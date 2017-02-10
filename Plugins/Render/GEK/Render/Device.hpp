@@ -19,6 +19,12 @@
 #include <functional>
 #include <memory>
 
+#ifdef _WINDLL
+#   define DLL_API __declspec(dllexport)
+#else
+#   define DLL_API __declspec(dllimport)
+#endif
+
 namespace Gek
 {
     namespace Render
@@ -120,7 +126,7 @@ namespace Gek
 
         using DisplayModeList = std::vector<DisplayMode>;
 
-        namespace PipelineType
+        namespace Pipeline
         {
             enum
             {
@@ -129,7 +135,7 @@ namespace Gek
                 Geometry = 1 << 2,
                 Pixel = 1 << 3,
             };
-        }; // namespace PipelineType
+        }; // namespace Pipeline
 
         enum class ComparisonFunction : uint8_t
         {
@@ -177,14 +183,6 @@ namespace Gek
                 Stencil = 1 << 1,
             };
         }; // ClearFlags
-
-        namespace RenderQueueFlags
-        {
-            enum
-            {
-                Direct = 1 << 0,
-            };
-        }; // namespace RenderQueueFlags
 
         struct ViewPort
         {
@@ -554,7 +552,7 @@ namespace Gek
         using PipelineStateHandle = Handle<uint16_t, __LINE__>;
         using SamplerStateHandle = Handle<uint8_t, __LINE__>;
         using ProgramHandle = Handle<uint16_t, __LINE__>;
-        using RenderListHandle = Handle<uint16_t, __LINE__>;
+        using BatchHandle = Handle<uint16_t, __LINE__>;
         using ResourceHandle = Handle<uint32_t, __LINE__>;
 
         GEK_INTERFACE(Device)
@@ -567,23 +565,25 @@ namespace Gek
                 uint32_t sampleQuality = 0;
             };
 
-            GEK_INTERFACE(RenderQueue)
+            static const DLL_API ResourceHandle SwapChain;
+
+            GEK_INTERFACE(Queue)
             {
-                struct Pipeline
+                struct Flags
                 {
                     enum
                     {
-                        Vertex = 1 << 0,
-                        Pixel = 1 << 1,
+                        Direct = 0,
+                        Bundle = 1 << 0,
                     };
-                }; // Pipeline
+                }; // struct Flags
 
-                virtual ~RenderQueue(void) = default;
+                virtual ~Queue(void) = default;
+
+                virtual void reset(void) = 0;
 
                 virtual void generateMipMaps(ResourceHandle texture) = 0;
                 virtual void resolveSamples(ResourceHandle destination, ResourceHandle source) = 0;
-
-                virtual void clearState(void) = 0;
 
                 virtual void clearUnorderedAccess(ResourceHandle object, Math::Float4 const &value) = 0;
                 virtual void clearUnorderedAccess(ResourceHandle object, Math::UInt4 const &value) = 0;
@@ -613,6 +613,8 @@ namespace Gek
                 virtual void drawInstancedPrimitive(ResourceHandle bufferArguments) = 0;
                 virtual void drawInstancedIndexedPrimitive(ResourceHandle bufferArguments) = 0;
                 virtual void dispatch(ResourceHandle bufferArguments) = 0;
+
+                virtual void appendBatch(BatchHandle batchHandle) = 0;
             };
 
             virtual ~Device(void) = default;
@@ -629,11 +631,14 @@ namespace Gek
 
             virtual SamplerStateHandle createSamplerState(const SamplerStateInformation &samplerState) = 0;
 
-            virtual std::vector<uint8_t> compileProgram(uint32_t pipeline, wchar_t const * const name, wchar_t const * const uncompiledProgram, wchar_t const * const entryFunction) = 0;
+            virtual std::vector<uint8_t> compileProgram(uint32_t pipeline, wchar_t const * const name, wchar_t const * const entryFunction, wchar_t const * const uncompiledProgram) = 0;
 
             virtual ResourceHandle createBuffer(const BufferDescription &description, const void *staticData = nullptr) = 0;
             virtual ResourceHandle createTexture(const TextureDescription &description, const void *data = nullptr) = 0;
             virtual ResourceHandle loadTexture(const FileSystem::Path &filePath, uint32_t flags) = 0;
+
+            virtual BufferDescription const * const getBufferDescription(ResourceHandle resource) const = 0;
+            virtual TextureDescription const * const getTextureDescription(ResourceHandle resource) const = 0;
 
             template <typename TYPE>
             bool mapResource(ResourceHandle buffer, TYPE *&data, Map mapping = Map::WriteDiscard)
@@ -647,9 +652,11 @@ namespace Gek
             virtual void updateResource(ResourceHandle resource, const void *data) = 0;
             virtual void copyResource(ResourceHandle destination, ResourceHandle source) = 0;
 
-            virtual RenderQueuePtr createRenderQueue(uint32_t flags) = 0;
-            virtual RenderListHandle createRenderList(RenderQueue *renderQueue) = 0;
-            virtual void executeRenderList(RenderListHandle renderList) = 0;
+            virtual QueuePtr createQueue(uint32_t flags) = 0;
+            virtual void runQueue(Queue *queue) = 0;
+                
+            virtual BatchHandle compileBatch(Queue *queue) = 0;
+            virtual void runBatch(BatchHandle batchHandle) = 0;
 
             virtual void present(bool waitForVerticalSync) = 0;
         };

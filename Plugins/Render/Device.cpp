@@ -5,6 +5,8 @@ namespace Gek
 {
     namespace Render
     {
+        const __declspec(dllexport) ResourceHandle Device::SwapChain(0xFFFFFFFF);
+
         size_t BufferDescription::getHash(void) const
         {
             return GetHash(format, stride, count, type, flags);

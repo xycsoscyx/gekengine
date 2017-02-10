@@ -37,9 +37,9 @@ namespace Gek
 
             Render::PipelineStateHandle pipelineState;
             Render::SamplerStateHandle samplerState;
-            Render::RenderListHandle renderList;
 
-            Render::ResourceHandle indirectBuffer;
+            Render::Device::QueuePtr renderQueue;
+
             Render::ResourceHandle constantBuffer;
             Render::ResourceHandle vertexBuffer;
             Render::ResourceHandle indexBuffer;
@@ -144,6 +144,7 @@ namespace Gek
             gui->consoleButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"console.png"), 0);
             gui->performanceButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"performance.png"), 0);
             gui->settingsButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"settings.png"), 0);
+            gui->renderQueue = renderDevice->createQueue(Render::Device::Queue::Flags::Direct);
 
             auto consolePane = gui->panelManager.addPane(ImGui::PanelManager::BOTTOM, "ConsolePanel##ConsolePanel");
             if (consolePane)
@@ -189,54 +190,46 @@ namespace Gek
             style.WindowRounding = 0.0f;
             style.FrameRounding = 3.0f;
 
-            static wchar_t const * const vertexShader =
-                L"cbuffer vertexBuffer : register(b0)" \
+            static wchar_t const * const guiProgram =
+                L"cbuffer Constants : register(b0)" \
                 L"{" \
                 L"    float4x4 ProjectionMatrix;" \
                 L"};" \
                 L"" \
-                L"struct VertexInput" \
+                L"struct Vertex" \
                 L"{" \
                 L"    float2 position : POSITION;" \
                 L"    float4 color : COLOR0;" \
                 L"    float2 texCoord  : TEXCOORD0;" \
                 L"};" \
                 L"" \
-                L"struct PixelOutput" \
+                L"struct Pixel" \
                 L"{" \
                 L"    float4 position : SV_POSITION;" \
                 L"    float4 color : COLOR0;" \
                 L"    float2 texCoord  : TEXCOORD0;" \
                 L"};" \
                 L"" \
-                L"PixelOutput main(in VertexInput input)" \
+                L"Pixel mainVertexProgram(in Vertex input)" \
                 L"{" \
-                L"    PixelOutput output;" \
+                L"    Pixel output;" \
                 L"    output.position = mul(ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));" \
                 L"    output.color = input.color;" \
                 L"    output.texCoord  = input.texCoord;" \
                 L"    return output;" \
-                L"}";
-
-            static wchar_t const * const pixelShader =
-                L"struct PixelInput" \
-                L"{" \
-                L"    float4 position : SV_POSITION;" \
-                L"    float4 color : COLOR0;" \
-                L"    float2 texCoord  : TEXCOORD0;" \
-                L"};" \
+                L"}" \
                 L"" \
                 L"sampler pointSampler;" \
                 L"Texture2D<float4> uiTexture : register(t0);" \
                 L"" \
-                L"float4 main(PixelInput input) : SV_Target" \
+                L"float4 mainPixelProgram(Pixel input) : SV_Target" \
                 L"{" \
                 L"    return (input.color * uiTexture.Sample(pointSampler, input.texCoord));" \
                 L"}";
 
             Render::PipelineStateInformation pipelineStateInformation;
-            pipelineStateInformation.compiledVertexShader = renderDevice->compileProgram(Render::PipelineType::Vertex, L"uiVertexProgram", L"main", vertexShader);
-            pipelineStateInformation.compiledPixelShader = renderDevice->compileProgram(Render::PipelineType::Pixel, L"uiPixelProgram", L"main", pixelShader);
+            pipelineStateInformation.compiledVertexShader = renderDevice->compileProgram(Render::Pipeline::Vertex, L"uiVertexProgram", L"mainVertexProgram", guiProgram);
+            pipelineStateInformation.compiledPixelShader = renderDevice->compileProgram(Render::Pipeline::Pixel, L"uiPixelProgram", L"mainPixelProgram", guiProgram);
 
             Render::InputElement element;
             element.format = Render::Format::R32G32_FLOAT;
@@ -271,12 +264,6 @@ namespace Gek
 
             gui->pipelineState = renderDevice->createPipelineState(pipelineStateInformation);
 
-            Render::BufferDescription indirectBufferDescription;
-            indirectBufferDescription.stride = (sizeof(uint32_t) * 5);
-            indirectBufferDescription.count = 1;
-            indirectBufferDescription.type = Render::BufferDescription::Type::IndirectArguments;
-            gui->indirectBuffer = renderDevice->createBuffer(indirectBufferDescription);
-
             Render::BufferDescription constantBufferDescription;
             constantBufferDescription.stride = sizeof(Math::Float4x4);
             constantBufferDescription.count = 1;
@@ -302,15 +289,6 @@ namespace Gek
             samplerStateInformation.addressModeW = Render::SamplerStateInformation::AddressMode::Wrap;
             gui->samplerState = renderDevice->createSamplerState(samplerStateInformation);
 
-            auto renderQueue = renderDevice->createRenderQueue();
-            renderQueue->bindPipelineState(gui->pipelineState);
-            renderQueue->bindVertexBufferList({ gui->vertexBuffer }, 0);
-            renderQueue->bindIndexBuffer(gui->indexBuffer, 0);
-            renderQueue->bindConstantBufferList({ gui->constantBuffer }, 0, Render::PipelineType::Vertex);
-            renderQueue->bindSamplerStateList({ gui->samplerState }, 0, Render::PipelineType::Pixel);
-            renderQueue->drawInstancedIndexedPrimitive(gui->indirectBuffer);
-            gui->renderList = renderDevice->createRenderList(renderQueue.get());
-
             imGuiIo.UserData = this;
             imGuiIo.RenderDrawListsFn = [](ImDrawData *drawData)
             {
@@ -328,14 +306,20 @@ namespace Gek
 
         ~Core(void)
         {
+            gui = nullptr;
+            ImGui::GetIO().Fonts->TexID = 0;
+            ImGui::Shutdown();
+
             renderDevice = nullptr;
             window = nullptr;
             context = nullptr;
+
+            CoUninitialize();
         }
 
         void renderDrawData(ImDrawData *drawData)
         {
-            if (!gui->vertexBuffer || gui->vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
+            if (!gui->vertexBuffer || renderDevice->getBufferDescription(gui->vertexBuffer)->count < uint32_t(drawData->TotalVtxCount))
             {
                 Render::BufferDescription vertexBufferDescription;
                 vertexBufferDescription.stride = sizeof(ImDrawVert);
@@ -345,7 +329,7 @@ namespace Gek
                 gui->vertexBuffer = renderDevice->createBuffer(vertexBufferDescription);
             }
 
-            if (!gui->indexBuffer || gui->indexBuffer->getDescription().count < uint32_t(drawData->TotalIdxCount))
+            if (!gui->indexBuffer || renderDevice->getBufferDescription(gui->indexBuffer)->count < uint32_t(drawData->TotalIdxCount))
             {
                 Render::BufferDescription vertexBufferDescription;
                 vertexBufferDescription.count = drawData->TotalIdxCount;
@@ -393,14 +377,22 @@ namespace Gek
 
             if (dataUploaded)
             {
-                auto backBuffer = renderDevice->getBackBuffer();
-                uint32_t width = backBuffer->getDescription().width;
-                uint32_t height = backBuffer->getDescription().height;
+                ImGuiIO &imGuiIo = ImGui::GetIO();
+                uint32_t width = imGuiIo.DisplaySize.x;
+                uint32_t height = imGuiIo.DisplaySize.y;
                 auto orthographic = Math::Float4x4::MakeOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
                 renderDevice->updateResource(gui->constantBuffer, &orthographic);
 
-                auto videoContext = renderDevice->getDefaultContext();
-                resources->setBackBuffer(videoContext, nullptr);
+                Render::ViewPort viewPort(Math::Float2::Zero, Math::Float2(width, height), 0.0f, 1.0f);
+
+                gui->renderQueue->reset();
+                gui->renderQueue->bindPipelineState(gui->pipelineState);
+                gui->renderQueue->bindVertexBufferList({ gui->vertexBuffer }, 0);
+                gui->renderQueue->bindIndexBuffer(gui->indexBuffer, 0);
+                gui->renderQueue->bindConstantBufferList({ gui->constantBuffer }, 0, Render::Pipeline::Vertex);
+                gui->renderQueue->bindSamplerStateList({ gui->samplerState }, 0, Render::Pipeline::Pixel);
+                gui->renderQueue->bindRenderTargetList({ Render::Device::SwapChain }, Render::ResourceHandle());
+                gui->renderQueue->setViewportList({ viewPort });
 
                 uint32_t vertexOffset = 0;
                 uint32_t indexOffset = 0;
@@ -421,13 +413,11 @@ namespace Gek
                             scissorBoxList[0].minimum.y = uint32_t(command->ClipRect.y);
                             scissorBoxList[0].maximum.x = uint32_t(command->ClipRect.z);
                             scissorBoxList[0].maximum.y = uint32_t(command->ClipRect.w);
-                            videoContext->setScissorList(scissorBoxList);
+                            gui->renderQueue->setScissorList(scissorBoxList);
 
-                            std::vector<Render::ResourceHandle> textureList(1);
-                            textureList[0] = *(Render::ResourceHandle *)command->TextureId;
-                            videoContext->pixelPipeline()->setResourceList(textureList, 0);
+                            gui->renderQueue->bindResourceList({ *(Render::ResourceHandle *)command->TextureId }, 0, Render::Pipeline::Pixel);
 
-                            renderDevice->executeRenderList(gui->renderList);
+                            gui->renderQueue->drawIndexedPrimitive(command->ElemCount, indexOffset, vertexOffset);
                         }
 
                         indexOffset += command->ElemCount;
@@ -436,6 +426,8 @@ namespace Gek
                     vertexOffset += commandList->VtxBuffer.Size;
                 }
             }
+
+            renderDevice->runQueue(gui->renderQueue.get());
         }
 
         void drawSettings(ImGui::PanelManagerWindowData &windowData)
@@ -488,6 +480,86 @@ namespace Gek
         bool update(void)
         {
             window->readEvents();
+
+            auto description = renderDevice->getTextureDescription(Render::Device::SwapChain);
+
+            ImGuiIO &imGuiIo = ImGui::GetIO();
+
+            uint32_t width = description->width;
+            uint32_t height = description->height;
+            imGuiIo.DisplaySize = ImVec2(float(width), float(height));
+            float barWidth = float(width);
+
+            gui->panelManager.setDisplayPortion(ImVec4(0, 0, width, height));
+
+            // Read keyboard modifiers inputs
+            imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+            imGuiIo.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+            imGuiIo.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+            imGuiIo.KeySuper = false;
+            // imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
+            // imGuiIo.MousePos : filled by WM_MOUSEMOVE events
+            // imGuiIo.MouseDown : filled by WM_*BUTTON* events
+            // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
+
+            ImGui::NewFrame();
+            ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+            ImGui::Begin("GEK Engine", nullptr, ImVec2(0, 0), 0.0f, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
+            if (windowActive)
+            {
+                if (showCursor)
+                {
+                    if (showModeChange)
+                    {
+                        ImGui::SetNextWindowPosCenter();
+                        ImGui::Begin("Keep Display Mode", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
+                        ImGui::Text("Keep Display Mode?");
+
+                        if (ImGui::Button("Yes"))
+                        {
+                            showModeChange = false;
+                            previousDisplayMode = currentDisplayMode;
+                        }
+
+                        ImGui::SameLine();
+                        modeChangeTimer -= 0.001f;
+                        if (modeChangeTimer <= 0.0f || ImGui::Button("No"))
+                        {
+                            showModeChange = false;
+                            setDisplayMode(previousDisplayMode);
+                        }
+
+                        ImGui::Text(StringUTF8::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)));
+
+                        ImGui::End();
+                    }
+                }
+            }
+
+            if (!windowActive)
+            {
+                ImGui::SetNextWindowPosCenter();
+                ImGui::Begin("GEK Engine##Paused", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoCollapse);
+                ImGui::Dummy(ImVec2(200, 0));
+                ImGui::Text("Paused");
+                ImGui::End();
+            }
+
+            if (windowActive && !showCursor)
+            {
+                auto rectangle = window->getScreenRectangle();
+                window->setCursorPosition(Math::Int2(
+                    int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
+                    int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
+            }
+
+            gui->panelManager.render();
+
+            ImGui::End();
+
+            ImGui::Render();
+            renderDevice->present(false);
+
             return engineRunning;
         }
 
@@ -517,19 +589,28 @@ namespace Gek
 
         void onCharacter(wchar_t character)
         {
-            //ImGuiIO &imGuiIo = ImGui::GetIO();
-            //imGuiIo.AddInputCharacter(character);
+            ImGuiIO &imGuiIo = ImGui::GetIO();
+            imGuiIo.AddInputCharacter(character);
         }
 
         void onKeyPressed(uint16_t key, bool state)
         {
-            //ImGuiIO &imGuiIo = ImGui::GetIO();
-            //imGuiIo.KeysDown[key] = state;
+            ImGuiIO &imGuiIo = ImGui::GetIO();
+            imGuiIo.KeysDown[key] = state;
+            if (state)
+            {
+                switch (key)
+                {
+                case VK_ESCAPE:
+                    showCursor = !showCursor;
+                    imGuiIo.MouseDrawCursor = showCursor;
+                    break;
+                };
+            }
         }
 
         void onMouseClicked(Window::Button button, bool state)
         {
-            /*
             ImGuiIO &imGuiIo = ImGui::GetIO();
             switch (button)
             {
@@ -545,20 +626,19 @@ namespace Gek
                 imGuiIo.MouseDown[1] = state;
                 break;
             };
-            */
         }
 
         void onMouseWheel(int32_t offset)
         {
-            //ImGuiIO &imGuiIo = ImGui::GetIO();
-            //imGuiIo.MouseWheel += (offset > 0 ? +1.0f : -1.0f);
+            ImGuiIO &imGuiIo = ImGui::GetIO();
+            imGuiIo.MouseWheel += (offset > 0 ? +1.0f : -1.0f);
         }
 
         void onMousePosition(int32_t xPosition, int32_t yPosition)
         {
-            //ImGuiIO &imGuiIo = ImGui::GetIO();
-            //imGuiIo.MousePos.x = xPosition;
-            //imGuiIo.MousePos.y = yPosition;
+            ImGuiIO &imGuiIo = ImGui::GetIO();
+            imGuiIo.MousePos.x = xPosition;
+            imGuiIo.MousePos.y = yPosition;
         }
 
         void onMouseMovement(int32_t xMovement, int32_t yMovement)

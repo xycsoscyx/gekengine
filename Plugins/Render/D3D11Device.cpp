@@ -677,19 +677,8 @@ namespace Gek
                 }
             };
 
-            HashCache<Render::ResourceHandle, ID3D11Resource> resourceCache;
-            DataCache<Render::ResourceHandle, ID3D11Buffer> bufferCache;
-            DataCache<Render::ResourceHandle, ID3D11ShaderResourceView> shaderResourceViewCache;
-            DataCache<Render::ResourceHandle, ID3D11UnorderedAccessView> unorderedAccessViewCache;
-            DataCache<Render::ResourceHandle, ID3D11RenderTargetView> renderTargetViewCache;
-            DataCache<Render::ResourceHandle, ID3D11DepthStencilView> depthStencilViewCache;
-            HashCache<Render::SamplerStateHandle, ID3D11SamplerState> samplerStateCache;
-            HashCache<Render::PipelineStateHandle, PipelineState> pipelineStateCache;
-            UniqueCache<Render::RenderListHandle, ID3D11CommandList> renderListCache;
-            ThreadPool resourceLoadPool;
-
-            class RenderQueue
-                : public Render::Device::RenderQueue
+            class Queue
+                : public Render::Device::Queue
             {
             public:
                 Device *device = nullptr;
@@ -703,7 +692,7 @@ namespace Gek
                 CComPtr<ID3D11DeviceContext> d3dDeviceContext;
 
             public:
-                RenderQueue(Device *device, CComPtr<ID3D11DeviceContext> &d3dDeviceContext)
+                Queue(Device *device, CComPtr<ID3D11DeviceContext> &d3dDeviceContext)
                     : device(device)
                     , d3dDeviceContext(d3dDeviceContext)
                     , samplerStateCache(device->samplerStateCache)
@@ -716,7 +705,15 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
                 }
 
-                // Render::Device::RenderQueue
+                // Render::Device::Queue
+                void reset(void)
+                {
+                    GEK_REQUIRE(d3dDeviceContext);
+
+                    CComPtr<ID3D11CommandList> commandList;
+                    d3dDeviceContext->FinishCommandList(false, &commandList);
+                }
+
                 void generateMipMaps(Render::ResourceHandle texture)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
@@ -729,13 +726,6 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
 
                     d3dDeviceContext->ResolveSubresource(device->resourceCache.get(destination), 0, device->resourceCache.get(source), 0, DXGI_FORMAT_UNKNOWN);
-                }
-
-                void clearState(void)
-                {
-                    GEK_REQUIRE(d3dDeviceContext);
-
-                    d3dDeviceContext->ClearState();
                 }
 
                 void clearUnorderedAccess(Render::ResourceHandle object, Math::Float4 const &value)
@@ -804,12 +794,12 @@ namespace Gek
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    if (pipelineFlags & Pipeline::Vertex)
+                    if (pipelineFlags & Render::Pipeline::Vertex)
                     {
                         d3dDeviceContext->VSSetSamplers(firstStage, list.size(), samplerStateCache.update(list));
                     }
 
-                    if (pipelineFlags & Pipeline::Pixel)
+                    if (pipelineFlags & Render::Pipeline::Pixel)
                     {
                         d3dDeviceContext->PSSetSamplers(firstStage, list.size(), samplerStateCache.update(list));
                     }
@@ -819,12 +809,12 @@ namespace Gek
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    if (pipelineFlags & Pipeline::Vertex)
+                    if (pipelineFlags & Render::Pipeline::Vertex)
                     {
                         d3dDeviceContext->VSSetConstantBuffers(firstStage, list.size(), constantBufferCache.update(list));
                     }
 
-                    if (pipelineFlags & Pipeline::Pixel)
+                    if (pipelineFlags & Render::Pipeline::Pixel)
                     {
                         d3dDeviceContext->PSSetConstantBuffers(firstStage, list.size(), constantBufferCache.update(list));
                     }
@@ -834,12 +824,12 @@ namespace Gek
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    if (pipelineFlags & Pipeline::Vertex)
+                    if (pipelineFlags & Render::Pipeline::Vertex)
                     {
                         d3dDeviceContext->VSSetShaderResources(firstStage, list.size(), resourceCache.update(list));
                     }
 
-                    if (pipelineFlags & Pipeline::Pixel)
+                    if (pipelineFlags & Render::Pipeline::Pixel)
                     {
                         d3dDeviceContext->PSSetShaderResources(firstStage, list.size(), resourceCache.update(list));
                     }
@@ -856,22 +846,38 @@ namespace Gek
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    DXGI_FORMAT format = DXGI_FORMAT_R16_UINT;// DirectX::BufferFormatList[static_cast<uint8_t>(indexBuffer->getDescription().format)];
-                    d3dDeviceContext->IASetIndexBuffer(device->bufferCache.get(indexBuffer), format, offset);
+                    auto description = device->getBufferDescription(indexBuffer);
+                    if (description)
+                    {
+                        DXGI_FORMAT format = DirectX::BufferFormatList[static_cast<uint8_t>(description->format)];
+                        d3dDeviceContext->IASetIndexBuffer(device->bufferCache.get(indexBuffer), format, offset);
+                    }
                 }
 
-                void bindVertexBufferList(const std::vector<Render::ResourceHandle> &list, uint32_t firstSlot, uint32_t *offsetList)
+                std::vector<uint32_t> vertexStrideCache;
+                std::vector<uint32_t> vertexOffsetCache;
+                void bindVertexBufferList(const std::vector<Render::ResourceHandle> &vertexBufferList, uint32_t firstSlot, uint32_t *offsetList)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    d3dDeviceContext->IASetVertexBuffers(firstSlot, list.size(), vertexBufferCache.update(list), nullptr, offsetList);
+                    uint32_t vertexBufferCount = UINT(vertexBufferList.size());
+                    vertexStrideCache.resize(vertexBufferCount);
+                    vertexOffsetCache.resize(vertexBufferCount);
+                    for (uint32_t buffer = 0; buffer < vertexBufferCount; ++buffer)
+                    {
+                        auto description = device->getBufferDescription(vertexBufferList[buffer]);
+                        vertexStrideCache[buffer] = (description ? description->stride : 0);
+                        vertexOffsetCache[buffer] = (offsetList ? offsetList[buffer] : 0);
+                    }
+
+                    d3dDeviceContext->IASetVertexBuffers(firstSlot, vertexBufferList.size(), vertexBufferCache.update(vertexBufferList), vertexStrideCache.data(), vertexOffsetCache.data());
                 }
 
-                void bindRenderTargetList(const std::vector<Render::ResourceHandle> &list, Render::ResourceHandle depthBuffer)
+                void bindRenderTargetList(const std::vector<Render::ResourceHandle> &renderTargetList, Render::ResourceHandle depthBuffer)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    d3dDeviceContext->OMSetRenderTargets(list.size(), renderTargetCache.update(list), nullptr);
+                    d3dDeviceContext->OMSetRenderTargets(renderTargetList.size(), renderTargetCache.update(renderTargetList), nullptr);
                 }
 
                 void drawPrimitive(uint32_t vertexCount, uint32_t firstVertex)
@@ -929,6 +935,17 @@ namespace Gek
                     
                     d3dDeviceContext->DispatchIndirect(device->bufferCache.get(bufferArguments), 0);
                 }
+
+                void appendBatch(Render::BatchHandle batchHandle)
+                {
+                    GEK_REQUIRE(d3dDeviceContext);
+
+                    auto commandList = device->batchCache.get(batchHandle);
+                    if (commandList)
+                    {
+                        d3dDeviceContext->ExecuteCommandList(commandList, false);
+                    }
+                }
             };
 
         public:
@@ -939,12 +956,24 @@ namespace Gek
             CComPtr<ID3D11DeviceContext> d3dDeviceContext;
             CComPtr<IDXGISwapChain1> dxgiSwapChain;
 
+            HashCache<Render::ResourceHandle, ID3D11Resource> resourceCache;
+            DataCache<Render::ResourceHandle, ID3D11Buffer> bufferCache;
+            DataCache<Render::ResourceHandle, ID3D11ShaderResourceView> shaderResourceViewCache;
+            DataCache<Render::ResourceHandle, ID3D11UnorderedAccessView> unorderedAccessViewCache;
+            DataCache<Render::ResourceHandle, ID3D11RenderTargetView> renderTargetViewCache;
+            DataCache<Render::ResourceHandle, ID3D11DepthStencilView> depthStencilViewCache;
+            HashCache<Render::SamplerStateHandle, ID3D11SamplerState> samplerStateCache;
+            HashCache<Render::PipelineStateHandle, PipelineState> pipelineStateCache;
+            UniqueCache<Render::BatchHandle, ID3D11CommandList> batchCache;
+
+            std::unordered_map<Render::ResourceHandle, Render::TextureDescription> textureDescriptionMap;
+            std::unordered_map<Render::ResourceHandle, Render::BufferDescription> bufferDescriptionMap;
+
         public:
             Device(Gek::Context *context, Window *window, Render::Device::Description deviceDescription)
                 : ContextRegistration(context)
                 , window(window)
                 , isChildWindow(GetParent((HWND)window->getBaseWindow()) != nullptr)
-                , resourceLoadPool(1)
             {
                 GEK_REQUIRE(window);
 
@@ -1015,6 +1044,34 @@ namespace Gek
                 d3dDeviceContext.Release();
 
                 d3dDevice.Release();
+            }
+
+            void updateSwapChain(void)
+            {
+                CComPtr<ID3D11Texture2D> d3dRenderTarget;
+                HRESULT resultValue = dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&d3dRenderTarget));
+                if (FAILED(resultValue) || !d3dRenderTarget)
+                {
+                    throw Render::OperationFailed("Unable to get swap chain primary buffer");
+                }
+
+                CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
+                resultValue = d3dDevice->CreateRenderTargetView(d3dRenderTarget, nullptr, &d3dRenderTargetView);
+                if (FAILED(resultValue) || !d3dRenderTargetView)
+                {
+                    throw Render::OperationFailed("Unable to create render target view for back buffer");
+                }
+
+                renderTargetViewCache.set(SwapChain, d3dRenderTargetView);
+
+                D3D11_TEXTURE2D_DESC textureDescription;
+                d3dRenderTarget->GetDesc(&textureDescription);
+
+                Render::TextureDescription description;
+                description.width = textureDescription.Width;
+                description.height = textureDescription.Height;
+                description.format = DirectX::getFormat(textureDescription.Format);
+                textureDescriptionMap.insert(std::make_pair(SwapChain, description));
             }
 
             // Render::Debug::Device
@@ -1111,7 +1168,9 @@ namespace Gek
                 GEK_REQUIRE(d3dDeviceContext);
                 GEK_REQUIRE(dxgiSwapChain);
 
+                renderTargetViewCache.set(SwapChain, CComPtr<ID3D11RenderTargetView>(nullptr));
                 d3dDeviceContext->ClearState();
+
                 HRESULT resultValue = dxgiSwapChain->SetFullscreenState(fullScreen, nullptr);
                 if (FAILED(resultValue))
                 {
@@ -1124,12 +1183,15 @@ namespace Gek
                         throw Render::OperationFailed("Unablet to set windowed state");
                     }
                 }
+
+                updateSwapChain();
             }
 
             void setDisplayMode(const Render::DisplayMode &displayMode)
             {
                 GEK_REQUIRE(dxgiSwapChain);
 
+                renderTargetViewCache.set(SwapChain, CComPtr<ID3D11RenderTargetView>(nullptr));
                 d3dDeviceContext->ClearState();
 
                 DXGI_MODE_DESC description;
@@ -1145,12 +1207,15 @@ namespace Gek
                 {
                     throw Render::OperationFailed("Unable to set display mode");
                 }
+
+                updateSwapChain();
             }
 
             void handleResize(void)
             {
                 GEK_REQUIRE(dxgiSwapChain);
 
+                renderTargetViewCache.set(SwapChain, CComPtr<ID3D11RenderTargetView>(nullptr));
                 d3dDeviceContext->ClearState();
 
                 HRESULT resultValue = dxgiSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
@@ -1158,6 +1223,8 @@ namespace Gek
                 {
                     throw Render::OperationFailed("Unable to resize swap chain buffers to window size");
                 }
+
+                updateSwapChain();
             }
 
             char const * const getSemanticMoniker(Render::InputElement::Semantic semantic)
@@ -1228,22 +1295,22 @@ namespace Gek
                     blendDescription.RenderTarget[renderTarget].DestBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(blendStateInformation.targetStateList[renderTarget].alphaDestination)];
                     blendDescription.RenderTarget[renderTarget].BlendOpAlpha = DirectX::BlendOperationList[static_cast<uint8_t>(blendStateInformation.targetStateList[renderTarget].alphaOperation)];
                     blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask = 0;
-                    if (blendStateInformation.targetStateList[renderTarget].writeMask & Render::BlendStateInformation::TargetStateInformation::Mask::R)
+                    if (blendStateInformation.targetStateList[renderTarget].writeMask & Render::BlendStateInformation::Mask::R)
                     {
                         blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_RED;
                     }
 
-                    if (blendStateInformation.targetStateList[renderTarget].writeMask & Render::BlendStateInformation::TargetStateInformation::Mask::G)
+                    if (blendStateInformation.targetStateList[renderTarget].writeMask & Render::BlendStateInformation::Mask::G)
                     {
                         blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_GREEN;
                     }
 
-                    if (blendStateInformation.targetStateList[renderTarget].writeMask & Render::BlendStateInformation::TargetStateInformation::Mask::B)
+                    if (blendStateInformation.targetStateList[renderTarget].writeMask & Render::BlendStateInformation::Mask::B)
                     {
                         blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_BLUE;
                     }
 
-                    if (blendStateInformation.targetStateList[renderTarget].writeMask & Render::BlendStateInformation::TargetStateInformation::Mask::A)
+                    if (blendStateInformation.targetStateList[renderTarget].writeMask & Render::BlendStateInformation::Mask::A)
                     {
                         blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_ALPHA;
                     }
@@ -1483,6 +1550,7 @@ namespace Gek
                         unorderedAccessViewCache.set(handle, d3dUnorderedAccessView);
                     }
 
+                    bufferDescriptionMap.insert(std::make_pair(handle, description));
                     return CComQIPtr<ID3D11Resource>(d3dBuffer);
                 });
             }
@@ -1550,7 +1618,7 @@ namespace Gek
                 */
             }
 
-            std::vector<uint8_t> compileProgram(StringUTF8 const &name, StringUTF8 const &type, StringUTF8 const &uncompiledProgram, StringUTF8 const &entryFunction)
+            std::vector<uint8_t> compileProgram(StringUTF8 const &name, StringUTF8 const &type, StringUTF8 const &entryFunction, StringUTF8 const &uncompiledProgram)
             {
                 GEK_REQUIRE(d3dDevice);
 
@@ -1577,7 +1645,7 @@ namespace Gek
                 return std::vector<uint8_t>(data, (data + d3dShaderBlob->GetBufferSize()));
             }
 
-            std::vector<uint8_t> compileProgram(uint32_t pipeline, wchar_t const * const name, wchar_t const * const uncompiledProgram, wchar_t const * const entryFunction)
+            std::vector<uint8_t> compileProgram(uint32_t pipeline, wchar_t const * const name, wchar_t const * const entryFunction, wchar_t const * const uncompiledProgram)
             {
                 GEK_REQUIRE(name);
                 GEK_REQUIRE(uncompiledProgram);
@@ -1585,17 +1653,17 @@ namespace Gek
 
                 switch (pipeline)
                 {
-                case Render::PipelineType::Compute:
-                    return compileProgram(name, "cs_5_0", uncompiledProgram, entryFunction);
+                case Render::Pipeline::Compute:
+                    return compileProgram(name, "cs_5_0", entryFunction, uncompiledProgram);
 
-                case Render::PipelineType::Vertex:
-                    return compileProgram(name, "vs_5_0", uncompiledProgram, entryFunction);
+                case Render::Pipeline::Vertex:
+                    return compileProgram(name, "vs_5_0", entryFunction, uncompiledProgram);
 
-                case Render::PipelineType::Geometry:
-                    return compileProgram(name, "gs_5_0", uncompiledProgram, entryFunction);
+                case Render::Pipeline::Geometry:
+                    return compileProgram(name, "gs_5_0", entryFunction, uncompiledProgram);
 
-                case Render::PipelineType::Pixel:
-                    return compileProgram(name, "ps_5_0", uncompiledProgram, entryFunction);
+                case Render::Pipeline::Pixel:
+                    return compileProgram(name, "ps_5_0", entryFunction, uncompiledProgram);
                 };
 
                 throw Render::CreateObjectFailed("Unknown program pipline encountered, only use single pipelines for program compilation");
@@ -1812,6 +1880,7 @@ namespace Gek
                         depthStencilViewCache.set(handle, d3dDepthStencilView);
                     }
 
+                    textureDescriptionMap.insert(std::make_pair(handle, description));
                     return d3dResource;
                 });
             }
@@ -1881,14 +1950,37 @@ namespace Gek
                     description.depth = image.GetMetadata().depth;
                     description.format = DirectX::getFormat(image.GetMetadata().format);
                     description.mipMapCount = image.GetMetadata().mipLevels;
+                    textureDescriptionMap.insert(std::make_pair(handle, description));
                     return d3dResource;
                 });
             }
 
-            Render::Device::RenderQueuePtr createRenderQueue(uint32_t flags)
+            Render::BufferDescription const * const getBufferDescription(Render::ResourceHandle resource) const
+            {
+                auto descriptionSearch = bufferDescriptionMap.find(resource);
+                if (descriptionSearch != bufferDescriptionMap.end())
+                {
+                    return &descriptionSearch->second;
+                }
+
+                return nullptr;
+            }
+
+            Render::TextureDescription const * const getTextureDescription(Render::ResourceHandle resource) const
+            {
+                auto descriptionSearch = textureDescriptionMap.find(resource);
+                if (descriptionSearch != textureDescriptionMap.end())
+                {
+                    return &descriptionSearch->second;
+                }
+
+                return nullptr;
+            }
+
+            Render::Device::QueuePtr createQueue(uint32_t flags)
             {
                 CComPtr<ID3D11DeviceContext> d3dDeviceContext;
-                if (flags & Render::RenderQueueFlags::Direct)
+                if (flags & Render::Device::Queue::Flags::Bundle)
                 {
                     d3dDevice->GetImmediateContext(&d3dDeviceContext);
                     if (!d3dDeviceContext)
@@ -1905,32 +1997,55 @@ namespace Gek
                     }
                 }
 
-                return std::make_unique<RenderQueue>(this, d3dDeviceContext);
+                return std::make_unique<Queue>(this, d3dDeviceContext);
             }
 
-            Render::RenderListHandle createRenderList(Render::Device::RenderQueue *baseRenderQueue)
+            void runQueue(Render::Device::Queue *baseQueue)
             {
                 GEK_REQUIRE(d3dDevice);
-                GEK_REQUIRE(baseRenderQueue);
+                GEK_REQUIRE(d3dDeviceContext);
+                GEK_REQUIRE(baseQueue);
 
-                RenderQueue *renderQueue = dynamic_cast<RenderQueue *>(baseRenderQueue);
-                if (!renderQueue)
+                Queue *queue = dynamic_cast<Queue *>(baseQueue);
+                if (!queue)
                 {
+                    throw Render::CreateObjectFailed("Unable to get internal render queue");
                 }
 
                 CComPtr<ID3D11CommandList> commandList;
-                HRESULT resultValue = renderQueue->d3dDeviceContext->FinishCommandList(false, &commandList);
+                HRESULT resultValue = queue->d3dDeviceContext->FinishCommandList(false, &commandList);
                 if (FAILED(resultValue) || !commandList)
                 {
                     throw Render::CreateObjectFailed("Unable to create render list");
                 }
 
-                return renderListCache.insert(commandList);
+                d3dDeviceContext->ExecuteCommandList(commandList, false);
             }
 
-            void executeRenderList(Render::RenderListHandle RenderListHandle)
+            Render::BatchHandle compileBatch(Render::Device::Queue *baseQueue)
             {
-                auto commandList = renderListCache.get(RenderListHandle);
+                GEK_REQUIRE(d3dDevice);
+                GEK_REQUIRE(baseQueue);
+
+                Queue *queue = dynamic_cast<Queue *>(baseQueue);
+                if (!queue)
+                {
+                    throw Render::CreateObjectFailed("Unable to get internal render queue");
+                }
+
+                CComPtr<ID3D11CommandList> commandList;
+                HRESULT resultValue = queue->d3dDeviceContext->FinishCommandList(false, &commandList);
+                if (FAILED(resultValue) || !commandList)
+                {
+                    throw Render::CreateObjectFailed("Unable to create render list");
+                }
+
+                return batchCache.insert(commandList);
+            }
+
+            void runBatch(Render::BatchHandle batchHandle)
+            {
+                auto commandList = batchCache.get(batchHandle);
                 if (commandList)
                 {
                     d3dDeviceContext->ExecuteCommandList(commandList, false);
