@@ -624,9 +624,9 @@ namespace Gek
             {
                 size_t listCount = inputList.size();
                 objectList.reserve(std::max(listCount, objectList.size()));
-                for (auto &handle : inputList)
+                for (size_t handle = 0; handle < listCount; handle++)
                 {
-                    objectList.push_back(dataCache.get(handle));
+                    objectList[handle] = dataCache.get(inputList[handle]);
                 }
 
                 return objectList.data();
@@ -1398,12 +1398,128 @@ namespace Gek
                 });
             }
 
+            bool mapResource(Render::ResourceHandle resource, void *&data, Render::Map mapping)
+            {
+                GEK_REQUIRE(d3dDeviceContext);
+
+                D3D11_MAP d3dMapping = DirectX::MapList[static_cast<uint8_t>(mapping)];
+
+                D3D11_MAPPED_SUBRESOURCE mappedSubResource;
+                mappedSubResource.pData = nullptr;
+                mappedSubResource.RowPitch = 0;
+                mappedSubResource.DepthPitch = 0;
+
+                if (SUCCEEDED(d3dDeviceContext->Map(resourceCache.get(resource), 0, d3dMapping, 0, &mappedSubResource)))
+                {
+                    data = mappedSubResource.pData;
+                    return true;
+                }
+
+                return false;
+            }
+
+            void unmapResource(Render::ResourceHandle resource)
+            {
+                GEK_REQUIRE(d3dDeviceContext);
+
+                d3dDeviceContext->Unmap(resourceCache.get(resource), 0);
+            }
+
+            void updateResource(Render::ResourceHandle resource, const void *data)
+            {
+                GEK_REQUIRE(d3dDeviceContext);
+                GEK_REQUIRE(data);
+
+                d3dDeviceContext->UpdateSubresource(resourceCache.get(resource), 0, nullptr, data, 0, 0);
+            }
+
+            void copyResource(Render::ResourceHandle destination, Render::ResourceHandle source)
+            {
+                GEK_REQUIRE(d3dDeviceContext);
+
+                /*
+                auto destinationTexture = dynamic_cast<BaseResourceHandle >(destination);
+                auto sourceTexture = dynamic_cast<BaseResourceHandle >(source);
+                if (destinationTexture && sourceTexture)
+                {
+                    if (destinationTexture->description.width != sourceTexture->description.width ||
+                        destinationTexture->description.height != sourceTexture->description.height ||
+                        destinationTexture->description.depth != sourceTexture->description.depth)
+                    {
+                        return;
+                    }
+                }
+
+                if (destinationTexture->description.mipMapCount > 0 || sourceTexture->description.mipMapCount > 0)
+                {
+                    d3dDeviceContext->CopySubresourceRegion(getObject<Resource>(destination), 0, 0, 0, 0, getObject<Resource>(source), 0, nullptr);
+                }
+                else
+                {
+                    d3dDeviceContext->CopyResource(getObject<Resource>(destination), getObject<Resource>(source));
+                }
+                */
+            }
+
+            std::vector<uint8_t> compileProgram(StringUTF8 const &name, StringUTF8 const &type, StringUTF8 const &entryFunction, StringUTF8 const &uncompiledProgram)
+            {
+                GEK_REQUIRE(d3dDevice);
+
+                uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
+#ifdef _DEBUG
+                flags |= D3DCOMPILE_DEBUG;
+                flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+                flags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
+#else
+                flags |= D3DCOMPILE_SKIP_VALIDATION;
+                flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
+#endif
+
+                CComPtr<ID3DBlob> d3dShaderBlob;
+                CComPtr<ID3DBlob> d3dCompilerErrors;
+                HRESULT resultValue = D3DCompile(uncompiledProgram, (uncompiledProgram.size() + 1), name, nullptr, nullptr, entryFunction, type, flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+                if (FAILED(resultValue) || !d3dShaderBlob)
+                {
+                    OutputDebugStringW(String::Format(L"D3DCompile Failed: %v\r\n%v\r\n", resultValue, (char const * const)d3dCompilerErrors->GetBufferPointer()));
+                    throw Render::ProgramCompilationFailed("Unable to compile program");
+                }
+
+                uint8_t *data = (uint8_t *)d3dShaderBlob->GetBufferPointer();
+                return std::vector<uint8_t>(data, (data + d3dShaderBlob->GetBufferSize()));
+            }
+
+            std::vector<uint8_t> compileProgram(uint32_t pipeline, wchar_t const * const name, wchar_t const * const entryFunction, wchar_t const * const uncompiledProgram)
+            {
+                GEK_REQUIRE(name);
+                GEK_REQUIRE(uncompiledProgram);
+                GEK_REQUIRE(entryFunction);
+
+                switch (pipeline)
+                {
+                case Render::Pipeline::Compute:
+                    return compileProgram(name, "cs_5_0", entryFunction, uncompiledProgram);
+
+                case Render::Pipeline::Vertex:
+                    return compileProgram(name, "vs_5_0", entryFunction, uncompiledProgram);
+
+                case Render::Pipeline::Geometry:
+                    return compileProgram(name, "gs_5_0", entryFunction, uncompiledProgram);
+
+                case Render::Pipeline::Pixel:
+                    return compileProgram(name, "ps_5_0", entryFunction, uncompiledProgram);
+                };
+
+                throw Render::CreateObjectFailed("Unknown program pipline encountered, only use single pipelines for program compilation");
+            }
+
             Render::ResourceHandle createBuffer(const Render::BufferDescription &description, const void *data)
             {
                 GEK_REQUIRE(d3dDevice);
                 GEK_REQUIRE(description.count > 0);
 
-                return resourceCache.insert(CombineHashes(description.getHash(), GetHash(data)), [this, description, data](Render::ResourceHandle handle) -> CComPtr<ID3D11Resource>
+                auto dataHash = reinterpret_cast<size_t>(data);
+                auto hash = CombineHashes(description.getHash(), dataHash);
+                return resourceCache.insert(hash, [this, description, data](Render::ResourceHandle handle) -> CComPtr<ID3D11Resource>
                 {
                     uint32_t stride = description.stride;
                     if (description.format != Render::Format::Unknown)
@@ -1555,120 +1671,6 @@ namespace Gek
                 });
             }
 
-            bool mapResource(Render::ResourceHandle resource, void *&data, Render::Map mapping)
-            {
-                GEK_REQUIRE(d3dDeviceContext);
-
-                D3D11_MAP d3dMapping = DirectX::MapList[static_cast<uint8_t>(mapping)];
-
-                D3D11_MAPPED_SUBRESOURCE mappedSubResource;
-                mappedSubResource.pData = nullptr;
-                mappedSubResource.RowPitch = 0;
-                mappedSubResource.DepthPitch = 0;
-
-                if (SUCCEEDED(d3dDeviceContext->Map(resourceCache.get(resource), 0, d3dMapping, 0, &mappedSubResource)))
-                {
-                    data = mappedSubResource.pData;
-                    return true;
-                }
-
-                return false;
-            }
-
-            void unmapResource(Render::ResourceHandle resource)
-            {
-                GEK_REQUIRE(d3dDeviceContext);
-
-                d3dDeviceContext->Unmap(resourceCache.get(resource), 0);
-            }
-
-            void updateResource(Render::ResourceHandle resource, const void *data)
-            {
-                GEK_REQUIRE(d3dDeviceContext);
-                GEK_REQUIRE(data);
-
-                d3dDeviceContext->UpdateSubresource(resourceCache.get(resource), 0, nullptr, data, 0, 0);
-            }
-
-            void copyResource(Render::ResourceHandle destination, Render::ResourceHandle source)
-            {
-                GEK_REQUIRE(d3dDeviceContext);
-
-                /*
-                auto destinationTexture = dynamic_cast<BaseResourceHandle >(destination);
-                auto sourceTexture = dynamic_cast<BaseResourceHandle >(source);
-                if (destinationTexture && sourceTexture)
-                {
-                    if (destinationTexture->description.width != sourceTexture->description.width ||
-                        destinationTexture->description.height != sourceTexture->description.height ||
-                        destinationTexture->description.depth != sourceTexture->description.depth)
-                    {
-                        return;
-                    }
-                }
-
-                if (destinationTexture->description.mipMapCount > 0 || sourceTexture->description.mipMapCount > 0)
-                {
-                    d3dDeviceContext->CopySubresourceRegion(getObject<Resource>(destination), 0, 0, 0, 0, getObject<Resource>(source), 0, nullptr);
-                }
-                else
-                {
-                    d3dDeviceContext->CopyResource(getObject<Resource>(destination), getObject<Resource>(source));
-                }
-                */
-            }
-
-            std::vector<uint8_t> compileProgram(StringUTF8 const &name, StringUTF8 const &type, StringUTF8 const &entryFunction, StringUTF8 const &uncompiledProgram)
-            {
-                GEK_REQUIRE(d3dDevice);
-
-                uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
-#ifdef _DEBUG
-                flags |= D3DCOMPILE_DEBUG;
-                flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
-                flags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
-#else
-                flags |= D3DCOMPILE_SKIP_VALIDATION;
-                flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
-#endif
-
-                CComPtr<ID3DBlob> d3dShaderBlob;
-                CComPtr<ID3DBlob> d3dCompilerErrors;
-                HRESULT resultValue = D3DCompile(uncompiledProgram, (uncompiledProgram.size() + 1), name, nullptr, nullptr, entryFunction, type, flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
-                if (FAILED(resultValue) || !d3dShaderBlob)
-                {
-                    OutputDebugStringW(String::Format(L"D3DCompile Failed: %v\r\n%v\r\n", resultValue, (char const * const)d3dCompilerErrors->GetBufferPointer()));
-                    throw Render::ProgramCompilationFailed("Unable to compile program");
-                }
-
-                uint8_t *data = (uint8_t *)d3dShaderBlob->GetBufferPointer();
-                return std::vector<uint8_t>(data, (data + d3dShaderBlob->GetBufferSize()));
-            }
-
-            std::vector<uint8_t> compileProgram(uint32_t pipeline, wchar_t const * const name, wchar_t const * const entryFunction, wchar_t const * const uncompiledProgram)
-            {
-                GEK_REQUIRE(name);
-                GEK_REQUIRE(uncompiledProgram);
-                GEK_REQUIRE(entryFunction);
-
-                switch (pipeline)
-                {
-                case Render::Pipeline::Compute:
-                    return compileProgram(name, "cs_5_0", entryFunction, uncompiledProgram);
-
-                case Render::Pipeline::Vertex:
-                    return compileProgram(name, "vs_5_0", entryFunction, uncompiledProgram);
-
-                case Render::Pipeline::Geometry:
-                    return compileProgram(name, "gs_5_0", entryFunction, uncompiledProgram);
-
-                case Render::Pipeline::Pixel:
-                    return compileProgram(name, "ps_5_0", entryFunction, uncompiledProgram);
-                };
-
-                throw Render::CreateObjectFailed("Unknown program pipline encountered, only use single pipelines for program compilation");
-            }
-
             Render::ResourceHandle createTexture(const Render::TextureDescription &description, const void *data)
             {
                 GEK_REQUIRE(d3dDevice);
@@ -1677,7 +1679,9 @@ namespace Gek
                 GEK_REQUIRE(description.height != 0);
                 GEK_REQUIRE(description.depth != 0);
 
-                return resourceCache.insert(CombineHashes(description.getHash(), GetHash(data)), [this, description, data](Render::ResourceHandle handle)->CComPtr<ID3D11Resource>
+                auto dataHash = reinterpret_cast<size_t>(data);
+                auto hash = CombineHashes(description.getHash(), dataHash);
+                return resourceCache.insert(hash, [this, description, data](Render::ResourceHandle handle)->CComPtr<ID3D11Resource>
                 {
                     uint32_t bindFlags = 0;
                     if (description.flags & Render::TextureDescription::Flags::RenderTarget)
@@ -1889,7 +1893,8 @@ namespace Gek
             {
                 GEK_REQUIRE(d3dDevice);
 
-                return resourceCache.insert(GetHash(filePath), [this, filePath, flags](Render::ResourceHandle handle)->CComPtr<ID3D11Resource>
+                auto hash = GetHash(filePath, flags);
+                return resourceCache.insert(hash, [this, filePath, flags](Render::ResourceHandle handle)->CComPtr<ID3D11Resource>
                 {
                     std::vector<uint8_t> buffer;
                     FileSystem::Load(filePath, buffer);
