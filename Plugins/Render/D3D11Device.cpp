@@ -552,6 +552,11 @@ namespace Gek
             std::unordered_map<HANDLE, CComPtr<TYPE>> dataMap;
 
         public:
+            void remove(HANDLE handle)
+            {
+                dataMap.erase(handle);
+            }
+
             void set(HANDLE handle, CComPtr<TYPE> &data)
             {
                 dataMap[handle] = data;
@@ -559,12 +564,7 @@ namespace Gek
 
             TYPE * get(HANDLE handle)
             {
-                if (!handle)
-                {
-                    return nullptr;
-                }
-
-                auto dataSearch = dataMap.find(handle);
+                auto dataSearch = (handle ? dataMap.find(handle) : std::end(dataMap));
                 return (dataSearch == std::end(dataMap) ? nullptr : dataSearch->second.p);
             }
         };
@@ -578,6 +578,11 @@ namespace Gek
             std::unordered_map<size_t, HANDLE> hashMap;
 
         public:
+            void remove(HANDLE handle)
+            {
+                DataCache::remove(handle);
+            }
+
             HANDLE insert(size_t hash, std::function<CComPtr<TYPE>(HANDLE)> &&onLoadRequired)
             {
                 auto hashSearch = hashMap.find(hash);
@@ -622,11 +627,11 @@ namespace Gek
 
             TYPE * const * const update(const std::vector<HANDLE> &inputList)
             {
-                size_t listCount = inputList.size();
-                objectList.reserve(std::max(listCount, objectList.size()));
-                for (size_t handle = 0; handle < listCount; handle++)
+                objectList.clear();
+                objectList.reserve(std::max(inputList.size(), objectList.size()));
+                for(auto &handle : inputList)
                 {
-                    objectList[handle] = dataCache.get(inputList[handle]);
+                    objectList.push_back(dataCache.get(handle));
                 }
 
                 return objectList.data();
@@ -682,22 +687,26 @@ namespace Gek
             {
             public:
                 Device *device = nullptr;
+                CComPtr<ID3D11DeviceContext> d3dDeviceContext;
                 FunctionCache<Render::SamplerStateHandle, ID3D11SamplerState> samplerStateCache;
-                FunctionCache<Render::ResourceHandle, ID3D11Buffer> constantBufferCache;
-                FunctionCache<Render::ResourceHandle, ID3D11ShaderResourceView> resourceCache;
+                FunctionCache<Render::ResourceHandle, ID3D11Buffer> vertexConstantBufferCache;
+                FunctionCache<Render::ResourceHandle, ID3D11Buffer> pixelConstantBufferCache;
+                FunctionCache<Render::ResourceHandle, ID3D11ShaderResourceView> vertexResourceCache;
+                FunctionCache<Render::ResourceHandle, ID3D11ShaderResourceView> pixelResourceCache;
                 FunctionCache<Render::ResourceHandle, ID3D11UnorderedAccessView> unorderedAccessCache;
                 FunctionCache<Render::ResourceHandle, ID3D11Buffer> vertexBufferCache;
                 FunctionCache<Render::ResourceHandle, ID3D11RenderTargetView> renderTargetCache;
-
-                CComPtr<ID3D11DeviceContext> d3dDeviceContext;
+                std::array<std::vector<uint32_t>, 2> vertexDataCache;
 
             public:
                 Queue(Device *device, CComPtr<ID3D11DeviceContext> &d3dDeviceContext)
                     : device(device)
                     , d3dDeviceContext(d3dDeviceContext)
                     , samplerStateCache(device->samplerStateCache)
-                    , constantBufferCache(device->bufferCache)
-                    , resourceCache(device->shaderResourceViewCache)
+                    , vertexConstantBufferCache(device->bufferCache)
+                    , pixelConstantBufferCache(device->bufferCache)
+                    , vertexResourceCache(device->shaderResourceViewCache)
+                    , pixelResourceCache(device->shaderResourceViewCache)
                     , unorderedAccessCache(device->unorderedAccessViewCache)
                     , vertexBufferCache(device->bufferCache)
                     , renderTargetCache(device->renderTargetViewCache)
@@ -811,12 +820,12 @@ namespace Gek
 
                     if (pipelineFlags & Render::Pipeline::Vertex)
                     {
-                        d3dDeviceContext->VSSetConstantBuffers(firstStage, list.size(), constantBufferCache.update(list));
+                        d3dDeviceContext->VSSetConstantBuffers(firstStage, list.size(), vertexConstantBufferCache.update(list));
                     }
 
                     if (pipelineFlags & Render::Pipeline::Pixel)
                     {
-                        d3dDeviceContext->PSSetConstantBuffers(firstStage, list.size(), constantBufferCache.update(list));
+                        d3dDeviceContext->PSSetConstantBuffers(firstStage, list.size(), pixelConstantBufferCache.update(list));
                     }
                 }
 
@@ -826,12 +835,12 @@ namespace Gek
 
                     if (pipelineFlags & Render::Pipeline::Vertex)
                     {
-                        d3dDeviceContext->VSSetShaderResources(firstStage, list.size(), resourceCache.update(list));
+                        d3dDeviceContext->VSSetShaderResources(firstStage, list.size(), vertexResourceCache.update(list));
                     }
 
                     if (pipelineFlags & Render::Pipeline::Pixel)
                     {
-                        d3dDeviceContext->PSSetShaderResources(firstStage, list.size(), resourceCache.update(list));
+                        d3dDeviceContext->PSSetShaderResources(firstStage, list.size(), pixelResourceCache.update(list));
                     }
                 }
 
@@ -854,23 +863,23 @@ namespace Gek
                     }
                 }
 
-                std::vector<uint32_t> vertexStrideCache;
-                std::vector<uint32_t> vertexOffsetCache;
                 void bindVertexBufferList(const std::vector<Render::ResourceHandle> &vertexBufferList, uint32_t firstSlot, uint32_t *offsetList)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    uint32_t vertexBufferCount = UINT(vertexBufferList.size());
-                    vertexStrideCache.resize(vertexBufferCount);
-                    vertexOffsetCache.resize(vertexBufferCount);
-                    for (uint32_t buffer = 0; buffer < vertexBufferCount; ++buffer)
+                    vertexDataCache[0].clear();
+                    vertexDataCache[1].clear();
+                    auto vertexBufferCount = vertexBufferList.size();
+                    vertexDataCache[0].reserve(std::max(vertexBufferCount, vertexDataCache[0].size()));
+                    vertexDataCache[1].reserve(std::max(vertexBufferCount, vertexDataCache[1].size()));
+                    for (size_t buffer = 0; buffer < vertexBufferCount; ++buffer)
                     {
                         auto description = device->getBufferDescription(vertexBufferList[buffer]);
-                        vertexStrideCache[buffer] = (description ? description->stride : 0);
-                        vertexOffsetCache[buffer] = (offsetList ? offsetList[buffer] : 0);
+                        vertexDataCache[0].push_back(description ? description->stride : 0);
+                        vertexDataCache[1].push_back(offsetList ? offsetList[buffer] : 0);
                     }
 
-                    d3dDeviceContext->IASetVertexBuffers(firstSlot, vertexBufferList.size(), vertexBufferCache.update(vertexBufferList), vertexStrideCache.data(), vertexOffsetCache.data());
+                    d3dDeviceContext->IASetVertexBuffers(firstSlot, vertexBufferList.size(), vertexBufferCache.update(vertexBufferList), vertexDataCache[0].data(), vertexDataCache[1].data());
                 }
 
                 void bindRenderTargetList(const std::vector<Render::ResourceHandle> &renderTargetList, Render::ResourceHandle depthBuffer)
@@ -956,18 +965,20 @@ namespace Gek
             CComPtr<ID3D11DeviceContext> d3dDeviceContext;
             CComPtr<IDXGISwapChain1> dxgiSwapChain;
 
+            HashCache<Render::PipelineStateHandle, PipelineState> pipelineStateCache;
+
+            HashCache<Render::SamplerStateHandle, ID3D11SamplerState> samplerStateCache;
+
             HashCache<Render::ResourceHandle, ID3D11Resource> resourceCache;
             DataCache<Render::ResourceHandle, ID3D11Buffer> bufferCache;
             DataCache<Render::ResourceHandle, ID3D11ShaderResourceView> shaderResourceViewCache;
             DataCache<Render::ResourceHandle, ID3D11UnorderedAccessView> unorderedAccessViewCache;
             DataCache<Render::ResourceHandle, ID3D11RenderTargetView> renderTargetViewCache;
             DataCache<Render::ResourceHandle, ID3D11DepthStencilView> depthStencilViewCache;
-            HashCache<Render::SamplerStateHandle, ID3D11SamplerState> samplerStateCache;
-            HashCache<Render::PipelineStateHandle, PipelineState> pipelineStateCache;
-            UniqueCache<Render::BatchHandle, ID3D11CommandList> batchCache;
-
             std::unordered_map<Render::ResourceHandle, Render::TextureDescription> textureDescriptionMap;
             std::unordered_map<Render::ResourceHandle, Render::BufferDescription> bufferDescriptionMap;
+
+            UniqueCache<Render::BatchHandle, ID3D11CommandList> batchCache;
 
         public:
             Device(Gek::Context *context, Window *window, Render::Device::Description deviceDescription)
@@ -1034,6 +1045,8 @@ namespace Gek
                 d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
                 //d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
 #endif
+
+                updateSwapChain();
             }
 
             ~Device(void)
@@ -1071,7 +1084,7 @@ namespace Gek
                 description.width = textureDescription.Width;
                 description.height = textureDescription.Height;
                 description.format = DirectX::getFormat(textureDescription.Format);
-                textureDescriptionMap.insert(std::make_pair(SwapChain, description));
+                textureDescriptionMap[SwapChain] = description;
             }
 
             // Render::Debug::Device
@@ -1230,6 +1243,33 @@ namespace Gek
             char const * const getSemanticMoniker(Render::InputElement::Semantic semantic)
             {
                 return DirectX::SemanticNameList[static_cast<uint8_t>(semantic)];
+            }
+
+            void deletePipelineState(Render::PipelineStateHandle pipelineState)
+            {
+                pipelineStateCache.remove(pipelineState);
+            }
+
+            void deleteSamplerState(Render::SamplerStateHandle samplerState)
+            {
+                samplerStateCache.remove(samplerState);
+            }
+
+            void deleteResource(Render::ResourceHandle resource)
+            {
+                resourceCache.remove(resource);
+                bufferCache.remove(resource);
+                shaderResourceViewCache.remove(resource);
+                unorderedAccessViewCache.remove(resource);
+                renderTargetViewCache.remove(resource);
+                depthStencilViewCache.remove(resource);
+                textureDescriptionMap.erase(resource);
+                bufferDescriptionMap.erase(resource);
+            }
+
+            void deleteBatch(Render::BatchHandle batch)
+            {
+                batchCache.remove(batch);
             }
 
             CComPtr<ID3D11RasterizerState> createRasterizerState(const Render::RasterizerStateInformation &rasterizerStateInformation)
@@ -1893,7 +1933,7 @@ namespace Gek
             {
                 GEK_REQUIRE(d3dDevice);
 
-                auto hash = GetHash(filePath, flags);
+                auto hash = GetHash(0xFFFFFFFF, filePath, flags);
                 return resourceCache.insert(hash, [this, filePath, flags](Render::ResourceHandle handle)->CComPtr<ID3D11Resource>
                 {
                     std::vector<uint8_t> buffer;
@@ -1948,6 +1988,8 @@ namespace Gek
                     {
                         throw Render::CreateObjectFailed("Unable to get texture resource");
                     }
+
+                    shaderResourceViewCache.set(handle, d3dShaderResourceView);
 
                     Render::TextureDescription description;
                     description.width = image.GetMetadata().width;

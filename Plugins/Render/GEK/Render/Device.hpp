@@ -549,11 +549,10 @@ namespace Gek
             }
         };
 
-        using PipelineStateHandle = Handle<uint16_t, __LINE__>;
+        using PipelineStateHandle = Handle<uint8_t, __LINE__>;
         using SamplerStateHandle = Handle<uint8_t, __LINE__>;
-        using ProgramHandle = Handle<uint16_t, __LINE__>;
-        using BatchHandle = Handle<uint16_t, __LINE__>;
         using ResourceHandle = Handle<uint32_t, __LINE__>;
+        using BatchHandle = Handle<uint16_t, __LINE__>;
 
         GEK_INTERFACE(Device)
         {
@@ -626,6 +625,11 @@ namespace Gek
             virtual void handleResize(void) = 0;
 
 			virtual char const * const getSemanticMoniker(InputElement::Semantic semantic) = 0;
+
+            virtual void deletePipelineState(PipelineStateHandle pipelineState) = 0;
+            virtual void deleteSamplerState(SamplerStateHandle samplerState) = 0;
+            virtual void deleteResource(ResourceHandle resource) = 0;
+            virtual void deleteBatch(BatchHandle batch) = 0;
 
             virtual PipelineStateHandle createPipelineState(const PipelineStateInformation &pipelineState) = 0;
 

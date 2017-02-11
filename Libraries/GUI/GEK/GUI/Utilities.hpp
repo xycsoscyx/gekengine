@@ -11,6 +11,7 @@
 #include "GEK/Utility/String.hpp"
 
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <ImGuizmo.h>
 
 namespace ImGui

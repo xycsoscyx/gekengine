@@ -9,7 +9,6 @@
 #include "GEK/Engine/Resources.hpp"
 #include "GEK/Engine/Renderer.hpp"
 #include <concurrent_unordered_map.h>
-#include <imgui_internal.h>
 #include <algorithm>
 #include <queue>
 #include <ppl.h>
