@@ -474,7 +474,7 @@ namespace Gek
             D3D11_MAP_WRITE_NO_OVERWRITE,
         };
 
-        static char const * const SemanticNameList[] =
+        static char const * const VertexSemanticList[] =
         {
             "POSITION",
             "TEXCOORD",
@@ -484,7 +484,18 @@ namespace Gek
             "COLOR",
         };
 
-        static_assert(ARRAYSIZE(SemanticNameList) == static_cast<uint8_t>(Render::InputElement::Semantic::Count), "New input element semantic added without adding to all SemanticNameList.");
+        static char const * const PixelSemanticList[] =
+        {
+            "SV_POSITION",
+            "TEXCOORD",
+            "TANGENT",
+            "BINORMAL",
+            "NORMAL",
+            "COLOR",
+        };
+
+        static_assert(ARRAYSIZE(VertexSemanticList) == static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count), "New element semantic added without adding to all VertexSemanticList.");
+        static_assert(ARRAYSIZE(PixelSemanticList) == static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count), "New element semantic added without adding to all PixelSemanticList.");
 
         Render::Format getFormat(DXGI_FORMAT format)
         {
@@ -541,10 +552,103 @@ namespace Gek
 
             return Render::Format::Unknown;
         }
+
+        StringUTF8 getFormatSemantic(Render::Format format)
+        {
+            switch (format)
+            {
+            case Render::Format::R32G32B32A32_FLOAT:
+            case Render::Format::R16G16B16A16_FLOAT:
+            case Render::Format::R16G16B16A16_UNORM:
+            case Render::Format::R10G10B10A2_UNORM:
+            case Render::Format::R8G8B8A8_UNORM:
+            case Render::Format::R8G8B8A8_UNORM_SRGB:
+            case Render::Format::R16G16B16A16_NORM:
+            case Render::Format::R8G8B8A8_NORM:
+                return "float4";
+
+            case Render::Format::R32G32B32_FLOAT:
+            case Render::Format::R11G11B10_FLOAT:
+                return "float3";
+
+            case Render::Format::R32G32_FLOAT:
+            case Render::Format::R16G16_FLOAT:
+            case Render::Format::R16G16_UNORM:
+            case Render::Format::R8G8_UNORM:
+            case Render::Format::R16G16_NORM:
+            case Render::Format::R8G8_NORM:
+                return "float2";
+
+            case Render::Format::R32_FLOAT:
+            case Render::Format::R16_FLOAT:
+            case Render::Format::R16_UNORM:
+            case Render::Format::R8_UNORM:
+            case Render::Format::R16_NORM:
+            case Render::Format::R8_NORM:
+            case Render::Format::D32_FLOAT_S8X24_UINT:
+            case Render::Format::D24_UNORM_S8_UINT:
+            case Render::Format::D32_FLOAT:
+            case Render::Format::D16_UNORM:
+                return "float";
+
+            case Render::Format::R32G32B32A32_UINT:
+            case Render::Format::R16G16B16A16_UINT:
+            case Render::Format::R10G10B10A2_UINT:
+                return "uint4";
+
+            case Render::Format::R8G8B8A8_UINT:
+            case Render::Format::R32G32B32_UINT:
+                return "uint3";
+
+            case Render::Format::R32G32_UINT:
+            case Render::Format::R16G16_UINT:
+            case Render::Format::R8G8_UINT:
+                return "uint2";
+
+            case Render::Format::R32_UINT:
+            case Render::Format::R16_UINT:
+            case Render::Format::R8_UINT:
+                return "uint";
+
+            case Render::Format::R32G32B32A32_INT:
+            case Render::Format::R16G16B16A16_INT:
+            case Render::Format::R8G8B8A8_INT:
+                return "int4";
+
+            case Render::Format::R32G32B32_INT:
+                return "int3";
+
+            case Render::Format::R32G32_INT:
+            case Render::Format::R16G16_INT:
+            case Render::Format::R8G8_INT:
+                return "int2";
+
+            case Render::Format::R32_INT:
+            case Render::Format::R16_INT:
+            case Render::Format::R8_INT:
+                return "int";
+            };
+
+            return "";
+        }
     }; // namespace DirectX
 
     namespace Direct3D11
     {
+        template <typename CLASS>
+        void setDebugName(CComPtr<CLASS> &object, StringUTF8 name, char const * const member = nullptr)
+        {
+            if (object && !name.empty())
+            {
+                if (member)
+                {
+                    name.appendFormat("::%v", member);
+                }
+
+                object->SetPrivateData(WKPDID_D3DDebugObjectName, name.length(), name.c_str());
+            }
+        }
+
         template <typename HANDLE, typename TYPE>
         class DataCache
         {
@@ -552,6 +656,11 @@ namespace Gek
             std::unordered_map<HANDLE, CComPtr<TYPE>> dataMap;
 
         public:
+            void clear(void)
+            {
+                dataMap.clear();
+            }
+
             void remove(HANDLE handle)
             {
                 dataMap.erase(handle);
@@ -647,7 +756,7 @@ namespace Gek
                 CComPtr<ID3D11RasterizerState> rasterizerState;
                 CComPtr<ID3D11DepthStencilState> depthStencilState;
                 CComPtr<ID3D11BlendState> blendState;
-                CComPtr<ID3D11InputLayout> inputLayout;
+                CComPtr<ID3D11InputLayout> vertexDeclaration;
                 CComPtr<ID3D11VertexShader> vertexShader;
                 CComPtr<ID3D11PixelShader> pixelShader;
                 D3D11_PRIMITIVE_TOPOLOGY primitiveTopology;
@@ -792,7 +901,7 @@ namespace Gek
                         d3dDeviceContext->RSSetState(pipelineState->rasterizerState);
                         d3dDeviceContext->OMSetDepthStencilState(pipelineState->depthStencilState, 0x0);
                         d3dDeviceContext->OMSetBlendState(pipelineState->blendState, Math::Float4::Zero.data, pipelineState->sampleMask);
-                        d3dDeviceContext->IASetInputLayout(pipelineState->inputLayout);
+                        d3dDeviceContext->IASetInputLayout(pipelineState->vertexDeclaration);
                         d3dDeviceContext->VSSetShader(pipelineState->vertexShader, nullptr, 0);
                         d3dDeviceContext->PSSetShader(pipelineState->pixelShader, nullptr, 0);
                         d3dDeviceContext->IASetPrimitiveTopology(pipelineState->primitiveTopology);
@@ -945,11 +1054,11 @@ namespace Gek
                     d3dDeviceContext->DispatchIndirect(device->bufferCache.get(bufferArguments), 0);
                 }
 
-                void appendBatch(Render::BatchHandle batchHandle)
+                void runQueue(Render::QueueHandle queue)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    auto commandList = device->batchCache.get(batchHandle);
+                    auto commandList = device->queueCache.get(queue);
                     if (commandList)
                     {
                         d3dDeviceContext->ExecuteCommandList(commandList, false);
@@ -978,7 +1087,7 @@ namespace Gek
             std::unordered_map<Render::ResourceHandle, Render::TextureDescription> textureDescriptionMap;
             std::unordered_map<Render::ResourceHandle, Render::BufferDescription> bufferDescriptionMap;
 
-            UniqueCache<Render::BatchHandle, ID3D11CommandList> batchCache;
+            UniqueCache<Render::QueueHandle, ID3D11CommandList> queueCache;
 
         public:
             Device(Gek::Context *context, Window *window, Render::Device::Description deviceDescription)
@@ -1053,9 +1162,24 @@ namespace Gek
             {
                 setFullScreenState(false);
 
+                pipelineStateCache.clear();
+                samplerStateCache.clear();
+                resourceCache.clear();
+                bufferCache.clear();
+                shaderResourceViewCache.clear();
+                unorderedAccessViewCache.clear();
+                renderTargetViewCache.clear();
+                depthStencilViewCache.clear();
+                textureDescriptionMap.clear();
+                bufferDescriptionMap.clear();
+                queueCache.clear();
+
                 dxgiSwapChain.Release();
                 d3dDeviceContext.Release();
-
+#ifdef _DEBUG
+                CComQIPtr<ID3D11Debug> d3dDebug(d3dDevice);
+                d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+#endif
                 d3dDevice.Release();
             }
 
@@ -1085,6 +1209,215 @@ namespace Gek
                 description.height = textureDescription.Height;
                 description.format = DirectX::getFormat(textureDescription.Format);
                 textureDescriptionMap[SwapChain] = description;
+            }
+
+            CComPtr<ID3D11RasterizerState> createRasterizerState(const Render::RasterizerStateInformation &rasterizerStateInformation)
+            {
+                GEK_REQUIRE(d3dDevice);
+
+                D3D11_RASTERIZER_DESC rasterizerDescription;
+                rasterizerDescription.FrontCounterClockwise = rasterizerStateInformation.frontCounterClockwise;
+                rasterizerDescription.DepthBias = rasterizerStateInformation.depthBias;
+                rasterizerDescription.DepthBiasClamp = rasterizerStateInformation.depthBiasClamp;
+                rasterizerDescription.SlopeScaledDepthBias = rasterizerStateInformation.slopeScaledDepthBias;
+                rasterizerDescription.DepthClipEnable = rasterizerStateInformation.depthClipEnable;
+                rasterizerDescription.ScissorEnable = rasterizerStateInformation.scissorEnable;
+                rasterizerDescription.MultisampleEnable = rasterizerStateInformation.multisampleEnable;
+                rasterizerDescription.AntialiasedLineEnable = rasterizerStateInformation.antialiasedLineEnable;
+                rasterizerDescription.FillMode = DirectX::FillModeList[static_cast<uint8_t>(rasterizerStateInformation.fillMode)];
+                rasterizerDescription.CullMode = DirectX::CullModeList[static_cast<uint8_t>(rasterizerStateInformation.cullMode)];
+
+                CComPtr<ID3D11RasterizerState> rasterizerState;
+                d3dDevice->CreateRasterizerState(&rasterizerDescription, &rasterizerState);
+                if (!rasterizerState)
+                {
+                    throw Render::CreateObjectFailed("Unable to create rasterizer state");
+                }
+
+                return rasterizerState;
+            }
+
+            CComPtr<ID3D11DepthStencilState> createDepthState(const Render::DepthStateInformation &depthStateInformation)
+            {
+                GEK_REQUIRE(d3dDevice);
+
+                D3D11_DEPTH_STENCIL_DESC depthStencilDescription;
+                depthStencilDescription.DepthEnable = depthStateInformation.enable;
+                depthStencilDescription.DepthFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(depthStateInformation.comparisonFunction)];
+                depthStencilDescription.StencilEnable = depthStateInformation.stencilEnable;
+                depthStencilDescription.StencilReadMask = depthStateInformation.stencilReadMask;
+                depthStencilDescription.StencilWriteMask = depthStateInformation.stencilWriteMask;
+                depthStencilDescription.FrontFace.StencilFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthStateInformation.stencilFrontState.failOperation)];
+                depthStencilDescription.FrontFace.StencilDepthFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthStateInformation.stencilFrontState.depthFailOperation)];
+                depthStencilDescription.FrontFace.StencilPassOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthStateInformation.stencilFrontState.passOperation)];
+                depthStencilDescription.FrontFace.StencilFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(depthStateInformation.stencilFrontState.comparisonFunction)];
+                depthStencilDescription.BackFace.StencilFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthStateInformation.stencilBackState.failOperation)];
+                depthStencilDescription.BackFace.StencilDepthFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthStateInformation.stencilBackState.depthFailOperation)];
+                depthStencilDescription.BackFace.StencilPassOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthStateInformation.stencilBackState.passOperation)];
+                depthStencilDescription.BackFace.StencilFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(depthStateInformation.stencilBackState.comparisonFunction)];
+                depthStencilDescription.DepthWriteMask = DirectX::DepthWriteMaskList[static_cast<uint8_t>(depthStateInformation.writeMask)];
+
+                CComPtr<ID3D11DepthStencilState> depthState;
+                d3dDevice->CreateDepthStencilState(&depthStencilDescription, &depthState);
+                if (!depthState)
+                {
+                    throw Render::CreateObjectFailed("Unable to create depth stencil state");
+                }
+
+                return depthState;
+            }
+
+            CComPtr<ID3D11BlendState> createBlendState(const Render::BlendStateInformation &blendStateInformation)
+            {
+                GEK_REQUIRE(d3dDevice);
+
+                D3D11_BLEND_DESC blendDescription;
+                blendDescription.AlphaToCoverageEnable = blendStateInformation.alphaToCoverage;
+                blendDescription.IndependentBlendEnable = !blendStateInformation.unifiedBlendState;
+                for (uint32_t renderTarget = 0; renderTarget < 8; ++renderTarget)
+                {
+                    blendDescription.RenderTarget[renderTarget].BlendEnable = blendStateInformation.targetStateList[renderTarget].enable;
+                    blendDescription.RenderTarget[renderTarget].SrcBlend = DirectX::BlendSourceList[static_cast<uint8_t>(blendStateInformation.targetStateList[renderTarget].colorSource)];
+                    blendDescription.RenderTarget[renderTarget].DestBlend = DirectX::BlendSourceList[static_cast<uint8_t>(blendStateInformation.targetStateList[renderTarget].colorDestination)];
+                    blendDescription.RenderTarget[renderTarget].BlendOp = DirectX::BlendOperationList[static_cast<uint8_t>(blendStateInformation.targetStateList[renderTarget].colorOperation)];
+                    blendDescription.RenderTarget[renderTarget].SrcBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(blendStateInformation.targetStateList[renderTarget].alphaSource)];
+                    blendDescription.RenderTarget[renderTarget].DestBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(blendStateInformation.targetStateList[renderTarget].alphaDestination)];
+                    blendDescription.RenderTarget[renderTarget].BlendOpAlpha = DirectX::BlendOperationList[static_cast<uint8_t>(blendStateInformation.targetStateList[renderTarget].alphaOperation)];
+                    blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask = 0;
+                    if (blendStateInformation.targetStateList[renderTarget].writeMask & Render::BlendStateInformation::Mask::R)
+                    {
+                        blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_RED;
+                    }
+
+                    if (blendStateInformation.targetStateList[renderTarget].writeMask & Render::BlendStateInformation::Mask::G)
+                    {
+                        blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_GREEN;
+                    }
+
+                    if (blendStateInformation.targetStateList[renderTarget].writeMask & Render::BlendStateInformation::Mask::B)
+                    {
+                        blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_BLUE;
+                    }
+
+                    if (blendStateInformation.targetStateList[renderTarget].writeMask & Render::BlendStateInformation::Mask::A)
+                    {
+                        blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_ALPHA;
+                    }
+                }
+
+                CComPtr<ID3D11BlendState> blendState;
+                d3dDevice->CreateBlendState(&blendDescription, &blendState);
+                if (!blendState)
+                {
+                    throw Render::CreateObjectFailed("Unable to create blend state");
+                }
+
+                return blendState;
+            }
+
+            std::vector<D3D11_INPUT_ELEMENT_DESC> getVertexDeclaration(const std::vector<Render::VertexDeclaration> &vertexDeclaration)
+            {
+                uint32_t semanticIndexList[static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count)] = { 0 };
+                std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDescriptionList;
+                for (auto &vertexElement : vertexDeclaration)
+                {
+                    D3D11_INPUT_ELEMENT_DESC elementDescription;
+                    elementDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(vertexElement.format)];
+                    elementDescription.AlignedByteOffset = (vertexElement.alignedByteOffset == Render::VertexDeclaration::AppendAligned ? D3D11_APPEND_ALIGNED_ELEMENT : vertexElement.alignedByteOffset);
+                    elementDescription.SemanticName = DirectX::VertexSemanticList[static_cast<uint8_t>(vertexElement.semantic)];
+                    elementDescription.SemanticIndex = semanticIndexList[static_cast<uint8_t>(vertexElement.semantic)]++;
+                    elementDescription.InputSlot = vertexElement.sourceIndex;
+                    switch (vertexElement.source)
+                    {
+                    case Render::VertexDeclaration::Source::Instance:
+                        elementDescription.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
+                        elementDescription.InstanceDataStepRate = 1;
+                        break;
+
+                    case Render::VertexDeclaration::Source::Vertex:
+                    default:
+                        elementDescription.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+                        elementDescription.InstanceDataStepRate = 0;
+                        break;
+                    };
+
+                    inputElementDescriptionList.push_back(elementDescription);
+                }
+
+                return inputElementDescriptionList;
+            }
+
+            StringUTF8 getShaderHeader(const Render::PipelineStateInformation &pipelineStateInformation)
+            {
+                static const char ConversionFunctions[] =
+                    "#define DeclareConstantBuffer(NAME, INDEX) cbuffer NAME : register(b##INDEX)\r\n" \
+                    "#define DeclareSamplerState(NAME, INDEX) SamplerState NAME : register(s##INDEX)\r\n" \
+                    "#define DeclareTexture1D(NAME, TYPE, INDEX) Texture1D<TYPE> NAME : register(t##INDEX)\r\n" \
+                    "#define DeclareTexture2D(NAME, TYPE, INDEX) Texture2D<TYPE> NAME : register(t##INDEX)\r\n" \
+                    "#define DeclareTexture3D(NAME, TYPE, INDEX) Texture3D<TYPE> NAME : register(t##INDEX)\r\n" \
+                    "#define DeclareTextureCube(NAME, TYPE, INDEX) TextureCube<TYPE> NAME : register(t##INDEX)\r\n" \
+
+                    "#define SampleTexture(TEXTURE, SAMPLER, COORD) TEXTURE.Sample(SAMPLER, COORD)\r\n" \
+
+                    "\r\n";
+
+                StringUTF8 shader(ConversionFunctions);
+                shader.append("struct Vertex\r\n{\r\n");
+                uint32_t vertexSemanticIndexList[static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count)] = { 0 };
+                for (auto &vertexElement : pipelineStateInformation.vertexDeclaration)
+                {
+                    StringUTF8 semantic = DirectX::VertexSemanticList[static_cast<uint8_t>(vertexElement.semantic)];
+                    StringUTF8 format = DirectX::getFormatSemantic(vertexElement.format);
+                    shader.appendFormat("    %v %v : %v%v;\r\n", format, vertexElement.name, semantic, vertexSemanticIndexList[static_cast<uint8_t>(vertexElement.semantic)]++);
+                }
+
+                shader.append("};\r\n\r\nstruct Pixel\r\n{\r\n");
+                uint32_t pixelSemanticIndexList[static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count)] = { 0 };
+                for (auto &pixelElement : pipelineStateInformation.pixelDeclaration)
+                {
+                    StringUTF8 semantic = DirectX::PixelSemanticList[static_cast<uint8_t>(pixelElement.semantic)];
+                    StringUTF8 format = DirectX::getFormatSemantic(pixelElement.format);
+                    shader.appendFormat("    %v %v : %v%v;\r\n", format, pixelElement.name, semantic, pixelSemanticIndexList[static_cast<uint8_t>(pixelElement.semantic)]++);
+                }
+
+                shader.append("};\r\n\r\nstruct Output\r\n{\r\n");
+                uint32_t renderTargetIndex = 0;
+                for (auto &renderTarget : pipelineStateInformation.renderTargetList)
+                {
+                    StringUTF8 format = DirectX::getFormatSemantic(renderTarget.format);
+                    shader.appendFormat("    %v %v : SV_TARGET%v;\r\n", format, renderTarget.name, renderTargetIndex++);
+                }
+
+                shader.append("};\r\n\r\n");
+                return shader;
+            }
+
+            std::vector<uint8_t> compileShader(StringUTF8 const &name, StringUTF8 const &type, StringUTF8 const &entryFunction, StringUTF8 const &shader, const StringUTF8 &header)
+            {
+                GEK_REQUIRE(d3dDevice);
+
+                uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
+#ifdef _DEBUG
+                flags |= D3DCOMPILE_DEBUG;
+                flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+                flags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
+#else
+                flags |= D3DCOMPILE_SKIP_VALIDATION;
+                flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
+#endif
+                auto fullShader(StringUTF8::Format("%v%v", header, shader));
+
+                CComPtr<ID3DBlob> d3dShaderBlob;
+                CComPtr<ID3DBlob> d3dCompilerErrors;
+                HRESULT resultValue = D3DCompile(fullShader, (fullShader.size() + 1), name, nullptr, nullptr, entryFunction, type, flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+                if (FAILED(resultValue) || !d3dShaderBlob)
+                {
+                    OutputDebugStringW(String::Format(L"D3DCompile Failed: %v\r\n%v\r\n", resultValue, (char const * const)d3dCompilerErrors->GetBufferPointer()));
+                    throw Render::ProgramCompilationFailed("Unable to compile shader");
+                }
+
+                uint8_t *data = (uint8_t *)d3dShaderBlob->GetBufferPointer();
+                return std::vector<uint8_t>(data, (data + d3dShaderBlob->GetBufferSize()));
             }
 
             // Render::Debug::Device
@@ -1240,11 +1573,6 @@ namespace Gek
                 updateSwapChain();
             }
 
-            char const * const getSemanticMoniker(Render::InputElement::Semantic semantic)
-            {
-                return DirectX::SemanticNameList[static_cast<uint8_t>(semantic)];
-            }
-
             void deletePipelineState(Render::PipelineStateHandle pipelineState)
             {
                 pipelineStateCache.remove(pipelineState);
@@ -1267,155 +1595,60 @@ namespace Gek
                 bufferDescriptionMap.erase(resource);
             }
 
-            void deleteBatch(Render::BatchHandle batch)
+            void deleteQueue(Render::QueueHandle queue)
             {
-                batchCache.remove(batch);
+                queueCache.remove(queue);
             }
 
-            CComPtr<ID3D11RasterizerState> createRasterizerState(const Render::RasterizerStateInformation &rasterizerStateInformation)
+            Render::PipelineStateHandle createPipelineState(const Render::PipelineStateInformation &pipelineStateInformation, wchar_t const * const name)
             {
-                GEK_REQUIRE(d3dDevice);
-
-                D3D11_RASTERIZER_DESC rasterizerDescription;
-                rasterizerDescription.FrontCounterClockwise = rasterizerStateInformation.frontCounterClockwise;
-                rasterizerDescription.DepthBias = rasterizerStateInformation.depthBias;
-                rasterizerDescription.DepthBiasClamp = rasterizerStateInformation.depthBiasClamp;
-                rasterizerDescription.SlopeScaledDepthBias = rasterizerStateInformation.slopeScaledDepthBias;
-                rasterizerDescription.DepthClipEnable = rasterizerStateInformation.depthClipEnable;
-                rasterizerDescription.ScissorEnable = rasterizerStateInformation.scissorEnable;
-                rasterizerDescription.MultisampleEnable = rasterizerStateInformation.multisampleEnable;
-                rasterizerDescription.AntialiasedLineEnable = rasterizerStateInformation.antialiasedLineEnable;
-                rasterizerDescription.FillMode = DirectX::FillModeList[static_cast<uint8_t>(rasterizerStateInformation.fillMode)];
-                rasterizerDescription.CullMode = DirectX::CullModeList[static_cast<uint8_t>(rasterizerStateInformation.cullMode)];
-
-                CComPtr<ID3D11RasterizerState> rasterizerState;
-                d3dDevice->CreateRasterizerState(&rasterizerDescription, &rasterizerState);
-                return rasterizerState;
-            }
-
-            CComPtr<ID3D11DepthStencilState> createDepthState(const Render::DepthStateInformation &depthStateInformation)
-            {
-                GEK_REQUIRE(d3dDevice);
-
-                D3D11_DEPTH_STENCIL_DESC depthStencilDescription;
-                depthStencilDescription.DepthEnable = depthStateInformation.enable;
-                depthStencilDescription.DepthFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(depthStateInformation.comparisonFunction)];
-                depthStencilDescription.StencilEnable = depthStateInformation.stencilEnable;
-                depthStencilDescription.StencilReadMask = depthStateInformation.stencilReadMask;
-                depthStencilDescription.StencilWriteMask = depthStateInformation.stencilWriteMask;
-                depthStencilDescription.FrontFace.StencilFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthStateInformation.stencilFrontState.failOperation)];
-                depthStencilDescription.FrontFace.StencilDepthFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthStateInformation.stencilFrontState.depthFailOperation)];
-                depthStencilDescription.FrontFace.StencilPassOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthStateInformation.stencilFrontState.passOperation)];
-                depthStencilDescription.FrontFace.StencilFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(depthStateInformation.stencilFrontState.comparisonFunction)];
-                depthStencilDescription.BackFace.StencilFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthStateInformation.stencilBackState.failOperation)];
-                depthStencilDescription.BackFace.StencilDepthFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthStateInformation.stencilBackState.depthFailOperation)];
-                depthStencilDescription.BackFace.StencilPassOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthStateInformation.stencilBackState.passOperation)];
-                depthStencilDescription.BackFace.StencilFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(depthStateInformation.stencilBackState.comparisonFunction)];
-                depthStencilDescription.DepthWriteMask = DirectX::DepthWriteMaskList[static_cast<uint8_t>(depthStateInformation.writeMask)];
-
-                CComPtr<ID3D11DepthStencilState> depthState;
-                d3dDevice->CreateDepthStencilState(&depthStencilDescription, &depthState);
-                return depthState;
-            }
-
-            CComPtr<ID3D11BlendState> createBlendState(const Render::BlendStateInformation &blendStateInformation)
-            {
-                GEK_REQUIRE(d3dDevice);
-
-                D3D11_BLEND_DESC blendDescription;
-                blendDescription.AlphaToCoverageEnable = blendStateInformation.alphaToCoverage;
-                blendDescription.IndependentBlendEnable = !blendStateInformation.unifiedBlendState;
-                for (uint32_t renderTarget = 0; renderTarget < 8; ++renderTarget)
+                return pipelineStateCache.insert(pipelineStateInformation.getHash(), [this, pipelineStateInformation, name = String(name)](Render::PipelineStateHandle) -> CComPtr<PipelineState>
                 {
-                    blendDescription.RenderTarget[renderTarget].BlendEnable = blendStateInformation.targetStateList[renderTarget].enable;
-                    blendDescription.RenderTarget[renderTarget].SrcBlend = DirectX::BlendSourceList[static_cast<uint8_t>(blendStateInformation.targetStateList[renderTarget].colorSource)];
-                    blendDescription.RenderTarget[renderTarget].DestBlend = DirectX::BlendSourceList[static_cast<uint8_t>(blendStateInformation.targetStateList[renderTarget].colorDestination)];
-                    blendDescription.RenderTarget[renderTarget].BlendOp = DirectX::BlendOperationList[static_cast<uint8_t>(blendStateInformation.targetStateList[renderTarget].colorOperation)];
-                    blendDescription.RenderTarget[renderTarget].SrcBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(blendStateInformation.targetStateList[renderTarget].alphaSource)];
-                    blendDescription.RenderTarget[renderTarget].DestBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(blendStateInformation.targetStateList[renderTarget].alphaDestination)];
-                    blendDescription.RenderTarget[renderTarget].BlendOpAlpha = DirectX::BlendOperationList[static_cast<uint8_t>(blendStateInformation.targetStateList[renderTarget].alphaOperation)];
-                    blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask = 0;
-                    if (blendStateInformation.targetStateList[renderTarget].writeMask & Render::BlendStateInformation::Mask::R)
-                    {
-                        blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_RED;
-                    }
+                    auto shaderHeader = getShaderHeader(pipelineStateInformation);
+                    auto compiledVertexShader = compileShader("", "vs_5_0", pipelineStateInformation.vertexShaderEntryFunction, pipelineStateInformation.vertexShader, shaderHeader);
+                    auto compiledPixelShader = compileShader("", "ps_5_0", pipelineStateInformation.pixelShaderEntryFunction, pipelineStateInformation.pixelShader, shaderHeader);
+                    auto vertexDeclaration = getVertexDeclaration(pipelineStateInformation.vertexDeclaration);
 
-                    if (blendStateInformation.targetStateList[renderTarget].writeMask & Render::BlendStateInformation::Mask::G)
-                    {
-                        blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_GREEN;
-                    }
-
-                    if (blendStateInformation.targetStateList[renderTarget].writeMask & Render::BlendStateInformation::Mask::B)
-                    {
-                        blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_BLUE;
-                    }
-
-                    if (blendStateInformation.targetStateList[renderTarget].writeMask & Render::BlendStateInformation::Mask::A)
-                    {
-                        blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_ALPHA;
-                    }
-                }
-
-                CComPtr<ID3D11BlendState> blendState;
-                d3dDevice->CreateBlendState(&blendDescription, &blendState);
-                return blendState;
-            }
-
-            std::vector<D3D11_INPUT_ELEMENT_DESC> getInputLayout(const std::vector<Render::InputElement> &inputElementList)
-            {
-                uint32_t semanticIndexList[static_cast<uint8_t>(Render::InputElement::Semantic::Count)] = { 0 };
-                std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDescriptionList;
-                for (auto &inputElement : inputElementList)
-                {
-                    D3D11_INPUT_ELEMENT_DESC elementDescription;
-                    elementDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(inputElement.format)];
-                    elementDescription.AlignedByteOffset = (inputElement.alignedByteOffset == Render::InputElement::AlignedByteOffset ? D3D11_APPEND_ALIGNED_ELEMENT : inputElement.alignedByteOffset);
-                    elementDescription.SemanticName = DirectX::SemanticNameList[static_cast<uint8_t>(inputElement.semantic)];
-                    elementDescription.SemanticIndex = semanticIndexList[static_cast<uint8_t>(inputElement.semantic)]++;
-                    elementDescription.InputSlot = inputElement.sourceIndex;
-                    switch (inputElement.source)
-                    {
-                    case Render::InputElement::Source::Instance:
-                        elementDescription.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
-                        elementDescription.InstanceDataStepRate = 1;
-                        break;
-
-                    case Render::InputElement::Source::Vertex:
-                    default:
-                        elementDescription.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-                        elementDescription.InstanceDataStepRate = 0;
-                        break;
-                    };
-
-                    inputElementDescriptionList.push_back(elementDescription);
-                }
-
-                return inputElementDescriptionList;
-            }
-
-            Render::PipelineStateHandle createPipelineState(const Render::PipelineStateInformation &pipelineStateInformation)
-            {
-                return pipelineStateCache.insert(pipelineStateInformation.getHash(), [this, pipelineStateInformation](Render::PipelineStateHandle) -> CComPtr<PipelineState>
-                {
                     CComPtr<PipelineState> pipelineState(new PipelineState());
                     pipelineState->rasterizerState = createRasterizerState(pipelineStateInformation.rasterizerStateInformation);
                     pipelineState->depthStencilState = createDepthState(pipelineStateInformation.depthStateInformation);
                     pipelineState->blendState = createBlendState(pipelineStateInformation.blendStateInformation);
-                    auto inputElementDescriptionList = getInputLayout(pipelineStateInformation.inputElementList);
-                    d3dDevice->CreateInputLayout(inputElementDescriptionList.data(), inputElementDescriptionList.size(), pipelineStateInformation.compiledVertexShader.data(), pipelineStateInformation.compiledVertexShader.size(), &pipelineState->inputLayout);
-                    d3dDevice->CreateVertexShader(pipelineStateInformation.compiledVertexShader.data(), pipelineStateInformation.compiledVertexShader.size(), nullptr, &pipelineState->vertexShader);
-                    d3dDevice->CreatePixelShader(pipelineStateInformation.compiledPixelShader.data(), pipelineStateInformation.compiledPixelShader.size(), nullptr, &pipelineState->pixelShader);
                     pipelineState->primitiveTopology = DirectX::TopologList[static_cast<uint8_t>(pipelineStateInformation.primitiveType)];
                     pipelineState->sampleMask = pipelineStateInformation.sampleMask;
+
+                    d3dDevice->CreateInputLayout(vertexDeclaration.data(), vertexDeclaration.size(), compiledVertexShader.data(), compiledVertexShader.size(), &pipelineState->vertexDeclaration);
+                    if (!pipelineState->vertexDeclaration)
+                    {
+                        throw Render::CreateObjectFailed("Unable to create pipeline vertex declaration");
+                    }
+
+                    d3dDevice->CreateVertexShader(compiledVertexShader.data(), compiledVertexShader.size(), nullptr, &pipelineState->vertexShader);
+                    if (!pipelineState->vertexShader)
+                    {
+                        throw Render::CreateObjectFailed("Unable to create pipeline vertex shader");
+                    }
+
+                    d3dDevice->CreatePixelShader(compiledPixelShader.data(), compiledPixelShader.size(), nullptr, &pipelineState->pixelShader);
+                    if (!pipelineState->pixelShader)
+                    {
+                        throw Render::CreateObjectFailed("Unable to create pipeline pixel shader");
+                    }
+
+                    setDebugName(pipelineState->rasterizerState, name, "RasterizerState");
+                    setDebugName(pipelineState->depthStencilState, name, "DepthStencilState");
+                    setDebugName(pipelineState->blendState, name, "BlendState");
+                    setDebugName(pipelineState->vertexDeclaration, name, "InputLayout");
+                    setDebugName(pipelineState->vertexShader, name, "VertexShader");
+                    setDebugName(pipelineState->pixelShader, name, "PixelShader");
                     return pipelineState;
                 });
             }
 
-            Render::SamplerStateHandle createSamplerState(const Render::SamplerStateInformation &samplerStateInformation)
+            Render::SamplerStateHandle createSamplerState(const Render::SamplerStateInformation &samplerStateInformation, wchar_t const * const name)
             {
                 GEK_REQUIRE(d3dDevice);
 
-                return samplerStateCache.insert(samplerStateInformation.getHash(), [this, samplerStateInformation](Render::SamplerStateHandle) -> CComPtr<ID3D11SamplerState>
+                return samplerStateCache.insert(samplerStateInformation.getHash(), [this, samplerStateInformation, name = String(name)](Render::SamplerStateHandle) -> CComPtr<ID3D11SamplerState>
                 {
                     D3D11_SAMPLER_DESC samplerDescription;
                     samplerDescription.AddressU = DirectX::AddressModeList[static_cast<uint8_t>(samplerStateInformation.addressModeU)];
@@ -1434,6 +1667,7 @@ namespace Gek
 
                     CComPtr<ID3D11SamplerState> samplerState;
                     d3dDevice->CreateSamplerState(&samplerDescription, &samplerState);
+                    setDebugName(samplerState, name);
                     return samplerState;
                 });
             }
@@ -1501,65 +1735,14 @@ namespace Gek
                 */
             }
 
-            std::vector<uint8_t> compileProgram(StringUTF8 const &name, StringUTF8 const &type, StringUTF8 const &entryFunction, StringUTF8 const &uncompiledProgram)
-            {
-                GEK_REQUIRE(d3dDevice);
-
-                uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
-#ifdef _DEBUG
-                flags |= D3DCOMPILE_DEBUG;
-                flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
-                flags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
-#else
-                flags |= D3DCOMPILE_SKIP_VALIDATION;
-                flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
-#endif
-
-                CComPtr<ID3DBlob> d3dShaderBlob;
-                CComPtr<ID3DBlob> d3dCompilerErrors;
-                HRESULT resultValue = D3DCompile(uncompiledProgram, (uncompiledProgram.size() + 1), name, nullptr, nullptr, entryFunction, type, flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
-                if (FAILED(resultValue) || !d3dShaderBlob)
-                {
-                    OutputDebugStringW(String::Format(L"D3DCompile Failed: %v\r\n%v\r\n", resultValue, (char const * const)d3dCompilerErrors->GetBufferPointer()));
-                    throw Render::ProgramCompilationFailed("Unable to compile program");
-                }
-
-                uint8_t *data = (uint8_t *)d3dShaderBlob->GetBufferPointer();
-                return std::vector<uint8_t>(data, (data + d3dShaderBlob->GetBufferSize()));
-            }
-
-            std::vector<uint8_t> compileProgram(uint32_t pipeline, wchar_t const * const name, wchar_t const * const entryFunction, wchar_t const * const uncompiledProgram)
-            {
-                GEK_REQUIRE(name);
-                GEK_REQUIRE(uncompiledProgram);
-                GEK_REQUIRE(entryFunction);
-
-                switch (pipeline)
-                {
-                case Render::Pipeline::Compute:
-                    return compileProgram(name, "cs_5_0", entryFunction, uncompiledProgram);
-
-                case Render::Pipeline::Vertex:
-                    return compileProgram(name, "vs_5_0", entryFunction, uncompiledProgram);
-
-                case Render::Pipeline::Geometry:
-                    return compileProgram(name, "gs_5_0", entryFunction, uncompiledProgram);
-
-                case Render::Pipeline::Pixel:
-                    return compileProgram(name, "ps_5_0", entryFunction, uncompiledProgram);
-                };
-
-                throw Render::CreateObjectFailed("Unknown program pipline encountered, only use single pipelines for program compilation");
-            }
-
-            Render::ResourceHandle createBuffer(const Render::BufferDescription &description, const void *data)
+            Render::ResourceHandle createBuffer(const Render::BufferDescription &description, const void *data, wchar_t const * const name)
             {
                 GEK_REQUIRE(d3dDevice);
                 GEK_REQUIRE(description.count > 0);
 
                 auto dataHash = reinterpret_cast<size_t>(data);
                 auto hash = CombineHashes(description.getHash(), dataHash);
-                return resourceCache.insert(hash, [this, description, data](Render::ResourceHandle handle) -> CComPtr<ID3D11Resource>
+                return resourceCache.insert(hash, [this, description, data, name = String(name)](Render::ResourceHandle handle) -> CComPtr<ID3D11Resource>
                 {
                     uint32_t stride = description.stride;
                     if (description.format != Render::Format::Unknown)
@@ -1668,6 +1851,7 @@ namespace Gek
                         }
                     }
 
+                    setDebugName(d3dBuffer, name);
                     bufferCache.set(handle, d3dBuffer);
                     if (description.flags & Render::BufferDescription::Flags::Resource)
                     {
@@ -1684,6 +1868,7 @@ namespace Gek
                             throw Render::CreateObjectFailed("Unable to create buffer shader resource view");
                         }
 
+                        setDebugName(d3dShaderResourceView, name, "ShaderResourceView");
                         shaderResourceViewCache.set(handle, d3dShaderResourceView);
                     }
 
@@ -1703,6 +1888,7 @@ namespace Gek
                             throw Render::CreateObjectFailed("Unable to create buffer unordered access view");
                         }
 
+                        setDebugName(d3dUnorderedAccessView, name, "UnorderedAccessView");
                         unorderedAccessViewCache.set(handle, d3dUnorderedAccessView);
                     }
 
@@ -1711,7 +1897,7 @@ namespace Gek
                 });
             }
 
-            Render::ResourceHandle createTexture(const Render::TextureDescription &description, const void *data)
+            Render::ResourceHandle createTexture(const Render::TextureDescription &description, const void *data, wchar_t const * const name)
             {
                 GEK_REQUIRE(d3dDevice);
                 GEK_REQUIRE(description.format != Render::Format::Unknown);
@@ -1721,7 +1907,7 @@ namespace Gek
 
                 auto dataHash = reinterpret_cast<size_t>(data);
                 auto hash = CombineHashes(description.getHash(), dataHash);
-                return resourceCache.insert(hash, [this, description, data](Render::ResourceHandle handle)->CComPtr<ID3D11Resource>
+                return resourceCache.insert(hash, [this, description, data, name = String(name)](Render::ResourceHandle handle)->CComPtr<ID3D11Resource>
                 {
                     uint32_t bindFlags = 0;
                     if (description.flags & Render::TextureDescription::Flags::RenderTarget)
@@ -1826,6 +2012,7 @@ namespace Gek
                         throw Render::CreateObjectFailed("Unable to get texture resource");
                     }
 
+                    setDebugName(d3dResource, name);
                     if (description.flags & Render::TextureDescription::Flags::Resource)
                     {
                         D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
@@ -1850,6 +2037,7 @@ namespace Gek
                             throw Render::CreateObjectFailed("Unable to create texture shader resource view");
                         }
 
+                        setDebugName(d3dShaderResourceView, name, "ShaderResourceView");
                         shaderResourceViewCache.set(handle, d3dShaderResourceView);
                     }
 
@@ -1877,6 +2065,7 @@ namespace Gek
                             throw Render::CreateObjectFailed("Unable to create texture unordered access view");
                         }
 
+                        setDebugName(d3dUnorderedAccessView, name, "UnorderedAccessView");
                         unorderedAccessViewCache.set(handle, d3dUnorderedAccessView);
                     }
 
@@ -1904,6 +2093,7 @@ namespace Gek
                             throw Render::CreateObjectFailed("Unable to create render target view");
                         }
 
+                        setDebugName(d3dRenderTargetView, name, "RenderTargetView");
                         renderTargetViewCache.set(handle, d3dRenderTargetView);
                     }
                     else if (description.flags & Render::TextureDescription::Flags::DepthTarget)
@@ -1921,6 +2111,7 @@ namespace Gek
                             throw Render::CreateObjectFailed("Unable to create depth stencil view");
                         }
 
+                        setDebugName(d3dDepthStencilView, name, "DepthStencilView");
                         depthStencilViewCache.set(handle, d3dDepthStencilView);
                     }
 
@@ -1929,12 +2120,12 @@ namespace Gek
                 });
             }
 
-            Render::ResourceHandle loadTexture(const FileSystem::Path &filePath, uint32_t flags)
+            Render::ResourceHandle loadTexture(const FileSystem::Path &filePath, uint32_t flags, wchar_t const * const name)
             {
                 GEK_REQUIRE(d3dDevice);
 
                 auto hash = GetHash(0xFFFFFFFF, filePath, flags);
-                return resourceCache.insert(hash, [this, filePath, flags](Render::ResourceHandle handle)->CComPtr<ID3D11Resource>
+                return resourceCache.insert(hash, [this, filePath, flags, name = String(name)](Render::ResourceHandle handle)->CComPtr<ID3D11Resource>
                 {
                     std::vector<uint8_t> buffer;
                     FileSystem::Load(filePath, buffer);
@@ -1989,6 +2180,8 @@ namespace Gek
                         throw Render::CreateObjectFailed("Unable to get texture resource");
                     }
 
+                    setDebugName(d3dResource, (name ? name : String(filePath)));
+                    setDebugName(d3dShaderResourceView, (name ? name : String(filePath)), "ShaderResourceView");
                     shaderResourceViewCache.set(handle, d3dShaderResourceView);
 
                     Render::TextureDescription description;
@@ -2024,27 +2217,39 @@ namespace Gek
                 return nullptr;
             }
 
-            Render::Device::QueuePtr createQueue(uint32_t flags)
+            Render::Device::QueuePtr createQueue(uint32_t flags, wchar_t const * const name)
             {
                 CComPtr<ID3D11DeviceContext> d3dDeviceContext;
-                if (flags & Render::Device::Queue::Flags::Bundle)
+                HRESULT resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeviceContext);
+                if (!d3dDeviceContext)
                 {
-                    d3dDevice->GetImmediateContext(&d3dDeviceContext);
-                    if (!d3dDeviceContext)
-                    {
-                        throw Render::CreateObjectFailed("Unable to get direct render queue");
-                    }
-                }
-                else
-                {
-                    HRESULT resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeviceContext);
-                    if (!d3dDeviceContext)
-                    {
-                        throw Render::CreateObjectFailed("Unable to create render queue");
-                    }
+                    throw Render::CreateObjectFailed("Unable to create bundle render queue");
                 }
 
+                setDebugName(d3dDeviceContext, name);
                 return std::make_unique<Queue>(this, d3dDeviceContext);
+            }
+
+            Render::QueueHandle compileQueue(Render::Device::Queue *baseQueue, wchar_t const * const name)
+            {
+                GEK_REQUIRE(d3dDevice);
+                GEK_REQUIRE(baseQueue);
+
+                Queue *queue = dynamic_cast<Queue *>(baseQueue);
+                if (!queue)
+                {
+                    throw Render::CreateObjectFailed("Unable to get internal render queue");
+                }
+
+                CComPtr<ID3D11CommandList> d3dCommandList;
+                HRESULT resultValue = queue->d3dDeviceContext->FinishCommandList(false, &d3dCommandList);
+                if (FAILED(resultValue) || !d3dCommandList)
+                {
+                    throw Render::CreateObjectFailed("Unable to create render list");
+                }
+
+                setDebugName(d3dCommandList, name);
+                return queueCache.insert(d3dCommandList);
             }
 
             void runQueue(Render::Device::Queue *baseQueue)
@@ -2069,30 +2274,9 @@ namespace Gek
                 d3dDeviceContext->ExecuteCommandList(commandList, false);
             }
 
-            Render::BatchHandle compileBatch(Render::Device::Queue *baseQueue)
+            void runQueue(Render::QueueHandle queue)
             {
-                GEK_REQUIRE(d3dDevice);
-                GEK_REQUIRE(baseQueue);
-
-                Queue *queue = dynamic_cast<Queue *>(baseQueue);
-                if (!queue)
-                {
-                    throw Render::CreateObjectFailed("Unable to get internal render queue");
-                }
-
-                CComPtr<ID3D11CommandList> commandList;
-                HRESULT resultValue = queue->d3dDeviceContext->FinishCommandList(false, &commandList);
-                if (FAILED(resultValue) || !commandList)
-                {
-                    throw Render::CreateObjectFailed("Unable to create render list");
-                }
-
-                return batchCache.insert(commandList);
-            }
-
-            void runBatch(Render::BatchHandle batchHandle)
-            {
-                auto commandList = batchCache.get(batchHandle);
+                auto commandList = queueCache.get(queue);
                 if (commandList)
                 {
                     d3dDeviceContext->ExecuteCommandList(commandList, false);

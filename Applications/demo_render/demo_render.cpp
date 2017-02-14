@@ -144,7 +144,7 @@ namespace Gek
             gui->consoleButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"console.png"), 0);
             gui->performanceButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"performance.png"), 0);
             gui->settingsButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"settings.png"), 0);
-            gui->renderQueue = renderDevice->createQueue(Render::Device::Queue::Flags::Direct);
+            gui->renderQueue = renderDevice->createQueue(0);
 
             auto consolePane = gui->panelManager.addPane(ImGui::PanelManager::BOTTOM, "ConsolePanel##ConsolePanel");
             if (consolePane)
@@ -184,65 +184,79 @@ namespace Gek
 
             ImGuiStyle& style = ImGui::GetStyle();
             //ImGui::SetupImGuiStyle(false, 0.9f);
-            ImGui::ResetStyle(ImGuiStyle_OSX, style);
+            ImGui::ResetStyle(ImGuiStyle_EdinBlack, style);
             style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
             style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
             style.WindowRounding = 0.0f;
             style.FrameRounding = 3.0f;
 
             static wchar_t const * const guiProgram =
-                L"cbuffer Constants : register(b0)" \
-                L"{" \
-                L"    float4x4 ProjectionMatrix;" \
-                L"};" \
-                L"" \
-                L"struct Vertex" \
-                L"{" \
-                L"    float2 position : POSITION;" \
-                L"    float4 color : COLOR0;" \
-                L"    float2 texCoord  : TEXCOORD0;" \
-                L"};" \
-                L"" \
-                L"struct Pixel" \
-                L"{" \
-                L"    float4 position : SV_POSITION;" \
-                L"    float4 color : COLOR0;" \
-                L"    float2 texCoord  : TEXCOORD0;" \
-                L"};" \
-                L"" \
-                L"Pixel mainVertexProgram(in Vertex input)" \
-                L"{" \
-                L"    Pixel output;" \
-                L"    output.position = mul(ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));" \
-                L"    output.color = input.color;" \
-                L"    output.texCoord  = input.texCoord;" \
-                L"    return output;" \
-                L"}" \
-                L"" \
-                L"sampler pointSampler;" \
-                L"Texture2D<float4> uiTexture : register(t0);" \
-                L"" \
-                L"float4 mainPixelProgram(Pixel input) : SV_Target" \
-                L"{" \
-                L"    return (input.color * uiTexture.Sample(pointSampler, input.texCoord));" \
+                L"DeclareConstantBuffer(Constants, 0)\r\n" \
+                L"{\r\n" \
+                L"    float4x4 ProjectionMatrix;\r\n" \
+                L"};\r\n" \
+                L"\r\n" \
+                L"DeclareSamplerState(PointSampler, 0);\r\n" \
+                L"DeclareTexture2D(GuiTexture, float4, 0);\r\n" \
+                L"\r\n" \
+                L"Pixel mainVertexProgram(in Vertex input)\r\n" \
+                L"{\r\n" \
+                L"    Pixel output;\r\n" \
+                L"    output.position = mul(ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));\r\n" \
+                L"    output.color = input.color;\r\n" \
+                L"    output.texCoord  = input.texCoord;\r\n" \
+                L"    return output;\r\n" \
+                L"}\r\n" \
+                L"\r\n" \
+                L"Output mainPixelProgram(in Pixel input)\r\n" \
+                L"{\r\n" \
+                L"    Output output;\r\n" \
+                L"    output.screen = (input.color * SampleTexture(GuiTexture, PointSampler, input.texCoord));\r\n" \
+                L"    return output;\r\n" \
                 L"}";
 
             Render::PipelineStateInformation pipelineStateInformation;
-            pipelineStateInformation.compiledVertexShader = renderDevice->compileProgram(Render::Pipeline::Vertex, L"uiVertexProgram", L"mainVertexProgram", guiProgram);
-            pipelineStateInformation.compiledPixelShader = renderDevice->compileProgram(Render::Pipeline::Pixel, L"uiPixelProgram", L"mainPixelProgram", guiProgram);
+            pipelineStateInformation.vertexShader = guiProgram;
+            pipelineStateInformation.vertexShaderEntryFunction = L"mainVertexProgram";
+            pipelineStateInformation.pixelShader = guiProgram;
+            pipelineStateInformation.pixelShaderEntryFunction = L"mainPixelProgram";
 
-            Render::InputElement element;
-            element.format = Render::Format::R32G32_FLOAT;
-            element.semantic = Render::InputElement::Semantic::Position;
-            pipelineStateInformation.inputElementList.push_back(element);
+            Render::VertexDeclaration vertexDeclaration;
+            vertexDeclaration.name = L"position";
+            vertexDeclaration.format = Render::Format::R32G32_FLOAT;
+            vertexDeclaration.semantic = Render::VertexDeclaration::Semantic::Position;
+            pipelineStateInformation.vertexDeclaration.push_back(vertexDeclaration);
 
-            element.format = Render::Format::R32G32_FLOAT;
-            element.semantic = Render::InputElement::Semantic::TexCoord;
-            pipelineStateInformation.inputElementList.push_back(element);
+            vertexDeclaration.name = L"texCoord";
+            vertexDeclaration.format = Render::Format::R32G32_FLOAT;
+            vertexDeclaration.semantic = Render::VertexDeclaration::Semantic::TexCoord;
+            pipelineStateInformation.vertexDeclaration.push_back(vertexDeclaration);
 
-            element.format = Render::Format::R8G8B8A8_UNORM;
-            element.semantic = Render::InputElement::Semantic::Color;
-            pipelineStateInformation.inputElementList.push_back(element);
+            vertexDeclaration.name = L"color";
+            vertexDeclaration.format = Render::Format::R8G8B8A8_UNORM;
+            vertexDeclaration.semantic = Render::VertexDeclaration::Semantic::Color;
+            pipelineStateInformation.vertexDeclaration.push_back(vertexDeclaration);
+
+            Render::ElementDeclaration pixelDeclaration;
+            pixelDeclaration.name = L"position";
+            pixelDeclaration.format = Render::Format::R32G32B32A32_FLOAT;
+            pixelDeclaration.semantic = Render::VertexDeclaration::Semantic::Position;
+            pipelineStateInformation.pixelDeclaration.push_back(pixelDeclaration);
+
+            pixelDeclaration.name = L"texCoord";
+            pixelDeclaration.format = Render::Format::R32G32_FLOAT;
+            pixelDeclaration.semantic = Render::VertexDeclaration::Semantic::TexCoord;
+            pipelineStateInformation.pixelDeclaration.push_back(pixelDeclaration);
+
+            pixelDeclaration.name = L"color";
+            pixelDeclaration.format = Render::Format::R8G8B8A8_UNORM;
+            pixelDeclaration.semantic = Render::VertexDeclaration::Semantic::Color;
+            pipelineStateInformation.pixelDeclaration.push_back(pixelDeclaration);
+
+            Render::NamedDeclaration targetDeclaration;
+            targetDeclaration.name = L"screen";
+            targetDeclaration.format = Render::Format::R8G8B8A8_UNORM_SRGB;
+            pipelineStateInformation.renderTargetList.push_back(targetDeclaration);
 
             pipelineStateInformation.blendStateInformation.unifiedBlendState = true;
             pipelineStateInformation.blendStateInformation.targetStateList[0].enable = true;
@@ -262,13 +276,13 @@ namespace Gek
             pipelineStateInformation.depthStateInformation.comparisonFunction = Render::ComparisonFunction::LessEqual;
             pipelineStateInformation.depthStateInformation.writeMask = Render::DepthStateInformation::Write::Zero;
 
-            gui->pipelineState = renderDevice->createPipelineState(pipelineStateInformation);
+            gui->pipelineState = renderDevice->createPipelineState(pipelineStateInformation, L"GUI");
 
             Render::BufferDescription constantBufferDescription;
             constantBufferDescription.stride = sizeof(Math::Float4x4);
             constantBufferDescription.count = 1;
             constantBufferDescription.type = Render::BufferDescription::Type::Constant;
-            gui->constantBuffer = renderDevice->createBuffer(constantBufferDescription);
+            gui->constantBuffer = renderDevice->createBuffer(constantBufferDescription, nullptr, L"GUI::Constants");
 
             uint8_t *pixels = nullptr;
             int32_t fontWidth = 0, fontHeight = 0;
@@ -279,15 +293,15 @@ namespace Gek
             fontDescription.width = fontWidth;
             fontDescription.height = fontHeight;
             fontDescription.flags = Render::TextureDescription::Flags::Resource;
-            gui->fontTexture = renderDevice->createTexture(fontDescription, pixels);
+            gui->fontTexture = renderDevice->createTexture(fontDescription, pixels, L"GUI::Font");
             imGuiIo.Fonts->TexID = &gui->fontTexture;
 
             Render::SamplerStateInformation samplerStateInformation;
             samplerStateInformation.filterMode = Render::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapPoint;
-            samplerStateInformation.addressModeU = Render::SamplerStateInformation::AddressMode::Wrap;
-            samplerStateInformation.addressModeV = Render::SamplerStateInformation::AddressMode::Wrap;
-            samplerStateInformation.addressModeW = Render::SamplerStateInformation::AddressMode::Wrap;
-            gui->samplerState = renderDevice->createSamplerState(samplerStateInformation);
+            samplerStateInformation.addressModeU = Render::SamplerStateInformation::AddressMode::Clamp;
+            samplerStateInformation.addressModeV = Render::SamplerStateInformation::AddressMode::Clamp;
+            samplerStateInformation.addressModeW = Render::SamplerStateInformation::AddressMode::Clamp;
+            gui->samplerState = renderDevice->createSamplerState(samplerStateInformation, L"GUI::Sampler");
 
             imGuiIo.UserData = this;
             imGuiIo.RenderDrawListsFn = [](ImDrawData *drawData)

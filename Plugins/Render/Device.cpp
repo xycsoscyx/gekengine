@@ -17,13 +17,12 @@ namespace Gek
             return GetHash(format, width, height, depth, mipMapCount, sampleCount, sampleQuality, flags);
         }
 
-        InputElement::Source InputElement::getSource(String const &elementSource)
+        size_t NamedDeclaration::getHash(void) const
         {
-            if (elementSource.compareNoCase(L"instance") == 0) return Source::Instance;
-            else return Source::Vertex;
+            return GetHash(name, format);
         }
 
-        InputElement::Semantic InputElement::getSemantic(String const &semantic)
+        ElementDeclaration::Semantic ElementDeclaration::getSemantic(String const &semantic)
         {
             if (semantic.compareNoCase(L"Position") == 0) return Semantic::Position;
             else if (semantic.compareNoCase(L"Tangent") == 0) return Semantic::Tangent;
@@ -31,6 +30,22 @@ namespace Gek
             else if (semantic.compareNoCase(L"Normal") == 0) return Semantic::Normal;
             else if (semantic.compareNoCase(L"Color") == 0) return Semantic::Color;
             else return Semantic::TexCoord;
+        }
+
+        size_t ElementDeclaration::getHash(void) const
+        {
+            return CombineHashes(NamedDeclaration::getHash(), GetHash(semantic));
+        }
+
+        VertexDeclaration::Source VertexDeclaration::getSource(String const &elementSource)
+        {
+            if (elementSource.compareNoCase(L"instance") == 0) return Source::Instance;
+            else return Source::Vertex;
+        }
+
+        size_t VertexDeclaration::getHash(void) const
+        {
+            return CombineHashes(ElementDeclaration::getHash(), GetHash(source, sourceIndex, alignedByteOffset));
         }
 
         Format getFormat(String const &format)
@@ -675,28 +690,30 @@ namespace Gek
             return GetHash(filterMode, addressModeU, addressModeV, addressModeW, mipLevelBias, maximumAnisotropy, comparisonFunction, borderColor.x, borderColor.y, borderColor.z, borderColor.w, minimumMipLevel, maximumMipLevel);
         }
 
-        size_t InputElement::getHash(void) const
-        {
-            return GetHash(format, semantic, source, sourceIndex, alignedByteOffset);
-        }
-
         size_t PipelineStateInformation::getHash(void) const
         {
-            auto hash = GetHash(compiledVertexShader.data());
-            hash = CombineHashes(hash, GetHash(compiledPixelShader.data()));
+            auto hash = GetHash(vertexShader);
+            hash = CombineHashes(hash, GetHash(vertexShaderEntryFunction));
+            hash = CombineHashes(hash, GetHash(pixelShader));
+            hash = CombineHashes(hash, GetHash(pixelShaderEntryFunction));
             hash = CombineHashes(hash, blendStateInformation.getHash());
             hash = CombineHashes(hash, sampleMask);
             hash = CombineHashes(hash, rasterizerStateInformation.getHash());
             hash = CombineHashes(hash, depthStateInformation.getHash());
-            for (auto &inputElement : inputElementList)
+            for (auto &vertexElement : vertexDeclaration)
             {
-                hash = CombineHashes(hash, inputElement.getHash());
+                hash = CombineHashes(hash, vertexElement.getHash());
             }
 
-            hash = CombineHashes(hash, GetHash(primitiveType, renderTargetCount));
-            for (auto &format : renderTargetFormatList)
+            for (auto &pixelElement : pixelDeclaration)
             {
-                hash = CombineHashes(hash, GetHash(format));
+                hash = CombineHashes(hash, pixelElement.getHash());
+            }
+
+            hash = CombineHashes(hash, GetHash(primitiveType));
+            for (auto &renderTarget : renderTargetList)
+            {
+                hash = CombineHashes(hash, renderTarget.getHash());
             }
 
             hash = CombineHashes(hash, GetHash(depthTargetFormat));

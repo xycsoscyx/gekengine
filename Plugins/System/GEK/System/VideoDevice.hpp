@@ -431,7 +431,7 @@ namespace Gek
 				Count,
 			};
 
-            static const uint32_t AlignedByteOffset = 0xFFFFFFFF;
+            static const uint32_t AppendAligned = 0xFFFFFFFF;
 
             static Source getSource(String const &elementSource);
             static Semantic getSemantic(String const &semantic);
@@ -440,7 +440,7 @@ namespace Gek
             Semantic semantic = Semantic::TexCoord;
 			Source source = Source::Vertex;
             uint32_t sourceIndex = 0;
-            uint32_t alignedByteOffset = AlignedByteOffset;
+            uint32_t alignedByteOffset = AppendAligned;
         };
 
         GEK_INTERFACE(Object)

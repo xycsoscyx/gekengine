@@ -2258,7 +2258,7 @@ namespace Gek
                 {
                     D3D11_INPUT_ELEMENT_DESC elementDesc;
                     elementDesc.Format = DirectX::BufferFormatList[static_cast<uint8_t>(element.format)];
-                    elementDesc.AlignedByteOffset = (element.alignedByteOffset == Video::InputElement::AlignedByteOffset ? D3D11_APPEND_ALIGNED_ELEMENT : element.alignedByteOffset);
+                    elementDesc.AlignedByteOffset = (element.alignedByteOffset == Video::InputElement::AppendAligned ? D3D11_APPEND_ALIGNED_ELEMENT : element.alignedByteOffset);
                     elementDesc.SemanticName = DirectX::SemanticNameList[static_cast<uint8_t>(element.semantic)];
                     elementDesc.SemanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)]++;
                     elementDesc.InputSlot = element.sourceIndex;

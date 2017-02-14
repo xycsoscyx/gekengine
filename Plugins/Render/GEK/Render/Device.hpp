@@ -410,51 +410,72 @@ namespace Gek
             size_t getHash(void) const;
         };
 
-        struct InputElement
+        struct NamedDeclaration
         {
-			enum class Source : uint8_t
-			{
-				Vertex = 0,
-				Instance,
-			};
+            String name;
+            Format format = Format::Unknown;
 
-			enum class Semantic : uint8_t
-			{
-				Position = 0,
-				TexCoord,
-				Tangent,
-				BiTangent,
-				Normal,
-				Color,
-				Count,
-			};
+            size_t getHash(void) const;
+        };
 
-            static const uint32_t AlignedByteOffset = 0xFFFFFFFF;
+        struct ElementDeclaration
+            : public NamedDeclaration
+        {
+            enum class Semantic : uint8_t
+            {
+                Position = 0,
+                TexCoord,
+                Tangent,
+                BiTangent,
+                Normal,
+                Color,
+                Count,
+            };
 
-            static Source getSource(String const &elementSource);
             static Semantic getSemantic(String const &semantic);
 
-            Format format = Format::Unknown;
             Semantic semantic = Semantic::TexCoord;
-			Source source = Source::Vertex;
+
+            size_t getHash(void) const;
+        };
+
+        struct VertexDeclaration
+            : public ElementDeclaration
+        {
+            enum class Source : uint8_t
+            {
+                Vertex = 0,
+                Instance,
+            };
+
+            static const uint32_t AppendAligned = 0xFFFFFFFF;
+
+            static Source getSource(String const &elementSource);
+
+            Source source = Source::Vertex;
             uint32_t sourceIndex = 0;
-            uint32_t alignedByteOffset = AlignedByteOffset;
+            uint32_t alignedByteOffset = AppendAligned;
 
             size_t getHash(void) const;
         };
 
         struct PipelineStateInformation
         {
-            std::vector<uint8_t> compiledVertexShader;
-            std::vector<uint8_t> compiledPixelShader;
             BlendStateInformation blendStateInformation;
             uint32_t sampleMask = 0xFFFFFFFF;
+
             RasterizerStateInformation rasterizerStateInformation;
+
             DepthStateInformation depthStateInformation;
-            std::vector<InputElement> inputElementList;
+
             PrimitiveType primitiveType = PrimitiveType::TriangleList;
-            uint32_t renderTargetCount = 1;
-            Format renderTargetFormatList[8] = { Format::Unknown };
+
+            std::vector<VertexDeclaration> vertexDeclaration;
+            std::vector<ElementDeclaration> pixelDeclaration;
+            String vertexShader, vertexShaderEntryFunction;
+            String pixelShader, pixelShaderEntryFunction;
+
+            std::vector<NamedDeclaration> renderTargetList;
             Format depthTargetFormat = Format::Unknown;
 
             size_t getHash(void) const;
@@ -552,7 +573,7 @@ namespace Gek
         using PipelineStateHandle = Handle<uint8_t, __LINE__>;
         using SamplerStateHandle = Handle<uint8_t, __LINE__>;
         using ResourceHandle = Handle<uint32_t, __LINE__>;
-        using BatchHandle = Handle<uint16_t, __LINE__>;
+        using QueueHandle = Handle<uint16_t, __LINE__>;
 
         GEK_INTERFACE(Device)
         {
@@ -572,8 +593,6 @@ namespace Gek
                 {
                     enum
                     {
-                        Direct = 0,
-                        Bundle = 1 << 0,
                     };
                 }; // struct Flags
 
@@ -613,7 +632,7 @@ namespace Gek
                 virtual void drawInstancedIndexedPrimitive(ResourceHandle bufferArguments) = 0;
                 virtual void dispatch(ResourceHandle bufferArguments) = 0;
 
-                virtual void appendBatch(BatchHandle batchHandle) = 0;
+                virtual void runQueue(QueueHandle queue) = 0;
             };
 
             virtual ~Device(void) = default;
@@ -624,22 +643,18 @@ namespace Gek
             virtual void setDisplayMode(const DisplayMode &displayMode) = 0;
             virtual void handleResize(void) = 0;
 
-			virtual char const * const getSemanticMoniker(InputElement::Semantic semantic) = 0;
-
             virtual void deletePipelineState(PipelineStateHandle pipelineState) = 0;
             virtual void deleteSamplerState(SamplerStateHandle samplerState) = 0;
             virtual void deleteResource(ResourceHandle resource) = 0;
-            virtual void deleteBatch(BatchHandle batch) = 0;
+            virtual void deleteQueue(QueueHandle queue) = 0;
 
-            virtual PipelineStateHandle createPipelineState(const PipelineStateInformation &pipelineState) = 0;
+            virtual PipelineStateHandle createPipelineState(const PipelineStateInformation &pipelineState, wchar_t const * const name = nullptr) = 0;
 
-            virtual SamplerStateHandle createSamplerState(const SamplerStateInformation &samplerState) = 0;
+            virtual SamplerStateHandle createSamplerState(const SamplerStateInformation &samplerState, wchar_t const * const name = nullptr) = 0;
 
-            virtual std::vector<uint8_t> compileProgram(uint32_t pipeline, wchar_t const * const name, wchar_t const * const entryFunction, wchar_t const * const uncompiledProgram) = 0;
-
-            virtual ResourceHandle createBuffer(const BufferDescription &description, const void *staticData = nullptr) = 0;
-            virtual ResourceHandle createTexture(const TextureDescription &description, const void *data = nullptr) = 0;
-            virtual ResourceHandle loadTexture(const FileSystem::Path &filePath, uint32_t flags) = 0;
+            virtual ResourceHandle createBuffer(const BufferDescription &description, const void *staticData = nullptr, wchar_t const * const name = nullptr) = 0;
+            virtual ResourceHandle createTexture(const TextureDescription &description, const void *data = nullptr, wchar_t const * const name = nullptr) = 0;
+            virtual ResourceHandle loadTexture(const FileSystem::Path &filePath, uint32_t flags, wchar_t const * const name = nullptr) = 0;
 
             virtual BufferDescription const * const getBufferDescription(ResourceHandle resource) const = 0;
             virtual TextureDescription const * const getTextureDescription(ResourceHandle resource) const = 0;
@@ -656,11 +671,10 @@ namespace Gek
             virtual void updateResource(ResourceHandle resource, const void *data) = 0;
             virtual void copyResource(ResourceHandle destination, ResourceHandle source) = 0;
 
-            virtual QueuePtr createQueue(uint32_t flags) = 0;
+            virtual QueuePtr createQueue(uint32_t flags, wchar_t const * const name = nullptr) = 0;
+            virtual QueueHandle compileQueue(Queue *queue, wchar_t const * const name = nullptr) = 0;
             virtual void runQueue(Queue *queue) = 0;
-                
-            virtual BatchHandle compileBatch(Queue *queue) = 0;
-            virtual void runBatch(BatchHandle batchHandle) = 0;
+            virtual void runQueue(QueueHandle queue) = 0;
 
             virtual void present(bool waitForVerticalSync) = 0;
         };
