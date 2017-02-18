@@ -117,6 +117,24 @@ namespace Gek
                 }
             };
 
+            struct CullData
+            {
+                std::vector<Plugin::Entity *> entityList;
+                std::vector<Shapes::Sphere, AlignedAllocator<Shapes::Sphere, 16>> shapeList;
+                std::vector<uint32_t, AlignedAllocator<uint32_t, 16>> visibilityList;
+
+                void resize(size_t size)
+                {
+                    entityList.reserve(size);
+                    entityList.clear();
+
+                    shapeList.reserve(size + (4 - (size % 4)));
+                    shapeList.clear();
+
+                    visibilityList.resize(size + (4 - (size % 4)));
+                }
+            } pointLightCullData, spotLightCullData;
+
             struct RenderCall
             {
                 Shapes::Frustum viewFrustum;
@@ -535,43 +553,37 @@ namespace Gek
             void addLight(Plugin::Entity * const entity, const Components::PointLight &lightComponent)
             {
                 auto &transformComponent = entity->getComponent<Components::Transform>();
-                if (currentRenderCall.viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius)))
-                {
-                    auto &colorComponent = entity->getComponent<Components::Color>();
+                auto &colorComponent = entity->getComponent<Components::Color>();
 
-                    auto lightIterator = pointLightList.grow_by(1);
-                    PointLightData &lightData = (*lightIterator);
-                    lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
-                    lightData.position = currentRenderCall.viewMatrix.transform(transformComponent.position);
-                    lightData.radius = lightComponent.radius;
-                    lightData.range = lightComponent.range;
+                auto lightIterator = pointLightList.grow_by(1);
+                PointLightData &lightData = (*lightIterator);
+                lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
+                lightData.position = currentRenderCall.viewMatrix.transform(transformComponent.position);
+                lightData.radius = lightComponent.radius;
+                lightData.range = lightComponent.range;
 
-                    auto lightIndex = std::distance(std::begin(pointLightList), lightIterator);
-                    addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, true);
-                }
+                auto lightIndex = std::distance(std::begin(pointLightList), lightIterator);
+                addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, true);
             }
 
             void addLight(Plugin::Entity * const entity, const Components::SpotLight &lightComponent)
             {
                 auto &transformComponent = entity->getComponent<Components::Transform>();
-                if (currentRenderCall.viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range)))
-                {
-                    auto &colorComponent = entity->getComponent<Components::Color>();
+                auto &colorComponent = entity->getComponent<Components::Color>();
 
-                    auto lightIterator = spotLightList.grow_by(1);
-                    SpotLightData &lightData = (*lightIterator);
-                    lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
-                    lightData.position = currentRenderCall.viewMatrix.transform(transformComponent.position);
-                    lightData.radius = lightComponent.radius;
-                    lightData.range = lightComponent.range;
-                    lightData.direction = currentRenderCall.viewMatrix.rotate(getLightDirection(transformComponent.rotation));
-                    lightData.innerAngle = lightComponent.innerAngle;
-                    lightData.outerAngle = lightComponent.outerAngle;
-                    lightData.coneFalloff = lightComponent.coneFalloff;
+                auto lightIterator = spotLightList.grow_by(1);
+                SpotLightData &lightData = (*lightIterator);
+                lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
+                lightData.position = currentRenderCall.viewMatrix.transform(transformComponent.position);
+                lightData.radius = lightComponent.radius;
+                lightData.range = lightComponent.range;
+                lightData.direction = currentRenderCall.viewMatrix.rotate(getLightDirection(transformComponent.rotation));
+                lightData.innerAngle = lightComponent.innerAngle;
+                lightData.outerAngle = lightComponent.outerAngle;
+                lightData.coneFalloff = lightComponent.coneFalloff;
 
-                    auto lightIndex = std::distance(std::begin(spotLightList), lightIterator);
-                    addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, false);
-                }
+                auto lightIndex = std::distance(std::begin(spotLightList), lightIterator);
+                addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, false);
             }
 
             // Plugin::Population Slots
@@ -700,7 +712,7 @@ namespace Gek
                             {
                                 directionalLightList.clear();
                                 directionalLightList.reserve(directionalLightEntities.size());
-                                for (auto &entity : directionalLightEntities)
+                                std::for_each(std::begin(directionalLightEntities), std::end(directionalLightEntities), [&](Plugin::Entity * const entity) -> void
                                 {
                                     auto &transformComponent = entity->getComponent<Components::Transform>();
                                     auto &colorComponent = entity->getComponent<Components::Color>();
@@ -710,7 +722,7 @@ namespace Gek
                                     lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
                                     lightData.direction = currentRenderCall.viewMatrix.rotate(getLightDirection(transformComponent.rotation));
                                     directionalLightList.push_back(lightData);
-                                }
+                                });
 
                                 if (!directionalLightList.empty())
                                 {
@@ -730,13 +742,39 @@ namespace Gek
                                 }
                             });
 
+                            static auto cullData = [&](const concurrency::concurrent_unordered_set<Plugin::Entity *> &sourceEntityList, CullData &cullData, 
+                                const std::function<Shapes::Sphere(Plugin::Entity * const, const Components::Transform &)> &getSphere) -> void
+                            {
+                                cullData.resize(sourceEntityList.size());
+                                std::for_each(std::begin(sourceEntityList), std::end(sourceEntityList), [&](Plugin::Entity * const entity) -> void
+                                {
+                                    cullData.entityList.push_back(entity);
+                                    auto &transformComponent = entity->getComponent<Components::Transform>();
+                                    cullData.shapeList.push_back(getSphere(entity, transformComponent));
+                                });
+
+                                currentRenderCall.viewFrustum.cull(cullData.shapeList, cullData.visibilityList);
+                            };
+
                             auto pointLightsDone = threadPool.enqueue([&](void) -> void
                             {
-                                pointLightList.clear();
-                                concurrency::parallel_for_each(std::begin(pointLightEntities), std::end(pointLightEntities), [&](Plugin::Entity * const entity) -> void
+                                static auto getSphere = [](Plugin::Entity * const entity, const Components::Transform &transformComponent) -> Shapes::Sphere
                                 {
                                     auto &lightComponent = entity->getComponent<Components::PointLight>();
-                                    addLight(entity, lightComponent);
+                                    return Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius);
+                                };
+
+                                cullData(pointLightEntities, pointLightCullData, getSphere);
+
+                                pointLightList.clear();
+                                concurrency::parallel_for(0U, pointLightEntities.size(), [&](size_t index) -> void
+                                {
+                                    if (pointLightCullData.visibilityList[index])
+                                    {
+                                        auto entity = pointLightCullData.entityList[index];
+                                        auto &lightComponent = entity->getComponent<Components::PointLight>();
+                                        addLight(entity, lightComponent);
+                                    }
                                 });
 
                                 if (!pointLightList.empty())
@@ -759,11 +797,23 @@ namespace Gek
 
                             auto spotLightsDone = threadPool.enqueue([&](void) -> void
                             {
-                                spotLightList.clear();
-                                concurrency::parallel_for_each(std::begin(spotLightEntities), std::end(spotLightEntities), [&](Plugin::Entity * const entity) -> void
+                                static auto getSphere = [](Plugin::Entity * const entity, const Components::Transform &transformComponent) -> Shapes::Sphere
                                 {
                                     auto &lightComponent = entity->getComponent<Components::SpotLight>();
-                                    addLight(entity, lightComponent);
+                                    return Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius);
+                                };
+
+                                cullData(spotLightEntities, spotLightCullData, getSphere);
+
+                                spotLightList.clear();
+                                concurrency::parallel_for(0U, spotLightEntities.size(), [&](size_t index) -> void
+                                {
+                                    if (spotLightCullData.visibilityList[index])
+                                    {
+                                        auto entity = spotLightCullData.entityList[index];
+                                        auto &lightComponent = entity->getComponent<Components::SpotLight>();
+                                        addLight(entity, lightComponent);
+                                    }
                                 });
 
                                 if (!spotLightList.empty())

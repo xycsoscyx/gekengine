@@ -33,7 +33,6 @@ namespace Gek
 
             Math::Float3 getSize(void) const;
             Math::Float3 getCenter(void) const;
-            int getPosition(const Plane &plane) const;
         };
     }; // namespace Shapes
 }; // namespace Gek

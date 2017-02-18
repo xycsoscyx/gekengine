@@ -53,24 +53,5 @@ namespace Gek
         {
             return (minimum + (getSize() * 0.5f));
         }
-
-        int AlignedBox::getPosition(const Plane &plane) const
-        {
-            if (plane.getDistance(Math::Float3((plane.normal.x > 0.0f ? maximum.x : minimum.x),
-                (plane.normal.y > 0.0f ? maximum.y : minimum.y),
-                (plane.normal.z > 0.0f ? maximum.z : minimum.z))) < 0.0f)
-            {
-                return -1;
-            }
-
-            if (plane.getDistance(Math::Float3((plane.normal.x < 0.0f ? maximum.x : minimum.x),
-                (plane.normal.y < 0.0f ? maximum.y : minimum.y),
-                (plane.normal.z < 0.0f ? maximum.z : minimum.z))) < 0.0f)
-            {
-                return 0;
-            }
-
-            return 1;
-        }
     }; // namespace Shapes
 }; // namespace Gek

@@ -38,6 +38,12 @@ namespace Gek
         {
         }
 
+        Plane &Plane::operator = (const Plane &plane)
+        {
+            vector = plane.vector;
+            return (*this);
+        }
+
         void Plane::normalize(void)
         {
             vector *= (1.0f / normal.getMagnitude());

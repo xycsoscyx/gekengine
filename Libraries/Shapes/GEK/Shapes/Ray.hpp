@@ -27,8 +27,6 @@ namespace Gek
             Ray(const Ray &ray);
 
             Ray &operator = (const Ray &ray);
-
-            float getDistance(const OrientedBox &orientedBox) const;
         };
     }; // namespace Shapes
 }; // namespace Gek

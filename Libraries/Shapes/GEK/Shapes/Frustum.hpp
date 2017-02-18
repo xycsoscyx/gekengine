@@ -9,6 +9,11 @@
 
 #include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Shapes/Plane.hpp"
+#include "GEK/Shapes/Sphere.hpp"
+#include "GEK/Shapes/AlignedBox.hpp"
+#include "GEK/Shapes/OrientedBox.hpp"
+#include "GEK/Utility/Allocator.hpp"
+#include <vector>
 
 namespace Gek
 {
@@ -17,7 +22,7 @@ namespace Gek
         struct Frustum
         {
         public:
-            Plane planes[6];
+            Plane planeList[6];
 
         public:
             Frustum(void);
@@ -26,16 +31,9 @@ namespace Gek
 
             void create(Math::Float4x4 const &perspectiveTransform);
 
-            template <class SHAPE>
-            bool isVisible(const SHAPE &shape) const
-            {
-                for (auto &plane : planes)
-                {
-                    if (shape.getPosition(plane) == -1) return false;
-                }
-
-                return true;
-            }
+            void cull(const std::vector<Sphere, AlignedAllocator<Sphere, 16>> &shapeList, std::vector<uint32_t, AlignedAllocator<uint32_t, 16>> &visibilityList);
+            void cull(const std::vector<AlignedBox, AlignedAllocator<AlignedBox, 16>> &shapeList, std::vector<uint32_t, AlignedAllocator<uint32_t, 16>> &visibilityList);
+            void cull(const std::vector<OrientedBox, AlignedAllocator<OrientedBox, 16>> &shapeList, std::vector<uint32_t, AlignedAllocator<uint32_t, 16>> &visibilityList);
         };
     }; // namespace Shapes
 }; // namespace Gek

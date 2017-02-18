@@ -332,7 +332,7 @@ namespace Gek
                 Model &model = *data.model;
                 Math::Float4x4 matrix(transformComponent.getMatrix());
                 Shapes::OrientedBox orientedBox(model.boundingBox, matrix);
-                if (viewFrustum.isVisible(orientedBox))
+                //if (viewFrustum.isVisible(orientedBox))
                 {
                     auto modelViewMatrix(matrix * viewMatrix);
                     concurrency::parallel_for_each(std::begin(model.partList), std::end(model.partList), [&](const Model::Part &part) -> void

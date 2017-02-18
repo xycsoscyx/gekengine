@@ -31,8 +31,6 @@ namespace Gek
             OrientedBox(const AlignedBox &box, Math::Float4x4 const &matrix);
 
             OrientedBox &operator = (const OrientedBox &box);
-
-            int getPosition(const Plane &plane) const;
         };
     }; // namespace Shapes
 }; // namespace Gek

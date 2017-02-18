@@ -27,8 +27,6 @@ namespace Gek
             Sphere(Math::Float3 const &position, float radius);
 
             Sphere &operator = (const Sphere &sphere);
-
-            int getPosition(const Plane &plane) const;
         };
     }; // namespace Shapes
 }; // namespace Gek

@@ -33,26 +33,5 @@ namespace Gek
             matrix = box.matrix;
             return (*this);
         }
-
-        int OrientedBox::getPosition(const Plane &plane) const
-        {
-            float distance = plane.getDistance(matrix.translation.xyz);
-            float radiusX = std::abs(matrix.rx.xyz.dot(plane.normal) * halfsize.x);
-            float radiusY = std::abs(matrix.ry.xyz.dot(plane.normal) * halfsize.y);
-            float radiusZ = std::abs(matrix.rz.xyz.dot(plane.normal) * halfsize.z);
-            float radius = (radiusX + radiusY + radiusZ);
-            if (distance < -radius)
-            {
-                return -1;
-            }
-            else if (distance > radius)
-            {
-                return 1;
-            }
-            else
-            {
-                return 0;
-            }
-        }
     }; // namespace Shapes
 }; // namespace Gek

@@ -28,22 +28,5 @@ namespace Gek
             radius = sphere.radius;
             return (*this);
         }
-
-        int Sphere::getPosition(const Plane &plane) const
-        {
-            float distance = plane.getDistance(position);
-            if (distance < -radius)
-            {
-                return -1;
-            }
-            else if (distance > radius)
-            {
-                return 1;
-            }
-            else
-            {
-                return 0;
-            }
-        }
     }; // namespace Shapes
 }; // namespace Gek
