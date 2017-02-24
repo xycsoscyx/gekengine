@@ -22,6 +22,7 @@
 #include <concurrent_unordered_set.h>
 #include <concurrent_vector.h>
 #include <concurrent_queue.h>
+#include <smmintrin.h>
 #include <algorithm>
 #include <ppl.h>
 
@@ -120,18 +121,77 @@ namespace Gek
             struct CullData
             {
                 std::vector<Plugin::Entity *> entityList;
-                std::vector<Shapes::Sphere, AlignedAllocator<Shapes::Sphere, 16>> shapeList;
-                std::vector<uint32_t, AlignedAllocator<uint32_t, 16>> visibilityList;
+                std::vector<float, AlignedAllocator<float, 16>> shapeXPositionList;
+                std::vector<float, AlignedAllocator<float, 16>> shapeYPositionList;
+                std::vector<float, AlignedAllocator<float, 16>> shapeZPositionList;
+                std::vector<float, AlignedAllocator<float, 16>> shapeRadiusList;
+                std::vector<bool> visibilityList;
 
-                void resize(size_t size)
+                template <typename COMPONENT>
+                void cull(const concurrency::concurrent_unordered_set<Plugin::Entity *> &entitySet, const __m128 (&frustumData)[6][4])
                 {
-                    entityList.reserve(size);
+                    const auto entityCount = entitySet.size();
+                    entityList.reserve(entityCount);
                     entityList.clear();
 
-                    shapeList.reserve(size + (4 - (size % 4)));
-                    shapeList.clear();
+                    auto buffer = (entityCount % 4);
+                    buffer = (buffer ? (4 - buffer) : buffer);
+                    shapeXPositionList.reserve(entityCount + buffer);
+                    shapeYPositionList.reserve(entityCount + buffer);
+                    shapeZPositionList.reserve(entityCount + buffer);
+                    shapeRadiusList.reserve(entityCount + buffer);
+                    shapeXPositionList.clear();
+                    shapeYPositionList.clear();
+                    shapeZPositionList.clear();
+                    shapeRadiusList.clear();
 
-                    visibilityList.resize(size + (4 - (size % 4)));
+                    std::for_each(std::begin(entitySet), std::end(entitySet), [&](Plugin::Entity * const entity) -> void
+                    {
+                        auto &transformComponent = entity->getComponent<Components::Transform>();
+                        auto &lightComponent = entity->getComponent<COMPONENT>();
+
+                        entityList.push_back(entity);
+                        shapeXPositionList.push_back(transformComponent.position.x);
+                        shapeYPositionList.push_back(transformComponent.position.y);
+                        shapeZPositionList.push_back(transformComponent.position.z);
+                        shapeRadiusList.push_back(lightComponent.range + lightComponent.radius);
+                    });
+
+                    visibilityList.resize(entityCount + buffer);
+                    static const auto AllZero = _mm_setzero_ps();
+                    for (size_t entityIndex = 0; entityIndex < entityCount; entityIndex += 4)
+                    {
+                        const auto shapeXPosition = _mm_load_ps(&shapeXPositionList[entityIndex]);
+                        const auto shapeYPosition = _mm_load_ps(&shapeYPositionList[entityIndex]);
+                        const auto shapeZPosition = _mm_load_ps(&shapeZPositionList[entityIndex]);
+                        const auto shapeRadius = _mm_load_ps(&shapeRadiusList[entityIndex]);
+                        const auto negativeShapeRadius = _mm_sub_ps(AllZero, shapeRadius);
+
+                        auto intersectionResult = AllZero;
+                        for (uint32_t plane = 0; plane < 6; ++plane)
+                        {
+                            // Plane.Normal.Dot(Sphere.Position)
+                            const auto dotX = _mm_mul_ps(shapeXPosition, frustumData[plane][0]);
+                            const auto dotY = _mm_mul_ps(shapeYPosition, frustumData[plane][1]);
+                            const auto dotZ = _mm_mul_ps(shapeZPosition, frustumData[plane][2]);
+                            const auto dotXY = _mm_add_ps(dotX, dotY);
+                            const auto dotProduct = _mm_add_ps(dotXY, dotZ);
+
+                            // + Plane.Distance
+                            const auto planeDistance = _mm_add_ps(dotProduct, frustumData[plane][3]);
+
+                            // < -Sphere.Radius
+                            const auto planeTest = _mm_cmplt_ps(planeDistance, negativeShapeRadius);
+                            intersectionResult = _mm_or_ps(intersectionResult, planeTest);
+                        }
+
+                        __declspec(align(16)) uint32_t resultValues[4];
+                        _mm_store_ps((float *)resultValues, intersectionResult);
+                        for (uint32_t subIndex = 0; subIndex < 4; subIndex++)
+                        {
+                            visibilityList[entityIndex + subIndex] = !resultValues[subIndex];
+                        }
+                    }
                 }
             } pointLightCullData, spotLightCullData;
 
@@ -655,15 +715,15 @@ namespace Gek
                 GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(population);
 
-                Plugin::Core::Log::Scope function(core->getLog(), __FUNCTION__);
-                core->getLog()->addValue("Cameras", renderCallList.unsafe_size());
+                Plugin::Core::Log::Scope function(core->getLog(), "Render Scene");
+                core->getLog()->addValue("Display Cameras", renderCallList.unsafe_size());
                 while (renderCallList.try_pop(currentRenderCall))
                 {
                     drawCallList.clear();
                     onRenderScene.emit(currentRenderCall.viewFrustum, currentRenderCall.viewMatrix);
                     if (!drawCallList.empty())
                     {
-                        core->getLog()->addValue("Draw Calls", drawCallList.size());
+                        core->getLog()->addValue("Display Draw Calls", drawCallList.size());
                         auto backBuffer = videoDevice->getBackBuffer();
                         auto width = backBuffer->getDescription().width;
                         auto height = backBuffer->getDescription().height;
@@ -726,7 +786,7 @@ namespace Gek
 
                                 if (!directionalLightList.empty())
                                 {
-                                    core->getLog()->addValue("Directional Lights", directionalLightList.size());
+                                    core->getLog()->addValue("Display Directional Lights", directionalLightList.size());
                                     if (!directionalLightDataBuffer || directionalLightDataBuffer->getDescription().count < directionalLightList.size())
                                     {
                                         directionalLightDataBuffer = nullptr;
@@ -742,32 +802,52 @@ namespace Gek
                                 }
                             });
 
-                            static auto cullData = [&](const concurrency::concurrent_unordered_set<Plugin::Entity *> &sourceEntityList, CullData &cullData, 
-                                const std::function<Shapes::Sphere(Plugin::Entity * const, const Components::Transform &)> &getSphere) -> void
+                            const __m128 frustumData[6][4] =
                             {
-                                cullData.resize(sourceEntityList.size());
-                                std::for_each(std::begin(sourceEntityList), std::end(sourceEntityList), [&](Plugin::Entity * const entity) -> void
                                 {
-                                    cullData.entityList.push_back(entity);
-                                    auto &transformComponent = entity->getComponent<Components::Transform>();
-                                    cullData.shapeList.push_back(getSphere(entity, transformComponent));
-                                });
-
-                                currentRenderCall.viewFrustum.cull(cullData.shapeList, cullData.visibilityList);
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[0].normal.x),
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[0].normal.y),
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[0].normal.z),
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[0].distance),
+                                },
+                                {
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[1].normal.x),
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[1].normal.y),
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[1].normal.z),
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[1].distance),
+                                },
+                                {
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[2].normal.x),
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[2].normal.y),
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[2].normal.z),
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[2].distance),
+                                },
+                                {
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[3].normal.x),
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[3].normal.y),
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[3].normal.z),
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[3].distance),
+                                },
+                                {
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[4].normal.x),
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[4].normal.y),
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[4].normal.z),
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[4].distance),
+                                },
+                                {
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[5].normal.x),
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[5].normal.y),
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[5].normal.z),
+                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[5].distance),
+                                },
                             };
 
                             auto pointLightsDone = threadPool.enqueue([&](void) -> void
                             {
-                                static auto getSphere = [](Plugin::Entity * const entity, const Components::Transform &transformComponent) -> Shapes::Sphere
-                                {
-                                    auto &lightComponent = entity->getComponent<Components::PointLight>();
-                                    return Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius);
-                                };
-
-                                cullData(pointLightEntities, pointLightCullData, getSphere);
+                                pointLightCullData.cull<Components::PointLight>(pointLightEntities, frustumData);
 
                                 pointLightList.clear();
-                                concurrency::parallel_for(0U, pointLightEntities.size(), [&](size_t index) -> void
+                                concurrency::parallel_for(0U, pointLightCullData.entityList.size(), [&](size_t index) -> void
                                 {
                                     if (pointLightCullData.visibilityList[index])
                                     {
@@ -779,7 +859,7 @@ namespace Gek
 
                                 if (!pointLightList.empty())
                                 {
-                                    core->getLog()->addValue("Point Lights", pointLightList.size());
+                                    core->getLog()->addValue("Display Point Lights", pointLightList.size());
                                     if (!pointLightDataBuffer || pointLightDataBuffer->getDescription().count < pointLightList.size())
                                     {
                                         pointLightDataBuffer = nullptr;
@@ -797,18 +877,12 @@ namespace Gek
 
                             auto spotLightsDone = threadPool.enqueue([&](void) -> void
                             {
-                                static auto getSphere = [](Plugin::Entity * const entity, const Components::Transform &transformComponent) -> Shapes::Sphere
-                                {
-                                    auto &lightComponent = entity->getComponent<Components::SpotLight>();
-                                    return Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius);
-                                };
-
-                                cullData(spotLightEntities, spotLightCullData, getSphere);
+                                spotLightCullData.cull<Components::SpotLight>(spotLightEntities, frustumData);
 
                                 spotLightList.clear();
-                                concurrency::parallel_for(0U, spotLightEntities.size(), [&](size_t index) -> void
+                                concurrency::parallel_for(0U, spotLightCullData.entityList.size(), [&](size_t index) -> void
                                 {
-                                    if (spotLightCullData.visibilityList[index])
+                                    if (pointLightCullData.visibilityList[index])
                                     {
                                         auto entity = spotLightCullData.entityList[index];
                                         auto &lightComponent = entity->getComponent<Components::SpotLight>();
@@ -818,7 +892,7 @@ namespace Gek
 
                                 if (!spotLightList.empty())
                                 {
-                                    core->getLog()->addValue("Spot Lights", spotLightList.size());
+                                    core->getLog()->addValue("Display Spot Lights", spotLightList.size());
                                     if (!spotLightDataBuffer || spotLightDataBuffer->getDescription().count < spotLightList.size())
                                     {
                                         spotLightDataBuffer = nullptr;

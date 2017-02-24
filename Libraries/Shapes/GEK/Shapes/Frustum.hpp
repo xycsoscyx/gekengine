@@ -21,6 +21,19 @@ namespace Gek
     {
         struct Frustum
         {
+            struct Planes
+            {
+                enum
+                {
+                    Near = 0,
+                    Far,
+                    Left,
+                    Right,
+                    Bottom,
+                    Top,
+                };
+            }; // struct Planes
+
         public:
             Plane planeList[6];
 
@@ -30,10 +43,6 @@ namespace Gek
             Frustum(Math::Float4x4 const &perspectiveTransform);
 
             void create(Math::Float4x4 const &perspectiveTransform);
-
-            void cull(const std::vector<Sphere, AlignedAllocator<Sphere, 16>> &shapeList, std::vector<uint32_t, AlignedAllocator<uint32_t, 16>> &visibilityList);
-            void cull(const std::vector<AlignedBox, AlignedAllocator<AlignedBox, 16>> &shapeList, std::vector<uint32_t, AlignedAllocator<uint32_t, 16>> &visibilityList);
-            void cull(const std::vector<OrientedBox, AlignedAllocator<OrientedBox, 16>> &shapeList, std::vector<uint32_t, AlignedAllocator<uint32_t, 16>> &visibilityList);
         };
     }; // namespace Shapes
 }; // namespace Gek

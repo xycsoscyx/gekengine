@@ -21,8 +21,8 @@ namespace Gek
         struct OrientedBox
         {
         public:
-            Math::Float4x4 matrix;
             Math::Float3 halfsize;
+            Math::Float4x4 matrix;
 
         public:
             OrientedBox(void);

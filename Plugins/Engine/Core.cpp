@@ -461,16 +461,16 @@ namespace Gek
                 listBoxSize.y -= ImGui::GetTextLineHeightWithSpacing();
                 if (ImGui::ListBoxHeader("##empty", listBoxSize))
                 {
-                    auto logCount = logList.size();
+                    const auto logCount = logList.size();
                     ImGuiListClipper clipper(logCount, ImGui::GetTextLineHeightWithSpacing());
                     while (clipper.Step())
                     {
                         for (int logIndex = clipper.DisplayStart; logIndex < clipper.DisplayEnd; ++logIndex)
                         {
-                            auto &log = logList[logIndex];
-                            auto &system = std::get<0>(log);
-                            auto &type = std::get<1>(log);
-                            auto &message = std::get<2>(log);
+                            const auto &log = logList[logIndex];
+                            const auto &system = std::get<0>(log);
+                            const auto &type = std::get<1>(log);
+                            const auto &message = std::get<2>(log);
 
                             ImVec4 color;
                             switch (type)
@@ -505,7 +505,13 @@ namespace Gek
             int currentSelectedEvent = 0;
             void drawPerformance(ImGui::PanelManagerWindowData &windowData)
             {
-                auto selected = std::next(std::begin(performanceHistory), currentSelectedEvent);
+                std::map<StringUTF8, PerformanceHistory::iterator> performanceMap;
+                for (auto &search = performanceHistory.begin(); search != performanceHistory.end(); ++search)
+                {
+                    performanceMap[search->first] = search;
+                }
+
+                auto selected = std::next(std::begin(performanceMap), currentSelectedEvent);
 
                 auto clientSize = (windowData.size - (ImGui::GetStyle().WindowPadding * 2.0f));
                 clientSize.y -= ImGui::GetTextLineHeightWithSpacing();
@@ -514,18 +520,18 @@ namespace Gek
                 eventSize.x = 300.0f;
                 if (ImGui::ListBoxHeader("##events", eventSize))
                 {
-                    ImGuiListClipper clipper(performanceHistory.size(), ImGui::GetTextLineHeightWithSpacing());
+                    ImGuiListClipper clipper(performanceMap.size(), ImGui::GetTextLineHeightWithSpacing());
                     while (clipper.Step())
                     {
-                        auto begin = std::next(std::begin(performanceHistory), clipper.DisplayStart);
-                        auto end = std::next(std::begin(performanceHistory), clipper.DisplayEnd);
+                        auto begin = std::next(std::begin(performanceMap), clipper.DisplayStart);
+                        auto end = std::next(std::begin(performanceMap), clipper.DisplayEnd);
                         for (auto data = begin; data != end; data++)
                         {
                             bool isSelected = (data == selected);
                             if (ImGui::Selectable(data->first, &isSelected))
                             {
                                 selected = data;
-                                currentSelectedEvent = std::distance(std::begin(performanceHistory), data);
+                                currentSelectedEvent = std::distance(std::begin(performanceMap), data);
                             }
                         }
                     };
@@ -550,7 +556,7 @@ namespace Gek
                     {
                         return 0.0f;
                     }
-                }, &history.data, HistoryLength, 0, nullptr, 0.0f, history.maximum, historySize);
+                }, &history->second.data, HistoryLength, 0, nullptr, 0.0f, history->second.maximum, historySize);
             }
 
             void drawSettings(ImGui::PanelManagerWindowData &windowData)
@@ -592,7 +598,7 @@ namespace Gek
 
             void renderDrawData(ImDrawData *drawData)
             {
-                Core::Scope function(this, __FUNCTION__);
+                Core::Scope function(this, "Render UI");
                 if (!gui->vertexBuffer || gui->vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
                 {
                     Video::Buffer::Description vertexBufferDescription;
@@ -919,7 +925,7 @@ namespace Gek
                 }
 
                 performanceMap.clear();
-                Core::Scope function(this, __FUNCTION__);
+                Core::Scope function(this, "Update Core");
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
 

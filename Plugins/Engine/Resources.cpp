@@ -358,7 +358,7 @@ namespace Gek
             template <typename INPUT, typename HANDLE, typename SOURCE>
             bool set(const std::vector<INPUT> &inputList, ResourceCache<HANDLE, SOURCE> &cache)
             {
-                auto listCount = inputList.size();
+                const auto listCount = inputList.size();
                 objectList.reserve(std::max(listCount, objectList.size()));
                 objectList.resize(listCount);
 
@@ -383,7 +383,7 @@ namespace Gek
             template <typename INPUT, typename HANDLE>
             bool set(const std::vector<INPUT> &inputList, ResourceCache<HANDLE, TYPE> &cache)
             {
-                auto listCount = inputList.size();
+                const auto listCount = inputList.size();
                 objectList.reserve(std::max(listCount, objectList.size()));
                 objectList.resize(listCount);
 
@@ -1010,8 +1010,8 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->addValue("Draw Calls", 1.0f);
-                    core->getLog()->addValue("Vertex Count", vertexCount);
+                    core->getLog()->addValue("Render Draw Calls", 1.0f);
+                    core->getLog()->addValue("Render Vertex Count", vertexCount);
                     videoContext->drawPrimitive(vertexCount, firstVertex);
                 }
             }
@@ -1020,9 +1020,9 @@ namespace Gek
             {
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->addValue("Draw Calls", 1.0f);
-                    core->getLog()->addValue("Vertex Count", vertexCount);
-                    core->getLog()->addValue("Instance Count", instanceCount);
+                    core->getLog()->addValue("Render Draw Calls", 1.0f);
+                    core->getLog()->addValue("Render Vertex Count", vertexCount);
+                    core->getLog()->addValue("Render Instance Count", instanceCount);
                     videoContext->drawInstancedPrimitive(instanceCount, firstInstance, vertexCount, firstVertex);
                 }
             }
@@ -1035,8 +1035,8 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->addValue("Draw Calls", 1.0f);
-                    core->getLog()->addValue("Index Count", indexCount);
+                    core->getLog()->addValue("Render Draw Calls", 1.0f);
+                    core->getLog()->addValue("Render Index Count", indexCount);
                     videoContext->drawIndexedPrimitive(indexCount, firstIndex, firstVertex);
                 }
             }
@@ -1047,9 +1047,9 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->addValue("Draw Calls", 1.0f);
-                    core->getLog()->addValue("Index Count", indexCount);
-                    core->getLog()->addValue("Instance Count", instanceCount);
+                    core->getLog()->addValue("Render Draw Calls", 1.0f);
+                    core->getLog()->addValue("Render Index Count", indexCount);
+                    core->getLog()->addValue("Render Instance Count", instanceCount);
                     videoContext->drawInstancedIndexedPrimitive(instanceCount, firstInstance, indexCount, firstIndex, firstVertex);
                 }
             }
@@ -1060,8 +1060,8 @@ namespace Gek
 
                 if (dispatchValid)
                 {
-                    core->getLog()->addValue("Dispatch Calls", 1.0f);
-                    core->getLog()->addValue("Dishatch Thread Count", threadGroupCountX * threadGroupCountY * threadGroupCountZ);
+                    core->getLog()->addValue("Render Dispatch Calls", 1.0f);
+                    core->getLog()->addValue("Render Dishatch Thread Count", threadGroupCountX * threadGroupCountY * threadGroupCountZ);
                     videoContext->dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
                 }
             }
@@ -1451,7 +1451,7 @@ namespace Gek
                 if (drawPrimitiveValid && (drawPrimitiveValid = renderTargetCache.set(renderTargetHandleList, dynamicCache)))
                 {
                     auto &renderTargetList = renderTargetCache.get();
-                    uint32_t renderTargetCount = renderTargetList.size();
+                    const uint32_t renderTargetCount = renderTargetList.size();
                     viewPortCache.resize(renderTargetCount);
                     for (uint32_t renderTarget = 0; renderTarget < renderTargetCount; ++renderTarget)
                     {

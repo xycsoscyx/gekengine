@@ -187,7 +187,6 @@ namespace Gek
             auto &object = parent.get(name);
             if (object.is_array())
             {
-                uint32_t mapCount = object.size();
                 for (auto &element : object.elements())
                 {
                     if (element.is_string())

@@ -105,7 +105,7 @@ namespace Gek
                         ImGui::EndPopup();
                     }
 
-                    auto entityCount = entityMap.size();
+                    const auto entityCount = entityMap.size();
                     if (ImGui::ListBoxHeader("##Entities", entityCount, 7))
                     {
                         ImGuiListClipper clipper(entityCount, ImGui::GetTextLineHeightWithSpacing());
@@ -154,8 +154,8 @@ namespace Gek
 
                             if (ImGui::BeginPopup("Select Component"))
                             {
-                                auto &componentMap = population->getComponentMap();
-                                auto componentCount = componentMap.size();
+                                const auto &componentMap = population->getComponentMap();
+                                const auto componentCount = componentMap.size();
                                 if (ImGui::ListBoxHeader("##Components", componentCount, 7))
                                 {
                                     ImGuiListClipper clipper(componentCount, ImGui::GetTextLineHeightWithSpacing());
@@ -180,10 +180,10 @@ namespace Gek
                                 ImGui::EndPopup();
                             }
 
-                            auto &entityComponentMap = entity->getComponentMap();
+                            const auto &entityComponentMap = entity->getComponentMap();
                             if (!entityComponentMap.empty())
                             {
-                                auto entityComponentsCount = entityComponentMap.size();
+                                const auto entityComponentsCount = entityComponentMap.size();
                                 if (ImGui::ListBoxHeader("##Components", entityComponentsCount, 7))
                                 {
                                     std::vector<std::type_index> componentDeleteList;
@@ -235,8 +235,7 @@ namespace Gek
                                             const auto backBuffer = core->getVideoDevice()->getBackBuffer();
                                             const float width = float(backBuffer->getDescription().width);
                                             const float height = float(backBuffer->getDescription().height);
-                                            auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
-
+                                            const auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
                                             if (component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, entity, componentData))
                                             {
                                                 onModified.emit(entity, entityComponentSearch->first);

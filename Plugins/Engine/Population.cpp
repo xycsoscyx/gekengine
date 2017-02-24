@@ -333,7 +333,7 @@ namespace Gek
                     }
                     else
                     {
-                        Plugin::Core::Log::Scope function(core->getLog(), __FUNCTION__);
+                        Plugin::Core::Log::Scope function(core->getLog(), "Update Population");
 
                         Action action;
                         while (actionQueue.try_pop(action))
