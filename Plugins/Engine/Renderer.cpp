@@ -118,44 +118,163 @@ namespace Gek
                 }
             };
 
-            struct CullData
+            struct RenderCall
             {
+                Shapes::Frustum viewFrustum;
+                Math::Float4x4 viewMatrix;
+                Math::Float4x4 projectionMatrix;
+                float nearClip = 0.0f;
+                float farClip = 0.0f;
+                ResourceHandle cameraTarget;
+
+                RenderCall(void)
+                {
+                }
+
+                RenderCall(const RenderCall &renderCall)
+                    : viewFrustum(renderCall.viewFrustum)
+                    , viewMatrix(renderCall.viewMatrix)
+                    , projectionMatrix(renderCall.projectionMatrix)
+                    , nearClip(renderCall.nearClip)
+                    , farClip(renderCall.farClip)
+                    , cameraTarget(renderCall.cameraTarget)
+                {
+                }
+            };
+
+            template <typename COMPONENT, typename DATA>
+            struct LightData
+            {
+                Video::Device *videoDevice = nullptr;
                 std::vector<Plugin::Entity *> entityList;
+                concurrency::concurrent_vector<DATA, AlignedAllocator<DATA, 16>> lightList;
+                Video::BufferPtr lightDataBuffer;
+
+                concurrency::critical_section addSection;
+                concurrency::critical_section removeSection;
+
+                LightData(size_t reserve, Video::Device *videoDevice)
+                    : videoDevice(videoDevice)
+                {
+                    lightList.reserve(reserve);
+                    createBuffer();
+                }
+
+                void addEntity(Plugin::Entity * const entity)
+                {
+                    if (entity->hasComponent<COMPONENT>())
+                    {
+                        concurrency::critical_section::scoped_lock lock(addSection);
+                        auto search = std::find_if(std::begin(entityList), std::end(entityList), [entity](Plugin::Entity * const search) -> bool
+                        {
+                            return (entity == search);
+                        });
+
+                        if (search == std::end(entityList))
+                        {
+                            entityList.push_back(entity);
+                        }
+                    }
+                }
+
+                void removeEntity(Plugin::Entity * const entity)
+                {
+                    concurrency::critical_section::scoped_lock lock(removeSection);
+                    auto search = std::find_if(std::begin(entityList), std::end(entityList), [entity](Plugin::Entity * const search) -> bool
+                    {
+                        return (entity == search);
+                    });
+
+                    if (search != std::end(entityList))
+                    {
+                        entityList.erase(search);
+                    }
+                }
+
+                void clearEntities(void)
+                {
+                    entityList.clear();
+                }
+
+                void createBuffer(void)
+                {
+                    if (!lightDataBuffer || lightDataBuffer->getDescription().count < lightList.size())
+                    {
+                        lightDataBuffer = nullptr;
+
+                        Video::Buffer::Description lightBufferDescription;
+                        lightBufferDescription.type = Video::Buffer::Description::Type::Structured;
+                        lightBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
+
+                        lightBufferDescription.stride = sizeof(DATA);
+                        lightBufferDescription.count = lightList.capacity();
+                        lightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
+                        lightDataBuffer->setName(String::Format(L"render:%v", typeid(COMPONENT).name()));
+                    }
+                }
+
+                bool updateBuffer(void)
+                {
+                    bool updated = true;
+                    if (!lightList.empty())
+                    {
+                        DATA *lightData = nullptr;
+                        if (updated = videoDevice->mapBuffer(lightDataBuffer.get(), lightData))
+                        {
+                            std::copy(std::begin(lightList), std::end(lightList), lightData);
+                            videoDevice->unmapBuffer(lightDataBuffer.get());
+                        }
+                    }
+
+                    return updated;
+                }
+            };
+
+            template <typename COMPONENT, typename DATA>
+            struct LightVisibilityData
+                : public LightData<COMPONENT, DATA>
+            {
                 std::vector<float, AlignedAllocator<float, 16>> shapeXPositionList;
                 std::vector<float, AlignedAllocator<float, 16>> shapeYPositionList;
                 std::vector<float, AlignedAllocator<float, 16>> shapeZPositionList;
                 std::vector<float, AlignedAllocator<float, 16>> shapeRadiusList;
                 std::vector<bool> visibilityList;
 
-                template <typename COMPONENT>
-                void cull(const concurrency::concurrent_unordered_set<Plugin::Entity *> &entitySet, const __m128 (&frustumData)[6][4])
+                LightVisibilityData(size_t reserve, Video::Device *videoDevice)
+                    : LightData(reserve, videoDevice)
                 {
-                    const auto entityCount = entitySet.size();
-                    entityList.reserve(entityCount);
-                    entityList.clear();
+                }
 
-                    auto buffer = (entityCount % 4);
-                    buffer = (buffer ? (4 - buffer) : buffer);
-                    shapeXPositionList.reserve(entityCount + buffer);
-                    shapeYPositionList.reserve(entityCount + buffer);
-                    shapeZPositionList.reserve(entityCount + buffer);
-                    shapeRadiusList.reserve(entityCount + buffer);
+                void clearEntities(void)
+                {
+                    LightData::clearEntities();
                     shapeXPositionList.clear();
                     shapeYPositionList.clear();
                     shapeZPositionList.clear();
                     shapeRadiusList.clear();
+                    visibilityList.clear();
+                }
 
-                    std::for_each(std::begin(entitySet), std::end(entitySet), [&](Plugin::Entity * const entity) -> void
+                void update(Video::Device *videoDevice, const __m128 (&frustumData)[6][4], const std::function<void(Plugin::Entity * const, const COMPONENT &)> &addLight)
+                {
+                    const auto entityCount = entityList.size();
+                    auto buffer = (entityCount % 4);
+                    buffer = (buffer ? (4 - buffer) : buffer);
+                    shapeXPositionList.resize(entityCount + buffer);
+                    shapeYPositionList.resize(entityCount + buffer);
+                    shapeZPositionList.resize(entityCount + buffer);
+                    shapeRadiusList.resize(entityCount + buffer);
+                    for (auto entityIndex = 0U; entityIndex < entityCount; entityIndex++)
                     {
+                        auto entity = entityList[entityIndex];
                         auto &transformComponent = entity->getComponent<Components::Transform>();
                         auto &lightComponent = entity->getComponent<COMPONENT>();
 
-                        entityList.push_back(entity);
-                        shapeXPositionList.push_back(transformComponent.position.x);
-                        shapeYPositionList.push_back(transformComponent.position.y);
-                        shapeZPositionList.push_back(transformComponent.position.z);
-                        shapeRadiusList.push_back(lightComponent.range + lightComponent.radius);
-                    });
+                        shapeXPositionList[entityIndex] = transformComponent.position.x;
+                        shapeYPositionList[entityIndex] = transformComponent.position.y;
+                        shapeZPositionList[entityIndex] = transformComponent.position.z;
+                        shapeRadiusList[entityIndex] = (lightComponent.range + lightComponent.radius);
+                    }
 
                     visibilityList.resize(entityCount + buffer);
                     static const auto AllZero = _mm_setzero_ps();
@@ -192,30 +311,22 @@ namespace Gek
                             visibilityList[entityIndex + subIndex] = !resultValues[subIndex];
                         }
                     }
-                }
-            } pointLightCullData, spotLightCullData;
 
-            struct RenderCall
-            {
-                Shapes::Frustum viewFrustum;
-                Math::Float4x4 viewMatrix;
-                Math::Float4x4 projectionMatrix;
-                float nearClip = 0.0f;
-                float farClip = 0.0f;
-                ResourceHandle cameraTarget;
+                    lightList.clear();
+                    concurrency::parallel_for(0U, entityList.size(), [&](size_t index) -> void
+                    {
+                        if (visibilityList[index])
+                        {
+                            auto entity = entityList[index];
+                            auto &lightComponent = entity->getComponent<COMPONENT>();
+                            addLight(entity, lightComponent);
+                        }
+                    });
 
-                RenderCall(void)
-                {
-                }
-
-                RenderCall(const RenderCall &renderCall)
-                    : viewFrustum(renderCall.viewFrustum)
-                    , viewMatrix(renderCall.viewMatrix)
-                    , projectionMatrix(renderCall.projectionMatrix)
-                    , nearClip(renderCall.nearClip)
-                    , farClip(renderCall.farClip)
-                    , cameraTarget(renderCall.cameraTarget)
-                {
+                    if (!lightList.empty())
+                    {
+                        createBuffer();
+                    }
                 }
             };
 
@@ -238,22 +349,16 @@ namespace Gek
             Video::ObjectPtr depthState;
 
             ThreadPool threadPool;
-            concurrency::concurrent_unordered_set<Plugin::Entity *> directionalLightEntities;
-            concurrency::concurrent_unordered_set<Plugin::Entity *> pointLightEntities;
-            concurrency::concurrent_unordered_set<Plugin::Entity *> spotLightEntities;
+            LightData<Components::DirectionalLight, DirectionalLightData> directionalLightData;
+            LightVisibilityData<Components::PointLight, PointLightData> pointLightData;
+            LightVisibilityData<Components::SpotLight, SpotLightData> spotLightData;
 
-            concurrency::concurrent_vector<DirectionalLightData, AlignedAllocator<DirectionalLightData, 16>> directionalLightList;
-            concurrency::concurrent_vector<PointLightData, AlignedAllocator<PointLightData, 16>> pointLightList;
-            concurrency::concurrent_vector<SpotLightData, AlignedAllocator<SpotLightData, 16>> spotLightList;
             TileLightIndex tileLightIndexList[GridSize];
             TileOffsetCount tileOffsetCountList[GridSize];
             std::vector<uint16_t> lightIndexList;
             uint32_t lightIndexCount = 0;
 
             Video::BufferPtr lightConstantBuffer;
-            Video::BufferPtr directionalLightDataBuffer;
-            Video::BufferPtr pointLightDataBuffer;
-            Video::BufferPtr spotLightDataBuffer;
             Video::BufferPtr tileOffsetCountBuffer;
             Video::BufferPtr lightIndexBuffer;
 
@@ -269,6 +374,9 @@ namespace Gek
                 , population(core->getPopulation())
                 , resources(dynamic_cast<Engine::Resources *>(core->getResources()))
                 , threadPool(3)
+                , directionalLightData(10, core->getVideoDevice())
+                , pointLightData(200, core->getVideoDevice())
+                , spotLightData(200, core->getVideoDevice())
             {
                 core->getLog()->message(L"Renderer", Plugin::Core::Log::Type::Message, L"Initializing rendering system components");
 
@@ -285,7 +393,7 @@ namespace Gek
                 pointSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
                 pointSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
                 pointSamplerState = videoDevice->createSamplerState(pointSamplerStateData);
-				pointSamplerState->setName(L"renderer:pointSamplerState");
+                pointSamplerState->setName(L"renderer:pointSamplerState");
 
                 Video::SamplerStateInformation linearClampSamplerStateData;
                 linearClampSamplerStateData.maximumAnisotropy = 8;
@@ -293,7 +401,7 @@ namespace Gek
                 linearClampSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
                 linearClampSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
                 linearClampSamplerState = videoDevice->createSamplerState(linearClampSamplerStateData);
-				linearClampSamplerState->setName(L"renderer:linearClampSamplerState");
+                linearClampSamplerState->setName(L"renderer:linearClampSamplerState");
 
                 Video::SamplerStateInformation linearWrapSamplerStateData;
                 linearWrapSamplerStateData.maximumAnisotropy = 8;
@@ -301,19 +409,19 @@ namespace Gek
                 linearWrapSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Wrap;
                 linearWrapSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
                 linearWrapSamplerState = videoDevice->createSamplerState(linearWrapSamplerStateData);
-				linearWrapSamplerState->setName(L"renderer:linearWrapSamplerState");
+                linearWrapSamplerState->setName(L"renderer:linearWrapSamplerState");
 
                 Video::UnifiedBlendStateInformation blendStateInformation;
                 blendState = videoDevice->createBlendState(blendStateInformation);
-				blendState->setName(L"renderer:blendState");
+                blendState->setName(L"renderer:blendState");
 
                 Video::RenderStateInformation renderStateInformation;
                 renderState = videoDevice->createRenderState(renderStateInformation);
-				renderState->setName(L"renderer:renderState");
+                renderState->setName(L"renderer:renderState");
 
                 Video::DepthStateInformation depthStateInformation;
                 depthState = videoDevice->createDepthState(depthStateInformation);
-				depthState->setName(L"renderer:depthState");
+                depthState->setName(L"renderer:depthState");
 
                 Video::Buffer::Description constantBufferDescription;
                 constantBufferDescription.stride = sizeof(EngineConstantData);
@@ -369,24 +477,6 @@ namespace Gek
                 lightBufferDescription.type = Video::Buffer::Description::Type::Structured;
                 lightBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
 
-                directionalLightList.reserve(10);
-                lightBufferDescription.stride = sizeof(DirectionalLightData);
-                lightBufferDescription.count = directionalLightList.capacity();
-                directionalLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
-                directionalLightDataBuffer->setName(L"renderer:directionalLightDataBuffer");
-
-                pointLightList.reserve(200);
-                lightBufferDescription.stride = sizeof(PointLightData);
-                lightBufferDescription.count = pointLightList.capacity();
-                pointLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
-                pointLightDataBuffer->setName(L"renderer:pointLightDataBuffer");
-
-                spotLightList.reserve(200);
-                lightBufferDescription.stride = sizeof(SpotLightData);
-                lightBufferDescription.count = spotLightList.capacity();
-                spotLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
-                spotLightDataBuffer->setName(L"renderer:spotLightDataBuffer");
-
                 Video::Buffer::Description tileBufferDescription;
                 tileBufferDescription.type = Video::Buffer::Description::Type::Raw;
                 tileBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
@@ -417,28 +507,17 @@ namespace Gek
             {
                 if (entity->hasComponent<Components::Transform>())
                 {
-                    if (entity->hasComponent<Components::DirectionalLight>())
-                    {
-                        directionalLightEntities.insert(entity);
-                    }
-
-                    if (entity->hasComponent<Components::PointLight>())
-                    {
-                        pointLightEntities.insert(entity);
-                    }
-
-                    if (entity->hasComponent<Components::SpotLight>())
-                    {
-                        spotLightEntities.insert(entity);
-                    }
+                    directionalLightData.addEntity(entity);
+                    pointLightData.addEntity(entity);
+                    spotLightData.addEntity(entity);
                 }
             }
 
             void removeEntity(Plugin::Entity * const entity)
             {
-                directionalLightEntities.unsafe_erase(entity);
-                pointLightEntities.unsafe_erase(entity);
-                spotLightEntities.unsafe_erase(entity);
+                directionalLightData.removeEntity(entity);
+                pointLightData.removeEntity(entity);
+                spotLightData.removeEntity(entity);
             }
 
             // Clustered Lighting
@@ -565,7 +644,7 @@ namespace Gek
                     int32_t(std::ceil(screenBounds.z * GridWidth)),
                     int32_t(std::ceil(screenBounds.w * GridHeight))
                 );
-                
+
                 gridBounds[0] = (gridBounds[0] < 0 ? 0 : gridBounds[0]);
                 gridBounds[1] = (gridBounds[1] < 0 ? 0 : gridBounds[1]);
                 gridBounds[2] = (gridBounds[2] > GridWidth ? GridWidth : gridBounds[2]);
@@ -615,14 +694,14 @@ namespace Gek
                 auto &transformComponent = entity->getComponent<Components::Transform>();
                 auto &colorComponent = entity->getComponent<Components::Color>();
 
-                auto lightIterator = pointLightList.grow_by(1);
+                auto lightIterator = pointLightData.lightList.grow_by(1);
                 PointLightData &lightData = (*lightIterator);
                 lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
                 lightData.position = currentRenderCall.viewMatrix.transform(transformComponent.position);
                 lightData.radius = lightComponent.radius;
                 lightData.range = lightComponent.range;
 
-                auto lightIndex = std::distance(std::begin(pointLightList), lightIterator);
+                auto lightIndex = std::distance(std::begin(pointLightData.lightList), lightIterator);
                 addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, true);
             }
 
@@ -631,7 +710,7 @@ namespace Gek
                 auto &transformComponent = entity->getComponent<Components::Transform>();
                 auto &colorComponent = entity->getComponent<Components::Color>();
 
-                auto lightIterator = spotLightList.grow_by(1);
+                auto lightIterator = spotLightData.lightList.grow_by(1);
                 SpotLightData &lightData = (*lightIterator);
                 lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
                 lightData.position = currentRenderCall.viewMatrix.transform(transformComponent.position);
@@ -642,7 +721,7 @@ namespace Gek
                 lightData.outerAngle = lightComponent.outerAngle;
                 lightData.coneFalloff = lightComponent.coneFalloff;
 
-                auto lightIndex = std::distance(std::begin(spotLightList), lightIterator);
+                auto lightIndex = std::distance(std::begin(spotLightData.lightList), lightIterator);
                 addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, false);
             }
 
@@ -650,15 +729,16 @@ namespace Gek
             void onLoadBegin(String const &populationName)
             {
                 GEK_REQUIRE(resources);
+
                 resources->clear();
-                directionalLightEntities.clear();
-                pointLightEntities.clear();
-                spotLightEntities.clear();
+                directionalLightData.clearEntities();
+                pointLightData.clearEntities();
+                spotLightData.clearEntities();
             }
 
             void onLoadSucceeded(String const &populationName)
             {
-                population->listEntities([&](Plugin::Entity * const entity, wchar_t const * const ) -> void
+                population->listEntities([&](Plugin::Entity * const entity, wchar_t const * const) -> void
                 {
                     addEntity(entity);
                 });
@@ -696,7 +776,7 @@ namespace Gek
                     }
                 }
             }
-            
+
             void queueRenderCall(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget)
             {
                 RenderCall renderCall;
@@ -770,9 +850,9 @@ namespace Gek
 
                             auto directionalLightsDone = threadPool.enqueue([&](void) -> void
                             {
-                                directionalLightList.clear();
-                                directionalLightList.reserve(directionalLightEntities.size());
-                                std::for_each(std::begin(directionalLightEntities), std::end(directionalLightEntities), [&](Plugin::Entity * const entity) -> void
+                                directionalLightData.lightList.clear();
+                                directionalLightData.lightList.reserve(directionalLightData.entityList.size());
+                                std::for_each(std::begin(directionalLightData.entityList), std::end(directionalLightData.entityList), [&](Plugin::Entity * const entity) -> void
                                 {
                                     auto &transformComponent = entity->getComponent<Components::Transform>();
                                     auto &colorComponent = entity->getComponent<Components::Color>();
@@ -781,25 +861,10 @@ namespace Gek
                                     DirectionalLightData lightData;
                                     lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
                                     lightData.direction = currentRenderCall.viewMatrix.rotate(getLightDirection(transformComponent.rotation));
-                                    directionalLightList.push_back(lightData);
+                                    directionalLightData.lightList.push_back(lightData);
                                 });
 
-                                if (!directionalLightList.empty())
-                                {
-                                    core->getLog()->addValue("Display Directional Lights", directionalLightList.size());
-                                    if (!directionalLightDataBuffer || directionalLightDataBuffer->getDescription().count < directionalLightList.size())
-                                    {
-                                        directionalLightDataBuffer = nullptr;
-
-                                        Video::Buffer::Description lightBufferDescription;
-                                        lightBufferDescription.type = Video::Buffer::Description::Type::Structured;
-                                        lightBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
-                                        lightBufferDescription.stride = sizeof(DirectionalLightData);
-                                        lightBufferDescription.count = directionalLightList.size();
-                                        directionalLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
-                                        directionalLightDataBuffer->setName(String::Format(L"renderer:directionalLightDataBuffer:%v", directionalLightDataBuffer.get()));
-                                    }
-                                }
+                                directionalLightData.createBuffer();
                             });
 
                             const __m128 frustumData[6][4] =
@@ -844,73 +909,27 @@ namespace Gek
 
                             auto pointLightsDone = threadPool.enqueue([&](void) -> void
                             {
-                                pointLightCullData.cull<Components::PointLight>(pointLightEntities, frustumData);
-
-                                pointLightList.clear();
-                                concurrency::parallel_for(0U, pointLightCullData.entityList.size(), [&](size_t index) -> void
+                                pointLightData.update(videoDevice, frustumData, [this](Plugin::Entity * const entity, const Components::PointLight &lightComponent) -> void
                                 {
-                                    if (pointLightCullData.visibilityList[index])
-                                    {
-                                        auto entity = pointLightCullData.entityList[index];
-                                        auto &lightComponent = entity->getComponent<Components::PointLight>();
-                                        addLight(entity, lightComponent);
-                                    }
+                                    addLight(entity, lightComponent);
                                 });
-
-                                if (!pointLightList.empty())
-                                {
-                                    core->getLog()->addValue("Display Point Lights", pointLightList.size());
-                                    if (!pointLightDataBuffer || pointLightDataBuffer->getDescription().count < pointLightList.size())
-                                    {
-                                        pointLightDataBuffer = nullptr;
-
-                                        Video::Buffer::Description lightBufferDescription;
-                                        lightBufferDescription.type = Video::Buffer::Description::Type::Structured;
-                                        lightBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
-                                        lightBufferDescription.stride = sizeof(PointLightData);
-                                        lightBufferDescription.count = pointLightList.size();
-                                        pointLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
-                                        pointLightDataBuffer->setName(String::Format(L"renderer:pointLightDataBuffer:%v", pointLightDataBuffer.get()));
-                                    }
-                                }
                             });
 
                             auto spotLightsDone = threadPool.enqueue([&](void) -> void
                             {
-                                spotLightCullData.cull<Components::SpotLight>(spotLightEntities, frustumData);
-
-                                spotLightList.clear();
-                                concurrency::parallel_for(0U, spotLightCullData.entityList.size(), [&](size_t index) -> void
+                                spotLightData.update(videoDevice, frustumData, [this](Plugin::Entity * const entity, const Components::SpotLight &lightComponent) -> void
                                 {
-                                    if (pointLightCullData.visibilityList[index])
-                                    {
-                                        auto entity = spotLightCullData.entityList[index];
-                                        auto &lightComponent = entity->getComponent<Components::SpotLight>();
-                                        addLight(entity, lightComponent);
-                                    }
+                                    addLight(entity, lightComponent);
                                 });
-
-                                if (!spotLightList.empty())
-                                {
-                                    core->getLog()->addValue("Display Spot Lights", spotLightList.size());
-                                    if (!spotLightDataBuffer || spotLightDataBuffer->getDescription().count < spotLightList.size())
-                                    {
-                                        spotLightDataBuffer = nullptr;
-
-                                        Video::Buffer::Description lightBufferDescription;
-                                        lightBufferDescription.type = Video::Buffer::Description::Type::Structured;
-                                        lightBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
-                                        lightBufferDescription.stride = sizeof(SpotLightData);
-                                        lightBufferDescription.count = spotLightList.size();
-                                        spotLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
-                                        spotLightDataBuffer->setName(String::Format(L"renderer:spotLightDataBuffer:%v", spotLightDataBuffer.get()));
-                                    }
-                                }
                             });
 
                             directionalLightsDone.get();
                             pointLightsDone.get();
                             spotLightsDone.get();
+
+                            core->getLog()->addValue("Display Directional Lights", directionalLightData.lightList.size());
+                            core->getLog()->addValue("Display Point Lights", pointLightData.lightList.size());
+                            core->getLog()->addValue("Display Spot Lights", spotLightData.lightList.size());
 
                             lightIndexList.clear();
                             lightIndexList.reserve(lightIndexCount);
@@ -925,46 +944,11 @@ namespace Gek
                                 lightIndexList.insert(std::end(lightIndexList), std::begin(tileLightIndex.spotLightList), std::end(tileLightIndex.spotLightList));
                             }
 
-                            if (!directionalLightList.empty())
+                            if (!directionalLightData.updateBuffer() ||
+                                !pointLightData.updateBuffer() ||
+                                !spotLightData.updateBuffer())
                             {
-                                DirectionalLightData *directionalLightData = nullptr;
-                                if (videoDevice->mapBuffer(directionalLightDataBuffer.get(), directionalLightData))
-                                {
-                                    std::copy(std::begin(directionalLightList), std::end(directionalLightList), directionalLightData);
-                                    videoDevice->unmapBuffer(directionalLightDataBuffer.get());
-                                }
-                                else
-                                {
-                                    continue;
-                                }
-                            }
-
-                            if (!pointLightList.empty())
-                            {
-                                PointLightData *pointLightData = nullptr;
-                                if (videoDevice->mapBuffer(pointLightDataBuffer.get(), pointLightData))
-                                {
-                                    std::copy(std::begin(pointLightList), std::end(pointLightList), pointLightData);
-                                    videoDevice->unmapBuffer(pointLightDataBuffer.get());
-                                }
-                                else
-                                {
-                                    continue;
-                                }
-                            }
-
-                            if (!spotLightList.empty())
-                            {
-                                SpotLightData *spotLightData = nullptr;
-                                if (videoDevice->mapBuffer(spotLightDataBuffer.get(), spotLightData))
-                                {
-                                    std::copy(std::begin(spotLightList), std::end(spotLightList), spotLightData);
-                                    videoDevice->unmapBuffer(spotLightDataBuffer.get());
-                                }
-                                else
-                                {
-                                    continue;
-                                }
+                                continue;
                             }
 
                             TileOffsetCount *tileOffsetCountData = nullptr;
@@ -1006,9 +990,9 @@ namespace Gek
                             }
 
                             LightConstantData lightConstants;
-                            lightConstants.directionalLightCount = directionalLightList.size();
-                            lightConstants.pointLightCount = pointLightList.size();
-                            lightConstants.spotLightCount = spotLightList.size();
+                            lightConstants.directionalLightCount = directionalLightData.lightList.size();
+                            lightConstants.pointLightCount = pointLightData.lightList.size();
+                            lightConstants.spotLightCount = spotLightData.lightList.size();
                             lightConstants.gridSize.x = GridWidth;
                             lightConstants.gridSize.y = GridHeight;
                             lightConstants.gridSize.z = GridDepth;
@@ -1051,9 +1035,9 @@ namespace Gek
                             videoContext->pixelPipeline()->setConstantBufferList({ lightConstantBuffer.get() }, 3);
                             videoContext->pixelPipeline()->setResourceList(
                             {
-                                directionalLightDataBuffer.get(),
-                                pointLightDataBuffer.get(),
-                                spotLightDataBuffer.get(),
+                                directionalLightData.lightDataBuffer.get(),
+                                pointLightData.lightDataBuffer.get(),
+                                spotLightData.lightDataBuffer.get(),
                                 tileOffsetCountBuffer.get(),
                                 lightIndexBuffer.get()
                             }, 0);
