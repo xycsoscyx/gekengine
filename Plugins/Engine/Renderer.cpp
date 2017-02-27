@@ -841,13 +841,6 @@ namespace Gek
 
                         if (isLightingRequired)
                         {
-                            lightIndexCount = 0;
-                            concurrency::parallel_for_each(std::begin(tileLightIndexList), std::end(tileLightIndexList), [&](auto &gridData) -> void
-                            {
-                                gridData.pointLightList.clear();
-                                gridData.spotLightList.clear();
-                            });
-
                             auto directionalLightsDone = threadPool.enqueue([&](void) -> void
                             {
                                 directionalLightData.lightList.clear();
@@ -906,6 +899,13 @@ namespace Gek
                                     _mm_set_ps1(currentRenderCall.viewFrustum.planeList[5].distance),
                                 },
                             };
+
+                            lightIndexCount = 0;
+                            concurrency::parallel_for_each(std::begin(tileLightIndexList), std::end(tileLightIndexList), [&](auto &gridData) -> void
+                            {
+                                gridData.pointLightList.clear();
+                                gridData.spotLightList.clear();
+                            });
 
                             auto pointLightsDone = threadPool.enqueue([&](void) -> void
                             {
