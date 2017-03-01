@@ -316,7 +316,17 @@ namespace Gek
                 return entityDataMap.size();
             }
 
-            void list(std::function<void(Plugin::Entity * const entity, Data &data, REQUIRED&... components)> onEntity)
+            void listEntities(std::function<void(Plugin::Entity * const entity, Data &data, REQUIRED&... components)> onEntity)
+            {
+                GEK_REQUIRE(onEntity);
+
+                std::for_each(std::begin(entityDataMap), std::end(entityDataMap), [&](auto &entitySearch) -> void
+                {
+                    onEntity(entitySearch.first, entitySearch.second, entitySearch.first->getComponent<REQUIRED>()...);
+                });
+            }
+
+            void parallelListEntities(std::function<void(Plugin::Entity * const entity, Data &data, REQUIRED&... components)> onEntity)
             {
                 GEK_REQUIRE(onEntity);
 

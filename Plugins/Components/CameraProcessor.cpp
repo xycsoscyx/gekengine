@@ -183,7 +183,7 @@ namespace Gek
 
             if (!core->isEditorActive())
             {
-                list([&](Plugin::Entity * const entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void
+                parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void
                 {
                     auto viewMatrix(transformComponent.getMatrix().getInverse());
 

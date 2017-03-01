@@ -51,7 +51,7 @@ namespace Gek
 				float padding2;
             };
 
-            Nano::Signal<void(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix)> onRenderScene;
+            Nano::Signal<void(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)> onRenderScene;
 
             virtual ~Renderer(void) = default;
 

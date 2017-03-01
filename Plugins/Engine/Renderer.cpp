@@ -800,7 +800,7 @@ namespace Gek
                 while (renderCallList.try_pop(currentRenderCall))
                 {
                     drawCallList.clear();
-                    onRenderScene.emit(currentRenderCall.viewFrustum, currentRenderCall.viewMatrix);
+                    onRenderScene.emit(currentRenderCall.viewFrustum, currentRenderCall.viewMatrix, currentRenderCall.projectionMatrix);
                     if (!drawCallList.empty())
                     {
                         core->getLog()->addValue("Display Draw Calls", drawCallList.size());
