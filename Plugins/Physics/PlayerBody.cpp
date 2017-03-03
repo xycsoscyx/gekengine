@@ -12,17 +12,18 @@
 
 #include <Newton.h>
 
-static const float MinimumRestrainingDistance = 1.0e-2f;
-static const float ContactSkinThickness = 0.025f;
-static const uint32_t MaximumContactCount = 32;
-static const uint32_t DiscreteMotionStepCount = 8;
-static const uint32_t MaximumIntegrationStepCount = 8;
-static const uint32_t MaximumSolverStepCount = 16;
-
 namespace Gek
 {
 	namespace Newton
 	{
+        static const float NewtonEpsilon = 1.0e-5f;
+        static const float MinimumRestrainingDistance = 1.0e-2f;
+        static const float ContactSkinThickness = 0.025f;
+        static const uint32_t MaximumContactCount = 32;
+        static const uint32_t DiscreteMotionStepCount = 8;
+        static const uint32_t MaximumIntegrationStepCount = 8;
+        static const uint32_t MaximumSolverStepCount = 16;
+
         class ConvexCastFilter
         {
         protected:
@@ -239,7 +240,7 @@ namespace Gek
                 Math::Float3 omegaDirection(deltaRotation.axis);
 
                 float directionMagnitudeSquared = omegaDirection.getMagnitudeSquared();
-                if (directionMagnitudeSquared < (Math::Epsilon * Math::Epsilon))
+                if (directionMagnitudeSquared < (NewtonEpsilon * NewtonEpsilon))
                 {
                     return Math::Float3::Zero;
                 }
@@ -278,7 +279,7 @@ namespace Gek
 
                 float thetaMagnitude;
                 Math::Quaternion deltaRotation;
-                if ((thetaMagnitideSquared * thetaMagnitideSquared / 24.0f) < Math::Epsilon)
+                if ((thetaMagnitideSquared * thetaMagnitideSquared / 24.0f) < NewtonEpsilon)
                 {
                     deltaRotation.w = (1.0f - (thetaMagnitideSquared / 2.0f));
                     thetaMagnitude = (1.0f - (thetaMagnitideSquared / 6.0f));
@@ -517,9 +518,9 @@ namespace Gek
                 upConstraint.m_normal[2] = 0.0f;
                 upConstraint.m_normal[3] = 0.0f;
 
-                for (int j = 0; (j < MaximumIntegrationStepCount) && (normalizedTimeLeft > Math::Epsilon); j++)
+                for (int j = 0; (j < MaximumIntegrationStepCount) && (normalizedTimeLeft > NewtonEpsilon); j++)
                 {
-                    if (velocity.getMagnitudeSquared() < Math::Epsilon)
+                    if (velocity.getMagnitudeSquared() < NewtonEpsilon)
                     {
                         break;
                     }
@@ -546,7 +547,7 @@ namespace Gek
                             for (int search = 0; search < contact; search++)
                             {
                                 Math::Float3 targetNormal(currentContactList[search].m_normal);
-                                if (sourceNormal.dot(targetNormal) > (1.0f - Math::Epsilon))
+                                if (sourceNormal.dot(targetNormal) > (1.0f - NewtonEpsilon))
                                 {
                                     currentContactList[contact] = currentContactList[contactCount - 1];
                                     contact--;
@@ -588,7 +589,7 @@ namespace Gek
 
                         float residual = 10.0f;
                         Math::Float3 auxBounceVeloc(0.0f, 0.0f, 0.0f);
-                        for (int contact = 0; (contact < MaximumSolverStepCount) && (residual > Math::Epsilon); contact++)
+                        for (int contact = 0; (contact < MaximumSolverStepCount) && (residual > NewtonEpsilon); contact++)
                         {
                             residual = 0.0f;
                             for (int search = 0; search < currentContact; search++)
@@ -621,7 +622,7 @@ namespace Gek
 
                         velocity += stepVelocity;
                         float velocityMagnitude = stepVelocity.getMagnitudeSquared();
-                        if (velocityMagnitude < Math::Epsilon)
+                        if (velocityMagnitude < NewtonEpsilon)
                         {
                             float advanceTime = std::min(descreteTimeStep, normalizedTimeLeft * frameTime);
                             matrix.translation.xyz += (velocity * advanceTime);
