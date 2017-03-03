@@ -633,18 +633,28 @@ namespace Gek
         {
             GEK_REQUIRE(renderer);
 
+            const auto entityCount = getEntityCount();
+            auto buffer = (entityCount % 4);
+            buffer = (buffer ? (4 - buffer) : buffer);
+            minimumXList.reserve(entityCount + buffer);
+            minimumYList.reserve(entityCount + buffer);
+            minimumZList.reserve(entityCount + buffer);
+            maximumXList.reserve(entityCount + buffer);
+            maximumYList.reserve(entityCount + buffer);
+            maximumZList.reserve(entityCount + buffer);
             minimumXList.clear();
             minimumYList.clear();
             minimumZList.clear();
             maximumXList.clear();
             maximumYList.clear();
             maximumZList.clear();
+
             for (size_t element = 0; element < 16; element++)
             {
+                transformList[element].reserve(entityCount + buffer);
                 transformList[element].clear();
             }
 
-            MaterialMap materialMap;
             listEntities([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
                 Model &model = *data.model;
@@ -667,12 +677,21 @@ namespace Gek
                 }
             });
 
-            visibilityList.resize(getEntityCount());
+            visibilityList.resize(entityCount + buffer);
             cull(viewMatrix, projectionMatrix);
 
-/*
+            MaterialMap materialMap;
+            auto entitySearch = std::begin(entityDataMap);
+            for (size_t entityIndex = 0; entityIndex < entityCount; entityIndex++)
+            {
+                if (visibilityList[entityIndex])
                 {
-                    auto modelViewMatrix(matrix * viewMatrix);
+                    auto entity = entitySearch->first;
+                    auto &transformComponent = entity->getComponent<Components::Transform>();
+                    auto &model = *entitySearch->second.model;
+                    ++entitySearch;
+
+                    auto modelViewMatrix(transformComponent.getMatrix() * viewMatrix);
                     concurrency::parallel_for_each(std::begin(model.partList), std::end(model.partList), [&](const Model::Part &part) -> void
                     {
                         auto &partMap = materialMap[part.material];
@@ -680,8 +699,8 @@ namespace Gek
                         instanceList.push_back(modelViewMatrix);
                     });
                 }
-            });
-*/
+            }
+
             size_t maximumInstanceCount = 0;
             for (auto &materialPair : materialMap)
             {
