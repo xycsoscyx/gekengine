@@ -86,7 +86,7 @@ namespace Gek
                 std::vector<float> data;
             };
 
-            static const uint32_t HistoryLength = 200;
+            static const uint32_t HistoryLength = 100;
             using PerformanceMap = concurrency::concurrent_unordered_map<char const * const, float>;
             using PerformanceHistory = concurrency::concurrent_unordered_map<char const * const, History>;
 
@@ -545,10 +545,10 @@ namespace Gek
                 auto historySize = clientSize;
                 historySize.x -= 300.0f;
                 historySize.x -= ImGui::GetStyle().WindowPadding.x;
-                ImGui::PlotHistogram("##history", [](void *data, int index) -> float
+                ImGui::Gek::PlotHistogram("##history", [](void *data, int index) -> float
                 {
                     auto &history = *(std::vector<float> *)data;
-                    if (index < history.size())
+                    if (index < int(history.size()))
                     {
                         return *std::next(std::begin(history), index);
                     }
@@ -556,7 +556,7 @@ namespace Gek
                     {
                         return 0.0f;
                     }
-                }, &history->second.data, HistoryLength, 0, nullptr, 0.0f, history->second.maximum, historySize);
+                }, &history->second.data, HistoryLength, 0, 0.0f, history->second.maximum, historySize);
             }
 
             void drawSettings(ImGui::PanelManagerWindowData &windowData)

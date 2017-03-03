@@ -16,17 +16,20 @@
 
 namespace ImGui
 {
-    bool InputString(char const * const label, ::Gek::String &string, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = NULL, void* user_data = NULL);
+    bool InputString(char const * label, ::Gek::String &string, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = nullptr, void *userData = nullptr);
 
     namespace Gek
     {
-        bool InputFloat(char const * const label, float* v, float step = 0.0f, float step_fast = 0.0f, int decimal_precision = -1, ImGuiInputTextFlags extra_flags = 0);
-        bool InputFloat2(char const * const label, float v[2], int decimal_precision = -1, ImGuiInputTextFlags extra_flags = 0);
-        bool InputFloat3(char const * const label, float v[3], int decimal_precision = -1, ImGuiInputTextFlags extra_flags = 0);
-        bool InputFloat4(char const * const label, float v[4], int decimal_precision = -1, ImGuiInputTextFlags extra_flags = 0);
+        bool InputFloat(char const * label, float *value, float step = 0.0f, float stepFast = 0.0f, int decimalPrecision = -1, ImGuiInputTextFlags flags = 0);
+        bool InputFloat2(char const * label, float value[2], int decimalPrecision = -1, ImGuiInputTextFlags flags = 0);
+        bool InputFloat3(char const * label, float value[3], int decimalPrecision = -1, ImGuiInputTextFlags flags = 0);
+        bool InputFloat4(char const * label, float value[4], int decimalPrecision = -1, ImGuiInputTextFlags flags = 0);
 
-        bool InputString(char const * const label, ::Gek::String &string, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = NULL, void* user_data = NULL);
+        bool InputString(char const * label, ::Gek::String &string, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = nullptr, void *userData = nullptr);
 
-        bool ListBox(char const * const label, int* current_item, bool(*items_getter)(void* data, int idx, const char** out_text), void* data, int items_count, int height_in_items = -1);
+        bool ListBox(char const * label, int *currentSelectionIndex, bool(*itemDataCallback)(void *userData, int index, const char ** textOutput), void *userData, int itemCount, int visibleItemCount = -1);
+
+        void PlotLines(char const * label, float(*itemDataCallback)(void *userData, int index), void *userData, int itemCount, int itemStartIndex = 0, float scaleMinimum = std::numeric_limits<float>::lowest(), float scaleMaximum = std::numeric_limits<float>::max(), ImVec2 graphSize = ImVec2(0, 0));
+        void PlotHistogram(char const * label, float(*itemDataCallback)(void *userData, int index), void *userData, int itemCount, int itemStartIndex = 0, float scaleMinimum = std::numeric_limits<float>::lowest(), float scaleMaximum = std::numeric_limits<float>::max(), ImVec2 graphSize = ImVec2(0, 0));
     }; // namespace Gek
 }; // namespace ImGui

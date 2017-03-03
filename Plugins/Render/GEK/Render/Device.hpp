@@ -539,7 +539,7 @@ namespace Gek
             size_t getHash(void) const;
         };
 
-        template <typename TYPE, uint8_t UNIQUE>
+        template <typename TYPE, size_t UNIQUE>
         struct Handle
         {
             TYPE identifier;
