@@ -695,7 +695,7 @@ namespace Gek
             HANDLE insert(size_t hash, std::function<CComPtr<TYPE>(HANDLE)> &&onLoadRequired)
             {
                 auto hashSearch = hashMap.find(hash);
-                if (hashSearch != hashMap.end())
+                if (hashSearch != std::end(hashMap))
                 {
                     return hashSearch->second;
                 }
@@ -2198,7 +2198,7 @@ namespace Gek
             Render::BufferDescription const * const getBufferDescription(Render::ResourceHandle resource) const
             {
                 auto descriptionSearch = bufferDescriptionMap.find(resource);
-                if (descriptionSearch != bufferDescriptionMap.end())
+                if (descriptionSearch != std::end(bufferDescriptionMap))
                 {
                     return &descriptionSearch->second;
                 }
@@ -2209,7 +2209,7 @@ namespace Gek
             Render::TextureDescription const * const getTextureDescription(Render::ResourceHandle resource) const
             {
                 auto descriptionSearch = textureDescriptionMap.find(resource);
-                if (descriptionSearch != textureDescriptionMap.end())
+                if (descriptionSearch != std::end(textureDescriptionMap))
                 {
                     return &descriptionSearch->second;
                 }

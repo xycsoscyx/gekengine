@@ -506,7 +506,7 @@ namespace Gek
             void drawPerformance(ImGui::PanelManagerWindowData &windowData)
             {
                 std::map<StringUTF8, PerformanceHistory::iterator> performanceMap;
-                for (auto &search = performanceHistory.begin(); search != performanceHistory.end(); ++search)
+                for (auto &search = std::begin(performanceHistory); search != std::end(performanceHistory); ++search)
                 {
                     performanceMap[search->first] = search;
                 }
@@ -885,7 +885,7 @@ namespace Gek
             void endEvent(char const * const name)
             {
                 auto &time = performanceMap[name];
-                time = (timer.getImmediateTime() - time);
+                time = (timer.getImmediateTime() - time) * 1000.0f;
             }
 
             void addValue(char const * const name, float value)
@@ -913,7 +913,7 @@ namespace Gek
                         history.data.push_back(frame.second);
                         if (history.data.size() > HistoryLength)
                         {
-                            auto iterator = history.data.begin();
+                            auto iterator = std::begin(history.data);
                             history.data.erase(iterator);
                         }
 
@@ -949,6 +949,8 @@ namespace Gek
                 // imGuiIo.MousePos : filled by WM_MOUSEMOVE events
                 // imGuiIo.MouseDown : filled by WM_*BUTTON* events
                 // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
+
+                videoDevice->begin();
 
                 ImGui::NewFrame();
                 ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
@@ -1033,7 +1035,14 @@ namespace Gek
 
                 renderer->renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());
                 ImGui::Render();
-                videoDevice->present(false);
+
+                auto eventTimeMap = videoDevice->getEvents();
+                for (auto &eventTime : eventTimeMap)
+                {
+                    addValue(eventTime.first, eventTime.second);
+                }
+
+                videoDevice->end(false);
 
                 return engineRunning;
             }

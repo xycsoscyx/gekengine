@@ -16,8 +16,6 @@ namespace Gek
 {
     namespace Shapes
     {
-        struct Plane;
-
         struct OrientedBox
         {
         public:

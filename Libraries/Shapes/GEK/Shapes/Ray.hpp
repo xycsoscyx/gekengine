@@ -13,8 +13,6 @@ namespace Gek
 {
     namespace Shapes
     {
-        struct OrientedBox;
-
         struct Ray
         {
         public:

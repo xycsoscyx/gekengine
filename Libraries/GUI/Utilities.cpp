@@ -91,10 +91,10 @@ namespace ImGui
             }
 
             // Determine scale from values if not specified
-            if (scaleMinimum == std::numeric_limits<float>::lowest() || scaleMaximum == std::numeric_limits<float>::max())
+            if (scaleMinimum == std::numeric_limits<float>::max() || scaleMaximum == std::numeric_limits<float>::max())
             {
                 float valueMinimum = std::numeric_limits<float>::max();
-                float valueMaximum = -std::numeric_limits<float>::lowest();
+                float valueMaximum = -std::numeric_limits<float>::max();
                 for (int i = 0; i < itemCount; i++)
                 {
                     const float value = itemDataCallback(userData, i);
@@ -185,7 +185,7 @@ namespace ImGui
             {
                 RenderTextClipped(ImVec2(frameBoundingBox.Min.x + style.FramePadding.x, frameBoundingBox.Min.y + style.FramePadding.y), 
                                   ImVec2(frameBoundingBox.Max.x + style.FramePadding.x, frameBoundingBox.Max.y - style.FramePadding.y), 
-                                  ::Gek::StringUTF8::Format("%v", int(floor(scaleSize * scale))), nullptr, nullptr, ImVec2(0.0f, (1.0f - scale)));
+                                  ::Gek::StringUTF8::Format("%v", ((scaleSize * scale) + scaleMinimum)), nullptr, nullptr, ImVec2(0.0f, (1.0f - scale)));
             }
         }
 

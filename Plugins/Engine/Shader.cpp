@@ -458,7 +458,7 @@ namespace Gek
                 }
 
                 passList.resize(passesNode.size());
-                auto passData = passList.begin();
+                auto passData = std::begin(passList);
 
                 for (auto &passNode : passesNode.elements())
                 {
@@ -473,7 +473,7 @@ namespace Gek
                     }
 
                     PassData &pass = *passData++;
-                    pass.identifier = std::distance(passList.begin(), passData);
+                    pass.identifier = std::distance(std::begin(passList), passData);
 
                     pass.lighting = passNode.get(L"lighting", false).as_bool();
                     lightingRequired |= pass.lighting;

@@ -531,6 +531,33 @@ namespace Gek
             virtual const Video::ViewPort &getViewPort(void) const = 0;
         };
 
+        GEK_INTERFACE(Query)
+            : virtual public Object
+        {
+            enum class Type : uint8_t
+            {
+                Event = 0,
+                Timestamp,
+                DisjointTimestamp,
+                Count,
+            };
+
+            enum class Status : uint8_t
+            {
+                Waiting = 0,
+                Ready,
+                Error,
+            };
+
+            struct DisjointTimestamp
+            {
+                uint64_t frequency = 0;
+                uint32_t disjoint = false;
+            };
+
+            virtual ~Query(void) = default;
+        };
+
         GEK_INTERFACE(Device)
         {
             struct Description
@@ -568,6 +595,10 @@ namespace Gek
                 virtual Pipeline * const vertexPipeline(void) = 0;
                 virtual Pipeline * const geometryPipeline(void) = 0;
                 virtual Pipeline * const pixelPipeline(void) = 0;
+
+                virtual void begin(Query *query) = 0;
+                virtual void end(Query *query) = 0;
+                virtual Query::Status getData(Query *query, void *data, size_t dataSize) = 0;
 
                 virtual void generateMipMaps(Texture *texture) = 0;
                 virtual void resolveSamples(Texture *destination, Texture *source) = 0;
@@ -618,10 +649,7 @@ namespace Gek
             virtual Context * const getDefaultContext(void) = 0;
 
             virtual ContextPtr createDeferredContext(void) = 0;
-
-            virtual ObjectPtr createEvent(void) = 0;
-            virtual void setEvent(Object *event) = 0;
-            virtual bool isEventSet(Object *event) = 0;
+            virtual QueryPtr createQuery(Query::Type type) = 0;
 
             virtual ObjectPtr createRenderState(const Video::RenderStateInformation &renderState) = 0;
             virtual ObjectPtr createDepthState(const Video::DepthStateInformation &depthState) = 0;
@@ -654,7 +682,10 @@ namespace Gek
 
             virtual void executeCommandList(Object *commandList) = 0;
 
-            virtual void present(bool waitForVerticalSync) = 0;
+            virtual void begin(void) = 0;
+            virtual void setEvent(char const * name) = 0;
+            virtual std::unordered_map<StringUTF8, float> getEvents(void) = 0;
+            virtual void end(bool waitForVerticalSync) = 0;
         };
 
         namespace Debug

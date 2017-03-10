@@ -86,13 +86,13 @@ namespace Gek
             }
         };
 
-        class Event
-            : public Video::Object
+        class Query
+            : public Video::Query
         {
         public:
 
         public:
-            Event(void)
+            Query(void)
             {
             }
 
@@ -658,6 +658,19 @@ namespace Gek
                 return pixelSystemHandler.get();
             }
 
+            void begin(Video::Query *query)
+            {
+            }
+
+            void end(Video::Query *query)
+            {
+            }
+
+            Video::Query::Status getData(Video::Query *query, void *data, size_t dataSize)
+            {
+                return Video::Query::Status::Error;
+            }
+
             void generateMipMaps(Video::Texture *texture)
             {
             }
@@ -839,18 +852,9 @@ namespace Gek
                 return std::make_unique<Context>(this);
             }
 
-            Video::ObjectPtr createEvent(void)
+            Video::QueryPtr createQuery(Video::Query::Type type)
             {
-                return std::make_unique<Event>();
-            }
-
-            void setEvent(Video::Object *event)
-            {
-            }
-
-            bool isEventSet(Video::Object *event)
-            {
-                return false;
+                return std::make_unique<Query>();
             }
 
             Video::ObjectPtr createRenderState(const Video::RenderStateInformation &renderState)
@@ -947,7 +951,21 @@ namespace Gek
             {
             }
 
-            void present(bool waitForVerticalSync)
+            void begin(void)
+            {
+            }
+
+            void setEvent(char const * name)
+            {
+            }
+
+            std::unordered_map<StringUTF8, float> getEvents(void)
+            {
+                std::unordered_map<StringUTF8, float> events;
+                return events;
+            }
+
+            void end(bool waitForVerticalSync)
             {
             }
         };

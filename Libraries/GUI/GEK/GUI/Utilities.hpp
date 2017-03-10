@@ -29,7 +29,7 @@ namespace ImGui
 
         bool ListBox(char const * label, int *currentSelectionIndex, bool(*itemDataCallback)(void *userData, int index, const char ** textOutput), void *userData, int itemCount, int visibleItemCount = -1);
 
-        void PlotLines(char const * label, float(*itemDataCallback)(void *userData, int index), void *userData, int itemCount, int itemStartIndex = 0, float scaleMinimum = std::numeric_limits<float>::lowest(), float scaleMaximum = std::numeric_limits<float>::max(), ImVec2 graphSize = ImVec2(0, 0));
-        void PlotHistogram(char const * label, float(*itemDataCallback)(void *userData, int index), void *userData, int itemCount, int itemStartIndex = 0, float scaleMinimum = std::numeric_limits<float>::lowest(), float scaleMaximum = std::numeric_limits<float>::max(), ImVec2 graphSize = ImVec2(0, 0));
+        void PlotLines(char const * label, float(*itemDataCallback)(void *userData, int index), void *userData, int itemCount, int itemStartIndex = 0, float scaleMinimum = std::numeric_limits<float>::max(), float scaleMaximum = std::numeric_limits<float>::max(), ImVec2 graphSize = ImVec2(0, 0));
+        void PlotHistogram(char const * label, float(*itemDataCallback)(void *userData, int index), void *userData, int itemCount, int itemStartIndex = 0, float scaleMinimum = std::numeric_limits<float>::max(), float scaleMaximum = std::numeric_limits<float>::max(), ImVec2 graphSize = ImVec2(0, 0));
     }; // namespace Gek
 }; // namespace ImGui

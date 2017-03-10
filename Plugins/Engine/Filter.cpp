@@ -327,7 +327,7 @@ namespace Gek
                 }
 
                 passList.resize(passesNode.size());
-                auto passData = passList.begin();
+                auto passData = std::begin(passList);
 
                 for (auto &passNode : passesNode.elements())
                 {

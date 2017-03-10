@@ -359,6 +359,15 @@ namespace Gek
 
         static_assert(ARRAYSIZE(FormatStrideList) == static_cast<uint8_t>(Video::Format::Count), "New format added without adding to all FormatStrideList.");
 
+        static const D3D11_QUERY QueryList[] =
+        {
+            D3D11_QUERY_EVENT,
+            D3D11_QUERY_TIMESTAMP,
+            D3D11_QUERY_TIMESTAMP_DISJOINT,
+        };
+
+        static_assert(ARRAYSIZE(QueryList) == static_cast<uint8_t>(Video::Query::Type::Count), "New query type added without adding to QueryList.");
+
         static const D3D11_DEPTH_WRITE_MASK DepthWriteMaskList[] =
         {
             D3D11_DEPTH_WRITE_MASK_ZERO,
@@ -662,7 +671,6 @@ namespace Gek
         using DepthState = BaseVideoObject<ID3D11DepthStencilState>;
         using BlendState = BaseVideoObject<ID3D11BlendState>;
         using SamplerState = BaseVideoObject<ID3D11SamplerState>;
-        using Event = BaseVideoObject<ID3D11Query>;
         using InputLayout = BaseVideoObject<ID3D11InputLayout>;
         using ComputeProgram = BaseVideoObject<ID3D11ComputeShader>;
         using VertexProgram = BaseVideoObject<ID3D11VertexShader>;
@@ -673,6 +681,24 @@ namespace Gek
         using ShaderResourceView = BaseObject<ID3D11ShaderResourceView>;
         using UnorderedAccessView = BaseObject<ID3D11UnorderedAccessView>;
         using RenderTargetView = BaseObject<ID3D11RenderTargetView>;
+
+        class Query
+            : public Video::Query
+        {
+        public:
+            CComPtr<ID3D11Query> d3dObject;
+
+        public:
+            Query(const CComPtr<ID3D11Query> &d3dQuery)
+                : d3dObject(d3dQuery)
+            {
+            }
+
+            void setName(wchar_t const * const name)
+            {
+                setDebugName(d3dObject, name);
+            }
+        };
 
         class Buffer
             : public Video::Buffer
@@ -1293,6 +1319,39 @@ namespace Gek
                     return pixelSystemHandler.get();
                 }
 
+                void begin(Video::Query *query)
+                {
+                    GEK_REQUIRE(d3dDeviceContext);
+                    GEK_REQUIRE(query);
+
+                    d3dDeviceContext->Begin(getObject<Query>(query));
+                }
+
+                void end(Video::Query *query)
+                {
+                    GEK_REQUIRE(d3dDeviceContext);
+                    GEK_REQUIRE(query);
+
+                    d3dDeviceContext->End(getObject<Query>(query));
+                }
+
+                Video::Query::Status getData(Video::Query *query, void *data, size_t dataSize)
+                {
+                    GEK_REQUIRE(d3dDeviceContext);
+                    GEK_REQUIRE(query);
+
+                    switch (d3dDeviceContext->GetData(getObject<Query>(query), data, dataSize, 0))
+                    {
+                    case S_OK:
+                        return Video::Query::Status::Ready;
+
+                    case S_FALSE:
+                        return Video::Query::Status::Waiting;
+                    };
+
+                    return Video::Query::Status::Error;
+                }
+
                 void generateMipMaps(Video::Texture *texture)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
@@ -1601,6 +1660,9 @@ namespace Gek
 #endif
 
                 defaultContext = std::make_unique<Context>(d3dDeviceContext);
+
+                eventDisjointQuery[0] = createQuery(Video::Query::Type::DisjointTimestamp);
+                eventDisjointQuery[1] = createQuery(Video::Query::Type::DisjointTimestamp);
             }
 
             ~Device(void)
@@ -1609,6 +1671,10 @@ namespace Gek
 
                 backBuffer = nullptr;
                 defaultContext = nullptr;
+
+                eventQueryMap.clear();
+                eventDisjointQuery[0] = nullptr;
+                eventDisjointQuery[1] = nullptr;
 
                 dxgiSwapChain.Release();
                 d3dDeviceContext.Release();
@@ -1820,12 +1886,12 @@ namespace Gek
                 return std::make_unique<Context>(d3dDeferredDeviceContext.p);
             }
 
-            Video::ObjectPtr createEvent(void)
+            Video::QueryPtr createQuery(Video::Query::Type type)
             {
                 GEK_REQUIRE(d3dDevice);
 
                 D3D11_QUERY_DESC description;
-                description.Query = D3D11_QUERY_EVENT;
+                description.Query = DirectX::QueryList[static_cast<uint8_t>(type)];
                 description.MiscFlags = 0;
 
                 CComPtr<ID3D11Query> d3dQuery;
@@ -1835,29 +1901,7 @@ namespace Gek
                     throw Video::OperationFailed("Unable to create event");
                 }
 
-                return std::make_unique<Event>(d3dQuery);
-            }
-
-            void setEvent(Video::Object *gpuEvent)
-            {
-                GEK_REQUIRE(d3dDeviceContext);
-                GEK_REQUIRE(gpuEvent);
-
-                d3dDeviceContext->End(getObject<Event>(gpuEvent));
-            }
-
-            bool isEventSet(Video::Object *gpuEvent)
-            {
-                GEK_REQUIRE(d3dDeviceContext);
-                GEK_REQUIRE(gpuEvent);
-
-                uint32_t isEventSet = 0;
-                if (FAILED(d3dDeviceContext->GetData(getObject<Event>(gpuEvent), (void *)&isEventSet, sizeof(uint32_t), TRUE)))
-                {
-                    isEventSet = 0;
-                }
-
-                return (isEventSet == 1);
+                return std::make_unique<Query>(d3dQuery);
             }
 
             Video::ObjectPtr createRenderState(const Video::RenderStateInformation &renderState)
@@ -2715,11 +2759,70 @@ namespace Gek
                 d3dDeviceContext->ExecuteCommandList(getObject<CommandList>(commandList), FALSE);
             }
 
-            void present(bool waitForVerticalSync)
+            uint32_t eventIndex = 0;
+            void begin(void)
+            {
+                defaultContext->begin(eventDisjointQuery[frameQueryIndex].get());
+                setEvent("GPU Begin");
+            }
+
+            int8_t frameQueryIndex = 0;
+            Video::QueryPtr eventDisjointQuery[2];
+            std::vector<std::pair<StringUTF8, Video::QueryPtr[2]>> eventQueryList;
+            void setEvent(char const * name)
+            {
+                eventIndex++;
+                while (eventQueryList.size() < eventIndex)
+                {
+                    eventQueryList.emplace_back(std::make_pair(name, { createQuery(Video::Query::Type::Timestamp), createQuery(Video::Query::Type::Timestamp) }));
+                }
+
+                defaultContext->end(eventQueryMap[name][frameQueryIndex].get());
+            }
+
+            int8_t frameCollectIndex = -1;
+            std::unordered_map<StringUTF8, float> getEvents(void)
+            {
+                std::unordered_map<StringUTF8, float> events;
+                if (frameCollectIndex < 0)
+                {
+                    frameCollectIndex = 0;
+                    return events;
+                }
+
+                while (defaultContext->getData(eventDisjointQuery[frameCollectIndex].get(), nullptr, 0) == Video::Query::Status::Waiting)
+                {
+                    Sleep(1);
+                };
+
+                int currentFrameIndex = frameCollectIndex;
+                ++frameCollectIndex &= 1;
+
+                Video::Query::DisjointTimestamp disjointTimestamp;
+                defaultContext->getData(eventDisjointQuery[currentFrameIndex].get(), &disjointTimestamp, sizeof(Video::Query::DisjointTimestamp));
+                if (!disjointTimestamp.disjoint)
+                {
+                    uint64_t startTime = 0;
+                    defaultContext->getData(eventQueryMap["Begin"][currentFrameIndex].get(), &startTime, sizeof(uint64_t));
+                    for (auto &eventQuery : eventQueryMap)
+                    {
+                        uint64_t eventTime = 0;
+                        defaultContext->getData(eventQuery.second[currentFrameIndex].get(), &eventTime, sizeof(uint64_t));
+                        events[eventQuery.first] = float(eventTime - startTime) / float(disjointTimestamp.frequency) * 1000.0f;
+                    }
+                }
+
+                return events;
+            }
+
+            void end(bool waitForVerticalSync)
             {
                 GEK_REQUIRE(dxgiSwapChain);
 
                 dxgiSwapChain->Present(waitForVerticalSync ? 1 : 0, 0);
+                setEvent("GPU End");
+                defaultContext->end(eventDisjointQuery[frameQueryIndex].get());
+                ++frameQueryIndex &= 1;
             }
         };
 

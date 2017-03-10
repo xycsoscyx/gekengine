@@ -133,6 +133,20 @@ namespace Gek
             Math::Float4x4 transform;
         };
 
+        struct DrawData
+        {
+            uint32_t instanceStart = 0;
+            uint32_t instanceCount = 0;
+            const Model::Part *part = nullptr;
+
+            DrawData(uint32_t instanceStart = 0, uint32_t instanceCount = 0, const Model::Part *part = nullptr)
+                : instanceStart(instanceStart)
+                , instanceCount(instanceCount)
+                , part(part)
+            {
+            }
+        };
+
     private:
         Video::Device *videoDevice = nullptr;
         Plugin::Population *population = nullptr;
@@ -145,12 +159,9 @@ namespace Gek
 
         concurrency::concurrent_unordered_map<std::size_t, Model> modelMap;
 
-        std::vector<float, AlignedAllocator<float, 16>> minimumXList;
-        std::vector<float, AlignedAllocator<float, 16>> minimumYList;
-        std::vector<float, AlignedAllocator<float, 16>> minimumZList;
-        std::vector<float, AlignedAllocator<float, 16>> maximumXList;
-        std::vector<float, AlignedAllocator<float, 16>> maximumYList;
-        std::vector<float, AlignedAllocator<float, 16>> maximumZList;
+        std::vector<float, AlignedAllocator<float, 16>> halfSizeXList;
+        std::vector<float, AlignedAllocator<float, 16>> halfSizeYList;
+        std::vector<float, AlignedAllocator<float, 16>> halfSizeZList;
         std::vector<float, AlignedAllocator<float, 16>> transformList[16];
         std::vector<bool> visibilityList;
 
@@ -531,10 +542,8 @@ namespace Gek
             auto objectCount = getEntityCount();
             for (uint32_t entityIndex = 0; entityIndex < objectCount; entityIndex += 4)
             {
-                SIMDMatrix world;
-
                 // Load the world transform matrix for four objects via the indirection table.
-
+                SIMDMatrix world;
                 world.x.x = _mm_load_ps(&transformList[0][entityIndex]);
                 world.x.y = _mm_load_ps(&transformList[1][entityIndex]);
                 world.x.z = _mm_load_ps(&transformList[2][entityIndex]);
@@ -558,25 +567,25 @@ namespace Gek
                 // Create the matrix to go from object->world->view->clip space.
                 const auto clip = simd_multiply(world, simd_view_proj);
 
-                SIMDVector min_pos;
-                SIMDVector max_pos;
+                const auto zero = _mm_setzero_ps();
 
                 // Load the mininum and maximum corner positions of the bounding box in object space.
-                min_pos.x = _mm_load_ps(&minimumXList[entityIndex]);
-                min_pos.y = _mm_load_ps(&minimumYList[entityIndex]);
-                min_pos.z = _mm_load_ps(&minimumZList[entityIndex]);
+                SIMDVector min_pos;
+                min_pos.x = _mm_sub_ps(zero, _mm_load_ps(&halfSizeXList[entityIndex]));
+                min_pos.y = _mm_sub_ps(zero, _mm_load_ps(&halfSizeYList[entityIndex]));
+                min_pos.z = _mm_sub_ps(zero, _mm_load_ps(&halfSizeZList[entityIndex]));
                 min_pos.w = _mm_set_ps1(1.0f);
 
-                max_pos.x = _mm_load_ps(&maximumXList[entityIndex]);
-                max_pos.y = _mm_load_ps(&maximumYList[entityIndex]);
-                max_pos.z = _mm_load_ps(&maximumZList[entityIndex]);
+                SIMDVector max_pos;
+                max_pos.x = _mm_load_ps(&halfSizeXList[entityIndex]);
+                max_pos.y = _mm_load_ps(&halfSizeYList[entityIndex]);
+                max_pos.z = _mm_load_ps(&halfSizeZList[entityIndex]);
                 max_pos.w = _mm_set_ps1(1.0f);
 
                 SIMDVector clip_pos[8];
                 // Transform each bounding box corner from object to clip space by sharing calculations.
                 simd_min_max_transform(clip, min_pos, max_pos, clip_pos);
 
-                const auto zero = _mm_setzero_ps();
                 const auto all_true = _mm_cmpeq_ps(zero, zero);
 
                 // Initialize test conditions.
@@ -617,7 +626,7 @@ namespace Gek
                 auto outside = _mm_or_ps(any_x_outside, any_y_outside);
                 outside = _mm_or_ps(outside, any_z_outside);
 
-                auto inside = _mm_xor_ps(outside, all_true);
+                const auto inside = _mm_xor_ps(outside, all_true);
 
                 __declspec(align(16)) uint32_t insideValues[4];
                 _mm_store_ps((float *)insideValues, inside);
@@ -636,18 +645,12 @@ namespace Gek
             const auto entityCount = getEntityCount();
             auto buffer = (entityCount % 4);
             buffer = (buffer ? (4 - buffer) : buffer);
-            minimumXList.reserve(entityCount + buffer);
-            minimumYList.reserve(entityCount + buffer);
-            minimumZList.reserve(entityCount + buffer);
-            maximumXList.reserve(entityCount + buffer);
-            maximumYList.reserve(entityCount + buffer);
-            maximumZList.reserve(entityCount + buffer);
-            minimumXList.clear();
-            minimumYList.clear();
-            minimumZList.clear();
-            maximumXList.clear();
-            maximumYList.clear();
-            maximumZList.clear();
+            halfSizeXList.reserve(entityCount + buffer);
+            halfSizeYList.reserve(entityCount + buffer);
+            halfSizeZList.reserve(entityCount + buffer);
+            halfSizeXList.clear();
+            halfSizeYList.clear();
+            halfSizeZList.clear();
 
             for (size_t element = 0; element < 16; element++)
             {
@@ -664,12 +667,9 @@ namespace Gek
                 Math::Float4x4 matrix(transformComponent.getMatrix());
                 matrix.translation.xyz += modelCenter;
 
-                minimumXList.push_back(-modelSize.x);
-                minimumYList.push_back(-modelSize.y);
-                minimumZList.push_back(-modelSize.z);
-                maximumXList.push_back(modelSize.x);
-                maximumYList.push_back(modelSize.y);
-                maximumZList.push_back(modelSize.z);
+                halfSizeXList.push_back(modelSize.x);
+                halfSizeYList.push_back(modelSize.y);
+                halfSizeZList.push_back(modelSize.z);
 
                 for (size_t element = 0; element < 16; element++)
                 {
@@ -707,22 +707,19 @@ namespace Gek
                 auto material = materialPair.first;
                 auto &partMap = materialPair.second;
 
-                struct DrawData
+                size_t partInstanceCount = 0;
+                for (auto &partPair : partMap)
                 {
-                    uint32_t instanceStart = 0;
-                    uint32_t instanceCount = 0;
-                    const Model::Part *part = nullptr;
+                    auto part = partPair.first;
+                    auto &partInstanceList = partPair.second;
+                    partInstanceCount += partInstanceList.size();
+                }
 
-                    DrawData(uint32_t instanceStart = 0, uint32_t instanceCount = 0, const Model::Part *part = nullptr)
-                        : instanceStart(instanceStart)
-                        , instanceCount(instanceCount)
-                        , part(part)
-                    {
-                    }
-                };
+                std::vector<DrawData> drawDataList;
+                drawDataList.reserve(partMap.size());
 
                 std::vector<Math::Float4x4> instanceList;
-                std::vector<DrawData> drawDataList;
+                instanceList.reserve(partInstanceCount);
 
                 for (auto &partPair : partMap)
                 {
