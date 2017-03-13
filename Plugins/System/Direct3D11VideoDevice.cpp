@@ -1660,9 +1660,6 @@ namespace Gek
 #endif
 
                 defaultContext = std::make_unique<Context>(d3dDeviceContext);
-
-                eventDisjointQuery[0] = createQuery(Video::Query::Type::DisjointTimestamp);
-                eventDisjointQuery[1] = createQuery(Video::Query::Type::DisjointTimestamp);
             }
 
             ~Device(void)
@@ -1671,10 +1668,6 @@ namespace Gek
 
                 backBuffer = nullptr;
                 defaultContext = nullptr;
-
-                eventQueryMap.clear();
-                eventDisjointQuery[0] = nullptr;
-                eventDisjointQuery[1] = nullptr;
 
                 dxgiSwapChain.Release();
                 d3dDeviceContext.Release();
@@ -2759,70 +2752,11 @@ namespace Gek
                 d3dDeviceContext->ExecuteCommandList(getObject<CommandList>(commandList), FALSE);
             }
 
-            uint32_t eventIndex = 0;
-            void begin(void)
-            {
-                defaultContext->begin(eventDisjointQuery[frameQueryIndex].get());
-                setEvent("GPU Begin");
-            }
-
-            int8_t frameQueryIndex = 0;
-            Video::QueryPtr eventDisjointQuery[2];
-            std::vector<std::pair<StringUTF8, Video::QueryPtr[2]>> eventQueryList;
-            void setEvent(char const * name)
-            {
-                eventIndex++;
-                while (eventQueryList.size() < eventIndex)
-                {
-                    eventQueryList.emplace_back(std::make_pair(name, { createQuery(Video::Query::Type::Timestamp), createQuery(Video::Query::Type::Timestamp) }));
-                }
-
-                defaultContext->end(eventQueryMap[name][frameQueryIndex].get());
-            }
-
-            int8_t frameCollectIndex = -1;
-            std::unordered_map<StringUTF8, float> getEvents(void)
-            {
-                std::unordered_map<StringUTF8, float> events;
-                if (frameCollectIndex < 0)
-                {
-                    frameCollectIndex = 0;
-                    return events;
-                }
-
-                while (defaultContext->getData(eventDisjointQuery[frameCollectIndex].get(), nullptr, 0) == Video::Query::Status::Waiting)
-                {
-                    Sleep(1);
-                };
-
-                int currentFrameIndex = frameCollectIndex;
-                ++frameCollectIndex &= 1;
-
-                Video::Query::DisjointTimestamp disjointTimestamp;
-                defaultContext->getData(eventDisjointQuery[currentFrameIndex].get(), &disjointTimestamp, sizeof(Video::Query::DisjointTimestamp));
-                if (!disjointTimestamp.disjoint)
-                {
-                    uint64_t startTime = 0;
-                    defaultContext->getData(eventQueryMap["Begin"][currentFrameIndex].get(), &startTime, sizeof(uint64_t));
-                    for (auto &eventQuery : eventQueryMap)
-                    {
-                        uint64_t eventTime = 0;
-                        defaultContext->getData(eventQuery.second[currentFrameIndex].get(), &eventTime, sizeof(uint64_t));
-                        events[eventQuery.first] = float(eventTime - startTime) / float(disjointTimestamp.frequency) * 1000.0f;
-                    }
-                }
-
-                return events;
-            }
-
-            void end(bool waitForVerticalSync)
+            void present(bool waitForVerticalSync)
             {
                 GEK_REQUIRE(dxgiSwapChain);
 
                 dxgiSwapChain->Present(waitForVerticalSync ? 1 : 0, 0);
-                setEvent("GPU End");
-                defaultContext->end(eventDisjointQuery[frameQueryIndex].get());
-                ++frameQueryIndex &= 1;
             }
         };
 

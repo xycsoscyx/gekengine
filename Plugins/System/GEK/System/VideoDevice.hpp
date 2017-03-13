@@ -682,10 +682,7 @@ namespace Gek
 
             virtual void executeCommandList(Object *commandList) = 0;
 
-            virtual void begin(void) = 0;
-            virtual void setEvent(char const * name) = 0;
-            virtual std::unordered_map<StringUTF8, float> getEvents(void) = 0;
-            virtual void end(bool waitForVerticalSync) = 0;
+            virtual void present(bool waitForVerticalSync) = 0;
         };
 
         namespace Debug

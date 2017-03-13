@@ -929,14 +929,6 @@ namespace Gek
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
 
-                auto backBuffer = videoDevice->getBackBuffer();
-                uint32_t width = backBuffer->getDescription().width;
-                uint32_t height = backBuffer->getDescription().height;
-                imGuiIo.DisplaySize = ImVec2(float(width), float(height));
-                float barWidth = float(width);
-
-                gui->panelManager.setDisplayPortion(ImVec4(0, 0, width, height));
-
                 imGuiIo.DeltaTime = frameTime;
                 addValue("Frame Rate", (1.0f / frameTime));
 
@@ -950,25 +942,17 @@ namespace Gek
                 // imGuiIo.MouseDown : filled by WM_*BUTTON* events
                 // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
 
-                videoDevice->begin();
+                auto backBuffer = videoDevice->getBackBuffer();
+                uint32_t width = backBuffer->getDescription().width;
+                uint32_t height = backBuffer->getDescription().height;
+                imGuiIo.DisplaySize = ImVec2(float(width), float(height));
+                gui->panelManager.setDisplayPortion(ImVec4(0, 0, width, height));
 
                 ImGui::NewFrame();
                 ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
                 ImGui::Begin("GEK Engine", nullptr, ImVec2(0, 0), 0.0f, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
                 if (windowActive)
                 {
-                    onDisplay.emit();
-                    onInterface.emit(showCursor);
-
-                    auto imGuiContext = ImGui::GetCurrentContext();
-                    for (auto &window : imGuiContext->Windows)
-                    {
-                        if (strcmp(window->Name, "Editor") == 0)
-                        {
-                            barWidth = (width - window->Size.x);
-                        }
-                    }
-
                     if (showCursor)
                     {
                         if (showModeChange)
@@ -1002,6 +986,9 @@ namespace Gek
                     {
                         population->update(frameTime);
                     }
+
+                    onDisplay.emit();
+                    onInterface.emit(showCursor);
                 }
 
                 if (population->isLoading())
@@ -1036,13 +1023,7 @@ namespace Gek
                 renderer->renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());
                 ImGui::Render();
 
-                auto eventTimeMap = videoDevice->getEvents();
-                for (auto &eventTime : eventTimeMap)
-                {
-                    addValue(eventTime.first, eventTime.second);
-                }
-
-                videoDevice->end(false);
+                videoDevice->present(false);
 
                 return engineRunning;
             }

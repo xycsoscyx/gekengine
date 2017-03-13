@@ -960,21 +960,7 @@ namespace Gek
             {
             }
 
-            void begin(void)
-            {
-            }
-
-            void setEvent(char const * name)
-            {
-            }
-
-            std::unordered_map<StringUTF8, float> getEvents(void)
-            {
-                std::unordered_map<StringUTF8, float> events;
-                return events;
-            }
-
-            void end(bool waitForVerticalSync)
+            void present(bool waitForVerticalSync)
             {
             }
         };
