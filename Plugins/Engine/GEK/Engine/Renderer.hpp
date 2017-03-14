@@ -12,6 +12,7 @@
 #include "GEK/System/VideoDevice.hpp"
 #include "GEK/Shapes/Frustum.hpp"
 #include <nano_signal_slot.hpp>
+#include <imgui.h>
 
 namespace Gek
 {
@@ -21,42 +22,15 @@ namespace Gek
 
         GEK_INTERFACE(Renderer)
         {
-            struct DirectionalLightData
-            {
-                Math::Float3 radiance;
-				float padding1;
-				Math::Float3 direction;
-				float padding2;
-			};
+            GEK_ADD_EXCEPTION(InvalidIndexBufferFormat);
 
-            struct PointLightData
-            {
-                Math::Float3 radiance;
-				float radius;
-				Math::Float3 position;
-                float range;
-            };
-
-            struct SpotLightData
-            {
-                Math::Float3 radiance;
-				float radius;
-				Math::Float3 position;
-                float range;
-                Math::Float3 direction;
-				float padding1;
-                float innerAngle;
-                float outerAngle;
-				float coneFalloff;
-				float padding2;
-            };
-
-            Nano::Signal<void(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)> onRenderScene;
+            Nano::Signal<void(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)> onQueueDrawCalls;
+            Nano::Signal<void(ImGuiContext * const guiContext)> onShowUI;
 
             virtual ~Renderer(void) = default;
 
+            virtual void queueCamera(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget = ResourceHandle()) = 0;
             virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *)> &&draw) = 0;
-            virtual void queueRenderCall(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget = ResourceHandle()) = 0;
 
             virtual void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle target) = 0;
         };

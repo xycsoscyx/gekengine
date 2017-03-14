@@ -104,8 +104,6 @@ namespace Gek
             GEK_REQUIRE(resources);
             GEK_REQUIRE(renderer);
 
-            population->onLoadBegin.connect<CameraProcessor, &CameraProcessor::onLoadBegin>(this);
-            population->onLoadSucceeded.connect<CameraProcessor, &CameraProcessor::onLoadSucceeded>(this);
             population->onEntityCreated.connect<CameraProcessor, &CameraProcessor::onEntityCreated>(this);
             population->onEntityDestroyed.connect<CameraProcessor, &CameraProcessor::onEntityDestroyed>(this);
             population->onComponentAdded.connect<CameraProcessor, &CameraProcessor::onComponentAdded>(this);
@@ -120,8 +118,6 @@ namespace Gek
             population->onComponentAdded.disconnect<CameraProcessor, &CameraProcessor::onComponentAdded>(this);
             population->onEntityDestroyed.disconnect<CameraProcessor, &CameraProcessor::onEntityDestroyed>(this);
             population->onEntityCreated.disconnect<CameraProcessor, &CameraProcessor::onEntityCreated>(this);
-            population->onLoadSucceeded.disconnect<CameraProcessor, &CameraProcessor::onLoadSucceeded>(this);
-            population->onLoadBegin.disconnect<CameraProcessor, &CameraProcessor::onLoadBegin>(this);
         }
 
         void addEntity(Plugin::Entity * const entity)
@@ -143,19 +139,6 @@ namespace Gek
         }
 
         // Plugin::Population Slots
-        void onLoadBegin(String const &populationName)
-        {
-            clear();
-        }
-
-        void onLoadSucceeded(String const &populationName)
-        {
-            population->listEntities([&](Plugin::Entity * const entity, wchar_t const * const ) -> void
-            {
-                addEntity(entity);
-            });
-        }
-
         void onEntityCreated(Plugin::Entity * const entity, wchar_t const * const entityName)
         {
             addEntity(entity);
@@ -177,11 +160,11 @@ namespace Gek
         }
 
         // Plugin::Population Slots
-        void onUpdate(void)
+        void onUpdate(float frameTime)
         {
             GEK_REQUIRE(renderer);
 
-            if (!core->isEditorActive())
+            if (frameTime > 0.0f && !core->isEditorActive())
             {
                 parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void
                 {
@@ -192,7 +175,7 @@ namespace Gek
                     const float height = float(backBuffer->getDescription().height);
                     Math::Float4x4 projectionMatrix(Math::Float4x4::MakePerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
 
-                    renderer->queueRenderCall(viewMatrix, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, data.target);
+                    renderer->queueCamera(viewMatrix, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, data.target);
                 });
             }
         }

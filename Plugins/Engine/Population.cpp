@@ -83,28 +83,9 @@ namespace Gek
         GEK_CONTEXT_USER(Population, Plugin::Core *)
             , public Edit::Population
         {
-        public:
-            struct Action
-            {
-                String name;
-                ActionParameter parameter;
-
-                Action(void)
-                {
-                }
-
-                Action(String const &name, const ActionParameter &parameter)
-                    : name(name)
-                    , parameter(parameter)
-                {
-                }
-            };
-
         private:
             Plugin::Core *core = nullptr;
 
-            float worldTime = 0.0f;
-            float frameTime = 0.0f;
             ShuntingYard shuntingYard;
             concurrency::concurrent_queue<Action> actionQueue;
 
@@ -113,8 +94,6 @@ namespace Gek
             ComponentMap componentMap;
 
             ThreadPool loadPool;
-            std::atomic<bool> loading = false;
-            concurrency::concurrent_queue<String> loadQueue;
             concurrency::concurrent_queue<std::function<void(void)>> entityQueue;
             EntityMap entityMap;
 
@@ -158,19 +137,98 @@ namespace Gek
                 componentMap.clear();
             }
 
-            void loadLevel(String const &populationName)
+            void queueEntity(Plugin::Entity *entity, String const & requestedName)
             {
-                core->getLog()->message(L"Population", Plugin::Core::Log::Type::Message, String::Format(L"Loading population: %v", populationName));
+                entityQueue.push([this, entity = entity, requestedName = requestedName](void) -> void
+                {
+                    auto entityName(requestedName.empty() ? String::Format(L"unnamed_%v", ++uniqueEntityIdentifier) : requestedName);
+                    if (entityMap.count(requestedName) > 0)
+                    {
+                        core->getLog()->message(L"Population", Plugin::Core::Log::Type::Error, String::Format(L"Unable to add entity to scene: %v", entityName));
+                    }
+                    else
+                    {
+                        entityMap[entityName].reset(entity);
+                        onEntityCreated.emit(entity, entityName);
+                    }
+                });
+            }
 
-                loading = true;
-                try
+            // Edit::Population
+            ComponentMap &getComponentMap(void)
+            {
+                return componentMap;
+            }
+
+            EntityMap &getEntityMap(void)
+            {
+                return entityMap;
+            }
+
+            Edit::Component *getComponent(const std::type_index &type)
+            {
+                auto componentsSearch = componentMap.find(type);
+                if (componentsSearch != std::end(componentMap))
+                {
+                    return dynamic_cast<Edit::Component *>(componentsSearch->second.get());
+                }
+                
+                return nullptr;
+            }
+
+            // Plugin::Population
+            ShuntingYard &getShuntingYard(void)
+            {
+                return shuntingYard;
+            }
+
+            void update(float frameTime)
+            {
+                Plugin::Core::Log::Scope function(core->getLog(), L"Update Population");
+
+                if (frameTime == 0.0f)
                 {
                     actionQueue.clear();
-                    entityQueue.clear();
-                    entityMap.clear();
+                }
+                else
+                {
+                    Action action;
+                    while (actionQueue.try_pop(action))
+                    {
+                        onAction.emit(action);
+                    };
+                }
 
-                    onLoadBegin.emit(populationName);
-                    if (!populationName.empty())
+
+                for (auto &slot : onUpdate)
+                {
+                    slot.second.emit(frameTime);
+                }
+
+                std::function<void(void)> entityAction;
+                while (entityQueue.try_pop(entityAction))
+                {
+                    entityAction();
+                };
+            }
+
+            void action(Action const &action)
+            {
+                actionQueue.push(action);
+            }
+
+            void load(wchar_t const * const populationName)
+            {
+                if (!populationName)
+                {
+                    return;
+                }
+
+                loadPool.enqueue([this, populationName = String(populationName)](void) -> void
+                {
+                    core->getLog()->message(L"Population", Plugin::Core::Log::Type::Message, String::Format(L"Loading population: %v", populationName));
+
+                    try
                     {
                         const JSON::Object worldNode = JSON::Load(getContext()->getRootFileName(L"data", L"scenes", populationName).withExtension(L".json"));
                         if (!worldNode.has_member(L"Population"))
@@ -247,127 +305,25 @@ namespace Gek
                                 if (componentData.name().compare(L"Name") != 0 &&
                                     componentData.name().compare(L"Template") != 0)
                                 {
-                                    addComponent(entity.get(), componentData);
+                                    std::type_index componentIdentifier(typeid(nullptr));
+                                    addComponent(entity.get(), componentData, &componentIdentifier);
                                 }
                             }
 
+                            String entityName;
                             if (entityNode.has_member(L"Name"))
                             {
-                                entityMap[entityNode[L"Name"].as_string()] = std::move(entity);
+                                entityName = entityNode.get(L"Name");
                             }
-                            else
-                            {
-                                auto name(String::Format(L"unnamed_%v", ++uniqueEntityIdentifier));
-                                entityMap[name] = std::move(entity);
-                            }
+
+                            queueEntity(entity.release(), entityName);
                         }
                     }
-
-                    frameTime = 0.0f;
-                    worldTime = 0.0f;
-                    onLoadSucceeded.emit(populationName);
-                }
-                catch (const std::exception &exception)
-                {
-                    core->getLog()->message(L"Population", Plugin::Core::Log::Type::Error, String::Format(L"Unable to load population: %v", exception.what()));
-                    onLoadFailed.emit(populationName);
-                };
-
-                loading = false;
-            }
-
-            // Edit::Population
-            ComponentMap &getComponentMap(void)
-            {
-                return componentMap;
-            }
-
-            EntityMap &getEntityMap(void)
-            {
-                return entityMap;
-            }
-
-            Edit::Component *getComponent(const std::type_index &type)
-            {
-                auto componentsSearch = componentMap.find(type);
-                if (componentsSearch != std::end(componentMap))
-                {
-                    return dynamic_cast<Edit::Component *>(componentsSearch->second.get());
-                }
-                
-                return nullptr;
-            }
-
-            // Plugin::Population
-            ShuntingYard &getShuntingYard(void)
-            {
-                return shuntingYard;
-            }
-
-            float getFrameTime(void) const
-            {
-                return frameTime;
-            }
-
-            float getWorldTime(void) const
-            {
-                return worldTime;
-            }
-
-            bool isLoading(void) const
-            {
-                return loading;
-            }
-
-            void update(float frameTime)
-            {
-                if (!loading)
-                {
-                    String populationName;
-                    if (loadQueue.try_pop(populationName))
+                    catch (const std::exception &exception)
                     {
-                        loadPool.enqueue([this, populationName](void) -> void
-                        {
-                            loadLevel(populationName);
-                        });
-                    }
-                    else
-                    {
-                        Plugin::Core::Log::Scope function(core->getLog(), "Update Population");
-
-                        Action action;
-                        while (actionQueue.try_pop(action))
-                        {
-                            onAction.emit(action.name, action.parameter);
-                        };
-
-                        this->frameTime = frameTime;
-                        this->worldTime += frameTime;
-                        for (auto &slot : onUpdate)
-                        {
-                            slot.second.emit();
-                        }
-
-                        std::function<void(void)> entityAction;
-                        while (entityQueue.try_pop(entityAction))
-                        {
-                            entityAction();
-                        };
-                    }
-                }
-            }
-
-            void action(String const &actionName, const ActionParameter &actionParameter)
-            {
-                if (!loading)
-                {
-                    actionQueue.push(Action(actionName, actionParameter));
-                }
-            }
-
-            void load(wchar_t const * const populationName)
-            {
-                loadQueue.push(populationName);
+                        core->getLog()->message(L"Population", Plugin::Core::Log::Type::Error, String::Format(L"Unable to load population: %v", exception.what()));
+                    };
+                });
             }
 
             void save(wchar_t const * const populationName)
@@ -411,32 +367,20 @@ namespace Gek
 
             Plugin::Entity *createEntity(wchar_t const * const entityName, const std::vector<JSON::Member> &componentList)
             {
-                std::shared_ptr<Entity> entity(std::make_shared<Entity>());
+                auto entity(std::make_unique<Entity>());
                 for (auto &componentData : componentList)
                 {
-                    addComponent(entity.get(), componentData);
+                    std::type_index componentIdentifier(typeid(nullptr));
+                    addComponent(entity.get(), componentData, &componentIdentifier);
                 }
 
-                entityQueue.push([this, requestedName = String(entityName), entity = move(entity)](void) -> void
-                {
-                    auto entityName(requestedName.empty() ? String::Format(L"unnamed_%v", ++uniqueEntityIdentifier) : requestedName);
-                    if (entityMap.count(requestedName) > 0)
-                    {
-                        core->getLog()->message(L"Population", Plugin::Core::Log::Type::Error, String::Format(L"Unable to add entity to scene: %v", entityName));
-                    }
-                    else
-                    {
-                        entityMap[entityName].reset(entity.get());
-                        onEntityCreated.emit(entity.get(), entityName);
-                    }
-                });
-
+                queueEntity(entity.release(), entityName);
                 return entity.get();
             }
 
             void killEntity(Plugin::Entity * const entity)
             {
-                entityQueue.push([this, entity = std::move(entity)](void) -> void
+                entityQueue.push([this, entity](void) -> void
                 {
                     auto entitySearch = std::find_if(std::begin(entityMap), std::end(entityMap), [entity](const EntityMap::value_type &entitySearch) -> bool
                     {

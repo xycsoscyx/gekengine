@@ -40,6 +40,36 @@ namespace Gek
             static const uint32_t GridSize = (GridWidth * GridHeight * GridDepth);
 
         public:
+            struct DirectionalLightData
+            {
+                Math::Float3 radiance;
+                float padding1;
+                Math::Float3 direction;
+                float padding2;
+            };
+
+            struct PointLightData
+            {
+                Math::Float3 radiance;
+                float radius;
+                Math::Float3 position;
+                float range;
+            };
+
+            struct SpotLightData
+            {
+                Math::Float3 radiance;
+                float radius;
+                Math::Float3 position;
+                float range;
+                Math::Float3 direction;
+                float padding1;
+                float innerAngle;
+                float outerAngle;
+                float coneFalloff;
+                float padding2;
+            };
+
             struct EngineConstantData
             {
                 float worldTime;
@@ -118,7 +148,7 @@ namespace Gek
                 }
             };
 
-            struct RenderCall
+            struct Camera
             {
                 Shapes::Frustum viewFrustum;
                 Math::Float4x4 viewMatrix;
@@ -127,11 +157,11 @@ namespace Gek
                 float farClip = 0.0f;
                 ResourceHandle cameraTarget;
 
-                RenderCall(void)
+                Camera(void)
                 {
                 }
 
-                RenderCall(const RenderCall &renderCall)
+                Camera(const Camera &renderCall)
                     : viewFrustum(renderCall.viewFrustum)
                     , viewMatrix(renderCall.viewMatrix)
                     , projectionMatrix(renderCall.projectionMatrix)
@@ -363,8 +393,22 @@ namespace Gek
             Video::BufferPtr lightIndexBuffer;
 
             DrawCallList drawCallList;
-            concurrency::concurrent_queue<RenderCall> renderCallList;
-            RenderCall currentRenderCall;
+            concurrency::concurrent_queue<Camera> cameraQueue;
+            Camera currentCamera;
+
+            struct
+            {
+                Video::ObjectPtr vertexProgram;
+                Video::ObjectPtr inputLayout;
+                Video::BufferPtr constantBuffer;
+                Video::ObjectPtr pixelProgram;
+                Video::ObjectPtr blendState;
+                Video::ObjectPtr renderState;
+                Video::ObjectPtr depthState;
+                Video::TexturePtr fontTexture;
+                Video::BufferPtr vertexBuffer;
+                Video::BufferPtr indexBuffer;
+            } gui;
 
         public:
             Renderer(Context *context, Plugin::Core *core)
@@ -378,15 +422,19 @@ namespace Gek
                 , pointLightData(200, core->getVideoDevice())
                 , spotLightData(200, core->getVideoDevice())
             {
-                core->getLog()->message(L"Renderer", Plugin::Core::Log::Type::Message, L"Initializing rendering system components");
-
-                core->onDisplay.connect<Renderer, &Renderer::onDisplay>(this);
-                population->onLoadBegin.connect<Renderer, &Renderer::onLoadBegin>(this);
-                population->onLoadSucceeded.connect<Renderer, &Renderer::onLoadSucceeded>(this);
                 population->onEntityCreated.connect<Renderer, &Renderer::onEntityCreated>(this);
                 population->onEntityDestroyed.connect<Renderer, &Renderer::onEntityDestroyed>(this);
                 population->onComponentAdded.connect<Renderer, &Renderer::onComponentAdded>(this);
                 population->onComponentRemoved.connect<Renderer, &Renderer::onComponentRemoved>(this);
+                population->onUpdate[1000].connect<Renderer, &Renderer::onUpdate>(this);
+
+                initializeSystem();
+                initializeUI();
+            }
+
+            void initializeSystem(void)
+            {
+                core->getLog()->message(L"Renderer", Plugin::Core::Log::Type::Message, L"Initializing rendering system components");
 
                 Video::SamplerStateInformation pointSamplerStateData;
                 pointSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapPoint;
@@ -492,15 +540,158 @@ namespace Gek
                 lightIndexBuffer->setName(L"renderer:lightIndexBuffer");
             }
 
+            void initializeUI(void)
+            {
+                core->getLog()->message(L"Renderer", Plugin::Core::Log::Type::Message, L"Initializing UI");
+
+                static wchar_t const * const vertexShader =
+                    L"cbuffer vertexBuffer : register(b0)" \
+                    L"{" \
+                    L"    float4x4 ProjectionMatrix;" \
+                    L"};" \
+                    L"" \
+                    L"struct VertexInput" \
+                    L"{" \
+                    L"    float2 position : POSITION;" \
+                    L"    float4 color : COLOR0;" \
+                    L"    float2 texCoord  : TEXCOORD0;" \
+                    L"};" \
+                    L"" \
+                    L"struct PixelOutput" \
+                    L"{" \
+                    L"    float4 position : SV_POSITION;" \
+                    L"    float4 color : COLOR0;" \
+                    L"    float2 texCoord  : TEXCOORD0;" \
+                    L"};" \
+                    L"" \
+                    L"PixelOutput main(in VertexInput input)" \
+                    L"{" \
+                    L"    PixelOutput output;" \
+                    L"    output.position = mul(ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));" \
+                    L"    output.color = input.color;" \
+                    L"    output.texCoord  = input.texCoord;" \
+                    L"    return output;" \
+                    L"}";
+
+                auto &compiled = resources->compileProgram(Video::PipelineType::Vertex, L"uiVertexProgram", L"main", vertexShader);
+                gui.vertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiled.data(), compiled.size());
+                gui.vertexProgram->setName(L"core:vertexProgram");
+
+                std::vector<Video::InputElement> elementList;
+
+                Video::InputElement element;
+                element.format = Video::Format::R32G32_FLOAT;
+                element.semantic = Video::InputElement::Semantic::Position;
+                elementList.push_back(element);
+
+                element.format = Video::Format::R32G32_FLOAT;
+                element.semantic = Video::InputElement::Semantic::TexCoord;
+                elementList.push_back(element);
+
+                element.format = Video::Format::R8G8B8A8_UNORM;
+                element.semantic = Video::InputElement::Semantic::Color;
+                elementList.push_back(element);
+
+                gui.inputLayout = videoDevice->createInputLayout(elementList, compiled.data(), compiled.size());
+                gui.inputLayout->setName(L"core:inputLayout");
+
+                Video::Buffer::Description constantBufferDescription;
+                constantBufferDescription.stride = sizeof(Math::Float4x4);
+                constantBufferDescription.count = 1;
+                constantBufferDescription.type = Video::Buffer::Description::Type::Constant;
+                gui.constantBuffer = videoDevice->createBuffer(constantBufferDescription);
+                gui.constantBuffer->setName(L"core:constantBuffer");
+
+                static wchar_t const * const pixelShader =
+                    L"struct PixelInput" \
+                    L"{" \
+                    L"    float4 position : SV_POSITION;" \
+                    L"    float4 color : COLOR0;" \
+                    L"    float2 texCoord  : TEXCOORD0;" \
+                    L"};" \
+                    L"" \
+                    L"sampler pointSampler;" \
+                    L"Texture2D<float4> uiTexture : register(t0);" \
+                    L"" \
+                    L"float4 main(PixelInput input) : SV_Target" \
+                    L"{" \
+                    L"    return (input.color * uiTexture.Sample(pointSampler, input.texCoord));" \
+                    L"}";
+
+                compiled = resources->compileProgram(Video::PipelineType::Pixel, L"uiPixelProgram", L"main", pixelShader);
+                gui.pixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiled.data(), compiled.size());
+                gui.pixelProgram->setName(L"core:pixelProgram");
+
+                Video::UnifiedBlendStateInformation blendStateInformation;
+                blendStateInformation.enable = true;
+                blendStateInformation.colorSource = Video::BlendStateInformation::Source::SourceAlpha;
+                blendStateInformation.colorDestination = Video::BlendStateInformation::Source::InverseSourceAlpha;
+                blendStateInformation.colorOperation = Video::BlendStateInformation::Operation::Add;
+                blendStateInformation.alphaSource = Video::BlendStateInformation::Source::InverseSourceAlpha;
+                blendStateInformation.alphaDestination = Video::BlendStateInformation::Source::Zero;
+                blendStateInformation.alphaOperation = Video::BlendStateInformation::Operation::Add;
+                gui.blendState = videoDevice->createBlendState(blendStateInformation);
+                gui.blendState->setName(L"core:blendState");
+
+                Video::RenderStateInformation renderStateInformation;
+                renderStateInformation.fillMode = Video::RenderStateInformation::FillMode::Solid;
+                renderStateInformation.cullMode = Video::RenderStateInformation::CullMode::None;
+                renderStateInformation.scissorEnable = true;
+                renderStateInformation.depthClipEnable = true;
+                gui.renderState = videoDevice->createRenderState(renderStateInformation);
+                gui.renderState->setName(L"core:renderState");
+
+                Video::DepthStateInformation depthStateInformation;
+                depthStateInformation.enable = true;
+                depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
+                depthStateInformation.writeMask = Video::DepthStateInformation::Write::Zero;
+                gui.depthState = videoDevice->createDepthState(depthStateInformation);
+                gui.depthState->setName(L"core:depthState");
+
+                ImGuiStyle& style = ImGui::GetStyle();
+                //ImGui::SetupImGuiStyle(false, 0.9f);
+                ImGui::ResetStyle(ImGuiStyle_OSX, style);
+                style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
+                style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
+                style.WindowRounding = 0.0f;
+                style.FrameRounding = 3.0f;
+
+                ImGuiIO &imGuiIo = ImGui::GetIO();
+                imGuiIo.Fonts->AddFontDefault();
+                imGuiIo.Fonts->Build();
+
+                uint8_t *pixels = nullptr;
+                int32_t fontWidth = 0, fontHeight = 0;
+                imGuiIo.Fonts->GetTexDataAsRGBA32(&pixels, &fontWidth, &fontHeight);
+
+                Video::Texture::Description fontDescription;
+                fontDescription.format = Video::Format::R8G8B8A8_UNORM;
+                fontDescription.width = fontWidth;
+                fontDescription.height = fontHeight;
+                fontDescription.flags = Video::Texture::Description::Flags::Resource;
+                gui.fontTexture = videoDevice->createTexture(fontDescription, pixels);
+
+                imGuiIo.Fonts->TexID = (Video::Object *)gui.fontTexture.get();
+
+                imGuiIo.UserData = this;
+                imGuiIo.RenderDrawListsFn = [](ImDrawData *drawData)
+                {
+                    ImGuiIO &imGuiIo = ImGui::GetIO();
+                    Renderer *renderer = static_cast<Renderer *>(imGuiIo.UserData);
+                    renderer->renderUI(drawData);
+                };
+            }
+
             ~Renderer(void)
             {
+                population->onUpdate[1000].disconnect<Renderer, &Renderer::onUpdate>(this);
                 population->onComponentRemoved.disconnect<Renderer, &Renderer::onComponentRemoved>(this);
                 population->onComponentAdded.disconnect<Renderer, &Renderer::onComponentAdded>(this);
                 population->onEntityDestroyed.disconnect<Renderer, &Renderer::onEntityDestroyed>(this);
                 population->onEntityCreated.disconnect<Renderer, &Renderer::onEntityCreated>(this);
-                population->onLoadSucceeded.disconnect<Renderer, &Renderer::onLoadSucceeded>(this);
-                population->onLoadBegin.disconnect<Renderer, &Renderer::onLoadBegin>(this);
-                core->onDisplay.disconnect<Renderer, &Renderer::onDisplay>(this);
+
+                ImGui::GetIO().Fonts->TexID = 0;
+                ImGui::Shutdown();
             }
 
             void addEntity(Plugin::Entity * const entity)
@@ -518,6 +709,128 @@ namespace Gek
                 directionalLightData.removeEntity(entity);
                 pointLightData.removeEntity(entity);
                 spotLightData.removeEntity(entity);
+            }
+
+            // ImGui
+            void renderUI(ImDrawData *drawData)
+            {
+                Plugin::Core::Log::Scope function(core->getLog(), L"Render UI");
+                if (!gui.vertexBuffer || gui.vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
+                {
+                    Video::Buffer::Description vertexBufferDescription;
+                    vertexBufferDescription.stride = sizeof(ImDrawVert);
+                    vertexBufferDescription.count = drawData->TotalVtxCount;
+                    vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
+                    vertexBufferDescription.flags = Video::Buffer::Description::Flags::Mappable;
+                    gui.vertexBuffer = videoDevice->createBuffer(vertexBufferDescription);
+                    gui.vertexBuffer->setName(String::Format(L"core:vertexBuffer:%v", gui.vertexBuffer.get()));
+                }
+
+                if (!gui.indexBuffer || gui.indexBuffer->getDescription().count < uint32_t(drawData->TotalIdxCount))
+                {
+                    Video::Buffer::Description vertexBufferDescription;
+                    vertexBufferDescription.count = drawData->TotalIdxCount;
+                    vertexBufferDescription.type = Video::Buffer::Description::Type::Index;
+                    vertexBufferDescription.flags = Video::Buffer::Description::Flags::Mappable;
+                    switch (sizeof(ImDrawIdx))
+                    {
+                    case 2:
+                        vertexBufferDescription.format = Video::Format::R16_UINT;
+                        break;
+
+                    case 4:
+                        vertexBufferDescription.format = Video::Format::R32_UINT;
+                        break;
+
+                    default:
+                        throw InvalidIndexBufferFormat("Index buffer can only be 16bit or 32bit");
+                    };
+
+                    gui.indexBuffer = videoDevice->createBuffer(vertexBufferDescription);
+                    gui.indexBuffer->setName(String::Format(L"core:vertexBuffer:%v", gui.indexBuffer.get()));
+                }
+
+                bool dataUploaded = false;
+                ImDrawVert* vertexData = nullptr;
+                ImDrawIdx* indexData = nullptr;
+                if (videoDevice->mapBuffer(gui.vertexBuffer.get(), vertexData))
+                {
+                    if (videoDevice->mapBuffer(gui.indexBuffer.get(), indexData))
+                    {
+                        for (int32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
+                        {
+                            const ImDrawList* commandList = drawData->CmdLists[commandListIndex];
+                            std::copy(commandList->VtxBuffer.Data, (commandList->VtxBuffer.Data + commandList->VtxBuffer.Size), vertexData);
+                            std::copy(commandList->IdxBuffer.Data, (commandList->IdxBuffer.Data + commandList->IdxBuffer.Size), indexData);
+                            vertexData += commandList->VtxBuffer.Size;
+                            indexData += commandList->IdxBuffer.Size;
+                        }
+
+                        dataUploaded = true;
+                        videoDevice->unmapBuffer(gui.indexBuffer.get());
+                    }
+
+                    videoDevice->unmapBuffer(gui.vertexBuffer.get());
+                }
+
+                if (dataUploaded)
+                {
+                    auto backBuffer = videoDevice->getBackBuffer();
+                    uint32_t width = backBuffer->getDescription().width;
+                    uint32_t height = backBuffer->getDescription().height;
+                    auto orthographic = Math::Float4x4::MakeOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
+                    videoDevice->updateResource(gui.constantBuffer.get(), &orthographic);
+
+                    auto videoContext = videoDevice->getDefaultContext();
+                    resources->setBackBuffer(videoContext, nullptr);
+
+                    videoContext->setInputLayout(gui.inputLayout.get());
+                    videoContext->setVertexBufferList({ gui.vertexBuffer.get() }, 0);
+                    videoContext->setIndexBuffer(gui.indexBuffer.get(), 0);
+                    videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+                    videoContext->vertexPipeline()->setProgram(gui.vertexProgram.get());
+                    videoContext->vertexPipeline()->setConstantBufferList({ gui.constantBuffer.get() }, 0);
+                    videoContext->pixelPipeline()->setProgram(gui.pixelProgram.get());
+                    videoContext->pixelPipeline()->setSamplerStateList({ pointSamplerState.get() }, 0);
+
+                    videoContext->setBlendState(gui.blendState.get(), Math::Float4::Black, 0xFFFFFFFF);
+                    videoContext->setDepthState(gui.depthState.get(), 0);
+                    videoContext->setRenderState(gui.renderState.get());
+
+                    uint32_t vertexOffset = 0;
+                    uint32_t indexOffset = 0;
+                    for (int32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
+                    {
+                        const ImDrawList* commandList = drawData->CmdLists[commandListIndex];
+                        for (int32_t commandIndex = 0; commandIndex < commandList->CmdBuffer.Size; ++commandIndex)
+                        {
+                            const ImDrawCmd* command = &commandList->CmdBuffer[commandIndex];
+                            if (command->UserCallback)
+                            {
+                                command->UserCallback(commandList, command);
+                            }
+                            else
+                            {
+                                std::vector<Math::UInt4> scissorBoxList(1);
+                                scissorBoxList[0].minimum.x = uint32_t(command->ClipRect.x);
+                                scissorBoxList[0].minimum.y = uint32_t(command->ClipRect.y);
+                                scissorBoxList[0].maximum.x = uint32_t(command->ClipRect.z);
+                                scissorBoxList[0].maximum.y = uint32_t(command->ClipRect.w);
+                                videoContext->setScissorList(scissorBoxList);
+
+                                std::vector<Video::Object *> textureList(1);
+                                textureList[0] = (Video::Object *)command->TextureId;
+                                videoContext->pixelPipeline()->setResourceList(textureList, 0);
+
+                                videoContext->drawIndexedPrimitive(command->ElemCount, indexOffset, vertexOffset);
+                            }
+
+                            indexOffset += command->ElemCount;
+                        }
+
+                        vertexOffset += commandList->VtxBuffer.Size;
+                    }
+                }
             }
 
             // Clustered Lighting
@@ -586,11 +899,11 @@ namespace Gek
             {
                 // Early out with empty rectangle if the light is too far behind the view frustum
                 Math::Float4 clipRegion(1.0f, 1.0f, 0.0f, 0.0f);
-                if ((position.z + range) >= currentRenderCall.nearClip)
+                if ((position.z + range) >= currentCamera.nearClip)
                 {
                     clipRegion.set(-1.0f, -1.0f, 1.0f, 1.0f);
-                    updateClipRegion(position.x, position.z, range, currentRenderCall.projectionMatrix.rx.x, clipRegion.minimum.x, clipRegion.maximum.x);
-                    updateClipRegion(position.y, position.z, range, currentRenderCall.projectionMatrix.ry.y, clipRegion.minimum.y, clipRegion.maximum.y);
+                    updateClipRegion(position.x, position.z, range, currentCamera.projectionMatrix.rx.x, clipRegion.minimum.x, clipRegion.maximum.x);
+                    updateClipRegion(position.y, position.z, range, currentCamera.projectionMatrix.ry.y, clipRegion.minimum.y, clipRegion.maximum.y);
                 }
 
                 return clipRegion;
@@ -605,14 +918,14 @@ namespace Gek
             bool isSeparated(float x, float y, float z, Math::Float3 const &position, float range) const
             {
                 // sub-frustrum bounds in view space       
-                float minimumZ = (z - 0) * 1.0f / GridDepth * (currentRenderCall.farClip - currentRenderCall.nearClip) + currentRenderCall.nearClip;
-                float maximumZ = (z + 1) * 1.0f / GridDepth * (currentRenderCall.farClip - currentRenderCall.nearClip) + currentRenderCall.nearClip;
+                float minimumZ = (z - 0) * 1.0f / GridDepth * (currentCamera.farClip - currentCamera.nearClip) + currentCamera.nearClip;
+                float maximumZ = (z + 1) * 1.0f / GridDepth * (currentCamera.farClip - currentCamera.nearClip) + currentCamera.nearClip;
 
                 static const Math::Float4 Negate(Math::Float2(-1.0f), Math::Float2(1.0f));
                 static const Math::Float4 GridDimensions(GridWidth, GridWidth, GridHeight, GridHeight);
 
                 Math::Float4 tileBounds(x, (x + 1.0f), y, (y + 1.0f));
-                Math::Float4 projectionScale(Math::Float2(currentRenderCall.projectionMatrix.rx.x), Math::Float2(currentRenderCall.projectionMatrix.ry.y));
+                Math::Float4 projectionScale(Math::Float2(currentCamera.projectionMatrix.rx.x), Math::Float2(currentCamera.projectionMatrix.ry.y));
                 auto minimum = Negate * (1.0f - 2.0f / GridDimensions * tileBounds) * minimumZ / projectionScale;
                 auto maximum = Negate * (1.0f - 2.0f / GridDimensions * tileBounds) * maximumZ / projectionScale;
 
@@ -650,8 +963,8 @@ namespace Gek
                 gridBounds[2] = (gridBounds[2] > GridWidth ? GridWidth : gridBounds[2]);
                 gridBounds[3] = (gridBounds[3] > GridHeight ? GridHeight : gridBounds[3]);
 
-                float centerDepth = ((position.z - currentRenderCall.nearClip) / (currentRenderCall.farClip - currentRenderCall.nearClip));
-                float rangeDepth = (range / (currentRenderCall.farClip - currentRenderCall.nearClip));
+                float centerDepth = ((position.z - currentCamera.nearClip) / (currentCamera.farClip - currentCamera.nearClip));
+                float rangeDepth = (range / (currentCamera.farClip - currentCamera.nearClip));
 
                 Math::Int2 depthBounds(
                     int32_t(std::floor((centerDepth - rangeDepth) * GridDepth)),
@@ -697,7 +1010,7 @@ namespace Gek
                 auto lightIterator = pointLightData.lightList.grow_by(1);
                 PointLightData &lightData = (*lightIterator);
                 lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
-                lightData.position = currentRenderCall.viewMatrix.transform(transformComponent.position);
+                lightData.position = currentCamera.viewMatrix.transform(transformComponent.position);
                 lightData.radius = lightComponent.radius;
                 lightData.range = lightComponent.range;
 
@@ -713,10 +1026,10 @@ namespace Gek
                 auto lightIterator = spotLightData.lightList.grow_by(1);
                 SpotLightData &lightData = (*lightIterator);
                 lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
-                lightData.position = currentRenderCall.viewMatrix.transform(transformComponent.position);
+                lightData.position = currentCamera.viewMatrix.transform(transformComponent.position);
                 lightData.radius = lightComponent.radius;
                 lightData.range = lightComponent.range;
-                lightData.direction = currentRenderCall.viewMatrix.rotate(getLightDirection(transformComponent.rotation));
+                lightData.direction = currentCamera.viewMatrix.rotate(getLightDirection(transformComponent.rotation));
                 lightData.innerAngle = lightComponent.innerAngle;
                 lightData.outerAngle = lightComponent.outerAngle;
                 lightData.coneFalloff = lightComponent.coneFalloff;
@@ -726,24 +1039,6 @@ namespace Gek
             }
 
             // Plugin::Population Slots
-            void onLoadBegin(String const &populationName)
-            {
-                GEK_REQUIRE(resources);
-
-                resources->clear();
-                directionalLightData.clearEntities();
-                pointLightData.clearEntities();
-                spotLightData.clearEntities();
-            }
-
-            void onLoadSucceeded(String const &populationName)
-            {
-                population->listEntities([&](Plugin::Entity * const entity, wchar_t const * const) -> void
-                {
-                    addEntity(entity);
-                });
-            }
-
             void onEntityCreated(Plugin::Entity * const entity, wchar_t const * const entityName)
             {
                 addEntity(entity);
@@ -765,6 +1060,18 @@ namespace Gek
             }
 
             // Renderer
+            void queueCamera(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget)
+            {
+                Camera renderCall;
+                renderCall.viewMatrix = viewMatrix;
+                renderCall.projectionMatrix = projectionMatrix;
+                renderCall.viewFrustum.create(viewMatrix * projectionMatrix);
+                renderCall.nearClip = nearClip;
+                renderCall.farClip = farClip;
+                renderCall.cameraTarget = cameraTarget;
+                cameraQueue.push(renderCall);
+            }
+
             void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *videoContext)> &&draw)
             {
                 if (plugin && material && draw)
@@ -777,33 +1084,21 @@ namespace Gek
                 }
             }
 
-            void queueRenderCall(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget)
-            {
-                RenderCall renderCall;
-                renderCall.viewMatrix = viewMatrix;
-                renderCall.projectionMatrix = projectionMatrix;
-                renderCall.viewFrustum.create(viewMatrix * projectionMatrix);
-                renderCall.nearClip = nearClip;
-                renderCall.farClip = farClip;
-                renderCall.cameraTarget = cameraTarget;
-                renderCallList.push(renderCall);
-            }
-
             // Plugin::Core Slots
-            void onDisplay(void)
+            void onUpdate(float frameTime)
             {
                 GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(population);
 
-                Plugin::Core::Log::Scope function(core->getLog(), "Render Scene");
-                core->getLog()->addValue("Display Cameras", renderCallList.unsafe_size());
-                while (renderCallList.try_pop(currentRenderCall))
+                Plugin::Core::Log::Scope function(core->getLog(), L"Render Scene");
+                core->getLog()->addValue(L"Display Cameras", cameraQueue.unsafe_size());
+                while (cameraQueue.try_pop(currentCamera))
                 {
                     drawCallList.clear();
-                    onRenderScene.emit(currentRenderCall.viewFrustum, currentRenderCall.viewMatrix, currentRenderCall.projectionMatrix);
+                    onQueueDrawCalls.emit(currentCamera.viewFrustum, currentCamera.viewMatrix, currentCamera.projectionMatrix);
                     if (!drawCallList.empty())
                     {
-                        core->getLog()->addValue("Display Draw Calls", drawCallList.size());
+                        core->getLog()->addValue(L"Display Draw Calls", drawCallList.size());
                         auto backBuffer = videoDevice->getBackBuffer();
                         auto width = backBuffer->getDescription().width;
                         auto height = backBuffer->getDescription().height;
@@ -853,7 +1148,7 @@ namespace Gek
 
                                     DirectionalLightData lightData;
                                     lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
-                                    lightData.direction = currentRenderCall.viewMatrix.rotate(getLightDirection(transformComponent.rotation));
+                                    lightData.direction = currentCamera.viewMatrix.rotate(getLightDirection(transformComponent.rotation));
                                     directionalLightData.lightList.push_back(lightData);
                                 });
 
@@ -863,40 +1158,40 @@ namespace Gek
                             const __m128 frustumData[6][4] =
                             {
                                 {
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[0].normal.x),
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[0].normal.y),
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[0].normal.z),
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[0].distance),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[0].normal.x),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[0].normal.y),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[0].normal.z),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[0].distance),
                                 },
                                 {
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[1].normal.x),
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[1].normal.y),
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[1].normal.z),
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[1].distance),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[1].normal.x),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[1].normal.y),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[1].normal.z),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[1].distance),
                                 },
                                 {
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[2].normal.x),
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[2].normal.y),
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[2].normal.z),
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[2].distance),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[2].normal.x),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[2].normal.y),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[2].normal.z),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[2].distance),
                                 },
                                 {
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[3].normal.x),
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[3].normal.y),
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[3].normal.z),
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[3].distance),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[3].normal.x),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[3].normal.y),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[3].normal.z),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[3].distance),
                                 },
                                 {
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[4].normal.x),
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[4].normal.y),
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[4].normal.z),
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[4].distance),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[4].normal.x),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[4].normal.y),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[4].normal.z),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[4].distance),
                                 },
                                 {
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[5].normal.x),
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[5].normal.y),
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[5].normal.z),
-                                    _mm_set_ps1(currentRenderCall.viewFrustum.planeList[5].distance),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[5].normal.x),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[5].normal.y),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[5].normal.z),
+                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[5].distance),
                                 },
                             };
 
@@ -927,9 +1222,9 @@ namespace Gek
                             pointLightsDone.get();
                             spotLightsDone.get();
 
-                            core->getLog()->addValue("Display Directional Lights", directionalLightData.lightList.size());
-                            core->getLog()->addValue("Display Point Lights", pointLightData.lightList.size());
-                            core->getLog()->addValue("Display Spot Lights", spotLightData.lightList.size());
+                            core->getLog()->addValue(L"Display Directional Lights", directionalLightData.lightList.size());
+                            core->getLog()->addValue(L"Display Point Lights", pointLightData.lightList.size());
+                            core->getLog()->addValue(L"Display Spot Lights", spotLightData.lightList.size());
 
                             lightIndexList.clear();
                             lightIndexList.reserve(lightIndexCount);
@@ -1002,16 +1297,16 @@ namespace Gek
                         }
 
                         EngineConstantData engineConstantData;
-                        engineConstantData.frameTime = population->getFrameTime();
-                        engineConstantData.worldTime = population->getWorldTime();
+                        engineConstantData.frameTime = frameTime;
+                        engineConstantData.worldTime = 0.0f;
 
                         CameraConstantData cameraConstantData;
-                        cameraConstantData.fieldOfView.x = (1.0f / currentRenderCall.projectionMatrix._11);
-                        cameraConstantData.fieldOfView.y = (1.0f / currentRenderCall.projectionMatrix._22);
-                        cameraConstantData.nearClip = currentRenderCall.nearClip;
-                        cameraConstantData.farClip = currentRenderCall.farClip;
-                        cameraConstantData.viewMatrix = currentRenderCall.viewMatrix;
-                        cameraConstantData.projectionMatrix = currentRenderCall.projectionMatrix;
+                        cameraConstantData.fieldOfView.x = (1.0f / currentCamera.projectionMatrix._11);
+                        cameraConstantData.fieldOfView.y = (1.0f / currentCamera.projectionMatrix._22);
+                        cameraConstantData.nearClip = currentCamera.nearClip;
+                        cameraConstantData.farClip = currentCamera.farClip;
+                        cameraConstantData.viewMatrix = currentCamera.viewMatrix;
+                        cameraConstantData.projectionMatrix = currentCamera.projectionMatrix;
 
                         Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                         videoContext->clearState();
@@ -1048,7 +1343,7 @@ namespace Gek
                             for (auto &shaderDrawCall : shaderDrawCallList.second)
                             {
                                 auto &shader = shaderDrawCall.shader;
-                                for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentRenderCall.viewFrustum); pass; pass = pass->next())
+                                for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentCamera.viewFrustum); pass; pass = pass->next())
                                 {
                                     resources->startResourceBlock();
                                     switch (pass->prepare())
@@ -1119,12 +1414,32 @@ namespace Gek
                         videoContext->vertexPipeline()->clearConstantBufferList(2, 0);
                         videoContext->pixelPipeline()->clearConstantBufferList(2, 0);
                         videoContext->computePipeline()->clearConstantBufferList(2, 0);
-                        if (currentRenderCall.cameraTarget)
+                        if (currentCamera.cameraTarget)
                         {
-                            renderOverlay(videoContext, resources->getResourceHandle(L"screen"), currentRenderCall.cameraTarget);
+                            renderOverlay(videoContext, resources->getResourceHandle(L"screen"), currentCamera.cameraTarget);
                         }
                     }
                 };
+
+                ImGuiIO &imGuiIo = ImGui::GetIO();
+                imGuiIo.DeltaTime = frameTime;
+                core->getLog()->addValue(L"Frame Rate", (1.0f / frameTime));
+
+                auto backBuffer = videoDevice->getBackBuffer();
+                uint32_t width = backBuffer->getDescription().width;
+                uint32_t height = backBuffer->getDescription().height;
+                imGuiIo.DisplaySize = ImVec2(float(width), float(height));
+
+                ImGui::NewFrame();
+                ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+                ImGui::Begin("GEK Engine", nullptr, ImVec2(0, 0), 0.0f, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
+                onShowUI.emit(ImGui::GetCurrentContext());
+                ImGui::End();
+
+                renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());
+                ImGui::Render();
+
+                videoDevice->present(false);
             }
 
             void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle target)

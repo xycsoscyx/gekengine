@@ -51,29 +51,10 @@ namespace Gek
             std::vector<Plugin::ProcessorPtr> processorList;
             Plugin::PopulationPtr population;
 
-            struct Resources
-            {
-                ImGui::PanelManager panelManager;
-                Video::ObjectPtr vertexProgram;
-                Video::ObjectPtr inputLayout;
-                Video::BufferPtr constantBuffer;
-                Video::ObjectPtr pixelProgram;
-                Video::ObjectPtr blendState;
-                Video::ObjectPtr renderState;
-                Video::ObjectPtr depthState;
-                Video::TexturePtr fontTexture;
-                Video::ObjectPtr samplerState;
-                Video::BufferPtr vertexBuffer;
-                Video::BufferPtr indexBuffer;
-
-                Video::TexturePtr consoleButton;
-                Video::TexturePtr performanceButton;
-                Video::TexturePtr settingsButton;
-            };
-
-            std::unique_ptr<Resources> gui = std::make_unique<Resources>();
-
-            bool showCursor = false;
+            ImGui::PanelManager panelManager;
+            Video::TexturePtr consoleButton;
+            Video::TexturePtr performanceButton;
+            Video::TexturePtr settingsButton;
 			bool showModeChange = false;
 			float modeChangeTimer = 0.0f;
             bool editorActive = false;
@@ -87,8 +68,8 @@ namespace Gek
             };
 
             static const uint32_t HistoryLength = 100;
-            using PerformanceMap = concurrency::concurrent_unordered_map<char const * const, float>;
-            using PerformanceHistory = concurrency::concurrent_unordered_map<char const * const, History>;
+            using PerformanceMap = concurrency::concurrent_unordered_map<String, float>;
+            using PerformanceHistory = concurrency::concurrent_unordered_map<String, History>;
 
             PerformanceMap performanceMap;
             PerformanceHistory performanceHistory;
@@ -173,37 +154,37 @@ namespace Gek
                 }
 
                 String baseFileName(getContext()->getRootFileName(L"data", L"gui"));
-                gui->consoleButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"console.png"), 0);
-                gui->performanceButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"performance.png"), 0);
-                gui->settingsButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"settings.png"), 0);
+                consoleButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"console.png"), 0);
+                performanceButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"performance.png"), 0);
+                settingsButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"settings.png"), 0);
 
-                auto propertiesPane = gui->panelManager.addPane(ImGui::PanelManager::RIGHT, "PropertiesPanel##PropertiesPanel");
+                auto propertiesPane = panelManager.addPane(ImGui::PanelManager::RIGHT, "PropertiesPanel##PropertiesPanel");
                 if (propertiesPane)
                 {
                     propertiesPane->previewOnHover = false;
                 }
 
-                auto consolePane = gui->panelManager.addPane(ImGui::PanelManager::BOTTOM, "ConsolePanel##ConsolePanel");
+                auto consolePane = panelManager.addPane(ImGui::PanelManager::BOTTOM, "ConsolePanel##ConsolePanel");
                 if (consolePane)
                 {
                     consolePane->previewOnHover = false;
 
                     consolePane->addButtonAndWindow(
-                        ImGui::Toolbutton("Console", (Video::Object *)gui->consoleButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
+                        ImGui::Toolbutton("Console", (Video::Object *)consoleButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
                         ImGui::PanelManagerPaneAssociatedWindow("Console", -1, [](ImGui::PanelManagerWindowData &windowData) -> void
                     {
                         ((Core *)windowData.userData)->drawConsole(windowData);
                     }, this, ImGuiWindowFlags_NoScrollbar));
 
                     consolePane->addButtonAndWindow(
-                        ImGui::Toolbutton("Performance", (Video::Object *)gui->performanceButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
+                        ImGui::Toolbutton("Performance", (Video::Object *)performanceButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
                         ImGui::PanelManagerPaneAssociatedWindow("Performance", -1, [](ImGui::PanelManagerWindowData &windowData) -> void
                     {
                         ((Core *)windowData.userData)->drawPerformance(windowData);
                     }, this, ImGuiWindowFlags_NoScrollbar));
 
                     consolePane->addButtonAndWindow(
-                        ImGui::Toolbutton("Settings", (Video::Object *)gui->settingsButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
+                        ImGui::Toolbutton("Settings", (Video::Object *)settingsButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
                         ImGui::PanelManagerPaneAssociatedWindow("Settings", -1, [](ImGui::PanelManagerWindowData &windowData) -> void
                     {
                         ((Core *)windowData.userData)->drawSettings(windowData);
@@ -214,6 +195,7 @@ namespace Gek
                 population = getContext()->createClass<Plugin::Population>(L"Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this);
                 renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", (Plugin::Core *)this);
+                renderer->onShowUI.connect<Core, &Core::onShowUI>(this);
 
                 message(L"Core", Log::Type::Message, L"Loading processor plugins");
 
@@ -235,12 +217,7 @@ namespace Gek
                     processor->onInitialized();
                 }
 
-                message(L"Core", Log::Type::Message, L"Initializing UI");
-
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                imGuiIo.Fonts->AddFontDefault();
-                imGuiIo.Fonts->Build();
-
                 imGuiIo.KeyMap[ImGuiKey_Tab] = VK_TAB;
                 imGuiIo.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
                 imGuiIo.KeyMap[ImGuiKey_RightArrow] = VK_RIGHT;
@@ -260,148 +237,8 @@ namespace Gek
                 imGuiIo.KeyMap[ImGuiKey_X] = 'X';
                 imGuiIo.KeyMap[ImGuiKey_Y] = 'Y';
                 imGuiIo.KeyMap[ImGuiKey_Z] = 'Z';
+                imGuiIo.MouseDrawCursor = false;
 
-                ImGuiStyle& style = ImGui::GetStyle();
-                //ImGui::SetupImGuiStyle(false, 0.9f);
-                ImGui::ResetStyle(ImGuiStyle_OSX, style);
-                style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
-                style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
-                style.WindowRounding = 0.0f;
-                style.FrameRounding = 3.0f;
-
-                static wchar_t const * const vertexShader =
-                    L"cbuffer vertexBuffer : register(b0)" \
-                    L"{" \
-                    L"    float4x4 ProjectionMatrix;" \
-                    L"};" \
-                    L"" \
-                    L"struct VertexInput" \
-                    L"{" \
-                    L"    float2 position : POSITION;" \
-                    L"    float4 color : COLOR0;" \
-                    L"    float2 texCoord  : TEXCOORD0;" \
-                    L"};" \
-                    L"" \
-                    L"struct PixelOutput" \
-                    L"{" \
-                    L"    float4 position : SV_POSITION;" \
-                    L"    float4 color : COLOR0;" \
-                    L"    float2 texCoord  : TEXCOORD0;" \
-                    L"};" \
-                    L"" \
-                    L"PixelOutput main(in VertexInput input)" \
-                    L"{" \
-                    L"    PixelOutput output;" \
-                    L"    output.position = mul(ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));" \
-                    L"    output.color = input.color;" \
-                    L"    output.texCoord  = input.texCoord;" \
-                    L"    return output;" \
-                    L"}";
-
-                auto &compiled = resources->compileProgram(Video::PipelineType::Vertex, L"uiVertexProgram", L"main", vertexShader);
-                gui->vertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiled.data(), compiled.size());
-                gui->vertexProgram->setName(L"core:vertexProgram");
-
-                std::vector<Video::InputElement> elementList;
-
-                Video::InputElement element;
-                element.format = Video::Format::R32G32_FLOAT;
-                element.semantic = Video::InputElement::Semantic::Position;
-                elementList.push_back(element);
-
-                element.format = Video::Format::R32G32_FLOAT;
-                element.semantic = Video::InputElement::Semantic::TexCoord;
-                elementList.push_back(element);
-
-                element.format = Video::Format::R8G8B8A8_UNORM;
-                element.semantic = Video::InputElement::Semantic::Color;
-                elementList.push_back(element);
-
-                gui->inputLayout = videoDevice->createInputLayout(elementList, compiled.data(), compiled.size());
-                gui->inputLayout->setName(L"core:inputLayout");
-
-                Video::Buffer::Description constantBufferDescription;
-                constantBufferDescription.stride = sizeof(Math::Float4x4);
-                constantBufferDescription.count = 1;
-                constantBufferDescription.type = Video::Buffer::Description::Type::Constant;
-                gui->constantBuffer = videoDevice->createBuffer(constantBufferDescription);
-                gui->constantBuffer->setName(L"core:constantBuffer");
-
-                static wchar_t const * const pixelShader =
-                    L"struct PixelInput" \
-                    L"{" \
-                    L"    float4 position : SV_POSITION;" \
-                    L"    float4 color : COLOR0;" \
-                    L"    float2 texCoord  : TEXCOORD0;" \
-                    L"};" \
-                    L"" \
-                    L"sampler pointSampler;" \
-                    L"Texture2D<float4> uiTexture : register(t0);" \
-                    L"" \
-                    L"float4 main(PixelInput input) : SV_Target" \
-                    L"{" \
-                    L"    return (input.color * uiTexture.Sample(pointSampler, input.texCoord));" \
-                    L"}";
-
-                compiled = resources->compileProgram(Video::PipelineType::Pixel, L"uiPixelProgram", L"main", pixelShader);
-                gui->pixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiled.data(), compiled.size());
-                gui->pixelProgram->setName(L"core:pixelProgram");
-
-                Video::UnifiedBlendStateInformation blendStateInformation;
-                blendStateInformation.enable = true;
-                blendStateInformation.colorSource = Video::BlendStateInformation::Source::SourceAlpha;
-                blendStateInformation.colorDestination = Video::BlendStateInformation::Source::InverseSourceAlpha;
-                blendStateInformation.colorOperation = Video::BlendStateInformation::Operation::Add;
-                blendStateInformation.alphaSource = Video::BlendStateInformation::Source::InverseSourceAlpha;
-                blendStateInformation.alphaDestination = Video::BlendStateInformation::Source::Zero;
-                blendStateInformation.alphaOperation = Video::BlendStateInformation::Operation::Add;
-                gui->blendState = videoDevice->createBlendState(blendStateInformation);
-                gui->blendState->setName(L"core:blendState");
-
-                Video::RenderStateInformation renderStateInformation;
-                renderStateInformation.fillMode = Video::RenderStateInformation::FillMode::Solid;
-                renderStateInformation.cullMode = Video::RenderStateInformation::CullMode::None;
-                renderStateInformation.scissorEnable = true;
-                renderStateInformation.depthClipEnable = true;
-                gui->renderState = videoDevice->createRenderState(renderStateInformation);
-                gui->renderState->setName(L"core:renderState");
-
-                Video::DepthStateInformation depthStateInformation;
-                depthStateInformation.enable = true;
-                depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
-                depthStateInformation.writeMask = Video::DepthStateInformation::Write::Zero;
-                gui->depthState = videoDevice->createDepthState(depthStateInformation);
-                gui->depthState->setName(L"core:depthState");
-
-                uint8_t *pixels = nullptr;
-                int32_t fontWidth = 0, fontHeight = 0;
-                imGuiIo.Fonts->GetTexDataAsRGBA32(&pixels, &fontWidth, &fontHeight);
-
-                Video::Texture::Description fontDescription;
-                fontDescription.format = Video::Format::R8G8B8A8_UNORM;
-                fontDescription.width = fontWidth;
-                fontDescription.height = fontHeight;
-                fontDescription.flags = Video::Texture::Description::Flags::Resource;
-                gui->fontTexture = videoDevice->createTexture(fontDescription, pixels);
-
-                imGuiIo.Fonts->TexID = (Video::Object *)gui->fontTexture.get();
-
-                Video::SamplerStateInformation samplerStateInformation;
-                samplerStateInformation.filterMode = Video::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapPoint;
-                samplerStateInformation.addressModeU = Video::SamplerStateInformation::AddressMode::Wrap;
-                samplerStateInformation.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
-                samplerStateInformation.addressModeW = Video::SamplerStateInformation::AddressMode::Wrap;
-                gui->samplerState = videoDevice->createSamplerState(samplerStateInformation);
-                gui->samplerState->setName(L"core:samplerState");
-
-                imGuiIo.UserData = this;
-                imGuiIo.RenderDrawListsFn = [](ImDrawData *drawData)
-                {
-                    ImGuiIO &imGuiIo = ImGui::GetIO();
-                    Core *core = static_cast<Core *>(imGuiIo.UserData);
-                    core->renderDrawData(drawData);
-                };
-                
                 windowActive = true;
                 engineRunning = true;
 
@@ -414,6 +251,7 @@ namespace Gek
 
             ~Core(void)
             {
+                renderer->onShowUI.disconnect<Core, &Core::onShowUI>(this);
                 window->onClose.disconnect<Core, &Core::onClose>(this);
                 window->onActivate.disconnect<Core, &Core::onActivate>(this);
                 window->onSizeChanged.disconnect<Core, &Core::onSizeChanged>(this);
@@ -425,9 +263,10 @@ namespace Gek
                 window->onMousePosition.disconnect<Core, &Core::onMousePosition>(this);
                 window->onMouseMovement.disconnect<Core, &Core::onMouseMovement>(this);
 
-                gui = nullptr;
-                ImGui::GetIO().Fonts->TexID = 0;
-                ImGui::Shutdown();
+                panelManager.clear();
+                consoleButton = nullptr;
+                performanceButton = nullptr;
+                settingsButton = nullptr;
 
                 processorList.clear();
                 renderer = nullptr;
@@ -593,128 +432,7 @@ namespace Gek
 
                 ImGui::PopItemWidth();
 
-                onOptions.emit(ImGui::GetCurrentContext(), windowData);
-            }
-
-            void renderDrawData(ImDrawData *drawData)
-            {
-                Core::Scope function(this, "Render UI");
-                if (!gui->vertexBuffer || gui->vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
-                {
-                    Video::Buffer::Description vertexBufferDescription;
-                    vertexBufferDescription.stride = sizeof(ImDrawVert);
-                    vertexBufferDescription.count = drawData->TotalVtxCount;
-                    vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
-                    vertexBufferDescription.flags = Video::Buffer::Description::Flags::Mappable;
-                    gui->vertexBuffer = videoDevice->createBuffer(vertexBufferDescription);
-                    gui->vertexBuffer->setName(String::Format(L"core:vertexBuffer:%v", gui->vertexBuffer.get()));
-                }
-
-                if (!gui->indexBuffer || gui->indexBuffer->getDescription().count < uint32_t(drawData->TotalIdxCount))
-                {
-                    Video::Buffer::Description vertexBufferDescription;
-                    vertexBufferDescription.count = drawData->TotalIdxCount;
-                    vertexBufferDescription.type = Video::Buffer::Description::Type::Index;
-                    vertexBufferDescription.flags = Video::Buffer::Description::Flags::Mappable;
-                    switch (sizeof(ImDrawIdx))
-                    {
-                    case 2:
-                        vertexBufferDescription.format = Video::Format::R16_UINT;
-                        break;
-
-                    case 4:
-                        vertexBufferDescription.format = Video::Format::R32_UINT;
-                        break;
-
-                    default:
-                        throw InvalidIndexBufferFormat("Index buffer can only be 16bit or 32bit");
-                    };
-
-                    gui->indexBuffer = videoDevice->createBuffer(vertexBufferDescription);
-                    gui->indexBuffer->setName(String::Format(L"core:vertexBuffer:%v", gui->indexBuffer.get()));
-                }
-
-                bool dataUploaded = false;
-                ImDrawVert* vertexData = nullptr;
-                ImDrawIdx* indexData = nullptr;
-                if (videoDevice->mapBuffer(gui->vertexBuffer.get(), vertexData))
-                {
-                    if (videoDevice->mapBuffer(gui->indexBuffer.get(), indexData))
-                    {
-                        for (int32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
-                        {
-                            const ImDrawList* commandList = drawData->CmdLists[commandListIndex];
-                            std::copy(commandList->VtxBuffer.Data, (commandList->VtxBuffer.Data + commandList->VtxBuffer.Size), vertexData);
-                            std::copy(commandList->IdxBuffer.Data, (commandList->IdxBuffer.Data + commandList->IdxBuffer.Size), indexData);
-                            vertexData += commandList->VtxBuffer.Size;
-                            indexData += commandList->IdxBuffer.Size;
-                        }
-
-                        dataUploaded = true;
-                        videoDevice->unmapBuffer(gui->indexBuffer.get());
-                    }
-
-                    videoDevice->unmapBuffer(gui->vertexBuffer.get());
-                }
-
-                if (dataUploaded)
-                {
-                    auto backBuffer = videoDevice->getBackBuffer();
-                    uint32_t width = backBuffer->getDescription().width;
-                    uint32_t height = backBuffer->getDescription().height;
-                    auto orthographic = Math::Float4x4::MakeOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
-                    videoDevice->updateResource(gui->constantBuffer.get(), &orthographic);
-
-                    auto videoContext = videoDevice->getDefaultContext();
-                    resources->setBackBuffer(videoContext, nullptr);
-
-                    videoContext->setInputLayout(gui->inputLayout.get());
-                    videoContext->setVertexBufferList({ gui->vertexBuffer.get() }, 0);
-                    videoContext->setIndexBuffer(gui->indexBuffer.get(), 0);
-                    videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
-                    videoContext->vertexPipeline()->setProgram(gui->vertexProgram.get());
-                    videoContext->vertexPipeline()->setConstantBufferList({ gui->constantBuffer.get() }, 0);
-                    videoContext->pixelPipeline()->setProgram(gui->pixelProgram.get());
-                    videoContext->pixelPipeline()->setSamplerStateList({ gui->samplerState.get() }, 0);
-
-                    videoContext->setBlendState(gui->blendState.get(), Math::Float4::Black, 0xFFFFFFFF);
-                    videoContext->setDepthState(gui->depthState.get(), 0);
-                    videoContext->setRenderState(gui->renderState.get());
-
-                    uint32_t vertexOffset = 0;
-                    uint32_t indexOffset = 0;
-                    for (int32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
-                    {
-                        const ImDrawList* commandList = drawData->CmdLists[commandListIndex];
-                        for (int32_t commandIndex = 0; commandIndex < commandList->CmdBuffer.Size; ++commandIndex)
-                        {
-                            const ImDrawCmd* command = &commandList->CmdBuffer[commandIndex];
-                            if (command->UserCallback)
-                            {
-                                command->UserCallback(commandList, command);
-                            }
-                            else
-                            {
-                                std::vector<Math::UInt4> scissorBoxList(1);
-                                scissorBoxList[0].minimum.x = uint32_t(command->ClipRect.x);
-                                scissorBoxList[0].minimum.y = uint32_t(command->ClipRect.y);
-                                scissorBoxList[0].maximum.x = uint32_t(command->ClipRect.z);
-                                scissorBoxList[0].maximum.y = uint32_t(command->ClipRect.w);
-                                videoContext->setScissorList(scissorBoxList);
-
-                                std::vector<Video::Object *> textureList(1);
-                                textureList[0] = (Video::Object *)command->TextureId;
-                                videoContext->pixelPipeline()->setResourceList(textureList, 0);
-
-                                videoContext->drawIndexedPrimitive(command->ElemCount, indexOffset, vertexOffset);
-                            }
-
-                            indexOffset += command->ElemCount;
-                        }
-
-                        vertexOffset += commandList->VtxBuffer.Size;
-                    }
-                }
+                OnSettingsPanel.emit(ImGui::GetCurrentContext(), windowData);
             }
 
             // Window slots
@@ -757,8 +475,7 @@ namespace Gek
                     switch (key)
                     {
                     case VK_ESCAPE:
-                        showCursor = !showCursor;
-                        imGuiIo.MouseDrawCursor = showCursor;
+                        imGuiIo.MouseDrawCursor = !imGuiIo.MouseDrawCursor;
                         break;
                     };
 
@@ -777,36 +494,36 @@ namespace Gek
                     }
                 }
 
-                if (!showCursor && population)
+                if (!imGuiIo.MouseDrawCursor && population)
                 {
                     switch (key)
                     {
                     case 'W':
                     case VK_UP:
-                        population->action(L"move_forward", state);
+                        population->action(Plugin::Population::Action(L"move_forward", state));
                         break;
 
                     case 'S':
                     case VK_DOWN:
-                        population->action(L"move_backward", state);
+                        population->action(Plugin::Population::Action(L"move_backward", state));
                         break;
 
                     case 'A':
                     case VK_LEFT:
-                        population->action(L"strafe_left", state);
+                        population->action(Plugin::Population::Action(L"strafe_left", state));
                         break;
 
                     case 'D':
                     case VK_RIGHT:
-                        population->action(L"strafe_right", state);
+                        population->action(Plugin::Population::Action(L"strafe_right", state));
                         break;
 
                     case VK_SPACE:
-                        population->action(L"jump", state);
+                        population->action(Plugin::Population::Action(L"jump", state));
                         break;
 
                     case VK_LCONTROL:
-                        population->action(L"crouch", state);
+                        population->action(Plugin::Population::Action(L"crouch", state));
                         break;
                     };
                 }
@@ -848,8 +565,8 @@ namespace Gek
             {
                 if (population)
                 {
-                    population->action(L"turn", xMovement * mouseSensitivity);
-                    population->action(L"tilt", yMovement * mouseSensitivity);
+                    population->action(Plugin::Population::Action(L"turn", xMovement * mouseSensitivity));
+                    population->action(Plugin::Population::Action(L"tilt", yMovement * mouseSensitivity));
                 }
             }
 
@@ -877,20 +594,76 @@ namespace Gek
                 };
             }
 
-            void beginEvent(char const * const name)
+            void beginEvent(wchar_t const * const name)
             {
                 performanceMap[name] = timer.getImmediateTime();
             }
 
-            void endEvent(char const * const name)
+            void endEvent(wchar_t const * const name)
             {
                 auto &time = performanceMap[name];
                 time = (timer.getImmediateTime() - time) * 1000.0f;
             }
 
-            void addValue(char const * const name, float value)
+            void addValue(wchar_t const * const name, float value)
             {
                 performanceMap[name] += value;
+            }
+
+            // Renderer
+            void onShowUI(ImGuiContext * const guiContext)
+            {
+                ImGuiIO &imGuiIo = ImGui::GetIO();
+                panelManager.setDisplayPortion(ImVec4(0, 0, imGuiIo.DisplaySize.x, imGuiIo.DisplaySize.y));
+
+                float frameTime = timer.getUpdateTime();
+                if (windowActive)
+                {
+                    if (imGuiIo.MouseDrawCursor)
+                    {
+                        if (showModeChange)
+                        {
+                            ImGui::SetNextWindowPosCenter();
+                            ImGui::Begin("Keep Display Mode", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
+                            ImGui::Text("Keep Display Mode?");
+
+                            if (ImGui::Button("Yes"))
+                            {
+                                showModeChange = false;
+                                previousDisplayMode = currentDisplayMode;
+                            }
+
+                            ImGui::SameLine();
+                            modeChangeTimer -= frameTime;
+                            if (modeChangeTimer <= 0.0f || ImGui::Button("No"))
+                            {
+                                showModeChange = false;
+                                setDisplayMode(previousDisplayMode);
+                            }
+
+                            ImGui::Text(StringUTF8::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)));
+
+                            ImGui::End();
+                        }
+                    }
+                    else
+                    {
+                        auto rectangle = window->getScreenRectangle();
+                        window->setCursorPosition(Math::Int2(
+                            int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
+                            int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
+                    }
+                }
+                else
+                {
+                    ImGui::SetNextWindowPosCenter();
+                    ImGui::Begin("GEK Engine##Paused", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoCollapse);
+                    ImGui::Dummy(ImVec2(200, 0));
+                    ImGui::Text("Paused");
+                    ImGui::End();
+                }
+
+                panelManager.render();
             }
 
             // Plugin::Core
@@ -925,14 +698,10 @@ namespace Gek
                 }
 
                 performanceMap.clear();
-                Core::Scope function(this, "Update Core");
-
-                ImGuiIO &imGuiIo = ImGui::GetIO();
-
-                imGuiIo.DeltaTime = frameTime;
-                addValue("Frame Rate", (1.0f / frameTime));
+                Core::Scope function(this, L"Update Core");
 
                 // Read keyboard modifiers inputs
+                ImGuiIO &imGuiIo = ImGui::GetIO();
                 imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
                 imGuiIo.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
                 imGuiIo.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
@@ -942,88 +711,17 @@ namespace Gek
                 // imGuiIo.MouseDown : filled by WM_*BUTTON* events
                 // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
 
-                auto backBuffer = videoDevice->getBackBuffer();
-                uint32_t width = backBuffer->getDescription().width;
-                uint32_t height = backBuffer->getDescription().height;
-                imGuiIo.DisplaySize = ImVec2(float(width), float(height));
-                gui->panelManager.setDisplayPortion(ImVec4(0, 0, width, height));
-
-                ImGui::NewFrame();
-                ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-                ImGui::Begin("GEK Engine", nullptr, ImVec2(0, 0), 0.0f, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
                 if (windowActive)
                 {
-                    if (showCursor)
+                    if (imGuiIo.MouseDrawCursor)
                     {
-                        if (showModeChange)
-                        {
-                            ImGui::SetNextWindowPosCenter();
-                            ImGui::Begin("Keep Display Mode", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
-                            ImGui::Text("Keep Display Mode?");
-
-                            if (ImGui::Button("Yes"))
-                            {
-                                showModeChange = false;
-                                previousDisplayMode = currentDisplayMode;
-                            }
-
-                            ImGui::SameLine();
-                            modeChangeTimer -= frameTime;
-                            if (modeChangeTimer <= 0.0f || ImGui::Button("No"))
-                            {
-                                showModeChange = false;
-                                setDisplayMode(previousDisplayMode);
-                            }
-
-                            ImGui::Text(StringUTF8::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)));
-
-                            ImGui::End();
-                        }
-
                         population->update(0.0f);
                     }
                     else
                     {
                         population->update(frameTime);
                     }
-
-                    onDisplay.emit();
-                    onInterface.emit(showCursor);
                 }
-
-                if (population->isLoading())
-                {
-                    ImGui::SetNextWindowPosCenter();
-                    ImGui::Begin("GEK Engine##Loading", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoCollapse);
-                    ImGui::Dummy(ImVec2(200, 0));
-                    ImGui::Text("Loading...");
-                    ImGui::End();
-                }
-                else if (!windowActive)
-                {
-                    ImGui::SetNextWindowPosCenter();
-                    ImGui::Begin("GEK Engine##Paused", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoCollapse);
-                    ImGui::Dummy(ImVec2(200, 0));
-                    ImGui::Text("Paused");
-                    ImGui::End();
-                }
-
-                if (windowActive && !showCursor)
-                {
-                    auto rectangle = window->getScreenRectangle();
-                    window->setCursorPosition(Math::Int2(
-                        int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
-                        int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
-                }
-
-                gui->panelManager.render();
-
-                ImGui::End();
-
-                renderer->renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());
-                ImGui::Render();
-
-                videoDevice->present(false);
 
                 return engineRunning;
             }
@@ -1070,7 +768,7 @@ namespace Gek
 
             ImGui::PanelManager * getPanelManager(void)
             {
-                return &gui->panelManager;
+                return &panelManager;
             }
 
             void listProcessors(std::function<void(Plugin::Processor *)> onProcessor)

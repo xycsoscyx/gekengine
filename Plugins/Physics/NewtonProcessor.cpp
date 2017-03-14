@@ -9,6 +9,7 @@
 #include "GEK/Engine/Core.hpp"
 #include "GEK/Engine/Processor.hpp"
 #include "GEK/Engine/Population.hpp"
+#include "GEK/Engine/Renderer.hpp"
 #include "GEK/Engine/Entity.hpp"
 #include "GEK/Engine/Editor.hpp"
 #include "GEK/Components/Transform.hpp"
@@ -72,6 +73,7 @@ namespace Gek
         private:
             Plugin::Core *core = nullptr;
             Plugin::Population *population = nullptr;
+            Plugin::Renderer *renderer = nullptr;
             Plugin::Editor *editor = nullptr;
 
             NewtonWorld *newtonWorld = nullptr;
@@ -90,6 +92,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , core(core)
                 , population(core->getPopulation())
+                , renderer(core->getRenderer())
                 , newtonWorld(NewtonCreate())
             {
                 GEK_REQUIRE(core);
@@ -111,9 +114,7 @@ namespace Gek
                 NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, nullptr, newtonOnAABBOverlap, newtonOnContactFriction);
 #endif
 
-                core->onInterface.connect<Processor, &Processor::onInterface>(this);
-                population->onLoadBegin.connect<Processor, &Processor::onLoadBegin>(this);
-                population->onLoadSucceeded.connect<Processor, &Processor::onLoadSucceeded>(this);
+                renderer->onShowUI.connect<Processor, &Processor::onShowUI>(this);
                 population->onEntityDestroyed.connect<Processor, &Processor::onEntityDestroyed>(this);
                 population->onUpdate[50].connect<Processor, &Processor::onUpdate>(this);
             }
@@ -127,9 +128,7 @@ namespace Gek
 
                 population->onUpdate[50].disconnect<Processor, &Processor::onUpdate>(this);
                 population->onEntityDestroyed.disconnect<Processor, &Processor::onEntityDestroyed>(this);
-                population->onLoadSucceeded.disconnect<Processor, &Processor::onLoadSucceeded>(this);
-                population->onLoadBegin.disconnect<Processor, &Processor::onLoadBegin>(this);
-                core->onInterface.disconnect<Processor, &Processor::onInterface>(this);
+                renderer->onShowUI.disconnect<Processor, &Processor::onShowUI>(this);
 
                 NewtonWaitForUpdateToFinish(newtonWorld);
                 for (auto &collisionPair : collisionMap)
@@ -355,7 +354,7 @@ namespace Gek
             }
 
             // Plugin::Core Slots
-            void onInterface(bool showCursor)
+            void onShowUI(ImGuiContext * const guiContext)
             {
             }
 
@@ -437,14 +436,13 @@ namespace Gek
                 }
             }
 
-            void onUpdate(void)
+            void onUpdate(float frameTime)
             {
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(newtonWorld);
 
-                if (!core->isEditorActive() && population->getFrameTime() > 0.0f)
+                if (frameTime > 0.0f && !core->isEditorActive())
                 {
-                    float frameTime = population->getFrameTime();
                     static const float StepTime = (1.0f / 120.0f);
                     while (frameTime > 0.0f)
                     {

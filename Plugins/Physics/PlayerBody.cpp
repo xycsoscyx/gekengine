@@ -57,7 +57,7 @@ namespace Gek
 			virtual void onExit(PlayerBody *player) { };
 
 			virtual StatePtr onUpdate(PlayerBody *player, float frameTime) { return nullptr; };
-			virtual StatePtr onAction(PlayerBody *player, String const &actionName, const Plugin::Population::ActionParameter &parameter) { return nullptr; };
+			virtual StatePtr onAction(PlayerBody *player, Plugin::Population::Action const &action) { return nullptr; };
 		};
 
 		class IdleState
@@ -65,7 +65,7 @@ namespace Gek
 		{
 		public:
 			StatePtr onUpdate(PlayerBody *player, float frameTime);
-			StatePtr onAction(PlayerBody *player, String const &actionName, const Plugin::Population::ActionParameter &parameter);
+			StatePtr onAction(PlayerBody *player, Plugin::Population::Action const &action);
 		};
 
 		class WalkingState
@@ -73,7 +73,7 @@ namespace Gek
 		{
 		public:
 			StatePtr onUpdate(PlayerBody *player, float frameTime);
-			StatePtr onAction(PlayerBody *player, String const &actionName, const Plugin::Population::ActionParameter &parameter);
+			StatePtr onAction(PlayerBody *player, Plugin::Population::Action const &action);
 		};
 
 		class JumpingState
@@ -82,7 +82,7 @@ namespace Gek
 		public:
 			void onEnter(PlayerBody *player);
 			StatePtr onUpdate(PlayerBody *player, float frameTime);
-            StatePtr onAction(PlayerBody *player, String const &actionName, const Plugin::Population::ActionParameter &parameter);
+            StatePtr onAction(PlayerBody *player, Plugin::Population::Action const &action);
         };
 
 		class PlayerBody
@@ -404,43 +404,43 @@ namespace Gek
             }
 
             // Plugin::Population Slots
-			void onAction(String const &actionName, const Plugin::Population::ActionParameter &parameter)
+			void onAction(Plugin::Population::Action const &action)
 			{
                 if (core->isEditorActive())
                 {
                     return;
                 }
 
-                if (actionName.compareNoCase(L"turn") == 0)
+                if (action.name.compareNoCase(L"turn") == 0)
 				{
-					headingAngle += (parameter.value * 0.01f);
+					headingAngle += (action.value * 0.01f);
 				}
-                else if (actionName.compareNoCase(L"tilt") == 0)
+                else if (action.name.compareNoCase(L"tilt") == 0)
                 {
-                    lookingAngle += (parameter.value * 0.01f);
+                    lookingAngle += (action.value * 0.01f);
                     lookingAngle = Math::Clamp(lookingAngle, -Math::Pi * 0.5f, Math::Pi * 0.5f);
                 }
-                else if (actionName.compareNoCase(L"move_forward") == 0)
+                else if (action.name.compareNoCase(L"move_forward") == 0)
 				{
-					moveForward = parameter.state;
+					moveForward = action.state;
 				}
-				else if (actionName.compareNoCase(L"move_backward") == 0)
+				else if (action.name.compareNoCase(L"move_backward") == 0)
 				{
-					moveBackward = parameter.state;
+					moveBackward = action.state;
 				}
-				else if (actionName.compareNoCase(L"strafe_left") == 0)
+				else if (action.name.compareNoCase(L"strafe_left") == 0)
 				{
-					strafeLeft = parameter.state;
+					strafeLeft = action.state;
 				}
-				else if (actionName.compareNoCase(L"strafe_right") == 0)
+				else if (action.name.compareNoCase(L"strafe_right") == 0)
 				{
-					strafeRight = parameter.state;
+					strafeRight = action.state;
 				}
-				else if (actionName.compareNoCase(L"crouch") == 0)
+				else if (action.name.compareNoCase(L"crouch") == 0)
 				{
 				}
 
-				StatePtr nextState(currentState->onAction(this, actionName, parameter));
+				StatePtr nextState(currentState->onAction(this, action));
 				if (nextState)
 				{
 					currentState->onExit(this);
@@ -677,28 +677,28 @@ namespace Gek
 			return nullptr;
 		}
 
-		StatePtr IdleState::onAction(PlayerBody *player, String const &actionName, const Plugin::Population::ActionParameter &parameter)
+		StatePtr IdleState::onAction(PlayerBody *player, Plugin::Population::Action const &action)
 		{
-			if (actionName.compareNoCase(L"crouch") == 0 && parameter.state)
+			if (action.name.compareNoCase(L"crouch") == 0 && action.state)
 			{
 			}
-			else if (actionName.compareNoCase(L"move_forward") == 0 && parameter.state)
-			{
-				return std::make_unique<WalkingState>();
-			}
-			else if (actionName.compareNoCase(L"move_backward") == 0 && parameter.state)
+			else if (action.name.compareNoCase(L"move_forward") == 0 && action.state)
 			{
 				return std::make_unique<WalkingState>();
 			}
-			else if (actionName.compareNoCase(L"strafe_left") == 0 && parameter.state)
+			else if (action.name.compareNoCase(L"move_backward") == 0 && action.state)
 			{
 				return std::make_unique<WalkingState>();
 			}
-			else if (actionName.compareNoCase(L"strafe_right") == 0 && parameter.state)
+			else if (action.name.compareNoCase(L"strafe_left") == 0 && action.state)
 			{
 				return std::make_unique<WalkingState>();
 			}
-			else if (actionName.compareNoCase(L"jump") == 0 && parameter.state && player->touchingSurface)
+			else if (action.name.compareNoCase(L"strafe_right") == 0 && action.state)
+			{
+				return std::make_unique<WalkingState>();
+			}
+			else if (action.name.compareNoCase(L"jump") == 0 && action.state && player->touchingSurface)
 			{
 				return std::make_unique<JumpingState>();
 			}
@@ -718,9 +718,9 @@ namespace Gek
 			return nullptr;
 		}
 
-		StatePtr WalkingState::onAction(PlayerBody *player, String const &actionName, const Plugin::Population::ActionParameter &parameter)
+		StatePtr WalkingState::onAction(PlayerBody *player, Plugin::Population::Action const &action)
 		{
-			if (actionName.compareNoCase(L"jump") == 0 && parameter.state && player->touchingSurface)
+			if (action.name.compareNoCase(L"jump") == 0 && action.state && player->touchingSurface)
 			{
 				return std::make_unique<JumpingState>();
 			}
@@ -751,9 +751,9 @@ namespace Gek
 			return nullptr;
 		}
 
-        StatePtr JumpingState::onAction(PlayerBody *player, String const &actionName, const Plugin::Population::ActionParameter &parameter)
+        StatePtr JumpingState::onAction(PlayerBody *player, Plugin::Population::Action const &action)
         {
-            if (actionName.compareNoCase(L"jump") == 0 && parameter.state && player->touchingSurface)
+            if (action.name.compareNoCase(L"jump") == 0 && action.state && player->touchingSurface)
             {
                 return std::make_unique<JumpingState>();
             }

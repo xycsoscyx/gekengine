@@ -67,15 +67,15 @@ namespace Gek
         }
 
         // Plugin::Population Slots
-        void onUpdate(void)
+        void onUpdate(float frameTime)
         {
             GEK_REQUIRE(population);
 
-            if (!core->isEditorActive())
+            if (frameTime > 0.0f && !core->isEditorActive())
             {
                 population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity * const entity, wchar_t const * const , auto &transformComponent, auto &spinComponent) -> void
                 {
-                    auto omega(spinComponent.torque * population->getFrameTime());
+                    auto omega(spinComponent.torque * frameTime);
                     transformComponent.rotation *= Math::Quaternion::FromEuler(omega.x, omega.y, omega.z);
                 });
             }

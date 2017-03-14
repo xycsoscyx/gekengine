@@ -33,37 +33,36 @@ namespace Gek
             GEK_ADD_EXCEPTION(InvalidEntityBlock);
             GEK_ADD_EXCEPTION(EntityNameExists);
 
-            struct ActionParameter
+            struct Action
             {
+                String name;
                 union
                 {
                     bool state;
                     float value;
                 };
 
-                ActionParameter(void)
+                Action(void)
                 {
                 }
 
-                ActionParameter(bool state)
-                    : state(state)
+                Action(wchar_t const * name, bool state)
+                    : name(name)
+                    , state(state)
                 {
                 }
 
-                ActionParameter(float value)
-                    : value(value)
+                Action(wchar_t const * name, float value)
+                    : name(name)
+                    , value(value)
                 {
                 }
             };
 
             virtual ~Population(void) = default;
 
-            std::map<int32_t, Nano::Signal<void(void)>> onUpdate;
-            Nano::Signal<void(String const &actionName, const ActionParameter &actionParameter)> onAction;
-
-            Nano::Signal<void(String const &populationName)> onLoadBegin;
-            Nano::Signal<void(String const &populationName)> onLoadSucceeded;
-            Nano::Signal<void(String const &populationName)> onLoadFailed;
+            std::map<int32_t, Nano::Signal<void(float frameTime)>> onUpdate;
+            Nano::Signal<void(Action const &action)> onAction;
 
             Nano::Signal<void(Plugin::Entity * const entity, wchar_t const * const entityName)> onEntityCreated;
             Nano::Signal<void(Plugin::Entity * const entity)> onEntityDestroyed;
@@ -72,9 +71,6 @@ namespace Gek
             Nano::Signal<void(Plugin::Entity * const entity, const std::type_index &type)> onComponentRemoved;
 
             virtual ShuntingYard &getShuntingYard(void) = 0;
-            virtual float getWorldTime(void) const = 0;
-            virtual float getFrameTime(void) const = 0;
-            virtual bool isLoading(void) const = 0;
 
             virtual void load(wchar_t const * const populationName) = 0;
             virtual void save(wchar_t const * const populationName) = 0;
@@ -99,7 +95,7 @@ namespace Gek
             }
 
             virtual void update(float frameTime = 0.0f) = 0;
-            virtual void action(String const &actionName, const ActionParameter &actionParameter) = 0;
+            virtual void action(Action const &action) = 0;
         };
     }; // namespace Plugin
 

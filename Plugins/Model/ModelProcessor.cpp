@@ -179,13 +179,11 @@ namespace Gek
             GEK_REQUIRE(resources);
             GEK_REQUIRE(renderer);
 
-            population->onLoadBegin.connect<ModelProcessor, &ModelProcessor::onLoadBegin>(this);
-            population->onLoadSucceeded.connect<ModelProcessor, &ModelProcessor::onLoadSucceeded>(this);
             population->onEntityCreated.connect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
             population->onEntityDestroyed.connect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
             population->onComponentAdded.connect<ModelProcessor, &ModelProcessor::onComponentAdded>(this);
             population->onComponentRemoved.connect<ModelProcessor, &ModelProcessor::onComponentRemoved>(this);
-            renderer->onRenderScene.connect<ModelProcessor, &ModelProcessor::onRenderScene>(this);
+            renderer->onQueueDrawCalls.connect<ModelProcessor, &ModelProcessor::onQueueDrawCalls>(this);
 
             visual = resources->loadVisual(L"model");
 
@@ -200,13 +198,11 @@ namespace Gek
 
         ~ModelProcessor(void)
         {
-            renderer->onRenderScene.disconnect<ModelProcessor, &ModelProcessor::onRenderScene>(this);
+            renderer->onQueueDrawCalls.disconnect<ModelProcessor, &ModelProcessor::onQueueDrawCalls>(this);
             population->onComponentRemoved.disconnect<ModelProcessor, &ModelProcessor::onComponentRemoved>(this);
             population->onComponentAdded.disconnect<ModelProcessor, &ModelProcessor::onComponentAdded>(this);
             population->onEntityDestroyed.disconnect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
             population->onEntityCreated.disconnect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
-            population->onLoadSucceeded.disconnect<ModelProcessor, &ModelProcessor::onLoadSucceeded>(this);
-            population->onLoadBegin.disconnect<ModelProcessor, &ModelProcessor::onLoadBegin>(this);
         }
 
         void addEntity(Plugin::Entity * const entity)
@@ -303,21 +299,6 @@ namespace Gek
         }
 
         // Plugin::Population Slots
-        void onLoadBegin(String const &populationName)
-        {
-            loadPool.clear();
-            modelMap.clear();
-            clear();
-        }
-
-        void onLoadSucceeded(String const &populationName)
-        {
-            population->listEntities([&](Plugin::Entity * const entity, wchar_t const * const ) -> void
-            {
-                addEntity(entity);
-            });
-        }
-
         void onEntityCreated(Plugin::Entity * const entity, wchar_t const * const entityName)
         {
             addEntity(entity);
@@ -638,7 +619,7 @@ namespace Gek
         }
 
         // Plugin::Renderer Slots
-        void onRenderScene(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)
+        void onQueueDrawCalls(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)
         {
             GEK_REQUIRE(renderer);
 

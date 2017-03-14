@@ -27,16 +27,18 @@ namespace Gek
         {
             GEK_ADD_EXCEPTION(InitializationFailed);
             GEK_ADD_EXCEPTION(InvalidDisplayMode);
-            GEK_ADD_EXCEPTION(InvalidIndexBufferFormat);
             GEK_ADD_EXCEPTION(InvalidOptionName);
 
             GEK_INTERFACE(Log)
             {
-                struct Scope
+                class Scope
                 {
+                private:
                     Log *log = nullptr;
-                    char const * const name = nullptr;
-                    Scope(Log *log, char const * const name)
+                    String name;
+
+                public:
+                    Scope(Log *log, wchar_t const * const name)
                         : log(log)
                         , name(name)
                     {
@@ -61,16 +63,14 @@ namespace Gek
 
                 virtual void message(wchar_t const * const system, Type logType, wchar_t const * const message) = 0;
 
-                virtual void beginEvent(char const * const name) = 0;
-                virtual void endEvent(char const * const name) = 0;
+                virtual void beginEvent(wchar_t const * const name) = 0;
+                virtual void endEvent(wchar_t const * const name) = 0;
 
-                virtual void addValue(char const * const name, float value) = 0;
+                virtual void addValue(wchar_t const * const name, float value) = 0;
             };
 
             Nano::Signal<void(void)> onResize;
-            Nano::Signal<void(void)> onDisplay;
-            Nano::Signal<void(bool showCursor)> onInterface;
-            Nano::Signal<void(ImGuiContext *context, ImGui::PanelManagerWindowData &windowData)> onOptions;
+            Nano::Signal<void(ImGuiContext *context, ImGui::PanelManagerWindowData &windowData)> OnSettingsPanel;
 
             virtual ~Core(void) = default;
 

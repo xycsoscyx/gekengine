@@ -52,7 +52,6 @@ namespace Gek
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(core);
 
-                population->onLoadBegin.connect<Editor, &Editor::onLoadBegin>(this);
                 population->onAction.connect<Editor, &Editor::onAction>(this);
                 population->onUpdate[90].connect<Editor, &Editor::onUpdate>(this);
 
@@ -72,7 +71,6 @@ namespace Gek
             {
                 population->onUpdate[90].disconnect<Editor, &Editor::onUpdate>(this);
                 population->onAction.disconnect<Editor, &Editor::onAction>(this);
-                population->onLoadBegin.disconnect<Editor, &Editor::onLoadBegin>(this);
             }
 
             void drawPopulation(ImGui::PanelManagerWindowData &windowData)
@@ -256,59 +254,44 @@ namespace Gek
             }
 
             // Plugin::Population Slots
-            void onAction(String const &actionName, const Plugin::Population::ActionParameter &parameter)
+            void onAction(Plugin::Population::Action const &action)
             {
                 if (!core->isEditorActive())
                 {
                     return;
                 }
 
-                if (actionName.compareNoCase(L"turn") == 0)
+                if (action.name.compareNoCase(L"turn") == 0)
                 {
-                    headingAngle += (parameter.value * 0.01f);
+                    headingAngle += (action.value * 0.01f);
                 }
-                else if (actionName.compareNoCase(L"tilt") == 0)
+                else if (action.name.compareNoCase(L"tilt") == 0)
                 {
-                    lookingAngle += (parameter.value * 0.01f);
+                    lookingAngle += (action.value * 0.01f);
                     lookingAngle = Math::Clamp(lookingAngle, -Math::Pi * 0.5f, Math::Pi * 0.5f);
                 }
-                else if (actionName.compareNoCase(L"move_forward") == 0)
+                else if (action.name.compareNoCase(L"move_forward") == 0)
                 {
-                    moveForward = parameter.state;
+                    moveForward = action.state;
                 }
-                else if (actionName.compareNoCase(L"move_backward") == 0)
+                else if (action.name.compareNoCase(L"move_backward") == 0)
                 {
-                    moveBackward = parameter.state;
+                    moveBackward = action.state;
                 }
-                else if (actionName.compareNoCase(L"strafe_left") == 0)
+                else if (action.name.compareNoCase(L"strafe_left") == 0)
                 {
-                    strafeLeft = parameter.state;
+                    strafeLeft = action.state;
                 }
-                else if (actionName.compareNoCase(L"strafe_right") == 0)
+                else if (action.name.compareNoCase(L"strafe_right") == 0)
                 {
-                    strafeRight = parameter.state;
+                    strafeRight = action.state;
                 }
             }
 
-            void onLoadBegin(String const &populationName)
-            {
-                selectedEntity = 0;
-                selectedComponent = 0;
-                headingAngle = 0.0f;
-                lookingAngle = 0.0f;
-                position = Math::Float3::Zero;
-                moveForward = false;
-                moveBackward = false;
-                strafeLeft = false;
-                strafeRight = false;
-            }
-
-            void onUpdate(void)
+            void onUpdate(float frameTime)
             {
                 if (core->isEditorActive())
                 {
-                    float frameTime = population->getFrameTime();
-
                     Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));
                     position += (viewMatrix.rz.xyz * (((moveForward ? 1.0f : 0.0f) + (moveBackward ? -1.0f : 0.0f)) * 5.0f) * frameTime);
                     position += (viewMatrix.rx.xyz * (((strafeLeft ? -1.0f : 0.0f) + (strafeRight ? 1.0f : 0.0f)) * 5.0f) * frameTime);
@@ -325,7 +308,7 @@ namespace Gek
                         L"antialias"
                     };
 
-                    renderer->queueRenderCall(viewMatrix, projectionMatrix, 0.5f, 200.0f, ResourceHandle());
+                    renderer->queueCamera(viewMatrix, projectionMatrix, 0.5f, 200.0f, ResourceHandle());
                 }
             }
         };
