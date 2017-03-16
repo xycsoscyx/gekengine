@@ -17,6 +17,11 @@ namespace Gek
 {
     namespace Components
     {
+        GEK_COMPONENT(Static)
+        {
+            String group;
+        };
+
         GEK_COMPONENT(Physical)
         {
             float mass = 0.0f;

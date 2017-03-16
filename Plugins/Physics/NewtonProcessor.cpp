@@ -77,8 +77,6 @@ namespace Gek
             Plugin::Editor *editor = nullptr;
 
             NewtonWorld *newtonWorld = nullptr;
-            NewtonCollision *newtonStaticScene = nullptr;
-            NewtonBody *newtonStaticBody = nullptr;
             std::unordered_map<uint32_t, uint32_t> staticSurfaceMap;
 
             Math::Float3 gravity = Math::Float3(0.0f, -32.174f, 0.0f);
@@ -115,7 +113,10 @@ namespace Gek
 #endif
 
                 renderer->onShowUI.connect<Processor, &Processor::onShowUI>(this);
+                population->onEntityCreated.connect<Processor, &Processor::onEntityCreated>(this);
                 population->onEntityDestroyed.connect<Processor, &Processor::onEntityDestroyed>(this);
+                population->onComponentAdded.connect<Processor, &Processor::onComponentAdded>(this);
+                population->onComponentRemoved.connect<Processor, &Processor::onComponentRemoved>(this);
                 population->onUpdate[50].connect<Processor, &Processor::onUpdate>(this);
             }
 
@@ -127,7 +128,10 @@ namespace Gek
                 }
 
                 population->onUpdate[50].disconnect<Processor, &Processor::onUpdate>(this);
+                population->onComponentRemoved.disconnect<Processor, &Processor::onComponentRemoved>(this);
+                population->onComponentAdded.disconnect<Processor, &Processor::onComponentAdded>(this);
                 population->onEntityDestroyed.disconnect<Processor, &Processor::onEntityDestroyed>(this);
+                population->onEntityCreated.disconnect<Processor, &Processor::onEntityCreated>(this);
                 renderer->onShowUI.disconnect<Processor, &Processor::onShowUI>(this);
 
                 NewtonWaitForUpdateToFinish(newtonWorld);
@@ -139,16 +143,11 @@ namespace Gek
                     }
                 }
 
-                if (newtonStaticScene)
-                {
-                    NewtonDestroyCollision(newtonStaticScene);
-                }
 
                 collisionMap.clear();
                 entityMap.clear();
                 surfaceList.clear();
                 surfaceIndexMap.clear();
-                newtonStaticBody = nullptr;
                 NewtonDestroyAllBodies(newtonWorld);
                 NewtonInvalidateCache(newtonWorld);
                 NewtonDestroy(newtonWorld);
@@ -159,7 +158,7 @@ namespace Gek
             {
                 dLong surfaceAttribute = 0;
                 Math::Float3 collisionNormal;
-                NewtonCollisionRayCast(newtonStaticScene, (position - normal).data, (position + normal).data, collisionNormal.data, &surfaceAttribute);
+                //NewtonCollisionRayCast(newtonStaticScene, (position - normal).data, (position + normal).data, collisionNormal.data, &surfaceAttribute);
                 if (surfaceAttribute > 0)
                 {
                     return staticSurfaceMap[uint32_t(surfaceAttribute)];
@@ -265,40 +264,64 @@ namespace Gek
             {
                 try
                 {
-                    if (entity->hasComponents<Components::Transform, Components::Physical>())
+                    if (entity->hasComponent<Components::Transform>())
                     {
-                        auto &transformComponent = entity->getComponent<Components::Transform>();
-                        auto &physicalComponent = entity->getComponent<Components::Physical>();
-
                         concurrency::critical_section::scoped_lock lock(criticalSection);
-                        if (entity->hasComponent<Components::Player>())
+                        auto &transformComponent = entity->getComponent<Components::Transform>();
+                        if (entity->hasComponents<Components::Model, Components::Static>())
                         {
-                            Newton::EntityPtr playerBody(createPlayerBody(core, population, newtonWorld, entity));
-                            if (playerBody)
-                            {
-                                NewtonBodySetTransformCallback(playerBody->getNewtonBody(), newtonSetTransform);
-                                entityMap[entity] = std::move(playerBody);
-                            }
-                        }
-                        else
-                        {
-                            NewtonCollision *newtonCollision = nullptr;
                             if (entity->hasComponent<Components::Model>())
                             {
                                 const auto &modelComponent = entity->getComponent<Components::Model>();
-                                newtonCollision = loadCollision(modelComponent);
-                            }
-
-                            if (newtonCollision)
-                            {
-                                if (physicalComponent.mass == 0.0f && loadingScene)
+                                auto newtonCollision = loadCollision(modelComponent);
+                                if (newtonCollision)
                                 {
+                                    const auto &staticComponent = entity->getComponent<Components::Static>();
+
+                                    auto newtonStaticScene = NewtonCreateSceneCollision(newtonWorld, 1);
+                                    if (newtonStaticScene == nullptr)
+                                    {
+                                        throw Newton::UnableToCreateCollision("Unable to create scene collision");
+                                    }
+
+                                    NewtonSceneCollisionBeginAddRemove(newtonStaticScene);
+                                    population->listEntities([&](Plugin::Entity * const entity, wchar_t const * const) -> void
+                                    {
+                                        addEntity(entity);
+                                    });
+
+                                    NewtonSceneCollisionEndAddRemove(newtonStaticScene);
+                                    NewtonCollisionSetMode(newtonStaticScene, true);
+                                    NewtonCollisionSetScale(newtonStaticScene, 1.0f, 1.0f, 1.0f);
+                                    NewtonCollisionSetMatrix(newtonStaticScene, Math::Float4x4::Identity.data);
+
+                                    auto newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
+                                    NewtonBodySetCollidable(newtonStaticBody, true);
+
                                     NewtonCollision *clonedCollision = NewtonCollisionCreateInstance(newtonCollision);
                                     NewtonCollisionSetMatrix(clonedCollision, transformComponent.getMatrix().data);
                                     NewtonSceneCollisionAddSubCollision(newtonStaticScene, clonedCollision);
                                     NewtonDestroyCollision(clonedCollision);
                                 }
-                                else
+                            }
+                        }
+                        else if (entity->hasComponents<Components::Physical>())
+                        {
+                            auto &physicalComponent = entity->getComponent<Components::Physical>();
+                            if (entity->hasComponent<Components::Player>())
+                            {
+                                Newton::EntityPtr playerBody(createPlayerBody(core, population, newtonWorld, entity));
+                                if (playerBody)
+                                {
+                                    NewtonBodySetTransformCallback(playerBody->getNewtonBody(), newtonSetTransform);
+                                    entityMap[entity] = std::move(playerBody);
+                                }
+                            }
+                            else if (entity->hasComponent<Components::Model>())
+                            {
+                                const auto &modelComponent = entity->getComponent<Components::Model>();
+                                auto newtonCollision = loadCollision(modelComponent);
+                                if (newtonCollision)
                                 {
                                     Newton::EntityPtr rigidBody(createRigidBody(newtonWorld, newtonCollision, entity));
                                     if (rigidBody)
@@ -359,60 +382,6 @@ namespace Gek
             }
 
             // Plugin::Population Slots
-            void onLoadBegin(String const &populationName)
-            {
-                NewtonWaitForUpdateToFinish(newtonWorld);
-                for (auto &collisionPair : collisionMap)
-                {
-                    if (collisionPair.second)
-                    {
-                        NewtonDestroyCollision(collisionPair.second);
-                    }
-                }
-
-                if (newtonStaticScene)
-                {
-                    NewtonDestroyCollision(newtonStaticScene);
-                    newtonStaticScene = nullptr;
-                }
-
-                collisionMap.clear();
-                entityMap.clear();
-                surfaceList.clear();
-                surfaceIndexMap.clear();
-                newtonStaticBody = nullptr;
-                NewtonDestroyAllBodies(newtonWorld);
-                NewtonInvalidateCache(newtonWorld);
-
-                surfaceList.push_back(Surface());
-            }
-
-            bool loadingScene = false;
-            void onLoadSucceeded(String const &populationName)
-            {
-                loadingScene = true;
-                newtonStaticScene = NewtonCreateSceneCollision(newtonWorld, 1);
-                if (newtonStaticScene == nullptr)
-                {
-                    throw Newton::UnableToCreateCollision("Unable to create scene collision");
-                }
-
-                NewtonSceneCollisionBeginAddRemove(newtonStaticScene);
-                population->listEntities([&](Plugin::Entity * const entity, wchar_t const * const ) -> void
-                {
-                    addEntity(entity);
-                });
-
-                NewtonSceneCollisionEndAddRemove(newtonStaticScene);
-                NewtonCollisionSetMode(newtonStaticScene, true);
-                NewtonCollisionSetScale(newtonStaticScene, 1.0f, 1.0f, 1.0f);
-                NewtonCollisionSetMatrix(newtonStaticScene, Math::Float4x4::Identity.data);
-
-                newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
-                NewtonBodySetCollidable(newtonStaticBody, true);
-                loadingScene = false;
-            }
-
             void onEntityCreated(Plugin::Entity * const entity, wchar_t const * const entityName)
             {
                 addEntity(entity);
@@ -573,8 +542,8 @@ namespace Gek
 
                     Math::Float3 position, normal;
                     NewtonMaterialGetContactPositionAndNormal(newtonMaterial, body0, position.data, normal.data);
-                    uint32_t surfaceIndex0 = (newtonEntity0 ? newtonEntity0->getSurface(position, normal) : processor->getStaticSceneSurface(position, normal));
-                    uint32_t surfaceIndex1 = (newtonEntity1 ? newtonEntity1->getSurface(position, normal) : processor->getStaticSceneSurface(position, normal));
+                    uint32_t surfaceIndex0 = (newtonEntity0 ? newtonEntity0->getSurface(position, normal) : 0);// processor->getStaticSceneSurface(position, normal));
+                    uint32_t surfaceIndex1 = (newtonEntity1 ? newtonEntity1->getSurface(position, normal) : 0);// processor->getStaticSceneSurface(position, normal));
                     const Surface &surface0 = processor->getSurface(surfaceIndex0);
                     const Surface &surface1 = processor->getSurface(surfaceIndex1);
 
