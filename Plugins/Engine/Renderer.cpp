@@ -434,7 +434,7 @@ namespace Gek
 
             void initializeSystem(void)
             {
-                core->getLog()->message(L"Renderer", Plugin::Core::Log::Type::Message, L"Initializing rendering system components");
+                core->getLog()->message("Renderer", Plugin::Core::Log::Type::Message, "Initializing rendering system components");
 
                 Video::SamplerStateInformation pointSamplerStateData;
                 pointSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapPoint;
@@ -542,7 +542,7 @@ namespace Gek
 
             void initializeUI(void)
             {
-                core->getLog()->message(L"Renderer", Plugin::Core::Log::Type::Message, L"Initializing UI");
+                core->getLog()->message("Renderer", Plugin::Core::Log::Type::Message, "Initializing user interface data");
 
                 static wchar_t const * const vertexShader =
                     L"cbuffer vertexBuffer : register(b0)" \
@@ -714,7 +714,7 @@ namespace Gek
             // ImGui
             void renderUI(ImDrawData *drawData)
             {
-                Plugin::Core::Log::Scope function(core->getLog(), L"Render UI");
+                Plugin::Core::Log::Scope function(core->getLog(), "Render", "User Interface Time");
                 if (!gui.vertexBuffer || gui.vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
                 {
                     Video::Buffer::Description vertexBufferDescription;
@@ -1090,15 +1090,20 @@ namespace Gek
                 GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(population);
 
-                Plugin::Core::Log::Scope function(core->getLog(), L"Render Scene");
-                core->getLog()->addValue(L"Display Cameras", cameraQueue.unsafe_size());
+                Plugin::Core::Log::Scope function(core->getLog(), "Render", "Update Time");
+                core->getLog()->setValue("Render", "Camera Count", cameraQueue.unsafe_size());
+                core->getLog()->setValue("Render", "Draw Queue Count", 0.0f);
+                core->getLog()->setValue("Render", "Directional Light Count", 0.0f);
+                core->getLog()->setValue("Render", "Point Light Count", 0.0f);
+                core->getLog()->setValue("Render", "Spot Light Count", 0.0f);
+
                 while (cameraQueue.try_pop(currentCamera))
                 {
                     drawCallList.clear();
                     onQueueDrawCalls.emit(currentCamera.viewFrustum, currentCamera.viewMatrix, currentCamera.projectionMatrix);
                     if (!drawCallList.empty())
                     {
-                        core->getLog()->addValue(L"Display Draw Calls", drawCallList.size());
+                        core->getLog()->adjustValue("Render", "Draw Queue Count", drawCallList.size());
                         auto backBuffer = videoDevice->getBackBuffer();
                         auto width = backBuffer->getDescription().width;
                         auto height = backBuffer->getDescription().height;
@@ -1222,9 +1227,9 @@ namespace Gek
                             pointLightsDone.get();
                             spotLightsDone.get();
 
-                            core->getLog()->addValue(L"Display Directional Lights", directionalLightData.lightList.size());
-                            core->getLog()->addValue(L"Display Point Lights", pointLightData.lightList.size());
-                            core->getLog()->addValue(L"Display Spot Lights", spotLightData.lightList.size());
+                            core->getLog()->adjustValue("Render", "Directional Light Count", directionalLightData.lightList.size());
+                            core->getLog()->adjustValue("Render", "Point Light Count", pointLightData.lightList.size());
+                            core->getLog()->adjustValue("Render", "Spot Light Count", spotLightData.lightList.size());
 
                             lightIndexList.clear();
                             lightIndexList.reserve(lightIndexCount);
@@ -1423,7 +1428,7 @@ namespace Gek
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 imGuiIo.DeltaTime = frameTime;
-                core->getLog()->addValue(L"Frame Rate", (1.0f / frameTime));
+                core->getLog()->setValue("Render", "Frame Rate", (1.0f / frameTime));
 
                 auto backBuffer = videoDevice->getBackBuffer();
                 uint32_t width = backBuffer->getDescription().width;

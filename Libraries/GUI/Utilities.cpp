@@ -95,9 +95,9 @@ namespace ImGui
             {
                 float valueMinimum = std::numeric_limits<float>::max();
                 float valueMaximum = -std::numeric_limits<float>::max();
-                for (int i = 0; i < itemCount; i++)
+                for (int item = 0; item < itemCount; item++)
                 {
-                    const float value = itemDataCallback(userData, i);
+                    const float value = itemDataCallback(userData, item);
                     valueMinimum = ImMin(valueMinimum, value);
                     valueMaximum = ImMax(valueMaximum, value);
                 }
@@ -123,12 +123,12 @@ namespace ImGui
                 int hoveredIndex = -1;
                 if (IsHovered(clientBoundingBox, 0))
                 {
-                    const float t = ImClamp((guiContext.IO.MousePos.x - clientBoundingBox.Min.x) / (clientBoundingBox.Max.x - clientBoundingBox.Min.x), 0.0f, 0.9999f);
-                    const int v_idx = (int)(t * adjustedItemCount);
-                    IM_ASSERT(v_idx >= 0 && v_idx < itemCount);
+                    const float mousePosition = ImClamp((guiContext.IO.MousePos.x - clientBoundingBox.Min.x) / (clientBoundingBox.Max.x - clientBoundingBox.Min.x), 0.0f, 0.9999f);
+                    const int mouseIndex = (int)(mousePosition * adjustedItemCount);
+                    IM_ASSERT(mouseIndex >= 0 && mouseIndex < itemCount);
 
-                    const float valueLeft = itemDataCallback(userData, (v_idx + itemStartIndex) % itemCount);
-                    const float valueRight = itemDataCallback(userData, (v_idx + 1 + itemStartIndex) % itemCount);
+                    const float valueLeft = itemDataCallback(userData, (mouseIndex + itemStartIndex) % itemCount);
+                    const float valueRight = itemDataCallback(userData, (mouseIndex + 1 + itemStartIndex) % itemCount);
                     if (plot_type == ImGuiPlotType_Lines)
                     {
                         SetTooltip("%8.4g - %8.4g", valueLeft, valueRight);
@@ -138,7 +138,7 @@ namespace ImGui
                         SetTooltip("%8.4g", valueLeft);
                     }
 
-                    hoveredIndex = v_idx;
+                    hoveredIndex = mouseIndex;
                 }
 
                 const float timeStep = 1.0f / (float)resultsWidth;

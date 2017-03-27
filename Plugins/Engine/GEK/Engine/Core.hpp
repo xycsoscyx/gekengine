@@ -35,19 +35,20 @@ namespace Gek
                 {
                 private:
                     Log *log = nullptr;
-                    String name;
+                    StringUTF8 system, name;
 
                 public:
-                    Scope(Log *log, wchar_t const * const name)
+                    Scope(Log *log, char const * const system, char const * const name)
                         : log(log)
+                        , system(system)
                         , name(name)
                     {
-                        log->beginEvent(name);
+                        log->beginEvent(system, name);
                     }
 
                     ~Scope(void)
                     {
-                        log->endEvent(name);
+                        log->endEvent(system, name);
                     }
                 };
 
@@ -61,16 +62,18 @@ namespace Gek
 
                 virtual ~Log(void) = default;
 
-                virtual void message(wchar_t const * const system, Type logType, wchar_t const * const message) = 0;
+                virtual void message(char const * const system, Type logType, char const * const message) = 0;
 
-                virtual void beginEvent(wchar_t const * const name) = 0;
-                virtual void endEvent(wchar_t const * const name) = 0;
+                virtual void beginEvent(char const * const system, char const * const name) = 0;
+                virtual void endEvent(char const * const system, char const * const name) = 0;
 
-                virtual void addValue(wchar_t const * const name, float value) = 0;
+                virtual void setValue(char const * const system, char const * const name, float value) = 0;
+                virtual void adjustValue(char const * const system, char const * const name, float value) = 0;
             };
 
             Nano::Signal<void(void)> onResize;
             Nano::Signal<void(ImGuiContext *context, ImGui::PanelManagerWindowData &windowData)> OnSettingsPanel;
+            Nano::Signal<void(void)> onUpdate;
 
             virtual ~Core(void) = default;
 

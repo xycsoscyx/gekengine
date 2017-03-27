@@ -231,7 +231,7 @@ namespace Gek
             {
                 try
                 {
-                    return data.as_cstring();
+                    return data.as_string();
                 }
                 catch (...)
                 {

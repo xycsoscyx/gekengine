@@ -107,20 +107,20 @@ namespace Gek
             {
                 GEK_REQUIRE(core);
 
-                core->getLog()->message(L"Population", Plugin::Core::Log::Type::Message, L"Loading component plugins");
+                core->getLog()->message("Population", Plugin::Core::Log::Type::Message, "Loading component plugins");
                 getContext()->listTypes(L"ComponentType", [&](wchar_t const * const className) -> void
                 {
-                    core->getLog()->message(L"Population", Plugin::Core::Log::Type::Message, String::Format(L"Component found: %v", className));
+                    core->getLog()->message("Population", Plugin::Core::Log::Type::Message, StringUTF8::Format("Component found: %v", className));
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className, static_cast<Plugin::Population *>(this)));
                     if (componentMap.count(component->getIdentifier()) > 0)
                     {
-                        core->getLog()->message(L"Population", Plugin::Core::Log::Type::Debug, String::Format(L"Duplicate component identifier found: Class(%v), Identifier(%v)", className, component->getIdentifier().name()));
+                        core->getLog()->message("Population", Plugin::Core::Log::Type::Debug, StringUTF8::Format("Duplicate component identifier found: Class(%v), Identifier(%v)", className, component->getIdentifier().name()));
                         return;
                     }
 
                     if (componentNameTypeMap.count(component->getIdentifier()) > 0)
                     {
-                        core->getLog()->message(L"Population", Plugin::Core::Log::Type::Debug, String::Format(L"Duplicate component name found: Class(%v), Name(%v)", className, component->getName()));
+                        core->getLog()->message("Population", Plugin::Core::Log::Type::Debug, StringUTF8::Format("Duplicate component name found: Class(%v), Name(%v)", className, component->getName()));
                         return;
                     }
 
@@ -144,7 +144,7 @@ namespace Gek
                     auto entityName(requestedName.empty() ? String::Format(L"unnamed_%v", ++uniqueEntityIdentifier) : requestedName);
                     if (entityMap.count(requestedName) > 0)
                     {
-                        core->getLog()->message(L"Population", Plugin::Core::Log::Type::Error, String::Format(L"Unable to add entity to scene: %v", entityName));
+                        core->getLog()->message("Population", Plugin::Core::Log::Type::Error, StringUTF8::Format("Unable to add entity to scene: %v", entityName));
                     }
                     else
                     {
@@ -184,7 +184,7 @@ namespace Gek
 
             void update(float frameTime)
             {
-                Plugin::Core::Log::Scope function(core->getLog(), L"Update Population");
+                Plugin::Core::Log::Scope function(core->getLog(), "Population", "Update Time");
 
                 if (frameTime == 0.0f)
                 {
@@ -210,6 +210,8 @@ namespace Gek
                 {
                     entityAction();
                 };
+
+                core->getLog()->setValue("Population", "Entity Count", entityMap.size());
             }
 
             void action(Action const &action)
@@ -226,7 +228,7 @@ namespace Gek
 
                 loadPool.enqueue([this, populationName = String(populationName)](void) -> void
                 {
-                    core->getLog()->message(L"Population", Plugin::Core::Log::Type::Message, String::Format(L"Loading population: %v", populationName));
+                    core->getLog()->message("Population", Plugin::Core::Log::Type::Message, StringUTF8::Format("Loading population: %v", populationName));
 
                     try
                     {
@@ -313,7 +315,7 @@ namespace Gek
                             String entityName;
                             if (entityNode.has_member(L"Name"))
                             {
-                                entityName = entityNode.get(L"Name");
+                                entityName = entityNode.get(L"Name").as_string();
                             }
 
                             queueEntity(entity.release(), entityName);
@@ -321,7 +323,7 @@ namespace Gek
                     }
                     catch (const std::exception &exception)
                     {
-                        core->getLog()->message(L"Population", Plugin::Core::Log::Type::Error, String::Format(L"Unable to load population: %v", exception.what()));
+                        core->getLog()->message("Population", Plugin::Core::Log::Type::Error, StringUTF8::Format("Unable to load population: %v", exception.what()));
                     };
                 });
             }
@@ -419,12 +421,12 @@ namespace Gek
                     }
                     else
                     {
-                        core->getLog()->message(L"Population", Plugin::Core::Log::Type::Error, String::Format(L"Entity contains unknown component identifier: %v", componentNameSearch->second.name()));
+                        core->getLog()->message("Population", Plugin::Core::Log::Type::Error, StringUTF8::Format("Entity contains unknown component identifier: %v", componentNameSearch->second.name()));
                     }
                 }
                 else
                 {
-                    core->getLog()->message(L"Population", Plugin::Core::Log::Type::Error, String::Format(L"Entity contains unknown component: %v", componentData.name()));
+                    core->getLog()->message("Population", Plugin::Core::Log::Type::Error, StringUTF8::Format("Entity contains unknown component: %v", componentData.name()));
                 }
 
                 return false;

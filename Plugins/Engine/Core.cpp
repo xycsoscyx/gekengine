@@ -62,25 +62,25 @@ namespace Gek
 
             struct History
             {
+                float current = 0.0f;
                 float minimum = 0.0f;
                 float maximum = 0.0f;
                 std::vector<float> data;
             };
 
             static const uint32_t HistoryLength = 100;
-            using PerformanceMap = concurrency::concurrent_unordered_map<String, float>;
-            using PerformanceHistory = concurrency::concurrent_unordered_map<String, History>;
+            using HistoryMap = concurrency::concurrent_unordered_map<StringUTF8, History>;
+            using PerformanceMap = concurrency::concurrent_unordered_map<StringUTF8, HistoryMap>;
 
             PerformanceMap performanceMap;
-            PerformanceHistory performanceHistory;
-            std::vector<std::tuple<String, Log::Type, String>> logList;
+            std::vector<std::tuple<StringUTF8, Log::Type, StringUTF8>> logList;
 
         public:
             Core(Context *context, Window *_window)
                 : ContextRegistration(context)
                 , window(_window)
             {
-                message(L"Core", Log::Type::Message, L"Starting GEK Engine");
+                message("Core", Log::Type::Message, "Starting GEK Engine");
 
                 if (!window)
                 {
@@ -104,11 +104,11 @@ namespace Gek
                 try
                 {
                     configuration = JSON::Load(getContext()->getRootFileName(L"config.json"));
-                    message(L"Core", Log::Type::Message, L"Configuration loaded");
+                    message("Core", Log::Type::Message, "Configuration loaded");
                 }
                 catch (const std::exception &)
                 {
-                    message(L"Core", Plugin::Core::Log::Type::Debug, L"Configuration not found, using default values");
+                    message("Core", Plugin::Core::Log::Type::Debug, "Configuration not found, using default values");
                 };
 
                 if (!configuration.is_object())
@@ -197,7 +197,7 @@ namespace Gek
                 renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", (Plugin::Core *)this);
                 renderer->onShowUI.connect<Core, &Core::onShowUI>(this);
 
-                message(L"Core", Log::Type::Message, L"Loading processor plugins");
+                message("Core", Log::Type::Message, "Loading processor plugins");
 
                 std::vector<String> processorNameList;
                 getContext()->listTypes(L"ProcessorType", [&](wchar_t const * const className) -> void
@@ -208,7 +208,7 @@ namespace Gek
                 processorList.reserve(processorNameList.size());
                 for (auto &processorName : processorNameList)
                 {
-                    message(L"Core", Log::Type::Message, String::Format(L"Processor found: %v", processorName));
+                    message("Core", Log::Type::Message, StringUTF8::Format("Processor found: %v", processorName));
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(processorName, (Plugin::Core *)this));
                 }
 
@@ -244,7 +244,7 @@ namespace Gek
 
                 window->setVisibility(true);
 
-                message(L"Core", Log::Type::Message, L"Starting engine");
+                message("Core", Log::Type::Message, "Starting engine");
 
                 population->load(L"demo");
             }
@@ -279,19 +279,19 @@ namespace Gek
             }
 
 			void setDisplayMode(uint32_t displayMode)
-			{
+            {
                 auto &displayModeData = displayModeList[displayMode];
-                message(L"Core", Log::Type::Message, String::Format(L"Setting display mode: %vx%v", displayModeData.width, displayModeData.height));
+                message("Core", Log::Type::Message, StringUTF8::Format("Setting display mode: %vx%v", displayModeData.width, displayModeData.height));
                 if (displayMode >= displayModeList.size())
                 {
                     throw InvalidDisplayMode("Invalid display mode encountered");
                 }
 
-				currentDisplayMode = displayMode;
-				videoDevice->setDisplayMode(displayModeData);
+                currentDisplayMode = displayMode;
+                videoDevice->setDisplayMode(displayModeData);
                 window->move();
-				onResize.emit();
-			}
+                onResize.emit();
+            }
 
             // ImGui
             void drawConsole(ImGui::PanelManagerWindowData &windowData)
@@ -341,61 +341,67 @@ namespace Gek
                 }
             }
 
-            int currentSelectedEvent = 0;
+            StringUTF8 selectedEvent;
+            StringUTF8 selectedSystem;
             void drawPerformance(ImGui::PanelManagerWindowData &windowData)
             {
-                std::map<StringUTF8, PerformanceHistory::iterator> performanceMap;
-                for (auto &search = std::begin(performanceHistory); search != std::end(performanceHistory); ++search)
+                if (performanceMap.empty())
                 {
-                    performanceMap[search->first] = search;
+                    return;
                 }
-
-                auto selected = std::next(std::begin(performanceMap), currentSelectedEvent);
 
                 auto clientSize = (windowData.size - (ImGui::GetStyle().WindowPadding * 2.0f));
                 clientSize.y -= ImGui::GetTextLineHeightWithSpacing();
 
-                auto eventSize = clientSize;
-                eventSize.x = 300.0f;
-                if (ImGui::ListBoxHeader("##events", eventSize))
-                {
-                    ImGuiListClipper clipper(performanceMap.size(), ImGui::GetTextLineHeightWithSpacing());
-                    while (clipper.Step())
-                    {
-                        auto begin = std::next(std::begin(performanceMap), clipper.DisplayStart);
-                        auto end = std::next(std::begin(performanceMap), clipper.DisplayEnd);
-                        for (auto data = begin; data != end; data++)
-                        {
-                            bool isSelected = (data == selected);
-                            if (ImGui::Selectable(data->first, &isSelected))
-                            {
-                                selected = data;
-                                currentSelectedEvent = std::distance(std::begin(performanceMap), data);
-                            }
-                        }
-                    };
+                History &selectedHistory = performanceMap.begin()->second.begin()->second;
 
-                    ImGui::ListBoxFooter();
+                ImGui::BeginGroup();
+                ImVec2 eventSize(300.0f, clientSize.y);
+                if (ImGui::BeginChildFrame(ImGui::GetCurrentWindow()->GetID("##events"), eventSize))
+                {
+                    for (auto &systemMap : performanceMap)
+                    {
+                        uint32_t flags = ImGuiTreeNodeFlags_CollapsingHeader;
+                        if (systemMap.first == selectedSystem)
+                        {
+                            flags |= ImGuiTreeNodeFlags_DefaultOpen;
+                        }
+
+                        if (ImGui::TreeNodeEx(systemMap.first, flags))
+                        {
+                            for (auto &eventData : systemMap.second)
+                            {
+                                bool isSelected = (eventData.first == selectedEvent);
+                                isSelected = ImGui::Selectable(eventData.first, &isSelected);
+                                if (isSelected)
+                                {
+                                    selectedEvent = eventData.first;
+                                    selectedHistory = eventData.second;
+                                }
+                            }
+
+                            ImGui::TreePop();
+                        }
+                    }
+
+                    ImGui::EndChildFrame();
                 }
 
-                auto &history = selected->second;
-
+                ImGui::EndGroup();
                 ImGui::SameLine();
-                auto historySize = clientSize;
-                historySize.x -= 300.0f;
-                historySize.x -= ImGui::GetStyle().WindowPadding.x;
-                ImGui::Gek::PlotHistogram("##history", [](void *data, int index) -> float
+                ImVec2 historySize((clientSize.x - 300.0f - ImGui::GetStyle().WindowPadding.x), clientSize.y);
+                ImGui::Gek::PlotHistogram("##historyHistogram", [](void *data, int index) -> float
                 {
                     auto &history = *(std::vector<float> *)data;
                     if (index < int(history.size()))
                     {
-                        return *std::next(std::begin(history), index);
+                        return history[index];
                     }
                     else
                     {
                         return 0.0f;
                     }
-                }, &history->second.data, HistoryLength, 0, 0.0f, history->second.maximum, historySize);
+                }, &selectedHistory.data, HistoryLength, 0, 0.0f, selectedHistory.maximum, historySize);
             }
 
             void drawSettings(ImGui::PanelManagerWindowData &windowData)
@@ -571,43 +577,48 @@ namespace Gek
             }
 
             // Plugin::Core::Log
-            void message(wchar_t const * const system, Log::Type logType, wchar_t const * const message)
+            void message(char const * const system, Log::Type logType, char const * const message)
             {
                 logList.push_back(std::make_tuple(system, logType, message));
                 switch (logType)
                 {
                 case Log::Type::Message:
-                    OutputDebugString(String::Format(L"(%v) %v\r\n", system, message));
+                    OutputDebugStringA(StringUTF8::Format("(%v) %v\r\n", system, message));
                     break;
 
                 case Log::Type::Warning:
-                    OutputDebugString(String::Format(L"WARNING: (%v) %v\r\n", system, message));
+                    OutputDebugStringA(StringUTF8::Format("WARNING: (%v) %v\r\n", system, message));
                     break;
 
                 case Log::Type::Error:
-                    OutputDebugString(String::Format(L"ERROR: (%v) %v\r\n", system, message));
+                    OutputDebugStringA(StringUTF8::Format("ERROR: (%v) %v\r\n", system, message));
                     break;
 
                 case Log::Type::Debug:
-                    OutputDebugString(String::Format(L"DEBUG: (%v) %v\r\n", system, message));
+                    OutputDebugStringA(StringUTF8::Format("DEBUG: (%v) %v\r\n", system, message));
                     break;
                 };
             }
 
-            void beginEvent(wchar_t const * const name)
+            void beginEvent(char const * const system, char const * const name)
             {
-                performanceMap[name] = timer.getImmediateTime();
+                performanceMap[system][name].current = timer.getImmediateTime();
             }
 
-            void endEvent(wchar_t const * const name)
+            void endEvent(char const * const system, char const * const name)
             {
-                auto &time = performanceMap[name];
+                auto &time = performanceMap[system][name].current;
                 time = (timer.getImmediateTime() - time) * 1000.0f;
             }
 
-            void addValue(wchar_t const * const name, float value)
+            void setValue(char const * const system, char const * const name, float value)
             {
-                performanceMap[name] += value;
+                performanceMap[system][name].current = value;
+            }
+
+            void adjustValue(char const * const system, char const * const name, float value)
+            {
+                performanceMap[system][name].current += value;
             }
 
             // Renderer
@@ -675,30 +686,32 @@ namespace Gek
                 float frameTime = timer.getUpdateTime();
                 if (windowActive)
                 {
-                    concurrency::parallel_for_each(std::begin(performanceMap), std::end(performanceMap), [&](PerformanceMap::value_type &frame) -> void
+                    for (auto &systemMap : performanceMap)
                     {
-                        static const auto adapt = [](float current, float target, float frameTime) -> float
+                        concurrency::parallel_for_each(std::begin(systemMap.second), std::end(systemMap.second), [&](HistoryMap::value_type &frame) -> void
                         {
-                            return (current + ((target - current) * (1.0 - exp(-frameTime * 1.25f))));
-                        };
+                            static const auto adapt = [](float current, float target, float frameTime) -> float
+                            {
+                                return (current + ((target - current) * (1.0 - exp(-frameTime * 1.25f))));
+                            };
 
-                        auto &history = performanceHistory[frame.first];
-                        history.data.push_back(frame.second);
-                        if (history.data.size() > HistoryLength)
-                        {
-                            auto iterator = std::begin(history.data);
-                            history.data.erase(iterator);
-                        }
+                            auto &history = frame.second;
+                            history.data.push_back(frame.second.current);
+                            if (history.data.size() > HistoryLength)
+                            {
+                                auto iterator = std::begin(history.data);
+                                history.data.erase(iterator);
+                            }
 
-                        auto minmax = std::minmax_element(std::begin(history.data), std::end(history.data));
-                        history.minimum = adapt(history.minimum, *minmax.first, frameTime);
-                        history.maximum = adapt(history.maximum, *minmax.second, frameTime);
-                        frame.second = 0.0f;
-                    });
+                            auto minmax = std::minmax_element(std::begin(history.data), std::end(history.data));
+                            history.minimum = adapt(history.minimum, *minmax.first, frameTime);
+                            history.maximum = adapt(history.maximum, *minmax.second, frameTime);
+                        });
+                    }
                 }
 
-                performanceMap.clear();
-                Core::Scope function(this, L"Update Core");
+                Core::Scope function(this, "Core", "Update Time");
+                onUpdate.emit();
 
                 // Read keyboard modifiers inputs
                 ImGuiIO &imGuiIo = ImGui::GetIO();

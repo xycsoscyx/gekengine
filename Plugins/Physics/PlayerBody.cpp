@@ -761,7 +761,7 @@ namespace Gek
             return nullptr;
         }
 
-        Newton::EntityPtr createPlayerBody(Plugin::Core *core, Plugin::Population *population, NewtonWorld *newtonWorld, Plugin::Entity * const entity)
+        EntityPtr createPlayerBody(Plugin::Core *core, Plugin::Population *population, NewtonWorld *newtonWorld, Plugin::Entity * const entity)
 		{
 			return std::make_unique<PlayerBody>(core, population, newtonWorld, entity);
 		}
