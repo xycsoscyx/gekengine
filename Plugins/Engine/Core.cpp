@@ -195,7 +195,7 @@ namespace Gek
                 population = getContext()->createClass<Plugin::Population>(L"Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this);
                 renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", (Plugin::Core *)this);
-                renderer->onShowUI.connect<Core, &Core::onShowUI>(this);
+                renderer->onShowUserInterface.connect<Core, &Core::onShowUserInterface>(this);
 
                 message("Core", Log::Type::Message, "Loading processor plugins");
 
@@ -251,7 +251,7 @@ namespace Gek
 
             ~Core(void)
             {
-                renderer->onShowUI.disconnect<Core, &Core::onShowUI>(this);
+                renderer->onShowUserInterface.disconnect<Core, &Core::onShowUserInterface>(this);
                 window->onClose.disconnect<Core, &Core::onClose>(this);
                 window->onActivate.disconnect<Core, &Core::onActivate>(this);
                 window->onSizeChanged.disconnect<Core, &Core::onSizeChanged>(this);
@@ -602,27 +602,30 @@ namespace Gek
 
             void beginEvent(char const * const system, char const * const name)
             {
-                performanceMap[system][name].current = timer.getImmediateTime();
+                auto &eventData = performanceMap[system][name];
+                eventData.current = timer.getImmediateTime();
             }
 
             void endEvent(char const * const system, char const * const name)
             {
-                auto &time = performanceMap[system][name].current;
-                time = (timer.getImmediateTime() - time) * 1000.0f;
+                auto &eventData = performanceMap[system][name];
+                eventData.current = (timer.getImmediateTime() - eventData.current) * 1000.0f;
             }
 
             void setValue(char const * const system, char const * const name, float value)
             {
-                performanceMap[system][name].current = value;
+                auto &eventData = performanceMap[system][name];
+                eventData.current = value;
             }
 
             void adjustValue(char const * const system, char const * const name, float value)
             {
-                performanceMap[system][name].current += value;
+                auto &eventData = performanceMap[system][name];
+                eventData.current += value;
             }
 
             // Renderer
-            void onShowUI(ImGuiContext * const guiContext)
+            void onShowUserInterface(ImGuiContext * const guiContext)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 panelManager.setDisplayPortion(ImVec4(0, 0, imGuiIo.DisplaySize.x, imGuiIo.DisplaySize.y));
@@ -680,12 +683,37 @@ namespace Gek
             // Plugin::Core
             bool update(void)
             {
+                Core::Scope function(this, "Core", "Update Time");
+
                 window->readEvents();
 
                 timer.update();
-                float frameTime = timer.getUpdateTime();
+
+                onBeginUpdate.emit();
+
+                // Read keyboard modifiers inputs
+                ImGuiIO &imGuiIo = ImGui::GetIO();
+                imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+                imGuiIo.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+                imGuiIo.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+                imGuiIo.KeySuper = false;
+                // imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
+                // imGuiIo.MousePos : filled by WM_MOUSEMOVE events
+                // imGuiIo.MouseDown : filled by WM_*BUTTON* events
+                // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
+
                 if (windowActive)
                 {
+                    float frameTime = timer.getUpdateTime();
+                    if (imGuiIo.MouseDrawCursor)
+                    {
+                        population->update(0.0f);
+                    }
+                    else
+                    {
+                        population->update(frameTime);
+                    }
+
                     for (auto &systemMap : performanceMap)
                     {
                         concurrency::parallel_for_each(std::begin(systemMap.second), std::end(systemMap.second), [&](HistoryMap::value_type &frame) -> void
@@ -703,36 +731,17 @@ namespace Gek
                                 history.data.erase(iterator);
                             }
 
-                            auto minmax = std::minmax_element(std::begin(history.data), std::end(history.data));
-                            history.minimum = adapt(history.minimum, *minmax.first, frameTime);
-                            history.maximum = adapt(history.maximum, *minmax.second, frameTime);
+                            if (history.data.size() == 1)
+                            {
+                                history.maximum = history.minimum = history.current;
+                            }
+                            else
+                            {
+                                auto minmax = std::minmax_element(std::begin(history.data), std::end(history.data));
+                                history.minimum = adapt(history.minimum, *minmax.first, frameTime);
+                                history.maximum = adapt(history.maximum, *minmax.second, frameTime);
+                            }
                         });
-                    }
-                }
-
-                Core::Scope function(this, "Core", "Update Time");
-                onUpdate.emit();
-
-                // Read keyboard modifiers inputs
-                ImGuiIO &imGuiIo = ImGui::GetIO();
-                imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-                imGuiIo.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-                imGuiIo.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
-                imGuiIo.KeySuper = false;
-                // imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
-                // imGuiIo.MousePos : filled by WM_MOUSEMOVE events
-                // imGuiIo.MouseDown : filled by WM_*BUTTON* events
-                // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
-
-                if (windowActive)
-                {
-                    if (imGuiIo.MouseDrawCursor)
-                    {
-                        population->update(0.0f);
-                    }
-                    else
-                    {
-                        population->update(frameTime);
                     }
                 }
 

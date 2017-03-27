@@ -1438,7 +1438,7 @@ namespace Gek
                 ImGui::NewFrame();
                 ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
                 ImGui::Begin("GEK Engine", nullptr, ImVec2(0, 0), 0.0f, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
-                onShowUI.emit(ImGui::GetCurrentContext());
+                onShowUserInterface.emit(ImGui::GetCurrentContext());
                 ImGui::End();
 
                 renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());

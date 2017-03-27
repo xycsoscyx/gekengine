@@ -25,7 +25,7 @@ namespace Gek
             GEK_ADD_EXCEPTION(InvalidIndexBufferFormat);
 
             Nano::Signal<void(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)> onQueueDrawCalls;
-            Nano::Signal<void(ImGuiContext * const guiContext)> onShowUI;
+            Nano::Signal<void(ImGuiContext * const guiContext)> onShowUserInterface;
 
             virtual ~Renderer(void) = default;
 

@@ -480,14 +480,14 @@ namespace Gek
                 GEK_REQUIRE(videoDevice);
 
                 core->onResize.connect<Resources, &Resources::onResize>(this);
-                core->onUpdate.connect<Resources, &Resources::onUpdate>(this);
+                core->onBeginUpdate.connect<Resources, &Resources::onBeginUpdate>(this);
             }
 
             ~Resources(void)
             {
                 GEK_REQUIRE(core);
 
-                core->onUpdate.disconnect<Resources, &Resources::onUpdate>(this);
+                core->onBeginUpdate.disconnect<Resources, &Resources::onBeginUpdate>(this);
                 core->onResize.disconnect<Resources, &Resources::onResize>(this);
             }
 
@@ -608,7 +608,7 @@ namespace Gek
                 createTexture(L"screenBuffer", description);
             }
 
-            void onUpdate(void)
+            void onBeginUpdate(void)
             {
                 core->getLog()->setValue("System", "Draw Call Count", 0.0f);
                 core->getLog()->setValue("System", "Vertex Count", 0.0f);

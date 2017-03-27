@@ -112,7 +112,7 @@ namespace Gek
                 NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, nullptr, newtonOnAABBOverlap, newtonOnContactFriction);
 #endif
 
-                renderer->onShowUI.connect<Processor, &Processor::onShowUI>(this);
+                renderer->onShowUserInterface.connect<Processor, &Processor::onShowUserInterface>(this);
                 population->onEntityCreated.connect<Processor, &Processor::onEntityCreated>(this);
                 population->onEntityDestroyed.connect<Processor, &Processor::onEntityDestroyed>(this);
                 population->onComponentAdded.connect<Processor, &Processor::onComponentAdded>(this);
@@ -132,7 +132,7 @@ namespace Gek
                 population->onComponentAdded.disconnect<Processor, &Processor::onComponentAdded>(this);
                 population->onEntityDestroyed.disconnect<Processor, &Processor::onEntityDestroyed>(this);
                 population->onEntityCreated.disconnect<Processor, &Processor::onEntityCreated>(this);
-                renderer->onShowUI.disconnect<Processor, &Processor::onShowUI>(this);
+                renderer->onShowUserInterface.disconnect<Processor, &Processor::onShowUserInterface>(this);
 
                 NewtonWaitForUpdateToFinish(newtonWorld);
                 for (auto &collisionPair : collisionMap)
@@ -389,7 +389,7 @@ namespace Gek
             }
 
             // Plugin::Core Slots
-            void onShowUI(ImGuiContext * const guiContext)
+            void onShowUserInterface(ImGuiContext * const guiContext)
             {
             }
 
