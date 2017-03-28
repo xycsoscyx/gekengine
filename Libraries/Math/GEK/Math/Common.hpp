@@ -18,6 +18,7 @@ namespace Gek
 	{
 		const float Infinity = std::numeric_limits<float>::max();
 		const float NegativeInfinity = std::numeric_limits<float>::lowest();
+        const float NotANumber = std::nanf("Gek::Math");
 		const float Epsilon = 1.0e-5f;
         const float Pi = 3.14159265358979323846f;
         const float Tau = (2.0f * Pi);

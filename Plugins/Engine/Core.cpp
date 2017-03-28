@@ -60,19 +60,19 @@ namespace Gek
             bool editorActive = false;
             bool consoleActive = false;
 
-            struct History
+            struct EventHistory
             {
-                float current = 0.0f;
+                float current = Math::NotANumber;
                 float minimum = 0.0f;
                 float maximum = 0.0f;
                 std::vector<float> data;
             };
 
             static const uint32_t HistoryLength = 100;
-            using HistoryMap = concurrency::concurrent_unordered_map<StringUTF8, History>;
-            using PerformanceMap = concurrency::concurrent_unordered_map<StringUTF8, HistoryMap>;
+            using EventHistoryMap = concurrency::concurrent_unordered_map<StringUTF8, EventHistory>;
+            using SystemHistoryMap = concurrency::concurrent_unordered_map<StringUTF8, EventHistoryMap>;
 
-            PerformanceMap performanceMap;
+            SystemHistoryMap systemHistoryMap;
             std::vector<std::tuple<StringUTF8, Log::Type, StringUTF8>> logList;
 
         public:
@@ -345,7 +345,7 @@ namespace Gek
             StringUTF8 selectedSystem;
             void drawPerformance(ImGui::PanelManagerWindowData &windowData)
             {
-                if (performanceMap.empty())
+                if (systemHistoryMap.empty())
                 {
                     return;
                 }
@@ -353,30 +353,28 @@ namespace Gek
                 auto clientSize = (windowData.size - (ImGui::GetStyle().WindowPadding * 2.0f));
                 clientSize.y -= ImGui::GetTextLineHeightWithSpacing();
 
-                History &selectedHistory = performanceMap.begin()->second.begin()->second;
-
                 ImGui::BeginGroup();
                 ImVec2 eventSize(300.0f, clientSize.y);
-                if (ImGui::BeginChildFrame(ImGui::GetCurrentWindow()->GetID("##events"), eventSize))
+                if (ImGui::BeginChildFrame(ImGui::GetCurrentWindow()->GetID("##systemEventTree"), eventSize))
                 {
-                    for (auto &systemMap : performanceMap)
+                    for (auto &systemPair : systemHistoryMap)
                     {
                         uint32_t flags = ImGuiTreeNodeFlags_CollapsingHeader;
-                        if (systemMap.first == selectedSystem)
+                        if (systemPair.first == selectedSystem)
                         {
                             flags |= ImGuiTreeNodeFlags_DefaultOpen;
                         }
 
-                        if (ImGui::TreeNodeEx(systemMap.first, flags))
+                        if (ImGui::TreeNodeEx(systemPair.first, flags))
                         {
-                            for (auto &eventData : systemMap.second)
+                            for (auto &eventPair : systemPair.second)
                             {
-                                bool isSelected = (eventData.first == selectedEvent);
-                                isSelected = ImGui::Selectable(eventData.first, &isSelected);
+                                bool isSelected = (eventPair.first == selectedEvent);
+                                isSelected = ImGui::Selectable(eventPair.first, &isSelected);
                                 if (isSelected)
                                 {
-                                    selectedEvent = eventData.first;
-                                    selectedHistory = eventData.second;
+                                    selectedSystem = systemPair.first;
+                                    selectedEvent = eventPair.first;
                                 }
                             }
 
@@ -388,20 +386,26 @@ namespace Gek
                 }
 
                 ImGui::EndGroup();
-                ImGui::SameLine();
-                ImVec2 historySize((clientSize.x - 300.0f - ImGui::GetStyle().WindowPadding.x), clientSize.y);
-                ImGui::Gek::PlotHistogram("##historyHistogram", [](void *data, int index) -> float
+                auto systemSearch = systemHistoryMap.find(selectedSystem);
+                if (systemSearch != std::end(systemHistoryMap))
                 {
-                    auto &history = *(std::vector<float> *)data;
-                    if (index < int(history.size()))
+                    auto &eventHistoryMap = systemSearch->second;
+                    auto eventSearch = eventHistoryMap.find(selectedEvent);
+                    if (eventSearch != std::end(eventHistoryMap))
                     {
-                        return history[index];
+                        auto &selectedEvent = eventSearch->second;
+                        if (!selectedEvent.data.empty())
+                        {
+                            ImGui::SameLine();
+                            ImVec2 historySize((clientSize.x - 300.0f - ImGui::GetStyle().WindowPadding.x), clientSize.y);
+                            ImGui::Gek::PlotHistogram("##historyHistogram", [](void *userData, int index) -> float
+                            {
+                                auto &data = *(std::vector<float> *)userData;
+                                return (index < int(data.size()) ? data[index] : 0.0f);
+                            }, &selectedEvent.data, HistoryLength, 0, 0.0f, selectedEvent.maximum, historySize);
+                        }
                     }
-                    else
-                    {
-                        return 0.0f;
-                    }
-                }, &selectedHistory.data, HistoryLength, 0, 0.0f, selectedHistory.maximum, historySize);
+                }
             }
 
             void drawSettings(ImGui::PanelManagerWindowData &windowData)
@@ -602,26 +606,26 @@ namespace Gek
 
             void beginEvent(char const * const system, char const * const name)
             {
-                auto &eventData = performanceMap[system][name];
+                auto &eventData = systemHistoryMap[system][name];
                 eventData.current = timer.getImmediateTime();
             }
 
             void endEvent(char const * const system, char const * const name)
             {
-                auto &eventData = performanceMap[system][name];
+                auto &eventData = systemHistoryMap[system][name];
                 eventData.current = (timer.getImmediateTime() - eventData.current) * 1000.0f;
             }
 
             void setValue(char const * const system, char const * const name, float value)
             {
-                auto &eventData = performanceMap[system][name];
+                auto &eventData = systemHistoryMap[system][name];
                 eventData.current = value;
             }
 
             void adjustValue(char const * const system, char const * const name, float value)
             {
-                auto &eventData = performanceMap[system][name];
-                eventData.current += value;
+                auto &eventData = systemHistoryMap[system][name];
+                eventData.current = ((std::isnan(eventData.current) ? 0.0f : eventData.current) + value);
             }
 
             // Renderer
@@ -689,8 +693,6 @@ namespace Gek
 
                 timer.update();
 
-                onBeginUpdate.emit();
-
                 // Read keyboard modifiers inputs
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
@@ -714,32 +716,38 @@ namespace Gek
                         population->update(frameTime);
                     }
 
-                    for (auto &systemMap : performanceMap)
+                    for (auto &systemPair : systemHistoryMap)
                     {
-                        concurrency::parallel_for_each(std::begin(systemMap.second), std::end(systemMap.second), [&](HistoryMap::value_type &frame) -> void
+                        auto &historyMap = systemPair.second;
+                        concurrency::parallel_for_each(std::begin(historyMap), std::end(historyMap), [&](EventHistoryMap::value_type &eventPair) -> void
                         {
                             static const auto adapt = [](float current, float target, float frameTime) -> float
                             {
                                 return (current + ((target - current) * (1.0 - exp(-frameTime * 1.25f))));
                             };
 
-                            auto &history = frame.second;
-                            history.data.push_back(frame.second.current);
-                            if (history.data.size() > HistoryLength)
+                            auto &eventData = eventPair.second;
+                            if (!std::isnan(eventData.current))
                             {
-                                auto iterator = std::begin(history.data);
-                                history.data.erase(iterator);
-                            }
+                                eventData.data.push_back(eventPair.second.current);
+                                if (eventData.data.size() > HistoryLength)
+                                {
+                                    auto iterator = std::begin(eventData.data);
+                                    eventData.data.erase(iterator);
+                                }
 
-                            if (history.data.size() == 1)
-                            {
-                                history.maximum = history.minimum = history.current;
-                            }
-                            else
-                            {
-                                auto minmax = std::minmax_element(std::begin(history.data), std::end(history.data));
-                                history.minimum = adapt(history.minimum, *minmax.first, frameTime);
-                                history.maximum = adapt(history.maximum, *minmax.second, frameTime);
+                                if (eventData.data.size() == 1)
+                                {
+                                    eventData.maximum = eventData.minimum = eventData.current;
+                                }
+                                else
+                                {
+                                    auto minmax = std::minmax_element(std::begin(eventData.data), std::end(eventData.data));
+                                    eventData.minimum = adapt(eventData.minimum, *minmax.first, frameTime);
+                                    eventData.maximum = adapt(eventData.maximum, *minmax.second, frameTime);
+                                }
+
+                                eventData.current = Math::NotANumber;
                             }
                         });
                     }

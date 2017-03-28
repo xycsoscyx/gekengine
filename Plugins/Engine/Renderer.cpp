@@ -1092,10 +1092,6 @@ namespace Gek
 
                 Plugin::Core::Log::Scope function(core->getLog(), "Render", "Update Time");
                 core->getLog()->setValue("Render", "Camera Count", cameraQueue.unsafe_size());
-                core->getLog()->setValue("Render", "Draw Queue Count", 0.0f);
-                core->getLog()->setValue("Render", "Directional Light Count", 0.0f);
-                core->getLog()->setValue("Render", "Point Light Count", 0.0f);
-                core->getLog()->setValue("Render", "Spot Light Count", 0.0f);
 
                 while (cameraQueue.try_pop(currentCamera))
                 {

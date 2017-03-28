@@ -480,14 +480,12 @@ namespace Gek
                 GEK_REQUIRE(videoDevice);
 
                 core->onResize.connect<Resources, &Resources::onResize>(this);
-                core->onBeginUpdate.connect<Resources, &Resources::onBeginUpdate>(this);
             }
 
             ~Resources(void)
             {
                 GEK_REQUIRE(core);
 
-                core->onBeginUpdate.disconnect<Resources, &Resources::onBeginUpdate>(this);
                 core->onResize.disconnect<Resources, &Resources::onResize>(this);
             }
 
@@ -606,16 +604,6 @@ namespace Gek
                 description.flags = Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource;
                 createTexture(L"screen", description);
                 createTexture(L"screenBuffer", description);
-            }
-
-            void onBeginUpdate(void)
-            {
-                core->getLog()->setValue("System", "Draw Call Count", 0.0f);
-                core->getLog()->setValue("System", "Vertex Count", 0.0f);
-                core->getLog()->setValue("System", "Instance Count", 0.0f);
-                core->getLog()->setValue("System", "Index Count", 0.0f);
-                core->getLog()->setValue("System", "Dispatch Call Count", 0.0f);
-                core->getLog()->setValue("System", "Dishatch Thread Count", 0.0f);
             }
 
             // ResourceRequester
@@ -1022,8 +1010,8 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->adjustValue("System", "Draw Call Count", 1.0f);
-                    core->getLog()->adjustValue("System", "Vertex Count", vertexCount);
+                    core->getLog()->adjustValue("Draw", "Primitive Count", 1.0f);
+                    core->getLog()->adjustValue("Draw", "Vertex Count", vertexCount);
                     videoContext->drawPrimitive(vertexCount, firstVertex);
                 }
             }
@@ -1032,9 +1020,9 @@ namespace Gek
             {
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->adjustValue("System", "Draw Call Count", 1.0f);
-                    core->getLog()->adjustValue("System", "Vertex Count", vertexCount);
-                    core->getLog()->adjustValue("System", "Instance Count", instanceCount);
+                    core->getLog()->adjustValue("Draw", "Primitive Count", 1.0f);
+                    core->getLog()->adjustValue("Draw", "Vertex Count", vertexCount);
+                    core->getLog()->adjustValue("Draw", "Instance Count", instanceCount);
                     videoContext->drawInstancedPrimitive(instanceCount, firstInstance, vertexCount, firstVertex);
                 }
             }
@@ -1047,8 +1035,8 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->adjustValue("System", "Draw Call Count", 1.0f);
-                    core->getLog()->adjustValue("System", "Index Count", indexCount);
+                    core->getLog()->adjustValue("Draw", "Primitive Count", 1.0f);
+                    core->getLog()->adjustValue("Draw", "Index Count", indexCount);
                     videoContext->drawIndexedPrimitive(indexCount, firstIndex, firstVertex);
                 }
             }
@@ -1059,9 +1047,9 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->adjustValue("System", "Draw Call Count", 1.0f);
-                    core->getLog()->adjustValue("System", "Index Count", indexCount);
-                    core->getLog()->adjustValue("System", "Instance Count", instanceCount);
+                    core->getLog()->adjustValue("Draw", "Primitive Count", 1.0f);
+                    core->getLog()->adjustValue("Draw", "Index Count", indexCount);
+                    core->getLog()->adjustValue("Draw", "Instance Count", instanceCount);
                     videoContext->drawInstancedIndexedPrimitive(instanceCount, firstInstance, indexCount, firstIndex, firstVertex);
                 }
             }
@@ -1072,8 +1060,8 @@ namespace Gek
 
                 if (dispatchValid)
                 {
-                    core->getLog()->adjustValue("System", "Dispatch Call Count", 1.0f);
-                    core->getLog()->adjustValue("System", "Dishatch Thread Count", threadGroupCountX * threadGroupCountY * threadGroupCountZ);
+                    core->getLog()->adjustValue("Draw", "Dispatch Count", 1.0f);
+                    core->getLog()->adjustValue("Draw", "Thread Count", threadGroupCountX * threadGroupCountY * threadGroupCountZ);
                     videoContext->dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
                 }
             }

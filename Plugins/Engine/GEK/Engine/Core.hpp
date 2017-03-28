@@ -73,7 +73,6 @@ namespace Gek
 
             Nano::Signal<void(void)> onResize;
             Nano::Signal<void(ImGuiContext *context, ImGui::PanelManagerWindowData &windowData)> OnSettingsPanel;
-            Nano::Signal<void(void)> onBeginUpdate;
 
             virtual ~Core(void) = default;
 
