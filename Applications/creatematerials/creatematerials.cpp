@@ -14,32 +14,32 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
         auto dataPath(FileSystem::GetFileName(rootPath, L"Data"));
 
-        String texturesPath(FileSystem::GetFileName(dataPath, L"Textures"));
+        WString texturesPath(FileSystem::GetFileName(dataPath, L"Textures"));
         texturesPath.toLower();
 
-        String materialsPath(FileSystem::GetFileName(dataPath, L"Materials"));
+        WString materialsPath(FileSystem::GetFileName(dataPath, L"Materials"));
         materialsPath.toLower();
 
-		std::function<bool(wchar_t const * const )> findMaterials;
-		findMaterials = [&](const FileSystem::Path &materialCollectionPath) -> bool
+		std::function<bool(FileSystem::Path const &)> findMaterials;
+		findMaterials = [&](FileSystem::Path const &materialCollectionPath) -> bool
 		{
 			if (materialCollectionPath.isDirectory())
 			{
 				printf("Collection Found: %S\r\n", materialCollectionPath.c_str());
-				FileSystem::Find(materialCollectionPath, [&](const FileSystem::Path &textureSetPath) -> bool
+				FileSystem::Find(materialCollectionPath, [&](FileSystem::Path const &textureSetPath) -> bool
 				{
 					if (textureSetPath.isDirectory())
 					{
-						String materialName(textureSetPath);
+						WString materialName(textureSetPath);
                         materialName = materialName.subString(texturesPath.size() + 1);
 						printf("> Material Found: %S\r\n", materialName.c_str());
 
                         JSON::Object renderState;
-                        std::map<String, std::map<uint32_t, std::pair<FileSystem::Path, String>>> fileMap;
-                        FileSystem::Find(textureSetPath, [&](const FileSystem::Path &filePath) -> bool
+                        std::map<WString, std::map<uint32_t, std::pair<FileSystem::Path, WString>>> fileMap;
+                        FileSystem::Find(textureSetPath, [&](FileSystem::Path const &filePath) -> bool
                         {
                             uint32_t extensionImportance = 0;
-                            String extension(filePath.getExtension());
+                            WString extension(filePath.getExtension());
                             if (extension.compareNoCase(L".json") == 0)
                             {
                                 try
@@ -81,7 +81,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                                 return true;
                             }
 
-                            String textureName(filePath.withoutExtension());
+                            WString textureName(filePath.withoutExtension());
                             textureName = textureName.subString(texturesPath.size() + 1);
                             textureName.toLower();
 
@@ -172,7 +172,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     catch (const std::exception &exception)
     {
         printf("\r\n\r\nGEK Engine - Error\r\n");
-        printf(StringUTF8::Format("Caught: %v\r\nType: %v\r\n", exception.what(), typeid(exception).name()));
+        printf(CString::Format("Caught: %v\r\nType: %v\r\n", exception.what(), typeid(exception).name()));
     }
     catch (...)
     {

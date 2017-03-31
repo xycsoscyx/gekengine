@@ -584,7 +584,7 @@ namespace Gek
         {
             if (object)
             {
-                StringUTF8 nameUTF8(name);
+                CString nameUTF8(name);
                 object->SetPrivateData(WKPDID_D3DDebugObjectName, UINT(nameUTF8.length()), nameUTF8.c_str());
             }
         }
@@ -2366,7 +2366,7 @@ namespace Gek
                 throw Video::CreateObjectFailed("Unknown program pipline encountered");
             }
 
-            std::vector<uint8_t> compileProgram(StringUTF8 const &name, StringUTF8 const &type, StringUTF8 const &uncompiledProgram, StringUTF8 const &entryFunction)
+            std::vector<uint8_t> compileProgram(CString const &name, CString const &type, CString const &uncompiledProgram, CString const &entryFunction)
             {
                 GEK_REQUIRE(d3dDevice);
 
@@ -2385,7 +2385,7 @@ namespace Gek
                 HRESULT resultValue = D3DCompile(uncompiledProgram, (uncompiledProgram.size() + 1), name, nullptr, nullptr, entryFunction, type, flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
-                    OutputDebugStringW(String::Format(L"D3DCompile Failed: %v\r\n%v\r\n", resultValue, (char const * const )d3dCompilerErrors->GetBufferPointer()));
+                    OutputDebugStringW(WString::Format(L"D3DCompile Failed: %v\r\n%v\r\n", resultValue, (char const * const )d3dCompilerErrors->GetBufferPointer()));
                     throw Video::ProgramCompilationFailed("Unable to compile program");
                 }
 
@@ -2627,14 +2627,14 @@ namespace Gek
                 }
             }
 
-            Video::TexturePtr loadTexture(const FileSystem::Path &filePath, uint32_t flags)
+            Video::TexturePtr loadTexture(FileSystem::Path const &filePath, uint32_t flags)
             {
                 GEK_REQUIRE(d3dDevice);
 
                 std::vector<uint8_t> buffer;
                 FileSystem::Load(filePath, buffer);
 
-                String extension(filePath.getExtension());
+                WString extension(filePath.getExtension());
                 std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
                 if (extension.compareNoCase(L".dds") == 0)
                 {
@@ -2693,12 +2693,12 @@ namespace Gek
                 return std::make_unique<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, description);
             }
 
-            Texture::Description loadTextureDescription(const FileSystem::Path &filePath)
+            Texture::Description loadTextureDescription(FileSystem::Path const &filePath)
             {
                 std::vector<uint8_t> buffer;
                 FileSystem::Load(filePath, buffer, 1024 * 4);
 
-                String extension(filePath.getExtension());
+                WString extension(filePath.getExtension());
                 std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::TexMetadata &)> getMetadata;
                 if (extension.compareNoCase(L".dds") == 0)
                 {

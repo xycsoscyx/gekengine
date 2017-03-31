@@ -10,13 +10,7 @@ namespace Gek
         {
         }
 
-        Path::Path(wchar_t const * const path)
-            : std::experimental::filesystem::path(path)
-        {
-            make_preferred();
-        }
-
-        Path::Path(String const &path)
+        Path::Path(WString const &path)
             : std::experimental::filesystem::path(path)
         {
             make_preferred();
@@ -28,12 +22,7 @@ namespace Gek
             make_preferred();
         }
 
-        void Path::operator = (wchar_t const * const path)
-        {
-            assign(path);
-        }
-
-        void Path::operator = (String const &path)
+        void Path::operator = (WString const &path)
         {
             assign(path);
         }
@@ -43,7 +32,7 @@ namespace Gek
             assign(path);
         }
 
-        Path::operator wchar_t const * const  (void) const
+        Path::operator wchar_t const * const (void) const
         {
             return c_str();
         }
@@ -58,17 +47,17 @@ namespace Gek
             replace_extension(L"");
         }
 
-        void Path::replaceFileName(wchar_t const * const fileName)
+        void Path::replaceFileName(WString const &fileName)
         {
             replace_filename(fileName);
         }
 
-        void Path::replaceExtension(wchar_t const * const extension)
+        void Path::replaceExtension(WString const &extension)
         {
             replace_extension(extension);
         }
 
-        Path Path::withExtension(wchar_t const * const extension) const
+        Path Path::withExtension(WString const &extension) const
         {
             Path path(*this);
             path.replace_extension(extension);
@@ -87,12 +76,12 @@ namespace Gek
             return parent_path().native();
         }
 
-        String Path::getFileName(void) const
+        WString Path::getFileName(void) const
         {
             return filename().native();
         }
 
-        String Path::getExtension(void) const
+        WString Path::getExtension(void) const
         {
             return extension().native();
         }
@@ -117,25 +106,25 @@ namespace Gek
         Path GetModuleFilePath(void)
         {
 #ifdef _WIN32
-            String relativeName((MAX_PATH + 1), L' ');
+            WString relativeName((MAX_PATH + 1), L' ');
             GetModuleFileName(nullptr, &relativeName.at(0), MAX_PATH);
             relativeName.trimRight();
 
-            String absoluteName((MAX_PATH + 1), L' ');
+            WString absoluteName((MAX_PATH + 1), L' ');
             GetFullPathName(relativeName, MAX_PATH, &absoluteName.at(0), nullptr);
             absoluteName.trimRight();
 #else
-            StringUTF8 processName(StringUTF8::Format("/proc/%v/exe", getpid()));
-            String absoluteName((MAX_PATH + 1), L'\0');
+            CString processName(CString::Format("/proc/%v/exe", getpid()));
+            WString absoluteName((MAX_PATH + 1), L'\0');
             readlink(processName, &absoluteName.at(0), MAX_PATH);
             absoluteName.trimRight();
 #endif
             return absoluteName;
         }
 
-        Path GetFileName(Path const &rootDirectory, const std::vector<String> &list)
+        Path GetFileName(Path const &rootDirectory, const std::vector<WString> &list)
 		{
-            String filePath(rootDirectory);
+            WString filePath(rootDirectory);
             filePath.join(list, std::experimental::filesystem::path::preferred_separator);
             return filePath;
 		}
@@ -149,7 +138,8 @@ namespace Gek
 		{
 			for (auto &fileSearch : std::experimental::filesystem::directory_iterator(rootDirectory))
 			{
-				onFileFound(fileSearch.path().wstring().c_str());
+                Path filePath(fileSearch.path().wstring());
+				onFileFound(filePath);
 			}
 		}
 
@@ -159,7 +149,7 @@ namespace Gek
             size = (limitReadSize == 0 ? size : std::min(size, limitReadSize));
             if (size > 0)
             {
-                FILE *file = fopen(StringUTF8(filePath.native()), "rb");
+                FILE *file = fopen(CString(filePath.native()), "rb");
                 if (file == nullptr)
                 {
                     throw FileNotFound("Unable to open file for reading");
@@ -176,7 +166,7 @@ namespace Gek
             }
 		}
 
-		void Load(Path const &filePath, StringUTF8 &string)
+		void Load(Path const &filePath, CString &string)
 		{
 			std::vector<uint8_t> buffer;
 			Load(filePath, buffer);
@@ -184,7 +174,7 @@ namespace Gek
 			string = reinterpret_cast<char *>(buffer.data());
 		}
 
-		void Load(Path const &filePath, String &string)
+		void Load(Path const &filePath, WString &string)
 		{
 			std::vector<uint8_t> buffer;
 			Load(filePath, buffer);
@@ -196,7 +186,7 @@ namespace Gek
         {
             MakeDirectoryChain(filePath.getParentPath());
 
-            FILE *file = fopen(StringUTF8(filePath.native()), "w+b");
+            FILE *file = fopen(CString(filePath.native()), "w+b");
 			if (file == nullptr)
 			{
 				throw FileNotFound("Unable to open file for writing");
@@ -211,16 +201,16 @@ namespace Gek
 			}
         }
 
-        void Save(Path const &filePath, StringUTF8 const &string)
+        void Save(Path const &filePath, CString const &string)
         {
             std::vector<uint8_t> buffer(string.length());
             std::copy(std::begin(string), std::end(string), std::begin(buffer));
             Save(filePath, buffer);
         }
 
-        void Save(Path const &filePath, String const &string)
+        void Save(Path const &filePath, WString const &string)
         {
-            Save(filePath, StringUTF8(string));
+            Save(filePath, CString(string));
         }
     } // namespace FileSystem
 }; // namespace Gek

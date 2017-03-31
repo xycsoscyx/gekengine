@@ -11,7 +11,7 @@
 
 using namespace Gek;
 
-void compressTexture(Video::Debug::Device *device, const FileSystem::Path &inputFilePath)
+void compressTexture(Video::Debug::Device *device, FileSystem::Path const &inputFilePath)
 {
 	if (!inputFilePath.isFile())
 	{
@@ -30,7 +30,7 @@ void compressTexture(Video::Debug::Device *device, const FileSystem::Path &input
 	std::vector<uint8_t> buffer;
 	FileSystem::Load(inputFilePath, buffer);
 
-	String extension(inputFilePath.getExtension());
+	WString extension(inputFilePath.getExtension());
 	std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
 	if (extension.compareNoCase(L".tga") == 0)
 	{
@@ -67,7 +67,7 @@ void compressTexture(Video::Debug::Device *device, const FileSystem::Path &input
 		throw std::exception("Unable to load input file");
 	}
 
-    String inputName(inputFilePath.withoutExtension());
+    WString inputName(inputFilePath.withoutExtension());
     inputName.toLower();
     
     bool useDevice = false;
@@ -181,8 +181,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         Video::Device::Description deviceDescription;
         Video::DevicePtr device(context->createClass<Video::Device>(L"Device::Video::D3D11", window.get(), deviceDescription));
 
-        std::function<bool(wchar_t const * const )> searchDirectory;
-		searchDirectory = [&](const FileSystem::Path &filePath) -> bool
+        std::function<bool(FileSystem::Path const &)> searchDirectory;
+		searchDirectory = [&](FileSystem::Path const &filePath) -> bool
 		{
 			if (filePath.isDirectory())
 			{
@@ -192,7 +192,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 			{
 				try
 				{
-					compressTexture(dynamic_cast<Video::Debug::Device *>(device.get()), String(filePath).getLower());
+					compressTexture(dynamic_cast<Video::Debug::Device *>(device.get()), WString(filePath).getLower());
 				}
 				catch (...)
 				{
@@ -210,7 +210,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     catch (const std::exception &exception)
     {
         printf("\r\n\r\nGEK Engine - Error\r\n");
-        printf(StringUTF8::Format("Caught: %v\r\nType: %v\r\n", exception.what(), typeid(exception).name()));
+        printf(CString::Format("Caught: %v\r\nType: %v\r\n", exception.what(), typeid(exception).name()));
     }
     catch (...)
     {

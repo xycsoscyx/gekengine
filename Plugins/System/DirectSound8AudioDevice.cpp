@@ -122,7 +122,7 @@ namespace Gek
 			}
 		};
 */
-		GEK_CONTEXT_USER(Device, HWND, String)
+		GEK_CONTEXT_USER(Device, HWND, WString)
 			, public Audio::Device
 		{
 		private:
@@ -131,7 +131,7 @@ namespace Gek
 			CComQIPtr<IDirectSoundBuffer, &IID_IDirectSoundBuffer> primarySoundBuffer;
 
 		public:
-			Device(Context *context, HWND window, String device)
+			Device(Context *context, HWND window, WString device)
 				: ContextRegistration(context)
 			{
 				GEK_REQUIRE(window);
@@ -141,7 +141,7 @@ namespace Gek
 				{
 					struct EnumData
 					{
-						String device;
+						WString device;
 						GUID *deviceGUID;
 					} enumerationData = { device, &deviceGUID };
 					DirectSoundEnumerateW([](LPGUID deviceGUID, LPCWSTR description, LPCWSTR module, void *context) -> BOOL
@@ -255,7 +255,7 @@ namespace Gek
 				directSoundListener->SetRolloffFactor(factor, DS3D_DEFERRED);
 			}
 
-            Audio::BufferPtr loadBuffer(const FileSystem::Path &filePath)
+            Audio::BufferPtr loadBuffer(FileSystem::Path const &filePath)
             {
                 return nullptr;
             }
@@ -265,7 +265,7 @@ namespace Gek
                 return nullptr;
             }
 /*
-			Audio::EffectPtr loadEffect(const FileSystem::Path &filePath)
+			Audio::EffectPtr loadEffect(FileSystem::Path const &filePath)
 			{
 				GEK_REQUIRE(directSound);
 
@@ -280,7 +280,7 @@ namespace Gek
 				return std::make_unique<Effect>(directSound8Buffer.p);
 			}
 
-			Audio::SoundPtr loadSound(const FileSystem::Path &filePath)
+			Audio::SoundPtr loadSound(FileSystem::Path const &filePath)
 			{
 				GEK_REQUIRE(directSound);
 

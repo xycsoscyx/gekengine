@@ -35,7 +35,7 @@ namespace Gek
 
             struct Action
             {
-                String name;
+                WString name;
                 union
                 {
                     bool state;
@@ -109,7 +109,7 @@ namespace Gek
             using ComponentMap = std::unordered_map<std::type_index, Plugin::ComponentPtr>;
             virtual ComponentMap &getComponentMap(void) = 0;
 
-            using EntityMap = std::unordered_map<String, Plugin::EntityPtr>;
+            using EntityMap = std::unordered_map<WString, Plugin::EntityPtr>;
             virtual EntityMap &getEntityMap(void) = 0;
 
             virtual ~Population(void) = default;

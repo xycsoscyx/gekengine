@@ -285,7 +285,7 @@ namespace Gek
                         }
                         catch (const std::exception &exception)
                         {
-                            resources->message("Resources", Plugin::Core::Log::Type::Error, StringUTF8::Format("Error occurred trying to reload an external resource: %v", exception.what()));
+                            resources->message("Resources", Plugin::Core::Log::Type::Error, CString::Format("Error occurred trying to reload an external resource: %v", exception.what()));
                         }
                         catch (...)
                         {
@@ -324,7 +324,7 @@ namespace Gek
                     }
                     catch (const std::exception &exception)
                     {
-                        resources->message("Resources", Plugin::Core::Log::Type::Error, StringUTF8::Format("Error occurred trying to load an external resource: %v", exception.what()));
+                        resources->message("Resources", Plugin::Core::Log::Type::Error, CString::Format("Error occurred trying to load an external resource: %v", exception.what()));
                     }
                     catch (...)
                     {
@@ -496,32 +496,29 @@ namespace Gek
                 return (videoPipeline->getType() == Video::PipelineType::Compute ? dispatchValid : drawPrimitiveValid);
             }
 
-            Video::TexturePtr loadTextureData(const FileSystem::Path &filePath, wchar_t const * const textureName, uint32_t flags)
+            Video::TexturePtr loadTextureData(FileSystem::Path const &filePath, WString const &textureName, uint32_t flags)
             {
                 auto texture = videoDevice->loadTexture(filePath, flags);
                 texture->setName(textureName);
                 return texture;
             }
 
-            String getFullProgram(wchar_t const * const name, wchar_t const * const engineData)
+            WString getFullProgram(WString const &name, WString const &engineData)
             {
-                GEK_REQUIRE(name);
-                GEK_REQUIRE(engineData);
-
                 auto programsPath(getContext()->getRootFileName(L"data", L"programs"));
                 auto filePath(FileSystem::GetFileName(programsPath, name));
                 if (filePath.isFile())
                 {
-                    String programDirectory(filePath.getParentPath());
+                    WString programDirectory(filePath.getParentPath());
 
-                    String baseProgram;
+                    WString baseProgram;
                     FileSystem::Load(filePath, baseProgram);
                     baseProgram.replace(L"\r", L"$");
                     baseProgram.replace(L"\n", L"$");
                     baseProgram.replace(L"$$", L"$");
                     auto programLines = baseProgram.split(L'$', false);
 
-                    String uncompiledProgram;
+                    WString uncompiledProgram;
                     for (auto &line : programLines)
                     {
                         if (line.empty())
@@ -530,7 +527,7 @@ namespace Gek
                         }
                         else if (line.find(L"#include") == 0)
                         {
-                            String includeName(line.subString(8));
+                            WString includeName(line.subString(8));
                             includeName.trim();
 
                             if (includeName.empty())
@@ -539,7 +536,7 @@ namespace Gek
                             }
                             else
                             {
-                                String includeData;
+                                WString includeData;
                                 if (includeName.compareNoCase(L"GEKEngine") == 0)
                                 {
                                     includeData = engineData;
@@ -622,7 +619,7 @@ namespace Gek
                     }
                     catch (const std::exception &exception)
                     {
-                        core->getLog()->message("Resources", Plugin::Core::Log::Type::Error, StringUTF8::Format("Error occurred trying to load an external resource: %v", exception.what()));
+                        core->getLog()->message("Resources", Plugin::Core::Log::Type::Error, CString::Format("Error occurred trying to load an external resource: %v", exception.what()));
                     }
                     catch (...)
                     {
@@ -632,11 +629,9 @@ namespace Gek
             }
 
             // Plugin::Resources
-            VisualHandle loadVisual(wchar_t const * const visualName)
+            VisualHandle loadVisual(WString const &visualName)
             {
-                GEK_REQUIRE(visualName);
-
-                auto load = [this, visualName = String(visualName)](VisualHandle)->Plugin::VisualPtr
+                auto load = [this, visualName](VisualHandle)->Plugin::VisualPtr
                 {
                     return getContext()->createClass<Plugin::Visual>(L"Engine::Visual", videoDevice, (Engine::Resources *)this, visualName);
                 };
@@ -645,11 +640,9 @@ namespace Gek
                 return visualCache.getHandle(hash, std::move(load)).second;
             }
 
-            MaterialHandle loadMaterial(wchar_t const * const materialName)
+            MaterialHandle loadMaterial(WString const &materialName)
             {
-                GEK_REQUIRE(materialName);
-
-                auto load = [this, materialName = String(materialName)](MaterialHandle handle)->Engine::MaterialPtr
+                auto load = [this, materialName](MaterialHandle handle)->Engine::MaterialPtr
                 {
                     return getContext()->createClass<Engine::Material>(L"Engine::Material", (Engine::Resources *)this, materialName, handle);
                 };
@@ -658,12 +651,10 @@ namespace Gek
                 return materialCache.getHandle(hash, std::move(load)).second;
             }
 
-            ResourceHandle loadTexture(wchar_t const * const textureName, uint32_t flags)
+            ResourceHandle loadTexture(WString const &textureName, uint32_t flags)
             {
-                GEK_REQUIRE(textureName);
-
                 // iterate over formats in case the texture name has no extension
-                static const String formatList[] =
+                static const WString formatList[] =
                 {
                     L"",
                     L".dds",
@@ -679,7 +670,7 @@ namespace Gek
                     auto filePath(texturePath.withExtension(format));
                     if (filePath.isFile())
                     {
-                        auto load = [this, filePath = FileSystem::Path(filePath), textureName = String(textureName), flags](ResourceHandle)->Video::TexturePtr
+                        auto load = [this, filePath = FileSystem::Path(filePath), textureName = WString(textureName), flags](ResourceHandle)->Video::TexturePtr
                         {
                             return loadTextureData(filePath, textureName, flags);
                         };
@@ -699,13 +690,11 @@ namespace Gek
                 return ResourceHandle();
             }
 
-            ResourceHandle createPattern(wchar_t const * const pattern, const JSON::Object &parameters)
+            ResourceHandle createPattern(WString const &pattern, const JSON::Object &parameters)
             {
-                GEK_REQUIRE(pattern);
-
                 std::vector<uint8_t> data;
                 Video::Texture::Description description;
-                if (wcsicmp(pattern, L"color") == 0)
+                if (pattern.compareNoCase(L"color") == 0)
                 {
                     try
                     {
@@ -757,7 +746,7 @@ namespace Gek
                         throw InvalidParameter("Unable to determine color texture type");
                     };
                 }
-                else if (wcsicmp(pattern, L"normal") == 0)
+                else if (pattern.compareNoCase(L"normal") == 0)
                 {
                     Math::Float3 normal(Math::Float3::Zero);
                     if (parameters.is_array() && parameters.size() == 3)
@@ -774,11 +763,11 @@ namespace Gek
 
                     description.format = Video::Format::R8G8B8A8_UNORM;
                 }
-                else if (wcsicmp(pattern, L"system") == 0)
+                else if (pattern.compareNoCase(L"system") == 0)
                 {
                     if (parameters.is_string())
                     {
-                        String type(parameters.as_cstring());
+                        WString type(parameters.as_cstring());
                         if (type.compareNoCase(L"debug") == 0)
                         {
                             data.push_back(255);
@@ -820,9 +809,9 @@ namespace Gek
                     throw InvalidParameter("Invalid color format encountered");
                 }
 
-                String name(String::Format(L"%v:%v", pattern, parameters.to_string()));
+                WString name(WString::Format(L"%v:%v", pattern, parameters.to_string()));
                 description.flags = Video::Texture::Description::Flags::Resource;
-                auto load = [this, name = String(name), description, data = move(data)](ResourceHandle) mutable -> Video::TexturePtr
+                auto load = [this, name, description, data = move(data)](ResourceHandle) mutable -> Video::TexturePtr
                 {
                     auto texture = videoDevice->createTexture(description, data.data());
                     texture->setName(name);
@@ -839,11 +828,9 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createTexture(wchar_t const * const textureName, const Video::Texture::Description &description)
+            ResourceHandle createTexture(WString const &textureName, const Video::Texture::Description &description)
             {
-                GEK_REQUIRE(textureName);
-
-                auto load = [this, textureName = String(textureName), description](ResourceHandle)->Video::TexturePtr
+                auto load = [this, textureName, description](ResourceHandle)->Video::TexturePtr
                 {
                     auto texture = videoDevice->createTexture(description);
                     texture->setName(textureName);
@@ -861,12 +848,11 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createBuffer(wchar_t const * const bufferName, const Video::Buffer::Description &description)
+            ResourceHandle createBuffer(WString const &bufferName, const Video::Buffer::Description &description)
             {
-                GEK_REQUIRE(bufferName);
                 GEK_REQUIRE(description.count > 0);
 
-                auto load = [this, bufferName = String(bufferName), description](ResourceHandle)->Video::BufferPtr
+                auto load = [this, bufferName, description](ResourceHandle)->Video::BufferPtr
                 {
                     auto buffer = videoDevice->createBuffer(description);
                     buffer->setName(bufferName);
@@ -884,13 +870,12 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createBuffer(wchar_t const * const bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData)
+            ResourceHandle createBuffer(WString const &bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData)
             {
-                GEK_REQUIRE(bufferName);
                 GEK_REQUIRE(description.count > 0);
                 GEK_REQUIRE(!staticData.empty());
 
-                auto load = [this, bufferName = String(bufferName), description, staticData = move(staticData)](ResourceHandle)->Video::BufferPtr
+                auto load = [this, bufferName, description, staticData = move(staticData)](ResourceHandle)->Video::BufferPtr
                 {
                     auto buffer = videoDevice->createBuffer(description, (void *)staticData.data());
                     buffer->setName(bufferName);
@@ -1031,8 +1016,6 @@ namespace Gek
             {
                 GEK_REQUIRE(videoContext);
 
-                GEK_REQUIRE(videoContext);
-
                 if (drawPrimitiveValid)
                 {
                     core->getLog()->adjustValue("Draw", "Primitive Count", 1.0f);
@@ -1103,10 +1086,8 @@ namespace Gek
                 return ShaderHandle();
             }
 
-            ResourceHandle getResourceHandle(wchar_t const * const resourceName) const
+            ResourceHandle getResourceHandle(WString const &resourceName) const
             {
-                GEK_REQUIRE(resourceName);
-
                 return dynamicCache.getHandle(GetHash(resourceName));
             }
 
@@ -1115,12 +1096,10 @@ namespace Gek
                 return shaderCache.getResource(handle);
             }
 
-            Engine::Shader * const getShader(wchar_t const * const shaderName, MaterialHandle material)
+            Engine::Shader * const getShader(WString const &shaderName, MaterialHandle material)
             {
-                GEK_REQUIRE(shaderName);
-
                 std::unique_lock<std::recursive_mutex> lock(shaderMutex);
-                auto load = [this, shaderName = String(shaderName)](ShaderHandle) mutable -> Engine::ShaderPtr
+                auto load = [this, shaderName](ShaderHandle) -> Engine::ShaderPtr
                 {
                     return getContext()->createClass<Engine::Shader>(L"Engine::Shader", videoDevice, (Engine::Resources *)this, core->getPopulation(), shaderName);
                 };
@@ -1135,11 +1114,9 @@ namespace Gek
                 return shaderCache.getResource(resource.second);
             }
 
-            Engine::Filter * const getFilter(wchar_t const * const filterName)
+            Engine::Filter * const getFilter(WString const &filterName)
             {
-                GEK_REQUIRE(filterName);
-
-                auto load = [this, filterName = String(filterName)](ResourceHandle)->Engine::FilterPtr
+                auto load = [this, filterName](ResourceHandle)->Engine::FilterPtr
                 {
                     return getContext()->createClass<Engine::Filter>(L"Engine::Filter", videoDevice, (Engine::Resources *)this, core->getPopulation(), filterName);
                 };
@@ -1175,16 +1152,12 @@ namespace Gek
                 }
             }
 
-            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, wchar_t const * const name, wchar_t const * const entryFunction, wchar_t const * const engineData)
+            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, WString const &name, WString const &entryFunction, WString const &engineData)
             {
-                GEK_REQUIRE(name);
-                GEK_REQUIRE(entryFunction);
-                GEK_REQUIRE(engineData);
-
                 auto uncompiledProgram = getFullProgram(name, engineData);
 
                 auto hash = GetHash(uncompiledProgram);
-                auto cacheExtension = String::Format(L".%v.bin", hash);
+                auto cacheExtension = WString::Format(L".%v.bin", hash);
                 auto cachePath(getContext()->getRootFileName(L"data", L"cache", name).withExtension(cacheExtension));
 
 				std::vector<uint8_t> compiledProgram;
@@ -1196,8 +1169,8 @@ namespace Gek
                 if (compiledProgram.empty())
                 {
 #ifdef _DEBUG
-					auto debugExtension = String::Format(L".%v.hlsl", hash);
-					String debugPath(getContext()->getRootFileName(L"data", L"cache", name).withExtension(debugExtension));
+					auto debugExtension = WString::Format(L".%v.hlsl", hash);
+					WString debugPath(getContext()->getRootFileName(L"data", L"cache", name).withExtension(debugExtension));
 					FileSystem::Save(debugPath, uncompiledProgram);
 #endif
 					compiledProgram = videoDevice->compileProgram(pipelineType, name, uncompiledProgram, entryFunction);
@@ -1207,17 +1180,13 @@ namespace Gek
                 return compiledProgram;
             }
 
-            ProgramHandle loadProgram(Video::PipelineType pipelineType, wchar_t const * const name, wchar_t const * const entryFunction, wchar_t const * const engineData)
+            ProgramHandle loadProgram(Video::PipelineType pipelineType, WString const &name, WString const &entryFunction, WString const &engineData)
             {
-                GEK_REQUIRE(name);
-                GEK_REQUIRE(entryFunction);
-                GEK_REQUIRE(engineData);
-
-                auto load = [this, pipelineType, name = String(name), entryFunction = String(entryFunction), engineData = String(engineData)](ProgramHandle)->Video::ObjectPtr
+                auto load = [this, pipelineType, name, entryFunction, engineData](ProgramHandle)->Video::ObjectPtr
                 {
                     auto compiledProgram = compileProgram(pipelineType, name, entryFunction, engineData);
                     auto program = videoDevice->createProgram(pipelineType, compiledProgram.data(), compiledProgram.size());
-                    program->setName(String::Format(L"%v:%v", name, entryFunction));
+                    program->setName(WString::Format(L"%v:%v", name, entryFunction));
                     return program;
                 };
 

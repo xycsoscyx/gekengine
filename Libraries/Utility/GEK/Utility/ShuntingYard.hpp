@@ -55,11 +55,11 @@ namespace Gek
         {
             TokenType type;
             uint32_t parameterCount;
-            String string;
+            WString string;
             float value;
 
             Token(TokenType type = TokenType::Unknown);
-            Token(TokenType type, wchar_t const * const string, uint32_t parameterCount = 0);
+            Token(TokenType type, WString const &string, uint32_t parameterCount = 0);
             Token(float value);
         };
 
@@ -93,9 +93,9 @@ namespace Gek
         };
 
     private:
-        std::unordered_map<String, float> variableMap;
-        std::unordered_map<String, Operation> operationsMap;
-        std::unordered_map<String, Function> functionsMap;
+        std::unordered_map<WString, float> variableMap;
+        std::unordered_map<WString, Operation> operationsMap;
+        std::unordered_map<WString, Function> functionsMap;
         std::mt19937 mersineTwister;
         uint32_t seed = std::mt19937::default_seed;
 
@@ -105,27 +105,27 @@ namespace Gek
         void setRandomSeed(uint32_t seed);
         uint32_t getRandomSeed(void);
 
-        TokenList getTokenList(wchar_t const * const expression);
+        TokenList getTokenList(WString const &expression);
         float evaluate(TokenList &rpnTokenList);
-        float evaluate(wchar_t const * const expression);
+        float evaluate(WString const &expression);
 
     private:
-        bool isNumber(wchar_t const * const token);
-        bool isOperation(wchar_t const * const token);
-        bool isFunction(wchar_t const * const token);
-        bool isLeftParenthesis(wchar_t const * const token);
-        bool isRightParenthesis(wchar_t const * const token);
-        bool isParenthesis(wchar_t const * const token);
-        bool isSeparator(wchar_t const * const token);
-        bool isAssociative(wchar_t const * const token, const Associations &type);
-        int comparePrecedence(wchar_t const * const token1, wchar_t const * const token2);
-        TokenType getTokenType(wchar_t const * const token);
+        bool isNumber(WString const &token);
+        bool isOperation(WString const &token);
+        bool isFunction(WString const &token);
+        bool isLeftParenthesis(WString const &token);
+        bool isRightParenthesis(WString const &token);
+        bool isParenthesis(WString const &token);
+        bool isSeparator(WString const &token);
+        bool isAssociative(WString const &token, const Associations &type);
+        int comparePrecedence(WString const &token1, WString const &token2);
+        TokenType getTokenType(WString const &token);
         bool isValidReturnType(const Token &token);
 
     private:
         void insertToken(TokenList &infixTokenList, Token &token);
-        void parseSubTokens(TokenList &infixTokenList, String const &token);
-        TokenList convertExpressionToInfix(String const &expression);
+        void parseSubTokens(TokenList &infixTokenList, WString const &token);
+        TokenList convertExpressionToInfix(WString const &expression);
         TokenList convertInfixToReversePolishNotation(const TokenList &infixTokenList);
         float evaluateReversePolishNotation(const TokenList &rpnTokenList);
     };

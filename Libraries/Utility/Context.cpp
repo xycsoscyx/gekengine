@@ -14,19 +14,19 @@ namespace Gek
     private:
         FileSystem::Path rootPath;
         std::vector<HMODULE> moduleList;
-        std::unordered_map<String, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)>> classMap;
-        std::unordered_multimap<String, String> typeMap;
+        std::unordered_map<WString, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)>> classMap;
+        std::unordered_multimap<WString, WString> typeMap;
 
     public:
-        ContextImplementation(const FileSystem::Path &rootPath, std::vector<FileSystem::Path> searchPathList)
+        ContextImplementation(FileSystem::Path const &rootPath, std::vector<FileSystem::Path> searchPathList)
             : rootPath(rootPath)
         {
-            SetCurrentDirectory(rootPath);
+            SetCurrentDirectoryW(rootPath);
             
             searchPathList.push_back(rootPath);
             for (auto &searchPath : searchPathList)
             {
-                FileSystem::Find(searchPath, [&](const FileSystem::Path &filePath) -> bool
+                FileSystem::Find(searchPath, [&](FileSystem::Path const &filePath) -> bool
                 {
 					if (filePath.isFile() && filePath.getExtension().compareNoCase(L".dll") == 0)
 					{
@@ -36,7 +36,7 @@ namespace Gek
 							InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "initializePlugin");
 							if (initializePlugin)
 							{
-								initializePlugin([this](wchar_t const * const className, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)> creator) -> void
+								initializePlugin([this](WString const &className, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)> creator) -> void
 								{
 									if (classMap.count(className) == 0)
 									{
@@ -46,7 +46,7 @@ namespace Gek
 									{
                                         throw DuplicateClass("Duplicate class found in plugin library");
 									}
-								}, [this](wchar_t const * const typeName, wchar_t const * const className) -> void
+								}, [this](WString const &typeName, WString const &className) -> void
 								{
 									typeMap.insert(std::make_pair(typeName, className));
 								});
@@ -80,12 +80,12 @@ namespace Gek
         }
 
         // Context
-        const FileSystem::Path &getRootPath(void) const
+        FileSystem::Path const &getRootPath(void) const
         {
             return rootPath;
         }
 
-        ContextUserPtr createBaseClass(wchar_t const * const className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const
+        ContextUserPtr createBaseClass(WString const &className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const
         {
             auto classSearch = classMap.find(className);
             if (classSearch == std::end(classMap))
@@ -96,7 +96,7 @@ namespace Gek
             return (*classSearch).second((Context *)this, typelessArguments, argumentTypes);
         }
 
-        void listTypes(wchar_t const * const typeName, std::function<void(wchar_t const * const )> onType) const
+        void listTypes(WString const &typeName, std::function<void(WString const &)> onType) const
         {
             GEK_REQUIRE(onType);
 
@@ -108,7 +108,7 @@ namespace Gek
         }
     };
 
-    ContextPtr Context::Create(const FileSystem::Path &rootPath, const std::vector<FileSystem::Path> &searchPathList)
+    ContextPtr Context::Create(FileSystem::Path const &rootPath, const std::vector<FileSystem::Path> &searchPathList)
     {
         return std::make_unique<ContextImplementation>(rootPath, searchPathList);
     }

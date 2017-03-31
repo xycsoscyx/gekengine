@@ -101,7 +101,7 @@ namespace Gek
             Count,
         };
 
-        Format getFormat(String const &format);
+        Format getFormat(WString const &format);
 
         struct DisplayMode
         {
@@ -412,7 +412,7 @@ namespace Gek
 
         struct NamedDeclaration
         {
-            String name;
+            WString name;
             Format format = Format::Unknown;
 
             size_t getHash(void) const;
@@ -432,7 +432,7 @@ namespace Gek
                 Count,
             };
 
-            static Semantic getSemantic(String const &semantic);
+            static Semantic getSemantic(WString const &semantic);
 
             Semantic semantic = Semantic::TexCoord;
 
@@ -450,7 +450,7 @@ namespace Gek
 
             static const uint32_t AppendAligned = 0xFFFFFFFF;
 
-            static Source getSource(String const &elementSource);
+            static Source getSource(WString const &elementSource);
 
             Source source = Source::Vertex;
             uint32_t sourceIndex = 0;
@@ -472,8 +472,8 @@ namespace Gek
 
             std::vector<VertexDeclaration> vertexDeclaration;
             std::vector<ElementDeclaration> pixelDeclaration;
-            String vertexShader, vertexShaderEntryFunction;
-            String pixelShader, pixelShaderEntryFunction;
+            WString vertexShader, vertexShaderEntryFunction;
+            WString pixelShader, pixelShaderEntryFunction;
 
             std::vector<NamedDeclaration> renderTargetList;
             Format depthTargetFormat = Format::Unknown;
@@ -579,7 +579,7 @@ namespace Gek
         {
             struct Description
             {
-                String device;
+                WString device;
                 Format displayFormat = Format::R8G8B8A8_UNORM_SRGB;
                 uint32_t sampleCount = 1;
                 uint32_t sampleQuality = 0;
@@ -654,7 +654,7 @@ namespace Gek
 
             virtual ResourceHandle createBuffer(const BufferDescription &description, const void *staticData = nullptr, wchar_t const * const name = nullptr) = 0;
             virtual ResourceHandle createTexture(const TextureDescription &description, const void *data = nullptr, wchar_t const * const name = nullptr) = 0;
-            virtual ResourceHandle loadTexture(const FileSystem::Path &filePath, uint32_t flags, wchar_t const * const name = nullptr) = 0;
+            virtual ResourceHandle loadTexture(FileSystem::Path const &filePath, uint32_t flags, wchar_t const * const name = nullptr) = 0;
 
             virtual BufferDescription const * const getBufferDescription(ResourceHandle resource) const = 0;
             virtual TextureDescription const * const getTextureDescription(ResourceHandle resource) const = 0;

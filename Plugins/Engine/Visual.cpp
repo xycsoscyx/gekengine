@@ -12,7 +12,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Visual, Video::Device *, Engine::Resources *, String)
+        GEK_CONTEXT_USER(Visual, Video::Device *, Engine::Resources *, WString)
             , public Plugin::Visual
         {
         private:
@@ -22,7 +22,7 @@ namespace Gek
 			Video::ObjectPtr geometryProgram;
 
         public:
-            Visual(Context *context, Video::Device *videoDevice, Engine::Resources *resources, String visualName)
+            Visual(Context *context, Video::Device *videoDevice, Engine::Resources *resources, WString visualName)
                 : ContextRegistration(context)
                 , videoDevice(videoDevice)
             {
@@ -31,7 +31,7 @@ namespace Gek
 
                 const JSON::Object visualNode = JSON::Load(getContext()->getRootFileName(L"data", L"visuals", visualName).withExtension(L".json"));
 
-				String inputVertexData;
+				WString inputVertexData;
 				std::vector<Video::InputElement> elementList;
                 const auto &inputNode = visualNode[L"input"];
                 if (inputNode.is_array())
@@ -44,10 +44,10 @@ namespace Gek
                             throw MissingParameter("Input elements require a name");
                         }
 
-                        String elementName(elementNode.get(L"name").as_string());
+                        WString elementName(elementNode.get(L"name").as_string());
                         if (elementNode.has_member(L"system"))
 						{
-                            String system(elementNode[L"system"].as_string());
+                            WString system(elementNode[L"system"].as_string());
 							if (system.compareNoCase(L"InstanceIndex") == 0)
 							{
 								inputVertexData.appendFormat(L"    uint %v : SV_InstanceId;\r\n", elementName);
@@ -73,7 +73,7 @@ namespace Gek
                                 throw MissingParameter("Input elements require a format");
                             }
 
-                            String elementName(elementNode.get(L"name").as_string());
+                            WString elementName(elementNode.get(L"name").as_string());
                             Video::Format format = Video::getFormat(elementNode.get(L"format").as_string());
                             if (format == Video::Format::Unknown)
                             {
@@ -99,7 +99,7 @@ namespace Gek
 					}
 				}
 
-				String outputVertexData;
+				WString outputVertexData;
                 auto outputNode = visualNode[L"output"];
                 if (outputNode.is_array())
 				{
@@ -121,7 +121,7 @@ namespace Gek
                             throw MissingParameter("Output elements require a semantic");
                         }
 
-                        String elementName(elementNode.get(L"name").as_string());
+                        WString elementName(elementNode.get(L"name").as_string());
                         Video::Format format = Video::getFormat(elementNode.get(L"format").as_string());
 						auto semantic = Video::InputElement::getSemantic(elementNode.get(L"semantic").as_string());
                         uint32_t count = elementNode.get(L"count", 1).as_uint();
@@ -134,7 +134,7 @@ namespace Gek
                 auto vertexNode = visualNode[L"vertex"];
                 if (vertexNode.is_object())
                 {
-					String engineData;
+					WString engineData;
 					engineData.appendFormat(
 						L"struct InputVertex\r\n" \
 						L"{\r\n" \
@@ -153,11 +153,11 @@ namespace Gek
 						L"    return outputVertex;\r\n" \
 						L"}\r\n", inputVertexData, outputVertexData);
 
-                    String entryFunction(vertexNode[L"entry"].as_string());
-                    String name(FileSystem::GetFileName(visualName, vertexNode[L"program"].as_string()).withExtension(L".hlsl"));
+                    WString entryFunction(vertexNode[L"entry"].as_string());
+                    WString name(FileSystem::GetFileName(visualName, vertexNode[L"program"].as_string()).withExtension(L".hlsl"));
                     auto compiledProgram = resources->compileProgram(Video::PipelineType::Vertex, name, entryFunction, engineData);
 					vertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiledProgram.data(), compiledProgram.size());
-                    vertexProgram->setName(String::Format(L"%v:%v", name, entryFunction));
+                    vertexProgram->setName(WString::Format(L"%v:%v", name, entryFunction));
                     if (!elementList.empty())
 					{
 						inputLayout = videoDevice->createInputLayout(elementList, compiledProgram.data(), compiledProgram.size());
@@ -171,11 +171,11 @@ namespace Gek
                 auto geometryNode = visualNode.get(L"geometry");
                 if (geometryNode.is_object())
 				{
-                    String entryFunction(geometryNode[L"entry"].as_string());
-                    String name(FileSystem::GetFileName(visualName, geometryNode[L"program"].as_string()).withExtension(L".hlsl"));
+                    WString entryFunction(geometryNode[L"entry"].as_string());
+                    WString name(FileSystem::GetFileName(visualName, geometryNode[L"program"].as_string()).withExtension(L".hlsl"));
                     auto compiledProgram = resources->compileProgram(Video::PipelineType::Geometry, name, entryFunction);
                     geometryProgram = videoDevice->createProgram(Video::PipelineType::Geometry, compiledProgram.data(), compiledProgram.size());
-                    geometryProgram->setName(String::Format(L"%v:%v", name, entryFunction));
+                    geometryProgram->setName(WString::Format(L"%v:%v", name, entryFunction));
                 }
 			}
 

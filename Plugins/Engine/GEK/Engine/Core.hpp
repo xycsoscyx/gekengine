@@ -35,7 +35,7 @@ namespace Gek
                 {
                 private:
                     Log *log = nullptr;
-                    StringUTF8 system, name;
+                    CString system, name;
 
                 public:
                     Scope(Log *log, char const * const system, char const * const name)
@@ -62,7 +62,13 @@ namespace Gek
 
                 virtual ~Log(void) = default;
 
-                virtual void message(char const * const system, Type logType, char const * const message) = 0;
+                virtual void message(CString const &system, Type logType, CString const &message) = 0;
+
+                template<typename... PARAMETERS>
+                void message(CString const &system, Type logType, CString const &message, PARAMETERS... arguments)
+                {
+                    message(system, logType, CString::Format(message, arguments...));
+                }
 
                 virtual void beginEvent(char const * const system, char const * const name) = 0;
                 virtual void endEvent(char const * const system, char const * const name) = 0;

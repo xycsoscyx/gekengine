@@ -106,13 +106,13 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     {
         printf("GEK Model Converter\r\n");
 
-        String fileNameInput;
-        String fileNameOutput;
+        WString fileNameInput;
+        WString fileNameOutput;
 		Parameters parameters;
         for (int argumentIndex = 1; argumentIndex < argumentCount; ++argumentIndex)
         {
-            String argument(argumentList[argumentIndex]);
-            std::vector<String> arguments(argument.split(L':'));
+            WString argument(argumentList[argumentIndex]);
+            std::vector<WString> arguments(argument.split(L':'));
             if (arguments.empty())
             {
                 throw std::exception("No arguments specified for command line parameter");
@@ -175,7 +175,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
-        auto scene = aiImportFileExWithProperties(StringUTF8(fileNameInput), importFlags, nullptr, propertyStore);
+        auto scene = aiImportFileExWithProperties(CString(fileNameInput), importFlags, nullptr, propertyStore);
         if (scene == nullptr)
         {
             throw std::exception("Unable to load scene with Assimp");
@@ -232,7 +232,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     catch (const std::exception &exception)
     {
         printf("\r\n\r\nGEK Engine - Error\r\n");
-        printf(StringUTF8::Format("Caught: %v\r\nType: %v\r\n", exception.what(), typeid(exception).name()));
+        printf(CString::Format("Caught: %v\r\nType: %v\r\n", exception.what(), typeid(exception).name()));
     }
     catch (...)
     {

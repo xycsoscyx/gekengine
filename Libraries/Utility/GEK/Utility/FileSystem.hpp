@@ -26,28 +26,26 @@ namespace Gek
             public std::experimental::filesystem::path
         {
             Path(void);
-            Path(wchar_t const * const path);
-            Path(String const &path);
+            Path(WString const &path);
             Path(Path const &path);
 
-            void operator = (wchar_t const * const path);
-            void operator = (String const &path);
+            void operator = (WString const &path);
             void operator = (Path const &path);
 
-            operator wchar_t const * const  (void) const;
+            operator wchar_t const * const (void) const;
 
             void removeFileName(void);
             void removeExtension(void);
 
-            void replaceFileName(wchar_t const * const fileName);
-            void replaceExtension(wchar_t const * const extension);
+            void replaceFileName(WString const &fileName);
+            void replaceExtension(WString const &extension);
 
-            Path withExtension(wchar_t const * const extension = nullptr) const;
+            Path withExtension(WString const &extension) const;
             Path withoutExtension() const;
 
             Path getParentPath(void) const;
-            String getFileName(void) const;
-            String getExtension(void) const;
+            WString getFileName(void) const;
+            WString getExtension(void) const;
 
             bool isFile(void) const;
             bool isDirectory(void) const;
@@ -56,7 +54,7 @@ namespace Gek
 
         Path GetModuleFilePath(void);
 
-        Path GetFileName(Path const &rootDirectory, const std::vector<String> &list);
+        Path GetFileName(Path const &rootDirectory, const std::vector<WString> &list);
         
         void MakeDirectoryChain(Path const &filePath);
 
@@ -69,12 +67,12 @@ namespace Gek
         void Find(Path const &rootDirectory, std::function<bool(Path const &filePath)> onFileFound);
 
         void Load(Path const &fileName, std::vector<uint8_t> &buffer, std::uintmax_t limitReadSize = 0);
-        void Load(Path const &fileName, StringUTF8 &string);
-        void Load(Path const &fileName, String &string);
+        void Load(Path const &fileName, CString &string);
+        void Load(Path const &fileName, WString &string);
 
         void Save(Path const &fileName, std::vector<uint8_t> const &buffer);
-        void Save(Path const &fileName, StringUTF8 const &string);
-        void Save(Path const &fileName, String const &string);
+        void Save(Path const &fileName, CString const &string);
+        void Save(Path const &fileName, WString const &string);
     }; // namespace File
 }; // namespace Gek
 

@@ -29,11 +29,11 @@ namespace Gek
         GEK_ADD_EXCEPTION(ClassNotFound);
         GEK_ADD_EXCEPTION(InvalidDerivation);
 
-        static ContextPtr Create(const FileSystem::Path &rootPath, const std::vector<FileSystem::Path> &searchPathList);
+        static ContextPtr Create(FileSystem::Path const &rootPath, const std::vector<FileSystem::Path> &searchPathList);
 
         virtual ~Context(void) = default;
 
-        virtual const FileSystem::Path &getRootPath(void) const = 0;
+        virtual FileSystem::Path const &getRootPath(void) const = 0;
 
         template <typename... PARAMETERS>
         FileSystem::Path getRootFileName(PARAMETERS... nameList)
@@ -41,10 +41,10 @@ namespace Gek
             return FileSystem::GetFileName(getRootPath(), { nameList... });
         }
 
-        virtual ContextUserPtr createBaseClass(wchar_t const * const className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const = 0;
+        virtual ContextUserPtr createBaseClass(WString const &className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const = 0;
 
         template <typename TYPE, typename... PARAMETERS>
-        std::unique_ptr<TYPE> createClass(wchar_t const * const className, PARAMETERS... arguments) const
+        std::unique_ptr<TYPE> createClass(WString const &className, PARAMETERS... arguments) const
         {
             std::tuple<PARAMETERS...> packedArguments(arguments...);
             std::vector<std::type_index> argumentTypes = { typeid(PARAMETERS)... };
@@ -60,6 +60,6 @@ namespace Gek
             return result;
         }
 
-        virtual void listTypes(wchar_t const * const typeName, std::function<void(wchar_t const * const )> onType) const = 0;
+        virtual void listTypes(WString const &typeName, std::function<void(WString const &)> onType) const = 0;
     };
 }; // namespace Gek

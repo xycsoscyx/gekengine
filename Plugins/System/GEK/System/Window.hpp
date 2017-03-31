@@ -24,10 +24,10 @@ namespace Gek
 
         struct Description
         {
-            String className;
+            WString className;
             bool hasOwnContext = true;
 
-            String windowName;
+            WString windowName;
             uint32_t initialWidth = 1;
             uint32_t initialHeight = 1;
             bool readMouseMovement = true;

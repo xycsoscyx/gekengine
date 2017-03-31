@@ -15,13 +15,13 @@ namespace Gek
             return GetHash(format, width, height, depth, mipMapCount, sampleCount, sampleQuality, flags);
         }
 
-        InputElement::Source InputElement::getSource(String const &elementSource)
+        InputElement::Source InputElement::getSource(WString const &elementSource)
         {
             if (elementSource.compareNoCase(L"instance") == 0) return Source::Instance;
             else return Source::Vertex;
         }
 
-        InputElement::Semantic InputElement::getSemantic(String const &semantic)
+        InputElement::Semantic InputElement::getSemantic(WString const &semantic)
         {
             if (semantic.compareNoCase(L"Position") == 0) return Semantic::Position;
             else if (semantic.compareNoCase(L"Tangent") == 0) return Semantic::Tangent;
@@ -31,7 +31,7 @@ namespace Gek
             else return Semantic::TexCoord;
         }
 
-        Format getFormat(String const &format)
+        Format getFormat(WString const &format)
         {
             if (format.compareNoCase(L"R32G32B32A32_FLOAT") == 0) return Format::R32G32B32A32_FLOAT;
             else if (format.compareNoCase(L"R16G16B16A16_FLOAT") == 0) return Format::R16G16B16A16_FLOAT;
@@ -90,7 +90,7 @@ namespace Gek
             return Format::Unknown;
         }
 
-        ComparisonFunction getComparisonFunction(String const &comparisonFunction)
+        ComparisonFunction getComparisonFunction(WString const &comparisonFunction)
         {
             if (comparisonFunction.compareNoCase(L"Never") == 0)
             {
@@ -133,7 +133,7 @@ namespace Gek
                 return;
             }
 
-            String fillMode(object.get(L"fillMode", L"Solid").as_string());
+            WString fillMode(object.get(L"fillMode", L"Solid").as_string());
             if (fillMode.compareNoCase(L"WireFrame") == 0)
             {
                 this->fillMode = FillMode::WireFrame;
@@ -143,7 +143,7 @@ namespace Gek
                 this->fillMode = FillMode::Solid;
             }
 
-            String cullMode(object.get(L"cullMode", L"Back").as_string());
+            WString cullMode(object.get(L"cullMode", L"Back").as_string());
             if (cullMode.compareNoCase(L"None") == 0)
             {
                 this->cullMode = CullMode::None;
@@ -179,7 +179,7 @@ namespace Gek
                 return;
             }
 
-            auto getOperation = [](String const &operation) -> Operation
+            auto getOperation = [](WString const &operation) -> Operation
             {
                 if (operation.compareNoCase(L"Replace") == 0)
                 {
@@ -230,7 +230,7 @@ namespace Gek
             }
 
             enable = object.get(L"enable", false).as_bool();
-            String writeMask(object.get(L"writeMask", L"All").as_string());
+            WString writeMask(object.get(L"writeMask", L"All").as_string());
             if (writeMask.compareNoCase(L"Zero") == 0)
             {
                 this->writeMask = Write::Zero;
@@ -269,7 +269,7 @@ namespace Gek
                 return;
             }
 
-            auto getSource = [](String const &source) -> Source
+            auto getSource = [](WString const &source) -> Source
             {
                 if (source.compareNoCase(L"Zero") == 0)
                 {
@@ -341,7 +341,7 @@ namespace Gek
                 }
             };
 
-            auto getOperation = [](String const &operation) -> Operation
+            auto getOperation = [](WString const &operation) -> Operation
             {
                 if (operation.compareNoCase(L"Subtract") == 0)
                 {
@@ -373,7 +373,7 @@ namespace Gek
             alphaDestination = getSource(object.get(L"alphaDestination", L"One").as_string());
             alphaOperation = getOperation(object.get(L"alphaOperation", L"Add").as_string());
 
-            String writeMask(object.get(L"writeMask", L"RGBA").as_string());
+            WString writeMask(object.get(L"writeMask", L"RGBA").as_string());
             if (writeMask.empty())
             {
                 this->writeMask = Mask::RGBA;
@@ -382,22 +382,22 @@ namespace Gek
             {
                 this->writeMask = 0;
                 writeMask.toLower();
-                if (writeMask.find(L'r') != String::npos)
+                if (writeMask.find(L'r') != WString::npos)
                 {
                     this->writeMask |= Mask::R;
                 }
 
-                if (writeMask.find(L'g') != String::npos)
+                if (writeMask.find(L'g') != WString::npos)
                 {
                     this->writeMask |= Mask::G;
                 }
 
-                if (writeMask.find(L'b') != String::npos)
+                if (writeMask.find(L'b') != WString::npos)
                 {
                     this->writeMask |= Mask::B;
                 }
 
-                if (writeMask.find(L'a') != String::npos)
+                if (writeMask.find(L'a') != WString::npos)
                 {
                     this->writeMask |= Mask::A;
                 }
@@ -466,7 +466,7 @@ namespace Gek
                 return;
             }
 
-            auto getFilterMode = [](String const &filterMode) -> FilterMode
+            auto getFilterMode = [](WString const &filterMode) -> FilterMode
             {
                 if (filterMode.compareNoCase(L"MinificationMagnificationPointMipMapLinear") == 0)
                 {
@@ -614,7 +614,7 @@ namespace Gek
                 }
             };
 
-            auto getAddressMode = [](String const &addressMode) -> AddressMode
+            auto getAddressMode = [](WString const &addressMode) -> AddressMode
             {
                 if (addressMode.compareNoCase(L"Wrap") == 0)
                 {

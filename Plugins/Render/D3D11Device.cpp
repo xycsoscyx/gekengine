@@ -553,7 +553,7 @@ namespace Gek
             return Render::Format::Unknown;
         }
 
-        StringUTF8 getFormatSemantic(Render::Format format)
+        CString getFormatSemantic(Render::Format format)
         {
             switch (format)
             {
@@ -636,7 +636,7 @@ namespace Gek
     namespace Direct3D11
     {
         template <typename CLASS>
-        void setDebugName(CComPtr<CLASS> &object, StringUTF8 name, char const * const member = nullptr)
+        void setDebugName(CComPtr<CLASS> &object, CString name, char const * const member = nullptr)
         {
             if (object && !name.empty())
             {
@@ -1347,7 +1347,7 @@ namespace Gek
                 return inputElementDescriptionList;
             }
 
-            StringUTF8 getShaderHeader(const Render::PipelineStateInformation &pipelineStateInformation)
+            CString getShaderHeader(const Render::PipelineStateInformation &pipelineStateInformation)
             {
                 static const char ConversionFunctions[] =
                     "#define DeclareConstantBuffer(NAME, INDEX) cbuffer NAME : register(b##INDEX)\r\n" \
@@ -1361,13 +1361,13 @@ namespace Gek
 
                     "\r\n";
 
-                StringUTF8 shader(ConversionFunctions);
+                CString shader(ConversionFunctions);
                 shader.append("struct Vertex\r\n{\r\n");
                 uint32_t vertexSemanticIndexList[static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count)] = { 0 };
                 for (auto &vertexElement : pipelineStateInformation.vertexDeclaration)
                 {
-                    StringUTF8 semantic = DirectX::VertexSemanticList[static_cast<uint8_t>(vertexElement.semantic)];
-                    StringUTF8 format = DirectX::getFormatSemantic(vertexElement.format);
+                    CString semantic = DirectX::VertexSemanticList[static_cast<uint8_t>(vertexElement.semantic)];
+                    CString format = DirectX::getFormatSemantic(vertexElement.format);
                     shader.appendFormat("    %v %v : %v%v;\r\n", format, vertexElement.name, semantic, vertexSemanticIndexList[static_cast<uint8_t>(vertexElement.semantic)]++);
                 }
 
@@ -1375,8 +1375,8 @@ namespace Gek
                 uint32_t pixelSemanticIndexList[static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count)] = { 0 };
                 for (auto &pixelElement : pipelineStateInformation.pixelDeclaration)
                 {
-                    StringUTF8 semantic = DirectX::PixelSemanticList[static_cast<uint8_t>(pixelElement.semantic)];
-                    StringUTF8 format = DirectX::getFormatSemantic(pixelElement.format);
+                    CString semantic = DirectX::PixelSemanticList[static_cast<uint8_t>(pixelElement.semantic)];
+                    CString format = DirectX::getFormatSemantic(pixelElement.format);
                     shader.appendFormat("    %v %v : %v%v;\r\n", format, pixelElement.name, semantic, pixelSemanticIndexList[static_cast<uint8_t>(pixelElement.semantic)]++);
                 }
 
@@ -1384,7 +1384,7 @@ namespace Gek
                 uint32_t renderTargetIndex = 0;
                 for (auto &renderTarget : pipelineStateInformation.renderTargetList)
                 {
-                    StringUTF8 format = DirectX::getFormatSemantic(renderTarget.format);
+                    CString format = DirectX::getFormatSemantic(renderTarget.format);
                     shader.appendFormat("    %v %v : SV_TARGET%v;\r\n", format, renderTarget.name, renderTargetIndex++);
                 }
 
@@ -1392,7 +1392,7 @@ namespace Gek
                 return shader;
             }
 
-            std::vector<uint8_t> compileShader(StringUTF8 const &name, StringUTF8 const &type, StringUTF8 const &entryFunction, StringUTF8 const &shader, const StringUTF8 &header)
+            std::vector<uint8_t> compileShader(CString const &name, CString const &type, CString const &entryFunction, CString const &shader, const CString &header)
             {
                 GEK_REQUIRE(d3dDevice);
 
@@ -1405,14 +1405,14 @@ namespace Gek
                 flags |= D3DCOMPILE_SKIP_VALIDATION;
                 flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif
-                auto fullShader(StringUTF8::Format("%v%v", header, shader));
+                auto fullShader(CString::Format("%v%v", header, shader));
 
                 CComPtr<ID3DBlob> d3dShaderBlob;
                 CComPtr<ID3DBlob> d3dCompilerErrors;
                 HRESULT resultValue = D3DCompile(fullShader, (fullShader.size() + 1), name, nullptr, nullptr, entryFunction, type, flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
-                    OutputDebugStringW(String::Format(L"D3DCompile Failed: %v\r\n%v\r\n", resultValue, (char const * const)d3dCompilerErrors->GetBufferPointer()));
+                    OutputDebugStringW(WString::Format(L"D3DCompile Failed: %v\r\n%v\r\n", resultValue, (char const * const)d3dCompilerErrors->GetBufferPointer()));
                     throw Render::ProgramCompilationFailed("Unable to compile shader");
                 }
 
@@ -1602,7 +1602,7 @@ namespace Gek
 
             Render::PipelineStateHandle createPipelineState(const Render::PipelineStateInformation &pipelineStateInformation, wchar_t const * const name)
             {
-                return pipelineStateCache.insert(pipelineStateInformation.getHash(), [this, pipelineStateInformation, name = String(name)](Render::PipelineStateHandle) -> CComPtr<PipelineState>
+                return pipelineStateCache.insert(pipelineStateInformation.getHash(), [this, pipelineStateInformation, name = WString(name)](Render::PipelineStateHandle) -> CComPtr<PipelineState>
                 {
                     auto shaderHeader = getShaderHeader(pipelineStateInformation);
                     auto compiledVertexShader = compileShader("", "vs_5_0", pipelineStateInformation.vertexShaderEntryFunction, pipelineStateInformation.vertexShader, shaderHeader);
@@ -1648,7 +1648,7 @@ namespace Gek
             {
                 GEK_REQUIRE(d3dDevice);
 
-                return samplerStateCache.insert(samplerStateInformation.getHash(), [this, samplerStateInformation, name = String(name)](Render::SamplerStateHandle) -> CComPtr<ID3D11SamplerState>
+                return samplerStateCache.insert(samplerStateInformation.getHash(), [this, samplerStateInformation, name = WString(name)](Render::SamplerStateHandle) -> CComPtr<ID3D11SamplerState>
                 {
                     D3D11_SAMPLER_DESC samplerDescription;
                     samplerDescription.AddressU = DirectX::AddressModeList[static_cast<uint8_t>(samplerStateInformation.addressModeU)];
@@ -1742,7 +1742,7 @@ namespace Gek
 
                 auto dataHash = reinterpret_cast<size_t>(data);
                 auto hash = CombineHashes(description.getHash(), dataHash);
-                return resourceCache.insert(hash, [this, description, data, name = String(name)](Render::ResourceHandle handle) -> CComPtr<ID3D11Resource>
+                return resourceCache.insert(hash, [this, description, data, name = WString(name)](Render::ResourceHandle handle) -> CComPtr<ID3D11Resource>
                 {
                     uint32_t stride = description.stride;
                     if (description.format != Render::Format::Unknown)
@@ -1907,7 +1907,7 @@ namespace Gek
 
                 auto dataHash = reinterpret_cast<size_t>(data);
                 auto hash = CombineHashes(description.getHash(), dataHash);
-                return resourceCache.insert(hash, [this, description, data, name = String(name)](Render::ResourceHandle handle)->CComPtr<ID3D11Resource>
+                return resourceCache.insert(hash, [this, description, data, name = WString(name)](Render::ResourceHandle handle)->CComPtr<ID3D11Resource>
                 {
                     uint32_t bindFlags = 0;
                     if (description.flags & Render::TextureDescription::Flags::RenderTarget)
@@ -2120,17 +2120,17 @@ namespace Gek
                 });
             }
 
-            Render::ResourceHandle loadTexture(const FileSystem::Path &filePath, uint32_t flags, wchar_t const * const name)
+            Render::ResourceHandle loadTexture(FileSystem::Path const &filePath, uint32_t flags, wchar_t const * const name)
             {
                 GEK_REQUIRE(d3dDevice);
 
                 auto hash = GetHash(0xFFFFFFFF, filePath, flags);
-                return resourceCache.insert(hash, [this, filePath, flags, name = String(name)](Render::ResourceHandle handle)->CComPtr<ID3D11Resource>
+                return resourceCache.insert(hash, [this, filePath, flags, name = WString(name)](Render::ResourceHandle handle)->CComPtr<ID3D11Resource>
                 {
                     std::vector<uint8_t> buffer;
                     FileSystem::Load(filePath, buffer);
 
-                    String extension(filePath.getExtension());
+                    WString extension(filePath.getExtension());
                     std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
                     if (extension.compareNoCase(L".dds") == 0)
                     {
@@ -2180,8 +2180,8 @@ namespace Gek
                         throw Render::CreateObjectFailed("Unable to get texture resource");
                     }
 
-                    setDebugName(d3dResource, (name ? name : String(filePath)));
-                    setDebugName(d3dShaderResourceView, (name ? name : String(filePath)), "ShaderResourceView");
+                    setDebugName(d3dResource, (name ? name : WString(filePath)));
+                    setDebugName(d3dShaderResourceView, (name ? name : WString(filePath)), "ShaderResourceView");
                     shaderResourceViewCache.set(handle, d3dShaderResourceView);
 
                     Render::TextureDescription description;

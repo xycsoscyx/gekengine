@@ -7,7 +7,7 @@ namespace Gek
     {
         Object Load(FileSystem::Path const &filePath)
         {
-            String data;
+            WString data;
             FileSystem::Load(filePath, data);
             return Object::parse(data);
         }
@@ -16,7 +16,7 @@ namespace Gek
         {
             std::wostringstream stream;;
             stream << jsoncons::pretty_print(object);
-            FileSystem::Save(filePath, String(stream.str().data()));
+            FileSystem::Save(filePath, WString(stream.str().data()));
         }
     }; // namespace JSON
 }; // namespace Gek

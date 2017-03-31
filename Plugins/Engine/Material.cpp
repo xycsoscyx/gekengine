@@ -14,7 +14,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Material, Engine::Resources *, String, MaterialHandle)
+        GEK_CONTEXT_USER(Material, Engine::Resources *, WString, MaterialHandle)
             , public Engine::Material
         {
         private:
@@ -22,7 +22,7 @@ namespace Gek
             std::unordered_map<uint32_t, PassData> passDataMap;
 
         public:
-            Material(Context *context, Engine::Resources *resources, String materialName, MaterialHandle materialHandle)
+            Material(Context *context, Engine::Resources *resources, WString materialName, MaterialHandle materialHandle)
                 : ContextRegistration(context)
                 , resources(resources)
             {
@@ -60,7 +60,7 @@ namespace Gek
                 auto &passesNode = shaderNode.get(L"passes");
                 for (auto &passNode : passesNode.members())
                 {
-                    String passName(passNode.name());
+                    WString passName(passNode.name());
                     auto &passValue = passNode.value();
                     auto shaderMaterial = shader->getMaterial(passName);
                     if (shaderMaterial)
@@ -96,7 +96,7 @@ namespace Gek
 
                                 if (resourceNode.has_member(L"file"))
                                 {
-                                    String resourceFileName(resourceNode.get(L"file").as_string());
+                                    WString resourceFileName(resourceNode.get(L"file").as_string());
                                     uint32_t flags = getTextureLoadFlags(resourceNode.get(L"flags", L"0").as_string());
                                     resourceHandle = resources->loadTexture(resourceFileName, flags);
                                 }

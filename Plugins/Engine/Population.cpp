@@ -89,8 +89,8 @@ namespace Gek
             ShuntingYard shuntingYard;
             concurrency::concurrent_queue<Action> actionQueue;
 
-            std::unordered_map<String, std::type_index> componentTypeNameMap;
-            std::unordered_map<std::type_index, String> componentNameTypeMap;
+            std::unordered_map<WString, std::type_index> componentTypeNameMap;
+            std::unordered_map<std::type_index, WString> componentNameTypeMap;
             ComponentMap componentMap;
 
             ThreadPool loadPool;
@@ -110,17 +110,17 @@ namespace Gek
                 core->getLog()->message("Population", Plugin::Core::Log::Type::Message, "Loading component plugins");
                 getContext()->listTypes(L"ComponentType", [&](wchar_t const * const className) -> void
                 {
-                    core->getLog()->message("Population", Plugin::Core::Log::Type::Message, StringUTF8::Format("Component found: %v", className));
+                    core->getLog()->message("Population", Plugin::Core::Log::Type::Message, CString::Format("Component found: %v", className));
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className, static_cast<Plugin::Population *>(this)));
                     if (componentMap.count(component->getIdentifier()) > 0)
                     {
-                        core->getLog()->message("Population", Plugin::Core::Log::Type::Debug, StringUTF8::Format("Duplicate component identifier found: Class(%v), Identifier(%v)", className, component->getIdentifier().name()));
+                        core->getLog()->message("Population", Plugin::Core::Log::Type::Debug, CString::Format("Duplicate component identifier found: Class(%v), Identifier(%v)", className, component->getIdentifier().name()));
                         return;
                     }
 
                     if (componentNameTypeMap.count(component->getIdentifier()) > 0)
                     {
-                        core->getLog()->message("Population", Plugin::Core::Log::Type::Debug, StringUTF8::Format("Duplicate component name found: Class(%v), Name(%v)", className, component->getName()));
+                        core->getLog()->message("Population", Plugin::Core::Log::Type::Debug, CString::Format("Duplicate component name found: Class(%v), Name(%v)", className, component->getName()));
                         return;
                     }
 
@@ -137,14 +137,14 @@ namespace Gek
                 componentMap.clear();
             }
 
-            void queueEntity(Plugin::Entity *entity, String const & requestedName)
+            void queueEntity(Plugin::Entity *entity, WString const & requestedName)
             {
                 entityQueue.push([this, entity = entity, requestedName = requestedName](void) -> void
                 {
-                    auto entityName(requestedName.empty() ? String::Format(L"unnamed_%v", ++uniqueEntityIdentifier) : requestedName);
+                    auto entityName(requestedName.empty() ? WString::Format(L"unnamed_%v", ++uniqueEntityIdentifier) : requestedName);
                     if (entityMap.count(requestedName) > 0)
                     {
-                        core->getLog()->message("Population", Plugin::Core::Log::Type::Error, StringUTF8::Format("Unable to add entity to scene: %v", entityName));
+                        core->getLog()->message("Population", Plugin::Core::Log::Type::Error, CString::Format("Unable to add entity to scene: %v", entityName));
                     }
                     else
                     {
@@ -226,9 +226,9 @@ namespace Gek
                     return;
                 }
 
-                loadPool.enqueue([this, populationName = String(populationName)](void) -> void
+                loadPool.enqueue([this, populationName = WString(populationName)](void) -> void
                 {
-                    core->getLog()->message("Population", Plugin::Core::Log::Type::Message, StringUTF8::Format("Loading population: %v", populationName));
+                    core->getLog()->message("Population", Plugin::Core::Log::Type::Message, CString::Format("Loading population: %v", populationName));
 
                     try
                     {
@@ -312,7 +312,7 @@ namespace Gek
                                 }
                             }
 
-                            String entityName;
+                            WString entityName;
                             if (entityNode.has_member(L"Name"))
                             {
                                 entityName = entityNode.get(L"Name").as_string();
@@ -323,7 +323,7 @@ namespace Gek
                     }
                     catch (const std::exception &exception)
                     {
-                        core->getLog()->message("Population", Plugin::Core::Log::Type::Error, StringUTF8::Format("Unable to load population: %v", exception.what()));
+                        core->getLog()->message("Population", Plugin::Core::Log::Type::Error, CString::Format("Unable to load population: %v", exception.what()));
                     };
                 });
             }
@@ -421,12 +421,12 @@ namespace Gek
                     }
                     else
                     {
-                        core->getLog()->message("Population", Plugin::Core::Log::Type::Error, StringUTF8::Format("Entity contains unknown component identifier: %v", componentNameSearch->second.name()));
+                        core->getLog()->message("Population", Plugin::Core::Log::Type::Error, CString::Format("Entity contains unknown component identifier: %v", componentNameSearch->second.name()));
                     }
                 }
                 else
                 {
-                    core->getLog()->message("Population", Plugin::Core::Log::Type::Error, StringUTF8::Format("Entity contains unknown component: %v", componentData.name()));
+                    core->getLog()->message("Population", Plugin::Core::Log::Type::Error, CString::Format("Entity contains unknown component: %v", componentData.name()));
                 }
 
                 return false;

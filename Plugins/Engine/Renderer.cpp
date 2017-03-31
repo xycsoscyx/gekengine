@@ -239,7 +239,7 @@ namespace Gek
                         lightBufferDescription.stride = sizeof(DATA);
                         lightBufferDescription.count = lightList.capacity();
                         lightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
-                        lightDataBuffer->setName(String::Format(L"render:%v", typeid(COMPONENT).name()));
+                        lightDataBuffer->setName(WString::Format(L"render:%v", typeid(COMPONENT).name()));
                     }
                 }
 
@@ -723,7 +723,7 @@ namespace Gek
                     vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
                     vertexBufferDescription.flags = Video::Buffer::Description::Flags::Mappable;
                     gui.vertexBuffer = videoDevice->createBuffer(vertexBufferDescription);
-                    gui.vertexBuffer->setName(String::Format(L"core:vertexBuffer:%v", gui.vertexBuffer.get()));
+                    gui.vertexBuffer->setName(WString::Format(L"core:vertexBuffer:%v", gui.vertexBuffer.get()));
                 }
 
                 if (!gui.indexBuffer || gui.indexBuffer->getDescription().count < uint32_t(drawData->TotalIdxCount))
@@ -747,7 +747,7 @@ namespace Gek
                     };
 
                     gui.indexBuffer = videoDevice->createBuffer(vertexBufferDescription);
-                    gui.indexBuffer->setName(String::Format(L"core:vertexBuffer:%v", gui.indexBuffer.get()));
+                    gui.indexBuffer->setName(WString::Format(L"core:vertexBuffer:%v", gui.indexBuffer.get()));
                 }
 
                 bool dataUploaded = false;
@@ -1270,7 +1270,7 @@ namespace Gek
                                     tileBufferDescription.format = Video::Format::R16_UINT;
                                     tileBufferDescription.count = lightIndexList.size();
                                     lightIndexBuffer = videoDevice->createBuffer(tileBufferDescription);
-                                    lightIndexBuffer->setName(String::Format(L"renderer:lightIndexBuffer:%v", lightIndexBuffer.get()));
+                                    lightIndexBuffer->setName(WString::Format(L"renderer:lightIndexBuffer:%v", lightIndexBuffer.get()));
                                 }
 
                                 uint16_t *lightIndexData = nullptr;

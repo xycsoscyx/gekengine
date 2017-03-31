@@ -28,7 +28,7 @@ namespace Gek
         int currentDisplayMode = 0;
         int previousDisplayMode = 0;
         Render::DisplayModeList displayModeList;
-        std::vector<StringUTF8> displayModeStringList;
+        std::vector<CString> displayModeStringList;
         bool fullScreen = false;
 
         struct GUI
@@ -121,7 +121,7 @@ namespace Gek
             displayModeList = renderDevice->getDisplayModeList(deviceDescription.displayFormat);
             for (auto &displayMode : displayModeList)
             {
-                StringUTF8 displayModeString(StringUTF8::Format("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
+                CString displayModeString(CString::Format("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
                 switch (displayMode.aspectRatio)
                 {
                 case Render::DisplayMode::AspectRatio::_4x3:
@@ -140,7 +140,7 @@ namespace Gek
                 displayModeStringList.push_back(displayModeString);
             }
 
-            String baseFileName(getContext()->getRootFileName(L"data", L"gui"));
+            WString baseFileName(getContext()->getRootFileName(L"data", L"gui"));
             gui->consoleButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"console.png"), 0);
             gui->performanceButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"performance.png"), 0);
             gui->settingsButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"settings.png"), 0);
@@ -396,7 +396,7 @@ namespace Gek
                             setDisplayMode(previousDisplayMode);
                         }
 
-                        ImGui::Text(StringUTF8::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)));
+                        ImGui::Text(CString::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)));
 
                         ImGui::End();
                     }
@@ -669,7 +669,8 @@ namespace Gek
         }
     };
 }; // namespace Gek
-int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ wchar_t *strCommandLine, _In_ int nCmdShow)
+
+int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstance, _In_ PWSTR commandLine, _In_ int commandShow)
 {
     try
     {
@@ -680,7 +681,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
     }
     catch (const std::exception &exception)
     {
-        MessageBoxA(nullptr, StringUTF8::Format("Caught: %v\r\nType: %v", exception.what(), typeid(exception).name()), "GEK Engine - Error", MB_OK | MB_ICONERROR);
+        MessageBoxA(nullptr, CString::Format("Caught: %v\r\nType: %v", exception.what(), typeid(exception).name()), "GEK Engine - Error", MB_OK | MB_ICONERROR);
     }
     catch (...)
     {

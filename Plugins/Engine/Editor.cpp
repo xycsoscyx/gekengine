@@ -55,7 +55,7 @@ namespace Gek
                 population->onAction.connect<Editor, &Editor::onAction>(this);
                 population->onUpdate[90].connect<Editor, &Editor::onUpdate>(this);
 
-                String baseFileName(getContext()->getRootFileName(L"data", L"gui"));
+                WString baseFileName(getContext()->getRootFileName(L"data", L"gui"));
                 deleteTexture = core->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"delete.png"), 0);
                 populationButton = core->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"population.png"), 0);
 
@@ -93,10 +93,10 @@ namespace Gek
 
                     if (ImGui::BeginPopup("Entity Name"))
                     {
-                        String name;
+                        WString name;
                         if (ImGui::Gek::InputString("Name", name, ImGuiInputTextFlags_EnterReturnsTrue))
                         {
-                            population->createEntity(String(name));
+                            population->createEntity(WString(name));
                             ImGui::CloseCurrentPopup();
                         }
 
@@ -122,7 +122,7 @@ namespace Gek
                                 ImGui::PopID();
                                 ImGui::SameLine();
                                 ImGui::SetItemAllowOverlap();
-                                if (ImGui::Selectable(StringUTF8(entitySearch->first), (entityIndex == selectedEntity)))
+                                if (ImGui::Selectable(CString(entitySearch->first), (entityIndex == selectedEntity)))
                                 {
                                     selectedEntity = entityIndex;
                                     selectedComponent = 0;
@@ -303,7 +303,7 @@ namespace Gek
                     const float height = float(backBuffer->getDescription().height);
                     auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
 
-                    std::vector<String> filters = {
+                    std::vector<WString> filters = {
                         L"tonemap",
                         L"antialias"
                     };

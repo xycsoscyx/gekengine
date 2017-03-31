@@ -186,16 +186,16 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     {
         printf("GEK Part Converter\r\n");
 
-        String fileNameInput;
-        String fileNameOutput;
+        WString fileNameInput;
+        WString fileNameOutput;
         Parameters parameters;
         bool flipCoords = false;
         bool flipWinding = false;
         float smoothingAngle = 80.0f;
         for (int argumentIndex = 1; argumentIndex < argumentCount; ++argumentIndex)
         {
-            String argument(argumentList[argumentIndex]);
-            std::vector<String> arguments(argument.split(L':'));
+            WString argument(argumentList[argumentIndex]);
+            std::vector<WString> arguments(argument.split(L':'));
             if (arguments.empty())
             {
                 throw std::exception("No arguments specified for command line parameter");
@@ -286,7 +286,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
-        auto scene = aiImportFileExWithProperties(StringUTF8(fileNameInput), importFlags, nullptr, propertyStore);
+        auto scene = aiImportFileExWithProperties(CString(fileNameInput), importFlags, nullptr, propertyStore);
         if (scene == nullptr)
         {
             throw std::exception("Unable to load scene with Assimp");
@@ -318,15 +318,15 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
         auto dataPath(FileSystem::GetFileName(rootPath, L"Data"));
 
-        String texturesPath(FileSystem::GetFileName(dataPath, L"Textures"));
+        WString texturesPath(FileSystem::GetFileName(dataPath, L"Textures"));
         texturesPath.toLower();
 
-        String materialsPath(FileSystem::GetFileName(dataPath, L"Materials"));
+        WString materialsPath(FileSystem::GetFileName(dataPath, L"Materials"));
         materialsPath.toLower();
 
-        std::map<FileSystem::Path, String> albedoToMaterialMap;
-        std::function<bool(const FileSystem::Path &)> findMaterials;
-        findMaterials = [&](const FileSystem::Path &filePath) -> bool
+        std::map<FileSystem::Path, WString> albedoToMaterialMap;
+        std::function<bool(FileSystem::Path const &)> findMaterials;
+        findMaterials = [&](FileSystem::Path const &filePath) -> bool
         {
             if (filePath.isDirectory())
             {
@@ -346,7 +346,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                     {
                         if (albedoNode.has_member(L"file"))
                         {
-                            String materialName(filePath.withoutExtension());
+                            WString materialName(filePath.withoutExtension());
                             materialName = materialName.subString(materialsPath.size() + 1);
                             materialName.toLower();
 
@@ -364,7 +364,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         };
 
         auto engineIndex = texturesPath.find(L"gek engine");
-        if (engineIndex != String::npos)
+        if (engineIndex != WString::npos)
         {
             // skip hard drive location, jump to known engine structure
             texturesPath = texturesPath.subString(engineIndex);
@@ -379,7 +379,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         std::unordered_map<FileSystem::Path, std::vector<Part>> albedoPartMap;
         for (auto &modelAlbedo : scenePartMap)
         {
-            String albedoName(modelAlbedo.first.withoutExtension());
+            WString albedoName(modelAlbedo.first.withoutExtension());
             albedoName.toLower();
 
             if (albedoName.find(L"textures\\") == 0)
@@ -393,7 +393,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             else
             {
                 auto texturesIndex = albedoName.find(texturesPath);
-                if (texturesIndex != String::npos)
+                if (texturesIndex != WString::npos)
                 {
                     albedoName = albedoName.subString(texturesIndex + texturesPath.length() + 1);
                 }
@@ -477,7 +477,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     catch (const std::exception &exception)
     {
         printf("\r\n\r\nGEK Engine - Error\r\n");
-        printf(StringUTF8::Format("Caught: %v\r\nType: %v\r\n", exception.what(), typeid(exception).name()));
+        printf(CString::Format("Caught: %v\r\nType: %v\r\n", exception.what(), typeid(exception).name()));
     }
     catch (...)
     {

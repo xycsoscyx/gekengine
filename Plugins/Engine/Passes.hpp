@@ -28,17 +28,17 @@ namespace Gek
         Math::Float4 floats;
         Math::UInt4 integers;
 
-        ClearData(ClearType type, String const &data);
+        ClearData(ClearType type, WString const &data);
     };
 
-    String getFormatSemantic(Video::Format format);
-    String getFormatSemantic(Video::Format format, uint32_t count);
+    WString getFormatSemantic(Video::Format format);
+    WString getFormatSemantic(Video::Format format, uint32_t count);
 
-    ClearType getClearType(String const &clearType);
+    ClearType getClearType(WString const &clearType);
 
-    uint32_t getTextureLoadFlags(String const &loadFlags);
-    uint32_t getTextureFlags(String const &createFlags);
-    uint32_t getBufferFlags(String const &createFlags);
+    uint32_t getTextureLoadFlags(WString const &loadFlags);
+    uint32_t getTextureFlags(WString const &createFlags);
+    uint32_t getBufferFlags(WString const &createFlags);
 
-    std::unordered_map<String, String> getAliasedMap(const JSON::Object &parent, wchar_t const * const name);
+    std::unordered_map<WString, WString> getAliasedMap(const JSON::Object &parent, wchar_t const * const name);
 }; // namespace Gek

@@ -95,7 +95,7 @@ namespace Gek
             Count,
         };
 
-        Format getFormat(String const &format);
+        Format getFormat(WString const &format);
 
         struct DisplayMode
         {
@@ -433,8 +433,8 @@ namespace Gek
 
             static const uint32_t AppendAligned = 0xFFFFFFFF;
 
-            static Source getSource(String const &elementSource);
-            static Semantic getSemantic(String const &semantic);
+            static Source getSource(WString const &elementSource);
+            static Semantic getSemantic(WString const &semantic);
 
             Video::Format format = Format::Unknown;
             Semantic semantic = Semantic::TexCoord;
@@ -562,7 +562,7 @@ namespace Gek
         {
             struct Description
             {
-                String device;
+                WString device;
                 Format displayFormat = Format::R8G8B8A8_UNORM_SRGB;
                 uint32_t sampleCount = 1;
                 uint32_t sampleQuality = 0;
@@ -658,8 +658,8 @@ namespace Gek
             virtual ObjectPtr createSamplerState(const Video::SamplerStateInformation &samplerState) = 0;
 
             virtual TexturePtr createTexture(const Texture::Description &description, const void *data = nullptr) = 0;
-            virtual TexturePtr loadTexture(const FileSystem::Path &filePath, uint32_t flags) = 0;
-            virtual Texture::Description loadTextureDescription(const FileSystem::Path &filePath) = 0;
+            virtual TexturePtr loadTexture(FileSystem::Path const &filePath, uint32_t flags) = 0;
+            virtual Texture::Description loadTextureDescription(FileSystem::Path const &filePath) = 0;
 
             virtual BufferPtr createBuffer(const Buffer::Description &description, const void *staticData = nullptr) = 0;
 

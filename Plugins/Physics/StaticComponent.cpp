@@ -9,7 +9,7 @@ namespace Gek
     namespace Newton
     {
         GEK_CONTEXT_USER(Static, Plugin::Population *)
-            , public Plugin::ComponentMixin<Components::Physical, Edit::Component>
+            , public Plugin::ComponentMixin<Components::Static, Edit::Component>
         {
         public:
             Static(Context *context, Plugin::Population *population)
@@ -26,7 +26,7 @@ namespace Gek
 
             void load(Components::Static * const data, const JSON::Object &componentData)
             {
-                data->group = getValue(componentData, L"group", String(L"default"));
+                data->group = getValue(componentData, L"group", WString(L"default"));
             }
 
             // Edit::Component

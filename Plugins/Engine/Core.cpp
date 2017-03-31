@@ -24,8 +24,8 @@ namespace Gek
         public:
             struct Command
             {
-                String function;
-                std::vector<String> parameterList;
+                WString function;
+                std::vector<WString> parameterList;
             };
 
         private:
@@ -36,7 +36,7 @@ namespace Gek
             int currentDisplayMode = 0;
 			int previousDisplayMode = 0;
             Video::DisplayModeList displayModeList;
-            std::vector<StringUTF8> displayModeStringList;
+            std::vector<CString> displayModeStringList;
             bool fullScreen = false;
            
             JSON::Object configuration;
@@ -69,11 +69,11 @@ namespace Gek
             };
 
             static const uint32_t HistoryLength = 100;
-            using EventHistoryMap = concurrency::concurrent_unordered_map<StringUTF8, EventHistory>;
-            using SystemHistoryMap = concurrency::concurrent_unordered_map<StringUTF8, EventHistoryMap>;
+            using EventHistoryMap = concurrency::concurrent_unordered_map<CString, EventHistory>;
+            using SystemHistoryMap = concurrency::concurrent_unordered_map<CString, EventHistoryMap>;
 
             SystemHistoryMap systemHistoryMap;
-            std::vector<std::tuple<StringUTF8, Log::Type, StringUTF8>> logList;
+            std::vector<std::tuple<CString, Log::Type, CString>> logList;
 
         public:
             Core(Context *context, Window *_window)
@@ -134,7 +134,7 @@ namespace Gek
                 displayModeList = videoDevice->getDisplayModeList(deviceDescription.displayFormat);
                 for (auto &displayMode : displayModeList)
                 {
-                    StringUTF8 displayModeString(StringUTF8::Format("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
+                    CString displayModeString(CString::Format("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
                     switch (displayMode.aspectRatio)
                     {
                     case Video::DisplayMode::AspectRatio::_4x3:
@@ -153,7 +153,7 @@ namespace Gek
                     displayModeStringList.push_back(displayModeString);
                 }
 
-                String baseFileName(getContext()->getRootFileName(L"data", L"gui"));
+                WString baseFileName(getContext()->getRootFileName(L"data", L"gui"));
                 consoleButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"console.png"), 0);
                 performanceButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"performance.png"), 0);
                 settingsButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"settings.png"), 0);
@@ -199,7 +199,7 @@ namespace Gek
 
                 message("Core", Log::Type::Message, "Loading processor plugins");
 
-                std::vector<String> processorNameList;
+                std::vector<WString> processorNameList;
                 getContext()->listTypes(L"ProcessorType", [&](wchar_t const * const className) -> void
                 {
                     processorNameList.push_back(className);
@@ -208,7 +208,7 @@ namespace Gek
                 processorList.reserve(processorNameList.size());
                 for (auto &processorName : processorNameList)
                 {
-                    message("Core", Log::Type::Message, StringUTF8::Format("Processor found: %v", processorName));
+                    message("Core", Log::Type::Message, CString::Format("Processor found: %v", processorName));
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(processorName, (Plugin::Core *)this));
                 }
 
@@ -281,7 +281,7 @@ namespace Gek
 			void setDisplayMode(uint32_t displayMode)
             {
                 auto &displayModeData = displayModeList[displayMode];
-                message("Core", Log::Type::Message, StringUTF8::Format("Setting display mode: %vx%v", displayModeData.width, displayModeData.height));
+                message("Core", Log::Type::Message, CString::Format("Setting display mode: %vx%v", displayModeData.width, displayModeData.height));
                 if (displayMode >= displayModeList.size())
                 {
                     throw InvalidDisplayMode("Invalid display mode encountered");
@@ -332,7 +332,7 @@ namespace Gek
                             };
 
                             ImGui::PushID(logIndex);
-                            ImGui::TextColored(color, StringUTF8::Format("%v: %v", system, message));
+                            ImGui::TextColored(color, CString::Format("%v: %v", system, message));
                             ImGui::PopID();
                         }
                     };
@@ -341,8 +341,8 @@ namespace Gek
                 }
             }
 
-            StringUTF8 selectedEvent;
-            StringUTF8 selectedSystem;
+            CString selectedEvent;
+            CString selectedSystem;
             void drawPerformance(ImGui::PanelManagerWindowData &windowData)
             {
                 if (systemHistoryMap.empty())
@@ -581,25 +581,25 @@ namespace Gek
             }
 
             // Plugin::Core::Log
-            void message(char const * const system, Log::Type logType, char const * const message)
+            void message(CString const &system, Log::Type logType, CString const &message)
             {
                 logList.push_back(std::make_tuple(system, logType, message));
                 switch (logType)
                 {
                 case Log::Type::Message:
-                    OutputDebugStringA(StringUTF8::Format("(%v) %v\r\n", system, message));
+                    OutputDebugStringA(CString::Format("(%v) %v\r\n", system, message));
                     break;
 
                 case Log::Type::Warning:
-                    OutputDebugStringA(StringUTF8::Format("WARNING: (%v) %v\r\n", system, message));
+                    OutputDebugStringA(CString::Format("WARNING: (%v) %v\r\n", system, message));
                     break;
 
                 case Log::Type::Error:
-                    OutputDebugStringA(StringUTF8::Format("ERROR: (%v) %v\r\n", system, message));
+                    OutputDebugStringA(CString::Format("ERROR: (%v) %v\r\n", system, message));
                     break;
 
                 case Log::Type::Debug:
-                    OutputDebugStringA(StringUTF8::Format("DEBUG: (%v) %v\r\n", system, message));
+                    OutputDebugStringA(CString::Format("DEBUG: (%v) %v\r\n", system, message));
                     break;
                 };
             }
@@ -659,7 +659,7 @@ namespace Gek
                                 setDisplayMode(previousDisplayMode);
                             }
 
-                            ImGui::Text(StringUTF8::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)));
+                            ImGui::Text(CString::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)));
 
                             ImGui::End();
                         }

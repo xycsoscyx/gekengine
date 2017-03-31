@@ -3,7 +3,7 @@
 
 namespace Gek
 {
-    ClearData::ClearData(ClearType type, String const &data)
+    ClearData::ClearData(ClearType type, WString const &data)
         : type(type)
     {
         switch (type)
@@ -19,7 +19,7 @@ namespace Gek
         };
     }
 
-    String getFormatSemantic(Video::Format format)
+    WString getFormatSemantic(Video::Format format)
     {
         switch (format)
         {
@@ -98,9 +98,9 @@ namespace Gek
         return L"";
     }
 
-    String getFormatSemantic(Video::Format format, uint32_t count)
+    WString getFormatSemantic(Video::Format format, uint32_t count)
     {
-        String semantic(getFormatSemantic(format));
+        WString semantic(getFormatSemantic(format));
         if (count > 0)
         {
             semantic.appendFormat(L"x%v", count);
@@ -109,7 +109,7 @@ namespace Gek
         return semantic;
     }
 
-    ClearType getClearType(String const &clearType)
+    ClearType getClearType(WString const &clearType)
     {
         if (clearType.compareNoCase(L"Target") == 0) return ClearType::Target;
         else if (clearType.compareNoCase(L"Float") == 0) return ClearType::Float;
@@ -117,11 +117,11 @@ namespace Gek
         return ClearType::Unknown;
     }
 
-    uint32_t getTextureLoadFlags(String const &loadFlags)
+    uint32_t getTextureLoadFlags(WString const &loadFlags)
     {
         uint32_t flags = 0;
         int position = 0;
-        std::vector<String> flagList(loadFlags.split(L','));
+        std::vector<WString> flagList(loadFlags.split(L','));
         for (auto &flag : flagList)
         {
             if (flag.compareNoCase(L"sRGB") == 0)
@@ -133,11 +133,11 @@ namespace Gek
         return flags;
     }
 
-    uint32_t getTextureFlags(String const &createFlags)
+    uint32_t getTextureFlags(WString const &createFlags)
     {
         uint32_t flags = 0;
         int position = 0;
-        std::vector<String> flagList(createFlags.split(L','));
+        std::vector<WString> flagList(createFlags.split(L','));
         for (auto &flag : flagList)
         {
             flag.trim();
@@ -158,11 +158,11 @@ namespace Gek
         return (flags | Video::Texture::Description::Flags::Resource);
     }
 
-    uint32_t getBufferFlags(String const &createFlags)
+    uint32_t getBufferFlags(WString const &createFlags)
     {
         uint32_t flags = 0;
         int position = 0;
-        std::vector<String> flagList(createFlags.split(L','));
+        std::vector<WString> flagList(createFlags.split(L','));
         for (auto &flag : flagList)
         {
             flag.trim();
@@ -179,9 +179,9 @@ namespace Gek
         return (flags | Video::Buffer::Description::Flags::Resource);
     }
 
-    std::unordered_map<String, String> getAliasedMap(const JSON::Object &parent, wchar_t const * const name)
+    std::unordered_map<WString, WString> getAliasedMap(const JSON::Object &parent, wchar_t const * const name)
     {
-        std::unordered_map<String, String> aliasedMap;
+        std::unordered_map<WString, WString> aliasedMap;
         if (parent.has_member(name))
         {
             auto &object = parent.get(name);
@@ -191,14 +191,14 @@ namespace Gek
                 {
                     if (element.is_string())
                     {
-                        String name(element.as_string());
+                        WString name(element.as_string());
                         aliasedMap[name] = name;
                     }
                     else if (element.is_object() && !element.empty())
                     {
                         auto &member = element.begin_members();
-                        String name(member->name());
-                        String value(member->value().as_string());
+                        WString name(member->name());
+                        WString value(member->value().as_string());
                         aliasedMap[name] = value;
                     }
                     else

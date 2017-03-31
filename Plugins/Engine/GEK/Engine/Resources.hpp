@@ -28,18 +28,18 @@ namespace Gek
 
             virtual ~Resources(void) = default;
 
-            virtual VisualHandle loadVisual(wchar_t const * const pluginName) = 0;
-            virtual MaterialHandle loadMaterial(wchar_t const * const materialName) = 0;
+            virtual VisualHandle loadVisual(WString const &pluginName) = 0;
+            virtual MaterialHandle loadMaterial(WString const &materialName) = 0;
 
-            virtual ResourceHandle loadTexture(wchar_t const * const textureName, uint32_t flags) = 0;
-            virtual ResourceHandle createPattern(wchar_t const * const pattern, const JSON::Object &parameters) = 0;
+            virtual ResourceHandle loadTexture(WString const &textureName, uint32_t flags) = 0;
+            virtual ResourceHandle createPattern(WString const &pattern, const JSON::Object &parameters) = 0;
 
-            virtual ResourceHandle createTexture(wchar_t const * const textureName, const Video::Texture::Description &description) = 0;
-            virtual ResourceHandle createBuffer(wchar_t const * const bufferName, const Video::Buffer::Description &description) = 0;
-            virtual ResourceHandle createBuffer(wchar_t const * const bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData) = 0;
+            virtual ResourceHandle createTexture(WString const &textureName, const Video::Texture::Description &description) = 0;
+            virtual ResourceHandle createBuffer(WString const &bufferName, const Video::Buffer::Description &description) = 0;
+            virtual ResourceHandle createBuffer(WString const &bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData) = 0;
 
             template <typename TYPE>
-            ResourceHandle createBuffer(wchar_t const * const bufferName, const Video::Buffer::Description &description, const TYPE *staticData)
+            ResourceHandle createBuffer(WString const &bufferName, const Video::Buffer::Description &description, const TYPE *staticData)
             {
                 auto rawData = reinterpret_cast<const uint8_t *>(staticData);
                 std::vector<uint8_t> rawBuffer(rawData, (rawData + (sizeof(TYPE) * description.count)));
@@ -80,17 +80,17 @@ namespace Gek
             virtual void clear(void) = 0;
 
             virtual ShaderHandle getMaterialShader(MaterialHandle material) const = 0;
-            virtual ResourceHandle getResourceHandle(wchar_t const * const resourceName) const = 0;
+            virtual ResourceHandle getResourceHandle(WString const &resourceName) const = 0;
 
-            virtual Shader * const getShader(wchar_t const * const shaderName, MaterialHandle materialHandle) = 0;
+            virtual Shader * const getShader(WString const &shaderName, MaterialHandle materialHandle) = 0;
             virtual Shader * const getShader(ShaderHandle handle) const = 0;
-            virtual Filter * const getFilter(wchar_t const * const filterName) = 0;
+            virtual Filter * const getFilter(WString const &filterName) = 0;
 
             virtual Video::Texture::Description * const getTextureDescription(ResourceHandle resourceHandle) = 0;
             virtual Video::Buffer::Description * const getBufferDescription(ResourceHandle resourceHandle) = 0;
 
-            virtual std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, wchar_t const * const name, wchar_t const * const entryFunction, wchar_t const * const engineData = nullptr) = 0;
-            virtual ProgramHandle loadProgram(Video::PipelineType pipelineType, wchar_t const * const name, wchar_t const * const entryFunction, wchar_t const * const engineData = nullptr) = 0;
+            virtual std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, WString const &name, WString const &entryFunction, WString const &engineData = WString()) = 0;
+            virtual ProgramHandle loadProgram(Video::PipelineType pipelineType, WString const &name, WString const &entryFunction, WString const &engineData = WString()) = 0;
 
             virtual RenderStateHandle createRenderState(const Video::RenderStateInformation &renderState) = 0;
             virtual DepthStateHandle createDepthState(const Video::DepthStateInformation &depthState) = 0;

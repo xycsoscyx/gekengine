@@ -48,7 +48,7 @@ namespace Gek
 
         void load(Components::Model * const data, const JSON::Object &componentData)
         {
-            data->name = getValue(componentData, L"name", String());
+            data->name = getValue(componentData, L"name", WString());
         }
 
         // Edit::Component
@@ -211,7 +211,7 @@ namespace Gek
             {
                 ProcessorMixin::addEntity(entity, [&](auto &data, auto &modelComponent, auto &transformComponent) -> void
                 {
-                    String fileName(getContext()->getRootFileName(L"data", L"models", modelComponent.name).withExtension(L".gek"));
+                    WString fileName(getContext()->getRootFileName(L"data", L"models", modelComponent.name).withExtension(L".gek"));
                     auto pair = modelMap.insert(std::make_pair(GetHash(modelComponent.name), Model()));
                     if (pair.second)
                     {
@@ -258,30 +258,30 @@ namespace Gek
                                     indexBufferDescription.format = Video::Format::R16_UINT;
                                     indexBufferDescription.count = partHeader.indexCount;
                                     indexBufferDescription.type = Video::Buffer::Description::Type::Index;
-                                    part.indexBuffer = resources->createBuffer(String::Format(L"model:indices:%v:%v", name, partIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
+                                    part.indexBuffer = resources->createBuffer(WString::Format(L"model:indices:%v:%v", name, partIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
                                     bufferData += (sizeof(uint16_t) * partHeader.indexCount);
 
                                     Video::Buffer::Description vertexBufferDescription;
                                     vertexBufferDescription.stride = sizeof(Math::Float3);
                                     vertexBufferDescription.count = partHeader.vertexCount;
                                     vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
-                                    part.vertexBufferList[0] = resources->createBuffer(String::Format(L"model:positions:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    part.vertexBufferList[0] = resources->createBuffer(WString::Format(L"model:positions:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                     bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
 
                                     vertexBufferDescription.stride = sizeof(Math::Float2);
-                                    part.vertexBufferList[1] = resources->createBuffer(String::Format(L"model:texcoords:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
+                                    part.vertexBufferList[1] = resources->createBuffer(WString::Format(L"model:texcoords:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
                                     bufferData += (sizeof(Math::Float2) * partHeader.vertexCount);
 
                                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    part.vertexBufferList[2] = resources->createBuffer(String::Format(L"model:tangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    part.vertexBufferList[2] = resources->createBuffer(WString::Format(L"model:tangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                     bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
 
                                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    part.vertexBufferList[3] = resources->createBuffer(String::Format(L"model:bitangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    part.vertexBufferList[3] = resources->createBuffer(WString::Format(L"model:bitangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                     bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
 
                                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    part.vertexBufferList[4] = resources->createBuffer(String::Format(L"model:normals:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    part.vertexBufferList[4] = resources->createBuffer(WString::Format(L"model:normals:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                     bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
 
                                     part.indexCount = partHeader.indexCount;

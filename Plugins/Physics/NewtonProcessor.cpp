@@ -171,7 +171,7 @@ namespace Gek
             {
                 NewtonCollision *newtonCollision = nullptr;
 
-                auto hash = GetHash(String::Format(L"model:%v", modelComponent.name));
+                auto hash = GetHash(WString::Format(L"model:%v", modelComponent.name));
                 auto collisionSearch = collisionMap.find(hash);
                 if (collisionSearch != std::end(collisionMap))
                 {
@@ -261,7 +261,7 @@ namespace Gek
 
             NewtonCollision *getStaticGroup(wchar_t const * name)
             {
-                auto hash = GetHash(String::Format(L"static:%v", name));
+                auto hash = GetHash(WString::Format(L"static:%v", name));
                 auto collisionSearch = collisionMap.find(hash);
                 if (collisionSearch != std::end(collisionMap))
                 {

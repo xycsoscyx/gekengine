@@ -19,7 +19,7 @@ namespace Gek
     {
         GEK_COMPONENT(Static)
         {
-            String group;
+            WString group;
         };
 
         GEK_COMPONENT(Physical)

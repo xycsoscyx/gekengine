@@ -20,7 +20,7 @@ namespace Gek
             float fieldOfView = Math::DegreesToRadians(90.0f);
             float nearClip = 1.0f;
             float farClip = 100.0f;
-            String target;
+            WString target;
         };
     };
 
@@ -48,7 +48,7 @@ namespace Gek
             data->fieldOfView = Math::DegreesToRadians(getValue(componentData, L"fieldOfView", 90.0f));
             data->nearClip = getValue(componentData, L"nearClip", 1.0f);
             data->farClip = getValue(componentData, L"farClip", 100.0f);
-            data->target = getValue(componentData, L"target", String());
+            data->target = getValue(componentData, L"target", WString());
         }
 
         // Edit::Component
@@ -133,7 +133,7 @@ namespace Gek
                     description.height = backBuffer->getDescription().height;
                     description.sampleCount = 4;
                     description.flags = Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource;
-                    data.target = resources->createTexture(String::Format(L"camera:%v", cameraComponent.target), description);
+                    data.target = resources->createTexture(WString::Format(L"camera:%v", cameraComponent.target), description);
                 }
             });
         }

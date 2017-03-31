@@ -23,7 +23,7 @@ namespace Gek
             : public BASE
         {
         private:
-            String name;
+            WString name;
 
         protected:
             Population *population = nullptr;
@@ -34,7 +34,7 @@ namespace Gek
             {
                 name = typeid(COMPONENT).name();
                 auto colonPosition = name.rfind(':');
-                if (colonPosition != StringUTF8::npos)
+                if (colonPosition != CString::npos)
                 {
                     name = name.subString(colonPosition + 1);
                 }
@@ -227,7 +227,7 @@ namespace Gek
                 return defaultValue;
             }
 
-            String getValue(JSON::Object const &data, String const &defaultValue)
+            WString getValue(JSON::Object const &data, WString const &defaultValue)
             {
                 try
                 {

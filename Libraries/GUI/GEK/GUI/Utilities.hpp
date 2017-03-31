@@ -16,7 +16,7 @@
 
 namespace ImGui
 {
-    bool InputString(char const * label, ::Gek::String &string, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = nullptr, void *userData = nullptr);
+    bool InputString(char const * label, ::Gek::WString &string, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = nullptr, void *userData = nullptr);
 
     namespace Gek
     {
@@ -25,7 +25,7 @@ namespace ImGui
         bool InputFloat3(char const * label, float value[3], int decimalPrecision = -1, ImGuiInputTextFlags flags = 0);
         bool InputFloat4(char const * label, float value[4], int decimalPrecision = -1, ImGuiInputTextFlags flags = 0);
 
-        bool InputString(char const * label, ::Gek::String &string, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = nullptr, void *userData = nullptr);
+        bool InputString(char const * label, ::Gek::WString &string, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = nullptr, void *userData = nullptr);
 
         bool ListBox(char const * label, int *currentSelectionIndex, bool(*itemDataCallback)(void *userData, int index, const char ** textOutput), void *userData, int itemCount, int visibleItemCount = -1);
 

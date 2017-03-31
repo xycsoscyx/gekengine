@@ -3,8 +3,8 @@
 
 namespace ImGui
 {
-    std::unordered_map<::Gek::StringUTF8, ::Gek::StringUTF8> labelStringMap;
-    bool InputString(char const * label, ::Gek::String &string, ImGuiInputTextFlags flags, ImGuiTextEditCallback callback, void *userData)
+    std::unordered_map<::Gek::CString, ::Gek::CString> labelStringMap;
+    bool InputString(char const * label, ::Gek::WString &string, ImGuiInputTextFlags flags, ImGuiTextEditCallback callback, void *userData)
     {
         auto &internalSearch = labelStringMap.insert(std::make_pair(label, string));
         auto &internalString = internalSearch.first->second;
@@ -27,37 +27,37 @@ namespace ImGui
         bool InputFloat(char const * label, float *value, float step, float stepFast, int decimalPrecision, ImGuiInputTextFlags flags)
         {
             ImGui::Text(label);
-            return ImGui::InputFloat(::Gek::StringUTF8::Format("##%v", label), value, step, stepFast, decimalPrecision, flags);
+            return ImGui::InputFloat(::Gek::CString::Format("##%v", label), value, step, stepFast, decimalPrecision, flags);
         }
 
         bool InputFloat2(char const * label, float value[2], int decimalPrecision, ImGuiInputTextFlags flags)
         {
             ImGui::Text(label);
-            return ImGui::InputFloat2(::Gek::StringUTF8::Format("##%v", label), value, decimalPrecision, flags);
+            return ImGui::InputFloat2(::Gek::CString::Format("##%v", label), value, decimalPrecision, flags);
         }
 
         bool InputFloat3(char const * label, float value[3], int decimalPrecision, ImGuiInputTextFlags flags)
         {
             ImGui::Text(label);
-            return ImGui::InputFloat3(::Gek::StringUTF8::Format("##%v", label), value, decimalPrecision, flags);
+            return ImGui::InputFloat3(::Gek::CString::Format("##%v", label), value, decimalPrecision, flags);
         }
 
         bool InputFloat4(char const * label, float value[4], int decimalPrecision, ImGuiInputTextFlags flags)
         {
             ImGui::Text(label);
-            return ImGui::InputFloat4(::Gek::StringUTF8::Format("##%v", label), value, decimalPrecision, flags);
+            return ImGui::InputFloat4(::Gek::CString::Format("##%v", label), value, decimalPrecision, flags);
         }
 
-        bool InputString(char const * label, ::Gek::String &string, ImGuiInputTextFlags flags, ImGuiTextEditCallback callback, void *userData)
+        bool InputString(char const * label, ::Gek::WString &string, ImGuiInputTextFlags flags, ImGuiTextEditCallback callback, void *userData)
         {
             ImGui::Text(label);
-            return ImGui::InputString(::Gek::StringUTF8::Format("##%v", label), string, flags, callback, userData);
+            return ImGui::InputString(::Gek::CString::Format("##%v", label), string, flags, callback, userData);
         }
 
         bool ListBox(char const * label, int *currentSelectionIndex, bool(*itemDataCallback)(void *userData, int index, const char ** textOutput), void *userData, int itemCount, int visibleItemCount)
         {
             ImGui::Text(label);
-            return ImGui::ListBox(::Gek::StringUTF8::Format("##%v", label), currentSelectionIndex, itemDataCallback, userData, itemCount, visibleItemCount);
+            return ImGui::ListBox(::Gek::CString::Format("##%v", label), currentSelectionIndex, itemDataCallback, userData, itemCount, visibleItemCount);
         }
 
         void PlotEx(ImGuiPlotType plot_type, char const * label, float(*itemDataCallback)(void *userData, int index), void *userData, int itemCount, int itemStartIndex, float scaleMinimum, float scaleMaximum, ImVec2 graphSize)
@@ -185,7 +185,7 @@ namespace ImGui
             {
                 RenderTextClipped(ImVec2(frameBoundingBox.Min.x + style.FramePadding.x, frameBoundingBox.Min.y + style.FramePadding.y), 
                                   ImVec2(frameBoundingBox.Max.x + style.FramePadding.x, frameBoundingBox.Max.y - style.FramePadding.y), 
-                                  ::Gek::StringUTF8::Format("%v", ((scaleSize * scale) + scaleMinimum)), nullptr, nullptr, ImVec2(0.0f, (1.0f - scale)));
+                                  ::Gek::CString::Format("%v", ((scaleSize * scale) + scaleMinimum)), nullptr, nullptr, ImVec2(0.0f, (1.0f - scale)));
             }
         }
 

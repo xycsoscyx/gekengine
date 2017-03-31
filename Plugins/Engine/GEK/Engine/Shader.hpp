@@ -55,7 +55,7 @@ namespace Gek
             {
                 struct Initializer
                 {
-                    String name;
+                    WString name;
                     ResourceHandle fallback;
                 };
 

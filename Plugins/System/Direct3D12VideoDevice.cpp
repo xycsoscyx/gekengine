@@ -946,12 +946,12 @@ namespace Gek
                 }
             }
 
-            Video::TexturePtr loadTexture(const FileSystem::Path &filePath, uint32_t flags)
+            Video::TexturePtr loadTexture(FileSystem::Path const &filePath, uint32_t flags)
             {
                 return std::make_unique<ViewTexture>(Video::Texture::Description());
             }
 
-            Texture::Description loadTextureDescription(const FileSystem::Path &filePath)
+            Texture::Description loadTextureDescription(FileSystem::Path const &filePath)
             {
                 return Texture::Description();
             }
