@@ -486,6 +486,7 @@ namespace Gek
             {
                 GEK_REQUIRE(core);
 
+                loadPool.clear();
                 core->onResize.disconnect<Resources, &Resources::onResize>(this);
             }
 

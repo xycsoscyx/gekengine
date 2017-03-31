@@ -73,7 +73,7 @@ namespace Gek
 
             if (frameTime > 0.0f && !core->isEditorActive())
             {
-                population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity * const entity, wchar_t const * const , auto &transformComponent, auto &spinComponent) -> void
+                population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity * const entity, WString const &, auto &transformComponent, auto &spinComponent) -> void
                 {
                     auto omega(spinComponent.torque * frameTime);
                     transformComponent.rotation *= Math::Quaternion::FromEuler(omega.x, omega.y, omega.z);

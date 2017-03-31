@@ -684,6 +684,8 @@ namespace Gek
 
             ~Renderer(void)
             {
+                threadPool.clear();
+
                 population->onUpdate[1000].disconnect<Renderer, &Renderer::onUpdate>(this);
                 population->onComponentRemoved.disconnect<Renderer, &Renderer::onComponentRemoved>(this);
                 population->onComponentAdded.disconnect<Renderer, &Renderer::onComponentAdded>(this);
@@ -1039,7 +1041,7 @@ namespace Gek
             }
 
             // Plugin::Population Slots
-            void onEntityCreated(Plugin::Entity * const entity, wchar_t const * const entityName)
+            void onEntityCreated(Plugin::Entity * const entity, WString const &entityName)
             {
                 addEntity(entity);
             }

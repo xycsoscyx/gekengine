@@ -198,6 +198,7 @@ namespace Gek
 
         ~ModelProcessor(void)
         {
+            loadPool.clear();
             renderer->onQueueDrawCalls.disconnect<ModelProcessor, &ModelProcessor::onQueueDrawCalls>(this);
             population->onComponentRemoved.disconnect<ModelProcessor, &ModelProcessor::onComponentRemoved>(this);
             population->onComponentAdded.disconnect<ModelProcessor, &ModelProcessor::onComponentAdded>(this);
@@ -299,7 +300,7 @@ namespace Gek
         }
 
         // Plugin::Population Slots
-        void onEntityCreated(Plugin::Entity * const entity, wchar_t const * const entityName)
+        void onEntityCreated(Plugin::Entity * const entity, WString const &entityName)
         {
             addEntity(entity);
         }

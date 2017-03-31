@@ -449,6 +449,7 @@ namespace Gek
             void onClose(void)
             {
                 engineRunning = false;
+                onExit.emit();
             }
 
             void onActivate(bool isActive)

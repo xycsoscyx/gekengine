@@ -139,7 +139,7 @@ namespace Gek
         }
 
         // Plugin::Population Slots
-        void onEntityCreated(Plugin::Entity * const entity, wchar_t const * const entityName)
+        void onEntityCreated(Plugin::Entity * const entity, WString const &entityName)
         {
             addEntity(entity);
         }

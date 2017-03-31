@@ -96,7 +96,7 @@ namespace Gek
                         WString name;
                         if (ImGui::Gek::InputString("Name", name, ImGuiInputTextFlags_EnterReturnsTrue))
                         {
-                            population->createEntity(WString(name));
+                            population->createEntity(name);
                             ImGui::CloseCurrentPopup();
                         }
 

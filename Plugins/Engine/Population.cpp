@@ -108,7 +108,7 @@ namespace Gek
                 GEK_REQUIRE(core);
 
                 core->getLog()->message("Population", Plugin::Core::Log::Type::Message, "Loading component plugins");
-                getContext()->listTypes(L"ComponentType", [&](wchar_t const * const className) -> void
+                getContext()->listTypes(L"ComponentType", [&](WString const &className) -> void
                 {
                     core->getLog()->message("Population", Plugin::Core::Log::Type::Message, CString::Format("Component found: %v", className));
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className, static_cast<Plugin::Population *>(this)));
@@ -128,10 +128,14 @@ namespace Gek
                     componentTypeNameMap.insert(std::make_pair(component->getName(), component->getIdentifier()));
                     componentMap[component->getIdentifier()] = std::move(component);
                 });
+
+                core->onExit.connect<Population, &Population::onExit>(this);
             }
 
             ~Population(void)
             {
+                core->onExit.disconnect<Population, &Population::onExit>(this);
+
                 entityMap.clear();
                 componentTypeNameMap.clear();
                 componentMap.clear();
@@ -152,6 +156,12 @@ namespace Gek
                         onEntityCreated.emit(entity, entityName);
                     }
                 });
+            }
+
+            // Core
+            void onExit(void)
+            {
+                loadPool.clear();
             }
 
             // Edit::Population
@@ -219,14 +229,9 @@ namespace Gek
                 actionQueue.push(action);
             }
 
-            void load(wchar_t const * const populationName)
+            void load(WString const &populationName)
             {
-                if (!populationName)
-                {
-                    return;
-                }
-
-                loadPool.enqueue([this, populationName = WString(populationName)](void) -> void
+                loadPool.enqueue([this, populationName](void) -> void
                 {
                     core->getLog()->message("Population", Plugin::Core::Log::Type::Message, CString::Format("Loading population: %v", populationName));
 
@@ -328,10 +333,8 @@ namespace Gek
                 });
             }
 
-            void save(wchar_t const * const populationName)
+            void save(WString const &populationName)
             {
-                GEK_REQUIRE(populationName);
-
                 JSON::Array population;
                 for (auto &entityPair : entityMap)
                 {
@@ -367,7 +370,7 @@ namespace Gek
                 JSON::Save(getContext()->getRootFileName(L"data", L"scenes", populationName).withExtension(L".json"), scene);
             }
 
-            Plugin::Entity *createEntity(wchar_t const * const entityName, const std::vector<JSON::Member> &componentList)
+            Plugin::Entity *createEntity(WString const &entityName, const std::vector<JSON::Member> &componentList)
             {
                 auto entity(std::make_unique<Entity>());
                 for (auto &componentData : componentList)
@@ -452,7 +455,7 @@ namespace Gek
                 }
             }
 
-            void listEntities(std::function<void(Plugin::Entity *, wchar_t const * const )> onEntity) const
+            void listEntities(std::function<void(Plugin::Entity *, WString const &)> onEntity) const
             {
                 concurrency::parallel_for_each(std::begin(entityMap), std::end(entityMap), [&](auto &entity) -> void
                 {

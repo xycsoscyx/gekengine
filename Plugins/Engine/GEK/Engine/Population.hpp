@@ -46,13 +46,13 @@ namespace Gek
                 {
                 }
 
-                Action(wchar_t const * name, bool state)
+                Action(WString const &name, bool state)
                     : name(name)
                     , state(state)
                 {
                 }
 
-                Action(wchar_t const * name, float value)
+                Action(WString const &name, float value)
                     : name(name)
                     , value(value)
                 {
@@ -64,7 +64,7 @@ namespace Gek
             std::map<int32_t, Nano::Signal<void(float frameTime)>> onUpdate;
             Nano::Signal<void(Action const &action)> onAction;
 
-            Nano::Signal<void(Plugin::Entity * const entity, wchar_t const * const entityName)> onEntityCreated;
+            Nano::Signal<void(Plugin::Entity * const entity, WString const &entityName)> onEntityCreated;
             Nano::Signal<void(Plugin::Entity * const entity)> onEntityDestroyed;
 
             Nano::Signal<void(Plugin::Entity * const entity, const std::type_index &type)> onComponentAdded;
@@ -72,20 +72,20 @@ namespace Gek
 
             virtual ShuntingYard &getShuntingYard(void) = 0;
 
-            virtual void load(wchar_t const * const populationName) = 0;
-            virtual void save(wchar_t const * const populationName) = 0;
+            virtual void load(WString const &populationName) = 0;
+            virtual void save(WString const &populationName) = 0;
 
-            virtual Plugin::Entity *createEntity(wchar_t const * const entityName, const std::vector<JSON::Member> &componentList = std::vector<JSON::Member>()) = 0;
+            virtual Plugin::Entity *createEntity(WString const &entityName, const std::vector<JSON::Member> &componentList = std::vector<JSON::Member>()) = 0;
             virtual void killEntity(Plugin::Entity * const entity) = 0;
             virtual void addComponent(Plugin::Entity * const entity, const JSON::Member &componentData) = 0;
             virtual void removeComponent(Plugin::Entity * const entity, const std::type_index &type) = 0;
 
-            virtual void listEntities(std::function<void(Plugin::Entity * const entity, wchar_t const * const entityName)> onEntity) const = 0;
+            virtual void listEntities(std::function<void(Plugin::Entity * const entity, WString const &entityName)> onEntity) const = 0;
 
             template<typename... COMPONENTS>
-            void listEntities(std::function<void(Plugin::Entity * const entity, wchar_t const * const entityName, COMPONENTS&... components)> onEntity) const
+            void listEntities(std::function<void(Plugin::Entity * const entity, WString const &entityName, COMPONENTS&... components)> onEntity) const
             {
-                listEntities([onEntity = move(onEntity)](Plugin::Entity * const entity, wchar_t const * const entityName) -> void
+                listEntities([onEntity = move(onEntity)](Plugin::Entity * const entity, WString const &entityName) -> void
                 {
                     if (entity->hasComponents<COMPONENTS...>())
                     {
