@@ -1,4 +1,5 @@
-﻿#include "GEK/Utility/String.hpp"
+﻿#include "GEK/Math/SIMD.hpp"
+#include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/ContextUser.hpp"
@@ -285,15 +286,16 @@ namespace Gek
                     visibilityList.clear();
                 }
 
-                void update(Video::Device *videoDevice, const __m128 (&frustumData)[6][4], const std::function<void(Plugin::Entity * const, const COMPONENT &)> &addLight)
+                void update(Video::Device *videoDevice, Math::SIMD::Frustum const &frustum, const std::function<void(Plugin::Entity * const, const COMPONENT &)> &addLight)
                 {
                     const auto entityCount = entityList.size();
                     auto buffer = (entityCount % 4);
                     buffer = (buffer ? (4 - buffer) : buffer);
-                    shapeXPositionList.resize(entityCount + buffer);
-                    shapeYPositionList.resize(entityCount + buffer);
-                    shapeZPositionList.resize(entityCount + buffer);
-                    shapeRadiusList.resize(entityCount + buffer);
+                    auto bufferedEntityCount = (entityCount + buffer);
+                    shapeXPositionList.resize(bufferedEntityCount);
+                    shapeYPositionList.resize(bufferedEntityCount);
+                    shapeZPositionList.resize(bufferedEntityCount);
+                    shapeRadiusList.resize(bufferedEntityCount);
                     for (auto entityIndex = 0U; entityIndex < entityCount; entityIndex++)
                     {
                         auto entity = entityList[entityIndex];
@@ -306,41 +308,8 @@ namespace Gek
                         shapeRadiusList[entityIndex] = (lightComponent.range + lightComponent.radius);
                     }
 
-                    visibilityList.resize(entityCount + buffer);
-                    static const auto AllZero = _mm_setzero_ps();
-                    for (size_t entityIndex = 0; entityIndex < entityCount; entityIndex += 4)
-                    {
-                        const auto shapeXPosition = _mm_load_ps(&shapeXPositionList[entityIndex]);
-                        const auto shapeYPosition = _mm_load_ps(&shapeYPositionList[entityIndex]);
-                        const auto shapeZPosition = _mm_load_ps(&shapeZPositionList[entityIndex]);
-                        const auto shapeRadius = _mm_load_ps(&shapeRadiusList[entityIndex]);
-                        const auto negativeShapeRadius = _mm_sub_ps(AllZero, shapeRadius);
-
-                        auto intersectionResult = AllZero;
-                        for (uint32_t plane = 0; plane < 6; ++plane)
-                        {
-                            // Plane.Normal.Dot(Sphere.Position)
-                            const auto dotX = _mm_mul_ps(shapeXPosition, frustumData[plane][0]);
-                            const auto dotY = _mm_mul_ps(shapeYPosition, frustumData[plane][1]);
-                            const auto dotZ = _mm_mul_ps(shapeZPosition, frustumData[plane][2]);
-                            const auto dotXY = _mm_add_ps(dotX, dotY);
-                            const auto dotProduct = _mm_add_ps(dotXY, dotZ);
-
-                            // + Plane.Distance
-                            const auto planeDistance = _mm_add_ps(dotProduct, frustumData[plane][3]);
-
-                            // < -Sphere.Radius
-                            const auto planeTest = _mm_cmplt_ps(planeDistance, negativeShapeRadius);
-                            intersectionResult = _mm_or_ps(intersectionResult, planeTest);
-                        }
-
-                        __declspec(align(16)) uint32_t resultValues[4];
-                        _mm_store_ps((float *)resultValues, intersectionResult);
-                        for (uint32_t subIndex = 0; subIndex < 4; subIndex++)
-                        {
-                            visibilityList[entityIndex + subIndex] = !resultValues[subIndex];
-                        }
-                    }
+                    visibilityList.resize(bufferedEntityCount);
+                    Math::SIMD::cullSpheres(frustum, bufferedEntityCount, shapeXPositionList, shapeYPositionList, shapeZPositionList, shapeRadiusList, visibilityList);
 
                     lightList.clear();
                     concurrency::parallel_for(0U, entityList.size(), [&](size_t index) -> void
@@ -1158,45 +1127,7 @@ namespace Gek
                                 directionalLightData.createBuffer();
                             });
 
-                            const __m128 frustumData[6][4] =
-                            {
-                                {
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[0].normal.x),
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[0].normal.y),
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[0].normal.z),
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[0].distance),
-                                },
-                                {
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[1].normal.x),
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[1].normal.y),
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[1].normal.z),
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[1].distance),
-                                },
-                                {
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[2].normal.x),
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[2].normal.y),
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[2].normal.z),
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[2].distance),
-                                },
-                                {
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[3].normal.x),
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[3].normal.y),
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[3].normal.z),
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[3].distance),
-                                },
-                                {
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[4].normal.x),
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[4].normal.y),
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[4].normal.z),
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[4].distance),
-                                },
-                                {
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[5].normal.x),
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[5].normal.y),
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[5].normal.z),
-                                    _mm_set_ps1(currentCamera.viewFrustum.planeList[5].distance),
-                                },
-                            };
+                            auto frustum = Math::SIMD::loadFrustum((Math::Float4 *)currentCamera.viewFrustum.planeList);
 
                             lightIndexCount = 0;
                             concurrency::parallel_for_each(std::begin(tileLightIndexList), std::end(tileLightIndexList), [&](auto &gridData) -> void
@@ -1207,7 +1138,7 @@ namespace Gek
 
                             auto pointLightsDone = threadPool.enqueue([&](void) -> void
                             {
-                                pointLightData.update(videoDevice, frustumData, [this](Plugin::Entity * const entity, const Components::PointLight &lightComponent) -> void
+                                pointLightData.update(videoDevice, frustum, [this](Plugin::Entity * const entity, const Components::PointLight &lightComponent) -> void
                                 {
                                     addLight(entity, lightComponent);
                                 });
@@ -1215,7 +1146,7 @@ namespace Gek
 
                             auto spotLightsDone = threadPool.enqueue([&](void) -> void
                             {
-                                spotLightData.update(videoDevice, frustumData, [this](Plugin::Entity * const entity, const Components::SpotLight &lightComponent) -> void
+                                spotLightData.update(videoDevice, frustum, [this](Plugin::Entity * const entity, const Components::SpotLight &lightComponent) -> void
                                 {
                                     addLight(entity, lightComponent);
                                 });
