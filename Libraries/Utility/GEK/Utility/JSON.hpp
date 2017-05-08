@@ -94,7 +94,15 @@ namespace Gek
         using Member = Object::member_type;
         using Array = Object::array;
 
-        Object Load(FileSystem::Path const &filePath);
+		extern const Object EmptyObject;
+
+        Object Load(FileSystem::Path const &filePath, const Object &defaultValue = EmptyObject);
         void Save(FileSystem::Path const &filePath, Object const &object);
+
+		template <typename TYPE>
+		TYPE &Get(Object &object, WString const &name, const TYPE &defaultValue = TYPE())
+		{
+
+		}
 	}; // namespace JSON
 }; // namespace Gek

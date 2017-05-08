@@ -64,10 +64,10 @@ namespace Gek
 
                 virtual void message(CString const &system, Type logType, CString const &message) = 0;
 
-                template<typename... PARAMETERS>
-                void message(CString const &system, Type logType, CString const &message, PARAMETERS... arguments)
+				template<typename TYPE, typename... PARAMETERS>
+				void message(CString const &system, Type logType, CString const &formatting, TYPE const &value, PARAMETERS... arguments)
                 {
-                    message(system, logType, CString::Format(message, arguments...));
+					message(system, logType, CString::Format(formatting, value, arguments...));
                 }
 
                 virtual void beginEvent(char const * const system, char const * const name) = 0;

@@ -1,4 +1,5 @@
 #include "GEK/Engine/Shader.hpp"
+#include "GEK/Engine/Core.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/JSON.hpp"
@@ -22,7 +23,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Shader, Video::Device *, Engine::Resources *, Plugin::Population *, WString)
+        GEK_CONTEXT_USER(Shader, Plugin::Core::Log *, Video::Device *, Engine::Resources *, Plugin::Population *, WString)
             , public Engine::Shader
         {
         public:
@@ -65,6 +66,7 @@ namespace Gek
             };
 
         private:
+			Plugin::Core::Log *log = nullptr;
             Video::Device *videoDevice = nullptr;
             Engine::Resources *resources = nullptr;
             Plugin::Population *population = nullptr;
@@ -79,8 +81,9 @@ namespace Gek
             bool lightingRequired = false;
 
         public:
-            Shader(Context *context, Video::Device *videoDevice, Engine::Resources *resources, Plugin::Population *population, WString shaderName)
+            Shader(Context *context, Plugin::Core::Log *log, Video::Device *videoDevice, Engine::Resources *resources, Plugin::Population *population, WString shaderName)
                 : ContextRegistration(context)
+				, log(log)
                 , videoDevice(videoDevice)
                 , resources(resources)
                 , population(population)
@@ -102,7 +105,16 @@ namespace Gek
 
             void reload(void)
             {
-                uint32_t passIndex = 0;
+				log->message("Shader", Plugin::Core::Log::Type::Message, "Loading shader: %v", shaderName);
+
+				static auto evaluate = [&](const JSON::Object &data, float defaultValue) -> float
+				{
+					WString value(data.to_string());
+					value.trim([](wchar_t ch) { return (ch != L'\"'); });
+					return population->getShuntingYard().evaluate(value, defaultValue);
+				};
+				
+				uint32_t passIndex = 0;
                 forwardPassMap.clear();
                 passList.clear();
 
@@ -110,34 +122,13 @@ namespace Gek
                 auto &backBufferDescription = backBuffer->getDescription();
 
                 const JSON::Object shaderNode = JSON::Load(getContext()->getRootFileName(L"data", L"shaders", shaderName).withExtension(L".json"));
-                if (!shaderNode.has_member(L"passes"))
-                {
-                    throw MissingParameter("Shader requires pass list");
-                }
+                auto &passesNode = shaderNode.get(L"passes", JSON::EmptyObject);
+                auto &materialNode = shaderNode.get(L"material", JSON::EmptyObject);
+				auto &inputNode = shaderNode.get(L"input", JSON::Array());
 
-                auto &passesNode = shaderNode.get(L"passes");
-                if (!passesNode.is_array())
-                {
-                    throw InvalidParameter("Pass list must be an array");
-                }
-
-                auto &materialNode = shaderNode.get(L"material");
-                if (!materialNode.is_null() && !materialNode.is_object())
-                {
-                    throw InvalidParameter("Material must be an object");
-                }
-
-                auto evaluate = [&](const JSON::Object &data) -> float
-                {
-                    WString value(data.to_string());
-                    value.trim([](wchar_t ch) { return (ch != L'\"'); });
-                    return population->getShuntingYard().evaluate(value);
-                };
-
-                WString inputData;
+				WString inputData;
                 if (shaderNode.has_member(L"input"))
                 {
-                    auto &inputNode = shaderNode.get(L"input");
                     if (!inputNode.is_array())
                     {
                         throw InvalidParameter("Vertex input layout must be an array of elements");
@@ -316,13 +307,13 @@ namespace Gek
                                     switch (dimensions)
                                     {
                                     case 3:
-                                        description.depth = evaluate(size.at(2));
+                                        description.depth = evaluate(size.at(2), 1);
 
                                     case 2:
-                                        description.height = evaluate(size.at(1));
+                                        description.height = evaluate(size.at(1), 1);
 
                                     case 1:
-                                        description.width = evaluate(size.at(0));
+                                        description.width = evaluate(size.at(0), 1);
                                         break;
 
                                     default:
@@ -331,13 +322,13 @@ namespace Gek
                                 }
                                 else
                                 {
-                                    description.width = evaluate(size);
+                                    description.width = evaluate(size, 1);
                                 }
                             }
 
                             description.sampleCount = textureValue.get(L"sampleCount", 1).as_uint();
                             description.flags = getTextureFlags(textureValue.get(L"flags", L"0").as_string());
-                            description.mipMapCount = evaluate(textureValue.get(L"mipmaps", L"1"));
+                            description.mipMapCount = evaluate(textureValue.get(L"mipmaps", L"1"), 1);
                             resource = resources->createTexture(WString::Format(L"%v:%v:resource", textureName, shaderName), description);
                         }
                         else
@@ -396,7 +387,7 @@ namespace Gek
                                 throw MissingParameter("Buffer must have a count value");
                             }
 
-                            uint32_t count = evaluate(bufferValue.get(L"count"));
+							uint32_t count = evaluate(bufferValue.get(L"count", L"0"), 0);
                             uint32_t flags = getBufferFlags(bufferValue.get(L"flags", L"0").as_string());
                             if (bufferValue.has_member(L"stride") || bufferValue.has_member(L"structure"))
                             {
@@ -413,7 +404,7 @@ namespace Gek
                                 description.count = count;
                                 description.flags = flags;
                                 description.type = Video::Buffer::Description::Type::Structured;
-                                description.stride = evaluate(bufferValue.get(L"stride"));
+                                description.stride = evaluate(bufferValue.get(L"stride", L"0"), 0);
                                 resource = resources->createBuffer(WString::Format(L"%v:%v:buffer", bufferName, shaderName), description);
                             }
                             else if (bufferValue.has_member(L"format"))
@@ -528,13 +519,13 @@ namespace Gek
                                 throw InvalidParameter("Dispatch array must have only 3 values");
                             }
 
-                            pass.dispatchWidth = evaluate(dispatch.at(0));
-                            pass.dispatchHeight = evaluate(dispatch.at(1));
-                            pass.dispatchDepth = evaluate(dispatch.at(1));
+                            pass.dispatchWidth = evaluate(dispatch.at(0), 1);
+                            pass.dispatchHeight = evaluate(dispatch.at(1), 1);
+                            pass.dispatchDepth = evaluate(dispatch.at(1), 1);
                         }
                         else
                         {
-                            pass.dispatchWidth = pass.dispatchHeight = pass.dispatchDepth = evaluate(dispatch);
+                            pass.dispatchWidth = pass.dispatchHeight = pass.dispatchDepth = evaluate(dispatch, 1);
                         }
                     }
                     else
@@ -873,7 +864,9 @@ namespace Gek
                     Video::PipelineType pipelineType = (pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel);
                     pass.program = resources->loadProgram(pipelineType, name, entryPoint, engineData);
                 }
-            }
+
+				log->message("Shader", Plugin::Core::Log::Type::Message, "Shader loaded successfully: %v", shaderName);
+			}
 
             // Shader
             uint32_t getDrawOrder(void) const

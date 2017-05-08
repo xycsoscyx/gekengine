@@ -24,11 +24,11 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 		throw std::exception("Input file hasn't changed since last compression");
 	}
 
-	printf("Compressing: -> %S\r\n", inputFilePath.c_str());
-	printf("             <- %S\r\n", outputFilePath.c_str());
+	std::cout << "Compressing: -> " << inputFilePath << std::endl;
+	std::cout << "             <- " << outputFilePath << std::endl;
 
-	std::vector<uint8_t> buffer;
-	FileSystem::Load(inputFilePath, buffer);
+	static const std::vector<uint8_t> EmptyBuffer;
+	std::vector<uint8_t> buffer(FileSystem::Load(inputFilePath, EmptyBuffer));
 
 	WString extension(inputFilePath.getExtension());
 	std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
@@ -87,26 +87,26 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 		if (DirectX::HasAlpha(image.GetMetadata().format))
 		{
 			outputFormat = DXGI_FORMAT_BC7_UNORM_SRGB;
-			printf("Compressing Albedo: BC7 sRGB\r\n");
+			std::cout << "Compressing Albedo: BC7 sRGB" << std::endl;
 		}
 		else
 		{
 			outputFormat = DXGI_FORMAT_BC1_UNORM_SRGB;
-			printf("Compressing Albedo: BC7 sRGB\r\n");
+			std::cout << "Compressing Albedo: BC7 sRGB" << std::endl;
 		}
 	}
 	else if (inputName.endsWith(L"normal") ||
 		inputName.endsWith(L"_n"))
 	{
 		outputFormat = DXGI_FORMAT_BC5_UNORM;
-		printf("Compressing Normal: BC5\r\n");
+		std::cout << "Compressing Normal: BC5" << std::endl;
 	}
 	else if (inputName.endsWith(L"roughness") ||
 		inputName.endsWith(L"rough") ||
 		inputName.endsWith(L"_r"))
 	{
 		outputFormat = DXGI_FORMAT_BC4_UNORM;
-		printf("Compressing Roughness: BC4\r\n");
+		std::cout << "Compressing Roughness: BC4" << std::endl;
 	}
 	else if (inputName.endsWith(L"metalness") ||
 		inputName.endsWith(L"metallic") ||
@@ -114,14 +114,14 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 		inputName.endsWith(L"_m"))
 	{
 		outputFormat = DXGI_FORMAT_BC4_UNORM;
-		printf("Compressing Metallic: BC4\r\n");
+		std::cout << "Compressing Metallic: BC4" << std::endl;
 	}
 	else
 	{
 		throw std::exception("Unknown material encountered");
 	}
 
-	printf(".loaded.");
+	std::cout << ".loaded.";
 
 	::DirectX::ScratchImage mipMapChain;
 	resultValue = ::DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), ::DirectX::TEX_FILTER_TRIANGLE, 0, mipMapChain);
@@ -131,7 +131,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 	}
 
 	image = std::move(mipMapChain);
-	printf(".mipmapped.");
+	std::cout << ".mipmapped.";
 
 	::DirectX::ScratchImage output;
 	if(useDevice)
@@ -149,7 +149,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 		throw std::exception("Unable to compress image");
 	}
 
-	printf(".compressed.");
+	std::cout << ".compressed.";
 
 	resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, outputFilePath);
 	if (FAILED(resultValue))
@@ -157,12 +157,12 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 		throw std::exception("Unable to save image");
 	}
 
-	printf(".done!\r\n");
+	std::cout << ".done!" << std::endl;
 }
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    printf("GEK Texture Compressor\r\n");
+    std::cout << "GEK Texture Compressor" << std::endl;
 
     try
     {
@@ -196,7 +196,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 				}
 				catch (...)
 				{
-					printf("[warning] Error trying to compress file: %S\r\n", filePath.c_str());
+					std::cerr << "[warning] Error trying to compress file: " << filePath << std::endl;
 				};
 			}
 
@@ -209,15 +209,15 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	}
     catch (const std::exception &exception)
     {
-        printf("\r\n\r\nGEK Engine - Error\r\n");
-        printf(CString::Format("Caught: %v\r\nType: %v\r\n", exception.what(), typeid(exception).name()));
+        std::cerr << "GEK Engine - Error" << std::endl;
+		std::cerr << "Caught: " << exception.what() << std::endl;
+		std::cerr << "Type: " << typeid(exception).name() << std::endl;
     }
     catch (...)
     {
-        printf("\r\n\r\nGEK Engine - Error\r\n");
-        printf("Caught: Non-standard exception\r\n");
+        std::cerr << "GEK Engine - Error" << std::endl;
+        std::cerr << "Caught: Non-standard exception" << std::endl;
     };
 
-    printf("\r\n");
     return 0;
 }

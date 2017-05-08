@@ -7,7 +7,6 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK/Utility/Exceptions.hpp"
 #include "GEK/Utility/String.hpp"
 #include <experimental\filesystem>
 #include <functional>
@@ -16,64 +15,94 @@
 
 namespace Gek
 {
-    namespace FileSystem
-    {
-        GEK_ADD_EXCEPTION(FileNotFound);
-        GEK_ADD_EXCEPTION(FileReadError);
-        GEK_ADD_EXCEPTION(FileWriteError);
+	namespace FileSystem
+	{
+		struct Path :
+			public std::experimental::filesystem::path
+		{
+			Path(void);
+			Path(WString const &path);
+			Path(Path const &path);
 
-        struct Path :
-            public std::experimental::filesystem::path
-        {
-            Path(void);
-            Path(WString const &path);
-            Path(Path const &path);
+			void operator = (WString const &path);
+			void operator = (Path const &path);
 
-            void operator = (WString const &path);
-            void operator = (Path const &path);
+			operator wchar_t const * const (void) const;
 
-            operator wchar_t const * const (void) const;
+			void removeFileName(void);
+			void removeExtension(void);
 
-            void removeFileName(void);
-            void removeExtension(void);
+			void replaceFileName(WString const &fileName);
+			void replaceExtension(WString const &extension);
 
-            void replaceFileName(WString const &fileName);
-            void replaceExtension(WString const &extension);
+			Path withExtension(WString const &extension) const;
+			Path withoutExtension() const;
 
-            Path withExtension(WString const &extension) const;
-            Path withoutExtension() const;
+			Path getParentPath(void) const;
+			WString getFileName(void) const;
+			WString getExtension(void) const;
 
-            Path getParentPath(void) const;
-            WString getFileName(void) const;
-            WString getExtension(void) const;
+			bool isFile(void) const;
+			bool isDirectory(void) const;
+			bool isNewerThan(Path const &path) const;
+		};
 
-            bool isFile(void) const;
-            bool isDirectory(void) const;
-            bool isNewerThan(Path const &path) const;
-        };
+		Path GetModuleFilePath(void);
 
-        Path GetModuleFilePath(void);
+		Path GetFileName(Path const &rootDirectory, const std::vector<WString> &list);
 
-        Path GetFileName(Path const &rootDirectory, const std::vector<WString> &list);
-        
-        void MakeDirectoryChain(Path const &filePath);
+		void MakeDirectoryChain(Path const &filePath);
 
-        template <typename... PARAMETERS>
-        Path GetFileName(Path const &rootDirectory, PARAMETERS... nameList)
-        {
-            return GetFileName(rootDirectory, { nameList... });
-        }
+		template <typename... PARAMETERS>
+		Path GetFileName(Path const &rootDirectory, PARAMETERS... nameList)
+		{
+			return GetFileName(rootDirectory, { nameList... });
+		}
 
-        void Find(Path const &rootDirectory, std::function<bool(Path const &filePath)> onFileFound);
+		void Find(Path const &rootDirectory, std::function<bool(Path const &filePath)> onFileFound);
 
-        void Load(Path const &fileName, std::vector<uint8_t> &buffer, std::uintmax_t limitReadSize = 0);
-        void Load(Path const &fileName, CString &string);
-        void Load(Path const &fileName, WString &string);
+		template <typename CONTAINER>
+		CONTAINER Load(Path const &filePath, CONTAINER const &defaultValue = CONTAINER(), std::uintmax_t limitReadSize = 0)
+		{
+			if (std::experimental::filesystem::is_regular_file(filePath))
+			{
+				CONTAINER buffer;
+				auto size = std::experimental::filesystem::file_size(filePath);
+				size = (limitReadSize == 0 ? size : std::min(size, limitReadSize));
+				if (size > 0)
+				{
+					// Need to use fopen since STL methods break up the reads to multiple small calls
+					FILE *file = fopen(CString(filePath.native()), "rb");
+					if (file != nullptr)
+					{
+						buffer.resize(size);
+						auto read = fread(static_cast<void *>(&buffer.front()), size, 1, file);
+						fclose(file);
 
-        void Save(Path const &fileName, std::vector<uint8_t> const &buffer);
-        void Save(Path const &fileName, CString const &string);
-        void Save(Path const &fileName, WString const &string);
-    }; // namespace File
+						if (read == 1)
+						{
+							return buffer;
+						}
+					}
+				}
+			}
+
+			return defaultValue;
+		}
+
+		template <typename CONTAINER>
+		void Save(Path const &filePath, CONTAINER const &buffer)
+		{
+			MakeDirectoryChain(filePath.getParentPath());
+
+			FILE *file = fopen(CString(filePath.native()), "w+b");
+			if (file != nullptr)
+			{
+				auto wrote = fwrite(buffer.data(), buffer.size(), 1, file);
+				fclose(file);
+			}
+		}
+	}; // namespace File
 }; // namespace Gek
 
 namespace std

@@ -101,21 +101,7 @@ namespace Gek
                 window->onMousePosition.connect<Core, &Core::onMousePosition>(this);
                 window->onMouseMovement.connect<Core, &Core::onMouseMovement>(this);
 
-                try
-                {
-                    configuration = JSON::Load(getContext()->getRootFileName(L"config.json"));
-                    message("Core", Log::Type::Message, "Configuration loaded");
-                }
-                catch (const std::exception &)
-                {
-                    message("Core", Plugin::Core::Log::Type::Debug, "Configuration not found, using default values");
-                };
-
-                if (!configuration.is_object())
-                {
-                    configuration = JSON::Object();
-                }
-
+                configuration = JSON::Load(getContext()->getRootFileName(L"config.json"));
                 if (!configuration.has_member(L"display") || !configuration.get(L"display").has_member(L"mode"))
                 {
                     configuration[L"display"][L"mode"] = 0;
@@ -588,19 +574,19 @@ namespace Gek
                 switch (logType)
                 {
                 case Log::Type::Message:
-                    OutputDebugStringA(CString::Format("(%v) %v\r\n", system, message));
+					std::cout << "(" << system << ") " << message << std::endl;
                     break;
 
                 case Log::Type::Warning:
-                    OutputDebugStringA(CString::Format("WARNING: (%v) %v\r\n", system, message));
+					std::cout << "(" << system << ") WARNING: " << message << std::endl;
                     break;
 
                 case Log::Type::Error:
-                    OutputDebugStringA(CString::Format("ERROR: (%v) %v\r\n", system, message));
+					std::cerr << "(" << system << ") ERROR: " << message << std::endl;
                     break;
 
                 case Log::Type::Debug:
-                    OutputDebugStringA(CString::Format("DEBUG: (%v) %v\r\n", system, message));
+					std::cout << "(" << system << ") DEBUG: " << message << std::endl;
                     break;
                 };
             }

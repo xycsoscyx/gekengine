@@ -7,10 +7,10 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK/Utility/Exceptions.hpp"
 #include "GEK/Utility/String.hpp"
 #include <unordered_map>
 #include <functional>
+#include <iostream>
 #include <random>
 #include <stack>
 
@@ -19,20 +19,19 @@ namespace Gek
     class ShuntingYard
     {
     public:
-        GEK_ADD_EXCEPTION();
-        GEK_ADD_EXCEPTION(UnknownTokenType, Exception);
-        GEK_ADD_EXCEPTION(UnbalancedParenthesis, Exception);
-        GEK_ADD_EXCEPTION(InvalidReturnType, Exception);
-        GEK_ADD_EXCEPTION(InvalidEquation, Exception);
-        GEK_ADD_EXCEPTION(InvalidOperator, Exception);
-        GEK_ADD_EXCEPTION(InvalidOperand, Exception);
-        GEK_ADD_EXCEPTION(InvalidFunction, Exception);
-        GEK_ADD_EXCEPTION(InvalidFunctionParameters, Exception);
-        GEK_ADD_EXCEPTION(NotEnoughFunctionParameters, Exception);
-        GEK_ADD_EXCEPTION(MissingFunctionParenthesis, Exception);
-        GEK_ADD_EXCEPTION(MisplacedSeparator, Exception);
+		class Logger
+			: public WString
+		{
+		public:
+			template<typename TYPE, typename... PARAMETERS>
+			BaseString & appendFormat(WString::value_type const *formatting, TYPE const &value, PARAMETERS... arguments)
+			{
+				auto message(WString::Format(formatting, value, arguments...));
+				std::wcout << message << std::endl;
+				return WString::append(message);
+			}
+		};
 
-    public:
         enum class Associations : uint8_t
         {
             Left = 0,
@@ -53,31 +52,20 @@ namespace Gek
 
         struct Token
         {
-            TokenType type;
-            uint32_t parameterCount;
+			size_t position = -1;
+            TokenType type = TokenType::Unknown;
+            uint32_t parameterCount = 0;
             WString string;
-            float value;
+            float value = 0.0f;
 
-            Token(TokenType type = TokenType::Unknown);
-            Token(TokenType type, WString const &string, uint32_t parameterCount = 0);
-            Token(float value);
+            Token(size_t position, TokenType type = TokenType::Unknown);
+            Token(size_t position, TokenType type, WString const &string, uint32_t parameterCount = 0);
+			Token(size_t position, float value);
         };
 
         using TokenList = std::vector<Token>;
 
     private:
-        template <typename DATA>
-        struct Stack
-            : public std::stack<DATA>
-        {
-            DATA popTop(void)
-            {
-                DATA topElement = top();
-                stack::pop();
-                return topElement;
-            }
-        };
-
         struct Operation
         {
             int precedence;
@@ -89,7 +77,7 @@ namespace Gek
         struct Function
         {
             uint32_t parameterCount;
-            std::function<float(Stack<Token> &)> function;
+            std::function<float(std::stack<float> &)> function;
         };
 
     private:
@@ -105,9 +93,9 @@ namespace Gek
         void setRandomSeed(uint32_t seed);
         uint32_t getRandomSeed(void);
 
-        TokenList getTokenList(WString const &expression);
-        float evaluate(TokenList &rpnTokenList);
-        float evaluate(WString const &expression);
+        TokenList getTokenList(WString const &expression, WString &logMessage = Logger());
+        float evaluate(TokenList &rpnTokenList, float defaultValue, WString &logMessage = Logger());
+        float evaluate(WString const &expression, float defaultValue, WString &logMessage = Logger());
 
     private:
         bool isNumber(WString const &token);
@@ -123,10 +111,10 @@ namespace Gek
         bool isValidReturnType(const Token &token);
 
     private:
-        void insertToken(TokenList &infixTokenList, Token &token);
-        void parseSubTokens(TokenList &infixTokenList, WString const &token);
-        TokenList convertExpressionToInfix(WString const &expression);
-        TokenList convertInfixToReversePolishNotation(const TokenList &infixTokenList);
-        float evaluateReversePolishNotation(const TokenList &rpnTokenList);
+		bool insertToken(TokenList &infixTokenList, Token &token, WString &logMessage);
+        bool parseSubTokens(TokenList &infixTokenList, WString const &token, size_t position, WString &logMessage);
+        TokenList convertExpressionToInfix(WString const &expression, WString &logMessage);
+        TokenList convertInfixToReversePolishNotation(const TokenList &infixTokenList, WString &logMessage);
+        float evaluateReversePolishNotation(const TokenList &rpnTokenList, float defaultValue, WString &logMessage);
     };
 }; // namespace Gek

@@ -28,6 +28,7 @@ namespace Gek
             data->range = getValue(componentData, L"range", 0.0f);
             data->radius = getValue(componentData, L"radius", 0.0f);
             data->intensity = getValue(componentData, L"intensity", 0.0f);
+			std::cout << "Range: " << data->range << ", Radius: " << data->radius << ", Intensity: " << data->intensity;
         }
 
         // Edit::Component

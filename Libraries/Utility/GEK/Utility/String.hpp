@@ -30,6 +30,7 @@ namespace Gek
     {
     public:
         using ElementType = ELEMENT;
+		static const BaseString<ELEMENT, TRAITS, ALLOCATOR> Empty;
 
     public:
         static BaseString Join(std::vector<BaseString> const &list, ELEMENT delimiter)
@@ -92,7 +93,7 @@ namespace Gek
             }
         }
 
-        BaseString subString(size_t position = 0, size_t length = BaseString::npos) const
+		BaseString subString(size_t position = 0, size_t length = BaseString::npos) const
         {
             if (position >= size())
             {

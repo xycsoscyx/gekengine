@@ -1,9 +1,5 @@
 #include "GEK/Utility/ShuntingYard.hpp"
 #include "GEK/Utility/String.hpp"
-#include <unordered_map>
-#include <functional>
-#include <random>
-#include <stack>
 #include <regex>
 
 // https://blog.kallisti.net.rz.xyz/2008/02/extension-to-the-shunting-yard-algorithm-to-allow-variable-numbers-of-arguments-to-functions/
@@ -14,28 +10,38 @@ namespace Gek
 
     static const std::wregex SearchNumber(SEARCH_NUMBER, std::regex::ECMAScript | std::regex::icase | std::regex::optimize);
     static const std::wregex SearchWord(L"([a-z]+)|" SEARCH_NUMBER, std::regex::ECMAScript | std::regex::icase | std::regex::optimize);
+	static const ShuntingYard::TokenList EmptyTokenList;
 
-    ShuntingYard::Token::Token(ShuntingYard::TokenType type)
-        : type(type)
-        , parameterCount(0)
+	template <typename TYPE>
+	TYPE PopTop(std::stack<TYPE> &stack)
+	{
+		auto top = stack.top();
+		stack.pop();
+		return top;
+	}
+
+	ShuntingYard::Token::Token(size_t position, ShuntingYard::TokenType type)
+		: position(position)
+        , type(type)
     {
     }
 
-    ShuntingYard::Token::Token(ShuntingYard::TokenType type, WString const &string, uint32_t parameterCount)
-        : type(type)
+    ShuntingYard::Token::Token(size_t position, ShuntingYard::TokenType type, WString const &string, uint32_t parameterCount)
+		: position(position)
+		, type(type)
         , string(string)
         , parameterCount(parameterCount)
     {
     }
 
-    ShuntingYard::Token::Token(float value)
-        : type(TokenType::Number)
-        , value(value)
-        , parameterCount(1)
-    {
-    }
-    
-    ShuntingYard::ShuntingYard(void)
+	ShuntingYard::Token::Token(size_t position, float value)
+		: position(position)
+		, type(TokenType::Number)
+		, value(value)
+	{
+	}
+
+	ShuntingYard::ShuntingYard(void)
         : mersineTwister(std::random_device()())
     {
         variableMap[L"pi"] = Math::Pi;
@@ -75,86 +81,86 @@ namespace Gek
             return (valueLeft - valueRight);
         } } });
 
-        functionsMap.insert({ L"sin",{ 1, [](Stack<Token> &stack) -> float
+        functionsMap.insert({ L"sin",{ 1, [](std::stack<float> &stack) -> float
         {
-            float value = stack.popTop().value;
+            float value = stack.top();
             return std::sin(value);
         } } });
 
-        functionsMap.insert({ L"cos",{ 1, [](Stack<Token> &stack) -> float
+        functionsMap.insert({ L"cos",{ 1, [](std::stack<float> &stack) -> float
         {
-            float value = stack.popTop().value;
+            float value = PopTop(stack);
             return std::cos(value);
         } } });
 
-        functionsMap.insert({ L"tan",{ 1, [](Stack<Token> &stack) -> float
+        functionsMap.insert({ L"tan",{ 1, [](std::stack<float> &stack) -> float
         {
-            float value = stack.popTop().value;
+            float value = PopTop(stack);
             return std::tan(value);
         } } });
 
-        functionsMap.insert({ L"asin",{ 1, [](Stack<Token> &stack) -> float
+        functionsMap.insert({ L"asin",{ 1, [](std::stack<float> &stack) -> float
         {
-            float value = stack.popTop().value;
+            float value = PopTop(stack);
             return std::asin(value);
         } } });
 
-        functionsMap.insert({ L"acos",{ 1, [](Stack<Token> &stack) -> float
+        functionsMap.insert({ L"acos",{ 1, [](std::stack<float> &stack) -> float
         {
-            float value = stack.popTop().value;
+            float value = PopTop(stack);
             return std::acos(value);
         } } });
 
-        functionsMap.insert({ L"atan",{ 1, [](Stack<Token> &stack) -> float
+        functionsMap.insert({ L"atan",{ 1, [](std::stack<float> &stack) -> float
         {
-            float value = stack.popTop().value;
+            float value = PopTop(stack);
             return std::atan(value);
         } } });
 
-        functionsMap.insert({ L"min",{ 2, [](Stack<Token> &stack) -> float
+        functionsMap.insert({ L"min",{ 2, [](std::stack<float> &stack) -> float
         {
-            float value2 = stack.popTop().value;
-            float value1 = stack.popTop().value;
+            float value2 = PopTop(stack);
+            float value1 = PopTop(stack);
             return std::min(value1, value2);
         } } });
 
-        functionsMap.insert({ L"max",{ 2, [](Stack<Token> &stack) -> float
+        functionsMap.insert({ L"max",{ 2, [](std::stack<float> &stack) -> float
         {
-            float value2 = stack.popTop().value;
-            float value1 = stack.popTop().value;
+            float value2 = PopTop(stack);
+            float value1 = PopTop(stack);
             return std::max(value1, value2);
         } } });
 
-        functionsMap.insert({ L"abs",{ 1, [](Stack<Token> &stack) -> float
+        functionsMap.insert({ L"abs",{ 1, [](std::stack<float> &stack) -> float
         {
-            float value = stack.popTop().value;
+            float value = PopTop(stack);
             return std::abs(value);
         } } });
 
-        functionsMap.insert({ L"ceil",{ 1, [](Stack<Token> &stack) -> float
+        functionsMap.insert({ L"ceil",{ 1, [](std::stack<float> &stack) -> float
         {
-            float value = stack.popTop().value;
+            float value = PopTop(stack);
             return std::ceil(value);
         } } });
 
-        functionsMap.insert({ L"floor",{ 1, [](Stack<Token> &stack) -> float
+        functionsMap.insert({ L"floor",{ 1, [](std::stack<float> &stack) -> float
         {
-            float value = stack.popTop().value;
+            float value = PopTop(stack);
             return std::floor(value);
         } } });
 
-        functionsMap.insert({ L"lerp",{ 3, [](Stack<Token> &stack) -> float
+        functionsMap.insert({ L"lerp",{ 3, [](std::stack<float> &stack) -> float
         {
-            float value3 = stack.popTop().value;
-            float value2 = stack.popTop().value;
-            float value1 = stack.popTop().value;
+            float value3 = PopTop(stack);
+            float value2 = PopTop(stack);
+            float value1 = PopTop(stack);
             return Math::Interpolate(value1, value2, value3);
         } } });
 
-        functionsMap.insert({ L"random",{ 2, [&](Stack<Token> &stack) -> float
+        functionsMap.insert({ L"random",{ 2, [&](std::stack<float> &stack) -> float
         {
-            float value2 = stack.popTop().value;
-            float value1 = stack.popTop().value;
+            float value2 = PopTop(stack);
+            float value1 = PopTop(stack);
             std::uniform_real_distribution<float> uniformRealDistribution(value1, value2);
             return uniformRealDistribution(mersineTwister);
         } } });
@@ -171,21 +177,21 @@ namespace Gek
         return seed;
     }
 
-    ShuntingYard::TokenList ShuntingYard::getTokenList(WString const &expression)
+    ShuntingYard::TokenList ShuntingYard::getTokenList(WString const &expression, WString &logMessage)
     {
-        TokenList infixTokenList = convertExpressionToInfix(expression);
-        return convertInfixToReversePolishNotation(infixTokenList);
+		TokenList infixTokenList(convertExpressionToInfix(expression, logMessage));
+        return convertInfixToReversePolishNotation(infixTokenList, logMessage);
     }
 
-    float ShuntingYard::evaluate(TokenList &rpnTokenList)
+    float ShuntingYard::evaluate(TokenList &rpnTokenList, float defaultValue, WString &logMessage)
     {
-        return evaluateReversePolishNotation(rpnTokenList);
+		return evaluateReversePolishNotation(rpnTokenList, defaultValue, logMessage);
     }
 
-    float ShuntingYard::evaluate(WString const &expression)
+    float ShuntingYard::evaluate(WString const &expression, float defaultValue, WString &logMessage)
     {
-        TokenList rpnTokenList(getTokenList(expression));
-        return evaluateReversePolishNotation(rpnTokenList);
+        TokenList rpnTokenList(getTokenList(expression, logMessage));
+        return evaluateReversePolishNotation(rpnTokenList, defaultValue, logMessage);
     }
 
     bool ShuntingYard::isNumber(WString const &token)
@@ -280,7 +286,7 @@ namespace Gek
         };
     }
 
-    void ShuntingYard::insertToken(TokenList &infixTokenList, Token &token)
+	bool ShuntingYard::insertToken(TokenList &infixTokenList, Token &token, WString &logMessage)
     {
         if (!infixTokenList.empty())
         {
@@ -289,17 +295,17 @@ namespace Gek
             // ) 2 or 2 2
             if (token.type == TokenType::Number && (previous.type == TokenType::Number || previous.type == TokenType::RightParenthesis))
             {
-                infixTokenList.push_back(Token(TokenType::BinaryOperation, L"*"));
+                infixTokenList.push_back(Token(token.position, TokenType::BinaryOperation, L"*"));
             }
             // 2 ( or ) (
             else if (token.type == TokenType::LeftParenthesis && (previous.type == TokenType::Number || previous.type == TokenType::RightParenthesis))
             {
-                infixTokenList.push_back(Token(TokenType::BinaryOperation, L"*"));
+                infixTokenList.push_back(Token(token.position, TokenType::BinaryOperation, L"*"));
             }
             // ) sin or 2 sin
             else if (token.type == TokenType::Function && (previous.type == TokenType::Number || previous.type == TokenType::RightParenthesis))
             {
-                infixTokenList.push_back(Token(TokenType::BinaryOperation, L"*"));
+                infixTokenList.push_back(Token(token.position, TokenType::BinaryOperation, L"*"));
             }
         }
 
@@ -336,9 +342,10 @@ namespace Gek
         }
 
         infixTokenList.push_back(token);
+		return true;
     }
 
-    void ShuntingYard::parseSubTokens(TokenList &infixTokenList, WString const &token)
+    bool ShuntingYard::parseSubTokens(TokenList &infixTokenList, WString const &token, size_t position, WString &logMessage)
     {
         for (std::wsregex_iterator tokenSearch(std::begin(token), std::end(token), SearchWord), end; tokenSearch != end; ++tokenSearch)
         {
@@ -349,43 +356,46 @@ namespace Gek
                 auto variableSearch = variableMap.find(value);
                 if (variableSearch != std::end(variableMap))
                 {
-                    insertToken(infixTokenList, Token(variableSearch->second));
+                    insertToken(infixTokenList, Token(position, variableSearch->second), logMessage);
                     continue;
                 }
 
                 auto functionSearch = functionsMap.find(value);
                 if (functionSearch != std::end(functionsMap))
                 {
-                    insertToken(infixTokenList, Token(TokenType::Function, functionSearch->first));
+                    insertToken(infixTokenList, Token(position, TokenType::Function, functionSearch->first), logMessage);
                     continue;
                 }
 
-                throw UnknownTokenType("Unlisted variable/function name encountered");
+				logMessage.appendFormat(L"Unlisted variable/function name encountered: %v, at %v", token, position);
+				return false;
             }
             else if(match[2].matched) // number
             {
                 float value(WString(match.str(2)));
-                insertToken(infixTokenList, Token(value));
+                insertToken(infixTokenList, Token(position, value), logMessage);
             }
         }
+
+		return true;
     }
 
-    ShuntingYard::TokenList ShuntingYard::convertExpressionToInfix(WString const &expression)
+    ShuntingYard::TokenList ShuntingYard::convertExpressionToInfix(WString const &expression, WString &logMessage)
     {
         WString runningToken;
         TokenList infixTokenList;
-        for (size_t index = 0; index < expression.size(); ++index)
+        for (size_t position = 0; position < expression.size(); ++position)
         {
-            WString nextToken(expression.subString(index, 1));
+            WString nextToken(expression.subString(position, 1));
             if (isOperation(nextToken) || isParenthesis(nextToken) || isSeparator(nextToken))
             {
                 if (!runningToken.empty())
                 {
-                    parseSubTokens(infixTokenList, runningToken);
+                    parseSubTokens(infixTokenList, runningToken, position, logMessage);
                     runningToken.clear();
                 }
 
-                insertToken(infixTokenList, Token(getTokenType(nextToken), nextToken));
+                insertToken(infixTokenList, Token(position, getTokenType(nextToken), nextToken), logMessage);
             }
             else
             {
@@ -393,7 +403,7 @@ namespace Gek
                 {
                     if (!runningToken.empty())
                     {
-                        parseSubTokens(infixTokenList, runningToken);
+                        parseSubTokens(infixTokenList, runningToken, position, logMessage);
                         runningToken.clear();
                     }
                 }
@@ -406,21 +416,21 @@ namespace Gek
 
         if (!runningToken.empty())
         {
-            parseSubTokens(infixTokenList, runningToken);
+            parseSubTokens(infixTokenList, runningToken, (expression.size() - runningToken.size()), logMessage);
         }
 
         return infixTokenList;
     }
 
-    ShuntingYard::TokenList ShuntingYard::convertInfixToReversePolishNotation(const TokenList &infixTokenList)
+    ShuntingYard::TokenList ShuntingYard::convertInfixToReversePolishNotation(const TokenList &infixTokenList, WString &logMessage)
     {
         TokenList rpnTokenList;
 
         bool hasVector = false;
 
-        Stack<Token> stack;
-        Stack<bool> parameterExistsStack;
-        Stack<uint32_t> parameterCountStack;
+		std::stack<Token> tokenStack;
+        std::stack<bool> parameterExistsStack;
+		std::stack<uint32_t> parameterCountStack;
         for (auto &token : infixTokenList)
         {
             switch (token.type)
@@ -436,23 +446,23 @@ namespace Gek
                 break;
 
             case TokenType::UnaryOperation:
-                stack.push(token);
+				tokenStack.push(token);
                 break;
 
             case TokenType::BinaryOperation:
-                while (!stack.empty() && (stack.top().type == TokenType::BinaryOperation &&
-                    (isAssociative(token.string, Associations::Left) && comparePrecedence(token.string, stack.top().string) == 0) ||
-                    (isAssociative(token.string, Associations::Right) && comparePrecedence(token.string, stack.top().string) < 0)))
+                while (!tokenStack.empty() && (tokenStack.top().type == TokenType::BinaryOperation &&
+                    (isAssociative(token.string, Associations::Left) && comparePrecedence(token.string, tokenStack.top().string) == 0) ||
+                    (isAssociative(token.string, Associations::Right) && comparePrecedence(token.string, tokenStack.top().string) < 0)))
                 {
-                    rpnTokenList.push_back(stack.popTop());
+                    rpnTokenList.push_back(PopTop(tokenStack));
                 };
 
-                stack.push(token);
+                tokenStack.push(token);
                 break;
 
             case TokenType::LeftParenthesis:
                 // only return vector as a final value
-                if (stack.empty() || (stack.top().type == TokenType::Function))
+                if (tokenStack.empty() || (tokenStack.top().type == TokenType::Function))
                 {
                     parameterCountStack.push(0);
                     if (!parameterExistsStack.empty())
@@ -464,30 +474,32 @@ namespace Gek
                     parameterExistsStack.push(false);
                 }
 
-                stack.push(token);
+                tokenStack.push(token);
                 break;
 
             case TokenType::RightParenthesis:
-                if (stack.empty())
+                if (tokenStack.empty())
                 {
-                    throw UnbalancedParenthesis("Unmatched right parenthesis found");
+                    logMessage.appendFormat(L"Unmatched right parenthesis found at %v", token.position);
+					return EmptyTokenList;
                 }
 
-                while (stack.top().type != TokenType::LeftParenthesis)
+                while (tokenStack.top().type != TokenType::LeftParenthesis)
                 {
-                    rpnTokenList.push_back(stack.popTop());
-                    if (stack.empty())
+                    rpnTokenList.push_back(PopTop(tokenStack));
+                    if (tokenStack.empty())
                     {
-                        throw UnbalancedParenthesis("Unmatched right parenthesis found");
-                    }
+                        logMessage.appendFormat(L"Unmatched right parenthesis found at %v", token.position);
+						return EmptyTokenList;
+					}
                 };
 
-                stack.pop();
-                if (!stack.empty() && stack.top().type == TokenType::Function)
+                tokenStack.pop();
+                if (!tokenStack.empty() && tokenStack.top().type == TokenType::Function)
                 {
-                    Token function = stack.popTop();
-                    function.parameterCount = parameterCountStack.popTop();
-                    if (parameterExistsStack.popTop())
+                    Token function = PopTop(tokenStack);
+					function.parameterCount = PopTop(parameterCountStack);
+                    if (PopTop(parameterExistsStack))
                     {
                         function.parameterCount++;
                     }
@@ -498,23 +510,26 @@ namespace Gek
                 break;
 
             case TokenType::Separator:
-                if (stack.empty())
+                if (tokenStack.empty())
                 {
-                    throw MisplacedSeparator("Separator encountered outside of parenthesis block");
-                }
+                    logMessage.appendFormat(L"Separator encountered outside of parenthesis block at %v", token.position);
+					return EmptyTokenList;
+				}
 
                 if (parameterExistsStack.empty())
                 {
-                    throw MisplacedSeparator("Separator encountered at start of parenthesis block");
-                }
+                    logMessage.appendFormat(L"Separator encountered at start of parenthesis block at %v", token.position);
+					return EmptyTokenList;
+				}
 
-                while (stack.top().type != TokenType::LeftParenthesis)
+                while (tokenStack.top().type != TokenType::LeftParenthesis)
                 {
-                    rpnTokenList.push_back(stack.popTop());
-                    if (stack.empty())
+                    rpnTokenList.push_back(PopTop(tokenStack));
+                    if (tokenStack.empty())
                     {
-                        throw MisplacedSeparator("Separator encountered without leading left parenthesis");
-                    }
+                        logMessage.appendFormat(L"Separator encountered without leading left parenthesis at %v", token.position);
+						return EmptyTokenList;
+					}
                 };
 
                 if (parameterExistsStack.top())
@@ -527,41 +542,45 @@ namespace Gek
                 break;
 
             case TokenType::Function:
-                stack.push(token);
+                tokenStack.push(token);
                 break;
 
             default:
-                throw UnknownTokenType("Unknown token type encountered");
-            };
+                logMessage.appendFormat(L"Unknown token type encountered at %v", token.position);
+				return EmptyTokenList;
+			};
         }
 
-        while (!stack.empty())
+        while (!tokenStack.empty())
         {
-            if (stack.top().type == TokenType::LeftParenthesis || stack.top().type == TokenType::RightParenthesis)
+			auto &top = tokenStack.top();
+            if (top.type == TokenType::LeftParenthesis || top.type == TokenType::RightParenthesis)
             {
-                throw UnbalancedParenthesis("Invalid surrounding parenthesis encountered");
-            }
+                logMessage.appendFormat(L"Invalid surrounding parenthesis encountered at %v", top.position);
+				return EmptyTokenList;
+			}
 
-            rpnTokenList.push_back(stack.popTop());
+            rpnTokenList.push_back(PopTop(tokenStack));
         };
 
         if (rpnTokenList.empty())
         {
-            throw InvalidEquation("Empty equation encountered");
-        }
+			logMessage.appendFormat(L"Empty equation encountered");
+			return EmptyTokenList;
+		}
 
         return rpnTokenList;
     }
 
-    float ShuntingYard::evaluateReversePolishNotation(const TokenList &rpnTokenList)
+	float ShuntingYard::evaluateReversePolishNotation(const TokenList &rpnTokenList, float defaultValue, WString &logMessage)
     {
-        Stack<Token> stack;
+		std::stack<float> stack;
         for (auto &token : rpnTokenList)
         {
             switch (token.type)
             {
             case TokenType::Number:
-                stack.push(token);
+                stack.push(token.value);
                 break;
 
             case TokenType::UnaryOperation:
@@ -570,28 +589,25 @@ namespace Gek
                     auto &operationSearch = operationsMap.find(token.string);
                     if (operationSearch == std::end(operationsMap))
                     {
-                        throw InvalidOperator("Unlisted unary operation encountered");
+                        logMessage.appendFormat(L"Unlisted unary operation encountered at %v", token.position);
+						return defaultValue;
                     }
 
                     auto &operation = operationSearch->second;
                     if (!operation.unaryFunction)
                     {
-                        throw InvalidOperator("Missing unary function encountered");
-                    }
+                        logMessage.appendFormat(L"Missing unary function encountered at %v", token.position);
+						return defaultValue;
+					}
 
                     if (stack.empty())
                     {
-                        throw InvalidOperand("Unary function encountered without parameter");
-                    }
+                        logMessage.appendFormat(L"Unary function encountered without parameter at %v", token.position);
+						return defaultValue;
+					}
 
-                    if (stack.top().type != TokenType::Number)
-                    {
-                        throw InvalidOperand("Unary function requires numeric parameter");
-                    }
-
-                    float functionValue = stack.popTop().value;
-
-                    stack.push(Token(operation.unaryFunction(functionValue)));
+                    float functionValue = PopTop(stack);
+                    stack.push(operation.unaryFunction(functionValue));
                     break;
                 }
 
@@ -601,38 +617,32 @@ namespace Gek
                     auto &operationSearch = operationsMap.find(token.string);
                     if (operationSearch == std::end(operationsMap))
                     {
-                        throw InvalidOperator("Unlisted binary operation encounterd");
-                    }
+                        logMessage.appendFormat(L"Unlisted binary operation encounterd at %v", token.position);
+						return defaultValue;
+					}
 
                     auto &operation = operationSearch->second;
                     if (!operation.binaryFunction)
                     {
-                        throw InvalidOperator("Missing binary function encountered");
-                    }
+                        logMessage.appendFormat(L"Missing binary function encountered at %v", token.position);
+						return defaultValue;
+					}
 
                     if (stack.empty())
                     {
-                        throw InvalidOperand("Binary function used without first parameter");
-                    }
+                        logMessage.appendFormat(L"Binary function used without first parameter at %v", token.position);
+						return defaultValue;
+					}
 
-                    if (stack.top().type != TokenType::Number)
-                    {
-                        throw InvalidOperand("Binary function requires numeric first parameter");
-                    }
-
-                    float functionValueRight = stack.popTop().value;
+                    float functionValueRight = PopTop(stack);
                     if (stack.empty())
                     {
-                        throw InvalidOperand("Binary function used without second parameter");
-                    }
+                        logMessage.appendFormat(L"Binary function used without second parameter at %v", token.position);
+						return defaultValue;
+					}
 
-                    if (stack.top().type != TokenType::Number)
-                    {
-                        throw InvalidOperand("Binary function requires numeric second parameter");
-                    }
-
-                    float functionValueLeft = stack.popTop().value;
-                    stack.push(Token(operation.binaryFunction(functionValueLeft, functionValueRight)));
+                    float functionValueLeft = PopTop(stack);
+                    stack.push(operation.binaryFunction(functionValueLeft, functionValueRight));
                     break;
                 }
 
@@ -642,39 +652,45 @@ namespace Gek
                     auto &functionSearch = functionsMap.find(token.string);
                     if (functionSearch == std::end(functionsMap))
                     {
-                        throw InvalidFunction("Unlisted function encountered");
-                    }
+                        logMessage.appendFormat(L"Unlisted function encountered at %v", token.position);
+						return defaultValue;
+					}
 
                     auto &function = functionSearch->second;
                     if (function.parameterCount != token.parameterCount)
                     {
-                        throw InvalidFunctionParameters("Expected different number of parameters for function");
-                    }
+                        logMessage.appendFormat(L"Expected different number of parameters for function at %v", token.position);
+						return defaultValue;
+					}
 
                     if (stack.size() < function.parameterCount)
                     {
-                        throw NotEnoughFunctionParameters("Not enough parameters passed to function");
-                    }
+                        logMessage.appendFormat(L"Not enough parameters passed to function at %v", token.position);
+						return defaultValue;
+					}
 
-                    stack.push(Token(function.function(stack)));
+                    stack.push(function.function(stack));
                     break;
                 }
 
             default:
-                throw UnknownTokenType("Unknown token type encountered");
-            };
+                logMessage.appendFormat(L"Unknown token type encountered at %v", token.position);
+				return defaultValue;
+			};
         }
 
         if (rpnTokenList.empty())
         {
-            throw InvalidEquation("Empty equation encountered");
-        }
+			logMessage.appendFormat(L"Empty equation encountered");
+			return defaultValue;
+		}
 
         if (stack.size() != 1)
         {
-            throw InvalidEquation("Too many values left in stack");
-        }
+			logMessage.appendFormat(L"Too many values left in stack: %v", stack.size());
+			return defaultValue;
+		}
 
-        return stack.popTop().value;
+		return stack.top();
     }
 }; // namespace Gek

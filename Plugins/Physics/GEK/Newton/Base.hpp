@@ -38,12 +38,6 @@ namespace Gek
 
     namespace Newton
     {
-        GEK_ADD_EXCEPTION(UnableToCreateCollision);
-        GEK_ADD_EXCEPTION(UnableToCreateBody);
-        GEK_ADD_EXCEPTION(InvalidModelIdentifier);
-        GEK_ADD_EXCEPTION(InvalidModelType);
-        GEK_ADD_EXCEPTION(InvalidModelVersion);
-
         GEK_INTERFACE(Entity)
         {
             virtual ~Entity(void) = default;

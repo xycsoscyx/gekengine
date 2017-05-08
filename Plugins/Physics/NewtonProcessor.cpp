@@ -184,24 +184,35 @@ namespace Gek
                 {
                     collisionMap[hash] = nullptr;
 
-                    std::vector<uint8_t> buffer;
-                    FileSystem::Load(getContext()->getRootFileName(L"data", L"models", modelComponent.name).withExtension(L".bin"), buffer);
+					core->getLog()->message("Physics", Plugin::Core::Log::Type::Message, "Loading collision model: %v", modelComponent.name);
+
+					static const std::vector<uint8_t> EmptyBuffer;
+					auto filePath = getContext()->getRootFileName(L"data", L"models", modelComponent.name).withExtension(L".bin");
+                    std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
+					if (buffer.size() < sizeof(Header))
+					{
+						core->getLog()->message("Physics", Plugin::Core::Log::Type::Error, "File too small to be collision model: %v", modelComponent.name);
+						return nullptr;
+					}
 
                     Header *header = (Header *)buffer.data();
                     if (header->identifier != *(uint32_t *)"GEKX")
                     {
-                        throw Newton::InvalidModelIdentifier("Unknown model file identifier encountered");
+						core->getLog()->message("Physics", Plugin::Core::Log::Type::Error, "Unknown model file identifier encountered: %v", modelComponent.name);
+						return nullptr;
                     }
 
                     if (header->version != 2)
                     {
-                        throw Newton::InvalidModelVersion("Unsupported model version encountered");
-                    }
+						core->getLog()->message("Physics", Plugin::Core::Log::Type::Error, "Unsupported model version encountered (requires: 2, has: %v): %v", header->version, modelComponent.name);
+						return nullptr;
+					}
 
                     if (header->newtonVersion != NewtonWorldGetVersion())
                     {
-                        throw Newton::InvalidModelVersion("Model created with different version of Newton Dynamics");
-                    }
+						core->getLog()->message("Physics", Plugin::Core::Log::Type::Error, "Model created with different version of Newton Dynamics (requires: %v, has: %v): %v", NewtonWorldGetVersion(), header->newtonVersion, modelComponent.name);
+						return nullptr;
+					}
 
                     struct DeSerializationData
                     {
@@ -224,13 +235,17 @@ namespace Gek
 
                     if (header->type == 1)
                     {
-                        HullHeader *hullHeader = (HullHeader *)header;
+						core->getLog()->message("Physics", Plugin::Core::Log::Type::Message, "Loading hull collision: %v", modelComponent.name);
+
+						HullHeader *hullHeader = (HullHeader *)header;
                         DeSerializationData data(buffer, (uint8_t *)&hullHeader->serializationData[0]);
                         newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &data);
                     }
                     else if (header->type == 2)
                     {
-                        TreeHeader *treeHeader = (TreeHeader *)header;
+						core->getLog()->message("Physics", Plugin::Core::Log::Type::Message, "Loading tree collision: %v", modelComponent.name);
+						
+						TreeHeader *treeHeader = (TreeHeader *)header;
                         for (uint32_t materialIndex = 0; materialIndex < treeHeader->materialCount; ++materialIndex)
                         {
                             TreeHeader::Material &materialHeader = treeHeader->materialList[materialIndex];
@@ -242,19 +257,23 @@ namespace Gek
                     }
                     else
                     {
-                        throw Newton::InvalidModelType("Unsupported model type encountered");
+						core->getLog()->message("Physics", Plugin::Core::Log::Type::Error, "Unsupported model type encountered: %v", modelComponent.name);
+						return nullptr;
                     }
 
                     if (newtonCollision == nullptr)
                     {
-                        throw Newton::UnableToCreateCollision("Unable to create model collision object");
-                    }
+						core->getLog()->message("Physics", Plugin::Core::Log::Type::Error, "Unable to create model collision object: %v", modelComponent.name);
+						return nullptr;
+					}
 
                     NewtonCollisionSetMode(newtonCollision, true);
                     NewtonCollisionSetScale(newtonCollision, 1.0f, 1.0f, 1.0f);
                     NewtonCollisionSetMatrix(newtonCollision, Math::Float4x4::Identity.data);
                     collisionMap[hash] = newtonCollision;
-                }
+
+					core->getLog()->message("Physics", Plugin::Core::Log::Type::Message, "Collision model successfully loaded: %v", modelComponent.name);
+				}
 
                 return newtonCollision;
             }
@@ -269,17 +288,16 @@ namespace Gek
                 }
 
                 auto newtonStaticGroup = NewtonCreateSceneCollision(newtonWorld, 1);
-                if (newtonStaticGroup == nullptr)
-                {
-                    throw Newton::UnableToCreateCollision("Unable to create scene collision");
-                }
+				assert(newtonStaticGroup && "Unable to create scene collision");
 
                 NewtonCollisionSetMode(newtonStaticGroup, true);
                 NewtonCollisionSetScale(newtonStaticGroup, 1.0f, 1.0f, 1.0f);
                 NewtonCollisionSetMatrix(newtonStaticGroup, Math::Float4x4::Identity.data);
 
                 auto newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticGroup, Math::Float4x4::Identity.data);
-                NewtonBodySetCollidable(newtonStaticBody, true);
+				assert(newtonStaticBody && "Unable to create scene static body");
+				
+				NewtonBodySetCollidable(newtonStaticBody, true);
 
                 collisionMap[hash] = newtonStaticGroup;
                 return newtonStaticGroup;

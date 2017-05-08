@@ -28,6 +28,7 @@
 #include <ppl.h>
 #include <array>
 #include <map>
+#include <set>
 
 namespace Gek
 {
@@ -77,10 +78,6 @@ namespace Gek
         , public Plugin::ProcessorMixin<ModelProcessor, Components::Model, Components::Transform>
         , public Plugin::Processor
     {
-        GEK_ADD_EXCEPTION(InvalidModelIdentifier);
-        GEK_ADD_EXCEPTION(InvalidModelType);
-        GEK_ADD_EXCEPTION(InvalidModelVersion);
-
     public:
         struct Header
         {
@@ -149,6 +146,7 @@ namespace Gek
         };
 
     private:
+		Plugin::Core::Log *log = nullptr;
         Video::Device *videoDevice = nullptr;
         Plugin::Population *population = nullptr;
         Plugin::Resources *resources = nullptr;
@@ -169,16 +167,20 @@ namespace Gek
     public:
         ModelProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
+			, log(core->getLog())
             , videoDevice(core->getVideoDevice())
             , population(core->getPopulation())
             , resources(core->getResources())
             , renderer(core->getRenderer())
             , loadPool(1)
         {
-            GEK_REQUIRE(videoDevice);
-            GEK_REQUIRE(population);
+			GEK_REQUIRE(log);
+			GEK_REQUIRE(videoDevice);
+			GEK_REQUIRE(population);
             GEK_REQUIRE(resources);
             GEK_REQUIRE(renderer);
+
+			log->message("Model", Plugin::Core::Log::Type::Message, "Initializing model system");
 
             population->onEntityCreated.connect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
             population->onEntityDestroyed.connect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
@@ -217,34 +219,54 @@ namespace Gek
                     auto pair = modelMap.insert(std::make_pair(GetHash(modelComponent.name), Model()));
                     if (pair.second)
                     {
-                        loadPool.enqueue([this, name = modelComponent.name, fileName, &model = pair.first->second](void) -> void
+						log->message("Model", Plugin::Core::Log::Type::Message, "Queueing model for load: %v", modelComponent.name);
+						loadPool.enqueue([this, name = modelComponent.name, fileName, &model = pair.first->second](void) -> void
                         {
-                            std::vector<uint8_t> buffer;
-                            FileSystem::Load(fileName, buffer, sizeof(Header));
+							log->message("Model", Plugin::Core::Log::Type::Message, "Reading model header: %v", name);
+
+							static const std::vector<uint8_t> EmptyBuffer;
+							std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer, sizeof(Header)));
+							if (buffer.size() < sizeof(Header))
+							{
+								log->message("Model", Plugin::Core::Log::Type::Error, "Model file too small to contain header: %v", fileName);
+								return;
+							}
 
                             Header *header = (Header *)buffer.data();
                             if (header->identifier != *(uint32_t *)"GEKX")
                             {
-                                throw InvalidModelIdentifier("Unknown model file identifier encountered");
+								log->message("Model", Plugin::Core::Log::Type::Error, "Unknown model file identifier encountered");
+								return;
                             }
 
                             if (header->type != 0)
                             {
-                                throw InvalidModelType("Unsupported model type encountered");
-                            }
+								log->message("Model", Plugin::Core::Log::Type::Error, "Unsupported model type encountered");
+								return;
+							}
 
                             if (header->version != 6)
                             {
-                                throw InvalidModelVersion("Unsupported model version encountered");
-                            }
+								log->message("Model", Plugin::Core::Log::Type::Error, "Unsupported model version encountered");
+								return;
+							}
 
                             model.boundingBox = header->boundingBox;
+							log->message("Model", Plugin::Core::Log::Type::Message, "Model: %v, %v parts", name, header->partCount);
+
                             loadPool.enqueue([this, name = name, fileName, &model](void) -> void
                             {
-                                std::vector<uint8_t> buffer;
-                                FileSystem::Load(fileName, buffer);
+								log->message("Model", Plugin::Core::Log::Type::Message, "Loading model: %v", name);
 
-                                Header *header = (Header *)buffer.data();
+								std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer));
+
+								Header *header = (Header *)buffer.data();
+								if (buffer.size() < (sizeof(Header) + (sizeof(Header::Part) * header->partCount)))
+								{
+									log->message("Model", Plugin::Core::Log::Type::Error, "Model file too small to contain part headers: %v", fileName);
+									return;
+								}
+
                                 model.partList.resize(header->partCount);
                                 uint8_t *bufferData = (uint8_t *)&header->partList[header->partCount];
                                 for (uint32_t partIndex = 0; partIndex < header->partCount; ++partIndex)
@@ -288,7 +310,9 @@ namespace Gek
 
                                     part.indexCount = partHeader.indexCount;
                                 }
-                            });
+							
+								log->message("Model", Plugin::Core::Log::Type::Message, "Model successfully loaded: %v", name);
+							});
                         });
                     }
 
@@ -369,6 +393,9 @@ namespace Gek
 
             Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedEntityCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
 
+			size_t visibleEntities = 0;
+			std::set<Model *> visibleModels;
+
             MaterialMap materialMap;
             auto entitySearch = std::begin(entityDataMap);
             for (size_t entityIndex = 0; entityIndex < entityCount; entityIndex++)
@@ -380,6 +407,9 @@ namespace Gek
                     auto &model = *entitySearch->second.model;
                     ++entitySearch;
 
+					visibleModels.insert(&model);
+					visibleEntities++;
+
                     auto modelViewMatrix(transformComponent.getMatrix() * viewMatrix);
                     concurrency::parallel_for_each(std::begin(model.partList), std::end(model.partList), [&](const Model::Part &part) -> void
                     {
@@ -390,7 +420,10 @@ namespace Gek
                 }
             }
 
-            size_t maximumInstanceCount = 0;
+			log->setValue("Model", "Entity Count", visibleEntities);
+			log->setValue("Model", "Model Count", visibleModels.size());
+
+			size_t maximumInstanceCount = 0;
             for (auto &materialPair : materialMap)
             {
                 auto material = materialPair.first;

@@ -184,7 +184,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 {
     try
     {
-        printf("GEK Part Converter\r\n");
+        std::cout << "GEK Part Converter" << std::endl;
 
         WString fileNameInput;
         WString fileNameOutput;
@@ -240,7 +240,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         aiLogStream logStream;
         logStream.callback = [](char const *message, char *user) -> void
         {
-            printf("Assimp: %s", message);
+			std::cerr << "Assimp: " << message << std::endl;
         };
 
         logStream.user = nullptr;
@@ -402,7 +402,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             auto materialAlebedoSearch = albedoToMaterialMap.find(albedoName);
             if (materialAlebedoSearch == std::end(albedoToMaterialMap))
             {
-                printf("! Unable to find material for albedo: %S\r\n", albedoName.c_str());
+                std::cerr << "! Unable to find material for albedo: " << albedoName.c_str() << std::endl;
             }
             else
             {
@@ -434,9 +434,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             throw std::exception("No valid material models found");
         }
 
-        printf("> Num. Parts: %d\r\n", materialPartMap.size());
-        printf("-   World Size Min(%f, %f, %f),\r\n", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
-        printf("               Max(%f, %f, %f)\r\n", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
+		std::cout << "> Num. Parts: " << materialPartMap.size() << std::endl;
+		std::cout << "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")" << std::endl;
+		std::cout << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
 
         FILE *file = nullptr;
         _wfopen_s(&file, fileNameOutput, L"wb");
@@ -451,9 +451,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         fwrite(&header, sizeof(Header), 1, file);
         for (auto &material : materialPartMap)
         {
-            printf("-    Material: %S\r\n", material.first.c_str());
-            printf("       Num. Vertices: %d\r\n", material.second.vertexPositionList.size());
-            printf("       Num. Indices: %d\r\n", material.second.indexList.size());
+			std::cout << "-    Material: " << material.first.c_str() << std::endl;
+            std::cout << "       Num. Vertices: " << material.second.vertexPositionList.size() << std::endl;
+            std::cout << "       Num. Indices: " << material.second.indexList.size() << std::endl;
 
             Header::Material materialHeader;
             std::wcsncpy(materialHeader.name, material.first, 63);
@@ -476,15 +476,15 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
     catch (const std::exception &exception)
     {
-        printf("\r\n\r\nGEK Engine - Error\r\n");
-        printf(CString::Format("Caught: %v\r\nType: %v\r\n", exception.what(), typeid(exception).name()));
-    }
+		std::cerr << "GEK Engine - Error" << std::endl;
+		std::cerr << "Caught: " << exception.what() << std::endl;
+		std::cerr << "Type: " << typeid(exception).name() << std::endl;
+	}
     catch (...)
     {
-        printf("\r\n\r\nGEK Engine - Error\r\n");
-        printf("Caught: Non-standard exception\r\n");
+        std::cerr << "GEK Engine - Error" << std::endl;
+        std::cerr << "Caught: Non-standard exception" << std::endl;
     };
 
-    printf("\r\n");
     return 0;
 }

@@ -296,7 +296,7 @@ namespace Gek
                     shapeYPositionList.resize(bufferedEntityCount);
                     shapeZPositionList.resize(bufferedEntityCount);
                     shapeRadiusList.resize(bufferedEntityCount);
-                    for (auto entityIndex = 0U; entityIndex < entityCount; entityIndex++)
+                    for (auto entityIndex = 0ULL; entityIndex < entityCount; entityIndex++)
                     {
                         auto entity = entityList[entityIndex];
                         auto &transformComponent = entity->getComponent<Components::Transform>();
@@ -312,7 +312,7 @@ namespace Gek
                     Math::SIMD::cullSpheres(frustum, bufferedEntityCount, shapeXPositionList, shapeYPositionList, shapeZPositionList, shapeRadiusList, visibilityList);
 
                     lightList.clear();
-                    concurrency::parallel_for(0U, entityList.size(), [&](size_t index) -> void
+                    concurrency::parallel_for(0ULL, entityList.size(), [&](size_t index) -> void
                     {
                         if (visibilityList[index])
                         {

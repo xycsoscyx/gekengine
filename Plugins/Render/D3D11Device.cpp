@@ -1412,7 +1412,7 @@ namespace Gek
                 HRESULT resultValue = D3DCompile(fullShader, (fullShader.size() + 1), name, nullptr, nullptr, entryFunction, type, flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
-                    OutputDebugStringW(WString::Format(L"D3DCompile Failed: %v\r\n%v\r\n", resultValue, (char const * const)d3dCompilerErrors->GetBufferPointer()));
+					std::cerr << "D3DCompile Failed: " << resultValue << " " << (char const * const)d3dCompilerErrors->GetBufferPointer() << std::endl;
                     throw Render::ProgramCompilationFailed("Unable to compile shader");
                 }
 
@@ -2127,8 +2127,8 @@ namespace Gek
                 auto hash = GetHash(0xFFFFFFFF, filePath, flags);
                 return resourceCache.insert(hash, [this, filePath, flags, name = WString(name)](Render::ResourceHandle handle)->CComPtr<ID3D11Resource>
                 {
-                    std::vector<uint8_t> buffer;
-                    FileSystem::Load(filePath, buffer);
+					static const std::vector<uint8_t> EmptyBuffer;
+					std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
 
                     WString extension(filePath.getExtension());
                     std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;

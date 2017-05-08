@@ -73,20 +73,7 @@ namespace Gek
             searchPathList.push_back(pluginPath);
 
             context = Context::Create(rootPath, searchPathList);
-
-            try
-            {
-                configuration = JSON::Load(getContext()->getRootFileName(L"config.json"));
-            }
-            catch (const std::exception &)
-            {
-            };
-
-            if (!configuration.is_object())
-            {
-                configuration = JSON::Object();
-            }
-
+            configuration = JSON::Load(getContext()->getRootFileName(L"config.json"));
             if (!configuration.has_member(L"display") || !configuration.get(L"display").has_member(L"mode"))
             {
                 configuration[L"display"][L"mode"] = 0;
@@ -672,7 +659,11 @@ namespace Gek
 
 int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstance, _In_ PWSTR commandLine, _In_ int commandShow)
 {
-    try
+	AllocConsole();
+	freopen("CONOUT$", "w", stdout);
+	freopen("CONOUT$", "w", stderr);
+
+	try
     {
         Gek::Core core;
         while (core.update())

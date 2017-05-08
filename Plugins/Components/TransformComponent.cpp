@@ -36,7 +36,8 @@ namespace Gek
         {
             data->position = getValue(componentData, L"position", Math::Float3::Zero);
             data->rotation = getValue(componentData, L"rotation", Math::Quaternion::Identity);
-        }
+			std::cout << "Position: " << data->position.x << ", " << data->position.y << ", " << data->position.z << std::endl;
+		}
 
         // Edit::Component
         void show(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)

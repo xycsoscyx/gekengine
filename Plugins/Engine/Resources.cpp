@@ -37,8 +37,6 @@ namespace Gek
         {
             virtual ~ResourceRequester(void) = default;
 
-            virtual void message(char const * const system, Plugin::Core::Log::Type logType, char const * const message) = 0;
-
             virtual void addRequest(std::function<void(void)> &&load) = 0;
         };
 
@@ -283,13 +281,8 @@ namespace Gek
                         {
                             resource->reload();
                         }
-                        catch (const std::exception &exception)
-                        {
-                            resources->message("Resources", Plugin::Core::Log::Type::Error, CString::Format("Error occurred trying to reload an external resource: %v", exception.what()));
-                        }
                         catch (...)
                         {
-                            resources->message("Resources", Plugin::Core::Log::Type::Error, "Unknown error occurred trying to reload an external resource");
                         };
                     }
                 }
@@ -322,13 +315,8 @@ namespace Gek
                         setResource(handle, load(handle));
                         return std::make_pair(true, handle);
                     }
-                    catch (const std::exception &exception)
-                    {
-                        resources->message("Resources", Plugin::Core::Log::Type::Error, CString::Format("Error occurred trying to load an external resource: %v", exception.what()));
-                    }
                     catch (...)
                     {
-                        resources->message("Resources", Plugin::Core::Log::Type::Error, "Unknown error occurred trying to load an external resource");
                     };
                 }
 
@@ -512,8 +500,7 @@ namespace Gek
                 {
                     WString programDirectory(filePath.getParentPath());
 
-                    WString baseProgram;
-                    FileSystem::Load(filePath, baseProgram);
+					WString baseProgram(FileSystem::Load(filePath, CString::Empty));
                     baseProgram.replace(L"\r", L"$");
                     baseProgram.replace(L"\n", L"$");
                     baseProgram.replace(L"$$", L"$");
@@ -551,7 +538,7 @@ namespace Gek
                                         auto localPath(FileSystem::GetFileName(programDirectory, includeName));
                                         if (localPath.isFile())
                                         {
-                                            FileSystem::Load(localPath, includeData);
+											includeData = FileSystem::Load(localPath, CString::Empty);
                                         }
                                     }
                                     else if (includeType == L'<')
@@ -559,7 +546,7 @@ namespace Gek
                                         auto rootPath(FileSystem::GetFileName(programsPath, includeName));
                                         if (rootPath.isFile())
                                         {
-                                            FileSystem::Load(rootPath, includeData);
+											includeData = FileSystem::Load(rootPath, CString::Empty);
                                         }
                                     }
                                     else
@@ -605,11 +592,6 @@ namespace Gek
             }
 
             // ResourceRequester
-            void message(char const * const system, Plugin::Core::Log::Type logType, char const * const message)
-            {
-                core->getLog()->message(system, logType, message);
-            }
-
             void addRequest(std::function<void(void)> &&load)
             {
                 loadPool.enqueue([this, load = move(load)](void) -> void
@@ -620,7 +602,7 @@ namespace Gek
                     }
                     catch (const std::exception &exception)
                     {
-                        core->getLog()->message("Resources", Plugin::Core::Log::Type::Error, CString::Format("Error occurred trying to load an external resource: %v", exception.what()));
+                        core->getLog()->message("Resources", Plugin::Core::Log::Type::Error, "Error occurred trying to load an external resource: %v", exception.what());
                     }
                     catch (...)
                     {
@@ -1102,7 +1084,7 @@ namespace Gek
                 std::unique_lock<std::recursive_mutex> lock(shaderMutex);
                 auto load = [this, shaderName](ShaderHandle) -> Engine::ShaderPtr
                 {
-                    return getContext()->createClass<Engine::Shader>(L"Engine::Shader", videoDevice, (Engine::Resources *)this, core->getPopulation(), shaderName);
+                    return getContext()->createClass<Engine::Shader>(L"Engine::Shader", core->getLog(), videoDevice, (Engine::Resources *)this, core->getPopulation(), shaderName);
                 };
 
                 auto hash = GetHash(shaderName);
@@ -1119,7 +1101,7 @@ namespace Gek
             {
                 auto load = [this, filterName](ResourceHandle)->Engine::FilterPtr
                 {
-                    return getContext()->createClass<Engine::Filter>(L"Engine::Filter", videoDevice, (Engine::Resources *)this, core->getPopulation(), filterName);
+                    return getContext()->createClass<Engine::Filter>(L"Engine::Filter", core->getLog(), videoDevice, (Engine::Resources *)this, core->getPopulation(), filterName);
                 };
 
                 auto hash = GetHash(filterName);
@@ -1164,7 +1146,8 @@ namespace Gek
 				std::vector<uint8_t> compiledProgram;
                 if (cachePath.isFile())
                 {
-                    FileSystem::Load(cachePath, compiledProgram);
+					static const std::vector<uint8_t> EmptyBuffer;
+					compiledProgram = FileSystem::Load(cachePath, EmptyBuffer);
                 }
                 
                 if (compiledProgram.empty())
@@ -1172,7 +1155,7 @@ namespace Gek
 #ifdef _DEBUG
 					auto debugExtension = WString::Format(L".%v.hlsl", hash);
 					WString debugPath(getContext()->getRootFileName(L"data", L"cache", name).withExtension(debugExtension));
-					FileSystem::Save(debugPath, uncompiledProgram);
+					FileSystem::Save(debugPath, CString(uncompiledProgram));
 #endif
 					compiledProgram = videoDevice->compileProgram(pipelineType, name, uncompiledProgram, entryFunction);
                     FileSystem::Save(cachePath, compiledProgram);

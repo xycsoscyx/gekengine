@@ -2385,7 +2385,7 @@ namespace Gek
                 HRESULT resultValue = D3DCompile(uncompiledProgram, (uncompiledProgram.size() + 1), name, nullptr, nullptr, entryFunction, type, flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
-                    OutputDebugStringW(WString::Format(L"D3DCompile Failed: %v\r\n%v\r\n", resultValue, (char const * const )d3dCompilerErrors->GetBufferPointer()));
+					std::cerr << "D3DCompile Failed: " << resultValue << " " << (char const * const)d3dCompilerErrors->GetBufferPointer() << std::endl;
                     throw Video::ProgramCompilationFailed("Unable to compile program");
                 }
 
@@ -2631,8 +2631,8 @@ namespace Gek
             {
                 GEK_REQUIRE(d3dDevice);
 
-                std::vector<uint8_t> buffer;
-                FileSystem::Load(filePath, buffer);
+				static const std::vector<uint8_t> EmptyBuffer;
+				std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
 
                 WString extension(filePath.getExtension());
                 std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
@@ -2695,8 +2695,8 @@ namespace Gek
 
             Texture::Description loadTextureDescription(FileSystem::Path const &filePath)
             {
-                std::vector<uint8_t> buffer;
-                FileSystem::Load(filePath, buffer, 1024 * 4);
+				static const std::vector<uint8_t> EmptyBuffer;
+				std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer, 1024 * 4));
 
                 WString extension(filePath.getExtension());
                 std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::TexMetadata &)> getMetadata;

@@ -93,7 +93,7 @@ void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
                     }
                     else
                     {
-                        printf("(Mesh %d) Invalid Face Found: %d (%d vertices)\r\n", meshIndex, faceIndex, face.mNumIndices);
+						std::cerr << "! (Mesh " << meshIndex << ") Invalid Face Found: " << faceIndex << " (" << face.mNumIndices << " vertices)" << std::endl;
                     }
                 }
 
@@ -140,9 +140,9 @@ void serializeCollision(void* const serializeHandle, const void* const buffer, i
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    try
+	try
     {
-        printf("GEK Part Converter\r\n");
+        std::cout << "GEK Part Converter" << std::endl;
 
         WString fileNameInput;
         WString fileNameOutput;
@@ -183,7 +183,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		aiLogStream logStream;
 		logStream.callback = [](char const *message, char *user) -> void
 		{
-			printf("Assimp: %s", message);
+			std::cerr << "Assimp: " << message << std::endl;
 		};
 
 		logStream.user = nullptr;
@@ -339,7 +339,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             auto materialAlebedoSearch = albedoToMaterialMap.find(albedoName);
             if (materialAlebedoSearch == std::end(albedoToMaterialMap))
             {
-                printf("! Unable to find material for albedo: %S\r\n", albedoName.c_str());
+                std::wcerr << L"! Unable to find material for albedo: " << albedoName << std::endl;
             }
             else
             {
@@ -367,9 +367,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 			throw std::exception("No valid material models found");
 		}
 
-		printf("> Num. Parts: %d\r\n", materialPartMap.size());
-        printf("< Size: Min(%f, %f, %f)\r\n", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
-        printf("        Max(%f, %f, %f)\r\n", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
+		std::cout << "> Num. Parts: " << materialPartMap.size() << std::endl;
+		std::cout << "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")" << std::endl;
+		std::cout << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
 
         NewtonWorld *newtonWorld = NewtonCreate();
         NewtonCollision *newtonCollision = NewtonCreateTreeCollision(newtonWorld, 0);
@@ -382,9 +382,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         NewtonTreeCollisionBeginBuild(newtonCollision);
         for (auto &material : materialPartMap)
         {
-            printf("-  %S\r\n", material.first.c_str());
-            printf("    %d vertices\r\n", material.second.vertexList.size());
-            printf("    %d indices\r\n", material.second.indexList.size());
+			std::cout << "-  " << material.first << std::endl;
+            std::cout << "    " << material.second.vertexList.size() << " vertices" << std::endl;
+            std::cout << "    " << material.second.indexList.size() << " indices" << std::endl;
 
             auto &indexList = material.second.indexList;
             auto &vertexList = material.second.vertexList;
@@ -430,15 +430,16 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
     catch (const std::exception &exception)
     {
-        printf("\r\n\r\nGEK Engine - Error\r\n");
-        printf(CString::Format("Caught: %v\r\nType: %v\r\n", exception.what(), typeid(exception).name()));
-    }
+		std::cerr << "GEK Engine - Error" << std::endl;
+		std::cerr << "Caught: " << exception.what() << std::endl;
+		std::cerr << "Type: " << typeid(exception).name() << std::endl;
+	}
     catch (...)
     {
-        printf("\r\n\r\nGEK Engine - Error\r\n");
-        printf("Caught: Non-standard exception\r\n");
+        std::cerr << "GEK Engine - Error" << std::endl;
+        std::cerr << "Caught: Non-standard exception" << std::endl;
     };
 
-    printf("\r\n");
+    std::cout << "" << std::endl;
     return 0;
 }

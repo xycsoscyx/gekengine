@@ -104,7 +104,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 {
     try
     {
-        printf("GEK Model Converter\r\n");
+        std::cout << "GEK Model Converter" << std::endl;
 
         WString fileNameInput;
         WString fileNameOutput;
@@ -140,7 +140,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		aiLogStream logStream;
 		logStream.callback = [](char const *message, char *user) -> void
 		{
-			printf("Assimp: %s", message);
+			std::cerr << "Assimp: " << message << std::endl;
 		};
 
 		logStream.user = nullptr;
@@ -203,9 +203,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             throw std::exception("No vertex data found in scene");
 		}
 
-		printf("> Num. Points: %d\r\n", pointList.size());
-        printf("< Size: Min(%f, %f, %f)\r\n", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
-        printf("        Max(%f, %f, %f)\r\n", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
+		std::cout << "> Num. Points: " << pointList.size() << std::endl;
+		std::cout << "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")" << std::endl;
+		std::cout << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
 
         NewtonWorld *newtonWorld = NewtonCreate();
         NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointList.size(), pointList.data()->data, sizeof(Math::Float3), 0.025f, 0, Math::Float4x4::Identity.data);
@@ -231,15 +231,15 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
     catch (const std::exception &exception)
     {
-        printf("\r\n\r\nGEK Engine - Error\r\n");
-        printf(CString::Format("Caught: %v\r\nType: %v\r\n", exception.what(), typeid(exception).name()));
-    }
+		std::cerr << "GEK Engine - Error" << std::endl;
+		std::cerr << "Caught: " << exception.what() << std::endl;
+		std::cerr << "Type: " << typeid(exception).name() << std::endl;
+	}
     catch (...)
     {
-        printf("\r\n\r\nGEK Engine - Error\r\n");
-        printf("Caught: Non-standard exception\r\n");
+        std::cerr << "GEK Engine - Error" << std::endl;
+        std::cerr << "Caught: Non-standard exception" << std::endl;
     };
 
-    printf("\r\n");
     return 0;
 }

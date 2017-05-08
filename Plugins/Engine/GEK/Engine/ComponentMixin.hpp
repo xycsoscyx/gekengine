@@ -60,88 +60,113 @@ namespace Gek
 
             bool getValue(JSON::Object const &data, bool defaultValue)
             {
-                try
-                {
-                    return data.as_bool();
-                }
-                catch (...)
-                {
-                    return defaultValue;
-                };
-            }
+				switch (data.type_id())
+				{
+				case jsoncons::value_type::small_string_t:
+				case jsoncons::value_type::string_t:
+					return population->getShuntingYard().evaluate(data.as_cstring(), defaultValue) != 0.0f;
+
+				case jsoncons::value_type::bool_t:
+					return data.var_.bool_data_cast()->value();
+
+				case jsoncons::value_type::double_t:
+					return data.var_.double_data_cast()->value() != 0.0;
+
+				case jsoncons::value_type::integer_t:
+					return data.var_.integer_data_cast()->value() != 0;
+
+				case jsoncons::value_type::uinteger_t:
+					return data.var_.uinteger_data_cast()->value() != 0;
+
+				default:
+					return defaultValue;
+				};
+			}
 
             int32_t getValue(JSON::Object const &data, int32_t defaultValue)
             {
-                try
-                {
-                    if (data.is_string())
-                    {
-                        return int32_t(population->getShuntingYard().evaluate(data.as_cstring()));
-                    }
-                    else
-                    {
-                        return data.as_integer();
-                    }
-                }
-                catch (...)
-                {
-                    return defaultValue;
-                };
-            }
+				switch (data.type_id())
+				{
+				case jsoncons::value_type::small_string_t:
+				case jsoncons::value_type::string_t:
+					return static_cast<int32_t>(population->getShuntingYard().evaluate(data.as_cstring(), defaultValue));
+
+				case jsoncons::value_type::double_t:
+					return static_cast<int64_t>(data.var_.double_data_cast()->value());
+
+				case jsoncons::value_type::integer_t:
+					return static_cast<int64_t>(data.var_.integer_data_cast()->value());
+
+				case jsoncons::value_type::uinteger_t:
+					return static_cast<int64_t>(data.var_.uinteger_data_cast()->value());
+
+				case jsoncons::value_type::bool_t:
+					return data.var_.bool_data_cast()->value() ? 1 : 0;
+
+				default:
+					return defaultValue;
+				};
+			}
 
             uint32_t getValue(JSON::Object const &data, uint32_t defaultValue)
             {
-                try
-                {
-                    if (data.is_string())
-                    {
-                        return uint32_t(population->getShuntingYard().evaluate(data.as_cstring()));
-                    }
-                    else
-                    {
-                        return data.as_uinteger();
-                    }
-                }
-                catch (...)
-                {
-                    return defaultValue;
-                };
-            }
+				switch (data.type_id())
+				{
+				case jsoncons::value_type::small_string_t:
+				case jsoncons::value_type::string_t:
+					return static_cast<uint32_t>(population->getShuntingYard().evaluate(data.as_cstring(), defaultValue));
+
+				case jsoncons::value_type::double_t:
+					return static_cast<uint32_t>(data.var_.double_data_cast()->value());
+
+				case jsoncons::value_type::integer_t:
+					return static_cast<uint32_t>(data.var_.integer_data_cast()->value());
+
+				case jsoncons::value_type::uinteger_t:
+					return static_cast<uint32_t>(data.var_.uinteger_data_cast()->value());
+
+				case jsoncons::value_type::bool_t:
+					return data.var_.bool_data_cast()->value() ? 1 : 0;
+
+				default:
+					return defaultValue;
+				};
+			}
 
             float getValue(JSON::Object const &data, float defaultValue)
             {
-                try
-                {
-                    if (data.is_string())
-                    {
-                        return population->getShuntingYard().evaluate(data.as_cstring());
-                    }
-                    else
-                    {
-                        return data.as<float>();
-                    }
-                }
-                catch (...)
-                {
-                    return defaultValue;
-                };
-            }
+				switch (data.type_id())
+				{
+				case jsoncons::value_type::small_string_t:
+				case jsoncons::value_type::string_t:
+					return population->getShuntingYard().evaluate(data.as_cstring(), defaultValue);
+
+				case jsoncons::value_type::double_t:
+					return static_cast<float>(data.var_.double_data_cast()->value());
+
+				case jsoncons::value_type::integer_t:
+					return static_cast<float>(data.var_.integer_data_cast()->value());
+
+				case jsoncons::value_type::uinteger_t:
+					return static_cast<float>(data.var_.uinteger_data_cast()->value());
+
+				case jsoncons::value_type::bool_t:
+					return data.var_.bool_data_cast()->value() ? 1.0f : 0.0f;
+
+				default:
+					return defaultValue;
+				};
+			}
 
             template <typename TYPE>
             Math::Vector2<TYPE> getValue(JSON::Object const &data, Math::Vector2<TYPE> const &defaultValue)
             {
-                try
+                if (data.is_array() && data.size() == 2)
                 {
-                    if (data.is_array() && data.size() == 2)
-                    {
-                        return Math::Vector2<TYPE>(
-                            getValue(data.at(0), defaultValue.x),
-                            getValue(data.at(1), defaultValue.y));
-                    }
+                    return Math::Vector2<TYPE>(
+                        getValue(data.at(0), defaultValue.x),
+                        getValue(data.at(1), defaultValue.y));
                 }
-                catch (...)
-                {
-                };
 
                 return defaultValue;
             }
@@ -149,19 +174,13 @@ namespace Gek
             template <typename TYPE>
             Math::Vector3<TYPE> getValue(JSON::Object const &data, Math::Vector3<TYPE> const &defaultValue)
             {
-                try
+                if (data.is_array() && data.size() == 3)
                 {
-                    if (data.is_array() && data.size() == 3)
-                    {
-                        return Math::Vector3<TYPE>(
-                            getValue(data.at(0), defaultValue.x),
-                            getValue(data.at(1), defaultValue.y),
-                            getValue(data.at(2), defaultValue.z));
-                    }
+                    return Math::Vector3<TYPE>(
+                        getValue(data.at(0), defaultValue.x),
+                        getValue(data.at(1), defaultValue.y),
+                        getValue(data.at(2), defaultValue.z));
                 }
-                catch (...)
-                {
-                };
 
                 return defaultValue;
             }
@@ -169,78 +188,59 @@ namespace Gek
             template <typename TYPE>
             Math::Vector4<TYPE> getValue(JSON::Object const &data, Math::Vector4<TYPE> const &defaultValue)
             {
-                try
-                {
-                    if (data.is_array())
-                    {
-                        if (data.size() == 3)
-                        {
-                            return Math::Vector4<TYPE>(
-                                getValue(data.at(0), defaultValue.x),
-                                getValue(data.at(1), defaultValue.y),
-                                getValue(data.at(2), defaultValue.z), 1.0f);
-                        }
-                        else if (data.size() == 4)
-                        {
-                            return Math::Vector4<TYPE>(
-                                getValue(data.at(0), defaultValue.x),
-                                getValue(data.at(1), defaultValue.y),
-                                getValue(data.at(2), defaultValue.z),
-                                getValue(data.at(3), defaultValue.w));
-                        }
-                    }
-                }
-                catch (...)
-                {
-                };
+				if (data.is_array())
+				{
+					if (data.size() == 3)
+					{
+						return Math::Vector4<TYPE>(
+							getValue(data.at(0), defaultValue.x),
+							getValue(data.at(1), defaultValue.y),
+							getValue(data.at(2), defaultValue.z), 1.0f);
+					}
+					else if (data.size() == 4)
+					{
+						return Math::Vector4<TYPE>(
+							getValue(data.at(0), defaultValue.x),
+							getValue(data.at(1), defaultValue.y),
+							getValue(data.at(2), defaultValue.z),
+							getValue(data.at(3), defaultValue.w));
+					}
+				}
 
                 return defaultValue;
             }
 
             Math::Quaternion getValue(JSON::Object const &data, Math::Quaternion const &defaultValue)
             {
-                try
+                if (data.is_array())
                 {
-                    if (data.is_array())
+                    if (data.size() == 3)
                     {
-                        if (data.size() == 3)
-                        {
-                            return Math::Quaternion::FromEuler(
-                                getValue(data.at(0), defaultValue.x),
-                                getValue(data.at(1), defaultValue.y),
-                                getValue(data.at(2), defaultValue.z));
-                        }
-                        else if (data.size() == 4)
-                        {
-                            return Math::Quaternion(
-                                getValue(data.at(0), defaultValue.x),
-                                getValue(data.at(1), defaultValue.y),
-                                getValue(data.at(2), defaultValue.z),
-                                getValue(data.at(3), defaultValue.w));
-                        }
+                        return Math::Quaternion::FromEuler(
+                            getValue(data.at(0), defaultValue.x),
+                            getValue(data.at(1), defaultValue.y),
+                            getValue(data.at(2), defaultValue.z));
+                    }
+                    else if (data.size() == 4)
+                    {
+                        return Math::Quaternion(
+                            getValue(data.at(0), defaultValue.x),
+                            getValue(data.at(1), defaultValue.y),
+                            getValue(data.at(2), defaultValue.z),
+                            getValue(data.at(3), defaultValue.w));
                     }
                 }
-                catch (...)
-                {
-                };
 
                 return defaultValue;
             }
 
             WString getValue(JSON::Object const &data, WString const &defaultValue)
             {
-                try
-                {
-                    return data.as_string();
-                }
-                catch (...)
-                {
-                    return defaultValue;
-                };
+                return data.as_string();
             }
 
             template <typename TYPE>
-            TYPE getValue(JSON::Object const &componentData, wchar_t const * const name, TYPE const &defaultValue)
+            TYPE getValue(JSON::Object const &componentData, WString const &name, TYPE const &defaultValue)
             {
                 if (componentData.is_object() && componentData.has_member(name))
                 {
@@ -311,7 +311,7 @@ namespace Gek
                 }
             }
 
-            uint32_t getEntityCount(void)
+            size_t getEntityCount(void)
             {
                 return entityDataMap.size();
             }
