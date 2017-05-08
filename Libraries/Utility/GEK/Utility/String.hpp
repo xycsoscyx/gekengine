@@ -25,6 +25,29 @@
 
 namespace Gek
 {
+	template <typename TYPE>
+	struct EmptyString
+	{
+	};
+
+	template<>
+	struct EmptyString<char>
+	{
+		static char const * Get(void)
+		{
+			return "";
+		}
+	};
+
+	template<>
+	struct EmptyString<wchar_t>
+	{
+		static wchar_t const * Get(void)
+		{
+			return L"";
+		}
+	};
+
     template<class ELEMENT, class TRAITS = std::char_traits<ELEMENT>, class ALLOCATOR = std::allocator<ELEMENT>>
     class BaseString : public std::basic_string<ELEMENT, TRAITS, ALLOCATOR>
     {
@@ -58,39 +81,27 @@ namespace Gek
         {
         }
 
-        BaseString(ELEMENT const *string)
-        {
-            if (string)
-            {
-                assign(string);
-            }
-        }
+		BaseString(ELEMENT const *string)
+			: basic_string(string ? string : EmptyString<ELEMENT>::Get())
+		{
+		}
 
         template<template <typename, typename, typename> class CONTAINER>
-        BaseString(CONTAINER<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> const &string)
-        {
-            if (!string.empty())
-            {
-                assign(string);
-            }
-        }
+		BaseString(CONTAINER<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> const &string)
+			: basic_string(string.empty() ? Empty : string)
+		{
+		}
 
         template<typename CONVERSION>
         BaseString(CONVERSION const *string)
         {
-            if (string)
-            {
-                converter<ELEMENT, CONVERSION>::convert((*this), string);
-            }
+			converter<ELEMENT, CONVERSION>::convert((*this), (string ? string : EmptyString<CONVERSION>::Get()));
         }
 
         template<template <typename, typename, typename> class CONTAINER, typename CONVERSION>
         BaseString(CONTAINER<CONVERSION, std::char_traits<CONVERSION>, std::allocator<CONVERSION>> const &string)
         {
-            if (!string.empty())
-            {
-                converter<ELEMENT, CONVERSION>::convert((*this), string.data());
-            }
+			converter<ELEMENT, CONVERSION>::convert((*this), string.data());
         }
 
 		BaseString subString(size_t position = 0, size_t length = BaseString::npos) const

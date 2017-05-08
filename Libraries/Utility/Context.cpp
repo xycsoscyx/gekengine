@@ -8,8 +8,8 @@
 
 namespace Gek
 {
-	const CString CString::Empty = CString();
-	const WString WString::Empty = WString();
+	const CString CString::Empty = CString(EmptyString<char>::Get());
+	const WString WString::Empty = WString(EmptyString<wchar_t>::Get());
 
     class ContextImplementation
         : public Context

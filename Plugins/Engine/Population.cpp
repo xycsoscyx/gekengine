@@ -134,6 +134,8 @@ namespace Gek
 
             ~Population(void)
             {
+				loadPool.clear();
+
                 core->onExit.disconnect<Population, &Population::onExit>(this);
 
                 entityMap.clear();
