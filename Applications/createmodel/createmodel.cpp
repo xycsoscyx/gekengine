@@ -118,7 +118,7 @@ void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
                     }
 
                     uint32_t edgeStartIndex = (faceIndex * 3);
-                    for (uint32_t edgeIndex = 0; edgeIndex < 3; edgeIndex++)
+                    for (uint32_t edgeIndex = 0; edgeIndex < 3; ++edgeIndex)
                     {
                         part.indexList[edgeStartIndex + edgeIndex] = face.mIndices[edgeIndex];
                     }
@@ -377,7 +377,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         }
 
         std::unordered_map<FileSystem::Path, std::vector<Part>> albedoPartMap;
-        for (auto &modelAlbedo : scenePartMap)
+        for (const auto &modelAlbedo : scenePartMap)
         {
             WString albedoName(modelAlbedo.first.withoutExtension());
             albedoName.toLower();
@@ -411,12 +411,12 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         }
 
         std::unordered_map<FileSystem::Path, Part> materialPartMap;
-        for (auto &multiMaterial : albedoPartMap)
+        for (const auto &multiMaterial : albedoPartMap)
         {
             Part &material = materialPartMap[multiMaterial.first];
-            for (auto &instance : multiMaterial.second)
+            for (const auto &instance : multiMaterial.second)
             {
-                for (auto &index : instance.indexList)
+                for (const auto &index : instance.indexList)
                 {
                     material.indexList.push_back(uint16_t(index + material.vertexPositionList.size()));
                 }
@@ -449,7 +449,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         header.partCount = materialPartMap.size();
         header.boundingBox = boundingBox;
         fwrite(&header, sizeof(Header), 1, file);
-        for (auto &material : materialPartMap)
+        for (const auto &material : materialPartMap)
         {
 			std::cout << "-    Material: " << material.first.c_str() << std::endl;
             std::cout << "       Num. Vertices: " << material.second.vertexPositionList.size() << std::endl;
@@ -462,7 +462,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             fwrite(&materialHeader, sizeof(Header::Material), 1, file);
         }
 
-        for (auto &material : materialPartMap)
+        for (const auto &material : materialPartMap)
         {
             fwrite(material.second.indexList.data(), sizeof(uint16_t), material.second.indexList.size(), file);
             fwrite(material.second.vertexPositionList.data(), sizeof(Math::Float3), material.second.vertexPositionList.size(), file);

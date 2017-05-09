@@ -56,11 +56,35 @@ namespace Gek
 		static const BaseString<ELEMENT, TRAITS, ALLOCATOR> Empty;
 
     public:
-        static BaseString Join(std::vector<BaseString> const &list, ELEMENT delimiter)
+        static BaseString Join(std::vector<BaseString> const &list, ELEMENT delimiter, bool initialDelimiter = false)
         {
-            BaseString result;
-            result.join(list, delimiter);
-            return result;
+			if (list.empty())
+			{
+				return Empty;
+			}
+
+			auto size = (initialDelimiter ? 1 : 0); // initial length
+			size += (list.size() - 1); // insert delimiters between list elements
+			for (const auto &string : list)
+			{
+				size += string.length();
+			}
+
+			BaseString result;
+			result.reserve(size);
+			if (initialDelimiter)
+			{
+				result.append(1U, delimiter);
+			}
+
+			result.append(list.front());
+			for (auto &string = std::next(std::begin(list), 1); string != std::end(list); ++string)
+			{
+				result.append(1U, delimiter);
+				result.append(*string);
+			}
+
+			return result;
         }
 
         template<typename TYPE, typename... PARAMETERS>
@@ -106,16 +130,9 @@ namespace Gek
 
 		BaseString subString(size_t position = 0, size_t length = BaseString::npos) const
         {
-            if (position >= size())
-            {
-                throw std::out_of_range("BaseString<ELEMENT>::subString() - position out of range");
-            }
-
-            if ((position + length) >= size())
-            {
-                length = std::string::npos;
-            }
-
+			auto currentSize = size();
+			position = ((position < currentSize) ? position : (currentSize - 1));
+			length = (((position + length) < currentSize) ? length : npos);
             return BaseString(substr(position, length));
         }
 
@@ -190,37 +207,6 @@ namespace Gek
             };
 
             return tokens;
-        }
-
-        BaseString & join(std::vector<BaseString> const &list, ELEMENT delimiter)
-        {
-            if (list.empty())
-            {
-                throw std::out_of_range("BaseString<ELEMENT>::join() - empty list passed as parameter");
-            }
-
-            bool initialDelimiter = (!empty() && back() != delimiter);
-            auto size = (length() + (initialDelimiter ? 1 : 0)); // initial length
-            size += (list.size() - 1); // insert delimiters between list elements
-            for (auto &stringSearch = std::begin(list); stringSearch != std::end(list); ++stringSearch)
-            {
-                size += (*stringSearch).length();
-            }
-
-            reserve(size);
-            if (initialDelimiter)
-            {
-                append(1U, delimiter);
-            }
-
-            append(list.front());
-            for (auto &stringSearch = std::next(std::begin(list), 1); stringSearch != std::end(list); ++stringSearch)
-            {
-                append(1U, delimiter);
-                append(*stringSearch);
-            }
-
-            return (*this);
         }
 
 		bool endsWith(BaseString const &string) const

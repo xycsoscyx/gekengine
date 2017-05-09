@@ -135,7 +135,7 @@ namespace Gek
                 renderer->onShowUserInterface.disconnect<Processor, &Processor::onShowUserInterface>(this);
 
                 NewtonWaitForUpdateToFinish(newtonWorld);
-                for (auto &collisionPair : collisionMap)
+                for (const auto &collisionPair : collisionMap)
                 {
                     if (collisionPair.second)
                     {
@@ -510,7 +510,7 @@ namespace Gek
             {
                 std::map<Newton::Entity *, float> updateMap;
                 Processor *processor = static_cast<Processor *>(userData);
-                for (auto &entityPair : processor->entityMap)
+                for (const auto &entityPair : processor->entityMap)
                 {
                     auto updatePair = (*updateMap.insert(std::make_pair(entityPair.second.get(), frameTime)).first);
                     NewtonDispachThreadJob(processor->newtonWorld, [](NewtonWorld* const world, void* const userData, int threadIndex) -> void
@@ -527,7 +527,7 @@ namespace Gek
             {
                 std::map<Newton::Entity *, float> updateMap;
                 Processor *processor = static_cast<Processor *>(userData);
-                for (auto &entityPair : processor->entityMap)
+                for (const auto &entityPair : processor->entityMap)
                 {
                     auto updatePair = (*updateMap.insert(std::make_pair(entityPair.second.get(), frameTime)).first);
                     NewtonDispachThreadJob(processor->newtonWorld, [](NewtonWorld* const world, void* const userData, int threadIndex) -> void

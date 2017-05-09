@@ -106,7 +106,7 @@ namespace Gek
             Render::Device::Description deviceDescription;
             renderDevice = getContext()->createClass<Render::Device>(L"Default::Render::Device", window.get(), deviceDescription);
             displayModeList = renderDevice->getDisplayModeList(deviceDescription.displayFormat);
-            for (auto &displayMode : displayModeList)
+            for (const auto &displayMode : displayModeList)
             {
                 CString displayModeString(CString::Format("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
                 switch (displayMode.aspectRatio)

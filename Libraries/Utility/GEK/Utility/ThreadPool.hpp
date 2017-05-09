@@ -23,19 +23,23 @@ namespace Gek
 
         std::mutex queueMutex;
         std::condition_variable condition;
-        bool stop = false;
+		std::atomic<bool> stop = false;
+
+	private:
+		void create(size_t threadCount);
 
     public:
         ThreadPool(size_t threadCount = 1);
         ~ThreadPool(void);
 
         ThreadPool(const ThreadPool &) = delete;
-        ThreadPool& operator= (const ThreadPool &) = delete;
-
-        ThreadPool(ThreadPool &&) = delete;
+		ThreadPool(ThreadPool &&) = delete;
+		
+		ThreadPool& operator= (const ThreadPool &) = delete;
         ThreadPool& operator= (const ThreadPool &&) = delete;
 
-        void clear(void);
+		void drain(void);
+		void reset(size_t *threadCount = nullptr);
 
         template<typename FUNCTION, typename... PARAMETERS>
         auto enqueue(FUNCTION&& function, PARAMETERS&&... arguments) -> std::future<typename std::result_of<FUNCTION(PARAMETERS...)>::type>

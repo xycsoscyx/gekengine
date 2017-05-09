@@ -27,7 +27,7 @@ namespace Gek
             SetCurrentDirectoryW(rootPath);
             
             searchPathList.push_back(rootPath);
-            for (auto &searchPath : searchPathList)
+            for (const auto &searchPath : searchPathList)
             {
                 FileSystem::Find(searchPath, [&](FileSystem::Path const &filePath) -> bool
                 {
@@ -76,7 +76,7 @@ namespace Gek
         {
             typeMap.clear();
             classMap.clear();
-            for (auto &module : moduleList)
+            for (const auto &module : moduleList)
             {
                 FreeLibrary(module);
             }

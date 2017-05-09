@@ -1319,7 +1319,7 @@ namespace Gek
             {
                 uint32_t semanticIndexList[static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count)] = { 0 };
                 std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDescriptionList;
-                for (auto &vertexElement : vertexDeclaration)
+                for (const auto &vertexElement : vertexDeclaration)
                 {
                     D3D11_INPUT_ELEMENT_DESC elementDescription;
                     elementDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(vertexElement.format)];
@@ -1364,7 +1364,7 @@ namespace Gek
                 CString shader(ConversionFunctions);
                 shader.append("struct Vertex\r\n{\r\n");
                 uint32_t vertexSemanticIndexList[static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count)] = { 0 };
-                for (auto &vertexElement : pipelineStateInformation.vertexDeclaration)
+                for (const auto &vertexElement : pipelineStateInformation.vertexDeclaration)
                 {
                     CString semantic = DirectX::VertexSemanticList[static_cast<uint8_t>(vertexElement.semantic)];
                     CString format = DirectX::getFormatSemantic(vertexElement.format);
@@ -1373,7 +1373,7 @@ namespace Gek
 
                 shader.append("};\r\n\r\nstruct Pixel\r\n{\r\n");
                 uint32_t pixelSemanticIndexList[static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count)] = { 0 };
-                for (auto &pixelElement : pipelineStateInformation.pixelDeclaration)
+                for (const auto &pixelElement : pipelineStateInformation.pixelDeclaration)
                 {
                     CString semantic = DirectX::PixelSemanticList[static_cast<uint8_t>(pixelElement.semantic)];
                     CString format = DirectX::getFormatSemantic(pixelElement.format);
@@ -1382,7 +1382,7 @@ namespace Gek
 
                 shader.append("};\r\n\r\nstruct Output\r\n{\r\n");
                 uint32_t renderTargetIndex = 0;
-                for (auto &renderTarget : pipelineStateInformation.renderTargetList)
+                for (const auto &renderTarget : pipelineStateInformation.renderTargetList)
                 {
                     CString format = DirectX::getFormatSemantic(renderTarget.format);
                     shader.appendFormat("    %v %v : SV_TARGET%v;\r\n", format, renderTarget.name, renderTargetIndex++);
@@ -1441,7 +1441,7 @@ namespace Gek
                     std::vector<DXGI_MODE_DESC> dxgiDisplayModeList(modeCount);
                     dxgiOutput->GetDisplayModeList(DirectX::TextureFormatList[static_cast<uint8_t>(format)], 0, &modeCount, dxgiDisplayModeList.data());
 
-                    for (auto &dxgiDisplayMode : dxgiDisplayModeList)
+                    for (const auto &dxgiDisplayMode : dxgiDisplayModeList)
                     {
                         if (dxgiDisplayMode.ScanlineOrdering == DXGI_MODE_SCANLINE_ORDER_PROGRESSIVE && dxgiDisplayMode.Scaling == DXGI_MODE_SCALING_CENTERED)
                         {

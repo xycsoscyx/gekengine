@@ -37,7 +37,7 @@ namespace Gek
                 if (inputNode.is_array())
 				{
 					uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
-					for (auto &elementNode : inputNode.elements())
+					for (const auto &elementNode : inputNode.elements())
 					{
                         if (!elementNode.has_member(L"name"))
                         {
@@ -104,7 +104,7 @@ namespace Gek
                 if (outputNode.is_array())
 				{
 					uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
-					for (auto &elementNode : outputNode.elements())
+					for (const auto &elementNode : outputNode.elements())
 					{
                         if (!elementNode.has_member(L"name"))
                         {

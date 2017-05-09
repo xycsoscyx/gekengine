@@ -118,7 +118,7 @@ namespace Gek
                 Video::Device::Description deviceDescription;
                 videoDevice = getContext()->createClass<Video::Device>(L"Default::Device::Video", window.get(), deviceDescription);
                 displayModeList = videoDevice->getDisplayModeList(deviceDescription.displayFormat);
-                for (auto &displayMode : displayModeList)
+                for (const auto &displayMode : displayModeList)
                 {
                     CString displayModeString(CString::Format("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
                     switch (displayMode.aspectRatio)
@@ -192,7 +192,7 @@ namespace Gek
                 });
 
                 processorList.reserve(processorNameList.size());
-                for (auto &processorName : processorNameList)
+                for (const auto &processorName : processorNameList)
                 {
                     message("Core", Log::Type::Message, CString::Format("Processor found: %v", processorName));
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(processorName, (Plugin::Core *)this));
@@ -343,7 +343,7 @@ namespace Gek
                 ImVec2 eventSize(300.0f, clientSize.y);
                 if (ImGui::BeginChildFrame(ImGui::GetCurrentWindow()->GetID("##systemEventTree"), eventSize))
                 {
-                    for (auto &systemPair : systemHistoryMap)
+                    for (const auto &systemPair : systemHistoryMap)
                     {
                         uint32_t flags = ImGuiTreeNodeFlags_CollapsingHeader;
                         if (systemPair.first == selectedSystem)
@@ -353,7 +353,7 @@ namespace Gek
 
                         if (ImGui::TreeNodeEx(systemPair.first, flags))
                         {
-                            for (auto &eventPair : systemPair.second)
+                            for (const auto &eventPair : systemPair.second)
                             {
                                 bool isSelected = (eventPair.first == selectedEvent);
                                 isSelected = ImGui::Selectable(eventPair.first, &isSelected);
@@ -790,7 +790,7 @@ namespace Gek
 
             void listProcessors(std::function<void(Plugin::Processor *)> onProcessor)
             {
-                for (auto &processor : processorList)
+                for (const auto &processor : processorList)
                 {
                     onProcessor(processor.get());
                 }

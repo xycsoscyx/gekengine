@@ -122,7 +122,7 @@ namespace Gek
         uint32_t flags = 0;
         int position = 0;
         std::vector<WString> flagList(loadFlags.split(L','));
-        for (auto &flag : flagList)
+        for (const auto &flag : flagList)
         {
             if (flag.compareNoCase(L"sRGB") == 0)
             {
@@ -138,9 +138,8 @@ namespace Gek
         uint32_t flags = 0;
         int position = 0;
         std::vector<WString> flagList(createFlags.split(L','));
-        for (auto &flag : flagList)
+        for (const auto &flag : flagList)
         {
-            flag.trim();
             if (flag.compareNoCase(L"target") == 0)
             {
                 flags |= Video::Texture::Description::Flags::RenderTarget;
@@ -163,9 +162,8 @@ namespace Gek
         uint32_t flags = 0;
         int position = 0;
         std::vector<WString> flagList(createFlags.split(L','));
-        for (auto &flag : flagList)
+        for (const auto &flag : flagList)
         {
-            flag.trim();
             if (flag.compareNoCase(L"unorderedaccess") == 0)
             {
                 flags |= Video::Buffer::Description::Flags::UnorderedAccess;

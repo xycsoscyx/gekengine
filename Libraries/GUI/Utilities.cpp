@@ -95,7 +95,7 @@ namespace ImGui
             {
                 float valueMinimum = std::numeric_limits<float>::max();
                 float valueMaximum = -std::numeric_limits<float>::max();
-                for (int item = 0; item < itemCount; item++)
+                for (int item = 0; item < itemCount; ++item)
                 {
                     const float value = itemDataCallback(userData, item);
                     valueMinimum = ImMin(valueMinimum, value);
@@ -150,7 +150,7 @@ namespace ImGui
                 const ImU32 colorBase = GetColorU32((plot_type == ImGuiPlotType_Lines) ? ImGuiCol_PlotLines : ImGuiCol_PlotHistogram);
                 const ImU32 colorHovered = GetColorU32((plot_type == ImGuiPlotType_Lines) ? ImGuiCol_PlotLinesHovered : ImGuiCol_PlotHistogramHovered);
 
-                for (int result = 0; result < resultsWidth; result++)
+                for (int result = 0; result < resultsWidth; ++result)
                 {
                     const float timeRight = timeLeft + timeStep;
                     const int valueRightIndex = (int)(timeLeft * adjustedItemCount + 0.5f);

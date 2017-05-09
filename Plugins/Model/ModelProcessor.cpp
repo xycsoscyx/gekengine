@@ -201,7 +201,7 @@ namespace Gek
 
         ~ModelProcessor(void)
         {
-            loadPool.clear();
+            loadPool.drain();
             renderer->onQueueDrawCalls.disconnect<ModelProcessor, &ModelProcessor::onQueueDrawCalls>(this);
             population->onComponentRemoved.disconnect<ModelProcessor, &ModelProcessor::onComponentRemoved>(this);
             population->onComponentAdded.disconnect<ModelProcessor, &ModelProcessor::onComponentAdded>(this);
@@ -383,7 +383,7 @@ namespace Gek
                 halfSizeXList.push_back(modelSize.x);
                 halfSizeYList.push_back(modelSize.y);
                 halfSizeZList.push_back(modelSize.z);
-                for (size_t element = 0; element < 16; element++)
+                for (size_t element = 0; element < 16; ++element)
                 {
                     transformList[element].push_back(matrix.data[element]);
                 }
@@ -398,7 +398,7 @@ namespace Gek
 
             MaterialMap materialMap;
             auto entitySearch = std::begin(entityDataMap);
-            for (size_t entityIndex = 0; entityIndex < entityCount; entityIndex++)
+            for (size_t entityIndex = 0; entityIndex < entityCount; ++entityIndex)
             {
                 if (visibilityList[entityIndex])
                 {
@@ -424,13 +424,13 @@ namespace Gek
 			log->setValue("Model", "Model Count", visibleModels.size());
 
 			size_t maximumInstanceCount = 0;
-            for (auto &materialPair : materialMap)
+            for (const auto &materialPair : materialMap)
             {
                 auto material = materialPair.first;
                 auto &partMap = materialPair.second;
 
                 size_t partInstanceCount = 0;
-                for (auto &partPair : partMap)
+                for (const auto &partPair : partMap)
                 {
                     auto part = partPair.first;
                     auto &partInstanceList = partPair.second;
@@ -443,7 +443,7 @@ namespace Gek
                 std::vector<Math::Float4x4> instanceList;
                 instanceList.reserve(partInstanceCount);
 
-                for (auto &partPair : partMap)
+                for (const auto &partPair : partMap)
                 {
                     auto part = partPair.first;
                     auto &partInstanceList = partPair.second;
@@ -462,7 +462,7 @@ namespace Gek
 
                         videoContext->setVertexBufferList({ instanceBuffer.get() }, 5);
 
-                        for (auto &drawData : drawDataList)
+                        for (const auto &drawData : drawDataList)
                         {
                             resources->setVertexBufferList(videoContext, drawData.part->vertexBufferList, 0);
                             resources->setIndexBuffer(videoContext, drawData.part->indexBuffer, 0);

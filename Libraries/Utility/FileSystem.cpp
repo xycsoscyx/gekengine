@@ -124,9 +124,7 @@ namespace Gek
 
         Path GetFileName(Path const &rootDirectory, const std::vector<WString> &list)
 		{
-            WString filePath(rootDirectory);
-            filePath.join(list, std::experimental::filesystem::path::preferred_separator);
-            return filePath;
+			return WString::Format(L"%v%v", rootDirectory, WString::Join(list, std::experimental::filesystem::path::preferred_separator, true));
 		}
 
         void MakeDirectoryChain(Path const &filePath)
@@ -136,7 +134,7 @@ namespace Gek
 
         void Find(Path const &rootDirectory, std::function<bool(Path const &)> onFileFound)
 		{
-			for (auto &fileSearch : std::experimental::filesystem::directory_iterator(rootDirectory))
+			for (const auto &fileSearch : std::experimental::filesystem::directory_iterator(rootDirectory))
 			{
                 Path filePath(fileSearch.path().wstring());
 				onFileFound(filePath);

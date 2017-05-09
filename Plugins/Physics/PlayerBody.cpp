@@ -147,7 +147,7 @@ namespace Gek
                 // create an inner thin cylinder
                 Math::Float3 point0(playerComponent.innerRadius, 0.0f, 0.0f);
                 Math::Float3 point1(playerComponent.innerRadius, playerComponent.height, 0.0f);
-                for (int point = 0; point < convexShapeDensity; point++)
+                for (int point = 0; point < convexShapeDensity; ++point)
                 {
                     Math::Float4x4 rotation(Math::Float4x4::FromYaw(point * 2.0f * Math::Pi / convexShapeDensity));
                     convexPoints[0][point] = rotation.rotate(point0);
@@ -194,7 +194,7 @@ namespace Gek
 
                 point0.set(castRadius, 0.0f, 0.0f);
                 point1.set(castRadius, castHeight, 0.0f);
-                for (int point = 0; point < convexShapeDensity; point++)
+                for (int point = 0; point < convexShapeDensity; ++point)
                 {
                     Math::Float4x4 rotation(Math::Float4x4::FromYaw(point * 2.0f * Math::Pi / convexShapeDensity));
                     convexPoints[0][point] = rotation.rotate(point0);
@@ -518,7 +518,7 @@ namespace Gek
                 upConstraint.m_normal[2] = 0.0f;
                 upConstraint.m_normal[3] = 0.0f;
 
-                for (int j = 0; (j < MaximumIntegrationStepCount) && (normalizedTimeLeft > NewtonEpsilon); j++)
+                for (uint32_t step = 0; (step < MaximumIntegrationStepCount) && (normalizedTimeLeft > NewtonEpsilon); step++)
                 {
                     if (velocity.getMagnitudeSquared() < NewtonEpsilon)
                     {
@@ -541,10 +541,10 @@ namespace Gek
                         float contactSpeedList[MaximumContactCount * 2];
                         float contactBounceSpeedList[MaximumContactCount * 2];
                         Math::Float3 contactBounceNormalList[MaximumContactCount * 2];
-                        for (int contact = 1; contact < contactCount; contact++)
+                        for (int contact = 1; contact < contactCount; ++contact)
                         {
                             Math::Float3 sourceNormal(currentContactList[contact - 1].m_normal);
-                            for (int search = 0; search < contact; search++)
+                            for (int search = 0; search < contact; ++search)
                             {
                                 Math::Float3 targetNormal(currentContactList[search].m_normal);
                                 if (sourceNormal.dot(targetNormal) > (1.0f - NewtonEpsilon))
@@ -571,7 +571,7 @@ namespace Gek
                             currentContact++;
                         }
 
-                        for (int contact = 0; contact < contactCount; contact++)
+                        for (int contact = 0; contact < contactCount; ++contact)
                         {
                             contactSpeedList[currentContact] = 0.0f;
                             contactBounceNormalList[currentContact].set(currentContactList[contact].m_normal);
@@ -579,7 +579,7 @@ namespace Gek
                             currentContact++;
                         }
 
-                        for (int contact = 0; contact < prevContactCount; contact++)
+                        for (int contact = 0; contact < prevContactCount; ++contact)
                         {
                             contactSpeedList[currentContact] = 0.0f;
                             contactBounceNormalList[currentContact].set(previousContactList[contact].m_normal);
@@ -589,10 +589,10 @@ namespace Gek
 
                         float residual = 10.0f;
                         Math::Float3 auxBounceVeloc(0.0f, 0.0f, 0.0f);
-                        for (int contact = 0; (contact < MaximumSolverStepCount) && (residual > NewtonEpsilon); contact++)
+                        for (int contact = 0; (contact < MaximumSolverStepCount) && (residual > NewtonEpsilon); ++contact)
                         {
                             residual = 0.0f;
-                            for (int search = 0; search < currentContact; search++)
+                            for (int search = 0; search < currentContact; ++search)
                             {
                                 Math::Float3 normal(contactBounceNormalList[search]);
                                 float v = contactBounceSpeedList[search] - normal.dot(auxBounceVeloc);
@@ -614,7 +614,7 @@ namespace Gek
                         }
 
                         Math::Float3 stepVelocity(0.0f);
-                        for (int contact = 0; contact < currentContact; contact++)
+                        for (int contact = 0; contact < currentContact; ++contact)
                         {
                             Math::Float3 normal(contactBounceNormalList[contact]);
                             stepVelocity += normal * (contactSpeedList[contact]);

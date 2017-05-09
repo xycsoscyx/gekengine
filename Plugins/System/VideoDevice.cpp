@@ -17,113 +17,108 @@ namespace Gek
 
         InputElement::Source InputElement::getSource(WString const &elementSource)
         {
-            if (elementSource.compareNoCase(L"instance") == 0) return Source::Instance;
-            else return Source::Vertex;
+			static const std::unordered_map<WString, InputElement::Source> data =
+			{
+				{ L"instance", Source::Instance },
+			};
+
+			auto result = data.find(elementSource.getLower());
+			return (result == std::end(data) ? Source::Vertex : result->second);
         }
 
         InputElement::Semantic InputElement::getSemantic(WString const &semantic)
         {
-            if (semantic.compareNoCase(L"Position") == 0) return Semantic::Position;
-            else if (semantic.compareNoCase(L"Tangent") == 0) return Semantic::Tangent;
-            else if (semantic.compareNoCase(L"BiTangent") == 0) return Semantic::BiTangent;
-            else if (semantic.compareNoCase(L"Normal") == 0) return Semantic::Normal;
-            else if (semantic.compareNoCase(L"Color") == 0) return Semantic::Color;
-            else return Semantic::TexCoord;
+			static const std::unordered_map<WString, InputElement::Semantic> data =
+			{
+				{ L"position", Semantic::Position },
+				{ L"tangent", Semantic::Tangent },
+				{ L"bitangent", Semantic::BiTangent },
+				{ L"normal", Semantic::Normal },
+				{ L"color", Semantic::Color },
+			};
+
+			auto result = data.find(semantic.getLower());
+			return (result == std::end(data) ? Semantic::TexCoord : result->second);
         }
 
         Format getFormat(WString const &format)
         {
-            if (format.compareNoCase(L"R32G32B32A32_FLOAT") == 0) return Format::R32G32B32A32_FLOAT;
-            else if (format.compareNoCase(L"R16G16B16A16_FLOAT") == 0) return Format::R16G16B16A16_FLOAT;
-            else if (format.compareNoCase(L"R32G32B32_FLOAT") == 0) return Format::R32G32B32_FLOAT;
-            else if (format.compareNoCase(L"R11G11B10_FLOAT") == 0) return Format::R11G11B10_FLOAT;
-            else if (format.compareNoCase(L"R32G32_FLOAT") == 0) return Format::R32G32_FLOAT;
-            else if (format.compareNoCase(L"R16G16_FLOAT") == 0) return Format::R16G16_FLOAT;
-            else if (format.compareNoCase(L"R32_FLOAT") == 0) return Format::R32_FLOAT;
-            else if (format.compareNoCase(L"R16_FLOAT") == 0) return Format::R16_FLOAT;
+			static const std::unordered_map<WString, Format> data =
+			{
+			    { L"R32G32B32A32_FLOAT", Format::R32G32B32A32_FLOAT },
+                { L"R16G16B16A16_FLOAT", Format::R16G16B16A16_FLOAT },
+                { L"R32G32B32_FLOAT", Format::R32G32B32_FLOAT },
+                { L"R11G11B10_FLOAT", Format::R11G11B10_FLOAT },
+                { L"R32G32_FLOAT", Format::R32G32_FLOAT },
+                { L"R16G16_FLOAT", Format::R16G16_FLOAT },
+                { L"R32_FLOAT", Format::R32_FLOAT },
+                { L"R16_FLOAT", Format::R16_FLOAT },
 
-            else if (format.compareNoCase(L"R32G32B32A32_UINT") == 0) return Format::R32G32B32A32_UINT;
-            else if (format.compareNoCase(L"R16G16B16A16_UINT") == 0) return Format::R16G16B16A16_UINT;
-            else if (format.compareNoCase(L"R10G10B10A2_UINT") == 0) return Format::R10G10B10A2_UINT;
-            else if (format.compareNoCase(L"R8G8B8A8_UINT") == 0) return Format::R8G8B8A8_UINT;
-            else if (format.compareNoCase(L"R32G32B32_UINT") == 0) return Format::R32G32B32_UINT;
-            else if (format.compareNoCase(L"R32G32_UINT") == 0) return Format::R32G32_UINT;
-            else if (format.compareNoCase(L"R16G16_UINT") == 0) return Format::R16G16_UINT;
-            else if (format.compareNoCase(L"R8G8_UINT") == 0) return Format::R8G8_UINT;
-            else if (format.compareNoCase(L"R32_UINT") == 0) return Format::R32_UINT;
-            else if (format.compareNoCase(L"R16_UINT") == 0) return Format::R16_UINT;
-            else if (format.compareNoCase(L"R8_UINT") == 0) return Format::R8_UINT;
+                { L"R32G32B32A32_UINT", Format::R32G32B32A32_UINT },
+                { L"R16G16B16A16_UINT", Format::R16G16B16A16_UINT },
+                { L"R10G10B10A2_UINT", Format::R10G10B10A2_UINT },
+                { L"R8G8B8A8_UINT", Format::R8G8B8A8_UINT },
+                { L"R32G32B32_UINT", Format::R32G32B32_UINT },
+                { L"R32G32_UINT", Format::R32G32_UINT },
+                { L"R16G16_UINT", Format::R16G16_UINT },
+                { L"R8G8_UINT", Format::R8G8_UINT },
+                { L"R32_UINT", Format::R32_UINT },
+                { L"R16_UINT", Format::R16_UINT },
+                { L"R8_UINT", Format::R8_UINT },
 
-            else if (format.compareNoCase(L"R32G32B32A32_INT") == 0) return Format::R32G32B32A32_INT;
-            else if (format.compareNoCase(L"R16G16B16A16_INT") == 0) return Format::R16G16B16A16_INT;
-            else if (format.compareNoCase(L"R8G8B8A8_INT") == 0) return Format::R8G8B8A8_INT;
-            else if (format.compareNoCase(L"R32G32B32_INT") == 0) return Format::R32G32B32_INT;
-            else if (format.compareNoCase(L"R32G32_INT") == 0) return Format::R32G32_INT;
-            else if (format.compareNoCase(L"R16G16_INT") == 0) return Format::R16G16_INT;
-            else if (format.compareNoCase(L"R8G8_INT") == 0) return Format::R8G8_INT;
-            else if (format.compareNoCase(L"R32_INT") == 0) return Format::R32_INT;
-            else if (format.compareNoCase(L"R16_INT") == 0) return Format::R16_INT;
-            else if (format.compareNoCase(L"R8_INT") == 0) return Format::R8_INT;
+                { L"R32G32B32A32_INT", Format::R32G32B32A32_INT },
+                { L"R16G16B16A16_INT", Format::R16G16B16A16_INT },
+                { L"R8G8B8A8_INT", Format::R8G8B8A8_INT },
+                { L"R32G32B32_INT", Format::R32G32B32_INT },
+                { L"R32G32_INT", Format::R32G32_INT },
+                { L"R16G16_INT", Format::R16G16_INT },
+                { L"R8G8_INT", Format::R8G8_INT },
+                { L"R32_INT", Format::R32_INT },
+                { L"R16_INT", Format::R16_INT },
+                { L"R8_INT", Format::R8_INT },
 
-            else if (format.compareNoCase(L"R16G16B16A16_UNORM") == 0) return Format::R16G16B16A16_UNORM;
-            else if (format.compareNoCase(L"R10G10B10A2_UNORM") == 0) return Format::R10G10B10A2_UNORM;
-            else if (format.compareNoCase(L"R8G8B8A8_UNORM") == 0) return Format::R8G8B8A8_UNORM;
-            else if (format.compareNoCase(L"R8G8B8A8_UNORM_SRGB") == 0) return Format::R8G8B8A8_UNORM_SRGB;
-            else if (format.compareNoCase(L"R16G16_UNORM") == 0) return Format::R16G16_UNORM;
-            else if (format.compareNoCase(L"R8G8_UNORM") == 0) return Format::R8G8_UNORM;
-            else if (format.compareNoCase(L"R16_UNORM") == 0) return Format::R16_UNORM;
-            else if (format.compareNoCase(L"R8_UNORM") == 0) return Format::R8_UNORM;
+                { L"R16G16B16A16_UNORM", Format::R16G16B16A16_UNORM },
+                { L"R10G10B10A2_UNORM", Format::R10G10B10A2_UNORM },
+                { L"R8G8B8A8_UNORM", Format::R8G8B8A8_UNORM },
+                { L"R8G8B8A8_UNORM_SRGB", Format::R8G8B8A8_UNORM_SRGB },
+                { L"R16G16_UNORM", Format::R16G16_UNORM },
+                { L"R8G8_UNORM", Format::R8G8_UNORM },
+                { L"R16_UNORM", Format::R16_UNORM },
+                { L"R8_UNORM", Format::R8_UNORM },
 
-            else if (format.compareNoCase(L"R16G16B16A16_NORM") == 0) return Format::R16G16B16A16_NORM;
-            else if (format.compareNoCase(L"R8G8B8A8_NORM") == 0) return Format::R8G8B8A8_NORM;
-            else if (format.compareNoCase(L"R16G16_NORM") == 0) return Format::R16G16_NORM;
-            else if (format.compareNoCase(L"R8G8_NORM") == 0) return Format::R8G8_NORM;
-            else if (format.compareNoCase(L"R16_NORM") == 0) return Format::R16_NORM;
-            else if (format.compareNoCase(L"R8_NORM") == 0) return Format::R8_NORM;
+                { L"R16G16B16A16_NORM", Format::R16G16B16A16_NORM },
+                { L"R8G8B8A8_NORM", Format::R8G8B8A8_NORM },
+                { L"R16G16_NORM", Format::R16G16_NORM },
+                { L"R8G8_NORM", Format::R8G8_NORM },
+                { L"R16_NORM", Format::R16_NORM },
+                { L"R8_NORM", Format::R8_NORM },
 
-            else if (format.compareNoCase(L"D32_FLOAT_S8X24_UINT") == 0) return Format::D32_FLOAT_S8X24_UINT;
-            else if (format.compareNoCase(L"D24_UNORM_S8_UINT") == 0) return Format::D24_UNORM_S8_UINT;
+                { L"D32_FLOAT_S8X24_UINT", Format::D32_FLOAT_S8X24_UINT },
+                { L"D24_UNORM_S8_UINT", Format::D24_UNORM_S8_UINT },
 
-            else if (format.compareNoCase(L"D32_FLOAT") == 0) return Format::D32_FLOAT;
-            else if (format.compareNoCase(L"D16_UNORM") == 0) return Format::D16_UNORM;
+                { L"D32_FLOAT", Format::D32_FLOAT },
+				{ L"D16_UNORM", Format::D16_UNORM },
+			};
 
-            return Format::Unknown;
+			auto result = data.find(format.getUpper());
+			return (result == std::end(data) ? Format::Unknown : result->second);
         }
 
         ComparisonFunction getComparisonFunction(WString const &comparisonFunction)
         {
-            if (comparisonFunction.compareNoCase(L"Never") == 0)
-            {
-                return ComparisonFunction::Never;
-            }
-            else if (comparisonFunction.compareNoCase(L"Equal") == 0)
-            {
-                return ComparisonFunction::Equal;
-            }
-            else if (comparisonFunction.compareNoCase(L"NotEqual") == 0)
-            {
-                return ComparisonFunction::NotEqual;
-            }
-            else if (comparisonFunction.compareNoCase(L"Less") == 0)
-            {
-                return ComparisonFunction::Less;
-            }
-            else if (comparisonFunction.compareNoCase(L"LessEqual") == 0)
-            {
-                return ComparisonFunction::LessEqual;
-            }
-            else if (comparisonFunction.compareNoCase(L"Greater") == 0)
-            {
-                return ComparisonFunction::Greater;
-            }
-            else if (comparisonFunction.compareNoCase(L"GreaterEqual") == 0)
-            {
-                return ComparisonFunction::GreaterEqual;
-            }
-            else
-            {
-                return ComparisonFunction::Always;
-            }
+			static const std::unordered_map<WString, ComparisonFunction> data =
+			{
+				{ L"never", ComparisonFunction::Never },
+				{ L"equal", ComparisonFunction::Equal },
+				{ L"notequal", ComparisonFunction::NotEqual },
+				{ L"less", ComparisonFunction::Less },
+				{ L"lessequal", ComparisonFunction::LessEqual },
+				{ L"greater", ComparisonFunction::Greater },
+				{ L"greaterequal", ComparisonFunction::GreaterEqual },
+			};
+
+			auto result = data.find(comparisonFunction.getLower());
+			return (result == std::end(data) ? ComparisonFunction::Always : result->second);
         }
 
         void RenderStateInformation::load(const JSON::Object &object)
@@ -148,7 +143,7 @@ namespace Gek
             {
                 this->cullMode = CullMode::None;
             }
-            else if (cullMode.compareNoCase(L"Front") == 0)
+            if (cullMode.compareNoCase(L"Front") == 0)
             {
                 this->cullMode = CullMode::Front;
             }
@@ -185,23 +180,23 @@ namespace Gek
                 {
                     return Operation::Replace;
                 }
-                else if (operation.compareNoCase(L"Invert") == 0)
+                if (operation.compareNoCase(L"Invert") == 0)
                 {
                     return Operation::Invert;
                 }
-                else if (operation.compareNoCase(L"Increase") == 0)
+                if (operation.compareNoCase(L"Increase") == 0)
                 {
                     return Operation::Increase;
                 }
-                else if (operation.compareNoCase(L"IncreaseSaturated") == 0)
+                if (operation.compareNoCase(L"IncreaseSaturated") == 0)
                 {
                     return Operation::IncreaseSaturated;
                 }
-                else if (operation.compareNoCase(L"Decrease") == 0)
+                if (operation.compareNoCase(L"Decrease") == 0)
                 {
                     return Operation::Decrease;
                 }
-                else if (operation.compareNoCase(L"DecreaseSaturated") == 0)
+                if (operation.compareNoCase(L"DecreaseSaturated") == 0)
                 {
                     return Operation::DecreaseSaturated;
                 }
@@ -275,63 +270,63 @@ namespace Gek
                 {
                     return Source::Zero;
                 }
-                else if (source.compareNoCase(L"BlendFactor") == 0)
+                if (source.compareNoCase(L"BlendFactor") == 0)
                 {
                     return Source::BlendFactor;
                 }
-                else if (source.compareNoCase(L"InverseBlendFactor") == 0)
+                if (source.compareNoCase(L"InverseBlendFactor") == 0)
                 {
                     return Source::InverseBlendFactor;
                 }
-                else if (source.compareNoCase(L"SourceColor") == 0)
+                if (source.compareNoCase(L"SourceColor") == 0)
                 {
                     return Source::SourceColor;
                 }
-                else if (source.compareNoCase(L"InverseSourceColor") == 0)
+                if (source.compareNoCase(L"InverseSourceColor") == 0)
                 {
                     return Source::InverseSourceColor;
                 }
-                else if (source.compareNoCase(L"SourceAlpha") == 0)
+                if (source.compareNoCase(L"SourceAlpha") == 0)
                 {
                     return Source::SourceAlpha;
                 }
-                else if (source.compareNoCase(L"InverseSourceAlpha") == 0)
+                if (source.compareNoCase(L"InverseSourceAlpha") == 0)
                 {
                     return Source::InverseSourceAlpha;
                 }
-                else if (source.compareNoCase(L"SourceAlphaSaturated") == 0)
+                if (source.compareNoCase(L"SourceAlphaSaturated") == 0)
                 {
                     return Source::SourceAlphaSaturated;
                 }
-                else if (source.compareNoCase(L"DestinationColor") == 0)
+                if (source.compareNoCase(L"DestinationColor") == 0)
                 {
                     return Source::DestinationColor;
                 }
-                else if (source.compareNoCase(L"InverseDestinationColor") == 0)
+                if (source.compareNoCase(L"InverseDestinationColor") == 0)
                 {
                     return Source::InverseDestinationColor;
                 }
-                else if (source.compareNoCase(L"DestinationAlpha") == 0)
+                if (source.compareNoCase(L"DestinationAlpha") == 0)
                 {
                     return Source::DestinationAlpha;
                 }
-                else if (source.compareNoCase(L"InverseDestinationAlpha") == 0)
+                if (source.compareNoCase(L"InverseDestinationAlpha") == 0)
                 {
                     return Source::InverseDestinationAlpha;
                 }
-                else if (source.compareNoCase(L"SecondarySourceColor") == 0)
+                if (source.compareNoCase(L"SecondarySourceColor") == 0)
                 {
                     return Source::SecondarySourceColor;
                 }
-                else if (source.compareNoCase(L"InverseSecondarySourceColor") == 0)
+                if (source.compareNoCase(L"InverseSecondarySourceColor") == 0)
                 {
                     return Source::InverseSecondarySourceColor;
                 }
-                else if (source.compareNoCase(L"SecondarySourceAlpha") == 0)
+                if (source.compareNoCase(L"SecondarySourceAlpha") == 0)
                 {
                     return Source::SecondarySourceAlpha;
                 }
-                else if (source.compareNoCase(L"InverseSecondarySourceAlpha") == 0)
+                if (source.compareNoCase(L"InverseSecondarySourceAlpha") == 0)
                 {
                     return Source::InverseSecondarySourceAlpha;
                 }
@@ -347,15 +342,15 @@ namespace Gek
                 {
                     return Operation::Subtract;
                 }
-                else if (operation.compareNoCase(L"ReverseSubtract") == 0)
+                if (operation.compareNoCase(L"ReverseSubtract") == 0)
                 {
                     return Operation::ReverseSubtract;
                 }
-                else if (operation.compareNoCase(L"Minimum") == 0)
+                if (operation.compareNoCase(L"Minimum") == 0)
                 {
                     return Operation::Minimum;
                 }
-                else if (operation.compareNoCase(L"Maximum") == 0)
+                if (operation.compareNoCase(L"Maximum") == 0)
                 {
                     return Operation::Maximum;
                 }
@@ -440,7 +435,7 @@ namespace Gek
                 if (targetStates.is_array())
                 {
                     size_t targetCount = std::min(targetStates.size(), this->targetStates.size());
-                    for (size_t target = 0; target < targetCount; target++)
+                    for (size_t target = 0; target < targetCount; ++target)
                     {
                         this->targetStates[target].load(targetStates[target]);
                     }
@@ -451,7 +446,7 @@ namespace Gek
         size_t IndependentBlendStateInformation::getHash(void) const
         {
             auto hash = GetHash(alphaToCoverage);
-            for (auto &targetState : targetStates)
+            for (const auto &targetState : targetStates)
             {
                 CombineHashes(hash, targetState.getHash());
             }
@@ -472,139 +467,139 @@ namespace Gek
                 {
                     return FilterMode::MinificationMagnificationPointMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"MinificationPointMagnificationLinearMipMapPoint") == 0)
+                if (filterMode.compareNoCase(L"MinificationPointMagnificationLinearMipMapPoint") == 0)
                 {
                     return FilterMode::MinificationPointMagnificationLinearMipMapPoint;
                 }
-                else if (filterMode.compareNoCase(L"MinificationPointMagnificationMipMapLinear") == 0)
+                if (filterMode.compareNoCase(L"MinificationPointMagnificationMipMapLinear") == 0)
                 {
                     return FilterMode::MinificationPointMagnificationMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"MinificationLinearMagnificationMipMapPoint") == 0)
+                if (filterMode.compareNoCase(L"MinificationLinearMagnificationMipMapPoint") == 0)
                 {
                     return FilterMode::MinificationLinearMagnificationMipMapPoint;
                 }
-                else if (filterMode.compareNoCase(L"MinificationLinearMagnificationPointMipMapLinear") == 0)
+                if (filterMode.compareNoCase(L"MinificationLinearMagnificationPointMipMapLinear") == 0)
                 {
                     return FilterMode::MinificationLinearMagnificationPointMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"MinificationMagnificationLinearMipMapPoint") == 0)
+                if (filterMode.compareNoCase(L"MinificationMagnificationLinearMipMapPoint") == 0)
                 {
                     return FilterMode::MinificationMagnificationLinearMipMapPoint;
                 }
-                else if (filterMode.compareNoCase(L"MinificationMagnificationMipMapLinear") == 0)
+                if (filterMode.compareNoCase(L"MinificationMagnificationMipMapLinear") == 0)
                 {
                     return FilterMode::MinificationMagnificationMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"Anisotropic") == 0)
+                if (filterMode.compareNoCase(L"Anisotropic") == 0)
                 {
                     return FilterMode::Anisotropic;
                 }
-                else if (filterMode.compareNoCase(L"ComparisonMinificationMagnificationMipMapPoint") == 0)
+                if (filterMode.compareNoCase(L"ComparisonMinificationMagnificationMipMapPoint") == 0)
                 {
                     return FilterMode::ComparisonMinificationMagnificationMipMapPoint;
                 }
-                else if (filterMode.compareNoCase(L"ComparisonMinificationMagnificationPointMipMapLinear") == 0)
+                if (filterMode.compareNoCase(L"ComparisonMinificationMagnificationPointMipMapLinear") == 0)
                 {
                     return FilterMode::ComparisonMinificationMagnificationPointMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"ComparisonMinificationPointMagnificationLinearMipMapPoint") == 0)
+                if (filterMode.compareNoCase(L"ComparisonMinificationPointMagnificationLinearMipMapPoint") == 0)
                 {
                     return FilterMode::ComparisonMinificationPointMagnificationLinearMipMapPoint;
                 }
-                else if (filterMode.compareNoCase(L"ComparisonMinificationPointMagnificationMipMapLinear") == 0)
+                if (filterMode.compareNoCase(L"ComparisonMinificationPointMagnificationMipMapLinear") == 0)
                 {
                     return FilterMode::ComparisonMinificationPointMagnificationMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"ComparisonMinificationLinearMagnificationMipMapPoint") == 0)
+                if (filterMode.compareNoCase(L"ComparisonMinificationLinearMagnificationMipMapPoint") == 0)
                 {
                     return FilterMode::ComparisonMinificationLinearMagnificationMipMapPoint;
                 }
-                else if (filterMode.compareNoCase(L"ComparisonMinificationLinearMagnificationPointMipMapLinear") == 0)
+                if (filterMode.compareNoCase(L"ComparisonMinificationLinearMagnificationPointMipMapLinear") == 0)
                 {
                     return FilterMode::ComparisonMinificationLinearMagnificationPointMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"ComparisonMinificationMagnificationLinearMipMapPoint") == 0)
+                if (filterMode.compareNoCase(L"ComparisonMinificationMagnificationLinearMipMapPoint") == 0)
                 {
                     return FilterMode::ComparisonMinificationMagnificationLinearMipMapPoint;
                 }
-                else if (filterMode.compareNoCase(L"ComparisonMinificationMagnificationMipMapLinear") == 0)
+                if (filterMode.compareNoCase(L"ComparisonMinificationMagnificationMipMapLinear") == 0)
                 {
                     return FilterMode::ComparisonMinificationMagnificationMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"ComparisonAnisotropic") == 0)
+                if (filterMode.compareNoCase(L"ComparisonAnisotropic") == 0)
                 {
                     return FilterMode::ComparisonAnisotropic;
                 }
-                else if (filterMode.compareNoCase(L"MinimumMinificationMagnificationMipMapPoint") == 0)
+                if (filterMode.compareNoCase(L"MinimumMinificationMagnificationMipMapPoint") == 0)
                 {
                     return FilterMode::MinimumMinificationMagnificationMipMapPoint;
                 }
-                else if (filterMode.compareNoCase(L"MinimumMinificationMagnificationPointMipMapLinear") == 0)
+                if (filterMode.compareNoCase(L"MinimumMinificationMagnificationPointMipMapLinear") == 0)
                 {
                     return FilterMode::MinimumMinificationMagnificationPointMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"MinimumMinificationPointMagnificationLinearMipMapPoint") == 0)
+                if (filterMode.compareNoCase(L"MinimumMinificationPointMagnificationLinearMipMapPoint") == 0)
                 {
                     return FilterMode::MinimumMinificationPointMagnificationLinearMipMapPoint;
                 }
-                else if (filterMode.compareNoCase(L"MinimumMinificationPointMagnificationMipMapLinear") == 0)
+                if (filterMode.compareNoCase(L"MinimumMinificationPointMagnificationMipMapLinear") == 0)
                 {
                     return FilterMode::MinimumMinificationPointMagnificationMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"MinimumMinificationLinearMagnificationMipMapPoint") == 0)
+                if (filterMode.compareNoCase(L"MinimumMinificationLinearMagnificationMipMapPoint") == 0)
                 {
                     return FilterMode::MinimumMinificationLinearMagnificationMipMapPoint;
                 }
-                else if (filterMode.compareNoCase(L"MinimumMinificationLinearMagnificationPointMipMapLinear") == 0)
+                if (filterMode.compareNoCase(L"MinimumMinificationLinearMagnificationPointMipMapLinear") == 0)
                 {
                     return FilterMode::MinimumMinificationLinearMagnificationPointMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"MinimumMinificationMagnificationLinearMipMapPoint") == 0)
+                if (filterMode.compareNoCase(L"MinimumMinificationMagnificationLinearMipMapPoint") == 0)
                 {
                     return FilterMode::MinimumMinificationMagnificationLinearMipMapPoint;
                 }
-                else if (filterMode.compareNoCase(L"MinimumMinificationMagnificationMipMapLinear") == 0)
+                if (filterMode.compareNoCase(L"MinimumMinificationMagnificationMipMapLinear") == 0)
                 {
                     return FilterMode::MinimumMinificationMagnificationMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"MinimumAnisotropic") == 0)
+                if (filterMode.compareNoCase(L"MinimumAnisotropic") == 0)
                 {
                     return FilterMode::MinimumAnisotropic;
                 }
-                else if (filterMode.compareNoCase(L"MaximumMinificationMagnificationMipMapPoint") == 0)
+                if (filterMode.compareNoCase(L"MaximumMinificationMagnificationMipMapPoint") == 0)
                 {
                     return FilterMode::MaximumMinificationMagnificationMipMapPoint;
                 }
-                else if (filterMode.compareNoCase(L"MaximumMinificationMagnificationPointMipMapLinear") == 0)
+                if (filterMode.compareNoCase(L"MaximumMinificationMagnificationPointMipMapLinear") == 0)
                 {
                     return FilterMode::MaximumMinificationMagnificationPointMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"MaximumMinificationPointMagnificationLinearMipMapPoint") == 0)
+                if (filterMode.compareNoCase(L"MaximumMinificationPointMagnificationLinearMipMapPoint") == 0)
                 {
                     return FilterMode::MaximumMinificationPointMagnificationLinearMipMapPoint;
                 }
-                else if (filterMode.compareNoCase(L"MaximumMinificationPointMagnificationMipMapLinear") == 0)
+                if (filterMode.compareNoCase(L"MaximumMinificationPointMagnificationMipMapLinear") == 0)
                 {
                     return FilterMode::MaximumMinificationPointMagnificationMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"MaximumMinificationLinearMagnificationMipMapPoint") == 0)
+                if (filterMode.compareNoCase(L"MaximumMinificationLinearMagnificationMipMapPoint") == 0)
                 {
                     return FilterMode::MaximumMinificationLinearMagnificationMipMapPoint;
                 }
-                else if (filterMode.compareNoCase(L"MaximumMinificationLinearMagnificationPointMipMapLinear") == 0)
+                if (filterMode.compareNoCase(L"MaximumMinificationLinearMagnificationPointMipMapLinear") == 0)
                 {
                     return FilterMode::MaximumMinificationLinearMagnificationPointMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"MaximumMinificationMagnificationLinearMipMapPoint") == 0)
+                if (filterMode.compareNoCase(L"MaximumMinificationMagnificationLinearMipMapPoint") == 0)
                 {
                     return FilterMode::MaximumMinificationMagnificationLinearMipMapPoint;
                 }
-                else if (filterMode.compareNoCase(L"MaximumMinificationMagnificationMipMapLinear") == 0)
+                if (filterMode.compareNoCase(L"MaximumMinificationMagnificationMipMapLinear") == 0)
                 {
                     return FilterMode::MaximumMinificationMagnificationMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"MaximumAnisotropic") == 0)
+                if (filterMode.compareNoCase(L"MaximumAnisotropic") == 0)
                 {
                     return FilterMode::MaximumAnisotropic;
                 }
@@ -620,15 +615,15 @@ namespace Gek
                 {
                     return AddressMode::Wrap;
                 }
-                else if (addressMode.compareNoCase(L"Mirror") == 0)
+                if (addressMode.compareNoCase(L"Mirror") == 0)
                 {
                     return AddressMode::Mirror;
                 }
-                else if (addressMode.compareNoCase(L"MirrorOnce") == 0)
+                if (addressMode.compareNoCase(L"MirrorOnce") == 0)
                 {
                     return AddressMode::MirrorOnce;
                 }
-                else if (addressMode.compareNoCase(L"Border") == 0)
+                if (addressMode.compareNoCase(L"Border") == 0)
                 {
                     return AddressMode::Border;
                 }
@@ -655,20 +650,20 @@ namespace Gek
                 {
                     borderColor = Math::Float4(borderColorNode.as<float>());
                 }
-                else if (borderColorNode.is_array())
+                if (borderColorNode.is_array())
                 {
                     if (borderColorNode.size() == 1)
                     {
                         borderColor = Math::Float4(borderColorNode.at(0).as<float>());
                     }
-                    else if (borderColorNode.size() == 3)
+                    if (borderColorNode.size() == 3)
                     {
                         borderColor = Math::Float4(
                             borderColorNode.at(0).as<float>(),
                             borderColorNode.at(1).as<float>(),
                             borderColorNode.at(2).as<float>(), 1.0f);
                     }
-                    else if (borderColorNode.size() == 4)
+                    if (borderColorNode.size() == 4)
                     {
                         borderColor = Math::Float4(
                             borderColorNode.at(0).as<float>(),

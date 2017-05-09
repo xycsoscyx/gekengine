@@ -474,7 +474,7 @@ namespace Gek
             {
                 GEK_REQUIRE(core);
 
-                loadPool.clear();
+                loadPool.drain();
                 core->onResize.disconnect<Resources, &Resources::onResize>(this);
             }
 
@@ -507,7 +507,7 @@ namespace Gek
                     auto programLines = baseProgram.split(L'$', false);
 
                     WString uncompiledProgram;
-                    for (auto &line : programLines)
+                    for (const auto &line : programLines)
                     {
                         if (line.empty())
                         {
@@ -648,7 +648,7 @@ namespace Gek
                 };
 
                 auto texturePath(getContext()->getRootFileName(L"data", L"textures", textureName));
-                for (auto &format : formatList)
+                for (const auto &format : formatList)
                 {
                     auto filePath(texturePath.withExtension(format));
                     if (filePath.isFile())
@@ -1037,7 +1037,7 @@ namespace Gek
             {
                 textureDescriptionMap.clear();
                 bufferDescriptionMap.clear();
-                loadPool.clear();
+                loadPool.reset();
                 materialShaderMap.clear();
                 programCache.clear();
                 materialCache.clear();

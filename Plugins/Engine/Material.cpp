@@ -83,7 +83,7 @@ namespace Gek
                         }
 
                         auto &passDataNode = passValue.get(L"data");
-                        for (auto &initializer : shaderMaterial->initializerList)
+                        for (const auto &initializer : shaderMaterial->initializerList)
                         {
                             ResourceHandle resourceHandle;
                             if (passDataNode.has_member(initializer.name))

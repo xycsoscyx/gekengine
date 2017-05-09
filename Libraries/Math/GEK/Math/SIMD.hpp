@@ -145,7 +145,7 @@ namespace Gek
 
                     __declspec(align(16)) uint32_t resultValues[4];
                     _mm_store_ps((float *)resultValues, intersectionResult);
-                    for (uint32_t sectionIndex = 0; sectionIndex < 4; sectionIndex++)
+                    for (uint32_t sectionIndex = 0; sectionIndex < 4; ++sectionIndex)
                     {
                         visibilityList[objectBase + sectionIndex] = !resultValues[sectionIndex];
                     }
@@ -380,7 +380,7 @@ namespace Gek
 
                     __declspec(align(16)) uint32_t insideValues[4];
                     _mm_store_ps((float *)insideValues, isInside);
-                    for (size_t sectionIndex = 0; sectionIndex < 4; sectionIndex++)
+                    for (size_t sectionIndex = 0; sectionIndex < 4; ++sectionIndex)
                     {
                         visibilityList[objectBase + sectionIndex] = !insideValues[sectionIndex];
                     }

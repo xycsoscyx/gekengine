@@ -210,7 +210,7 @@ namespace Gek
                                     };
 
                                     ImGui::ListBoxFooter();
-                                    for (auto &componentType : componentDeleteList)
+                                    for (const auto &componentType : componentDeleteList)
                                     {
                                         population->removeComponent(entity, componentType);
                                     }

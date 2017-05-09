@@ -10,7 +10,7 @@ namespace Gek
 
         Frustum::Frustum(const Frustum &frustum)
         {
-            for (uint32_t index = 0; index < 6; index++)
+            for (uint32_t index = 0; index < 6; ++index)
             {
                 planeList[index] = frustum.planeList[index];
             }

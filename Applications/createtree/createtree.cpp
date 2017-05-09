@@ -314,7 +314,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         }
 
         std::unordered_map<FileSystem::Path, std::vector<Part>> albedoPartMap;
-        for (auto &modelAlbedo : scenePartMap)
+        for (const auto &modelAlbedo : scenePartMap)
         {
             WString albedoName(modelAlbedo.first.withoutExtension());
             albedoName.toLower();
@@ -348,12 +348,12 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         }
 
         std::unordered_map<FileSystem::Path, Part> materialPartMap;
-        for (auto &multiMaterial : albedoPartMap)
+        for (const auto &multiMaterial : albedoPartMap)
         {
             Part &material = materialPartMap[multiMaterial.first];
-            for (auto &instance : multiMaterial.second)
+            for (const auto &instance : multiMaterial.second)
             {
-                for (auto &index : instance.indexList)
+                for (const auto &index : instance.indexList)
                 {
                     material.indexList.push_back(uint16_t(index + material.vertexList.size()));
                 }
@@ -380,7 +380,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
         int materialIdentifier = 0;
         NewtonTreeCollisionBeginBuild(newtonCollision);
-        for (auto &material : materialPartMap)
+        for (const auto &material : materialPartMap)
         {
 			std::cout << "-  " << material.first << std::endl;
             std::cout << "    " << material.second.vertexList.size() << " vertices" << std::endl;
@@ -415,7 +415,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         Header header;
         header.partCount = materialPartMap.size();
         fwrite(&header, sizeof(Header), 1, file);
-        for (auto &material : materialPartMap)
+        for (const auto &material : materialPartMap)
         {
             Header::Material materialHeader;
             wcsncpy(materialHeader.name, material.first, 63);

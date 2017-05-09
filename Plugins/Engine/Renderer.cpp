@@ -296,7 +296,7 @@ namespace Gek
                     shapeYPositionList.resize(bufferedEntityCount);
                     shapeZPositionList.resize(bufferedEntityCount);
                     shapeRadiusList.resize(bufferedEntityCount);
-                    for (auto entityIndex = 0ULL; entityIndex < entityCount; entityIndex++)
+                    for (size_t entityIndex = 0; entityIndex < entityCount; ++entityIndex)
                     {
                         auto entity = entityList[entityIndex];
                         auto &transformComponent = entity->getComponent<Components::Transform>();
@@ -347,7 +347,7 @@ namespace Gek
             Video::ObjectPtr renderState;
             Video::ObjectPtr depthState;
 
-            ThreadPool threadPool;
+            ThreadPool workerPool;
             LightData<Components::DirectionalLight, DirectionalLightData> directionalLightData;
             LightVisibilityData<Components::PointLight, PointLightData> pointLightData;
             LightVisibilityData<Components::SpotLight, SpotLightData> spotLightData;
@@ -386,7 +386,7 @@ namespace Gek
                 , videoDevice(core->getVideoDevice())
                 , population(core->getPopulation())
                 , resources(dynamic_cast<Engine::Resources *>(core->getResources()))
-                , threadPool(3)
+                , workerPool(3)
                 , directionalLightData(10, core->getVideoDevice())
                 , pointLightData(200, core->getVideoDevice())
                 , spotLightData(200, core->getVideoDevice())
@@ -653,7 +653,7 @@ namespace Gek
 
             ~Renderer(void)
             {
-                threadPool.clear();
+                workerPool.drain();
 
                 population->onUpdate[1000].disconnect<Renderer, &Renderer::onUpdate>(this);
                 population->onComponentRemoved.disconnect<Renderer, &Renderer::onComponentRemoved>(this);
@@ -948,10 +948,10 @@ namespace Gek
                 concurrency::parallel_for(depthBounds.minimum, depthBounds.maximum, [&](auto z) -> void
                 {
                     uint32_t zSlice = (z * GridHeight);
-                    for (auto y = gridBounds.minimum.y; y < gridBounds.maximum.y; y++)
+                    for (auto y = gridBounds.minimum.y; y < gridBounds.maximum.y; ++y)
                     {
                         uint32_t ySlize = ((zSlice + y) * GridWidth);
-                        for (auto x = gridBounds.minimum.x; x < gridBounds.maximum.x; x++)
+                        for (auto x = gridBounds.minimum.x; x < gridBounds.maximum.x; ++x)
                         {
                             if (!isSeparated(float(x), float(y), float(z), position, range))
                             {
@@ -1108,7 +1108,7 @@ namespace Gek
 
                         if (isLightingRequired)
                         {
-                            auto directionalLightsDone = threadPool.enqueue([&](void) -> void
+                            auto directionalLightsDone = workerPool.enqueue([&](void) -> void
                             {
                                 directionalLightData.lightList.clear();
                                 directionalLightData.lightList.reserve(directionalLightData.entityList.size());
@@ -1136,7 +1136,7 @@ namespace Gek
                                 gridData.spotLightList.clear();
                             });
 
-                            auto pointLightsDone = threadPool.enqueue([&](void) -> void
+                            auto pointLightsDone = workerPool.enqueue([&](void) -> void
                             {
                                 pointLightData.update(videoDevice, frustum, [this](Plugin::Entity * const entity, const Components::PointLight &lightComponent) -> void
                                 {
@@ -1144,7 +1144,7 @@ namespace Gek
                                 });
                             });
 
-                            auto spotLightsDone = threadPool.enqueue([&](void) -> void
+                            auto spotLightsDone = workerPool.enqueue([&](void) -> void
                             {
                                 spotLightData.update(videoDevice, frustum, [this](Plugin::Entity * const entity, const Components::SpotLight &lightComponent) -> void
                                 {
@@ -1162,7 +1162,7 @@ namespace Gek
 
                             lightIndexList.clear();
                             lightIndexList.reserve(lightIndexCount);
-                            for (uint32_t tileIndex = 0; tileIndex < GridSize; tileIndex++)
+                            for (uint32_t tileIndex = 0; tileIndex < GridSize; ++tileIndex)
                             {
                                 auto &tileOffsetCount = tileOffsetCountList[tileIndex];
                                 auto &tileLightIndex = tileLightIndexList[tileIndex];
@@ -1272,9 +1272,9 @@ namespace Gek
                             }, 0);
                         }
 
-                        for (auto &shaderDrawCallList : drawCallSetMap)
+                        for (const auto &shaderDrawCallList : drawCallSetMap)
                         {
-                            for (auto &shaderDrawCall : shaderDrawCallList.second)
+                            for (const auto &shaderDrawCall : shaderDrawCallList.second)
                             {
                                 auto &shader = shaderDrawCall.shader;
                                 for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentCamera.viewFrustum); pass; pass = pass->next())
@@ -1322,7 +1322,7 @@ namespace Gek
                         }
 
                         videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                        for (auto &filterName : { L"tonemap", L"antialias" })
+                        for (const auto &filterName : { L"tonemap", L"antialias" })
                         {
                             Engine::Filter * const filter = resources->getFilter(filterName);
                             if (filter)

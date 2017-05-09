@@ -134,7 +134,7 @@ namespace Gek
 
             ~Population(void)
             {
-				loadPool.clear();
+				loadPool.drain();
 
                 core->onExit.disconnect<Population, &Population::onExit>(this);
 
@@ -163,7 +163,7 @@ namespace Gek
             // Core
             void onExit(void)
             {
-                loadPool.clear();
+                loadPool.reset();
             }
 
             // Edit::Population
@@ -273,7 +273,7 @@ namespace Gek
                         }
 
 						core->getLog()->message("Population", Plugin::Core::Log::Type::Message, "Found %v Entity Definitions", populationNode.size());
-                        for (auto &entityNode : populationNode.elements())
+                        for (const auto &entityNode : populationNode.elements())
                         {
                             if (!entityNode.is_object())
                             {
@@ -284,13 +284,13 @@ namespace Gek
                             if (entityNode.has_member(L"Template"))
                             {
                                 auto &templateNode = templatesNode.get(entityNode[L"Template"].as_string());
-                                for (auto &componentNode : templateNode.members())
+                                for (const auto &componentNode : templateNode.members())
                                 {
                                     entityComponentList.push_back(componentNode);
                                 }
                             }
 
-                            for (auto &componentNode : entityNode.members())
+                            for (const auto &componentNode : entityNode.members())
                             {
                                 auto componentSearch = std::find_if(std::begin(entityComponentList), std::end(entityComponentList), [&](const JSON::Member &componentData) -> bool
                                 {
@@ -304,7 +304,7 @@ namespace Gek
                                 else
                                 {
                                     auto &componentData = (*componentSearch);
-                                    for (auto &attribute : componentNode.value().members())
+                                    for (const auto &attribute : componentNode.value().members())
                                     {
                                         componentData.value().set(attribute.name(), attribute.value());
                                     }
@@ -312,7 +312,7 @@ namespace Gek
                             }
 
                             auto entity(std::make_unique<Entity>());
-                            for (auto &componentData : entityComponentList)
+                            for (const auto &componentData : entityComponentList)
                             {
                                 if (componentData.name().compare(L"Name") != 0 &&
                                     componentData.name().compare(L"Template") != 0)
@@ -341,7 +341,7 @@ namespace Gek
             void save(WString const &populationName)
             {
                 JSON::Array population;
-                for (auto &entityPair : entityMap)
+                for (const auto &entityPair : entityMap)
                 {
                     JSON::Object entityData;
                     entityData.set(L"Name", entityPair.first);
@@ -378,7 +378,7 @@ namespace Gek
             Plugin::Entity *createEntity(WString const &entityName, const std::vector<JSON::Member> &componentList)
             {
                 auto entity(std::make_unique<Entity>());
-                for (auto &componentData : componentList)
+                for (const auto &componentData : componentList)
                 {
                     std::type_index componentIdentifier(typeid(nullptr));
                     addComponent(entity.get(), componentData, &componentIdentifier);

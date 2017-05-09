@@ -1696,7 +1696,7 @@ namespace Gek
                     std::vector<DXGI_MODE_DESC> dxgiDisplayModeList(modeCount);
                     dxgiOutput->GetDisplayModeList(DirectX::TextureFormatList[static_cast<uint8_t>(format)], 0, &modeCount, dxgiDisplayModeList.data());
 
-                    for (auto &dxgiDisplayMode : dxgiDisplayModeList)
+                    for (const auto &dxgiDisplayMode : dxgiDisplayModeList)
                     {
                         if (dxgiDisplayMode.ScanlineOrdering == DXGI_MODE_SCANLINE_ORDER_PROGRESSIVE && dxgiDisplayMode.Scaling == DXGI_MODE_SCALING_CENTERED)
                         {
@@ -2291,7 +2291,7 @@ namespace Gek
 
                 uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
                 std::vector<D3D11_INPUT_ELEMENT_DESC> d3dElementList;
-                for (auto &element : elementList)
+                for (const auto &element : elementList)
                 {
                     D3D11_INPUT_ELEMENT_DESC elementDesc;
                     elementDesc.Format = DirectX::BufferFormatList[static_cast<uint8_t>(element.format)];

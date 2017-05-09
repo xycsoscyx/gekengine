@@ -431,7 +431,7 @@ namespace Gek
 		std::stack<Token> tokenStack;
         std::stack<bool> parameterExistsStack;
 		std::stack<uint32_t> parameterCountStack;
-        for (auto &token : infixTokenList)
+        for (const auto &token : infixTokenList)
         {
             switch (token.type)
             {
@@ -575,7 +575,7 @@ namespace Gek
 	float ShuntingYard::evaluateReversePolishNotation(const TokenList &rpnTokenList, float defaultValue, WString &logMessage)
     {
 		std::stack<float> stack;
-        for (auto &token : rpnTokenList)
+        for (const auto &token : rpnTokenList)
         {
             switch (token.type)
             {

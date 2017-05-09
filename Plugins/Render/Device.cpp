@@ -441,7 +441,7 @@ namespace Gek
                 if (targetStates.is_array())
                 {
                     size_t targetCount = std::min(targetStates.size(), this->targetStateList.size());
-                    for (size_t target = 0; target < targetCount; target++)
+                    for (size_t target = 0; target < targetCount; ++target)
                     {
                         this->targetStateList[target].load(targetStates[target]);
                     }
@@ -452,7 +452,7 @@ namespace Gek
         size_t BlendStateInformation::getHash(void) const
         {
             auto hash = GetHash(alphaToCoverage, unifiedBlendState);
-            for (auto &targetState : targetStateList)
+            for (const auto &targetState : targetStateList)
             {
                 CombineHashes(hash, targetState.getHash());
             }
@@ -700,18 +700,18 @@ namespace Gek
             hash = CombineHashes(hash, sampleMask);
             hash = CombineHashes(hash, rasterizerStateInformation.getHash());
             hash = CombineHashes(hash, depthStateInformation.getHash());
-            for (auto &vertexElement : vertexDeclaration)
+            for (const auto &vertexElement : vertexDeclaration)
             {
                 hash = CombineHashes(hash, vertexElement.getHash());
             }
 
-            for (auto &pixelElement : pixelDeclaration)
+            for (const auto &pixelElement : pixelDeclaration)
             {
                 hash = CombineHashes(hash, pixelElement.getHash());
             }
 
             hash = CombineHashes(hash, GetHash(primitiveType));
-            for (auto &renderTarget : renderTargetList)
+            for (const auto &renderTarget : renderTargetList)
             {
                 hash = CombineHashes(hash, renderTarget.getHash());
             }
