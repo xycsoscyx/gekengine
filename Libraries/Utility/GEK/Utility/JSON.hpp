@@ -98,11 +98,5 @@ namespace Gek
 
         Object Load(FileSystem::Path const &filePath, const Object &defaultValue = EmptyObject);
         void Save(FileSystem::Path const &filePath, Object const &object);
-
-		template <typename TYPE>
-		TYPE &Get(Object &object, WString const &name, const TYPE &defaultValue = TYPE())
-		{
-
-		}
 	}; // namespace JSON
 }; // namespace Gek

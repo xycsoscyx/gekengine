@@ -24,10 +24,10 @@ extern ContextUserPtr CLASS##CreateInstance(Context *, void *, std::vector<std::
 
 #define GEK_CONTEXT_BEGIN(SOURCENAME)                                                                                               \
 extern "C" __declspec(dllexport) void initializePlugin(                                                                             \
-    std::function<void(WString const &, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)>)> addClass,\
-    std::function<void(WString const &, WString const &)> addType)                                                                  \
+    std::function<void(std::string const &, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)>)> addClass,\
+    std::function<void(std::string const &, std::string const &)> addType)                                                                  \
 {                                                                                                                                   \
-    WString lastClassName;
+    std::string lastClassName;
 
 #define GEK_CONTEXT_ADD_CLASS(CLASSNAME, CLASS)                                                                                     \
     addClass(L#CLASSNAME, CLASS##CreateInstance);                                                                                   \
@@ -41,9 +41,9 @@ extern "C" __declspec(dllexport) void initializePlugin(                         
 
 namespace Gek
 {
-    using InitializePlugin = void(*)(std::function<void(WString const & className,
+    using InitializePlugin = void(*)(std::function<void(std::string const & className,
         std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)>)> addClass, 
-        std::function<void(WString const &, WString const &)> addType);
+        std::function<void(std::string const &, std::string const &)> addType);
 
     GEK_PREDECLARE(Context);
 

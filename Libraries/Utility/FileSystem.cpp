@@ -10,11 +10,17 @@ namespace Gek
         {
         }
 
-        Path::Path(WString const &path)
-            : std::experimental::filesystem::path(path)
-        {
-            make_preferred();
-        }
+		Path::Path(std::string const &path)
+			: std::experimental::filesystem::path(path)
+		{
+			make_preferred();
+		}
+
+		Path::Path(std::experimental::filesystem::path const &path)
+			: std::experimental::filesystem::path(path)
+		{
+			make_preferred();
+		}
 
         Path::Path(Path const &path)
             : std::experimental::filesystem::path(path)
@@ -22,7 +28,7 @@ namespace Gek
             make_preferred();
         }
 
-        void Path::operator = (WString const &path)
+        void Path::operator = (std::string const &path)
         {
             assign(path);
         }
@@ -47,17 +53,17 @@ namespace Gek
             replace_extension(L"");
         }
 
-        void Path::replaceFileName(WString const &fileName)
+        void Path::replaceFileName(std::string const &fileName)
         {
             replace_filename(fileName);
         }
 
-        void Path::replaceExtension(WString const &extension)
+        void Path::replaceExtension(std::string const &extension)
         {
             replace_extension(extension);
         }
 
-        Path Path::withExtension(WString const &extension) const
+        Path Path::withExtension(std::string const &extension) const
         {
             Path path(*this);
             path.replace_extension(extension);
@@ -73,17 +79,17 @@ namespace Gek
 
         Path Path::getParentPath(void) const
         {
-            return parent_path().native();
+            return parent_path().u8string();
         }
 
-        WString Path::getFileName(void) const
+        std::string Path::getFileName(void) const
         {
-            return filename().native();
+            return filename().u8string();
         }
 
-        WString Path::getExtension(void) const
+        std::string Path::getExtension(void) const
         {
-            return extension().native();
+            return extension().u8string();
         }
 
         bool Path::isFile(void) const
@@ -106,25 +112,25 @@ namespace Gek
         Path GetModuleFilePath(void)
         {
 #ifdef _WIN32
-            WString relativeName((MAX_PATH + 1), L' ');
+            std::wstring relativeName((MAX_PATH + 1), L' ');
             GetModuleFileName(nullptr, &relativeName.at(0), MAX_PATH);
-            relativeName.trimRight();
+			TrimRight(relativeName);
 
-            WString absoluteName((MAX_PATH + 1), L' ');
-            GetFullPathName(relativeName, MAX_PATH, &absoluteName.at(0), nullptr);
-            absoluteName.trimRight();
+            std::wstring absoluteName((MAX_PATH + 1), L' ');
+            GetFullPathName(relativeName.c_str(), MAX_PATH, &absoluteName.at(0), nullptr);
+			TrimRight(absoluteName);
 #else
             CString processName(CString::Format("/proc/%v/exe", getpid()));
-            WString absoluteName((MAX_PATH + 1), L'\0');
+            std::string absoluteName((MAX_PATH + 1), L'\0');
             readlink(processName, &absoluteName.at(0), MAX_PATH);
-            absoluteName.trimRight();
+			TrimRight(absoluteName);
 #endif
-            return absoluteName;
+			return std::experimental::filesystem::path(absoluteName);
         }
 
-        Path GetFileName(Path const &rootDirectory, const std::vector<WString> &list)
+        Path GetFileName(Path const &rootDirectory, const std::vector<std::string> &list)
 		{
-			return WString::Format(L"%v%v", rootDirectory, WString::Join(list, std::experimental::filesystem::path::preferred_separator, true));
+			return Format("%v%v", rootDirectory, Join(list, std::experimental::filesystem::path::preferred_separator, true));
 		}
 
         void MakeDirectoryChain(Path const &filePath)
@@ -136,8 +142,7 @@ namespace Gek
 		{
 			for (const auto &fileSearch : std::experimental::filesystem::directory_iterator(rootDirectory))
 			{
-                Path filePath(fileSearch.path().wstring());
-				onFileFound(filePath);
+				onFileFound(fileSearch.path().u8string());
 			}
 		}
     } // namespace FileSystem

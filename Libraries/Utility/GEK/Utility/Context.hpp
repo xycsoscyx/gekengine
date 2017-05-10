@@ -41,10 +41,10 @@ namespace Gek
             return FileSystem::GetFileName(getRootPath(), { nameList... });
         }
 
-        virtual ContextUserPtr createBaseClass(WString const &className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const = 0;
+        virtual ContextUserPtr createBaseClass(std::string const &className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const = 0;
 
         template <typename TYPE, typename... PARAMETERS>
-        std::unique_ptr<TYPE> createClass(WString const &className, PARAMETERS... arguments) const
+        std::unique_ptr<TYPE> createClass(std::string const &className, PARAMETERS... arguments) const
         {
             std::tuple<PARAMETERS...> packedArguments(arguments...);
             std::vector<std::type_index> argumentTypes = { typeid(PARAMETERS)... };
@@ -60,6 +60,6 @@ namespace Gek
             return result;
         }
 
-        virtual void listTypes(WString const &typeName, std::function<void(WString const &)> onType) const = 0;
+        virtual void listTypes(std::string const &typeName, std::function<void(std::string const &)> onType) const = 0;
     };
 }; // namespace Gek

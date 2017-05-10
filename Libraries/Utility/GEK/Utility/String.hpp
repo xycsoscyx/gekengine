@@ -25,312 +25,199 @@
 
 namespace Gek
 {
-	template <typename TYPE>
-	struct EmptyString
-	{
-	};
+	static const std::string EmptyString;
 
-	template<>
-	struct EmptyString<char>
+	template <typename CONTAINER>
+	void TrimLeft(CONTAINER &string, std::function<bool(typename CONTAINER::value_type)> checkElement = [](typename CONTAINER::value_type ch) { return !std::isspace(ch, std::locale::classic()); })
 	{
-		static char const * Get(void)
-		{
-			return "";
-		}
-	};
+		string.erase(std::begin(string), std::find_if(std::begin(string), std::end(string), checkElement));
+	}
 
-	template<>
-	struct EmptyString<wchar_t>
+	template <typename CONTAINER>
+	void TrimRight(CONTAINER &string, std::function<bool(typename CONTAINER::value_type)> checkElement = [](typename CONTAINER::value_type ch) { return !std::isspace(ch, std::locale::classic()); })
 	{
-		static wchar_t const * Get(void)
-		{
-			return L"";
-		}
-	};
+		string.erase(std::find_if(std::rbegin(string), std::rend(string), checkElement).base(), std::end(string));
+	}
 
-    template<class ELEMENT, class TRAITS = std::char_traits<ELEMENT>, class ALLOCATOR = std::allocator<ELEMENT>>
-    class BaseString : public std::basic_string<ELEMENT, TRAITS, ALLOCATOR>
+	template <typename CONTAINER>
+	void Trim(CONTAINER &string, std::function<bool(typename CONTAINER::value_type)> checkElement = [](typename CONTAINER::value_type ch) { return !std::isspace(ch, std::locale::classic()); })
+	{
+		TrimLeft(string, checkElement);
+		TrimRight(string, checkElement);
+	}
+
+	template <typename CONTAINER>
+	CONTAINER GetLower(CONTAINER &string)
+	{
+		CONTAINER transformed;
+		std::transform(std::begin(string), std::end(string), std::back_inserter(transformed), ::tolower);
+		return transformed;
+	}
+
+	template <typename CONTAINER>
+	CONTAINER GetUpper(CONTAINER &string)
+	{
+		CONTAINER transformed;
+		std::transform(std::begin(string), std::end(string), std::back_inserter(transformed), ::toupper);
+		return transformed;
+	}
+
+	static std::string Join(std::vector<std::string> const &list, char delimiter, bool initialDelimiter = false)
     {
-    public:
-        using ElementType = ELEMENT;
-		static const BaseString<ELEMENT, TRAITS, ALLOCATOR> Empty;
-
-    public:
-        static BaseString Join(std::vector<BaseString> const &list, ELEMENT delimiter, bool initialDelimiter = false)
-        {
-			if (list.empty())
-			{
-				return Empty;
-			}
-
-			auto size = (initialDelimiter ? 1 : 0); // initial length
-			size += (list.size() - 1); // insert delimiters between list elements
-			for (const auto &string : list)
-			{
-				size += string.length();
-			}
-
-			BaseString result;
-			result.reserve(size);
-			if (initialDelimiter)
-			{
-				result.append(1U, delimiter);
-			}
-
-			result.append(list.front());
-			for (auto &string = std::next(std::begin(list), 1); string != std::end(list); ++string)
-			{
-				result.append(1U, delimiter);
-				result.append(*string);
-			}
-
-			return result;
-        }
-
-        template<typename TYPE, typename... PARAMETERS>
-        static BaseString Format(ELEMENT const *formatting, TYPE const &value, PARAMETERS... arguments)
-        {
-            BaseString result;
-            result.format(formatting, value, arguments...);
-            return result;
-        }
-
-    public:
-        BaseString(void)
-        {
-        }
-
-        BaseString(std::size_t length, ELEMENT character)
-            : basic_string(length, character)
-        {
-        }
-
-		BaseString(ELEMENT const *string)
-			: basic_string(string ? string : EmptyString<ELEMENT>::Get())
+		if (list.empty())
 		{
+			return EmptyString;
 		}
 
-        template<template <typename, typename, typename> class CONTAINER>
-		BaseString(CONTAINER<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> const &string)
-			: basic_string(string.empty() ? Empty : string)
+		auto size = (initialDelimiter ? 1 : 0); // initial length
+		size += (list.size() - 1); // insert delimiters between list elements
+		for (const auto &string : list)
 		{
+			size += string.length();
 		}
 
-        template<typename CONVERSION>
-        BaseString(CONVERSION const *string)
-        {
-			converter<ELEMENT, CONVERSION>::convert((*this), (string ? string : EmptyString<CONVERSION>::Get()));
-        }
-
-        template<template <typename, typename, typename> class CONTAINER, typename CONVERSION>
-        BaseString(CONTAINER<CONVERSION, std::char_traits<CONVERSION>, std::allocator<CONVERSION>> const &string)
-        {
-			converter<ELEMENT, CONVERSION>::convert((*this), string.data());
-        }
-
-		BaseString subString(size_t position = 0, size_t length = BaseString::npos) const
-        {
-			auto currentSize = size();
-			position = ((position < currentSize) ? position : (currentSize - 1));
-			length = (((position + length) < currentSize) ? length : npos);
-            return BaseString(substr(position, length));
-        }
-
-        bool replace(BaseString const &searchFor, BaseString const &replaceWith)
-        {
-            bool replaced = false;
-
-            size_t position = 0;
-            while ((position = find(searchFor, position)) != std::string::npos)
-            {
-                basic_string::replace(position, searchFor.size(), replaceWith);
-                position += replaceWith.length();
-                replaced = true;
-            };
-
-            return replaced;
-        }
-
-        void trimLeft(std::function<bool(ELEMENT)> checkElement = [](ELEMENT ch) { return !std::isspace(ch, std::locale::classic()); })
-        {
-            erase(begin(), std::find_if(begin(), end(), checkElement));
-        }
-
-        void trimRight(std::function<bool(ELEMENT)> checkElement = [](ELEMENT ch) { return !std::isspace(ch, std::locale::classic()); })
-        {
-            erase(std::find_if(rbegin(), rend(), checkElement).base(), end());
-        }
-
-        void trim(std::function<bool(ELEMENT)> checkElement = [](ELEMENT ch) { return !std::isspace(ch, std::locale::classic()); })
-        {
-            trimLeft(checkElement);
-            trimRight(checkElement);
-        }
-
-        void toLower(void)
-        {
-			std::transform(begin(), end(), begin(), ::tolower);
-        }
-
-        void toUpper(void)
-        {
-            std::transform(begin(), end(), begin(), ::toupper);
-        }
-
-        BaseString getLower(void) const
-        {
-            BaseString transformed;
-            std::transform(begin(), end(), std::back_inserter(transformed), ::tolower);
-            return transformed;
-        }
-
-        BaseString getUpper(void) const
-        {
-            BaseString transformed;
-            std::transform(begin(), end(), std::back_inserter(transformed), ::toupper);
-            return transformed;
-        }
-
-        std::vector<BaseString> split(ELEMENT delimiter, bool clearSpaces = true) const
-        {
-            BaseString current;
-            std::vector<BaseString> tokens;
-            std::basic_stringstream<ELEMENT, TRAITS, ALLOCATOR> stream(data());
-            while (std::getline(stream, current, delimiter))
-            {
-                if (clearSpaces)
-                {
-                    current.trim();
-                }
-
-                tokens.push_back(current);
-            };
-
-            return tokens;
-        }
-
-		bool endsWith(BaseString const &string) const
+		std::string result;
+		result.reserve(size);
+		if (initialDelimiter)
 		{
-			if (string.length() > length()) return false;
-			return std::equal(string.rbegin(), string.rend(), rbegin());
+			result.append(1U, delimiter);
 		}
 
-		int compareNoCase(BaseString const &string) const
+		result.append(list.front());
+		for (auto &string = std::next(std::begin(list), 1); string != std::end(list); ++string)
+		{
+			result.append(1U, delimiter);
+			result.append(*string);
+		}
+
+		return result;
+    }
+
+	std::vector<std::string> Split(const std::string &string, char delimiter, bool clearSpaces = true)
+	{
+		std::string current;
+		std::vector<std::string> tokens;
+		std::stringstream stream(string);
+		while (std::getline(stream, current, delimiter))
+		{
+			if (clearSpaces)
+			{
+				Trim(current);
+			}
+
+			tokens.push_back(current);
+		};
+
+		return tokens;
+	}
+
+	char const *Format(char const *string)
+	{
+		return string;
+	}
+
+	template<typename TYPE, typename... PARAMETERS>
+	std::string Format(char const *formatting, TYPE const &value, PARAMETERS... arguments)
+	{
+		std::string result;
+		while (formatting && *formatting)
+		{
+			char currentCharacter = *formatting++;
+			if (currentCharacter == char('%') && formatting && *formatting)
+			{
+				char nextCharacter = *formatting++;
+				if (nextCharacter == char('%'))
+				{
+					// %%
+					result.append(1U, nextCharacter);
+				}
+				else if (nextCharacter == char('v'))
+				{
+					// %v
+					// use += operator for automatic type conversion
+					// will fail at compile time with unknown types
+					return (result + Format(formatting, arguments...));
+				}
+				else
+				{
+					// %(other)
+					result.append(1U, currentCharacter).append(1U, nextCharacter);
+				}
+			}
+			else
+			{
+				result.append(1U, currentCharacter);
+			}
+		};
+
+		return result;
+	}
+
+	bool Replace(std::string &string, std::string const &searchFor, std::string const &replaceWith)
+	{
+		bool did_replace = false;
+
+		size_t position = 0;
+		while ((position = string.find(searchFor, position)) != std::string::npos)
+		{
+			string.replace(position, searchFor.size(), replaceWith);
+			position += replaceWith.length();
+			did_replace = true;
+		};
+
+		return did_replace;
+	}
+
+	void try_this(void)
+	{
+		auto string = Format("%v%v", 1, 2);
+	}
+
+/*
+        std::string &operator = (char const &value)
         {
-            if (size() != string.size())
-            {
-                return 1;
-            }
-
-            return std::equal(std::begin(*this), std::end(*this), std::begin(string), [](ELEMENT const &left, ELEMENT const &right) -> bool
-            {
-                return (std::tolower(left) == std::tolower(right));
-            }) ? 0 : 1;
-        }
-
-        BaseString & append(std::size_t length, ELEMENT character)
-        {
-            return static_cast<BaseString &>(std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(length, character));
-        }
-
-        BaseString & append(BaseString const &string)
-        {
-            return static_cast<BaseString &>(std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(string));
-        }
-
-        BaseString & appendFormat(ELEMENT const *string)
-        {
-            return static_cast<BaseString &>(std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(string));
-        }
-
-        template<typename TYPE, typename... PARAMETERS>
-        BaseString & appendFormat(ELEMENT const *formatting, TYPE const &value, PARAMETERS... arguments)
-        {
-            while (formatting && *formatting)
-            {
-                ELEMENT currentCharacter = *formatting++;
-                if (currentCharacter == ELEMENT('%') && formatting && *formatting)
-                {
-                    ELEMENT nextCharacter = *formatting++;
-                    if (nextCharacter == ELEMENT('%'))
-                    {
-                        // %%
-                        append(1U, nextCharacter);
-                    }
-                    else if (nextCharacter == ELEMENT('v'))
-                    {
-                        // %v
-                        // use += operator for automatic type conversion
-                        // will fail at compile time with unknown types
-                        (*this) += value;
-                        return appendFormat(formatting, arguments...);
-                    }
-                    else
-                    {
-                        // %(other)
-                        append(1U, currentCharacter).append(1U, nextCharacter);
-                    }
-                }
-                else
-                {
-                    append(1U, currentCharacter);
-                }
-            };
-
-            return (*this);
-        }
-
-        template<typename... PARAMETERS>
-        BaseString & format(ELEMENT const *formatting, PARAMETERS... arguments)
-        {
-            clear();
-            return appendFormat(formatting, arguments...);
-        }
-
-        BaseString &operator = (ELEMENT const &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
+            std::basic_stringstream<char, std::char_traits<char>, std::allocator<char>> stream;
             stream << value;
-            return static_cast<BaseString &>(assign(stream.str()));
+            return static_cast<std::string &>(assign(stream.str()));
         }
 
-        BaseString &operator = (bool const &value)
+        std::string &operator = (bool const &value)
         {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
+            std::basic_stringstream<char, std::char_traits<char>, std::allocator<char>> stream;
             stream << std::boolalpha << value;
-            return static_cast<BaseString &>(assign(stream.str()));
+            return static_cast<std::string &>(assign(stream.str()));
         }
 
-        BaseString &operator = (float const &value)
+        std::string &operator = (float const &value)
         {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
+            std::basic_stringstream<char, std::char_traits<char>, std::allocator<char>> stream;
             stream << std::showpoint << value;
-            return static_cast<BaseString &>(assign(stream.str()));
+            return static_cast<std::string &>(assign(stream.str()));
         }
 
-        BaseString &operator = (long const &value)
+        std::string &operator = (long const &value)
         {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(8) << std::hex << value;
-            return static_cast<BaseString &>(assign(stream.str()));
+            std::basic_stringstream<char, std::char_traits<char>, std::allocator<char>> stream;
+            stream << std::uppercase << std::setfill(char('0')) << std::setw(8) << std::hex << value;
+            return static_cast<std::string &>(assign(stream.str()));
         }
 
-        BaseString &operator = (unsigned long const &value)
+        std::string &operator = (unsigned long const &value)
         {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(8) << std::hex << value;
-            return static_cast<BaseString &>(assign(stream.str()));
+            std::basic_stringstream<char, std::char_traits<char>, std::allocator<char>> stream;
+            stream << std::uppercase << std::setfill(char('0')) << std::setw(8) << std::hex << value;
+            return static_cast<std::string &>(assign(stream.str()));
         }
 
         template <typename TYPE>
-        BaseString &operator = (TYPE const &value)
+        std::string &operator = (TYPE const &value)
         {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
+            std::basic_stringstream<char, std::char_traits<char>, std::allocator<char>> stream;
             stream << value;
-            return static_cast<BaseString &>(assign(stream.str()));
+            return static_cast<std::string &>(assign(stream.str()));
         }
 
-        BaseString &operator = (ELEMENT const *string)
+        std::string &operator = (char const *string)
         {
             if (string)
             {
@@ -345,7 +232,7 @@ namespace Gek
         }
 
         template<template <typename, typename, typename> class CONTAINER>
-        BaseString &operator = (CONTAINER<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> const &string)
+        std::string &operator = (CONTAINER<char, std::char_traits<char>, std::allocator<char>> const &string)
         {
             if (string.empty())
             {
@@ -360,11 +247,11 @@ namespace Gek
         }
 
         template <typename CONVERSION>
-        BaseString &operator = (CONVERSION const *string)
+        std::string &operator = (CONVERSION const *string)
         {
             if (string)
             {
-                converter<ELEMENT, CONVERSION>::convert((*this), string);
+                converter<char, CONVERSION>::convert((*this), string);
             }
             else
             {
@@ -375,7 +262,7 @@ namespace Gek
         }
 
         template<template <typename, typename, typename> class CONTAINER, typename CONVERSION>
-        BaseString &operator = (CONTAINER<CONVERSION, std::char_traits<CONVERSION>, std::allocator<CONVERSION>> const &string)
+        std::string &operator = (CONTAINER<CONVERSION, std::char_traits<CONVERSION>, std::allocator<CONVERSION>> const &string)
         {
             if (string.empty())
             {
@@ -383,87 +270,87 @@ namespace Gek
             }
             else
             {
-                converter<ELEMENT, CONVERSION>::convert((*this), string.data());
+                converter<char, CONVERSION>::convert((*this), string.data());
             }
 
             return (*this);
         }
 
-        void operator += (ELEMENT const &value)
+        void operator += (char const &value)
         {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
+            std::basic_stringstream<char, std::char_traits<char>, std::allocator<char>> stream;
             stream << value;
-            std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(stream.str());
+            std::basic_string<char, TRAITS, ALLOCATOR>::append(stream.str());
         }
 
         void operator += (bool const &value)
         {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
+            std::basic_stringstream<char, std::char_traits<char>, std::allocator<char>> stream;
             stream << std::boolalpha << value;
-            std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(stream.str());
+            std::basic_string<char, TRAITS, ALLOCATOR>::append(stream.str());
         }
 
         void operator += (float const &value)
         {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
+            std::basic_stringstream<char, std::char_traits<char>, std::allocator<char>> stream;
             stream << std::showpoint << value;
-            std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(stream.str());
+            std::basic_string<char, TRAITS, ALLOCATOR>::append(stream.str());
         }
 
         void operator += (long const &value)
         {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(8) << std::hex << value;
-            std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(stream.str());
+            std::basic_stringstream<char, std::char_traits<char>, std::allocator<char>> stream;
+            stream << std::uppercase << std::setfill(char('0')) << std::setw(8) << std::hex << value;
+            std::basic_string<char, TRAITS, ALLOCATOR>::append(stream.str());
         }
 
         void operator += (unsigned long const &value)
         {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(8) << std::hex << value;
-            std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(stream.str());
+            std::basic_stringstream<char, std::char_traits<char>, std::allocator<char>> stream;
+            stream << std::uppercase << std::setfill(char('0')) << std::setw(8) << std::hex << value;
+            std::basic_string<char, TRAITS, ALLOCATOR>::append(stream.str());
         }
 
         template <typename TYPE>
         void operator += (TYPE const &value)
         {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
+            std::basic_stringstream<char, std::char_traits<char>, std::allocator<char>> stream;
             stream << value;
-            std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(stream.str());
+            std::basic_string<char, TRAITS, ALLOCATOR>::append(stream.str());
         }
 
-        void operator += (ELEMENT const *string)
+        void operator += (char const *string)
         {
             if (string)
             {
-                std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(string);
+                std::basic_string<char, TRAITS, ALLOCATOR>::append(string);
             }
         }
 
         template<template <typename, typename, typename> class CONTAINER>
-        void operator += (CONTAINER<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> const &string)
+        void operator += (CONTAINER<char, std::char_traits<char>, std::allocator<char>> const &string)
         {
-            std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(std::begin(string), std::end(string));
+            std::basic_string<char, TRAITS, ALLOCATOR>::append(std::begin(string), std::end(string));
         }
 
         template <typename CONVERSION>
         void operator += (const CONVERSION *string)
         {
-            BaseString converted(string);
-            std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(std::begin(converted), std::end(converted));
+            std::string converted(string);
+            std::basic_string<char, TRAITS, ALLOCATOR>::append(std::begin(converted), std::end(converted));
         }
 
         template<template <typename, typename, typename> class CONTAINER, typename CONVERSION>
         void operator += (CONTAINER<CONVERSION, std::char_traits<CONVERSION>, std::allocator<CONVERSION>> const &string)
         {
-            BaseString converted(string);
-            std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(std::begin(converted), std::end(converted));
+            std::string converted(string);
+            std::basic_string<char, TRAITS, ALLOCATOR>::append(std::begin(converted), std::end(converted));
         }
 
         operator bool() const
         {
             bool value;
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
+            std::basic_stringstream<char, std::char_traits<char>, std::allocator<char>> stream(*this);
             stream >> std::boolalpha >> value;
             return (stream.fail() ? false : value);
         }
@@ -471,7 +358,7 @@ namespace Gek
         operator float () const
         {
             float value;
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
+            std::basic_stringstream<char, std::char_traits<char>, std::allocator<char>> stream(*this);
             stream >> value;
             return (stream.fail() ? 0.0f : value);
         }
@@ -479,7 +366,7 @@ namespace Gek
         operator int32_t () const
         {
             int32_t value;
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
+            std::basic_stringstream<char, std::char_traits<char>, std::allocator<char>> stream(*this);
             stream >> value;
             return (stream.fail() ? 0 : value);
         }
@@ -487,12 +374,12 @@ namespace Gek
         operator uint32_t () const
         {
             uint32_t value;
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
+            std::basic_stringstream<char, std::char_traits<char>, std::allocator<char>> stream(*this);
             stream >> value;
             return (stream.fail() ? 0 : value);
         }
 
-        operator ELEMENT const * const () const
+        operator char const * const () const
         {
             return data();
         }
@@ -541,8 +428,8 @@ namespace Gek
 
         struct MustMatch
         {
-            ELEMENT character;
-            MustMatch(ELEMENT character)
+            char character;
+            MustMatch(char character)
                 : character(character)
             {
             }
@@ -550,7 +437,7 @@ namespace Gek
             template <typename STREAM>
             friend STREAM &operator >> (STREAM &stream, const MustMatch &match)
             {
-                ELEMENT next;
+                char next;
                 stream.get(next);
                 if (next != match.character)
                 {
@@ -561,28 +448,5 @@ namespace Gek
             }
         };
     };
-
-    using CString = BaseString<char>;
-    using WString = BaseString<wchar_t>;
+	*/
 }; // namespace Gek
-
-namespace std
-{
-    template<>
-    struct hash<Gek::CString>
-    {
-        size_t operator()(Gek::CString const &value) const
-        {
-            return hash<string>()(value);
-        }
-    };
-
-    template<>
-    struct hash<Gek::WString>
-    {
-        size_t operator()(Gek::WString const &value) const
-        {
-            return hash<wstring>()(value);
-        }
-    };
-}; // namespace std

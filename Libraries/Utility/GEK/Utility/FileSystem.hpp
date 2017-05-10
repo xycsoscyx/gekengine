@@ -21,10 +21,11 @@ namespace Gek
 			public std::experimental::filesystem::path
 		{
 			Path(void);
-			Path(WString const &path);
+			Path(std::string const &path);
+			Path(std::experimental::filesystem::path const &path);
 			Path(Path const &path);
 
-			void operator = (WString const &path);
+			void operator = (std::string const &path);
 			void operator = (Path const &path);
 
 			operator wchar_t const * const (void) const;
@@ -32,15 +33,15 @@ namespace Gek
 			void removeFileName(void);
 			void removeExtension(void);
 
-			void replaceFileName(WString const &fileName);
-			void replaceExtension(WString const &extension);
+			void replaceFileName(std::string const &fileName);
+			void replaceExtension(std::string const &extension);
 
-			Path withExtension(WString const &extension) const;
+			Path withExtension(std::string const &extension) const;
 			Path withoutExtension() const;
 
 			Path getParentPath(void) const;
-			WString getFileName(void) const;
-			WString getExtension(void) const;
+			std::string getFileName(void) const;
+			std::string getExtension(void) const;
 
 			bool isFile(void) const;
 			bool isDirectory(void) const;
@@ -49,7 +50,7 @@ namespace Gek
 
 		Path GetModuleFilePath(void);
 
-		Path GetFileName(Path const &rootDirectory, const std::vector<WString> &list);
+		Path GetFileName(Path const &rootDirectory, const std::vector<std::string> &list);
 
 		void MakeDirectoryChain(Path const &filePath);
 
