@@ -8,8 +8,6 @@
 
 namespace Gek
 {
-	const std::string Empty;
-
     class ContextImplementation
         : public Context
     {
@@ -23,16 +21,16 @@ namespace Gek
         ContextImplementation(FileSystem::Path const &rootPath, std::vector<FileSystem::Path> searchPathList)
             : rootPath(rootPath)
         {
-            SetCurrentDirectoryW(rootPath);
+            SetCurrentDirectoryW(rootPath.native().c_str());
             
             searchPathList.push_back(rootPath);
             for (const auto &searchPath : searchPathList)
             {
                 FileSystem::Find(searchPath, [&](FileSystem::Path const &filePath) -> bool
                 {
-					if (filePath.isFile() && GetLower(filePath.getExtension()) == ".dll")
+					if (filePath.isFile() && String::GetLower(filePath.getExtension()) == ".dll"s)
 					{
-						HMODULE module = LoadLibrary(filePath);
+						HMODULE module = LoadLibrary(filePath.native().c_str());
 						if (module)
 						{
 							InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "initializePlugin");

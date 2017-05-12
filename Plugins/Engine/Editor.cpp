@@ -55,9 +55,9 @@ namespace Gek
                 population->onAction.connect<Editor, &Editor::onAction>(this);
                 population->onUpdate[90].connect<Editor, &Editor::onUpdate>(this);
 
-                WString baseFileName(getContext()->getRootFileName(L"data", L"gui"));
-                deleteTexture = core->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"delete.png"), 0);
-                populationButton = core->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"population.png"), 0);
+                auto baseFileName(getContext()->getRootFileName("data"s, "gui"s));
+                deleteTexture = core->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, "delete.png"s), 0);
+                populationButton = core->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, "population.png"s), 0);
 
                 core->getPanelManager()->getPane(ImGui::PanelManager::RIGHT)->addButtonAndWindow(
                     ImGui::Toolbutton("Population", (Video::Object *)populationButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
@@ -93,8 +93,8 @@ namespace Gek
 
                     if (ImGui::BeginPopup("Entity Name"))
                     {
-                        WString name;
-                        if (ImGui::Gek::InputString("Name", name, ImGuiInputTextFlags_EnterReturnsTrue))
+                        std::string name;
+                        if (GUI::InputString("Name", name, ImGuiInputTextFlags_EnterReturnsTrue))
                         {
                             population->createEntity(name);
                             ImGui::CloseCurrentPopup();
@@ -122,7 +122,7 @@ namespace Gek
                                 ImGui::PopID();
                                 ImGui::SameLine();
                                 ImGui::SetItemAllowOverlap();
-                                if (ImGui::Selectable(CString(entitySearch->first), (entityIndex == selectedEntity)))
+                                if (ImGui::Selectable(entitySearch->first.c_str(), (entityIndex == selectedEntity)))
                                 {
                                     selectedEntity = entityIndex;
                                     selectedComponent = 0;
@@ -261,28 +261,28 @@ namespace Gek
                     return;
                 }
 
-                if (action.name.compareNoCase(L"turn") == 0)
+                if (action.name == "turn"s)
                 {
                     headingAngle += (action.value * 0.01f);
                 }
-                else if (action.name.compareNoCase(L"tilt") == 0)
+                else if (action.name == "tilt"s)
                 {
                     lookingAngle += (action.value * 0.01f);
                     lookingAngle = Math::Clamp(lookingAngle, -Math::Pi * 0.5f, Math::Pi * 0.5f);
                 }
-                else if (action.name.compareNoCase(L"move_forward") == 0)
+                else if (action.name == "move_forward"s)
                 {
                     moveForward = action.state;
                 }
-                else if (action.name.compareNoCase(L"move_backward") == 0)
+                else if (action.name == "move_backward"s)
                 {
                     moveBackward = action.state;
                 }
-                else if (action.name.compareNoCase(L"strafe_left") == 0)
+                else if (action.name == "strafe_left"s)
                 {
                     strafeLeft = action.state;
                 }
-                else if (action.name.compareNoCase(L"strafe_right") == 0)
+                else if (action.name == "strafe_right"s)
                 {
                     strafeRight = action.state;
                 }
@@ -303,9 +303,9 @@ namespace Gek
                     const float height = float(backBuffer->getDescription().height);
                     auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
 
-                    std::vector<WString> filters = {
-                        L"tonemap",
-                        L"antialias"
+                    std::vector<std::string> filters = {
+                        "tonemap"s,
+                        "antialiass"s,
                     };
 
                     renderer->queueCamera(viewMatrix, projectionMatrix, 0.5f, 200.0f, ResourceHandle());

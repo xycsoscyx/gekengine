@@ -7,7 +7,8 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK/Utility/Exceptions.hpp"
+#include "GEK/Math/Vector2.hpp"
+#include "GEK/Math/Vector4.hpp"
 #include "GEK/Utility/Context.hpp"
 #include <nano_signal_slot.hpp>
 
@@ -24,10 +25,10 @@ namespace Gek
 
         struct Description
         {
-            WString className;
+            std::string className;
             bool hasOwnContext = true;
 
-            WString windowName;
+            std::string windowName;
             uint32_t initialWidth = 1;
             uint32_t initialHeight = 1;
             bool readMouseMovement = true;

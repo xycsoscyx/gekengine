@@ -35,7 +35,7 @@ namespace Gek
 
             struct Action
             {
-                WString name;
+                std::string name;
                 union
                 {
                     bool state;
@@ -46,15 +46,15 @@ namespace Gek
                 {
                 }
 
-                Action(WString const &name, bool state)
-                    : name(name)
+                Action(std::string const &name, bool state)
+                    : name(String::GetLower(name))
                     , state(state)
                 {
                 }
 
-                Action(WString const &name, float value)
-                    : name(name)
-                    , value(value)
+                Action(std::string const &name, float value)
+					: name(String::GetLower(name))
+					, value(value)
                 {
                 }
             };
@@ -64,7 +64,7 @@ namespace Gek
             std::map<int32_t, Nano::Signal<void(float frameTime)>> onUpdate;
             Nano::Signal<void(Action const &action)> onAction;
 
-            Nano::Signal<void(Plugin::Entity * const entity, WString const &entityName)> onEntityCreated;
+            Nano::Signal<void(Plugin::Entity * const entity, std::string const &entityName)> onEntityCreated;
             Nano::Signal<void(Plugin::Entity * const entity)> onEntityDestroyed;
 
             Nano::Signal<void(Plugin::Entity * const entity, const std::type_index &type)> onComponentAdded;
@@ -72,20 +72,20 @@ namespace Gek
 
             virtual ShuntingYard &getShuntingYard(void) = 0;
 
-            virtual void load(WString const &populationName) = 0;
-            virtual void save(WString const &populationName) = 0;
+            virtual void load(std::string const &populationName) = 0;
+            virtual void save(std::string const &populationName) = 0;
 
-            virtual Plugin::Entity *createEntity(WString const &entityName, const std::vector<JSON::Member> &componentList = std::vector<JSON::Member>()) = 0;
+            virtual Plugin::Entity *createEntity(std::string const &entityName, const std::vector<JSON::Member> &componentList = std::vector<JSON::Member>()) = 0;
             virtual void killEntity(Plugin::Entity * const entity) = 0;
             virtual void addComponent(Plugin::Entity * const entity, const JSON::Member &componentData) = 0;
             virtual void removeComponent(Plugin::Entity * const entity, const std::type_index &type) = 0;
 
-            virtual void listEntities(std::function<void(Plugin::Entity * const entity, WString const &entityName)> onEntity) const = 0;
+            virtual void listEntities(std::function<void(Plugin::Entity * const entity, std::string const &entityName)> onEntity) const = 0;
 
             template<typename... COMPONENTS>
-            void listEntities(std::function<void(Plugin::Entity * const entity, WString const &entityName, COMPONENTS&... components)> onEntity) const
+            void listEntities(std::function<void(Plugin::Entity * const entity, std::string const &entityName, COMPONENTS&... components)> onEntity) const
             {
-                listEntities([onEntity = move(onEntity)](Plugin::Entity * const entity, WString const &entityName) -> void
+                listEntities([onEntity = move(onEntity)](Plugin::Entity * const entity, std::string const &entityName) -> void
                 {
                     if (entity->hasComponents<COMPONENTS...>())
                     {
@@ -109,7 +109,7 @@ namespace Gek
             using ComponentMap = std::unordered_map<std::type_index, Plugin::ComponentPtr>;
             virtual ComponentMap &getComponentMap(void) = 0;
 
-            using EntityMap = std::unordered_map<WString, Plugin::EntityPtr>;
+            using EntityMap = std::unordered_map<std::string, Plugin::EntityPtr>;
             virtual EntityMap &getEntityMap(void) = 0;
 
             virtual ~Population(void) = default;

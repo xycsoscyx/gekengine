@@ -22,34 +22,6 @@
 
 namespace Gek
 {
-    // Function Traits
-    // http://stackoverflow.com/questions/2562320/specializing-a-template-on-a-lambda-in-c0x
-
-    template <typename CLASS>
-    struct FunctionCache
-    {
-        using ReturnType = typename FunctionCache<decltype(&CLASS::operator())>::ReturnType;
-        using ArgumentTypes = typename FunctionCache<decltype(&CLASS::operator())>::ArgumentTypes;
-    };
-
-    template <typename RETURN, typename CLASS, typename... PARAMETERS>
-    struct FunctionCache<RETURN(__stdcall CLASS::*)(PARAMETERS...)>
-    {
-        using ReturnType = RETURN;
-        using ArgumentTypes = std::tuple<typename std::decay<PARAMETERS>::type...>;
-
-        ArgumentTypes cache;
-        void operator()(CLASS *classObject, RETURN(__stdcall CLASS::*function)(PARAMETERS...), PARAMETERS... arguments)
-        {
-            auto current = std::tie(arguments...);
-            if (current != cache)
-            {
-                cache = current;
-                (classObject->*function)(arguments...);
-            }
-        }
-    };
-
     namespace DirectX
     {
         // All these lists must match, since the same GEK Format can be used for either textures or buffers
@@ -580,12 +552,11 @@ namespace Gek
     namespace Direct3D11
     {
         template <typename CLASS>
-        void setDebugName(CComPtr<CLASS> &object, wchar_t const * const name)
+        void setDebugName(CComPtr<CLASS> &object, std::string const &name)
         {
             if (object)
             {
-                CString nameUTF8(name);
-                object->SetPrivateData(WKPDID_D3DDebugObjectName, UINT(nameUTF8.length()), nameUTF8.c_str());
+                object->SetPrivateData(WKPDID_D3DDebugObjectName, UINT(name.size()), name.c_str());
             }
         }
 
@@ -660,7 +631,7 @@ namespace Gek
             {
             }
 
-            void setName(wchar_t const * const name)
+			void setName(std::string const &name)
             {
                 setDebugName(d3dObject, name);
             }
@@ -694,8 +665,8 @@ namespace Gek
             {
             }
 
-            void setName(wchar_t const * const name)
-            {
+			void setName(std::string const &name)
+			{
                 setDebugName(d3dObject, name);
             }
         };
@@ -722,8 +693,8 @@ namespace Gek
 
             virtual ~Buffer(void) = default;
 
-            void setName(wchar_t const * const name)
-            {
+			void setName(std::string const &name)
+			{
                 setDebugName(d3dObject, name);
                 setDebugName(Resource::d3dObject, name);
                 setDebugName(ShaderResourceView::d3dObject, name);
@@ -783,8 +754,8 @@ namespace Gek
             {
             }
 
-            void setName(wchar_t const * const name)
-            {
+			void setName(std::string const &name)
+			{
                 setDebugName(Resource::d3dObject, name);
                 setDebugName(ShaderResourceView::d3dObject, name);
                 setDebugName(UnorderedAccessView::d3dObject, name);
@@ -835,8 +806,8 @@ namespace Gek
 
             virtual ~TargetTexture(void) = default;
 
-            virtual void setName(wchar_t const * const name)
-            {
+			void setName(std::string const &name)
+			{
                 setDebugName(Resource::d3dObject, name);
                 setDebugName(RenderTargetView::d3dObject, name);
             }
@@ -857,7 +828,7 @@ namespace Gek
 
             virtual ~TargetViewTexture(void) = default;
 
-            void setName(wchar_t const * const name)
+            void setName(std::string const &name)
             {
                 setDebugName(Resource::d3dObject, name);
                 setDebugName(RenderTargetView::d3dObject, name);
@@ -887,7 +858,7 @@ namespace Gek
 
             virtual ~DepthTexture(void) = default;
 
-            void setName(wchar_t const * const name)
+            void setName(std::string const &name)
             {
                 setDebugName(Resource::d3dObject, name);
                 setDebugName(ShaderResourceView::d3dObject, name);
@@ -1340,7 +1311,7 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(query);
 
-                    switch (d3dDeviceContext->GetData(getObject<Query>(query), data, dataSize, 0))
+                    switch (d3dDeviceContext->GetData(getObject<Query>(query), data, UINT(dataSize), 0))
                     {
                     case S_OK:
                         return Video::Query::Status::Ready;
@@ -2366,7 +2337,7 @@ namespace Gek
                 throw Video::CreateObjectFailed("Unknown program pipline encountered");
             }
 
-            std::vector<uint8_t> compileProgram(CString const &name, CString const &type, CString const &uncompiledProgram, CString const &entryFunction)
+            std::vector<uint8_t> compileProgram(std::string const &name, std::string const &type, std::string const &uncompiledProgram, std::string const &entryFunction)
             {
                 GEK_REQUIRE(d3dDevice);
 
@@ -2382,7 +2353,7 @@ namespace Gek
 
                 CComPtr<ID3DBlob> d3dShaderBlob;
                 CComPtr<ID3DBlob> d3dCompilerErrors;
-                HRESULT resultValue = D3DCompile(uncompiledProgram, (uncompiledProgram.size() + 1), name, nullptr, nullptr, entryFunction, type, flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+                HRESULT resultValue = D3DCompile(uncompiledProgram.c_str(), (uncompiledProgram.size() + 1), name.c_str(), nullptr, nullptr, entryFunction.c_str(), type.c_str(), flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
 					std::cerr << "D3DCompile Failed: " << resultValue << " " << (char const * const)d3dCompilerErrors->GetBufferPointer() << std::endl;
@@ -2393,25 +2364,25 @@ namespace Gek
                 return std::vector<uint8_t>(data, (data + d3dShaderBlob->GetBufferSize()));
             }
 
-            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, wchar_t const * const name, wchar_t const * const uncompiledProgram, wchar_t const * const entryFunction)
+            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, std::string const &name, std::string const &uncompiledProgram, std::string const &entryFunction)
             {
-                GEK_REQUIRE(name);
-                GEK_REQUIRE(uncompiledProgram);
-                GEK_REQUIRE(entryFunction);
+                GEK_REQUIRE(!name.empty());
+                GEK_REQUIRE(!uncompiledProgram.empty());
+                GEK_REQUIRE(!entryFunction.empty());
 
                 switch (pipelineType)
                 {
                 case Video::PipelineType::Compute:
-                    return compileProgram(name, "cs_5_0", uncompiledProgram, entryFunction);
+                    return compileProgram(name, "cs_5_0"s, uncompiledProgram, entryFunction);
 
                 case Video::PipelineType::Vertex:
-                    return compileProgram(name, "vs_5_0", uncompiledProgram, entryFunction);
+                    return compileProgram(name, "vs_5_0"s, uncompiledProgram, entryFunction);
 
                 case Video::PipelineType::Geometry:
-                    return compileProgram(name, "gs_5_0", uncompiledProgram, entryFunction);
+                    return compileProgram(name, "gs_5_0"s, uncompiledProgram, entryFunction);
 
                 case Video::PipelineType::Pixel:
-                    return compileProgram(name, "ps_5_0", uncompiledProgram, entryFunction);
+                    return compileProgram(name, "ps_5_0"s, uncompiledProgram, entryFunction);
                 };
 
                 throw Video::CreateObjectFailed("Unknown program pipline encountered");
@@ -2634,26 +2605,25 @@ namespace Gek
 				static const std::vector<uint8_t> EmptyBuffer;
 				std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
 
-                WString extension(filePath.getExtension());
+				std::string extension(String::GetLower(filePath.getExtension()));
                 std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
-                if (extension.compareNoCase(L".dds") == 0)
+                if (extension == ".dds"s)
                 {
                     load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromDDSMemory(buffer.data(), buffer.size(), 0, nullptr, image); };
                 }
-                else if (extension.compareNoCase(L".tga") == 0)
+                else if (extension == ".tga"s)
                 {
                     load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromTGAMemory(buffer.data(), buffer.size(), nullptr, image); };
                 }
-                else if (extension.compareNoCase(L".png") == 0)
+                else if (extension == ".png"s)
                 {
                     load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_PNG, nullptr, image); };
                 }
-                else if (extension.compareNoCase(L".bmp") == 0)
+                else if (extension == ".bmp"s)
                 {
                     load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_BMP, nullptr, image); };
                 }
-                else if (extension.compareNoCase(L".jpg") == 0 ||
-                    extension.compareNoCase(L".jpeg") == 0)
+                else if (extension == ".jpg"s || extension == ".jpeg"s)
                 {
                     load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, nullptr, image); };
                 }
@@ -2698,26 +2668,25 @@ namespace Gek
 				static const std::vector<uint8_t> EmptyBuffer;
 				std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer, 1024 * 4));
 
-                WString extension(filePath.getExtension());
-                std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::TexMetadata &)> getMetadata;
-                if (extension.compareNoCase(L".dds") == 0)
+				std::string extension(String::GetLower(filePath.getExtension()));
+				std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::TexMetadata &)> getMetadata;
+                if (extension == ".dds"s)
                 {
                     getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromDDSMemory(buffer.data(), buffer.size(), 0, metadata); };
                 }
-                else if (extension.compareNoCase(L".tga") == 0)
+                else if (extension == ".tga"s)
                 {
                     getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromTGAMemory(buffer.data(), buffer.size(), metadata); };
                 }
-                else if (extension.compareNoCase(L".png") == 0)
+                else if (extension == ".png"s)
                 {
                     getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_PNG, metadata); };
                 }
-                else if (extension.compareNoCase(L".bmp") == 0)
+                else if (extension == ".bmp"s)
                 {
                     getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_BMP, metadata); };
                 }
-                else if (extension.compareNoCase(L".jpg") == 0 ||
-                    extension.compareNoCase(L".jpeg") == 0)
+                else if (extension == ".jpg"s || extension == ".jpeg"s)
                 {
                     getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, metadata); };
                 }

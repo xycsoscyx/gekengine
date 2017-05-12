@@ -89,8 +89,8 @@ namespace Gek
             ShuntingYard shuntingYard;
             concurrency::concurrent_queue<Action> actionQueue;
 
-            std::unordered_map<WString, std::type_index> componentTypeNameMap;
-            std::unordered_map<std::type_index, WString> componentNameTypeMap;
+            std::unordered_map<std::string, std::type_index> componentTypeNameMap;
+            std::unordered_map<std::type_index, std::string> componentNameTypeMap;
             ComponentMap componentMap;
 
             ThreadPool loadPool;
@@ -107,20 +107,20 @@ namespace Gek
             {
                 GEK_REQUIRE(core);
 
-                core->getLog()->message("Population", Plugin::Core::Log::Type::Message, "Loading component plugins");
-                getContext()->listTypes(L"ComponentType", [&](WString const &className) -> void
+                core->getLog()->message("Population"s, Plugin::Core::Log::Type::Message, "Loading component plugins");
+                getContext()->listTypes("ComponentType"s, [&](std::string const &className) -> void
                 {
-                    core->getLog()->message("Population", Plugin::Core::Log::Type::Message, "Component found: %v", className);
+                    core->getLog()->message("Population"s, Plugin::Core::Log::Type::Message, "Component found: %v", className);
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className, static_cast<Plugin::Population *>(this)));
                     if (componentMap.count(component->getIdentifier()) > 0)
                     {
-                        core->getLog()->message("Population", Plugin::Core::Log::Type::Debug, "Duplicate component identifier found: Class(%v), Identifier(%v)", className, component->getIdentifier().name());
+                        core->getLog()->message("Population"s, Plugin::Core::Log::Type::Debug, "Duplicate component identifier found: Class(%v), Identifier(%v)", className, component->getIdentifier().name());
                         return;
                     }
 
                     if (componentNameTypeMap.count(component->getIdentifier()) > 0)
                     {
-                        core->getLog()->message("Population", Plugin::Core::Log::Type::Debug, "Duplicate component name found: Class(%v), Name(%v)", className, component->getName());
+                        core->getLog()->message("Population"s, Plugin::Core::Log::Type::Debug, "Duplicate component name found: Class(%v), Name(%v)", className, component->getName());
                         return;
                     }
 
@@ -143,14 +143,14 @@ namespace Gek
                 componentMap.clear();
             }
 
-            void queueEntity(Plugin::Entity *entity, WString const & requestedName)
+            void queueEntity(Plugin::Entity *entity, std::string const & requestedName)
             {
                 entityQueue.push([this, entity = entity, requestedName = requestedName](void) -> void
                 {
-                    auto entityName(requestedName.empty() ? WString::Format(L"unnamed_%v", ++uniqueEntityIdentifier) : requestedName);
+                    auto entityName(requestedName.empty() ? String::Format("unnamed_%v", ++uniqueEntityIdentifier) : requestedName);
                     if (entityMap.count(requestedName) > 0)
                     {
-                        core->getLog()->message("Population", Plugin::Core::Log::Type::Error, "Unable to add entity to scene: %v", entityName);
+                        core->getLog()->message("Population"s, Plugin::Core::Log::Type::Error, "Unable to add entity to scene: %v", entityName);
                     }
                     else
                     {
@@ -196,7 +196,7 @@ namespace Gek
 
             void update(float frameTime)
             {
-                Plugin::Core::Log::Scope function(core->getLog(), "Population", "Update Time");
+                Plugin::Core::Log::Scope function(core->getLog(), "Population"s, "Update Time"s);
 
                 if (frameTime == 0.0f)
                 {
@@ -223,7 +223,7 @@ namespace Gek
                     entityAction();
                 };
 
-                core->getLog()->setValue("Population", "Entity Count", entityMap.size());
+                core->getLog()->setValue("Population"s, "Entity Count"s, entityMap.size());
             }
 
             void action(Action const &action)
@@ -231,23 +231,23 @@ namespace Gek
                 actionQueue.push(action);
             }
 
-            void load(WString const &populationName)
+            void load(std::string const &populationName)
             {
                 loadPool.enqueue([this, populationName](void) -> void
                 {
-                    core->getLog()->message("Population", Plugin::Core::Log::Type::Message, "Loading population: %v", populationName);
+                    core->getLog()->message("Population"s, Plugin::Core::Log::Type::Message, "Loading population: %v", populationName);
 
                     try
                     {
-                        const JSON::Object worldNode = JSON::Load(getContext()->getRootFileName(L"data", L"scenes", populationName).withExtension(L".json"));
-                        if (!worldNode.has_member(L"Population"))
+                        const JSON::Object worldNode = JSON::Load(getContext()->getRootFileName("data"s, "scenes"s, populationName).withExtension(".json"s));
+                        if (!worldNode.has_member("Population"s))
                         {
                             throw InvalidPopulationBlock("Scene must contain a population list");
                         }
 
-                        if (worldNode.has_member(L"Seed"))
+                        if (worldNode.has_member("Seed"s))
                         {
-                            shuntingYard.setRandomSeed(worldNode.get(L"Seed", std::mt19937::default_seed).as_uint());
+                            shuntingYard.setRandomSeed(worldNode.get("Seed"s, std::mt19937::default_seed).as_uint());
                         }
                         else
                         {
@@ -255,24 +255,24 @@ namespace Gek
                         }
 
                         JSON::Object templatesNode;
-                        if (worldNode.has_member(L"Templates"))
+                        if (worldNode.has_member("Templates"s))
                         {
-                            templatesNode = worldNode.get(L"Templates");
+                            templatesNode = worldNode.get("Templates"s);
                             if (!templatesNode.is_object())
                             {
                                 throw InvalidTemplatesBlock("Scene Templates must be an object");
                             }
 
-							core->getLog()->message("Population", Plugin::Core::Log::Type::Message, "Found templated block");
+							core->getLog()->message("Population"s, Plugin::Core::Log::Type::Message, "Found templated block");
 						}
 
-                        auto &populationNode = worldNode.get(L"Population");
+                        auto &populationNode = worldNode.get("Population"s);
                         if (!populationNode.is_array())
                         {
                             throw InvalidPopulationBlock("Scene Population must be an array");
                         }
 
-						core->getLog()->message("Population", Plugin::Core::Log::Type::Message, "Found %v Entity Definitions", populationNode.size());
+						core->getLog()->message("Population"s, Plugin::Core::Log::Type::Message, "Found %v Entity Definitions", populationNode.size());
                         for (const auto &entityNode : populationNode.elements())
                         {
                             if (!entityNode.is_object())
@@ -281,9 +281,9 @@ namespace Gek
                             }
 
                             std::vector<JSON::Member> entityComponentList;
-                            if (entityNode.has_member(L"Template"))
+                            if (entityNode.has_member("Template"s))
                             {
-                                auto &templateNode = templatesNode.get(entityNode[L"Template"].as_string());
+                                auto &templateNode = templatesNode.get(entityNode["Template"s].as_string());
                                 for (const auto &componentNode : templateNode.members())
                                 {
                                     entityComponentList.push_back(componentNode);
@@ -314,18 +314,18 @@ namespace Gek
                             auto entity(std::make_unique<Entity>());
                             for (const auto &componentData : entityComponentList)
                             {
-                                if (componentData.name().compare(L"Name") != 0 &&
-                                    componentData.name().compare(L"Template") != 0)
+                                if (componentData.name() != "Name"s &&
+                                    componentData.name() != "Template"s)
                                 {
                                     std::type_index componentIdentifier(typeid(nullptr));
                                     addComponent(entity.get(), componentData, &componentIdentifier);
                                 }
                             }
 
-                            WString entityName;
-                            if (entityNode.has_member(L"Name"))
+                            std::string entityName;
+                            if (entityNode.has_member("Name"s))
                             {
-                                entityName = entityNode.get(L"Name").as_string();
+                                entityName = entityNode.get("Name"s).as_string();
                             }
 
                             queueEntity(entity.release(), entityName);
@@ -333,18 +333,18 @@ namespace Gek
                     }
                     catch (const std::exception &exception)
                     {
-                        core->getLog()->message("Population", Plugin::Core::Log::Type::Error, "Unable to load population: %v", exception.what());
+                        core->getLog()->message("Population"s, Plugin::Core::Log::Type::Error, "Unable to load population: %v", exception.what());
                     };
                 });
             }
 
-            void save(WString const &populationName)
+            void save(std::string const &populationName)
             {
                 JSON::Array population;
                 for (const auto &entityPair : entityMap)
                 {
                     JSON::Object entityData;
-                    entityData.set(L"Name", entityPair.first);
+                    entityData.set("Name"s, entityPair.first);
 
                     Entity *entity = static_cast<Entity *>(entityPair.second.get());
                     entity->listComponents([&](const std::type_index &type, const Plugin::Component::Data *data) -> void
@@ -370,12 +370,12 @@ namespace Gek
                 }
 
                 JSON::Object scene;
-                scene.set(L"Population", population);
-                scene.set(L"Seed", shuntingYard.getRandomSeed());
-                JSON::Save(getContext()->getRootFileName(L"data", L"scenes", populationName).withExtension(L".json"), scene);
+                scene.set("Population"s, population);
+                scene.set("Seed"s, shuntingYard.getRandomSeed());
+                JSON::Save(getContext()->getRootFileName("data"s, "scenes"s, populationName).withExtension(".json"s), scene);
             }
 
-            Plugin::Entity *createEntity(WString const &entityName, const std::vector<JSON::Member> &componentList)
+            Plugin::Entity *createEntity(std::string const &entityName, const std::vector<JSON::Member> &componentList)
             {
                 auto entity(std::make_unique<Entity>());
                 for (const auto &componentData : componentList)
@@ -429,12 +429,12 @@ namespace Gek
                     }
                     else
                     {
-                        core->getLog()->message("Population", Plugin::Core::Log::Type::Error, "Entity contains unknown component identifier: %v", componentNameSearch->second.name());
+                        core->getLog()->message("Population"s, Plugin::Core::Log::Type::Error, "Entity contains unknown component identifier: %v", componentNameSearch->second.name());
                     }
                 }
                 else
                 {
-                    core->getLog()->message("Population", Plugin::Core::Log::Type::Error, "Entity contains unknown component: %v", componentData.name());
+                    core->getLog()->message("Population"s, Plugin::Core::Log::Type::Error, "Entity contains unknown component: %v", componentData.name());
                 }
 
                 return false;
@@ -460,7 +460,7 @@ namespace Gek
                 }
             }
 
-            void listEntities(std::function<void(Plugin::Entity *, WString const &)> onEntity) const
+            void listEntities(std::function<void(Plugin::Entity *, std::string const &)> onEntity) const
             {
                 concurrency::parallel_for_each(std::begin(entityMap), std::end(entityMap), [&](auto &entity) -> void
                 {

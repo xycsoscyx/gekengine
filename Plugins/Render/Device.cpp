@@ -22,25 +22,35 @@ namespace Gek
             return GetHash(name, format);
         }
 
-        ElementDeclaration::Semantic ElementDeclaration::getSemantic(WString const &semantic)
+        ElementDeclaration::Semantic ElementDeclaration::getSemantic(std::string const &string)
         {
-            if (semantic.compareNoCase(L"Position") == 0) return Semantic::Position;
-            else if (semantic.compareNoCase(L"Tangent") == 0) return Semantic::Tangent;
-            else if (semantic.compareNoCase(L"BiTangent") == 0) return Semantic::BiTangent;
-            else if (semantic.compareNoCase(L"Normal") == 0) return Semantic::Normal;
-            else if (semantic.compareNoCase(L"Color") == 0) return Semantic::Color;
-            else return Semantic::TexCoord;
-        }
+			static const std::unordered_map<std::string, Semantic> data =
+			{
+				{ "position"s, Semantic::Position },
+				{ "tangent"s, Semantic::Tangent },
+				{ "bitangent"s, Semantic::BiTangent },
+				{ "normal"s, Semantic::Normal },
+				{ "color"s, Semantic::Color },
+			};
+
+			auto result = data.find(String::GetLower(string));
+			return (result == std::end(data) ? Semantic::TexCoord : result->second);
+		}
 
         size_t ElementDeclaration::getHash(void) const
         {
             return CombineHashes(NamedDeclaration::getHash(), GetHash(semantic));
         }
 
-        VertexDeclaration::Source VertexDeclaration::getSource(WString const &elementSource)
+        VertexDeclaration::Source VertexDeclaration::getSource(std::string const &string)
         {
-            if (elementSource.compareNoCase(L"instance") == 0) return Source::Instance;
-            else return Source::Vertex;
+			static const std::unordered_map<std::string, Source> data =
+			{
+				{ "instance"s, Source::Instance },
+			};
+
+			auto result = data.find(String::GetLower(string));
+			return (result == std::end(data) ? Source::Vertex : result->second);
         }
 
         size_t VertexDeclaration::getHash(void) const
@@ -48,140 +58,126 @@ namespace Gek
             return CombineHashes(ElementDeclaration::getHash(), GetHash(source, sourceIndex, alignedByteOffset));
         }
 
-        Format getFormat(WString const &format)
-        {
-            if (format.compareNoCase(L"R32G32B32A32_FLOAT") == 0) return Format::R32G32B32A32_FLOAT;
-            else if (format.compareNoCase(L"R16G16B16A16_FLOAT") == 0) return Format::R16G16B16A16_FLOAT;
-            else if (format.compareNoCase(L"R32G32B32_FLOAT") == 0) return Format::R32G32B32_FLOAT;
-            else if (format.compareNoCase(L"R11G11B10_FLOAT") == 0) return Format::R11G11B10_FLOAT;
-            else if (format.compareNoCase(L"R32G32_FLOAT") == 0) return Format::R32G32_FLOAT;
-            else if (format.compareNoCase(L"R16G16_FLOAT") == 0) return Format::R16G16_FLOAT;
-            else if (format.compareNoCase(L"R32_FLOAT") == 0) return Format::R32_FLOAT;
-            else if (format.compareNoCase(L"R16_FLOAT") == 0) return Format::R16_FLOAT;
+		Format getFormat(std::string const &string)
+		{
+			static const std::unordered_map<std::string, Format> data =
+			{
+				{ "R32G32B32A32_FLOAT"s, Format::R32G32B32A32_FLOAT },
+				{ "R16G16B16A16_FLOAT"s, Format::R16G16B16A16_FLOAT },
+				{ "R32G32B32_FLOAT"s, Format::R32G32B32_FLOAT },
+				{ "R11G11B10_FLOAT"s, Format::R11G11B10_FLOAT },
+				{ "R32G32_FLOAT"s, Format::R32G32_FLOAT },
+				{ "R16G16_FLOAT"s, Format::R16G16_FLOAT },
+				{ "R32_FLOAT"s, Format::R32_FLOAT },
+				{ "R16_FLOAT"s, Format::R16_FLOAT },
 
-            else if (format.compareNoCase(L"R32G32B32A32_UINT") == 0) return Format::R32G32B32A32_UINT;
-            else if (format.compareNoCase(L"R16G16B16A16_UINT") == 0) return Format::R16G16B16A16_UINT;
-            else if (format.compareNoCase(L"R10G10B10A2_UINT") == 0) return Format::R10G10B10A2_UINT;
-            else if (format.compareNoCase(L"R8G8B8A8_UINT") == 0) return Format::R8G8B8A8_UINT;
-            else if (format.compareNoCase(L"R32G32B32_UINT") == 0) return Format::R32G32B32_UINT;
-            else if (format.compareNoCase(L"R32G32_UINT") == 0) return Format::R32G32_UINT;
-            else if (format.compareNoCase(L"R16G16_UINT") == 0) return Format::R16G16_UINT;
-            else if (format.compareNoCase(L"R8G8_UINT") == 0) return Format::R8G8_UINT;
-            else if (format.compareNoCase(L"R32_UINT") == 0) return Format::R32_UINT;
-            else if (format.compareNoCase(L"R16_UINT") == 0) return Format::R16_UINT;
-            else if (format.compareNoCase(L"R8_UINT") == 0) return Format::R8_UINT;
+				{ "R32G32B32A32_UINT"s, Format::R32G32B32A32_UINT },
+				{ "R16G16B16A16_UINT"s, Format::R16G16B16A16_UINT },
+				{ "R10G10B10A2_UINT"s, Format::R10G10B10A2_UINT },
+				{ "R8G8B8A8_UINT"s, Format::R8G8B8A8_UINT },
+				{ "R32G32B32_UINT"s, Format::R32G32B32_UINT },
+				{ "R32G32_UINT"s, Format::R32G32_UINT },
+				{ "R16G16_UINT"s, Format::R16G16_UINT },
+				{ "R8G8_UINT"s, Format::R8G8_UINT },
+				{ "R32_UINT"s, Format::R32_UINT },
+				{ "R16_UINT"s, Format::R16_UINT },
+				{ "R8_UINT"s, Format::R8_UINT },
 
-            else if (format.compareNoCase(L"R32G32B32A32_INT") == 0) return Format::R32G32B32A32_INT;
-            else if (format.compareNoCase(L"R16G16B16A16_INT") == 0) return Format::R16G16B16A16_INT;
-            else if (format.compareNoCase(L"R8G8B8A8_INT") == 0) return Format::R8G8B8A8_INT;
-            else if (format.compareNoCase(L"R32G32B32_INT") == 0) return Format::R32G32B32_INT;
-            else if (format.compareNoCase(L"R32G32_INT") == 0) return Format::R32G32_INT;
-            else if (format.compareNoCase(L"R16G16_INT") == 0) return Format::R16G16_INT;
-            else if (format.compareNoCase(L"R8G8_INT") == 0) return Format::R8G8_INT;
-            else if (format.compareNoCase(L"R32_INT") == 0) return Format::R32_INT;
-            else if (format.compareNoCase(L"R16_INT") == 0) return Format::R16_INT;
-            else if (format.compareNoCase(L"R8_INT") == 0) return Format::R8_INT;
+				{ "R32G32B32A32_INT"s, Format::R32G32B32A32_INT },
+				{ "R16G16B16A16_INT"s, Format::R16G16B16A16_INT },
+				{ "R8G8B8A8_INT"s, Format::R8G8B8A8_INT },
+				{ "R32G32B32_INT"s, Format::R32G32B32_INT },
+				{ "R32G32_INT"s, Format::R32G32_INT },
+				{ "R16G16_INT"s, Format::R16G16_INT },
+				{ "R8G8_INT"s, Format::R8G8_INT },
+				{ "R32_INT"s, Format::R32_INT },
+				{ "R16_INT"s, Format::R16_INT },
+				{ "R8_INT"s, Format::R8_INT },
 
-            else if (format.compareNoCase(L"R16G16B16A16_UNORM") == 0) return Format::R16G16B16A16_UNORM;
-            else if (format.compareNoCase(L"R10G10B10A2_UNORM") == 0) return Format::R10G10B10A2_UNORM;
-            else if (format.compareNoCase(L"R8G8B8A8_UNORM") == 0) return Format::R8G8B8A8_UNORM;
-            else if (format.compareNoCase(L"R8G8B8A8_UNORM_SRGB") == 0) return Format::R8G8B8A8_UNORM_SRGB;
-            else if (format.compareNoCase(L"R16G16_UNORM") == 0) return Format::R16G16_UNORM;
-            else if (format.compareNoCase(L"R8G8_UNORM") == 0) return Format::R8G8_UNORM;
-            else if (format.compareNoCase(L"R16_UNORM") == 0) return Format::R16_UNORM;
-            else if (format.compareNoCase(L"R8_UNORM") == 0) return Format::R8_UNORM;
+				{ "R16G16B16A16_UNORM"s, Format::R16G16B16A16_UNORM },
+				{ "R10G10B10A2_UNORM"s, Format::R10G10B10A2_UNORM },
+				{ "R8G8B8A8_UNORM"s, Format::R8G8B8A8_UNORM },
+				{ "R8G8B8A8_UNORM_SRGB"s, Format::R8G8B8A8_UNORM_SRGB },
+				{ "R16G16_UNORM"s, Format::R16G16_UNORM },
+				{ "R8G8_UNORM"s, Format::R8G8_UNORM },
+				{ "R16_UNORM"s, Format::R16_UNORM },
+				{ "R8_UNORM"s, Format::R8_UNORM },
 
-            else if (format.compareNoCase(L"R16G16B16A16_NORM") == 0) return Format::R16G16B16A16_NORM;
-            else if (format.compareNoCase(L"R8G8B8A8_NORM") == 0) return Format::R8G8B8A8_NORM;
-            else if (format.compareNoCase(L"R16G16_NORM") == 0) return Format::R16G16_NORM;
-            else if (format.compareNoCase(L"R8G8_NORM") == 0) return Format::R8G8_NORM;
-            else if (format.compareNoCase(L"R16_NORM") == 0) return Format::R16_NORM;
-            else if (format.compareNoCase(L"R8_NORM") == 0) return Format::R8_NORM;
+				{ "R16G16B16A16_NORM"s, Format::R16G16B16A16_NORM },
+				{ "R8G8B8A8_NORM"s, Format::R8G8B8A8_NORM },
+				{ "R16G16_NORM"s, Format::R16G16_NORM },
+				{ "R8G8_NORM"s, Format::R8G8_NORM },
+				{ "R16_NORM"s, Format::R16_NORM },
+				{ "R8_NORM"s, Format::R8_NORM },
 
-            else if (format.compareNoCase(L"D32_FLOAT_S8X24_UINT") == 0) return Format::D32_FLOAT_S8X24_UINT;
-            else if (format.compareNoCase(L"D24_UNORM_S8_UINT") == 0) return Format::D24_UNORM_S8_UINT;
+				{ "D32_FLOAT_S8X24_UINT"s, Format::D32_FLOAT_S8X24_UINT },
+				{ "D24_UNORM_S8_UINT"s, Format::D24_UNORM_S8_UINT },
 
-            else if (format.compareNoCase(L"D32_FLOAT") == 0) return Format::D32_FLOAT;
-            else if (format.compareNoCase(L"D16_UNORM") == 0) return Format::D16_UNORM;
+				{ "D32_FLOAT"s, Format::D32_FLOAT },
+				{ "D16_UNORM"s, Format::D16_UNORM },
+			};
 
-            return Format::Unknown;
-        }
+			auto result = data.find(String::GetUpper(string));
+			return (result == std::end(data) ? Format::Unknown : result->second);
+		}
 
-        ComparisonFunction getComparisonFunction(WString const &comparisonFunction)
-        {
-            if (comparisonFunction.compareNoCase(L"Never") == 0)
-            {
-                return ComparisonFunction::Never;
-            }
-            else if (comparisonFunction.compareNoCase(L"Equal") == 0)
-            {
-                return ComparisonFunction::Equal;
-            }
-            else if (comparisonFunction.compareNoCase(L"NotEqual") == 0)
-            {
-                return ComparisonFunction::NotEqual;
-            }
-            else if (comparisonFunction.compareNoCase(L"Less") == 0)
-            {
-                return ComparisonFunction::Less;
-            }
-            else if (comparisonFunction.compareNoCase(L"LessEqual") == 0)
-            {
-                return ComparisonFunction::LessEqual;
-            }
-            else if (comparisonFunction.compareNoCase(L"Greater") == 0)
-            {
-                return ComparisonFunction::Greater;
-            }
-            else if (comparisonFunction.compareNoCase(L"GreaterEqual") == 0)
-            {
-                return ComparisonFunction::GreaterEqual;
-            }
-            else
-            {
-                return ComparisonFunction::Always;
-            }
-        }
+		ComparisonFunction getComparisonFunction(std::string const &string)
+		{
+			static const std::unordered_map<std::string, ComparisonFunction> data =
+			{
+				{ "never"s, ComparisonFunction::Never },
+				{ "equal"s, ComparisonFunction::Equal },
+				{ "notequal"s, ComparisonFunction::NotEqual },
+				{ "less"s, ComparisonFunction::Less },
+				{ "lessequal"s, ComparisonFunction::LessEqual },
+				{ "greater"s, ComparisonFunction::Greater },
+				{ "greaterequal"s, ComparisonFunction::GreaterEqual },
+			};
 
-        void RasterizerStateInformation::load(const JSON::Object &object)
+			auto result = data.find(String::GetLower(string));
+			return (result == std::end(data) ? ComparisonFunction::Always : result->second);
+		}
+
+		void RasterizerStateInformation::load(const JSON::Object &object)
         {
             if (!object.is_object())
             {
                 return;
             }
 
-            WString fillMode(object.get(L"fillMode", L"Solid").as_string());
-            if (fillMode.compareNoCase(L"WireFrame") == 0)
-            {
-                this->fillMode = FillMode::WireFrame;
-            }
-            else
-            {
-                this->fillMode = FillMode::Solid;
-            }
+			auto getFillMode = [](std::string const &string) -> auto
+			{
+				static const std::unordered_map<std::string, FillMode> data =
+				{
+					{ "wireframe"s, FillMode::WireFrame },
+				};
 
-            WString cullMode(object.get(L"cullMode", L"Back").as_string());
-            if (cullMode.compareNoCase(L"None") == 0)
-            {
-                this->cullMode = CullMode::None;
-            }
-            else if (cullMode.compareNoCase(L"Front") == 0)
-            {
-                this->cullMode = CullMode::Front;
-            }
-            else
-            {
-                this->cullMode = CullMode::Back;
-            }
+				auto result = data.find(String::GetLower(string));
+				return (result == std::end(data) ? FillMode::Solid : result->second);
+			};
 
-            frontCounterClockwise = object.get(L"frontCounterClockwise", false).as_bool();
-            depthBias = object.get(L"depthBias", 0).as_uint();
-            depthBiasClamp = object.get(L"depthBiasClamp", 0.0f).as<float>();
-            slopeScaledDepthBias = object.get(L"slopeScaledDepthBias", 0.0f).as<float>();
-            depthClipEnable = object.get(L"depthClipEnable", true).as_bool();
-            scissorEnable = object.get(L"scissorEnable", false).as_bool();
-            multisampleEnable = object.get(L"multisampleEnable", false).as_bool();
-            antialiasedLineEnable = object.get(L"antialiasedLineEnable", false).as_bool();
+			auto getCullMode = [](std::string const &string) -> auto
+			{
+				static const std::unordered_map<std::string, CullMode> data =
+				{
+					{ "none"s, CullMode::None },
+					{ "front"s, CullMode::Front },
+				};
+
+				auto result = data.find(String::GetLower(string));
+				return (result == std::end(data) ? CullMode::Back : result->second);
+			};
+
+			fillMode = getFillMode(object.get("fillMode"s, "Solid"s).as_string());
+			cullMode = getCullMode(object.get("cullMode"s, "Back"s).as_string());
+			frontCounterClockwise = object.get("frontCounterClockwise"s, false).as_bool();
+            depthBias = object.get("depthBias"s, 0).as_uint();
+            depthBiasClamp = object.get("depthBiasClamp"s, 0.0f).as<float>();
+            slopeScaledDepthBias = object.get("slopeScaledDepthBias"s, 0.0f).as<float>();
+            depthClipEnable = object.get("depthClipEnable"s, true).as_bool();
+            scissorEnable = object.get("scissorEnable"s, false).as_bool();
+            multisampleEnable = object.get("multisampleEnable"s, false).as_bool();
+            antialiasedLineEnable = object.get("antialiasedLineEnable"s, false).as_bool();
         }
 
         size_t RasterizerStateInformation::getHash(void) const
@@ -196,43 +192,27 @@ namespace Gek
                 return;
             }
 
-            auto getOperation = [](WString const &operation) -> Operation
-            {
-                if (operation.compareNoCase(L"Replace") == 0)
-                {
-                    return Operation::Replace;
-                }
-                else if (operation.compareNoCase(L"Invert") == 0)
-                {
-                    return Operation::Invert;
-                }
-                else if (operation.compareNoCase(L"Increase") == 0)
-                {
-                    return Operation::Increase;
-                }
-                else if (operation.compareNoCase(L"IncreaseSaturated") == 0)
-                {
-                    return Operation::IncreaseSaturated;
-                }
-                else if (operation.compareNoCase(L"Decrease") == 0)
-                {
-                    return Operation::Decrease;
-                }
-                else if (operation.compareNoCase(L"DecreaseSaturated") == 0)
-                {
-                    return Operation::DecreaseSaturated;
-                }
-                else
-                {
-                    return Operation::Zero;
-                }
-            };
+			auto getOperation = [](std::string const &string) -> auto
+			{
+				static const std::unordered_map<std::string, Operation> data =
+				{
+					{ "replace"s, Operation::Replace },
+					{ "invert"s, Operation::Invert },
+					{ "increase"s, Operation::Increase },
+					{ "increasesaturated"s, Operation::IncreaseSaturated },
+					{ "decrease"s, Operation::Decrease },
+					{ "decreasesaturated"s, Operation::DecreaseSaturated },
+				};
 
-            failOperation = getOperation(object.get(L"failOperation", L"Keep").as_string());
-            depthFailOperation = getOperation(object.get(L"depthFailOperation", L"Keep").as_string());
-            passOperation = getOperation(object.get(L"passOperation", L"Keep").as_string());
-            comparisonFunction = getComparisonFunction(object.get(L"comparisonFunction", L"Always").as_string());
-        }
+				auto result = data.find(String::GetLower(string));
+				return (result == std::end(data) ? Operation::Zero : result->second);
+			};
+
+			failOperation = getOperation(object.get("failOperation"s, "Keep"s).as_string());
+			depthFailOperation = getOperation(object.get("depthFailOperation"s, "Keep"s).as_string());
+			passOperation = getOperation(object.get("passOperation"s, "Keep"s).as_string());
+			comparisonFunction = getComparisonFunction(object.get("comparisonFunction"s, "Always"s).as_string());
+		}
 
         size_t DepthStateInformation::StencilStateInformation::getHash(void) const
         {
@@ -246,31 +226,33 @@ namespace Gek
                 return;
             }
 
-            enable = object.get(L"enable", false).as_bool();
-            WString writeMask(object.get(L"writeMask", L"All").as_string());
-            if (writeMask.compareNoCase(L"Zero") == 0)
-            {
-                this->writeMask = Write::Zero;
-            }
-            else
-            {
-                this->writeMask = Write::All;
-            }
+			auto getWriteMask = [](std::string const &string) -> auto
+			{
+				static const std::unordered_map<std::string, Write> data =
+				{
+					{ "zero"s, Write::Zero },
+				};
 
-            comparisonFunction = getComparisonFunction(object.get(L"comparisonFunction", L"Always").as_string());
-            stencilEnable = object.get(L"stencilEnable", false).as_bool();
-            stencilReadMask = object.get(L"stencilReadMask", 0).as_uint();
-            stencilWriteMask = object.get(L"stencilWriteMask", 0).as_uint();
-            if (object.has_member(L"stencilFrontState"))
-            {
-                stencilFrontState.load(object.get(L"stencilFrontState"));
-            }
+				auto result = data.find(String::GetLower(string));
+				return (result == std::end(data) ? Write::All : result->second);
+			};
 
-            if (object.has_member(L"stencilBackState"))
-            {
-                stencilBackState.load(object.get(L"stencilBackState"));
-            }
-        }
+			enable = object.get("enable"s, false).as_bool();
+			writeMask = getWriteMask(object.get("writeMask"s, "All"s).as_string());
+			comparisonFunction = getComparisonFunction(object.get("comparisonFunction"s, "Always"s).as_string());
+			stencilEnable = object.get("stencilEnable"s, false).as_bool();
+			stencilReadMask = object.get("stencilReadMask"s, 0).as_uint();
+			stencilWriteMask = object.get("stencilWriteMask"s, 0).as_uint();
+			if (object.has_member("stencilFrontState"s))
+			{
+				stencilFrontState.load(object.get("stencilFrontState"s));
+			}
+
+			if (object.has_member("stencilBackState"s))
+			{
+				stencilBackState.load(object.get("stencilBackState"s));
+			}
+		}
 
         size_t DepthStateInformation::getHash(void) const
         {
@@ -286,135 +268,78 @@ namespace Gek
                 return;
             }
 
-            auto getSource = [](WString const &source) -> Source
-            {
-                if (source.compareNoCase(L"Zero") == 0)
-                {
-                    return Source::Zero;
-                }
-                else if (source.compareNoCase(L"BlendFactor") == 0)
-                {
-                    return Source::BlendFactor;
-                }
-                else if (source.compareNoCase(L"InverseBlendFactor") == 0)
-                {
-                    return Source::InverseBlendFactor;
-                }
-                else if (source.compareNoCase(L"SourceColor") == 0)
-                {
-                    return Source::SourceColor;
-                }
-                else if (source.compareNoCase(L"InverseSourceColor") == 0)
-                {
-                    return Source::InverseSourceColor;
-                }
-                else if (source.compareNoCase(L"SourceAlpha") == 0)
-                {
-                    return Source::SourceAlpha;
-                }
-                else if (source.compareNoCase(L"InverseSourceAlpha") == 0)
-                {
-                    return Source::InverseSourceAlpha;
-                }
-                else if (source.compareNoCase(L"SourceAlphaSaturated") == 0)
-                {
-                    return Source::SourceAlphaSaturated;
-                }
-                else if (source.compareNoCase(L"DestinationColor") == 0)
-                {
-                    return Source::DestinationColor;
-                }
-                else if (source.compareNoCase(L"InverseDestinationColor") == 0)
-                {
-                    return Source::InverseDestinationColor;
-                }
-                else if (source.compareNoCase(L"DestinationAlpha") == 0)
-                {
-                    return Source::DestinationAlpha;
-                }
-                else if (source.compareNoCase(L"InverseDestinationAlpha") == 0)
-                {
-                    return Source::InverseDestinationAlpha;
-                }
-                else if (source.compareNoCase(L"SecondarySourceColor") == 0)
-                {
-                    return Source::SecondarySourceColor;
-                }
-                else if (source.compareNoCase(L"InverseSecondarySourceColor") == 0)
-                {
-                    return Source::InverseSecondarySourceColor;
-                }
-                else if (source.compareNoCase(L"SecondarySourceAlpha") == 0)
-                {
-                    return Source::SecondarySourceAlpha;
-                }
-                else if (source.compareNoCase(L"InverseSecondarySourceAlpha") == 0)
-                {
-                    return Source::InverseSecondarySourceAlpha;
-                }
-                else
-                {
-                    return Source::One;
-                }
-            };
+			auto getSource = [](std::string const &string) -> Source
+			{
+				static const std::unordered_map<std::string, Source> data =
+				{
+					{ "zero"s, Source::Zero },
+					{ "blendfactor"s, Source::BlendFactor },
+					{ "inverseblendfactor"s, Source::InverseBlendFactor },
+					{ "sourcecolor"s, Source::SourceColor },
+					{ "inversesourcecolor"s, Source::InverseSourceColor },
+					{ "sourcealpha"s, Source::SourceAlpha },
+					{ "inversesourcealpha"s, Source::InverseSourceAlpha },
+					{ "sourcealphasaturated"s, Source::SourceAlphaSaturated },
+					{ "destinationcolor"s, Source::DestinationColor },
+					{ "inversedestinationcolor"s, Source::InverseDestinationColor },
+					{ "destinationalpha"s, Source::DestinationAlpha },
+					{ "inversedestinationalpha"s, Source::InverseDestinationAlpha },
+					{ "secondarysourcecolor"s, Source::SecondarySourceColor },
+					{ "inversesecondarysourcecolor"s, Source::InverseSecondarySourceColor },
+					{ "secondarysourcealpha"s, Source::SecondarySourceAlpha },
+					{ "inversesecondarysourcealpha"s, Source::InverseSecondarySourceAlpha },
+				};
 
-            auto getOperation = [](WString const &operation) -> Operation
-            {
-                if (operation.compareNoCase(L"Subtract") == 0)
-                {
-                    return Operation::Subtract;
-                }
-                else if (operation.compareNoCase(L"ReverseSubtract") == 0)
-                {
-                    return Operation::ReverseSubtract;
-                }
-                else if (operation.compareNoCase(L"Minimum") == 0)
-                {
-                    return Operation::Minimum;
-                }
-                else if (operation.compareNoCase(L"Maximum") == 0)
-                {
-                    return Operation::Maximum;
-                }
-                else
-                {
-                    return Operation::Add;
-                }
-            };
+				auto result = data.find(String::GetLower(string));
+				return (result == std::end(data) ? Source::One : result->second);
+			};
 
-            enable = object.get(L"enable", false).as_bool();
-            colorSource = getSource(object.get(L"colorSource", L"One").as_string());
-            colorDestination = getSource(object.get(L"colorDestination", L"One").as_string());
-            colorOperation = getOperation(object.get(L"colorOperation", L"Add").as_string());
-            alphaSource = getSource(object.get(L"alphaSource", L"One").as_string());
-            alphaDestination = getSource(object.get(L"alphaDestination", L"One").as_string());
-            alphaOperation = getOperation(object.get(L"alphaOperation", L"Add").as_string());
+			auto getOperation = [](std::string const &string) -> Operation
+			{
+				static const std::unordered_map<std::string, Operation> data =
+				{
+					{ "subtract"s, Operation::Subtract },
+					{ "teversesubtract"s, Operation::ReverseSubtract },
+					{ "minimum"s, Operation::Minimum },
+					{ "maximum"s, Operation::Maximum },
+				};
 
-            WString writeMask(object.get(L"writeMask", L"RGBA").as_string());
-            if (writeMask.empty())
+				auto result = data.find(String::GetLower(string));
+				return (result == std::end(data) ? Operation::Add : result->second);
+			};
+
+			enable = object.get("enable"s, false).as_bool();
+			colorSource = getSource(object.get("colorSource"s, "One"s).as_string());
+			colorDestination = getSource(object.get("colorDestination"s, "One"s).as_string());
+			colorOperation = getOperation(object.get("colorOperation"s, "Add"s).as_string());
+			alphaSource = getSource(object.get("alphaSource"s, "One"s).as_string());
+			alphaDestination = getSource(object.get("alphaDestination"s, "One"s).as_string());
+			alphaOperation = getOperation(object.get("alphaOperation"s, "Add"s).as_string());
+
+			std::string writeMask(String::GetLower(object.get("writeMask"s, "RGBA"s).as_string()));
+			if (writeMask.empty())
             {
                 this->writeMask = Mask::RGBA;
             }
             else
             {
                 this->writeMask = 0;
-                writeMask.toLower();
-                if (writeMask.find(L'r') != WString::npos)
+                if (writeMask.find('r') != std::string::npos)
                 {
                     this->writeMask |= Mask::R;
                 }
 
-                if (writeMask.find(L'g') != WString::npos)
+                if (writeMask.find('g') != std::string::npos)
                 {
                     this->writeMask |= Mask::G;
                 }
 
-                if (writeMask.find(L'b') != WString::npos)
+                if (writeMask.find('b') != std::string::npos)
                 {
                     this->writeMask |= Mask::B;
                 }
 
-                if (writeMask.find(L'a') != WString::npos)
+                if (writeMask.find('a') != std::string::npos)
                 {
                     this->writeMask |= Mask::A;
                 }
@@ -433,11 +358,11 @@ namespace Gek
                 return;
             }
 
-            alphaToCoverage = object.get(L"alphaToCoverage", false).as_bool();
-            unifiedBlendState = object.get(L"unifiedBlendState", true).as_bool();
-            if (object.has_member(L"targetStates"))
+            alphaToCoverage = object.get("alphaToCoverage"s, false).as_bool();
+            unifiedBlendState = object.get("unifiedBlendState"s, true).as_bool();
+            if (object.has_member("targetStates"s))
             {
-                auto &targetStates = object.get(L"targetStates");
+                auto &targetStates = object.get("targetStates"s);
                 if (targetStates.is_array())
                 {
                     size_t targetCount = std::min(targetStates.size(), this->targetStateList.size());
@@ -467,192 +392,79 @@ namespace Gek
                 return;
             }
 
-            auto getFilterMode = [](WString const &filterMode) -> FilterMode
-            {
-                if (filterMode.compareNoCase(L"MinificationMagnificationPointMipMapLinear") == 0)
-                {
-                    return FilterMode::MinificationMagnificationPointMipMapLinear;
-                }
-                else if (filterMode.compareNoCase(L"MinificationPointMagnificationLinearMipMapPoint") == 0)
-                {
-                    return FilterMode::MinificationPointMagnificationLinearMipMapPoint;
-                }
-                else if (filterMode.compareNoCase(L"MinificationPointMagnificationMipMapLinear") == 0)
-                {
-                    return FilterMode::MinificationPointMagnificationMipMapLinear;
-                }
-                else if (filterMode.compareNoCase(L"MinificationLinearMagnificationMipMapPoint") == 0)
-                {
-                    return FilterMode::MinificationLinearMagnificationMipMapPoint;
-                }
-                else if (filterMode.compareNoCase(L"MinificationLinearMagnificationPointMipMapLinear") == 0)
-                {
-                    return FilterMode::MinificationLinearMagnificationPointMipMapLinear;
-                }
-                else if (filterMode.compareNoCase(L"MinificationMagnificationLinearMipMapPoint") == 0)
-                {
-                    return FilterMode::MinificationMagnificationLinearMipMapPoint;
-                }
-                else if (filterMode.compareNoCase(L"MinificationMagnificationMipMapLinear") == 0)
-                {
-                    return FilterMode::MinificationMagnificationMipMapLinear;
-                }
-                else if (filterMode.compareNoCase(L"Anisotropic") == 0)
-                {
-                    return FilterMode::Anisotropic;
-                }
-                else if (filterMode.compareNoCase(L"ComparisonMinificationMagnificationMipMapPoint") == 0)
-                {
-                    return FilterMode::ComparisonMinificationMagnificationMipMapPoint;
-                }
-                else if (filterMode.compareNoCase(L"ComparisonMinificationMagnificationPointMipMapLinear") == 0)
-                {
-                    return FilterMode::ComparisonMinificationMagnificationPointMipMapLinear;
-                }
-                else if (filterMode.compareNoCase(L"ComparisonMinificationPointMagnificationLinearMipMapPoint") == 0)
-                {
-                    return FilterMode::ComparisonMinificationPointMagnificationLinearMipMapPoint;
-                }
-                else if (filterMode.compareNoCase(L"ComparisonMinificationPointMagnificationMipMapLinear") == 0)
-                {
-                    return FilterMode::ComparisonMinificationPointMagnificationMipMapLinear;
-                }
-                else if (filterMode.compareNoCase(L"ComparisonMinificationLinearMagnificationMipMapPoint") == 0)
-                {
-                    return FilterMode::ComparisonMinificationLinearMagnificationMipMapPoint;
-                }
-                else if (filterMode.compareNoCase(L"ComparisonMinificationLinearMagnificationPointMipMapLinear") == 0)
-                {
-                    return FilterMode::ComparisonMinificationLinearMagnificationPointMipMapLinear;
-                }
-                else if (filterMode.compareNoCase(L"ComparisonMinificationMagnificationLinearMipMapPoint") == 0)
-                {
-                    return FilterMode::ComparisonMinificationMagnificationLinearMipMapPoint;
-                }
-                else if (filterMode.compareNoCase(L"ComparisonMinificationMagnificationMipMapLinear") == 0)
-                {
-                    return FilterMode::ComparisonMinificationMagnificationMipMapLinear;
-                }
-                else if (filterMode.compareNoCase(L"ComparisonAnisotropic") == 0)
-                {
-                    return FilterMode::ComparisonAnisotropic;
-                }
-                else if (filterMode.compareNoCase(L"MinimumMinificationMagnificationMipMapPoint") == 0)
-                {
-                    return FilterMode::MinimumMinificationMagnificationMipMapPoint;
-                }
-                else if (filterMode.compareNoCase(L"MinimumMinificationMagnificationPointMipMapLinear") == 0)
-                {
-                    return FilterMode::MinimumMinificationMagnificationPointMipMapLinear;
-                }
-                else if (filterMode.compareNoCase(L"MinimumMinificationPointMagnificationLinearMipMapPoint") == 0)
-                {
-                    return FilterMode::MinimumMinificationPointMagnificationLinearMipMapPoint;
-                }
-                else if (filterMode.compareNoCase(L"MinimumMinificationPointMagnificationMipMapLinear") == 0)
-                {
-                    return FilterMode::MinimumMinificationPointMagnificationMipMapLinear;
-                }
-                else if (filterMode.compareNoCase(L"MinimumMinificationLinearMagnificationMipMapPoint") == 0)
-                {
-                    return FilterMode::MinimumMinificationLinearMagnificationMipMapPoint;
-                }
-                else if (filterMode.compareNoCase(L"MinimumMinificationLinearMagnificationPointMipMapLinear") == 0)
-                {
-                    return FilterMode::MinimumMinificationLinearMagnificationPointMipMapLinear;
-                }
-                else if (filterMode.compareNoCase(L"MinimumMinificationMagnificationLinearMipMapPoint") == 0)
-                {
-                    return FilterMode::MinimumMinificationMagnificationLinearMipMapPoint;
-                }
-                else if (filterMode.compareNoCase(L"MinimumMinificationMagnificationMipMapLinear") == 0)
-                {
-                    return FilterMode::MinimumMinificationMagnificationMipMapLinear;
-                }
-                else if (filterMode.compareNoCase(L"MinimumAnisotropic") == 0)
-                {
-                    return FilterMode::MinimumAnisotropic;
-                }
-                else if (filterMode.compareNoCase(L"MaximumMinificationMagnificationMipMapPoint") == 0)
-                {
-                    return FilterMode::MaximumMinificationMagnificationMipMapPoint;
-                }
-                else if (filterMode.compareNoCase(L"MaximumMinificationMagnificationPointMipMapLinear") == 0)
-                {
-                    return FilterMode::MaximumMinificationMagnificationPointMipMapLinear;
-                }
-                else if (filterMode.compareNoCase(L"MaximumMinificationPointMagnificationLinearMipMapPoint") == 0)
-                {
-                    return FilterMode::MaximumMinificationPointMagnificationLinearMipMapPoint;
-                }
-                else if (filterMode.compareNoCase(L"MaximumMinificationPointMagnificationMipMapLinear") == 0)
-                {
-                    return FilterMode::MaximumMinificationPointMagnificationMipMapLinear;
-                }
-                else if (filterMode.compareNoCase(L"MaximumMinificationLinearMagnificationMipMapPoint") == 0)
-                {
-                    return FilterMode::MaximumMinificationLinearMagnificationMipMapPoint;
-                }
-                else if (filterMode.compareNoCase(L"MaximumMinificationLinearMagnificationPointMipMapLinear") == 0)
-                {
-                    return FilterMode::MaximumMinificationLinearMagnificationPointMipMapLinear;
-                }
-                else if (filterMode.compareNoCase(L"MaximumMinificationMagnificationLinearMipMapPoint") == 0)
-                {
-                    return FilterMode::MaximumMinificationMagnificationLinearMipMapPoint;
-                }
-                else if (filterMode.compareNoCase(L"MaximumMinificationMagnificationMipMapLinear") == 0)
-                {
-                    return FilterMode::MaximumMinificationMagnificationMipMapLinear;
-                }
-                else if (filterMode.compareNoCase(L"MaximumAnisotropic") == 0)
-                {
-                    return FilterMode::MaximumAnisotropic;
-                }
-                else
-                {
-                    return FilterMode::MinificationMagnificationMipMapPoint;
-                }
-            };
+			auto getFilterMode = [](std::string const &string) -> FilterMode
+			{
+				static const std::unordered_map<std::string, FilterMode> data =
+				{
+					{ "minificationmagnificationpointmipmaplinear"s, FilterMode::MinificationMagnificationPointMipMapLinear },
+					{ "minificationpointmagnificationlinearmipmappoint"s, FilterMode::MinificationPointMagnificationLinearMipMapPoint },
+					{ "minificationpointmagnificationmipmaplinear"s, FilterMode::MinificationPointMagnificationMipMapLinear },
+					{ "minificationlinearmagnificationmipmappoint"s, FilterMode::MinificationLinearMagnificationMipMapPoint },
+					{ "minificationlinearmagnificationpointmipmaplinear"s, FilterMode::MinificationLinearMagnificationPointMipMapLinear },
+					{ "minificationmagnificationlinearmipmappoint"s, FilterMode::MinificationMagnificationLinearMipMapPoint },
+					{ "minificationmagnificationmipmaplinear"s, FilterMode::MinificationMagnificationMipMapLinear },
+					{ "anisotropic"s, FilterMode::Anisotropic },
+					{ "comparisonminificationmagnificationmipmappoint"s, FilterMode::ComparisonMinificationMagnificationMipMapPoint },
+					{ "comparisonminificationmagnificationpointmipmaplinear"s, FilterMode::ComparisonMinificationMagnificationPointMipMapLinear },
+					{ "comparisonminificationpointmagnificationlinearmipmappoint"s, FilterMode::ComparisonMinificationPointMagnificationLinearMipMapPoint },
+					{ "comparisonminificationpointmagnificationmipmaplinear"s, FilterMode::ComparisonMinificationPointMagnificationMipMapLinear },
+					{ "comparisonminificationlinearmagnificationmipmappoint"s, FilterMode::ComparisonMinificationLinearMagnificationMipMapPoint },
+					{ "comparisonminificationlinearmagnificationpointmipmaplinear"s, FilterMode::ComparisonMinificationLinearMagnificationPointMipMapLinear },
+					{ "comparisonminificationmagnificationlinearmipmappoint"s, FilterMode::ComparisonMinificationMagnificationLinearMipMapPoint },
+					{ "comparisonminificationmagnificationmipmaplinear"s, FilterMode::ComparisonMinificationMagnificationMipMapLinear },
+					{ "comparisonanisotropic"s, FilterMode::ComparisonAnisotropic },
+					{ "minimumminificationmagnificationmipmappoint"s, FilterMode::MinimumMinificationMagnificationMipMapPoint },
+					{ "minimumminificationmagnificationpointmipmaplinear"s, FilterMode::MinimumMinificationMagnificationPointMipMapLinear },
+					{ "minimumminificationpointmagnificationlinearmipmappoint"s, FilterMode::MinimumMinificationPointMagnificationLinearMipMapPoint },
+					{ "minimumminificationpointmagnificationmipmaplinear"s, FilterMode::MinimumMinificationPointMagnificationMipMapLinear },
+					{ "minimumminificationlinearmagnificationmipmappoint"s, FilterMode::MinimumMinificationLinearMagnificationMipMapPoint },
+					{ "minimumminificationlinearmagnificationpointmipmaplinear"s, FilterMode::MinimumMinificationLinearMagnificationPointMipMapLinear },
+					{ "minimumminificationmagnificationlinearmipmappoint"s, FilterMode::MinimumMinificationMagnificationLinearMipMapPoint },
+					{ "minimumminificationmagnificationmipmaplinear"s, FilterMode::MinimumMinificationMagnificationMipMapLinear },
+					{ "minimumanisotropic"s, FilterMode::MinimumAnisotropic },
+					{ "maximumminificationmagnificationmipmappoint"s, FilterMode::MaximumMinificationMagnificationMipMapPoint },
+					{ "maximumminificationmagnificationpointmipmaplinear"s, FilterMode::MaximumMinificationMagnificationPointMipMapLinear },
+					{ "maximumminificationpointmagnificationlinearmipmappoint"s, FilterMode::MaximumMinificationPointMagnificationLinearMipMapPoint },
+					{ "maximumminificationpointmagnificationmipmaplinear"s, FilterMode::MaximumMinificationPointMagnificationMipMapLinear },
+					{ "maximumminificationlinearmagnificationmipmappoint"s, FilterMode::MaximumMinificationLinearMagnificationMipMapPoint },
+					{ "maximumminificationlinearmagnificationpointmipmaplinear"s, FilterMode::MaximumMinificationLinearMagnificationPointMipMapLinear },
+					{ "maximumminificationmagnificationlinearmipmappoint"s, FilterMode::MaximumMinificationMagnificationLinearMipMapPoint },
+					{ "maximumminificationmagnificationmipmaplinear"s, FilterMode::MaximumMinificationMagnificationMipMapLinear },
+					{ "maximumanisotropic"s, FilterMode::MaximumAnisotropic },
+				};
 
-            auto getAddressMode = [](WString const &addressMode) -> AddressMode
-            {
-                if (addressMode.compareNoCase(L"Wrap") == 0)
-                {
-                    return AddressMode::Wrap;
-                }
-                else if (addressMode.compareNoCase(L"Mirror") == 0)
-                {
-                    return AddressMode::Mirror;
-                }
-                else if (addressMode.compareNoCase(L"MirrorOnce") == 0)
-                {
-                    return AddressMode::MirrorOnce;
-                }
-                else if (addressMode.compareNoCase(L"Border") == 0)
-                {
-                    return AddressMode::Border;
-                }
-                else
-                {
-                    return AddressMode::Clamp;
-                }
-            };
+				auto result = data.find(String::GetLower(string));
+				return (result == std::end(data) ? FilterMode::MinificationMagnificationMipMapPoint : result->second);
+			};
 
-            filterMode = getFilterMode(object.get(L"filterMode", L"AllPoint").as_string());
-            addressModeU = getAddressMode(object.get(L"addressModeU", L"Clamp").as_string());
-            addressModeV = getAddressMode(object.get(L"addressModeV", L"Clamp").as_string());
-            addressModeW = getAddressMode(object.get(L"addressModeW", L"Clamp").as_string());
-            mipLevelBias = object.get(L"mipLevelBias", 0.0).as<float>();
-            maximumAnisotropy = object.get(L"maximumAnisotropy", 1).as_uint();
-            comparisonFunction = getComparisonFunction(object.get(L"comparisonFunction", L"Never").as_string());
-            minimumMipLevel = object.get(L"minimumMipLevel", 0.0).as<float>();
-            maximumMipLevel = object.get(L"maximumMipLevel", Math::Infinity).as<float>();
+			auto getAddressMode = [](std::string const &string) -> AddressMode
+			{
+				static const std::unordered_map<std::string, AddressMode> data =
+				{
+					{ "wrap"s, AddressMode::Wrap },
+					{ "mirror"s, AddressMode::Mirror },
+					{ "mirroronce"s, AddressMode::MirrorOnce },
+					{ "border"s, AddressMode::Border },
+				};
 
-            if (object.has_member(L"borderColor"))
-            {
-                auto borderColorNode = object.get(L"borderColor");
-                if (borderColorNode.is<float>())
+				auto result = data.find(String::GetLower(string));
+				return (result == std::end(data) ? AddressMode::Clamp : result->second);
+			};
+
+			filterMode = getFilterMode(object.get("filterMode"s, "AllPoint"s).as_string());
+			addressModeU = getAddressMode(object.get("addressModeU"s, "Clamp"s).as_string());
+			addressModeV = getAddressMode(object.get("addressModeV"s, "Clamp"s).as_string());
+			addressModeW = getAddressMode(object.get("addressModeW"s, "Clamp"s).as_string());
+			mipLevelBias = object.get("mipLevelBias"s, 0.0).as<float>();
+			maximumAnisotropy = object.get("maximumAnisotropy"s, 1).as_uint();
+			comparisonFunction = getComparisonFunction(object.get("comparisonFunction"s, "Never"s).as_string());
+			minimumMipLevel = object.get("minimumMipLevel"s, 0.0).as<float>();
+			maximumMipLevel = object.get("maximumMipLevel"s, Math::Infinity).as<float>();
+
+			if (object.has_member("borderColor"s))
+			{
+				auto borderColorNode = object.get("borderColor"s);
+				if (borderColorNode.is<float>())
                 {
                     borderColor = Math::Float4(borderColorNode.as<float>());
                 }

@@ -35,10 +35,10 @@ namespace Gek
                 {
                 private:
                     Log *log = nullptr;
-                    CString system, name;
+                    std::string system, name;
 
                 public:
-                    Scope(Log *log, char const * const system, char const * const name)
+                    Scope(Log *log, std::string const &system, std::string const &name)
                         : log(log)
                         , system(system)
                         , name(name)
@@ -62,19 +62,19 @@ namespace Gek
 
                 virtual ~Log(void) = default;
 
-                virtual void message(CString const &system, Type logType, CString const &message) = 0;
+                virtual void message(std::string const &system, Type logType, std::string const &message) = 0;
 
 				template<typename TYPE, typename... PARAMETERS>
-				void message(CString const &system, Type logType, CString const &formatting, TYPE const &value, PARAMETERS... arguments)
+				void message(std::string const &system, Type logType, char const *formatting, TYPE const &value, PARAMETERS... arguments)
                 {
-					message(system, logType, CString::Format(formatting, value, arguments...));
+					message(system, logType, String::Format(formatting, value, arguments...));
                 }
 
-                virtual void beginEvent(char const * const system, char const * const name) = 0;
-                virtual void endEvent(char const * const system, char const * const name) = 0;
+                virtual void beginEvent(std::string const &system, std::string const &name) = 0;
+                virtual void endEvent(std::string const &system, std::string const &name) = 0;
 
-                virtual void setValue(char const * const system, char const * const name, float value) = 0;
-                virtual void adjustValue(char const * const system, char const * const name, float value) = 0;
+                virtual void setValue(std::string const &system, std::string const &name, float value) = 0;
+                virtual void adjustValue(std::string const &system, std::string const &name, float value) = 0;
             };
 
             Nano::Signal<void(void)> onResize;

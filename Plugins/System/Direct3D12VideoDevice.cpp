@@ -21,7 +21,7 @@ namespace Gek
             {
             }
 
-            void setName(wchar_t const * const name)
+            void setName(std::string const &name)
             {
             }
         };
@@ -36,7 +36,7 @@ namespace Gek
             {
             }
 
-            void setName(wchar_t const * const name)
+            void setName(std::string const &name)
             {
             }
         };
@@ -51,7 +51,7 @@ namespace Gek
             {
             }
 
-            void setName(wchar_t const * const name)
+            void setName(std::string const &name)
             {
             }
         };
@@ -66,7 +66,7 @@ namespace Gek
             {
             }
 
-            void setName(wchar_t const * const name)
+            void setName(std::string const &name)
             {
             }
         };
@@ -81,7 +81,7 @@ namespace Gek
             {
             }
 
-            void setName(wchar_t const * const name)
+            void setName(std::string const &name)
             {
             }
         };
@@ -96,7 +96,7 @@ namespace Gek
             {
             }
 
-            void setName(wchar_t const * const name)
+            void setName(std::string const &name)
             {
             }
         };
@@ -111,7 +111,7 @@ namespace Gek
             {
             }
 
-            void setName(wchar_t const * const name)
+            void setName(std::string const &name)
             {
             }
         };
@@ -126,7 +126,7 @@ namespace Gek
             {
             }
 
-            void setName(wchar_t const * const name)
+            void setName(std::string const &name)
             {
             }
         };
@@ -141,7 +141,7 @@ namespace Gek
             {
             }
 
-            void setName(wchar_t const * const name)
+            void setName(std::string const &name)
             {
             }
         };
@@ -156,7 +156,7 @@ namespace Gek
             {
             }
 
-            void setName(wchar_t const * const name)
+            void setName(std::string const &name)
             {
             }
         };
@@ -171,7 +171,7 @@ namespace Gek
             {
             }
 
-            void setName(wchar_t const * const name)
+            void setName(std::string const &name)
             {
             }
         };
@@ -244,7 +244,7 @@ namespace Gek
 
             virtual ~Buffer(void) = default;
 
-            void setName(wchar_t const * const name)
+            void setName(std::string const &name)
             {
             }
 
@@ -291,7 +291,7 @@ namespace Gek
             {
             }
 
-            void setName(wchar_t const * const name)
+            void setName(std::string const &name)
             {
             }
         };
@@ -340,7 +340,7 @@ namespace Gek
 
             virtual ~TargetTexture(void) = default;
 
-            virtual void setName(wchar_t const * const name)
+            virtual void setName(std::string const &name)
             {
             }
         };
@@ -360,7 +360,7 @@ namespace Gek
 
             virtual ~TargetViewTexture(void) = default;
 
-            void setName(wchar_t const * const name)
+            void setName(std::string const &name)
             {
             }
         };
@@ -384,7 +384,7 @@ namespace Gek
 
             virtual ~DepthTexture(void) = default;
 
-            void setName(wchar_t const * const name)
+            void setName(std::string const &name)
             {
             }
         };
@@ -925,7 +925,7 @@ namespace Gek
                 return std::make_unique<ComputeProgram>();
             }
 
-            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, wchar_t const * const name, wchar_t const * const uncompiledProgram, wchar_t const * const entryFunction)
+            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, std::string const &name, std::string const &uncompiledProgram, std::string const &entryFunction)
             {
                 return std::vector<uint8_t>();
             }

@@ -28,18 +28,18 @@ namespace Gek
             // Plugin::Component
             void save(Components::Player const * const data, JSON::Object &componentData) const
             {
-                componentData.set(L"height", data->height);
-                componentData.set(L"outerRadius", data->outerRadius);
-                componentData.set(L"innerRadius", data->innerRadius);
-                componentData.set(L"stairStep", data->stairStep);
+                componentData.set("height", data->height);
+                componentData.set("outerRadius", data->outerRadius);
+                componentData.set("innerRadius", data->innerRadius);
+                componentData.set("stairStep", data->stairStep);
             }
 
             void load(Components::Player * const data, const JSON::Object &componentData)
             {
-                data->height = getValue(componentData, L"height", 0.0f);
-                data->outerRadius = getValue(componentData, L"outerRadius", 0.0f);
-                data->innerRadius = getValue(componentData, L"innerRadius", 0.0f);
-                data->stairStep = getValue(componentData, L"stairStep", 0.0f);
+                data->height = getValue(componentData, "height", 0.0f);
+                data->outerRadius = getValue(componentData, "outerRadius", 0.0f);
+                data->innerRadius = getValue(componentData, "innerRadius", 0.0f);
+                data->stairStep = getValue(componentData, "stairStep", 0.0f);
             }
 
             // Edit::Component
@@ -48,10 +48,10 @@ namespace Gek
                 ImGui::SetCurrentContext(guiContext);
                 auto &playerComponent = *dynamic_cast<Components::Player *>(data);
                 bool changed = 
-                    ImGui::Gek::InputFloat("Height", &playerComponent.height, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                    ImGui::Gek::InputFloat("Outer Radius", &playerComponent.outerRadius, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                    ImGui::Gek::InputFloat("Inner Radius", &playerComponent.innerRadius, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                    ImGui::Gek::InputFloat("Stair Step", &playerComponent.stairStep, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
+                    GUI::InputFloat("Height", &playerComponent.height, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                    GUI::InputFloat("Outer Radius", &playerComponent.outerRadius, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                    GUI::InputFloat("Inner Radius", &playerComponent.innerRadius, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                    GUI::InputFloat("Stair Step", &playerComponent.stairStep, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
                 ImGui::SetCurrentContext(nullptr);
                 return changed;
             }

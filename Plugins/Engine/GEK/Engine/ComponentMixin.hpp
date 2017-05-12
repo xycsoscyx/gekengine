@@ -23,7 +23,7 @@ namespace Gek
             : public BASE
         {
         private:
-            WString name;
+            std::string name;
 
         protected:
             Population *population = nullptr;
@@ -34,16 +34,16 @@ namespace Gek
             {
                 name = typeid(COMPONENT).name();
                 auto colonPosition = name.rfind(':');
-                if (colonPosition != CString::npos)
+                if (colonPosition != std::string::npos)
                 {
-                    name = name.subString(colonPosition + 1);
+                    name = name.substr(colonPosition + 1);
                 }
             }
 
             virtual ~ComponentMixin(void) = default;
 
             // Plugin::Component
-            wchar_t const * const getName(void) const
+            std::string const &getName(void) const
             {
                 return name;
             }
@@ -64,7 +64,7 @@ namespace Gek
 				{
 				case jsoncons::value_type::small_string_t:
 				case jsoncons::value_type::string_t:
-					return population->getShuntingYard().evaluate(data.as_cstring(), defaultValue) != 0.0f;
+					return population->getShuntingYard().evaluate(data.as_string(), defaultValue) != 0.0f;
 
 				case jsoncons::value_type::bool_t:
 					return data.var_.bool_data_cast()->value();
@@ -89,7 +89,7 @@ namespace Gek
 				{
 				case jsoncons::value_type::small_string_t:
 				case jsoncons::value_type::string_t:
-					return static_cast<int32_t>(population->getShuntingYard().evaluate(data.as_cstring(), defaultValue));
+					return static_cast<int32_t>(population->getShuntingYard().evaluate(data.as_string(), defaultValue));
 
 				case jsoncons::value_type::double_t:
 					return static_cast<int64_t>(data.var_.double_data_cast()->value());
@@ -114,7 +114,7 @@ namespace Gek
 				{
 				case jsoncons::value_type::small_string_t:
 				case jsoncons::value_type::string_t:
-					return static_cast<uint32_t>(population->getShuntingYard().evaluate(data.as_cstring(), defaultValue));
+					return static_cast<uint32_t>(population->getShuntingYard().evaluate(data.as_string(), defaultValue));
 
 				case jsoncons::value_type::double_t:
 					return static_cast<uint32_t>(data.var_.double_data_cast()->value());
@@ -139,7 +139,7 @@ namespace Gek
 				{
 				case jsoncons::value_type::small_string_t:
 				case jsoncons::value_type::string_t:
-					return population->getShuntingYard().evaluate(data.as_cstring(), defaultValue);
+					return population->getShuntingYard().evaluate(data.as_string(), defaultValue);
 
 				case jsoncons::value_type::double_t:
 					return static_cast<float>(data.var_.double_data_cast()->value());
@@ -234,13 +234,13 @@ namespace Gek
                 return defaultValue;
             }
 
-            WString getValue(JSON::Object const &data, WString const &defaultValue)
+            std::string getValue(JSON::Object const &data, std::string const &defaultValue)
             {
                 return data.as_string();
             }
 
             template <typename TYPE>
-            TYPE getValue(JSON::Object const &componentData, WString const &name, TYPE const &defaultValue)
+            TYPE getValue(JSON::Object const &componentData, std::string const &name, TYPE const &defaultValue)
             {
                 if (componentData.is_object() && componentData.has_member(name))
                 {

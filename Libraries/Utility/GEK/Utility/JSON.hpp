@@ -7,6 +7,10 @@
 /// Last Changed: $Date$
 #pragma once
 
+#include "GEK/Math/Vector2.hpp"
+#include "GEK/Math/Vector3.hpp"
+#include "GEK/Math/Vector4.hpp"
+#include "GEK/Math/Quaternion.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include <jsoncons/json.hpp>
@@ -90,7 +94,7 @@ namespace Gek
 {
     namespace JSON
     {
-        using Object = jsoncons::wjson;
+        using Object = jsoncons::json;
         using Member = Object::member_type;
         using Array = Object::array;
 

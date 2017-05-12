@@ -106,41 +106,41 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     {
         std::cout << "GEK Model Converter" << std::endl;
 
-        WString fileNameInput;
-        WString fileNameOutput;
+        std::string fileNameInput;
+        std::string fileNameOutput;
 		Parameters parameters;
         for (int argumentIndex = 1; argumentIndex < argumentCount; ++argumentIndex)
         {
-            WString argument(argumentList[argumentIndex]);
-            std::vector<WString> arguments(argument.split(L':'));
+			std::string argument(String::Narrow(argumentList[argumentIndex]));
+			std::vector<std::string> arguments(String::Split(String::GetLower(argument), ':'));
             if (arguments.empty())
             {
                 throw std::exception("No arguments specified for command line parameter");
             }
 
-            if (arguments[0].compareNoCase(L"-input") == 0 && ++argumentIndex < argumentCount)
+            if (arguments[0] == "-input"s && ++argumentIndex < argumentCount)
             {
-                fileNameInput = argumentList[argumentIndex];
+                fileNameInput = String::Narrow(argumentList[argumentIndex]);
             }
-            else if (arguments[0].compareNoCase(L"-output") == 0 && ++argumentIndex < argumentCount)
+            else if (arguments[0] == "-output"s && ++argumentIndex < argumentCount)
             {
-                fileNameOutput = argumentList[argumentIndex];
+                fileNameOutput = String::Narrow(argumentList[argumentIndex]);
             }
-			else if (arguments[0].compareNoCase(L"-unitsInFoot") == 0)
+			else if (arguments[0] == "-unitsinfoot"s)
 			{
 				if (arguments.size() != 2)
 				{
 					throw std::exception("Missing parameters for unitsInFoot");
 				}
 
-				parameters.feetPerUnit = (1.0f / (float)arguments[1]);
+				parameters.feetPerUnit = (1.0f / (float)String::Convert(arguments[1], 1.0f));
 			}
 		}
 
 		aiLogStream logStream;
 		logStream.callback = [](char const *message, char *user) -> void
 		{
-			std::cerr << "Assimp: " << message << std::endl;
+			std::cerr << "Assimp: " << message;
 		};
 
 		logStream.user = nullptr;
@@ -175,7 +175,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
-        auto scene = aiImportFileExWithProperties(CString(fileNameInput), importFlags, nullptr, propertyStore);
+        auto scene = aiImportFileExWithProperties(fileNameInput.c_str(), importFlags, nullptr, propertyStore);
         if (scene == nullptr)
         {
             throw std::exception("Unable to load scene with Assimp");
@@ -215,7 +215,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         }
 
         FILE *file = nullptr;
-        _wfopen_s(&file, fileNameOutput, L"wb");
+        _wfopen_s(&file, String::Widen(fileNameOutput).c_str(), L"wb");
         if (file == nullptr)
         {
             throw std::exception("Unable to create output file");

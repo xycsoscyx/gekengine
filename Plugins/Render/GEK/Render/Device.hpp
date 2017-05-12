@@ -101,7 +101,7 @@ namespace Gek
             Count,
         };
 
-        Format getFormat(WString const &format);
+        Format getFormat(std::string const &format);
 
         struct DisplayMode
         {
@@ -412,7 +412,7 @@ namespace Gek
 
         struct NamedDeclaration
         {
-            WString name;
+            std::string name;
             Format format = Format::Unknown;
 
             size_t getHash(void) const;
@@ -432,7 +432,7 @@ namespace Gek
                 Count,
             };
 
-            static Semantic getSemantic(WString const &semantic);
+            static Semantic getSemantic(std::string const &semantic);
 
             Semantic semantic = Semantic::TexCoord;
 
@@ -450,7 +450,7 @@ namespace Gek
 
             static const uint32_t AppendAligned = 0xFFFFFFFF;
 
-            static Source getSource(WString const &elementSource);
+            static Source getSource(std::string const &elementSource);
 
             Source source = Source::Vertex;
             uint32_t sourceIndex = 0;
@@ -472,8 +472,8 @@ namespace Gek
 
             std::vector<VertexDeclaration> vertexDeclaration;
             std::vector<ElementDeclaration> pixelDeclaration;
-            WString vertexShader, vertexShaderEntryFunction;
-            WString pixelShader, pixelShaderEntryFunction;
+            std::string vertexShader, vertexShaderEntryFunction;
+            std::string pixelShader, pixelShaderEntryFunction;
 
             std::vector<NamedDeclaration> renderTargetList;
             Format depthTargetFormat = Format::Unknown;
@@ -579,7 +579,7 @@ namespace Gek
         {
             struct Description
             {
-                WString device;
+                std::string device;
                 Format displayFormat = Format::R8G8B8A8_UNORM_SRGB;
                 uint32_t sampleCount = 1;
                 uint32_t sampleQuality = 0;
@@ -648,13 +648,13 @@ namespace Gek
             virtual void deleteResource(ResourceHandle resource) = 0;
             virtual void deleteQueue(QueueHandle queue) = 0;
 
-            virtual PipelineStateHandle createPipelineState(const PipelineStateInformation &pipelineState, wchar_t const * const name = nullptr) = 0;
+            virtual PipelineStateHandle createPipelineState(const PipelineStateInformation &pipelineState, std::string const &name = std::string()) = 0;
 
-            virtual SamplerStateHandle createSamplerState(const SamplerStateInformation &samplerState, wchar_t const * const name = nullptr) = 0;
+            virtual SamplerStateHandle createSamplerState(const SamplerStateInformation &samplerState, std::string const &name = std::string()) = 0;
 
-            virtual ResourceHandle createBuffer(const BufferDescription &description, const void *staticData = nullptr, wchar_t const * const name = nullptr) = 0;
-            virtual ResourceHandle createTexture(const TextureDescription &description, const void *data = nullptr, wchar_t const * const name = nullptr) = 0;
-            virtual ResourceHandle loadTexture(FileSystem::Path const &filePath, uint32_t flags, wchar_t const * const name = nullptr) = 0;
+            virtual ResourceHandle createBuffer(const BufferDescription &description, const void *staticData = nullptr, std::string const &name = std::string()) = 0;
+            virtual ResourceHandle createTexture(const TextureDescription &description, const void *data = nullptr, std::string const &name = std::string()) = 0;
+            virtual ResourceHandle loadTexture(FileSystem::Path const &filePath, uint32_t flags, std::string const &name = std::string()) = 0;
 
             virtual BufferDescription const * const getBufferDescription(ResourceHandle resource) const = 0;
             virtual TextureDescription const * const getTextureDescription(ResourceHandle resource) const = 0;
@@ -671,8 +671,8 @@ namespace Gek
             virtual void updateResource(ResourceHandle resource, const void *data) = 0;
             virtual void copyResource(ResourceHandle destination, ResourceHandle source) = 0;
 
-            virtual QueuePtr createQueue(uint32_t flags, wchar_t const * const name = nullptr) = 0;
-            virtual QueueHandle compileQueue(Queue *queue, wchar_t const * const name = nullptr) = 0;
+            virtual QueuePtr createQueue(uint32_t flags, std::string const &name = std::string()) = 0;
+            virtual QueueHandle compileQueue(Queue *queue, std::string const &name = std::string()) = 0;
             virtual void runQueue(Queue *queue) = 0;
             virtual void runQueue(QueueHandle queue) = 0;
 

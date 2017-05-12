@@ -3,23 +3,23 @@
 
 namespace Gek
 {
-    ClearData::ClearData(ClearType type, WString const &data)
+    ClearData::ClearData(ClearType type, std::string const &data)
         : type(type)
     {
         switch (type)
         {
         case ClearType::Float:
         case ClearType::Target:
-            floats.set((float)data);
+			floats.set(String::Convert(data, 0.0f));
             break;
             
         case ClearType::UInt:
-            integers[0] = integers[1] = integers[2] = integers[3] = data;
+			integers[0] = integers[1] = integers[2] = integers[3] = String::Convert(data, 0U);
             break;
         };
     }
 
-    WString getFormatSemantic(Video::Format format)
+    std::string getFormatSemantic(Video::Format format)
     {
         switch (format)
         {
@@ -31,11 +31,11 @@ namespace Gek
         case Video::Format::R8G8B8A8_UNORM_SRGB:
         case Video::Format::R16G16B16A16_NORM:
         case Video::Format::R8G8B8A8_NORM:
-            return L"float4";
+            return "float4"s;
 
         case Video::Format::R32G32B32_FLOAT:
         case Video::Format::R11G11B10_FLOAT:
-            return L"float3";
+            return "float3"s;
 
         case Video::Format::R32G32_FLOAT:
         case Video::Format::R16G16_FLOAT:
@@ -43,7 +43,7 @@ namespace Gek
         case Video::Format::R8G8_UNORM:
         case Video::Format::R16G16_NORM:
         case Video::Format::R8G8_NORM:
-            return L"float2";
+            return "float2"s;
 
         case Video::Format::R32_FLOAT:
         case Video::Format::R16_FLOAT:
@@ -55,76 +55,81 @@ namespace Gek
         case Video::Format::D24_UNORM_S8_UINT:
         case Video::Format::D32_FLOAT:
         case Video::Format::D16_UNORM:
-            return L"float";
+            return "float"s;
 
         case Video::Format::R32G32B32A32_UINT:
         case Video::Format::R16G16B16A16_UINT:
         case Video::Format::R10G10B10A2_UINT:
-            return L"uint4";
+            return "uint4"s;
 
         case Video::Format::R8G8B8A8_UINT:
         case Video::Format::R32G32B32_UINT:
-            return L"uint3";
+            return "uint3"s;
 
         case Video::Format::R32G32_UINT:
         case Video::Format::R16G16_UINT:
         case Video::Format::R8G8_UINT:
-            return L"uint2";
+            return "uint2"s;
 
         case Video::Format::R32_UINT:
         case Video::Format::R16_UINT:
         case Video::Format::R8_UINT:
-            return L"uint";
+            return "uint"s;
 
         case Video::Format::R32G32B32A32_INT:
         case Video::Format::R16G16B16A16_INT:
         case Video::Format::R8G8B8A8_INT:
-            return L"int4";
+            return "int4"s;
 
         case Video::Format::R32G32B32_INT:
-            return L"int3";
+            return "int3"s;
 
         case Video::Format::R32G32_INT:
         case Video::Format::R16G16_INT:
         case Video::Format::R8G8_INT:
-            return L"int2";
+            return "int2"s;
 
         case Video::Format::R32_INT:
         case Video::Format::R16_INT:
         case Video::Format::R8_INT:
-            return L"int";
+            return "int"s;
         };
 
-        return L"";
+		return String::Empty;
     }
 
-    WString getFormatSemantic(Video::Format format, uint32_t count)
+    std::string getFormatSemantic(Video::Format format, uint32_t count)
     {
-        WString semantic(getFormatSemantic(format));
+        std::string semantic(getFormatSemantic(format));
         if (count > 0)
         {
-            semantic.appendFormat(L"x%v", count);
+            semantic += String::Format("x%v", count);
         }
 
         return semantic;
     }
 
-    ClearType getClearType(WString const &clearType)
+    ClearType getClearType(std::string const &string)
     {
-        if (clearType.compareNoCase(L"Target") == 0) return ClearType::Target;
-        else if (clearType.compareNoCase(L"Float") == 0) return ClearType::Float;
-        else if (clearType.compareNoCase(L"UInt") == 0) return ClearType::UInt;
-        return ClearType::Unknown;
+		static const std::unordered_map<std::string, ClearType> data =
+		{
+			{ "target"s, ClearType::Target },
+			{ "float"s, ClearType::Float },
+			{ "uint"s, ClearType::UInt },
+		};
+
+		auto result = data.find(String::GetLower(string));
+		return (result == std::end(data) ? ClearType::Unknown : result->second);
     }
 
-    uint32_t getTextureLoadFlags(WString const &loadFlags)
+    uint32_t getTextureLoadFlags(std::string const &loadFlags)
     {
         uint32_t flags = 0;
         int position = 0;
-        std::vector<WString> flagList(loadFlags.split(L','));
+		std::vector<std::string> flagList(String::Split(String::GetLower(loadFlags), ','));
         for (const auto &flag : flagList)
         {
-            if (flag.compareNoCase(L"sRGB") == 0)
+            if (flag == "srgb"s)
             {
                 flags |= Video::TextureLoadFlags::sRGB;
             }
@@ -133,22 +138,22 @@ namespace Gek
         return flags;
     }
 
-    uint32_t getTextureFlags(WString const &createFlags)
+    uint32_t getTextureFlags(std::string const &createFlags)
     {
         uint32_t flags = 0;
         int position = 0;
-        std::vector<WString> flagList(createFlags.split(L','));
+        std::vector<std::string> flagList(String::Split(String::GetLower(createFlags), ','));
         for (const auto &flag : flagList)
         {
-            if (flag.compareNoCase(L"target") == 0)
+            if (flag == "target"s)
             {
                 flags |= Video::Texture::Description::Flags::RenderTarget;
             }
-            else if (flag.compareNoCase(L"depth") == 0)
+            else if (flag == "depth"s)
             {
                 flags |= Video::Texture::Description::Flags::DepthTarget;
             }
-            else if (flag.compareNoCase(L"unorderedaccess") == 0)
+            else if (flag == "unorderedaccess"s)
             {
                 flags |= Video::Texture::Description::Flags::UnorderedAccess;
             }
@@ -157,18 +162,18 @@ namespace Gek
         return (flags | Video::Texture::Description::Flags::Resource);
     }
 
-    uint32_t getBufferFlags(WString const &createFlags)
+    uint32_t getBufferFlags(std::string const &createFlags)
     {
         uint32_t flags = 0;
         int position = 0;
-        std::vector<WString> flagList(createFlags.split(L','));
+        std::vector<std::string> flagList(String::Split(String::GetLower(createFlags), ','));
         for (const auto &flag : flagList)
         {
-            if (flag.compareNoCase(L"unorderedaccess") == 0)
+            if (flag == "unorderedaccess"s)
             {
                 flags |= Video::Buffer::Description::Flags::UnorderedAccess;
             }
-            else if (flag.compareNoCase(L"counter") == 0)
+            else if (flag == "counter"s)
             {
                 flags |= Video::Buffer::Description::Flags::Counter;
             }
@@ -177,9 +182,9 @@ namespace Gek
         return (flags | Video::Buffer::Description::Flags::Resource);
     }
 
-    std::unordered_map<WString, WString> getAliasedMap(const JSON::Object &parent, wchar_t const * const name)
+    std::unordered_map<std::string, std::string> getAliasedMap(const JSON::Object &parent, std::string const &name)
     {
-        std::unordered_map<WString, WString> aliasedMap;
+        std::unordered_map<std::string, std::string> aliasedMap;
         if (parent.has_member(name))
         {
             auto &object = parent.get(name);
@@ -189,14 +194,14 @@ namespace Gek
                 {
                     if (element.is_string())
                     {
-                        WString name(element.as_string());
+                        std::string name(element.as_string());
                         aliasedMap[name] = name;
                     }
                     else if (element.is_object() && !element.empty())
                     {
                         auto &member = element.begin_members();
-                        WString name(member->name());
-                        WString value(member->value().as_string());
+                        std::string name(member->name());
+                        std::string value(member->value().as_string());
                         aliasedMap[name] = value;
                     }
                     else

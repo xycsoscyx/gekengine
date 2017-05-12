@@ -411,32 +411,32 @@ namespace Gek
                     return;
                 }
 
-                if (action.name.compareNoCase(L"turn") == 0)
+                if (action.name == "turn"s)
 				{
 					headingAngle += (action.value * 0.01f);
 				}
-                else if (action.name.compareNoCase(L"tilt") == 0)
+                else if (action.name == "tilt"s)
                 {
                     lookingAngle += (action.value * 0.01f);
                     lookingAngle = Math::Clamp(lookingAngle, -Math::Pi * 0.5f, Math::Pi * 0.5f);
                 }
-                else if (action.name.compareNoCase(L"move_forward") == 0)
+                else if (action.name == "move_forward"s)
 				{
 					moveForward = action.state;
 				}
-				else if (action.name.compareNoCase(L"move_backward") == 0)
+				else if (action.name == "move_backward"s)
 				{
 					moveBackward = action.state;
 				}
-				else if (action.name.compareNoCase(L"strafe_left") == 0)
+				else if (action.name == "strafe_left"s)
 				{
 					strafeLeft = action.state;
 				}
-				else if (action.name.compareNoCase(L"strafe_right") == 0)
+				else if (action.name == "strafe_right"s)
 				{
 					strafeRight = action.state;
 				}
-				else if (action.name.compareNoCase(L"crouch") == 0)
+				else if (action.name == "crouch"s)
 				{
 				}
 
@@ -679,26 +679,26 @@ namespace Gek
 
 		StatePtr IdleState::onAction(PlayerBody *player, Plugin::Population::Action const &action)
 		{
-			if (action.name.compareNoCase(L"crouch") == 0 && action.state)
+			if (action.name == "crouch"s && action.state)
 			{
 			}
-			else if (action.name.compareNoCase(L"move_forward") == 0 && action.state)
-			{
-				return std::make_unique<WalkingState>();
-			}
-			else if (action.name.compareNoCase(L"move_backward") == 0 && action.state)
+			else if (action.name == "move_forward"s && action.state)
 			{
 				return std::make_unique<WalkingState>();
 			}
-			else if (action.name.compareNoCase(L"strafe_left") == 0 && action.state)
+			else if (action.name == "move_backward"s && action.state)
 			{
 				return std::make_unique<WalkingState>();
 			}
-			else if (action.name.compareNoCase(L"strafe_right") == 0 && action.state)
+			else if (action.name == "strafe_left"s && action.state)
 			{
 				return std::make_unique<WalkingState>();
 			}
-			else if (action.name.compareNoCase(L"jump") == 0 && action.state && player->touchingSurface)
+			else if (action.name == "strafe_right"s && action.state)
+			{
+				return std::make_unique<WalkingState>();
+			}
+			else if (action.name == "jump"s && action.state && player->touchingSurface)
 			{
 				return std::make_unique<JumpingState>();
 			}
@@ -720,7 +720,7 @@ namespace Gek
 
 		StatePtr WalkingState::onAction(PlayerBody *player, Plugin::Population::Action const &action)
 		{
-			if (action.name.compareNoCase(L"jump") == 0 && action.state && player->touchingSurface)
+			if (action.name == "jump"s && action.state && player->touchingSurface)
 			{
 				return std::make_unique<JumpingState>();
 			}
@@ -753,7 +753,7 @@ namespace Gek
 
         StatePtr JumpingState::onAction(PlayerBody *player, Plugin::Population::Action const &action)
         {
-            if (action.name.compareNoCase(L"jump") == 0 && action.state && player->touchingSurface)
+            if (action.name == "jump"s && action.state && player->touchingSurface)
             {
                 return std::make_unique<JumpingState>();
             }

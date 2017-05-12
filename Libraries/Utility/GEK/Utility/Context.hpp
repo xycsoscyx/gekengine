@@ -36,9 +36,9 @@ namespace Gek
         virtual FileSystem::Path const &getRootPath(void) const = 0;
 
         template <typename... PARAMETERS>
-        FileSystem::Path getRootFileName(PARAMETERS... nameList)
+        FileSystem::Path getRootFileName(PARAMETERS&&... nameList)
         {
-            return FileSystem::GetFileName(getRootPath(), { nameList... });
+            return FileSystem::GetFileName(getRootPath(), nameList...);
         }
 
         virtual ContextUserPtr createBaseClass(std::string const &className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const = 0;

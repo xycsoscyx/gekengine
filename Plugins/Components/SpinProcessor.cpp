@@ -37,9 +37,9 @@ namespace Gek
 
         void load(Components::Spin * const data, const JSON::Object &componentData)
         {
-            data->torque.x = population->getShuntingYard().evaluate(L"random(-pi,pi)", 0.0f);
-            data->torque.y = population->getShuntingYard().evaluate(L"random(-pi,pi)", 0.0f);
-            data->torque.z = population->getShuntingYard().evaluate(L"random(-pi,pi)", 0.0f);
+            data->torque.x = population->getShuntingYard().evaluate("random(-pi,pi)"s, 0.0f);
+            data->torque.y = population->getShuntingYard().evaluate("random(-pi,pi)"s, 0.0f);
+            data->torque.z = population->getShuntingYard().evaluate("random(-pi,pi)"s, 0.0f);
         }
     };
 
@@ -73,7 +73,7 @@ namespace Gek
 
             if (frameTime > 0.0f && !core->isEditorActive())
             {
-                population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity * const entity, WString const &, auto &transformComponent, auto &spinComponent) -> void
+                population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity * const entity, std::string const &, auto &transformComponent, auto &spinComponent) -> void
                 {
                     auto omega(spinComponent.torque * frameTime);
                     transformComponent.rotation *= Math::Quaternion::FromEuler(omega.x, omega.y, omega.z);

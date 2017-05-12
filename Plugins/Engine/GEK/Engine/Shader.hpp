@@ -55,7 +55,7 @@ namespace Gek
             {
                 struct Initializer
                 {
-                    WString name;
+                    std::string name;
                     ResourceHandle fallback;
                 };
 
@@ -69,7 +69,7 @@ namespace Gek
             virtual void reload(void) = 0;
 
             virtual uint32_t getDrawOrder(void) const = 0;
-            virtual const Material *getMaterial(wchar_t const * const passName) const = 0;
+            virtual const Material *getMaterial(std::string const &passName) const = 0;
             virtual bool isLightingRequired(void) const = 0;
 
             virtual Pass::Iterator begin(Video::Device::Context *videoContext, Math::Float4x4 const &viewMatrix, const Shapes::Frustum &viewFrustum) = 0;

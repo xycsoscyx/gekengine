@@ -49,7 +49,7 @@ namespace Gek
             {
                 struct Material
                 {
-                    wchar_t name[64];
+                    char name[64];
                 };
 
                 uint32_t materialCount;
@@ -171,7 +171,7 @@ namespace Gek
             {
                 NewtonCollision *newtonCollision = nullptr;
 
-                auto hash = GetHash(WString::Format(L"model:%v", modelComponent.name));
+                auto hash = GetHash(String::Format("model:%v", modelComponent.name));
                 auto collisionSearch = collisionMap.find(hash);
                 if (collisionSearch != std::end(collisionMap))
                 {
@@ -184,33 +184,33 @@ namespace Gek
                 {
                     collisionMap[hash] = nullptr;
 
-					core->getLog()->message("Physics", Plugin::Core::Log::Type::Message, "Loading collision model: %v", modelComponent.name);
+					core->getLog()->message("Physics"s, Plugin::Core::Log::Type::Message, "Loading collision model: %v", modelComponent.name);
 
 					static const std::vector<uint8_t> EmptyBuffer;
-					auto filePath = getContext()->getRootFileName(L"data", L"models", modelComponent.name).withExtension(L".bin");
+					auto filePath = getContext()->getRootFileName("data"s, "models"s, modelComponent.name).withExtension(".bin"s);
                     std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
 					if (buffer.size() < sizeof(Header))
 					{
-						core->getLog()->message("Physics", Plugin::Core::Log::Type::Error, "File too small to be collision model: %v", modelComponent.name);
+						core->getLog()->message("Physics"s, Plugin::Core::Log::Type::Error, "File too small to be collision model: %v", modelComponent.name);
 						return nullptr;
 					}
 
                     Header *header = (Header *)buffer.data();
                     if (header->identifier != *(uint32_t *)"GEKX")
                     {
-						core->getLog()->message("Physics", Plugin::Core::Log::Type::Error, "Unknown model file identifier encountered: %v", modelComponent.name);
+						core->getLog()->message("Physics"s, Plugin::Core::Log::Type::Error, "Unknown model file identifier encountered: %v", modelComponent.name);
 						return nullptr;
                     }
 
                     if (header->version != 2)
                     {
-						core->getLog()->message("Physics", Plugin::Core::Log::Type::Error, "Unsupported model version encountered (requires: 2, has: %v): %v", header->version, modelComponent.name);
+						core->getLog()->message("Physics"s, Plugin::Core::Log::Type::Error, "Unsupported model version encountered (requires: 2, has: %v): %v", header->version, modelComponent.name);
 						return nullptr;
 					}
 
                     if (header->newtonVersion != NewtonWorldGetVersion())
                     {
-						core->getLog()->message("Physics", Plugin::Core::Log::Type::Error, "Model created with different version of Newton Dynamics (requires: %v, has: %v): %v", NewtonWorldGetVersion(), header->newtonVersion, modelComponent.name);
+						core->getLog()->message("Physics"s, Plugin::Core::Log::Type::Error, "Model created with different version of Newton Dynamics (requires: %v, has: %v): %v", NewtonWorldGetVersion(), header->newtonVersion, modelComponent.name);
 						return nullptr;
 					}
 
@@ -235,7 +235,7 @@ namespace Gek
 
                     if (header->type == 1)
                     {
-						core->getLog()->message("Physics", Plugin::Core::Log::Type::Message, "Loading hull collision: %v", modelComponent.name);
+						core->getLog()->message("Physics"s, Plugin::Core::Log::Type::Message, "Loading hull collision: %v", modelComponent.name);
 
 						HullHeader *hullHeader = (HullHeader *)header;
                         DeSerializationData data(buffer, (uint8_t *)&hullHeader->serializationData[0]);
@@ -243,7 +243,7 @@ namespace Gek
                     }
                     else if (header->type == 2)
                     {
-						core->getLog()->message("Physics", Plugin::Core::Log::Type::Message, "Loading tree collision: %v", modelComponent.name);
+						core->getLog()->message("Physics"s, Plugin::Core::Log::Type::Message, "Loading tree collision: %v", modelComponent.name);
 						
 						TreeHeader *treeHeader = (TreeHeader *)header;
                         for (uint32_t materialIndex = 0; materialIndex < treeHeader->materialCount; ++materialIndex)
@@ -257,13 +257,13 @@ namespace Gek
                     }
                     else
                     {
-						core->getLog()->message("Physics", Plugin::Core::Log::Type::Error, "Unsupported model type encountered: %v", modelComponent.name);
+						core->getLog()->message("Physics"s, Plugin::Core::Log::Type::Error, "Unsupported model type encountered: %v", modelComponent.name);
 						return nullptr;
                     }
 
                     if (newtonCollision == nullptr)
                     {
-						core->getLog()->message("Physics", Plugin::Core::Log::Type::Error, "Unable to create model collision object: %v", modelComponent.name);
+						core->getLog()->message("Physics"s, Plugin::Core::Log::Type::Error, "Unable to create model collision object: %v", modelComponent.name);
 						return nullptr;
 					}
 
@@ -272,15 +272,15 @@ namespace Gek
                     NewtonCollisionSetMatrix(newtonCollision, Math::Float4x4::Identity.data);
                     collisionMap[hash] = newtonCollision;
 
-					core->getLog()->message("Physics", Plugin::Core::Log::Type::Message, "Collision model successfully loaded: %v", modelComponent.name);
+					core->getLog()->message("Physics"s, Plugin::Core::Log::Type::Message, "Collision model successfully loaded: %v", modelComponent.name);
 				}
 
                 return newtonCollision;
             }
 
-            NewtonCollision *getStaticGroup(wchar_t const * name)
+            NewtonCollision *getStaticGroup(std::string const &name)
             {
-                auto hash = GetHash(WString::Format(L"static:%v", name));
+                auto hash = GetHash(String::Format("static:%v", name));
                 auto collisionSearch = collisionMap.find(hash);
                 if (collisionSearch != std::end(collisionMap))
                 {
@@ -412,7 +412,7 @@ namespace Gek
             }
 
             // Plugin::Population Slots
-            void onEntityCreated(Plugin::Entity * const entity, WString const &entityName)
+            void onEntityCreated(Plugin::Entity * const entity, std::string const &entityName)
             {
                 addEntity(entity);
             }
@@ -460,7 +460,7 @@ namespace Gek
                 return Gravity;
             }
 
-            uint32_t loadSurface(wchar_t const * const surfaceName)
+            uint32_t loadSurface(std::string const &surfaceName)
             {
                 uint32_t surfaceIndex = 0;
 
@@ -475,17 +475,17 @@ namespace Gek
                     surfaceIndexMap[hash] = 0;
                     try
                     {
-                        const JSON::Object materialNode = JSON::Load(getContext()->getRootFileName(L"data", L"materials", surfaceName).withExtension(L".json"));
+                        const JSON::Object materialNode = JSON::Load(getContext()->getRootFileName("data"s, "materials"s, surfaceName).withExtension(".json"s));
 
-                        auto &surfaceNode = materialNode.get(L"surface");
+                        auto &surfaceNode = materialNode.get("surface"s);
                         if (surfaceNode.is_object())
                         {
                             Surface surface;
-                            surface.ghost = surfaceNode.get(L"ghost", surface.ghost).as_bool();
-                            surface.staticFriction = surfaceNode.get(L"static_friction", surface.staticFriction).as<float>();
-                            surface.kineticFriction = surfaceNode.get(L"kinetic_friction", surface.kineticFriction).as<float>();
-                            surface.elasticity = surfaceNode.get(L"elasticity", surface.elasticity).as<float>();
-                            surface.softness = surfaceNode.get(L"softness", surface.softness).as<float>();
+                            surface.ghost = surfaceNode.get("ghost"s, surface.ghost).as_bool();
+                            surface.staticFriction = surfaceNode.get("static_friction"s, surface.staticFriction).as<float>();
+                            surface.kineticFriction = surfaceNode.get("kinetic_friction"s, surface.kineticFriction).as<float>();
+                            surface.elasticity = surfaceNode.get("elasticity"s, surface.elasticity).as<float>();
+                            surface.softness = surfaceNode.get("softness"s, surface.softness).as<float>();
 
                             surfaceIndex = surfaceList.size();
                             surfaceList.push_back(surface);

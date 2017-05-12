@@ -20,15 +20,15 @@ namespace Gek
     {
     public:
 		class Logger
-			: public WString
+			: public std::string
 		{
 		public:
 			template<typename TYPE, typename... PARAMETERS>
-			BaseString & appendFormat(WString::value_type const *formatting, TYPE const &value, PARAMETERS... arguments)
+            std::string & appendFormat(char const *formatting, TYPE const &value, PARAMETERS... arguments)
 			{
-				auto message(WString::Format(formatting, value, arguments...));
-				std::wcout << message << std::endl;
-				return WString::append(message);
+				auto message(Format(formatting, value, arguments...));
+				std::cout << message << std::endl;
+				return append(message);
 			}
 		};
 
@@ -55,11 +55,11 @@ namespace Gek
 			size_t position = -1;
             TokenType type = TokenType::Unknown;
             uint32_t parameterCount = 0;
-            WString string;
+            std::string string;
             float value = 0.0f;
 
             Token(size_t position, TokenType type = TokenType::Unknown);
-            Token(size_t position, TokenType type, WString const &string, uint32_t parameterCount = 0);
+            Token(size_t position, TokenType type, std::string const &string, uint32_t parameterCount = 0);
 			Token(size_t position, float value);
         };
 
@@ -81,9 +81,9 @@ namespace Gek
         };
 
     private:
-        std::unordered_map<WString, float> variableMap;
-        std::unordered_map<WString, Operation> operationsMap;
-        std::unordered_map<WString, Function> functionsMap;
+        std::unordered_map<std::string, float> variableMap;
+        std::unordered_map<std::string, Operation> operationsMap;
+        std::unordered_map<std::string, Function> functionsMap;
         std::mt19937 mersineTwister;
         uint32_t seed = std::mt19937::default_seed;
 
@@ -93,28 +93,28 @@ namespace Gek
         void setRandomSeed(uint32_t seed);
         uint32_t getRandomSeed(void);
 
-        TokenList getTokenList(WString const &expression, WString &logMessage = Logger());
-        float evaluate(TokenList &rpnTokenList, float defaultValue, WString &logMessage = Logger());
-        float evaluate(WString const &expression, float defaultValue, WString &logMessage = Logger());
+        TokenList getTokenList(std::string const &expression, std::string &logMessage = Logger());
+        float evaluate(TokenList &rpnTokenList, float defaultValue, std::string &logMessage = Logger());
+        float evaluate(std::string const &expression, float defaultValue, std::string &logMessage = Logger());
 
     private:
-        bool isNumber(WString const &token);
-        bool isOperation(WString const &token);
-        bool isFunction(WString const &token);
-        bool isLeftParenthesis(WString const &token);
-        bool isRightParenthesis(WString const &token);
-        bool isParenthesis(WString const &token);
-        bool isSeparator(WString const &token);
-        bool isAssociative(WString const &token, const Associations &type);
-        int comparePrecedence(WString const &token1, WString const &token2);
-        TokenType getTokenType(WString const &token);
+        bool isNumber(std::string const &token);
+        bool isOperation(std::string const &token);
+        bool isFunction(std::string const &token);
+        bool isLeftParenthesis(std::string const &token);
+        bool isRightParenthesis(std::string const &token);
+        bool isParenthesis(std::string const &token);
+        bool isSeparator(std::string const &token);
+        bool isAssociative(std::string const &token, const Associations &type);
+        int comparePrecedence(std::string const &token1, std::string const &token2);
+        TokenType getTokenType(std::string const &token);
         bool isValidReturnType(const Token &token);
 
     private:
-		bool insertToken(TokenList &infixTokenList, Token &token, WString &logMessage);
-        bool parseSubTokens(TokenList &infixTokenList, WString const &token, size_t position, WString &logMessage);
-        TokenList convertExpressionToInfix(WString const &expression, WString &logMessage);
-        TokenList convertInfixToReversePolishNotation(const TokenList &infixTokenList, WString &logMessage);
-        float evaluateReversePolishNotation(const TokenList &rpnTokenList, float defaultValue, WString &logMessage);
+		bool insertToken(TokenList &infixTokenList, Token &token, std::string &logMessage);
+        bool parseSubTokens(TokenList &infixTokenList, std::string const &token, size_t position, std::string &logMessage);
+        TokenList convertExpressionToInfix(std::string const &expression, std::string &logMessage);
+        TokenList convertInfixToReversePolishNotation(const TokenList &infixTokenList, std::string &logMessage);
+        float evaluateReversePolishNotation(const TokenList &rpnTokenList, float defaultValue, std::string &logMessage);
     };
 }; // namespace Gek

@@ -32,7 +32,7 @@ namespace Gek
 
             virtual ~Component(void) = default;
 
-            virtual wchar_t const * const getName(void) const = 0;
+			virtual std::string const &getName(void) const = 0;
             virtual std::type_index getIdentifier(void) const = 0;
 
             virtual std::unique_ptr<Data> create(void) = 0;

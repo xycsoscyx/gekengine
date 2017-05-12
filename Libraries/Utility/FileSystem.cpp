@@ -38,11 +38,6 @@ namespace Gek
             assign(path);
         }
 
-        Path::operator wchar_t const * const (void) const
-        {
-            return c_str();
-        }
-
         void Path::removeFileName(void)
         {
             remove_filename();
@@ -50,7 +45,7 @@ namespace Gek
 
         void Path::removeExtension(void)
         {
-            replace_extension(L"");
+            replace_extension(String::Empty);
         }
 
         void Path::replaceFileName(std::string const &fileName)
@@ -73,7 +68,7 @@ namespace Gek
         Path Path::withoutExtension(void) const
         {
             Path path(*this);
-            path.replace_extension(L"");
+            path.replace_extension(String::Empty);
             return path;
         }
 
@@ -114,24 +109,19 @@ namespace Gek
 #ifdef _WIN32
             std::wstring relativeName((MAX_PATH + 1), L' ');
             GetModuleFileName(nullptr, &relativeName.at(0), MAX_PATH);
-			TrimRight(relativeName);
+            String::TrimRight(relativeName);
 
             std::wstring absoluteName((MAX_PATH + 1), L' ');
             GetFullPathName(relativeName.c_str(), MAX_PATH, &absoluteName.at(0), nullptr);
-			TrimRight(absoluteName);
+            String::TrimRight(absoluteName);
 #else
             CString processName(CString::Format("/proc/%v/exe", getpid()));
             std::string absoluteName((MAX_PATH + 1), L'\0');
             readlink(processName, &absoluteName.at(0), MAX_PATH);
-			TrimRight(absoluteName);
+            String::TrimRight(absoluteName);
 #endif
 			return std::experimental::filesystem::path(absoluteName);
         }
-
-        Path GetFileName(Path const &rootDirectory, const std::vector<std::string> &list)
-		{
-			return Format("%v%v", rootDirectory, Join(list, std::experimental::filesystem::path::preferred_separator, true));
-		}
 
         void MakeDirectoryChain(Path const &filePath)
         {

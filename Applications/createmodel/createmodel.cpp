@@ -23,7 +23,7 @@ struct Header
 {
     struct Material
     {
-        wchar_t name[64] = L"";
+        char name[64] = "";
         uint32_t vertexCount = 0;
         uint32_t indexCount = 0;
     };
@@ -52,7 +52,7 @@ struct Parameters
     float feetPerUnit = 1.0f;
 };
 
-void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiNode *node, std::unordered_map<FileSystem::Path, std::vector<Part>> &scenePartMap, Shapes::AlignedBox &boundingBox)
+void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiNode *node, std::unordered_map<std::string, std::vector<Part>> &scenePartMap, Shapes::AlignedBox &boundingBox)
 {
     if (node == nullptr)
     {
@@ -160,7 +160,7 @@ void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
                 aiString sceneDiffuseMaterial;
                 const aiMaterial *sceneMaterial = scene->mMaterials[mesh->mMaterialIndex];
                 sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
-                FileSystem::Path materialPath(sceneDiffuseMaterial.C_Str());
+				std::string materialPath = sceneDiffuseMaterial.C_Str();
                 scenePartMap[materialPath].push_back(std::move(part));
             }
         }
@@ -186,61 +186,61 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     {
         std::cout << "GEK Part Converter" << std::endl;
 
-        WString fileNameInput;
-        WString fileNameOutput;
+        std::string fileNameInput;
+        std::string fileNameOutput;
         Parameters parameters;
         bool flipCoords = false;
         bool flipWinding = false;
         float smoothingAngle = 80.0f;
         for (int argumentIndex = 1; argumentIndex < argumentCount; ++argumentIndex)
         {
-            WString argument(argumentList[argumentIndex]);
-            std::vector<WString> arguments(argument.split(L':'));
+			std::string argument(String::Narrow(argumentList[argumentIndex]));
+			std::vector<std::string> arguments(String::Split(String::GetLower(argument), ':'));
             if (arguments.empty())
             {
                 throw std::exception("No arguments specified for command line parameter");
             }
 
-            if (arguments[0].compareNoCase(L"-input") == 0 && ++argumentIndex < argumentCount)
+            if (arguments[0] == "-input"s && ++argumentIndex < argumentCount)
             {
-                fileNameInput = argumentList[argumentIndex];
+				fileNameInput = String::Narrow(argumentList[argumentIndex]);
             }
-            else if (arguments[0].compareNoCase(L"-output") == 0 && ++argumentIndex < argumentCount)
+            else if (arguments[0] == "-output"s && ++argumentIndex < argumentCount)
             {
-                fileNameOutput = argumentList[argumentIndex];
+				fileNameOutput = String::Narrow(argumentList[argumentIndex]);
             }
-            else if (arguments[0].compareNoCase(L"-flipCoords") == 0)
+            else if (arguments[0] == "-flipCoords"s)
             {
                 flipCoords = true;
             }
-            else if (arguments[0].compareNoCase(L"-flipWinding") == 0)
+            else if (arguments[0] == "-flipWinding"s)
             {
                 flipWinding = true;
             }
-            else if (arguments[0].compareNoCase(L"-smoothAngle") == 0)
+            else if (arguments[0] == "-smoothAngle"s)
             {
                 if (arguments.size() != 2)
                 {
                     throw std::exception("Missing parameters for smoothAngle");
                 }
 
-                smoothingAngle = arguments[1];
+				smoothingAngle = String::Convert(arguments[1], 80.0f);
             }
-            else if (arguments[0].compareNoCase(L"-unitsInFoot") == 0)
+            else if (arguments[0] == "-unitsInFoot"s)
             {
                 if (arguments.size() != 2)
                 {
                     throw std::exception("Missing parameters for unitsInFoot");
                 }
 
-                parameters.feetPerUnit = (1.0f / (float)arguments[1]);
+				parameters.feetPerUnit = (1.0f / String::Convert(arguments[1], 1.0f));
             }
         }
 
         aiLogStream logStream;
         logStream.callback = [](char const *message, char *user) -> void
         {
-			std::cerr << "Assimp: " << message << std::endl;
+			std::cerr << "Assimp: " << message;
         };
 
         logStream.user = nullptr;
@@ -286,7 +286,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
-        auto scene = aiImportFileExWithProperties(CString(fileNameInput), importFlags, nullptr, propertyStore);
+        auto scene = aiImportFileExWithProperties(fileNameInput.c_str(), importFlags, nullptr, propertyStore);
         if (scene == nullptr)
         {
             throw std::exception("Unable to load scene with Assimp");
@@ -309,22 +309,19 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         }
 
         Shapes::AlignedBox boundingBox;
-        std::unordered_map<FileSystem::Path, std::vector<Part>> scenePartMap;
+        std::unordered_map<std::string, std::vector<Part>> scenePartMap;
         getSceneParts(parameters, scene, scene->mRootNode, scenePartMap, boundingBox);
 
         aiReleasePropertyStore(propertyStore);
         aiReleaseImport(scene);
 
         auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
-        auto dataPath(FileSystem::GetFileName(rootPath, L"Data"));
+        auto dataPath(FileSystem::GetFileName(rootPath, "Data"s));
 
-        WString texturesPath(FileSystem::GetFileName(dataPath, L"Textures"));
-        texturesPath.toLower();
+		std::string texturesPath(String::GetLower(FileSystem::GetFileName(dataPath, "Textures"s).u8string()));
+        auto materialsPath(FileSystem::GetFileName(dataPath, "Materials"s).u8string());
 
-        WString materialsPath(FileSystem::GetFileName(dataPath, L"Materials"));
-        materialsPath.toLower();
-
-        std::map<FileSystem::Path, WString> albedoToMaterialMap;
+		std::map<std::string, std::string> albedoToMaterialMap;
         std::function<bool(FileSystem::Path const &)> findMaterials;
         findMaterials = [&](FileSystem::Path const &filePath) -> bool
         {
@@ -337,20 +334,17 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                 try
                 {
                     const JSON::Object materialNode = JSON::Load(filePath);
-                    auto &shaderNode = materialNode[L"shader"];
-                    auto &passesNode = shaderNode[L"passes"];
-                    auto &solidNode = passesNode[L"solid"];
-                    auto &dataNode = solidNode[L"data"];
-                    auto &albedoNode = dataNode[L"albedo"];
+                    auto &shaderNode = materialNode["shader"s];
+                    auto &passesNode = shaderNode["passes"s];
+                    auto &solidNode = passesNode["solid"s];
+                    auto &dataNode = solidNode["data"s];
+                    auto &albedoNode = dataNode["albedo"s];
                     if (albedoNode.is_object())
                     {
-                        if (albedoNode.has_member(L"file"))
+                        if (albedoNode.has_member("file"s))
                         {
-                            WString materialName(filePath.withoutExtension());
-                            materialName = materialName.subString(materialsPath.size() + 1);
-                            materialName.toLower();
-
-                            FileSystem::Path albedoPath(albedoNode[L"file"].as_string());
+							std::string materialName(String::GetLower(filePath.withoutExtension().u8string().substr(materialsPath.size() + 1)));
+                            std::string albedoPath(albedoNode["file"s].as_string());
                             albedoToMaterialMap[albedoPath] = materialName;
                         }
                     }
@@ -363,11 +357,11 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             return true;
         };
 
-        auto engineIndex = texturesPath.find(L"gek engine");
-        if (engineIndex != WString::npos)
+        auto engineIndex = texturesPath.find("gek engine"s);
+        if (engineIndex != std::string::npos)
         {
             // skip hard drive location, jump to known engine structure
-            texturesPath = texturesPath.subString(engineIndex);
+            texturesPath = texturesPath.substr(engineIndex);
         }
 
         FileSystem::Find(materialsPath, findMaterials);
@@ -376,26 +370,24 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             throw std::exception("Unable to locate any materials");
         }
 
-        std::unordered_map<FileSystem::Path, std::vector<Part>> albedoPartMap;
+        std::unordered_map<std::string, std::vector<Part>> albedoPartMap;
         for (const auto &modelAlbedo : scenePartMap)
         {
-            WString albedoName(modelAlbedo.first.withoutExtension());
-            albedoName.toLower();
-
-            if (albedoName.find(L"textures\\") == 0)
+			std::string albedoName(String::GetLower(FileSystem::Path(modelAlbedo.first).withoutExtension().u8string()));
+            if (albedoName.find("textures\\"s) == 0)
             {
-                albedoName = albedoName.subString(9);
+                albedoName = albedoName.substr(9);
             }
-            else if (albedoName.find(L"..\\textures\\") == 0)
+            else if (albedoName.find("..\\textures\\"s) == 0)
             {
-                albedoName = albedoName.subString(12);
+                albedoName = albedoName.substr(12);
             }
             else
             {
                 auto texturesIndex = albedoName.find(texturesPath);
-                if (texturesIndex != WString::npos)
+                if (texturesIndex != std::string::npos)
                 {
-                    albedoName = albedoName.subString(texturesIndex + texturesPath.length() + 1);
+                    albedoName = albedoName.substr(texturesIndex + texturesPath.length() + 1);
                 }
             }
 
@@ -410,7 +402,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             }
         }
 
-        std::unordered_map<FileSystem::Path, Part> materialPartMap;
+        std::unordered_map<std::string, Part> materialPartMap;
         for (const auto &multiMaterial : albedoPartMap)
         {
             Part &material = materialPartMap[multiMaterial.first];
@@ -439,7 +431,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		std::cout << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
 
         FILE *file = nullptr;
-        _wfopen_s(&file, fileNameOutput, L"wb");
+        _wfopen_s(&file, String::Widen(fileNameOutput).c_str(), L"wb");
         if (file == nullptr)
         {
             throw std::exception("Unable to create output file");
@@ -451,12 +443,13 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         fwrite(&header, sizeof(Header), 1, file);
         for (const auto &material : materialPartMap)
         {
-			std::cout << "-    Material: " << material.first.c_str() << std::endl;
+			std::string name = material.first;
+			std::cout << "-    Material: " << name << std::endl;
             std::cout << "       Num. Vertices: " << material.second.vertexPositionList.size() << std::endl;
             std::cout << "       Num. Indices: " << material.second.indexList.size() << std::endl;
 
             Header::Material materialHeader;
-            std::wcsncpy(materialHeader.name, material.first, 63);
+            std::strncpy(materialHeader.name, name.c_str(), 63);
             materialHeader.vertexCount = material.second.vertexPositionList.size();
             materialHeader.indexCount = material.second.indexList.size();
             fwrite(&materialHeader, sizeof(Header::Material), 1, file);

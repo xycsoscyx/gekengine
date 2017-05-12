@@ -154,7 +154,8 @@ namespace Gek
                 windowClass.hCursor = LoadCursor(GetModuleHandle(nullptr), IDC_ARROW);
                 windowClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
                 windowClass.lpszMenuName = nullptr;
-                windowClass.lpszClassName = description.className;
+				auto wideClassName(String::Widen(description.className));
+				windowClass.lpszClassName = wideClassName.c_str();
                 ATOM classAtom = RegisterClass(&windowClass);
                 if (!classAtom)
                 {
@@ -171,7 +172,7 @@ namespace Gek
                 AdjustWindowRect(&clientRectangle, WS_OVERLAPPEDWINDOW, false);
                 int windowWidth = (clientRectangle.right - clientRectangle.left);
                 int windowHeight = (clientRectangle.bottom - clientRectangle.top);
-                window = CreateWindow(windowClass.lpszClassName, description.windowName, windowFlags, CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
+                window = CreateWindow(wideClassName.c_str(), String::Widen(description.windowName).c_str(), windowFlags, CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
                 if (window == nullptr)
                 {
                     throw std::exception("Unable to create window");

@@ -21,12 +21,12 @@ namespace Gek
             // Plugin::Component
             void save(Components::Physical const * const data, JSON::Object &componentData) const
             {
-                componentData.set(L"mass", data->mass);
+                componentData.set("mass", data->mass);
             }
 
             void load(Components::Physical * const data, const JSON::Object &componentData)
             {
-                data->mass = getValue(componentData, L"mass", 0.0f);
+                data->mass = getValue(componentData, "mass", 0.0f);
             }
 
             // Edit::Component
@@ -35,7 +35,7 @@ namespace Gek
                 ImGui::SetCurrentContext(guiContext);
                 auto &physicalComponent = *dynamic_cast<Components::Physical *>(data);
                 bool changed =
-                    ImGui::Gek::InputFloat("Mass", &physicalComponent.mass, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
+                    GUI::InputFloat("Mass", &physicalComponent.mass, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
                 ImGui::SetCurrentContext(nullptr);
                 return changed;
             }

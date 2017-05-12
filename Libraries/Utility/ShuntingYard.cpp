@@ -1,15 +1,15 @@
 #include "GEK/Utility/ShuntingYard.hpp"
 #include "GEK/Utility/String.hpp"
+#include "GEK/Math/Common.hpp"
 #include <regex>
 
 // https://blog.kallisti.net.rz.xyz/2008/02/extension-to-the-shunting-yard-algorithm-to-allow-variable-numbers-of-arguments-to-functions/
 
 namespace Gek
 {
-    #define SEARCH_NUMBER L"([+-]?(?:(?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))(?:e\\d+)?)"
-
-    static const std::wregex SearchNumber(SEARCH_NUMBER, std::regex::ECMAScript | std::regex::icase | std::regex::optimize);
-    static const std::wregex SearchWord(L"([a-z]+)|" SEARCH_NUMBER, std::regex::ECMAScript | std::regex::icase | std::regex::optimize);
+    #define SEARCH_NUMBER "([+-]?(?:(?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))(?:e\\d+)?)"
+    static const std::regex SearchNumber(SEARCH_NUMBER, std::regex::ECMAScript | std::regex::icase | std::regex::optimize);
+    static const std::regex SearchWord("([a-z]+)|" SEARCH_NUMBER, std::regex::ECMAScript | std::regex::icase | std::regex::optimize);
 	static const ShuntingYard::TokenList EmptyTokenList;
 
 	template <typename TYPE>
@@ -26,7 +26,7 @@ namespace Gek
     {
     }
 
-    ShuntingYard::Token::Token(size_t position, ShuntingYard::TokenType type, WString const &string, uint32_t parameterCount)
+    ShuntingYard::Token::Token(size_t position, ShuntingYard::TokenType type, std::string const &string, uint32_t parameterCount)
 		: position(position)
 		, type(type)
         , string(string)
@@ -44,28 +44,28 @@ namespace Gek
 	ShuntingYard::ShuntingYard(void)
         : mersineTwister(std::random_device()())
     {
-        variableMap[L"pi"] = Math::Pi;
-        variableMap[L"tau"] = Math::Tau;
-        variableMap[L"e"] = Math::E;
-        variableMap[L"true"] = 1.0f;
-        variableMap[L"false"] = 0.0f;
+        variableMap["pi"s] = Math::Pi;
+        variableMap["tau"s] = Math::Tau;
+        variableMap["e"s] = Math::E;
+        variableMap["true"s] = 1.0f;
+        variableMap["false"s] = 0.0f;
 
-        operationsMap.insert({ L"^",{ 4, Associations::Right, nullptr, [](float valueLeft, float valueRight) -> float
+        operationsMap.insert({ "^"s, { 4, Associations::Right, nullptr, [](float valueLeft, float valueRight) -> float
         {
             return std::pow(valueLeft, valueRight);
         } } });
 
-        operationsMap.insert({ L"*",{ 3, Associations::Left, nullptr, [](float valueLeft, float valueRight) -> float
+        operationsMap.insert({ "*"s, { 3, Associations::Left, nullptr, [](float valueLeft, float valueRight) -> float
         {
             return (valueLeft * valueRight);
         } } });
 
-        operationsMap.insert({ L"/",{ 3, Associations::Left, nullptr, [](float valueLeft, float valueRight) -> float
+        operationsMap.insert({ "/"s, { 3, Associations::Left, nullptr, [](float valueLeft, float valueRight) -> float
         {
             return (valueLeft / valueRight);
         } } });
 
-        operationsMap.insert({ L"+",{ 2, Associations::Left, [](float value) -> float
+        operationsMap.insert({ "+"s, { 2, Associations::Left, [](float value) -> float
         {
             return value;
         }, [](float valueLeft, float valueRight) -> float
@@ -73,7 +73,7 @@ namespace Gek
             return (valueLeft + valueRight);
         } } });
 
-        operationsMap.insert({ L"-",{ 2, Associations::Left, [](float value) -> float
+        operationsMap.insert({ "-"s, { 2, Associations::Left, [](float value) -> float
         {
             return -value;
         }, [](float valueLeft, float valueRight) -> float
@@ -81,75 +81,75 @@ namespace Gek
             return (valueLeft - valueRight);
         } } });
 
-        functionsMap.insert({ L"sin",{ 1, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "sin"s, { 1, [](std::stack<float> &stack) -> float
         {
             float value = stack.top();
             return std::sin(value);
         } } });
 
-        functionsMap.insert({ L"cos",{ 1, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "cos"s, { 1, [](std::stack<float> &stack) -> float
         {
             float value = PopTop(stack);
             return std::cos(value);
         } } });
 
-        functionsMap.insert({ L"tan",{ 1, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "tan"s, { 1, [](std::stack<float> &stack) -> float
         {
             float value = PopTop(stack);
             return std::tan(value);
         } } });
 
-        functionsMap.insert({ L"asin",{ 1, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "asin"s, { 1, [](std::stack<float> &stack) -> float
         {
             float value = PopTop(stack);
             return std::asin(value);
         } } });
 
-        functionsMap.insert({ L"acos",{ 1, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "acos"s, { 1, [](std::stack<float> &stack) -> float
         {
             float value = PopTop(stack);
             return std::acos(value);
         } } });
 
-        functionsMap.insert({ L"atan",{ 1, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "atan"s, { 1, [](std::stack<float> &stack) -> float
         {
             float value = PopTop(stack);
             return std::atan(value);
         } } });
 
-        functionsMap.insert({ L"min",{ 2, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "min"s, { 2, [](std::stack<float> &stack) -> float
         {
             float value2 = PopTop(stack);
             float value1 = PopTop(stack);
             return std::min(value1, value2);
         } } });
 
-        functionsMap.insert({ L"max",{ 2, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "max"s, { 2, [](std::stack<float> &stack) -> float
         {
             float value2 = PopTop(stack);
             float value1 = PopTop(stack);
             return std::max(value1, value2);
         } } });
 
-        functionsMap.insert({ L"abs",{ 1, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "abs"s, { 1, [](std::stack<float> &stack) -> float
         {
             float value = PopTop(stack);
             return std::abs(value);
         } } });
 
-        functionsMap.insert({ L"ceil",{ 1, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "cei"s, { 1, [](std::stack<float> &stack) -> float
         {
             float value = PopTop(stack);
             return std::ceil(value);
         } } });
 
-        functionsMap.insert({ L"floor",{ 1, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "floor"s, { 1, [](std::stack<float> &stack) -> float
         {
             float value = PopTop(stack);
             return std::floor(value);
         } } });
 
-        functionsMap.insert({ L"lerp",{ 3, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "lerp"s, { 3, [](std::stack<float> &stack) -> float
         {
             float value3 = PopTop(stack);
             float value2 = PopTop(stack);
@@ -157,7 +157,7 @@ namespace Gek
             return Math::Interpolate(value1, value2, value3);
         } } });
 
-        functionsMap.insert({ L"random",{ 2, [&](std::stack<float> &stack) -> float
+        functionsMap.insert({ "random"s, { 2, [&](std::stack<float> &stack) -> float
         {
             float value2 = PopTop(stack);
             float value1 = PopTop(stack);
@@ -177,72 +177,72 @@ namespace Gek
         return seed;
     }
 
-    ShuntingYard::TokenList ShuntingYard::getTokenList(WString const &expression, WString &logMessage)
+    ShuntingYard::TokenList ShuntingYard::getTokenList(std::string const &expression, std::string &logMessage)
     {
 		TokenList infixTokenList(convertExpressionToInfix(expression, logMessage));
         return convertInfixToReversePolishNotation(infixTokenList, logMessage);
     }
 
-    float ShuntingYard::evaluate(TokenList &rpnTokenList, float defaultValue, WString &logMessage)
+    float ShuntingYard::evaluate(TokenList &rpnTokenList, float defaultValue, std::string &logMessage)
     {
 		return evaluateReversePolishNotation(rpnTokenList, defaultValue, logMessage);
     }
 
-    float ShuntingYard::evaluate(WString const &expression, float defaultValue, WString &logMessage)
+    float ShuntingYard::evaluate(std::string const &expression, float defaultValue, std::string &logMessage)
     {
         TokenList rpnTokenList(getTokenList(expression, logMessage));
         return evaluateReversePolishNotation(rpnTokenList, defaultValue, logMessage);
     }
 
-    bool ShuntingYard::isNumber(WString const &token)
+    bool ShuntingYard::isNumber(std::string const &token)
     {
         return std::regex_search(token, SearchNumber);
     }
 
-    bool ShuntingYard::isOperation(WString const &token)
+    bool ShuntingYard::isOperation(std::string const &token)
     {
         return (operationsMap.count(token) > 0);
     }
 
-    bool ShuntingYard::isFunction(WString const &token)
+    bool ShuntingYard::isFunction(std::string const &token)
     {
         return (functionsMap.count(token) > 0);
     }
 
-    bool ShuntingYard::isLeftParenthesis(WString const &token)
+    bool ShuntingYard::isLeftParenthesis(std::string const &token)
     {
-        return (token == L"(");
+        return (token.size() == 1 && token.at(0) == '(');
     }
 
-    bool ShuntingYard::isRightParenthesis(WString const &token)
+    bool ShuntingYard::isRightParenthesis(std::string const &token)
     {
-        return (token == L")");
+        return (token.size() == 1 && token.at(0) == ')');
     }
 
-    bool ShuntingYard::isParenthesis(WString const &token)
+    bool ShuntingYard::isParenthesis(std::string const &token)
     {
         return (isLeftParenthesis(token) || isRightParenthesis(token));
     }
 
-    bool ShuntingYard::isSeparator(WString const &token)
+    bool ShuntingYard::isSeparator(std::string const &token)
     {
-        return (token == L",");
+        return (token.size() == 1 && token.at(0) == ',');
     }
 
-    bool ShuntingYard::isAssociative(WString const &token, const Associations &type)
+    bool ShuntingYard::isAssociative(std::string const &token, const Associations &type)
     {
         auto &p = operationsMap.find(token)->second;
         return p.association == type;
     }
 
-    int ShuntingYard::comparePrecedence(WString const &token1, WString const &token2)
+    int ShuntingYard::comparePrecedence(std::string const &token1, std::string const &token2)
     {
         auto &p1 = operationsMap.find(token1)->second;
         auto &p2 = operationsMap.find(token2)->second;
         return p1.precedence - p2.precedence;
     }
 
-    ShuntingYard::TokenType ShuntingYard::getTokenType(WString const &token)
+    ShuntingYard::TokenType ShuntingYard::getTokenType(std::string const &token)
     {
         if (isSeparator(token))
         {
@@ -286,7 +286,7 @@ namespace Gek
         };
     }
 
-	bool ShuntingYard::insertToken(TokenList &infixTokenList, Token &token, WString &logMessage)
+	bool ShuntingYard::insertToken(TokenList &infixTokenList, Token &token, std::string &logMessage)
     {
         if (!infixTokenList.empty())
         {
@@ -295,23 +295,23 @@ namespace Gek
             // ) 2 or 2 2
             if (token.type == TokenType::Number && (previous.type == TokenType::Number || previous.type == TokenType::RightParenthesis))
             {
-                infixTokenList.push_back(Token(token.position, TokenType::BinaryOperation, L"*"));
+                infixTokenList.push_back(Token(token.position, TokenType::BinaryOperation, "*"s));
             }
             // 2 ( or ) (
             else if (token.type == TokenType::LeftParenthesis && (previous.type == TokenType::Number || previous.type == TokenType::RightParenthesis))
             {
-                infixTokenList.push_back(Token(token.position, TokenType::BinaryOperation, L"*"));
+                infixTokenList.push_back(Token(token.position, TokenType::BinaryOperation, "*"s));
             }
             // ) sin or 2 sin
             else if (token.type == TokenType::Function && (previous.type == TokenType::Number || previous.type == TokenType::RightParenthesis))
             {
-                infixTokenList.push_back(Token(token.position, TokenType::BinaryOperation, L"*"));
+                infixTokenList.push_back(Token(token.position, TokenType::BinaryOperation, "*"s));
             }
         }
 
         if (token.type == TokenType::BinaryOperation)
         {
-            if (token.string == L"-" || token.string == L"+")
+            if (token.string.size() == 1 && (token.string.at(0) == '-' || token.string.at(0) == '+'))
             {
                 // -3 or -sin
                 if (infixTokenList.empty())
@@ -345,14 +345,14 @@ namespace Gek
 		return true;
     }
 
-    bool ShuntingYard::parseSubTokens(TokenList &infixTokenList, WString const &token, size_t position, WString &logMessage)
+    bool ShuntingYard::parseSubTokens(TokenList &infixTokenList, std::string const &token, size_t position, std::string &logMessage)
     {
-        for (std::wsregex_iterator tokenSearch(std::begin(token), std::end(token), SearchWord), end; tokenSearch != end; ++tokenSearch)
+        for (std::sregex_iterator tokenSearch(std::begin(token), std::end(token), SearchWord), end; tokenSearch != end; ++tokenSearch)
         {
             auto match = *tokenSearch;
             if (match[1].matched) // variable
             {
-                WString value(match.str(1));
+                std::string value(match.str(1));
                 auto variableSearch = variableMap.find(value);
                 if (variableSearch != std::end(variableMap))
                 {
@@ -367,12 +367,12 @@ namespace Gek
                     continue;
                 }
 
-				logMessage.appendFormat(L"Unlisted variable/function name encountered: %v, at %v", token, position);
+				logMessage += String::Format("Unlisted variable/function name encountered: %v, at %v", token, position);
 				return false;
             }
             else if(match[2].matched) // number
             {
-                float value(WString(match.str(2)));
+                float value(String::Convert(match.str(2), 0.0f));
                 insertToken(infixTokenList, Token(position, value), logMessage);
             }
         }
@@ -380,13 +380,13 @@ namespace Gek
 		return true;
     }
 
-    ShuntingYard::TokenList ShuntingYard::convertExpressionToInfix(WString const &expression, WString &logMessage)
+    ShuntingYard::TokenList ShuntingYard::convertExpressionToInfix(std::string const &expression, std::string &logMessage)
     {
-        WString runningToken;
+        std::string runningToken;
         TokenList infixTokenList;
         for (size_t position = 0; position < expression.size(); ++position)
         {
-            WString nextToken(expression.subString(position, 1));
+            std::string nextToken(1U, expression.at(position));
             if (isOperation(nextToken) || isParenthesis(nextToken) || isSeparator(nextToken))
             {
                 if (!runningToken.empty())
@@ -399,7 +399,7 @@ namespace Gek
             }
             else
             {
-                if (nextToken == L" ")
+                if (nextToken.size() == 1 && nextToken.at(0) == ' ')
                 {
                     if (!runningToken.empty())
                     {
@@ -422,7 +422,7 @@ namespace Gek
         return infixTokenList;
     }
 
-    ShuntingYard::TokenList ShuntingYard::convertInfixToReversePolishNotation(const TokenList &infixTokenList, WString &logMessage)
+    ShuntingYard::TokenList ShuntingYard::convertInfixToReversePolishNotation(const TokenList &infixTokenList, std::string &logMessage)
     {
         TokenList rpnTokenList;
 
@@ -480,7 +480,7 @@ namespace Gek
             case TokenType::RightParenthesis:
                 if (tokenStack.empty())
                 {
-                    logMessage.appendFormat(L"Unmatched right parenthesis found at %v", token.position);
+                    logMessage += String::Format("Unmatched right parenthesis found at %v", token.position);
 					return EmptyTokenList;
                 }
 
@@ -489,7 +489,7 @@ namespace Gek
                     rpnTokenList.push_back(PopTop(tokenStack));
                     if (tokenStack.empty())
                     {
-                        logMessage.appendFormat(L"Unmatched right parenthesis found at %v", token.position);
+                        logMessage += String::Format("Unmatched right parenthesis found at %v", token.position);
 						return EmptyTokenList;
 					}
                 };
@@ -512,13 +512,13 @@ namespace Gek
             case TokenType::Separator:
                 if (tokenStack.empty())
                 {
-                    logMessage.appendFormat(L"Separator encountered outside of parenthesis block at %v", token.position);
+                    logMessage += String::Format("Separator encountered outside of parenthesis block at %v", token.position);
 					return EmptyTokenList;
 				}
 
                 if (parameterExistsStack.empty())
                 {
-                    logMessage.appendFormat(L"Separator encountered at start of parenthesis block at %v", token.position);
+                    logMessage += String::Format("Separator encountered at start of parenthesis block at %v", token.position);
 					return EmptyTokenList;
 				}
 
@@ -527,7 +527,7 @@ namespace Gek
                     rpnTokenList.push_back(PopTop(tokenStack));
                     if (tokenStack.empty())
                     {
-                        logMessage.appendFormat(L"Separator encountered without leading left parenthesis at %v", token.position);
+                        logMessage += String::Format("Separator encountered without leading left parenthesis at %v", token.position);
 						return EmptyTokenList;
 					}
                 };
@@ -546,7 +546,7 @@ namespace Gek
                 break;
 
             default:
-                logMessage.appendFormat(L"Unknown token type encountered at %v", token.position);
+                logMessage += String::Format("Unknown token type encountered at %v", token.position);
 				return EmptyTokenList;
 			};
         }
@@ -556,7 +556,7 @@ namespace Gek
 			auto &top = tokenStack.top();
             if (top.type == TokenType::LeftParenthesis || top.type == TokenType::RightParenthesis)
             {
-                logMessage.appendFormat(L"Invalid surrounding parenthesis encountered at %v", top.position);
+                logMessage += String::Format("Invalid surrounding parenthesis encountered at %v", top.position);
 				return EmptyTokenList;
 			}
 
@@ -565,14 +565,14 @@ namespace Gek
 
         if (rpnTokenList.empty())
         {
-			logMessage.appendFormat(L"Empty equation encountered");
+			logMessage += String::Format("Empty equation encountered");
 			return EmptyTokenList;
 		}
 
         return rpnTokenList;
     }
 
-	float ShuntingYard::evaluateReversePolishNotation(const TokenList &rpnTokenList, float defaultValue, WString &logMessage)
+	float ShuntingYard::evaluateReversePolishNotation(const TokenList &rpnTokenList, float defaultValue, std::string &logMessage)
     {
 		std::stack<float> stack;
         for (const auto &token : rpnTokenList)
@@ -589,20 +589,20 @@ namespace Gek
                     auto &operationSearch = operationsMap.find(token.string);
                     if (operationSearch == std::end(operationsMap))
                     {
-                        logMessage.appendFormat(L"Unlisted unary operation encountered at %v", token.position);
+                        logMessage += String::Format("Unlisted unary operation encountered at %v", token.position);
 						return defaultValue;
                     }
 
                     auto &operation = operationSearch->second;
                     if (!operation.unaryFunction)
                     {
-                        logMessage.appendFormat(L"Missing unary function encountered at %v", token.position);
+                        logMessage += String::Format("Missing unary function encountered at %v", token.position);
 						return defaultValue;
 					}
 
                     if (stack.empty())
                     {
-                        logMessage.appendFormat(L"Unary function encountered without parameter at %v", token.position);
+                        logMessage += String::Format("Unary function encountered without parameter at %v", token.position);
 						return defaultValue;
 					}
 
@@ -617,27 +617,27 @@ namespace Gek
                     auto &operationSearch = operationsMap.find(token.string);
                     if (operationSearch == std::end(operationsMap))
                     {
-                        logMessage.appendFormat(L"Unlisted binary operation encounterd at %v", token.position);
+                        logMessage += String::Format("Unlisted binary operation encounterd at %v", token.position);
 						return defaultValue;
 					}
 
                     auto &operation = operationSearch->second;
                     if (!operation.binaryFunction)
                     {
-                        logMessage.appendFormat(L"Missing binary function encountered at %v", token.position);
+                        logMessage += String::Format("Missing binary function encountered at %v", token.position);
 						return defaultValue;
 					}
 
                     if (stack.empty())
                     {
-                        logMessage.appendFormat(L"Binary function used without first parameter at %v", token.position);
+                        logMessage += String::Format("Binary function used without first parameter at %v", token.position);
 						return defaultValue;
 					}
 
                     float functionValueRight = PopTop(stack);
                     if (stack.empty())
                     {
-                        logMessage.appendFormat(L"Binary function used without second parameter at %v", token.position);
+                        logMessage += String::Format("Binary function used without second parameter at %v", token.position);
 						return defaultValue;
 					}
 
@@ -652,20 +652,20 @@ namespace Gek
                     auto &functionSearch = functionsMap.find(token.string);
                     if (functionSearch == std::end(functionsMap))
                     {
-                        logMessage.appendFormat(L"Unlisted function encountered at %v", token.position);
+                        logMessage += String::Format("Unlisted function encountered at %v", token.position);
 						return defaultValue;
 					}
 
                     auto &function = functionSearch->second;
                     if (function.parameterCount != token.parameterCount)
                     {
-                        logMessage.appendFormat(L"Expected different number of parameters for function at %v", token.position);
+                        logMessage += String::Format("Expected different number of parameters for function at %v", token.position);
 						return defaultValue;
 					}
 
                     if (stack.size() < function.parameterCount)
                     {
-                        logMessage.appendFormat(L"Not enough parameters passed to function at %v", token.position);
+                        logMessage += String::Format("Not enough parameters passed to function at %v", token.position);
 						return defaultValue;
 					}
 
@@ -674,20 +674,20 @@ namespace Gek
                 }
 
             default:
-                logMessage.appendFormat(L"Unknown token type encountered at %v", token.position);
+                logMessage += String::Format("Unknown token type encountered at %v", token.position);
 				return defaultValue;
 			};
         }
 
         if (rpnTokenList.empty())
         {
-			logMessage.appendFormat(L"Empty equation encountered");
+			logMessage += String::Format("Empty equation encountered");
 			return defaultValue;
 		}
 
         if (stack.size() != 1)
         {
-			logMessage.appendFormat(L"Too many values left in stack: %v", stack.size());
+			logMessage += String::Format("Too many values left in stack: %v", stack.size());
 			return defaultValue;
 		}
 

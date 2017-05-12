@@ -28,8 +28,6 @@ namespace Gek
 			void operator = (std::string const &path);
 			void operator = (Path const &path);
 
-			operator wchar_t const * const (void) const;
-
 			void removeFileName(void);
 			void removeExtension(void);
 
@@ -50,15 +48,30 @@ namespace Gek
 
 		Path GetModuleFilePath(void);
 
-		Path GetFileName(Path const &rootDirectory, const std::vector<std::string> &list);
-
-		void MakeDirectoryChain(Path const &filePath);
+		inline std::string CombineFileName(std::string const &name)
+		{
+			return (char(std::experimental::filesystem::path::preferred_separator) + name);
+		}
 
 		template <typename... PARAMETERS>
-		Path GetFileName(Path const &rootDirectory, PARAMETERS... nameList)
+		std::string CombineFileName(std::string const &name, const PARAMETERS&... nameList)
 		{
-			return GetFileName(rootDirectory, { nameList... });
+			return (CombineFileName(name) + CombineFileName(nameList...));
 		}
+
+		template <typename... PARAMETERS>
+		Path GetFileName(std::string const &rootDirectory, const PARAMETERS&... nameList)
+		{
+			return (rootDirectory + CombineFileName(nameList...));
+		}
+
+		template <typename... PARAMETERS>
+		Path GetFileName(Path const &rootDirectory, const PARAMETERS&... nameList)
+		{
+			return (rootDirectory.u8string() + CombineFileName(nameList...));
+		}
+
+		void MakeDirectoryChain(Path const &filePath);
 
 		void Find(Path const &rootDirectory, std::function<bool(Path const &filePath)> onFileFound);
 
@@ -73,7 +86,7 @@ namespace Gek
 				if (size > 0)
 				{
 					// Need to use fopen since STL methods break up the reads to multiple small calls
-					FILE *file = fopen(CString(filePath.native()), "rb");
+					FILE *file = _wfopen(filePath.native().c_str(), L"rb");
 					if (file != nullptr)
 					{
 						buffer.resize(size);
@@ -96,7 +109,7 @@ namespace Gek
 		{
 			MakeDirectoryChain(filePath.getParentPath());
 
-			FILE *file = fopen(CString(filePath.native()), "w+b");
+			FILE *file = _wfopen(filePath.native().c_str(), L"w+b");
 			if (file != nullptr)
 			{
 				auto wrote = fwrite(buffer.data(), buffer.size(), 1, file);
@@ -105,15 +118,3 @@ namespace Gek
 		}
 	}; // namespace File
 }; // namespace Gek
-
-namespace std
-{
-    template<>
-    struct hash<Gek::FileSystem::Path>
-    {
-        size_t operator()(const Gek::FileSystem::Path &value) const
-        {
-            return hash<wstring>()(value.native());
-        }
-    };
-}; // namespace std

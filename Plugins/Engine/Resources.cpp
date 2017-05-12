@@ -485,68 +485,66 @@ namespace Gek
                 return (videoPipeline->getType() == Video::PipelineType::Compute ? dispatchValid : drawPrimitiveValid);
             }
 
-            Video::TexturePtr loadTextureData(FileSystem::Path const &filePath, WString const &textureName, uint32_t flags)
+            Video::TexturePtr loadTextureData(FileSystem::Path const &filePath, std::string const &textureName, uint32_t flags)
             {
                 auto texture = videoDevice->loadTexture(filePath, flags);
                 texture->setName(textureName);
                 return texture;
             }
 
-            WString getFullProgram(WString const &name, WString const &engineData)
+            std::string getFullProgram(std::string const &name, std::string const &engineData)
             {
-                auto programsPath(getContext()->getRootFileName(L"data", L"programs"));
+                auto programsPath(getContext()->getRootFileName("data"s, "programs"s));
                 auto filePath(FileSystem::GetFileName(programsPath, name));
                 if (filePath.isFile())
                 {
-                    WString programDirectory(filePath.getParentPath());
+                    auto programDirectory(filePath.getParentPath());
+					std::string baseProgram(FileSystem::Load(filePath, String::Empty));
+                    String::Replace(baseProgram, "\r"s, "$"s);
+					String::Replace(baseProgram, "\n"s, "$"s);
+					String::Replace(baseProgram, "$$"s, "$"s);
+                    auto programLines = String::Split(baseProgram, '$', false);
 
-					WString baseProgram(FileSystem::Load(filePath, CString::Empty));
-                    baseProgram.replace(L"\r", L"$");
-                    baseProgram.replace(L"\n", L"$");
-                    baseProgram.replace(L"$$", L"$");
-                    auto programLines = baseProgram.split(L'$', false);
-
-                    WString uncompiledProgram;
+                    std::string uncompiledProgram;
                     for (const auto &line : programLines)
                     {
                         if (line.empty())
                         {
-                            uncompiledProgram.append(L"\r\n");
+                            uncompiledProgram.append("\r\n"s);
                         }
-                        else if (line.find(L"#include") == 0)
+                        else if (line.find("#include"s) == 0)
                         {
-                            WString includeName(line.subString(8));
-                            includeName.trim();
-
+							std::string includeName(String::GetLower(line.substr(8)));
+							String::Trim(includeName);
                             if (includeName.empty())
                             {
                                 throw InvalidIncludeName("Empty include encountered");
                             }
                             else
                             {
-                                WString includeData;
-                                if (includeName.compareNoCase(L"GEKEngine") == 0)
+                                std::string includeData;
+                                if (includeName == "gekengine"s)
                                 {
                                     includeData = engineData;
                                 }
                                 else
                                 {
                                     auto includeType = includeName.at(0);
-                                    includeName = includeName.subString(1, includeName.length() - 2);
-                                    if (includeType == L'\"')
+                                    includeName = includeName.substr(1, includeName.length() - 2);
+                                    if (includeType == '\"')
                                     {
                                         auto localPath(FileSystem::GetFileName(programDirectory, includeName));
                                         if (localPath.isFile())
                                         {
-											includeData = FileSystem::Load(localPath, CString::Empty);
+											includeData = FileSystem::Load(localPath, String::Empty);
                                         }
                                     }
-                                    else if (includeType == L'<')
+                                    else if (includeType == '<')
                                     {
                                         auto rootPath(FileSystem::GetFileName(programsPath, includeName));
                                         if (rootPath.isFile())
                                         {
-											includeData = FileSystem::Load(rootPath, CString::Empty);
+											includeData = FileSystem::Load(rootPath, String::Empty);
                                         }
                                     }
                                     else
@@ -556,13 +554,13 @@ namespace Gek
                                 }
 
                                 uncompiledProgram.append(includeData);
-                                uncompiledProgram.append(L"\r\n");
+                                uncompiledProgram.append("\r\n"s);
                             }
                         }
                         else
                         {
                             uncompiledProgram.append(line);
-                            uncompiledProgram.append(L"\r\n");
+                            uncompiledProgram.append("\r\n"s);
                         }
                     }
 
@@ -587,8 +585,8 @@ namespace Gek
                 description.width = backBuffer->getDescription().width;
                 description.height = backBuffer->getDescription().height;
                 description.flags = Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource;
-                createTexture(L"screen", description);
-                createTexture(L"screenBuffer", description);
+                createTexture("screen"s, description);
+                createTexture("screenBuffer"s, description);
             }
 
             // ResourceRequester
@@ -602,58 +600,58 @@ namespace Gek
                     }
                     catch (const std::exception &exception)
                     {
-                        core->getLog()->message("Resources", Plugin::Core::Log::Type::Error, "Error occurred trying to load an external resource: %v", exception.what());
+                        core->getLog()->message("Resources"s, Plugin::Core::Log::Type::Error, "Error occurred trying to load an external resource: %v", exception.what());
                     }
                     catch (...)
                     {
-                        core->getLog()->message("Resources", Plugin::Core::Log::Type::Error, "Unknown error occurred trying to load an external resource");
+                        core->getLog()->message("Resources"s, Plugin::Core::Log::Type::Error, "Unknown error occurred trying to load an external resource");
                     };
                 });
             }
 
             // Plugin::Resources
-            VisualHandle loadVisual(WString const &visualName)
+            VisualHandle loadVisual(std::string const &visualName)
             {
                 auto load = [this, visualName](VisualHandle)->Plugin::VisualPtr
                 {
-                    return getContext()->createClass<Plugin::Visual>(L"Engine::Visual", videoDevice, (Engine::Resources *)this, visualName);
+                    return getContext()->createClass<Plugin::Visual>("Engine::Visual"s, videoDevice, (Engine::Resources *)this, visualName);
                 };
 
                 auto hash = GetHash(visualName);
                 return visualCache.getHandle(hash, std::move(load)).second;
             }
 
-            MaterialHandle loadMaterial(WString const &materialName)
+            MaterialHandle loadMaterial(std::string const &materialName)
             {
                 auto load = [this, materialName](MaterialHandle handle)->Engine::MaterialPtr
                 {
-                    return getContext()->createClass<Engine::Material>(L"Engine::Material", (Engine::Resources *)this, materialName, handle);
+                    return getContext()->createClass<Engine::Material>("Engine::Material"s, (Engine::Resources *)this, materialName, handle);
                 };
 
                 auto hash = GetHash(materialName);
                 return materialCache.getHandle(hash, std::move(load)).second;
             }
 
-            ResourceHandle loadTexture(WString const &textureName, uint32_t flags)
+            ResourceHandle loadTexture(std::string const &textureName, uint32_t flags)
             {
                 // iterate over formats in case the texture name has no extension
-                static const WString formatList[] =
+                static const std::string formatList[] =
                 {
-                    L"",
-                    L".dds",
-                    L".tga",
-                    L".png",
-                    L".jpg",
-                    L".bmp",
+                    ""s,
+                    ".dds"s,
+                    ".tga"s,
+                    ".png"s,
+                    ".jpg"s,
+                    ".bmp"s,
                 };
 
-                auto texturePath(getContext()->getRootFileName(L"data", L"textures", textureName));
+                auto texturePath(getContext()->getRootFileName("data"s, "textures"s, textureName));
                 for (const auto &format : formatList)
                 {
                     auto filePath(texturePath.withExtension(format));
                     if (filePath.isFile())
                     {
-                        auto load = [this, filePath = FileSystem::Path(filePath), textureName = WString(textureName), flags](ResourceHandle)->Video::TexturePtr
+                        auto load = [this, filePath = FileSystem::Path(filePath), textureName = std::string(textureName), flags](ResourceHandle)->Video::TexturePtr
                         {
                             return loadTextureData(filePath, textureName, flags);
                         };
@@ -673,11 +671,11 @@ namespace Gek
                 return ResourceHandle();
             }
 
-            ResourceHandle createPattern(WString const &pattern, const JSON::Object &parameters)
+            ResourceHandle createPattern(std::string const &pattern, const JSON::Object &parameters)
             {
                 std::vector<uint8_t> data;
                 Video::Texture::Description description;
-                if (pattern.compareNoCase(L"color") == 0)
+                if (pattern == "color"s)
                 {
                     try
                     {
@@ -729,7 +727,7 @@ namespace Gek
                         throw InvalidParameter("Unable to determine color texture type");
                     };
                 }
-                else if (pattern.compareNoCase(L"normal") == 0)
+                else if (pattern == "normal"s)
                 {
                     Math::Float3 normal(Math::Float3::Zero);
                     if (parameters.is_array() && parameters.size() == 3)
@@ -746,12 +744,12 @@ namespace Gek
 
                     description.format = Video::Format::R8G8B8A8_UNORM;
                 }
-                else if (pattern.compareNoCase(L"system") == 0)
+                else if (pattern == "system"s)
                 {
                     if (parameters.is_string())
                     {
-                        WString type(parameters.as_cstring());
-                        if (type.compareNoCase(L"debug") == 0)
+                        std::string type(parameters.as_cstring());
+                        if (type == "debug"s)
                         {
                             data.push_back(255);
                             data.push_back(0);
@@ -759,7 +757,7 @@ namespace Gek
                             data.push_back(255);
                             description.format = Video::Format::R8G8B8A8_UNORM;
                         }
-                        else if (type.compareNoCase(L"flat") == 0)
+                        else if (type == "flat"s)
                         {
                             Math::Float3 normal(0.0f, 0.0f, 1.0f);
                             uint8_t normalData[4] =
@@ -792,7 +790,7 @@ namespace Gek
                     throw InvalidParameter("Invalid color format encountered");
                 }
 
-                WString name(WString::Format(L"%v:%v", pattern, parameters.to_string()));
+                std::string name(String::Format("%v:%v", pattern, parameters.to_string()));
                 description.flags = Video::Texture::Description::Flags::Resource;
                 auto load = [this, name, description, data = move(data)](ResourceHandle) mutable -> Video::TexturePtr
                 {
@@ -811,7 +809,7 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createTexture(WString const &textureName, const Video::Texture::Description &description)
+            ResourceHandle createTexture(std::string const &textureName, const Video::Texture::Description &description)
             {
                 auto load = [this, textureName, description](ResourceHandle)->Video::TexturePtr
                 {
@@ -831,7 +829,7 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createBuffer(WString const &bufferName, const Video::Buffer::Description &description)
+            ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description)
             {
                 GEK_REQUIRE(description.count > 0);
 
@@ -853,7 +851,7 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createBuffer(WString const &bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData)
+            ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData)
             {
                 GEK_REQUIRE(description.count > 0);
                 GEK_REQUIRE(!staticData.empty());
@@ -978,8 +976,8 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->adjustValue("Draw", "Primitive Count", 1.0f);
-                    core->getLog()->adjustValue("Draw", "Vertex Count", vertexCount);
+                    core->getLog()->adjustValue("Draw"s, "Primitive Count"s, 1.0f);
+                    core->getLog()->adjustValue("Draw"s, "Vertex Count"s, vertexCount);
                     videoContext->drawPrimitive(vertexCount, firstVertex);
                 }
             }
@@ -988,9 +986,9 @@ namespace Gek
             {
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->adjustValue("Draw", "Primitive Count", 1.0f);
-                    core->getLog()->adjustValue("Draw", "Vertex Count", vertexCount);
-                    core->getLog()->adjustValue("Draw", "Instance Count", instanceCount);
+                    core->getLog()->adjustValue("Draw"s, "Primitive Count"s, 1.0f);
+                    core->getLog()->adjustValue("Draw"s, "Vertex Count"s, vertexCount);
+                    core->getLog()->adjustValue("Draw"s, "Instance Count"s, instanceCount);
                     videoContext->drawInstancedPrimitive(instanceCount, firstInstance, vertexCount, firstVertex);
                 }
             }
@@ -1001,8 +999,8 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->adjustValue("Draw", "Primitive Count", 1.0f);
-                    core->getLog()->adjustValue("Draw", "Index Count", indexCount);
+                    core->getLog()->adjustValue("Draw"s, "Primitive Count"s, 1.0f);
+                    core->getLog()->adjustValue("Draw"s, "Index Count"s, indexCount);
                     videoContext->drawIndexedPrimitive(indexCount, firstIndex, firstVertex);
                 }
             }
@@ -1013,9 +1011,9 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->adjustValue("Draw", "Primitive Count", 1.0f);
-                    core->getLog()->adjustValue("Draw", "Index Count", indexCount);
-                    core->getLog()->adjustValue("Draw", "Instance Count", instanceCount);
+                    core->getLog()->adjustValue("Draw"s, "Primitive Count"s, 1.0f);
+                    core->getLog()->adjustValue("Draw"s, "Index Count"s, indexCount);
+                    core->getLog()->adjustValue("Draw"s, "Instance Count"s, instanceCount);
                     videoContext->drawInstancedIndexedPrimitive(instanceCount, firstInstance, indexCount, firstIndex, firstVertex);
                 }
             }
@@ -1026,8 +1024,8 @@ namespace Gek
 
                 if (dispatchValid)
                 {
-                    core->getLog()->adjustValue("Draw", "Dispatch Count", 1.0f);
-                    core->getLog()->adjustValue("Draw", "Thread Count", threadGroupCountX * threadGroupCountY * threadGroupCountZ);
+                    core->getLog()->adjustValue("Draw"s, "Dispatch Count"s, 1.0f);
+                    core->getLog()->adjustValue("Draw"s, "Thread Count"s, threadGroupCountX * threadGroupCountY * threadGroupCountZ);
                     videoContext->dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
                 }
             }
@@ -1054,8 +1052,8 @@ namespace Gek
                 description.width = backBuffer->getDescription().width;
                 description.height = backBuffer->getDescription().height;
                 description.flags = Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource;
-                createTexture(L"screen", description);
-                createTexture(L"screenBuffer", description);
+                createTexture("screen"s, description);
+                createTexture("screenBuffer"s, description);
             }
 
             ShaderHandle getMaterialShader(MaterialHandle material) const
@@ -1069,7 +1067,7 @@ namespace Gek
                 return ShaderHandle();
             }
 
-            ResourceHandle getResourceHandle(WString const &resourceName) const
+            ResourceHandle getResourceHandle(std::string const &resourceName) const
             {
                 return dynamicCache.getHandle(GetHash(resourceName));
             }
@@ -1079,12 +1077,12 @@ namespace Gek
                 return shaderCache.getResource(handle);
             }
 
-            Engine::Shader * const getShader(WString const &shaderName, MaterialHandle material)
+            Engine::Shader * const getShader(std::string const &shaderName, MaterialHandle material)
             {
                 std::unique_lock<std::recursive_mutex> lock(shaderMutex);
                 auto load = [this, shaderName](ShaderHandle) -> Engine::ShaderPtr
                 {
-                    return getContext()->createClass<Engine::Shader>(L"Engine::Shader", core->getLog(), videoDevice, (Engine::Resources *)this, core->getPopulation(), shaderName);
+                    return getContext()->createClass<Engine::Shader>("Engine::Shader"s, core->getLog(), videoDevice, (Engine::Resources *)this, core->getPopulation(), shaderName);
                 };
 
                 auto hash = GetHash(shaderName);
@@ -1097,11 +1095,11 @@ namespace Gek
                 return shaderCache.getResource(resource.second);
             }
 
-            Engine::Filter * const getFilter(WString const &filterName)
+            Engine::Filter * const getFilter(std::string const &filterName)
             {
                 auto load = [this, filterName](ResourceHandle)->Engine::FilterPtr
                 {
-                    return getContext()->createClass<Engine::Filter>(L"Engine::Filter", core->getLog(), videoDevice, (Engine::Resources *)this, core->getPopulation(), filterName);
+                    return getContext()->createClass<Engine::Filter>("Engine::Filter"s, core->getLog(), videoDevice, (Engine::Resources *)this, core->getPopulation(), filterName);
                 };
 
                 auto hash = GetHash(filterName);
@@ -1135,13 +1133,13 @@ namespace Gek
                 }
             }
 
-            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, WString const &name, WString const &entryFunction, WString const &engineData)
+            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, std::string const &name, std::string const &entryFunction, std::string const &engineData)
             {
                 auto uncompiledProgram = getFullProgram(name, engineData);
 
                 auto hash = GetHash(uncompiledProgram);
-                auto cacheExtension = WString::Format(L".%v.bin", hash);
-                auto cachePath(getContext()->getRootFileName(L"data", L"cache", name).withExtension(cacheExtension));
+                auto cacheExtension = String::Format(".%v.bin", hash);
+                auto cachePath(getContext()->getRootFileName("data"s, "cache"s, name).withExtension(cacheExtension));
 
 				std::vector<uint8_t> compiledProgram;
                 if (cachePath.isFile())
@@ -1153,9 +1151,9 @@ namespace Gek
                 if (compiledProgram.empty())
                 {
 #ifdef _DEBUG
-					auto debugExtension = WString::Format(L".%v.hlsl", hash);
-					WString debugPath(getContext()->getRootFileName(L"data", L"cache", name).withExtension(debugExtension));
-					FileSystem::Save(debugPath, CString(uncompiledProgram));
+					auto debugExtension = String::Format(".%v.hlsl", hash);
+					auto debugPath(getContext()->getRootFileName("data"s, "cache"s, name).withExtension(debugExtension));
+					FileSystem::Save(debugPath, uncompiledProgram);
 #endif
 					compiledProgram = videoDevice->compileProgram(pipelineType, name, uncompiledProgram, entryFunction);
                     FileSystem::Save(cachePath, compiledProgram);
@@ -1164,13 +1162,13 @@ namespace Gek
                 return compiledProgram;
             }
 
-            ProgramHandle loadProgram(Video::PipelineType pipelineType, WString const &name, WString const &entryFunction, WString const &engineData)
+            ProgramHandle loadProgram(Video::PipelineType pipelineType, std::string const &name, std::string const &entryFunction, std::string const &engineData)
             {
                 auto load = [this, pipelineType, name, entryFunction, engineData](ProgramHandle)->Video::ObjectPtr
                 {
                     auto compiledProgram = compileProgram(pipelineType, name, entryFunction, engineData);
                     auto program = videoDevice->createProgram(pipelineType, compiledProgram.data(), compiledProgram.size());
-                    program->setName(WString::Format(L"%v:%v", name, entryFunction));
+                    program->setName(String::Format("%v:%v", name, entryFunction));
                     return program;
                 };
 

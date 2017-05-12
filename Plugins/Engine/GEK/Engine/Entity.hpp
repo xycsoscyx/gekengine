@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <typeindex>
 #include <algorithm>
+#include <numeric>
 
 namespace Gek
 {

@@ -20,7 +20,7 @@ namespace Gek
             float fieldOfView = Math::DegreesToRadians(90.0f);
             float nearClip = 1.0f;
             float farClip = 100.0f;
-            WString target;
+            std::string target;
         };
     };
 
@@ -37,18 +37,18 @@ namespace Gek
         // Plugin::Component
         void save(Components::FirstPersonCamera const * const data, JSON::Object &componentData) const
         {
-            componentData.set(L"fieldOfView", Math::RadiansToDegrees(data->fieldOfView));
-            componentData.set(L"nearClip", data->nearClip);
-            componentData.set(L"farClip", data->farClip);
-            componentData.set(L"target", data->target);
+            componentData.set("fieldOfView"s, Math::RadiansToDegrees(data->fieldOfView));
+            componentData.set("nearClip"s, data->nearClip);
+            componentData.set("farClip"s, data->farClip);
+            componentData.set("target"s, data->target);
         }
 
         void load(Components::FirstPersonCamera * const data, const JSON::Object &componentData)
         {
-            data->fieldOfView = Math::DegreesToRadians(getValue(componentData, L"fieldOfView", 90.0f));
-            data->nearClip = getValue(componentData, L"nearClip", 1.0f);
-            data->farClip = getValue(componentData, L"farClip", 100.0f);
-            data->target = getValue(componentData, L"target", WString());
+            data->fieldOfView = Math::DegreesToRadians(getValue(componentData, "fieldOfView"s, 90.0f));
+            data->nearClip = getValue(componentData, "nearClip"s, 1.0f);
+            data->farClip = getValue(componentData, "farClip"s, 100.0f);
+            data->target = getValue(componentData, "target"s, std::string());
         }
 
         // Edit::Component
@@ -57,10 +57,10 @@ namespace Gek
             ImGui::SetCurrentContext(guiContext);
             auto &firstPersonCameraComponent = *dynamic_cast<Components::FirstPersonCamera *>(data);
             bool changed =
-                ImGui::Gek::InputFloat("Field of View", &firstPersonCameraComponent.fieldOfView, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                ImGui::Gek::InputFloat("Near Clip", &firstPersonCameraComponent.nearClip, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                ImGui::Gek::InputFloat("Far Clip", &firstPersonCameraComponent.farClip, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                ImGui::Gek::InputString("Target", firstPersonCameraComponent.target, flags);
+                GUI::InputFloat("Field of View", &firstPersonCameraComponent.fieldOfView, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                GUI::InputFloat("Near Clip", &firstPersonCameraComponent.nearClip, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                GUI::InputFloat("Far Clip", &firstPersonCameraComponent.farClip, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                GUI::InputString("Target", firstPersonCameraComponent.target, flags);
             ImGui::SetCurrentContext(nullptr);
             return changed;
         }
@@ -133,13 +133,13 @@ namespace Gek
                     description.height = backBuffer->getDescription().height;
                     description.sampleCount = 4;
                     description.flags = Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource;
-                    data.target = resources->createTexture(WString::Format(L"camera:%v", cameraComponent.target), description);
+                    data.target = resources->createTexture(String::Format("camera:%v", cameraComponent.target), description);
                 }
             });
         }
 
         // Plugin::Population Slots
-        void onEntityCreated(Plugin::Entity * const entity, WString const &entityName)
+        void onEntityCreated(Plugin::Entity * const entity, std::string const &entityName)
         {
             addEntity(entity);
         }

@@ -1,4 +1,4 @@
-﻿#include "GEK/Utility/Exceptions.hpp"
+﻿#include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/Context.hpp"
@@ -28,7 +28,7 @@ namespace Gek
         int currentDisplayMode = 0;
         int previousDisplayMode = 0;
         Render::DisplayModeList displayModeList;
-        std::vector<CString> displayModeStringList;
+        std::vector<std::string> displayModeStringList;
         bool fullScreen = false;
 
         struct GUI
@@ -73,18 +73,18 @@ namespace Gek
             searchPathList.push_back(pluginPath);
 
             context = Context::Create(rootPath, searchPathList);
-            configuration = JSON::Load(getContext()->getRootFileName(L"config.json"));
-            if (!configuration.has_member(L"display") || !configuration.get(L"display").has_member(L"mode"))
+            configuration = JSON::Load(getContext()->getRootFileName("config.json"s));
+            if (!configuration.has_member("display"s) || !configuration.get("display"s).has_member("mode"s))
             {
-                configuration[L"display"][L"mode"] = 0;
+                configuration["display"s]["mode"s] = 0;
             }
 
-            previousDisplayMode = currentDisplayMode = configuration[L"display"][L"mode"].as_uint();
+            previousDisplayMode = currentDisplayMode = configuration["display"s]["mode"s].as_uint();
 
             Window::Description windowDescription;
-            windowDescription.className = L"GEK_Engine_Demo";
-            windowDescription.windowName = L"GEK Engine Demo";
-            window = getContext()->createClass<Window>(L"Default::Render::Window", windowDescription);
+            windowDescription.className = "GEK_Engine_Demo"s;
+            windowDescription.windowName = "GEK Engine Demo"s;
+            window = getContext()->createClass<Window>("Default::Render::Window"s, windowDescription);
 
             window->onClose.connect<Core, &Core::onClose>(this);
             window->onActivate.connect<Core, &Core::onActivate>(this);
@@ -104,33 +104,33 @@ namespace Gek
             }
 
             Render::Device::Description deviceDescription;
-            renderDevice = getContext()->createClass<Render::Device>(L"Default::Render::Device", window.get(), deviceDescription);
+            renderDevice = getContext()->createClass<Render::Device>("Default::Render::Device"s, window.get(), deviceDescription);
             displayModeList = renderDevice->getDisplayModeList(deviceDescription.displayFormat);
             for (const auto &displayMode : displayModeList)
             {
-                CString displayModeString(CString::Format("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
+                std::string displayModeString(String::Format("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
                 switch (displayMode.aspectRatio)
                 {
                 case Render::DisplayMode::AspectRatio::_4x3:
-                    displayModeString.append(" (4x3)");
+                    displayModeString += " (4x3)"s;
                     break;
 
                 case Render::DisplayMode::AspectRatio::_16x9:
-                    displayModeString.append(" (16x9)");
+                    displayModeString += " (16x9)"s;
                     break;
 
                 case Render::DisplayMode::AspectRatio::_16x10:
-                    displayModeString.append(" (16x10)");
+                    displayModeString += " (16x10)"s;
                     break;
                 };
 
                 displayModeStringList.push_back(displayModeString);
             }
 
-            WString baseFileName(getContext()->getRootFileName(L"data", L"gui"));
-            gui->consoleButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"console.png"), 0);
-            gui->performanceButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"performance.png"), 0);
-            gui->settingsButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"settings.png"), 0);
+            auto baseFileName(getContext()->getRootFileName("data"s, "gui"s));
+            gui->consoleButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, "console.png"s), 0);
+            gui->performanceButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, "performance.png"s), 0);
+            gui->settingsButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, "settings.png"s), 0);
             gui->renderQueue = renderDevice->createQueue(0);
 
             auto consolePane = gui->panelManager.addPane(ImGui::PanelManager::BOTTOM, "ConsolePanel##ConsolePanel");
@@ -177,71 +177,71 @@ namespace Gek
             style.WindowRounding = 0.0f;
             style.FrameRounding = 3.0f;
 
-            static wchar_t const * const guiProgram =
-                L"DeclareConstantBuffer(Constants, 0)\r\n" \
-                L"{\r\n" \
-                L"    float4x4 ProjectionMatrix;\r\n" \
-                L"};\r\n" \
-                L"\r\n" \
-                L"DeclareSamplerState(PointSampler, 0);\r\n" \
-                L"DeclareTexture2D(GuiTexture, float4, 0);\r\n" \
-                L"\r\n" \
-                L"Pixel mainVertexProgram(in Vertex input)\r\n" \
-                L"{\r\n" \
-                L"    Pixel output;\r\n" \
-                L"    output.position = mul(ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));\r\n" \
-                L"    output.color = input.color;\r\n" \
-                L"    output.texCoord  = input.texCoord;\r\n" \
-                L"    return output;\r\n" \
-                L"}\r\n" \
-                L"\r\n" \
-                L"Output mainPixelProgram(in Pixel input)\r\n" \
-                L"{\r\n" \
-                L"    Output output;\r\n" \
-                L"    output.screen = (input.color * SampleTexture(GuiTexture, PointSampler, input.texCoord));\r\n" \
-                L"    return output;\r\n" \
-                L"}";
+            static char const * const guiProgram =
+                "DeclareConstantBuffer(Constants, 0)\r\n" \
+                "{\r\n" \
+                "    float4x4 ProjectionMatrix;\r\n" \
+                "};\r\n" \
+                "\r\n" \
+                "DeclareSamplerState(PointSampler, 0);\r\n" \
+                "DeclareTexture2D(GuiTexture, float4, 0);\r\n" \
+                "\r\n" \
+                "Pixel mainVertexProgram(in Vertex input)\r\n" \
+                "{\r\n" \
+                "    Pixel output;\r\n" \
+                "    output.position = mul(ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));\r\n" \
+                "    output.color = input.color;\r\n" \
+                "    output.texCoord  = input.texCoord;\r\n" \
+                "    return output;\r\n" \
+                "}\r\n" \
+                "\r\n" \
+                "Output mainPixelProgram(in Pixel input)\r\n" \
+                "{\r\n" \
+                "    Output output;\r\n" \
+                "    output.screen = (input.color * SampleTexture(GuiTexture, PointSampler, input.texCoord));\r\n" \
+                "    return output;\r\n" \
+                "}";
 
             Render::PipelineStateInformation pipelineStateInformation;
             pipelineStateInformation.vertexShader = guiProgram;
-            pipelineStateInformation.vertexShaderEntryFunction = L"mainVertexProgram";
+            pipelineStateInformation.vertexShaderEntryFunction = "mainVertexProgram"s;
             pipelineStateInformation.pixelShader = guiProgram;
-            pipelineStateInformation.pixelShaderEntryFunction = L"mainPixelProgram";
+            pipelineStateInformation.pixelShaderEntryFunction = "mainPixelProgram"s;
 
             Render::VertexDeclaration vertexDeclaration;
-            vertexDeclaration.name = L"position";
+            vertexDeclaration.name = "position"s;
             vertexDeclaration.format = Render::Format::R32G32_FLOAT;
             vertexDeclaration.semantic = Render::VertexDeclaration::Semantic::Position;
             pipelineStateInformation.vertexDeclaration.push_back(vertexDeclaration);
 
-            vertexDeclaration.name = L"texCoord";
+            vertexDeclaration.name = "texCoord"s;
             vertexDeclaration.format = Render::Format::R32G32_FLOAT;
             vertexDeclaration.semantic = Render::VertexDeclaration::Semantic::TexCoord;
             pipelineStateInformation.vertexDeclaration.push_back(vertexDeclaration);
 
-            vertexDeclaration.name = L"color";
+            vertexDeclaration.name = "color"s;
             vertexDeclaration.format = Render::Format::R8G8B8A8_UNORM;
             vertexDeclaration.semantic = Render::VertexDeclaration::Semantic::Color;
             pipelineStateInformation.vertexDeclaration.push_back(vertexDeclaration);
 
             Render::ElementDeclaration pixelDeclaration;
-            pixelDeclaration.name = L"position";
+            pixelDeclaration.name = "position"s;
             pixelDeclaration.format = Render::Format::R32G32B32A32_FLOAT;
             pixelDeclaration.semantic = Render::VertexDeclaration::Semantic::Position;
             pipelineStateInformation.pixelDeclaration.push_back(pixelDeclaration);
 
-            pixelDeclaration.name = L"texCoord";
+            pixelDeclaration.name = "texCoord"s;
             pixelDeclaration.format = Render::Format::R32G32_FLOAT;
             pixelDeclaration.semantic = Render::VertexDeclaration::Semantic::TexCoord;
             pipelineStateInformation.pixelDeclaration.push_back(pixelDeclaration);
 
-            pixelDeclaration.name = L"color";
+            pixelDeclaration.name = "color"s;
             pixelDeclaration.format = Render::Format::R8G8B8A8_UNORM;
             pixelDeclaration.semantic = Render::VertexDeclaration::Semantic::Color;
             pipelineStateInformation.pixelDeclaration.push_back(pixelDeclaration);
 
             Render::NamedDeclaration targetDeclaration;
-            targetDeclaration.name = L"screen";
+            targetDeclaration.name = "screen"s;
             targetDeclaration.format = Render::Format::R8G8B8A8_UNORM_SRGB;
             pipelineStateInformation.renderTargetList.push_back(targetDeclaration);
 
@@ -263,13 +263,13 @@ namespace Gek
             pipelineStateInformation.depthStateInformation.comparisonFunction = Render::ComparisonFunction::LessEqual;
             pipelineStateInformation.depthStateInformation.writeMask = Render::DepthStateInformation::Write::Zero;
 
-            gui->pipelineState = renderDevice->createPipelineState(pipelineStateInformation, L"GUI");
+            gui->pipelineState = renderDevice->createPipelineState(pipelineStateInformation, "GUI"s);
 
             Render::BufferDescription constantBufferDescription;
             constantBufferDescription.stride = sizeof(Math::Float4x4);
             constantBufferDescription.count = 1;
             constantBufferDescription.type = Render::BufferDescription::Type::Constant;
-            gui->constantBuffer = renderDevice->createBuffer(constantBufferDescription, nullptr, L"GUI::Constants");
+            gui->constantBuffer = renderDevice->createBuffer(constantBufferDescription, nullptr, "GUI::Constants"s);
 
             uint8_t *pixels = nullptr;
             int32_t fontWidth = 0, fontHeight = 0;
@@ -280,7 +280,7 @@ namespace Gek
             fontDescription.width = fontWidth;
             fontDescription.height = fontHeight;
             fontDescription.flags = Render::TextureDescription::Flags::Resource;
-            gui->fontTexture = renderDevice->createTexture(fontDescription, pixels, L"GUI::Font");
+            gui->fontTexture = renderDevice->createTexture(fontDescription, pixels, "GUI::Font"s);
             imGuiIo.Fonts->TexID = &gui->fontTexture;
 
             Render::SamplerStateInformation samplerStateInformation;
@@ -288,7 +288,7 @@ namespace Gek
             samplerStateInformation.addressModeU = Render::SamplerStateInformation::AddressMode::Clamp;
             samplerStateInformation.addressModeV = Render::SamplerStateInformation::AddressMode::Clamp;
             samplerStateInformation.addressModeW = Render::SamplerStateInformation::AddressMode::Clamp;
-            gui->samplerState = renderDevice->createSamplerState(samplerStateInformation, L"GUI::Sampler");
+            gui->samplerState = renderDevice->createSamplerState(samplerStateInformation, "GUI::Sampler"s);
 
             imGuiIo.UserData = this;
             imGuiIo.RenderDrawListsFn = [](ImDrawData *drawData)
@@ -383,7 +383,7 @@ namespace Gek
                             setDisplayMode(previousDisplayMode);
                         }
 
-                        ImGui::Text(CString::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)));
+                        ImGui::Text(String::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)).c_str());
 
                         ImGui::End();
                     }
@@ -560,7 +560,7 @@ namespace Gek
                     {
                         bool isSelected = (mode == currentDisplayMode);
                         auto data = std::next(std::begin(displayModeStringList), mode);
-                        if (ImGui::Selectable(*data, &isSelected))
+                        if (ImGui::Selectable(data->c_str(), &isSelected))
                         {
                             setDisplayMode(mode);
                         }
@@ -672,11 +672,11 @@ int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstan
     }
     catch (const std::exception &exception)
     {
-        MessageBoxA(nullptr, CString::Format("Caught: %v\r\nType: %v", exception.what(), typeid(exception).name()), "GEK Engine - Error", MB_OK | MB_ICONERROR);
+        MessageBoxA(nullptr, String::Format("Caught: %v\r\nType: %v", exception.what(), typeid(exception).name()).c_str(), "GEK Engine - Error", MB_OK | MB_ICONERROR);
     }
     catch (...)
     {
-        MessageBox(nullptr, L"Caught: Non-standard exception", L"GEK Engine - Error", MB_OK | MB_ICONERROR);
+        MessageBoxA(nullptr, "Caught: Non-standard exception", "GEK Engine - Error", MB_OK | MB_ICONERROR);
     };
 
     return 0;

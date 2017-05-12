@@ -45,12 +45,12 @@ namespace Gek
         // Plugin::Component
         void save(Components::Model const * const data, JSON::Object &componentData) const
         {
-            componentData.set(L"name", data->name);
+            componentData.set("name"s, data->name);
         }
 
         void load(Components::Model * const data, const JSON::Object &componentData)
         {
-            data->name = getValue(componentData, L"name", WString());
+            data->name = getValue(componentData, "name"s, std::string());
         }
 
         // Edit::Component
@@ -58,7 +58,7 @@ namespace Gek
         {
             ImGui::SetCurrentContext(guiContext);
             auto &modelComponent = *dynamic_cast<Components::Model *>(data);
-            bool changed = ImGui::Gek::InputString("Model", modelComponent.name, flags);
+            bool changed = GUI::InputString("Model", modelComponent.name, flags);
             ImGui::SetCurrentContext(nullptr);
             return changed;
         }
@@ -83,7 +83,7 @@ namespace Gek
         {
             struct Part
             {
-                wchar_t name[64];
+                char name[64];
                 uint32_t vertexCount = 0;
                 uint32_t indexCount = 0;
             };
@@ -180,7 +180,7 @@ namespace Gek
             GEK_REQUIRE(resources);
             GEK_REQUIRE(renderer);
 
-			log->message("Model", Plugin::Core::Log::Type::Message, "Initializing model system");
+			log->message("Model"s, Plugin::Core::Log::Type::Message, "Initializing model system");
 
             population->onEntityCreated.connect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
             population->onEntityDestroyed.connect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
@@ -188,7 +188,7 @@ namespace Gek
             population->onComponentRemoved.connect<ModelProcessor, &ModelProcessor::onComponentRemoved>(this);
             renderer->onQueueDrawCalls.connect<ModelProcessor, &ModelProcessor::onQueueDrawCalls>(this);
 
-            visual = resources->loadVisual(L"model");
+            visual = resources->loadVisual("model"s);
 
             Video::Buffer::Description instanceDescription;
             instanceDescription.stride = sizeof(Math::Float4x4);
@@ -196,7 +196,7 @@ namespace Gek
             instanceDescription.type = Video::Buffer::Description::Type::Vertex;
             instanceDescription.flags = Video::Buffer::Description::Flags::Mappable;
             instanceBuffer = videoDevice->createBuffer(instanceDescription);
-            instanceBuffer->setName(L"model:instances");
+            instanceBuffer->setName("model:instances"s);
         }
 
         ~ModelProcessor(void)
@@ -215,55 +215,55 @@ namespace Gek
             {
                 ProcessorMixin::addEntity(entity, [&](auto &data, auto &modelComponent, auto &transformComponent) -> void
                 {
-                    WString fileName(getContext()->getRootFileName(L"data", L"models", modelComponent.name).withExtension(L".gek"));
+                    auto fileName(getContext()->getRootFileName("data"s, "models"s, modelComponent.name).withExtension(".gek"));
                     auto pair = modelMap.insert(std::make_pair(GetHash(modelComponent.name), Model()));
                     if (pair.second)
                     {
-						log->message("Model", Plugin::Core::Log::Type::Message, "Queueing model for load: %v", modelComponent.name);
+						log->message("Model"s, Plugin::Core::Log::Type::Message, "Queueing model for load: %v", modelComponent.name);
 						loadPool.enqueue([this, name = modelComponent.name, fileName, &model = pair.first->second](void) -> void
                         {
-							log->message("Model", Plugin::Core::Log::Type::Message, "Reading model header: %v", name);
+							log->message("Model"s, Plugin::Core::Log::Type::Message, "Reading model header: %v", name);
 
 							static const std::vector<uint8_t> EmptyBuffer;
 							std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer, sizeof(Header)));
 							if (buffer.size() < sizeof(Header))
 							{
-								log->message("Model", Plugin::Core::Log::Type::Error, "Model file too small to contain header: %v", fileName);
+								log->message("Model"s, Plugin::Core::Log::Type::Error, "Model file too small to contain header: %v", fileName);
 								return;
 							}
 
                             Header *header = (Header *)buffer.data();
                             if (header->identifier != *(uint32_t *)"GEKX")
                             {
-								log->message("Model", Plugin::Core::Log::Type::Error, "Unknown model file identifier encountered");
+								log->message("Model"s, Plugin::Core::Log::Type::Error, "Unknown model file identifier encountered");
 								return;
                             }
 
                             if (header->type != 0)
                             {
-								log->message("Model", Plugin::Core::Log::Type::Error, "Unsupported model type encountered");
+								log->message("Model"s, Plugin::Core::Log::Type::Error, "Unsupported model type encountered");
 								return;
 							}
 
                             if (header->version != 6)
                             {
-								log->message("Model", Plugin::Core::Log::Type::Error, "Unsupported model version encountered");
+								log->message("Model"s, Plugin::Core::Log::Type::Error, "Unsupported model version encountered");
 								return;
 							}
 
                             model.boundingBox = header->boundingBox;
-							log->message("Model", Plugin::Core::Log::Type::Message, "Model: %v, %v parts", name, header->partCount);
+							log->message("Model"s, Plugin::Core::Log::Type::Message, "Model: %v, %v parts", name, header->partCount);
 
                             loadPool.enqueue([this, name = name, fileName, &model](void) -> void
                             {
-								log->message("Model", Plugin::Core::Log::Type::Message, "Loading model: %v", name);
+								log->message("Model"s, Plugin::Core::Log::Type::Message, "Loading model: %v", name);
 
 								std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer));
 
 								Header *header = (Header *)buffer.data();
 								if (buffer.size() < (sizeof(Header) + (sizeof(Header::Part) * header->partCount)))
 								{
-									log->message("Model", Plugin::Core::Log::Type::Error, "Model file too small to contain part headers: %v", fileName);
+									log->message("Model"s, Plugin::Core::Log::Type::Error, "Model file too small to contain part headers: %v", fileName);
 									return;
 								}
 
@@ -272,46 +272,44 @@ namespace Gek
                                 for (uint32_t partIndex = 0; partIndex < header->partCount; ++partIndex)
                                 {
                                     Header::Part &partHeader = header->partList[partIndex];
-                                    Model::Part &part = model.partList[partIndex];
-                                    if (wcslen(partHeader.name) > 0)
-                                    {
-                                        part.material = resources->loadMaterial(partHeader.name);
-                                    }
+									Model::Part &part = model.partList[partIndex];
+
+                                    part.material = resources->loadMaterial(partHeader.name);
 
                                     Video::Buffer::Description indexBufferDescription;
                                     indexBufferDescription.format = Video::Format::R16_UINT;
                                     indexBufferDescription.count = partHeader.indexCount;
                                     indexBufferDescription.type = Video::Buffer::Description::Type::Index;
-                                    part.indexBuffer = resources->createBuffer(WString::Format(L"model:indices:%v:%v", name, partIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
+                                    part.indexBuffer = resources->createBuffer(String::Format("model:indices:%v:%v", name, partIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
                                     bufferData += (sizeof(uint16_t) * partHeader.indexCount);
 
                                     Video::Buffer::Description vertexBufferDescription;
                                     vertexBufferDescription.stride = sizeof(Math::Float3);
                                     vertexBufferDescription.count = partHeader.vertexCount;
                                     vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
-                                    part.vertexBufferList[0] = resources->createBuffer(WString::Format(L"model:positions:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    part.vertexBufferList[0] = resources->createBuffer(String::Format("model:positions:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                     bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
 
                                     vertexBufferDescription.stride = sizeof(Math::Float2);
-                                    part.vertexBufferList[1] = resources->createBuffer(WString::Format(L"model:texcoords:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
+                                    part.vertexBufferList[1] = resources->createBuffer(String::Format("model:texcoords:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
                                     bufferData += (sizeof(Math::Float2) * partHeader.vertexCount);
 
                                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    part.vertexBufferList[2] = resources->createBuffer(WString::Format(L"model:tangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    part.vertexBufferList[2] = resources->createBuffer(String::Format("model:tangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                     bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
 
                                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    part.vertexBufferList[3] = resources->createBuffer(WString::Format(L"model:bitangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    part.vertexBufferList[3] = resources->createBuffer(String::Format("model:bitangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                     bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
 
                                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    part.vertexBufferList[4] = resources->createBuffer(WString::Format(L"model:normals:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    part.vertexBufferList[4] = resources->createBuffer(String::Format("model:normals:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                     bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
 
                                     part.indexCount = partHeader.indexCount;
                                 }
 							
-								log->message("Model", Plugin::Core::Log::Type::Message, "Model successfully loaded: %v", name);
+								log->message("Model"s, Plugin::Core::Log::Type::Message, "Model successfully loaded: %v", name);
 							});
                         });
                     }
@@ -325,7 +323,7 @@ namespace Gek
         }
 
         // Plugin::Population Slots
-        void onEntityCreated(Plugin::Entity * const entity, WString const &entityName)
+        void onEntityCreated(Plugin::Entity * const entity, std::string const &entityName)
         {
             addEntity(entity);
         }
@@ -420,8 +418,8 @@ namespace Gek
                 }
             }
 
-			log->setValue("Model", "Entity Count", visibleEntities);
-			log->setValue("Model", "Model Count", visibleModels.size());
+			log->setValue("Model"s, "Entity Count"s, visibleEntities);
+			log->setValue("Model"s, "Model Count"s, visibleModels.size());
 
 			size_t maximumInstanceCount = 0;
             for (const auto &materialPair : materialMap)
@@ -481,7 +479,7 @@ namespace Gek
                 instanceDescription.type = Video::Buffer::Description::Type::Vertex;
                 instanceDescription.flags = Video::Buffer::Description::Flags::Mappable;
                 instanceBuffer = videoDevice->createBuffer(instanceDescription);
-                instanceBuffer->setName(L"model:instances");
+                instanceBuffer->setName("model:instances"s);
             }
         }
     };

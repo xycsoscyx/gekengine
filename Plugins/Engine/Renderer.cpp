@@ -240,7 +240,7 @@ namespace Gek
                         lightBufferDescription.stride = sizeof(DATA);
                         lightBufferDescription.count = lightList.capacity();
                         lightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
-                        lightDataBuffer->setName(WString::Format(L"render:%v", typeid(COMPONENT).name()));
+                        lightDataBuffer->setName(String::Format("render:%v", typeid(COMPONENT).name()));
                     }
                 }
 
@@ -403,14 +403,14 @@ namespace Gek
 
             void initializeSystem(void)
             {
-                core->getLog()->message("Renderer", Plugin::Core::Log::Type::Message, "Initializing rendering system components");
+                core->getLog()->message("Renderer"s, Plugin::Core::Log::Type::Message, "Initializing rendering system components");
 
                 Video::SamplerStateInformation pointSamplerStateData;
                 pointSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapPoint;
                 pointSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
                 pointSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
                 pointSamplerState = videoDevice->createSamplerState(pointSamplerStateData);
-                pointSamplerState->setName(L"renderer:pointSamplerState");
+                pointSamplerState->setName("renderer:pointSamplerState"s);
 
                 Video::SamplerStateInformation linearClampSamplerStateData;
                 linearClampSamplerStateData.maximumAnisotropy = 8;
@@ -418,7 +418,7 @@ namespace Gek
                 linearClampSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
                 linearClampSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
                 linearClampSamplerState = videoDevice->createSamplerState(linearClampSamplerStateData);
-                linearClampSamplerState->setName(L"renderer:linearClampSamplerState");
+                linearClampSamplerState->setName("renderer:linearClampSamplerState"s);
 
                 Video::SamplerStateInformation linearWrapSamplerStateData;
                 linearWrapSamplerStateData.maximumAnisotropy = 8;
@@ -426,69 +426,69 @@ namespace Gek
                 linearWrapSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Wrap;
                 linearWrapSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
                 linearWrapSamplerState = videoDevice->createSamplerState(linearWrapSamplerStateData);
-                linearWrapSamplerState->setName(L"renderer:linearWrapSamplerState");
+                linearWrapSamplerState->setName("renderer:linearWrapSamplerState"s);
 
                 Video::UnifiedBlendStateInformation blendStateInformation;
                 blendState = videoDevice->createBlendState(blendStateInformation);
-                blendState->setName(L"renderer:blendState");
+                blendState->setName("renderer:blendState"s);
 
                 Video::RenderStateInformation renderStateInformation;
                 renderState = videoDevice->createRenderState(renderStateInformation);
-                renderState->setName(L"renderer:renderState");
+                renderState->setName("renderer:renderState"s);
 
                 Video::DepthStateInformation depthStateInformation;
                 depthState = videoDevice->createDepthState(depthStateInformation);
-                depthState->setName(L"renderer:depthState");
+                depthState->setName("renderer:depthState"s);
 
                 Video::Buffer::Description constantBufferDescription;
                 constantBufferDescription.stride = sizeof(EngineConstantData);
                 constantBufferDescription.count = 1;
                 constantBufferDescription.type = Video::Buffer::Description::Type::Constant;
                 engineConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
-                engineConstantBuffer->setName(L"renderer:engineConstantBuffer");
+                engineConstantBuffer->setName("renderer:engineConstantBuffer"s);
 
                 constantBufferDescription.stride = sizeof(CameraConstantData);
                 cameraConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
-                cameraConstantBuffer->setName(L"renderer:cameraConstantBuffer");
+                cameraConstantBuffer->setName("renderer:cameraConstantBuffer"s);
 
                 constantBufferDescription.stride = sizeof(LightConstantData);
                 lightConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
-                lightConstantBuffer->setName(L"renderer:lightConstantBuffer");
+                lightConstantBuffer->setName("renderer:lightConstantBuffer"s);
 
-                static const wchar_t program[] =
-                    L"struct Output" \
-                    L"{" \
-                    L"    float4 screen : SV_POSITION;" \
-                    L"    float2 texCoord : TEXCOORD0;" \
-                    L"};" \
-                    L"" \
-                    L"Output mainVertexProgram(in uint vertexID : SV_VertexID)" \
-                    L"{" \
-                    L"    Output output;" \
-                    L"    output.texCoord = float2((vertexID << 1) & 2, vertexID & 2);" \
-                    L"    output.screen = float4(output.texCoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f);" \
-                    L"    return output;" \
-                    L"}" \
-                    L"" \
-                    L"struct Input" \
-                    L"{" \
-                    L"    float4 screen : SV_POSITION;\r\n" \
-                    L"    float2 texCoord : TEXCOORD0;" \
-                    L"};" \
-                    L"" \
-                    L"Texture2D<float3> inputBuffer : register(t0);" \
-                    L"float3 mainPixelProgram(in Input input) : SV_TARGET0" \
-                    L"{" \
-                    L"    return inputBuffer[input.screen.xy];" \
-                    L"}";
+                static const char program[] =
+                    "struct Output" \
+                    "{" \
+                    "    float4 screen : SV_POSITION;" \
+                    "    float2 texCoord : TEXCOORD0;" \
+                    "};" \
+                    "" \
+                    "Output mainVertexProgram(in uint vertexID : SV_VertexID)" \
+                    "{" \
+                    "    Output output;" \
+                    "    output.texCoord = float2((vertexID << 1) & 2, vertexID & 2);" \
+                    "    output.screen = float4(output.texCoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f);" \
+                    "    return output;" \
+                    "}" \
+                    "" \
+                    "struct Input" \
+                    "{" \
+                    "    float4 screen : SV_POSITION;\r\n" \
+                    "    float2 texCoord : TEXCOORD0;" \
+                    "};" \
+                    "" \
+                    "Texture2D<float3> inputBuffer : register(t0);" \
+                    "float3 mainPixelProgram(in Input input) : SV_TARGET0" \
+                    "{" \
+                    "    return inputBuffer[input.screen.xy];" \
+                    "}";
 
-                auto compiledVertexProgram = resources->compileProgram(Video::PipelineType::Vertex, L"deferredVertexProgram", L"mainVertexProgram", program);
+                auto compiledVertexProgram = resources->compileProgram(Video::PipelineType::Vertex, "deferredVertexProgram"s, "mainVertexProgram"s, program);
                 deferredVertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiledVertexProgram.data(), compiledVertexProgram.size());
-                deferredVertexProgram->setName(L"renderer:deferredVertexProgram");
+                deferredVertexProgram->setName("renderer:deferredVertexProgram"s);
 
-                auto compiledPixelProgram = resources->compileProgram(Video::PipelineType::Pixel, L"deferredPixelProgram", L"mainPixelProgram", program);
+                auto compiledPixelProgram = resources->compileProgram(Video::PipelineType::Pixel, "deferredPixelProgram"s, "mainPixelProgram"s, program);
                 deferredPixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiledPixelProgram.data(), compiledPixelProgram.size());
-                deferredPixelProgram->setName(L"renderer:deferredPixelProgram");
+                deferredPixelProgram->setName("renderer:deferredPixelProgram"s);
 
                 Video::Buffer::Description lightBufferDescription;
                 lightBufferDescription.type = Video::Buffer::Description::Type::Structured;
@@ -500,51 +500,51 @@ namespace Gek
                 tileBufferDescription.format = Video::Format::R32G32_UINT;
                 tileBufferDescription.count = GridSize;
                 tileOffsetCountBuffer = videoDevice->createBuffer(tileBufferDescription);
-                tileOffsetCountBuffer->setName(L"renderer:tileOffsetCountBuffer");
+                tileOffsetCountBuffer->setName("renderer:tileOffsetCountBuffer"s);
 
                 lightIndexList.reserve(GridSize * 10);
                 tileBufferDescription.format = Video::Format::R16_UINT;
                 tileBufferDescription.count = lightIndexList.capacity();
                 lightIndexBuffer = videoDevice->createBuffer(tileBufferDescription);
-                lightIndexBuffer->setName(L"renderer:lightIndexBuffer");
+                lightIndexBuffer->setName("renderer:lightIndexBuffer"s);
             }
 
             void initializeUI(void)
             {
-                core->getLog()->message("Renderer", Plugin::Core::Log::Type::Message, "Initializing user interface data");
+                core->getLog()->message("Renderer"s, Plugin::Core::Log::Type::Message, "Initializing user interface data");
 
-                static wchar_t const * const vertexShader =
-                    L"cbuffer vertexBuffer : register(b0)" \
-                    L"{" \
-                    L"    float4x4 ProjectionMatrix;" \
-                    L"};" \
-                    L"" \
-                    L"struct VertexInput" \
-                    L"{" \
-                    L"    float2 position : POSITION;" \
-                    L"    float4 color : COLOR0;" \
-                    L"    float2 texCoord  : TEXCOORD0;" \
-                    L"};" \
-                    L"" \
-                    L"struct PixelOutput" \
-                    L"{" \
-                    L"    float4 position : SV_POSITION;" \
-                    L"    float4 color : COLOR0;" \
-                    L"    float2 texCoord  : TEXCOORD0;" \
-                    L"};" \
-                    L"" \
-                    L"PixelOutput main(in VertexInput input)" \
-                    L"{" \
-                    L"    PixelOutput output;" \
-                    L"    output.position = mul(ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));" \
-                    L"    output.color = input.color;" \
-                    L"    output.texCoord  = input.texCoord;" \
-                    L"    return output;" \
-                    L"}";
+                static char const vertexShader[] =
+                    "cbuffer vertexBuffer : register(b0)" \
+                    "{" \
+                    "    float4x4 ProjectionMatrix;" \
+                    "};" \
+                    "" \
+                    "struct VertexInput" \
+                    "{" \
+                    "    float2 position : POSITION;" \
+                    "    float4 color : COLOR0;" \
+                    "    float2 texCoord  : TEXCOORD0;" \
+                    "};" \
+                    "" \
+                    "struct PixelOutput" \
+                    "{" \
+                    "    float4 position : SV_POSITION;" \
+                    "    float4 color : COLOR0;" \
+                    "    float2 texCoord  : TEXCOORD0;" \
+                    "};" \
+                    "" \
+                    "PixelOutput main(in VertexInput input)" \
+                    "{" \
+                    "    PixelOutput output;" \
+                    "    output.position = mul(ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));" \
+                    "    output.color = input.color;" \
+                    "    output.texCoord  = input.texCoord;" \
+                    "    return output;" \
+                    "}";
 
-                auto &compiled = resources->compileProgram(Video::PipelineType::Vertex, L"uiVertexProgram", L"main", vertexShader);
+                auto &compiled = resources->compileProgram(Video::PipelineType::Vertex, "uiVertexProgram"s, "main"s, vertexShader);
                 gui.vertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiled.data(), compiled.size());
-                gui.vertexProgram->setName(L"core:vertexProgram");
+                gui.vertexProgram->setName("core:vertexProgram"s);
 
                 std::vector<Video::InputElement> elementList;
 
@@ -562,34 +562,34 @@ namespace Gek
                 elementList.push_back(element);
 
                 gui.inputLayout = videoDevice->createInputLayout(elementList, compiled.data(), compiled.size());
-                gui.inputLayout->setName(L"core:inputLayout");
+                gui.inputLayout->setName("core:inputLayout"s);
 
                 Video::Buffer::Description constantBufferDescription;
                 constantBufferDescription.stride = sizeof(Math::Float4x4);
                 constantBufferDescription.count = 1;
                 constantBufferDescription.type = Video::Buffer::Description::Type::Constant;
                 gui.constantBuffer = videoDevice->createBuffer(constantBufferDescription);
-                gui.constantBuffer->setName(L"core:constantBuffer");
+                gui.constantBuffer->setName("core:constantBuffer"s);
 
-                static wchar_t const * const pixelShader =
-                    L"struct PixelInput" \
-                    L"{" \
-                    L"    float4 position : SV_POSITION;" \
-                    L"    float4 color : COLOR0;" \
-                    L"    float2 texCoord  : TEXCOORD0;" \
-                    L"};" \
-                    L"" \
-                    L"sampler pointSampler;" \
-                    L"Texture2D<float4> uiTexture : register(t0);" \
-                    L"" \
-                    L"float4 main(PixelInput input) : SV_Target" \
-                    L"{" \
-                    L"    return (input.color * uiTexture.Sample(pointSampler, input.texCoord));" \
-                    L"}";
+                static char const pixelShader[] =
+                    "struct PixelInput" \
+                    "{" \
+                    "    float4 position : SV_POSITION;" \
+                    "    float4 color : COLOR0;" \
+                    "    float2 texCoord  : TEXCOORD0;" \
+                    "};" \
+                    "" \
+                    "sampler pointSampler;" \
+                    "Texture2D<float4> uiTexture : register(t0);" \
+                    "" \
+                    "float4 main(PixelInput input) : SV_Target" \
+                    "{" \
+                    "    return (input.color * uiTexture.Sample(pointSampler, input.texCoord));" \
+                    "}";
 
-                compiled = resources->compileProgram(Video::PipelineType::Pixel, L"uiPixelProgram", L"main", pixelShader);
+                compiled = resources->compileProgram(Video::PipelineType::Pixel, "uiPixelProgram"s, "main"s, pixelShader);
                 gui.pixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiled.data(), compiled.size());
-                gui.pixelProgram->setName(L"core:pixelProgram");
+                gui.pixelProgram->setName("core:pixelProgram"s);
 
                 Video::UnifiedBlendStateInformation blendStateInformation;
                 blendStateInformation.enable = true;
@@ -600,7 +600,7 @@ namespace Gek
                 blendStateInformation.alphaDestination = Video::BlendStateInformation::Source::Zero;
                 blendStateInformation.alphaOperation = Video::BlendStateInformation::Operation::Add;
                 gui.blendState = videoDevice->createBlendState(blendStateInformation);
-                gui.blendState->setName(L"core:blendState");
+                gui.blendState->setName("core:blendState"s);
 
                 Video::RenderStateInformation renderStateInformation;
                 renderStateInformation.fillMode = Video::RenderStateInformation::FillMode::Solid;
@@ -608,14 +608,14 @@ namespace Gek
                 renderStateInformation.scissorEnable = true;
                 renderStateInformation.depthClipEnable = true;
                 gui.renderState = videoDevice->createRenderState(renderStateInformation);
-                gui.renderState->setName(L"core:renderState");
+                gui.renderState->setName("core:renderState"s);
 
                 Video::DepthStateInformation depthStateInformation;
                 depthStateInformation.enable = true;
                 depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
                 depthStateInformation.writeMask = Video::DepthStateInformation::Write::Zero;
                 gui.depthState = videoDevice->createDepthState(depthStateInformation);
-                gui.depthState->setName(L"core:depthState");
+                gui.depthState->setName("core:depthState"s);
 
                 ImGuiStyle& style = ImGui::GetStyle();
                 //ImGui::SetupImGuiStyle(false, 0.9f);
@@ -685,7 +685,7 @@ namespace Gek
             // ImGui
             void renderUI(ImDrawData *drawData)
             {
-                Plugin::Core::Log::Scope function(core->getLog(), "Render", "User Interface Time");
+                Plugin::Core::Log::Scope function(core->getLog(), "Render"s, "User Interface Time"s);
                 if (!gui.vertexBuffer || gui.vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
                 {
                     Video::Buffer::Description vertexBufferDescription;
@@ -694,7 +694,7 @@ namespace Gek
                     vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
                     vertexBufferDescription.flags = Video::Buffer::Description::Flags::Mappable;
                     gui.vertexBuffer = videoDevice->createBuffer(vertexBufferDescription);
-                    gui.vertexBuffer->setName(WString::Format(L"core:vertexBuffer:%v", gui.vertexBuffer.get()));
+                    gui.vertexBuffer->setName(String::Format("core:vertexBuffer:%v", gui.vertexBuffer.get()));
                 }
 
                 if (!gui.indexBuffer || gui.indexBuffer->getDescription().count < uint32_t(drawData->TotalIdxCount))
@@ -718,7 +718,7 @@ namespace Gek
                     };
 
                     gui.indexBuffer = videoDevice->createBuffer(vertexBufferDescription);
-                    gui.indexBuffer->setName(WString::Format(L"core:vertexBuffer:%v", gui.indexBuffer.get()));
+                    gui.indexBuffer->setName(String::Format("core:vertexBuffer:%v", gui.indexBuffer.get()));
                 }
 
                 bool dataUploaded = false;
@@ -1010,7 +1010,7 @@ namespace Gek
             }
 
             // Plugin::Population Slots
-            void onEntityCreated(Plugin::Entity * const entity, WString const &entityName)
+            void onEntityCreated(Plugin::Entity * const entity, std::string const &entityName)
             {
                 addEntity(entity);
             }
@@ -1061,8 +1061,8 @@ namespace Gek
                 GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(population);
 
-                Plugin::Core::Log::Scope function(core->getLog(), "Render", "Update Time");
-                core->getLog()->setValue("Render", "Camera Count", cameraQueue.unsafe_size());
+                Plugin::Core::Log::Scope function(core->getLog(), "Render"s, "Update Time"s);
+                core->getLog()->setValue("Render"s, "Camera Count"s, cameraQueue.unsafe_size());
 
                 while (cameraQueue.try_pop(currentCamera))
                 {
@@ -1070,7 +1070,7 @@ namespace Gek
                     onQueueDrawCalls.emit(currentCamera.viewFrustum, currentCamera.viewMatrix, currentCamera.projectionMatrix);
                     if (!drawCallList.empty())
                     {
-                        core->getLog()->adjustValue("Render", "Draw Queue Count", drawCallList.size());
+                        core->getLog()->adjustValue("Render"s, "Draw Queue Count"s, drawCallList.size());
                         auto backBuffer = videoDevice->getBackBuffer();
                         auto width = backBuffer->getDescription().width;
                         auto height = backBuffer->getDescription().height;
@@ -1156,9 +1156,9 @@ namespace Gek
                             pointLightsDone.get();
                             spotLightsDone.get();
 
-                            core->getLog()->adjustValue("Render", "Directional Light Count", directionalLightData.lightList.size());
-                            core->getLog()->adjustValue("Render", "Point Light Count", pointLightData.lightList.size());
-                            core->getLog()->adjustValue("Render", "Spot Light Count", spotLightData.lightList.size());
+                            core->getLog()->adjustValue("Render"s, "Directional Light Count"s, directionalLightData.lightList.size());
+                            core->getLog()->adjustValue("Render"s, "Point Light Count"s, pointLightData.lightList.size());
+                            core->getLog()->adjustValue("Render"s, "Spot Light Count"s, spotLightData.lightList.size());
 
                             lightIndexList.clear();
                             lightIndexList.reserve(lightIndexCount);
@@ -1203,7 +1203,7 @@ namespace Gek
                                     tileBufferDescription.format = Video::Format::R16_UINT;
                                     tileBufferDescription.count = lightIndexList.size();
                                     lightIndexBuffer = videoDevice->createBuffer(tileBufferDescription);
-                                    lightIndexBuffer->setName(WString::Format(L"renderer:lightIndexBuffer:%v", lightIndexBuffer.get()));
+                                    lightIndexBuffer->setName(String::Format("renderer:lightIndexBuffer:%v", lightIndexBuffer.get()));
                                 }
 
                                 uint16_t *lightIndexData = nullptr;
@@ -1322,7 +1322,7 @@ namespace Gek
                         }
 
                         videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                        for (const auto &filterName : { L"tonemap", L"antialias" })
+                        for (const auto &filterName : { "tonemap"s, "antialias"s })
                         {
                             Engine::Filter * const filter = resources->getFilter(filterName);
                             if (filter)
@@ -1350,14 +1350,14 @@ namespace Gek
                         videoContext->computePipeline()->clearConstantBufferList(2, 0);
                         if (currentCamera.cameraTarget)
                         {
-                            renderOverlay(videoContext, resources->getResourceHandle(L"screen"), currentCamera.cameraTarget);
+                            renderOverlay(videoContext, resources->getResourceHandle("screen"s), currentCamera.cameraTarget);
                         }
                     }
                 };
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 imGuiIo.DeltaTime = frameTime;
-                core->getLog()->setValue("Render", "Frame Rate", (1.0f / frameTime));
+                core->getLog()->setValue("Render"s, "Frame Rate"s, (1.0f / frameTime));
 
                 auto backBuffer = videoDevice->getBackBuffer();
                 uint32_t width = backBuffer->getDescription().width;
@@ -1370,7 +1370,7 @@ namespace Gek
                 onShowUserInterface.emit(ImGui::GetCurrentContext());
                 ImGui::End();
 
-                renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());
+                renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle("screen"s), ResourceHandle());
                 ImGui::Render();
 
                 videoDevice->present(false);

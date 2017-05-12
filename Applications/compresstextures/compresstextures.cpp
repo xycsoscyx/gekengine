@@ -18,7 +18,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 		throw std::exception("Input file not found");
 	}
 
-    auto outputFilePath(inputFilePath.withExtension(L".dds"));
+    auto outputFilePath(inputFilePath.withExtension(".dds"s));
 	if (outputFilePath.isFile() && outputFilePath.isNewerThan(inputFilePath))
 	{
 		throw std::exception("Input file hasn't changed since last compression");
@@ -30,27 +30,26 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 	static const std::vector<uint8_t> EmptyBuffer;
 	std::vector<uint8_t> buffer(FileSystem::Load(inputFilePath, EmptyBuffer));
 
-	WString extension(inputFilePath.getExtension());
+	std::string extension(String::GetLower(inputFilePath.getExtension()));
 	std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
-	if (extension.compareNoCase(L".tga") == 0)
+	if (extension == ".tga"s)
 	{
 		load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromTGAMemory(buffer.data(), buffer.size(), nullptr, image); };
 	}
-	else if (extension.compareNoCase(L".png") == 0)
+	else if (extension == ".png"s)
 	{
 		load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_PNG, nullptr, image); };
 	}
-	else if (extension.compareNoCase(L".bmp") == 0)
+	else if (extension == ".bmp"s)
 	{
 		load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_BMP, nullptr, image); };
 	}
-	else if (extension.compareNoCase(L".jpg") == 0 ||
-		extension.compareNoCase(L".jpeg") == 0)
+	else if (extension == ".jpg"s || extension == ".jpeg"s)
 	{
 		load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, nullptr, image); };
 	}
 /*
-	else if (extension.compareNoCase(L".dds") == 0)
+	else if (extension == ".dds"s)
 	{
 		load = std::bind(::DirectX::LoadFromDDSMemory, std::placeholders::_1, std::placeholders::_2, 0, nullptr, std::placeholders::_3);
 	}
@@ -67,19 +66,17 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 		throw std::exception("Unable to load input file");
 	}
 
-    WString inputName(inputFilePath.withoutExtension());
-    inputName.toLower();
-    
     bool useDevice = false;
 	uint32_t flags = ::DirectX::TEX_COMPRESS_PARALLEL;
 	DXGI_FORMAT outputFormat = DXGI_FORMAT_UNKNOWN;
-	if (inputName.endsWith(L"basecolor") ||
-		inputName.endsWith(L"base_color") ||
-		inputName.endsWith(L"diffuse") ||
-		inputName.endsWith(L"albedo") ||
-		inputName.endsWith(L"alb") ||
-        inputName.endsWith(L"_d") ||
-        inputName.endsWith(L"_C"))
+	std::string inputName(String::GetLower(inputFilePath.withoutExtension().u8string()));
+	if (String::EndsWith(inputName, "basecolor"s) ||
+		String::EndsWith(inputName, "base_color"s) ||
+		String::EndsWith(inputName, "diffuse"s) ||
+		String::EndsWith(inputName, "albedo"s) ||
+		String::EndsWith(inputName, "alb"s) ||
+        String::EndsWith(inputName, "_d"s) ||
+        String::EndsWith(inputName, "_C"s))
 {
 		useDevice = true;
 		//flags |= ::DirectX::TEX_COMPRESS_SRGB_IN;
@@ -95,23 +92,23 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 			std::cout << "Compressing Albedo: BC7 sRGB" << std::endl;
 		}
 	}
-	else if (inputName.endsWith(L"normal") ||
-		inputName.endsWith(L"_n"))
+	else if (String::EndsWith(inputName, "normal"s) ||
+		String::EndsWith(inputName, "_n"s))
 	{
 		outputFormat = DXGI_FORMAT_BC5_UNORM;
 		std::cout << "Compressing Normal: BC5" << std::endl;
 	}
-	else if (inputName.endsWith(L"roughness") ||
-		inputName.endsWith(L"rough") ||
-		inputName.endsWith(L"_r"))
+	else if (String::EndsWith(inputName, "roughness"s) ||
+		String::EndsWith(inputName, "rough"s) ||
+		String::EndsWith(inputName, "_r"s))
 	{
 		outputFormat = DXGI_FORMAT_BC4_UNORM;
 		std::cout << "Compressing Roughness: BC4" << std::endl;
 	}
-	else if (inputName.endsWith(L"metalness") ||
-		inputName.endsWith(L"metallic") ||
-		inputName.endsWith(L"metal") ||
-		inputName.endsWith(L"_m"))
+	else if (String::EndsWith(inputName, "metalness"s) ||
+		String::EndsWith(inputName, "metallic"s) ||
+		String::EndsWith(inputName, "metal"s) ||
+		String::EndsWith(inputName, "_m"s))
 	{
 		outputFormat = DXGI_FORMAT_BC4_UNORM;
 		std::cout << "Compressing Metallic: BC4" << std::endl;
@@ -151,7 +148,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 
 	std::cout << ".compressed.";
 
-	resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, outputFilePath);
+	resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, outputFilePath.c_str());
 	if (FAILED(resultValue))
 	{
 		throw std::exception("Unable to save image");
@@ -174,12 +171,12 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         ContextPtr context(Context::Create(rootPath, searchPathList));
 
         Window::Description description;
-        description.className = L"GEK_Engine_Textures";
-        description.windowName = L"GEK Engine Textures";
-        WindowPtr window(context->createClass<Window>(L"Default::System::Window", description));
+        description.className = "GEK_Engine_Textures"s;
+        description.windowName = "GEK Engine Textures"s;
+        WindowPtr window(context->createClass<Window>("Default::System::Window"s, description));
 
         Video::Device::Description deviceDescription;
-        Video::DevicePtr device(context->createClass<Video::Device>(L"Device::Video::D3D11", window.get(), deviceDescription));
+        Video::DevicePtr device(context->createClass<Video::Device>("Device::Video::D3D11"s, window.get(), deviceDescription));
 
         std::function<bool(FileSystem::Path const &)> searchDirectory;
 		searchDirectory = [&](FileSystem::Path const &filePath) -> bool
@@ -188,11 +185,11 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 			{
 				FileSystem::Find(filePath, searchDirectory);
 			}
-			else if (filePath.isFile() && filePath.getExtension().compareNoCase(L".dds") != 0)
+			else if (filePath.isFile() && filePath.getExtension() != ".dds"s)
 			{
 				try
 				{
-					compressTexture(dynamic_cast<Video::Debug::Device *>(device.get()), WString(filePath).getLower());
+					compressTexture(dynamic_cast<Video::Debug::Device *>(device.get()), String::GetLower(filePath.u8string()));
 				}
 				catch (...)
 				{
@@ -204,7 +201,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		};
 
 		CoInitialize(nullptr);
-		FileSystem::Find(FileSystem::GetFileName(rootPath, L"Data", L"Textures"), searchDirectory);
+		FileSystem::Find(FileSystem::GetFileName(rootPath, "Data"s, "Textures"s), searchDirectory);
 		CoUninitialize();
 	}
     catch (const std::exception &exception)

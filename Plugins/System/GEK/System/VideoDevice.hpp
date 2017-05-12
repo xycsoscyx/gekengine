@@ -95,7 +95,7 @@ namespace Gek
             Count,
         };
 
-        Format getFormat(WString const &format);
+        Format getFormat(std::string const &format);
 
         struct DisplayMode
         {
@@ -433,8 +433,8 @@ namespace Gek
 
             static const uint32_t AppendAligned = 0xFFFFFFFF;
 
-            static Source getSource(WString const &elementSource);
-            static Semantic getSemantic(WString const &semantic);
+            static Source getSource(std::string const &elementSource);
+            static Semantic getSemantic(std::string const &semantic);
 
             Video::Format format = Format::Unknown;
             Semantic semantic = Semantic::TexCoord;
@@ -447,7 +447,7 @@ namespace Gek
         {
             virtual ~Object(void) = default;
 
-            virtual void setName(wchar_t const * const name) = 0;
+            virtual void setName(std::string const &name) = 0;
         };
 
         GEK_INTERFACE(Buffer)
@@ -562,7 +562,7 @@ namespace Gek
         {
             struct Description
             {
-                WString device;
+                std::string device;
                 Format displayFormat = Format::R8G8B8A8_UNORM_SRGB;
                 uint32_t sampleCount = 1;
                 uint32_t sampleQuality = 0;
@@ -677,7 +677,7 @@ namespace Gek
 
 			virtual ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, const void *compiledData, uint32_t compiledSize) = 0;
 
-            virtual std::vector<uint8_t> compileProgram(PipelineType pipelineType, wchar_t const * const name, wchar_t const * const uncompiledProgram, wchar_t const * const entryFunction) = 0;
+            virtual std::vector<uint8_t> compileProgram(PipelineType pipelineType, std::string const &name, std::string const &uncompiledProgram, std::string const &entryFunction) = 0;
             virtual ObjectPtr createProgram(PipelineType pipelineType, const void *compiledData, uint32_t compiledSize) = 0;
 
             virtual void executeCommandList(Object *commandList) = 0;

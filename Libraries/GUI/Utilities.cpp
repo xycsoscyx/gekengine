@@ -1,68 +1,64 @@
 #include "GEK/GUI/Utilities.hpp"
 #include <unordered_map>
 
-namespace ImGui
+namespace Gek
 {
-    std::unordered_map<::Gek::CString, ::Gek::CString> labelStringMap;
-    bool InputString(char const * label, ::Gek::WString &string, ImGuiInputTextFlags flags, ImGuiTextEditCallback callback, void *userData)
-    {
-        auto &internalSearch = labelStringMap.insert(std::make_pair(label, string));
-        auto &internalString = internalSearch.first->second;
-        if (internalSearch.second)
-        {
-            internalString.reserve(256);
-        }
-
-        if (InputText(label, &internalString.front(), 255, flags, callback, userData))
-        {
-            string = internalString;
-            return true;
-        }
-
-        return false;
-    }
-
-    namespace Gek
+    namespace GUI
     {
         bool InputFloat(char const * label, float *value, float step, float stepFast, int decimalPrecision, ImGuiInputTextFlags flags)
         {
-            ImGui::Text(label);
-            return ImGui::InputFloat(::Gek::CString::Format("##%v", label), value, step, stepFast, decimalPrecision, flags);
+            ::ImGui::Text(label);
+            return ::ImGui::InputFloat(String::Format("##%v", label).c_str(), value, step, stepFast, decimalPrecision, flags);
         }
 
         bool InputFloat2(char const * label, float value[2], int decimalPrecision, ImGuiInputTextFlags flags)
         {
-            ImGui::Text(label);
-            return ImGui::InputFloat2(::Gek::CString::Format("##%v", label), value, decimalPrecision, flags);
+            ::ImGui::Text(label);
+            return ::ImGui::InputFloat2(String::Format("##%v", label).c_str(), value, decimalPrecision, flags);
         }
 
         bool InputFloat3(char const * label, float value[3], int decimalPrecision, ImGuiInputTextFlags flags)
         {
-            ImGui::Text(label);
-            return ImGui::InputFloat3(::Gek::CString::Format("##%v", label), value, decimalPrecision, flags);
+            ::ImGui::Text(label);
+            return ::ImGui::InputFloat3(String::Format("##%v", label).c_str(), value, decimalPrecision, flags);
         }
 
         bool InputFloat4(char const * label, float value[4], int decimalPrecision, ImGuiInputTextFlags flags)
         {
-            ImGui::Text(label);
-            return ImGui::InputFloat4(::Gek::CString::Format("##%v", label), value, decimalPrecision, flags);
+            ::ImGui::Text(label);
+            return ::ImGui::InputFloat4(String::Format("##%v", label).c_str(), value, decimalPrecision, flags);
         }
 
-        bool InputString(char const * label, ::Gek::WString &string, ImGuiInputTextFlags flags, ImGuiTextEditCallback callback, void *userData)
+        std::unordered_map<std::string, std::string> labelStringMap;
+        bool InputString(char const * label, std::string &string, ImGuiInputTextFlags flags, ImGuiTextEditCallback callback, void *userData)
         {
-            ImGui::Text(label);
-            return ImGui::InputString(::Gek::CString::Format("##%v", label), string, flags, callback, userData);
+            ::ImGui::Text(label);
+            auto &internalSearch = labelStringMap.insert(std::make_pair(label, string));
+            auto &internalString = internalSearch.first->second;
+            if (internalSearch.second)
+            {
+                internalString.reserve(256);
+            }
+
+            if (::ImGui::InputText(String::Format("##%v", label).c_str(), &internalString.front(), 255, flags, callback, userData))
+            {
+                string = internalString;
+                return true;
+            }
+
+            return false;
+
         }
 
         bool ListBox(char const * label, int *currentSelectionIndex, bool(*itemDataCallback)(void *userData, int index, const char ** textOutput), void *userData, int itemCount, int visibleItemCount)
         {
-            ImGui::Text(label);
-            return ImGui::ListBox(::Gek::CString::Format("##%v", label), currentSelectionIndex, itemDataCallback, userData, itemCount, visibleItemCount);
+            ::ImGui::Text(label);
+            return ::ImGui::ListBox(String::Format("##%v", label).c_str(), currentSelectionIndex, itemDataCallback, userData, itemCount, visibleItemCount);
         }
 
         void PlotEx(ImGuiPlotType plot_type, char const * label, float(*itemDataCallback)(void *userData, int index), void *userData, int itemCount, int itemStartIndex, float scaleMinimum, float scaleMaximum, ImVec2 graphSize)
         {
-            ImGuiWindow *window = GetCurrentWindow();
+            ImGuiWindow *window = ::ImGui::GetCurrentWindow();
             if (window->SkipItems)
             {
                 return;
@@ -70,10 +66,10 @@ namespace ImGui
 
             ImGuiContext &guiContext = *GImGui;
             const ImGuiStyle &style = guiContext.Style;
-            const ImVec2 labelSize = CalcTextSize(label, nullptr, true);
+            const ImVec2 labelSize = ::ImGui::CalcTextSize(label, nullptr, true);
             if (graphSize.x == 0.0f)
             {
-                graphSize.x = CalcItemWidth();
+                graphSize.x = ::ImGui::CalcItemWidth();
             }
 
             if (graphSize.y == 0.0f)
@@ -84,8 +80,8 @@ namespace ImGui
             const ImRect frameBoundingBox(window->DC.CursorPos, window->DC.CursorPos + ImVec2(graphSize.x, graphSize.y));
             const ImRect clientBoundingBox(frameBoundingBox.Min + style.FramePadding, frameBoundingBox.Max - style.FramePadding);
             const ImRect totalBoundingBox(frameBoundingBox.Min, frameBoundingBox.Max + ImVec2(labelSize.x > 0.0f ? style.ItemInnerSpacing.x + labelSize.x : 0.0f, 0));
-            ItemSize(totalBoundingBox, style.FramePadding.y);
-            if (!ItemAdd(totalBoundingBox, nullptr))
+            ::ImGui::ItemSize(totalBoundingBox, style.FramePadding.y);
+            if (!::ImGui::ItemAdd(totalBoundingBox, nullptr))
             {
                 return;
             }
@@ -113,7 +109,7 @@ namespace ImGui
                 }
             }
 
-            RenderFrame(frameBoundingBox.Min, frameBoundingBox.Max, GetColorU32(ImGuiCol_FrameBg), true, style.FrameRounding);
+            ::ImGui::RenderFrame(frameBoundingBox.Min, frameBoundingBox.Max, ::ImGui::GetColorU32(ImGuiCol_FrameBg), true, style.FrameRounding);
             if (itemCount > 0)
             {
                 int resultsWidth = ImMin((int)graphSize.x, itemCount) + ((plot_type == ImGuiPlotType_Lines) ? -1 : 0);
@@ -121,7 +117,7 @@ namespace ImGui
 
                 // Tooltip on hover
                 int hoveredIndex = -1;
-                if (IsHovered(clientBoundingBox, 0))
+                if (::ImGui::IsHovered(clientBoundingBox, 0))
                 {
                     const float mousePosition = ImClamp((guiContext.IO.MousePos.x - clientBoundingBox.Min.x) / (clientBoundingBox.Max.x - clientBoundingBox.Min.x), 0.0f, 0.9999f);
                     const int mouseIndex = (int)(mousePosition * adjustedItemCount);
@@ -131,11 +127,11 @@ namespace ImGui
                     const float valueRight = itemDataCallback(userData, (mouseIndex + 1 + itemStartIndex) % itemCount);
                     if (plot_type == ImGuiPlotType_Lines)
                     {
-                        SetTooltip("%8.4g - %8.4g", valueLeft, valueRight);
+                        ::ImGui::SetTooltip("%8.4g - %8.4g", valueLeft, valueRight);
                     }
                     else if (plot_type == ImGuiPlotType_Histogram)
                     {
-                        SetTooltip("%8.4g", valueLeft);
+                        ::ImGui::SetTooltip("%8.4g", valueLeft);
                     }
 
                     hoveredIndex = mouseIndex;
@@ -147,8 +143,8 @@ namespace ImGui
                 float timeLeft = 0.0f;
                 ImVec2 nornalizedTimeLeft = ImVec2(timeLeft, 1.0f - ImSaturate((valueLeft - scaleMinimum) / (scaleMaximum - scaleMinimum)));    // Point in the normalized space of our target rectangle
 
-                const ImU32 colorBase = GetColorU32((plot_type == ImGuiPlotType_Lines) ? ImGuiCol_PlotLines : ImGuiCol_PlotHistogram);
-                const ImU32 colorHovered = GetColorU32((plot_type == ImGuiPlotType_Lines) ? ImGuiCol_PlotLinesHovered : ImGuiCol_PlotHistogramHovered);
+                const ImU32 colorBase = ::ImGui::GetColorU32((plot_type == ImGuiPlotType_Lines) ? ImGuiCol_PlotLines : ImGuiCol_PlotHistogram);
+                const ImU32 colorHovered = ::ImGui::GetColorU32((plot_type == ImGuiPlotType_Lines) ? ImGuiCol_PlotLinesHovered : ImGuiCol_PlotHistogramHovered);
 
                 for (int result = 0; result < resultsWidth; ++result)
                 {
@@ -183,9 +179,10 @@ namespace ImGui
             auto scaleSize = (scaleMaximum - scaleMinimum);
             for (float scale = 0.0f; scale <= 1.0f; scale += 0.2f)
             {
-                RenderTextClipped(ImVec2(frameBoundingBox.Min.x + style.FramePadding.x, frameBoundingBox.Min.y + style.FramePadding.y), 
-                                  ImVec2(frameBoundingBox.Max.x + style.FramePadding.x, frameBoundingBox.Max.y - style.FramePadding.y), 
-                                  ::Gek::CString::Format("%v", ((scaleSize * scale) + scaleMinimum)), nullptr, nullptr, ImVec2(0.0f, (1.0f - scale)));
+                ::ImGui::RenderTextClipped(
+                    ImVec2(frameBoundingBox.Min.x + style.FramePadding.x, frameBoundingBox.Min.y + style.FramePadding.y),
+                    ImVec2(frameBoundingBox.Max.x + style.FramePadding.x, frameBoundingBox.Max.y - style.FramePadding.y),
+                    String::Format("%v", ((scaleSize * scale) + scaleMinimum)).c_str(), nullptr, nullptr, ImVec2(0.0f, (1.0f - scale)));
             }
         }
 
@@ -198,5 +195,5 @@ namespace ImGui
         {
             PlotEx(ImGuiPlotType_Histogram, label, itemDataCallback, userData, itemCount, itemStartIndex, scaleMinimum, scaleMaximum, graphSize);
         }
-    }; // namespace Gek
-}; // namespace ImGui
+    }; // namespace GUI
+}; // namespace Gek

@@ -21,7 +21,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Filter, Plugin::Core::Log *, Video::Device *, Engine::Resources *, Plugin::Population *, WString)
+        GEK_CONTEXT_USER(Filter, Plugin::Core::Log *, Video::Device *, Engine::Resources *, Plugin::Population *, std::string)
             , public Engine::Filter
         {
         public:
@@ -56,7 +56,7 @@ namespace Gek
             Engine::Resources *resources = nullptr;
             Plugin::Population *population = nullptr;
 
-            WString filterName;
+            std::string filterName;
 
             Video::BufferPtr filterConstantBuffer;
 
@@ -65,7 +65,7 @@ namespace Gek
             std::vector<PassData> passList;
 
         public:
-            Filter(Context *context, Plugin::Core::Log *log, Video::Device *videoDevice, Engine::Resources *resources, Plugin::Population *population, WString filterName)
+            Filter(Context *context, Plugin::Core::Log *log, Video::Device *videoDevice, Engine::Resources *resources, Plugin::Population *population, std::string filterName)
                 : ContextRegistration(context)
 				, log(log)
                 , videoDevice(videoDevice)
@@ -84,12 +84,12 @@ namespace Gek
                 constantBufferDescription.count = 1;
                 constantBufferDescription.type = Video::Buffer::Description::Type::Constant;
                 filterConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
-                filterConstantBuffer->setName(WString::Format(L"%v:filterConstantBuffer", filterName));
+                filterConstantBuffer->setName(String::Format("%v:filterConstantBuffer", filterName));
             }
 
             void reload(void)
             {
-				log->message("Filter", Plugin::Core::Log::Type::Message, "Loading filter: %v", filterName);
+				log->message("Filter"s, Plugin::Core::Log::Type::Message, "Loading filter: %v", filterName);
 				
 				passList.clear();
 
@@ -99,13 +99,13 @@ namespace Gek
                 depthState = resources->createDepthState(Video::DepthStateInformation());
                 renderState = resources->createRenderState(Video::RenderStateInformation());
 
-                const JSON::Object filterNode = JSON::Load(getContext()->getRootFileName(L"data", L"filters", filterName).withExtension(L".json"));
-                if (!filterNode.has_member(L"passes"))
+                const JSON::Object filterNode = JSON::Load(getContext()->getRootFileName("data"s, "filters"s, filterName).withExtension(".json"s));
+                if (!filterNode.has_member("passes"s))
                 {
                     throw MissingParameter("Shader requiredspass list");
                 }
 
-                auto &passesNode = filterNode.get(L"passes");
+                auto &passesNode = filterNode.get("passes"s);
                 if (!passesNode.is_array())
                 {
                     throw InvalidParameter("Pass list must be an array");
@@ -113,21 +113,21 @@ namespace Gek
 
                 auto evaluate = [&](const JSON::Object &data, float defaultValue) -> float
                 {
-                    WString value(data.to_string());
-                    value.trim([](wchar_t ch) { return (ch != L'\"'); });
+                    std::string value(data.to_string());
+					String::Trim(value, [](char ch) { return (ch != '\"'); });
                     return population->getShuntingYard().evaluate(value, defaultValue);
                 };
 
-                std::unordered_map<WString, ResourceHandle> resourceMap;
-                std::unordered_map<WString, WString> resourceSemanticsMap;
+                std::unordered_map<std::string, ResourceHandle> resourceMap;
+                std::unordered_map<std::string, std::string> resourceSemanticsMap;
 
-                resourceMap[L"screen"] = resources->getResourceHandle(L"screen");
-                resourceMap[L"screenBuffer"] = resources->getResourceHandle(L"screenBuffer");
-                resourceSemanticsMap[L"screen"] = resourceSemanticsMap[L"screenBuffer"] = L"Texture2D<float3>";
+                resourceMap["screen"s] = resources->getResourceHandle("screen"s);
+                resourceMap["screenBuffer"s] = resources->getResourceHandle("screenBuffer"s);
+                resourceSemanticsMap["screen"s] = resourceSemanticsMap["screenBuffer"s] = "Texture2D<float3>"s;
 
-                if (filterNode.has_member(L"textures"))
+                if (filterNode.has_member("textures"s))
                 {
-                    auto &texturesNode = filterNode.get(L"textures");
+                    auto &texturesNode = filterNode.get("textures"s);
                     if (!texturesNode.is_object())
                     {
                         throw InvalidParameter("Texture list must be an object");
@@ -135,7 +135,7 @@ namespace Gek
 
                     for (auto &textureNode : texturesNode.members())
                     {
-                        WString textureName(textureNode.name());
+                        std::string textureName(textureNode.name());
                         auto &textureValue = textureNode.value();
                         if (resourceMap.count(textureName) > 0)
                         {
@@ -143,28 +143,28 @@ namespace Gek
                         }
 
                         ResourceHandle resource;
-                        if (textureValue.has_member(L"external"))
+                        if (textureValue.has_member("external"s))
                         {
-                            if (!textureValue.has_member(L"name"))
+                            if (!textureValue.has_member("name"s))
                             {
                                 throw MissingParameter("External texture requires a name");
                             }
 
-                            WString externalSource(textureValue.get(L"external").as_string());
-                            WString externalName(textureValue.get(L"name").as_string());
-                            if (externalSource.compareNoCase(L"shader") == 0)
+							std::string externalName(textureValue.get("name"s).as_string());
+							std::string externalSource(String::GetLower(textureValue.get("external"s).as_string()));
+							if (externalSource == "shader"s)
                             {
                                 resources->getShader(externalName, MaterialHandle());
-                                resource = resources->getResourceHandle(WString::Format(L"%v:%v:resource", textureName, externalName));
+                                resource = resources->getResourceHandle(String::Format("%v:%v:resource", textureName, externalName));
                             }
-                            else if (externalSource.compareNoCase(L"filter") == 0)
+                            else if (externalSource == "filter"s)
                             {
                                 resources->getFilter(externalName);
-                                resource = resources->getResourceHandle(WString::Format(L"%v:%v:resource", textureName, externalName));
+                                resource = resources->getResourceHandle(String::Format("%v:%v:resource", textureName, externalName));
                             }
-                            else if (externalSource.compareNoCase(L"file") == 0)
+                            else if (externalSource == "file"s)
                             {
-                                uint32_t flags = getTextureLoadFlags(textureValue.get(L"flags", L"0").as_string());
+                                uint32_t flags = getTextureLoadFlags(textureValue.get("flags"s, 0).as_string());
                                 resource = resources->loadTexture(externalName, flags);
                             }
                             else
@@ -172,23 +172,23 @@ namespace Gek
                                 throw InvalidParameter("Unknown source for external texture");
                             }
                         }
-                        else if (textureValue.has_member(L"file"))
+                        else if (textureValue.has_member("file"s))
                         {
-                            uint32_t flags = getTextureLoadFlags(textureValue.get(L"flags", L"0").as_string());
-                            resource = resources->loadTexture(textureValue.get(L"file").as_cstring(), flags);
+                            uint32_t flags = getTextureLoadFlags(textureValue.get("flags"s, 0).as_string());
+                            resource = resources->loadTexture(textureValue.get("file"s).as_cstring(), flags);
                         }
-                        else if (textureValue.has_member(L"format"))
+                        else if (textureValue.has_member("format"s))
                         {
                             Video::Texture::Description description(backBufferDescription);
-                            description.format = Video::getFormat(textureValue.get(L"format").as_string());
+                            description.format = Video::getFormat(textureValue.get("format"s).as_string());
                             if (description.format == Video::Format::Unknown)
                             {
                                 throw InvalidParameter("Invalid texture format specified");
                             }
 
-                            if (textureValue.has_member(L"size"))
+                            if (textureValue.has_member("size"s))
                             {
-                                auto &size = textureValue.get(L"size");
+                                auto &size = textureValue.get("size"s);
                                 if (size.is_array())
                                 {
                                     auto dimensions = size.size();
@@ -214,10 +214,10 @@ namespace Gek
                                 }
                             }
 
-                            description.sampleCount = textureValue.get(L"sampleCount", 1).as_uint();
-                            description.flags = getTextureFlags(textureValue.get(L"flags", L"0").as_string());
-                            description.mipMapCount = evaluate(textureValue.get(L"mipmaps", L"1"), 1);
-                            resource = resources->createTexture(WString::Format(L"%v:%v:resource", textureName, filterName), description);
+                            description.sampleCount = textureValue.get("sampleCount"s, 1).as_uint();
+                            description.flags = getTextureFlags(textureValue.get("flags"s, 0).as_string());
+                            description.mipMapCount = evaluate(textureValue.get("mipmaps"s, 1), 1);
+                            resource = resources->createTexture(String::Format("%v:%v:resource", textureName, filterName), description);
                         }
                         else
                         {
@@ -230,23 +230,23 @@ namespace Gek
                         {
                             if (description->depth > 1)
                             {
-                                resourceSemanticsMap[textureName] = WString::Format(L"Texture3D<%v>", getFormatSemantic(description->format));
+                                resourceSemanticsMap[textureName] = String::Format("Texture3D<%v>", getFormatSemantic(description->format));
                             }
                             else if (description->height > 1 || description->width == 1)
                             {
-                                resourceSemanticsMap[textureName] = WString::Format(L"Texture2D<%v>", getFormatSemantic(description->format));
+                                resourceSemanticsMap[textureName] = String::Format("Texture2D<%v>", getFormatSemantic(description->format));
                             }
                             else
                             {
-                                resourceSemanticsMap[textureName] = WString::Format(L"Texture1D<%v>", getFormatSemantic(description->format));
+                                resourceSemanticsMap[textureName] = String::Format("Texture1D<%v>", getFormatSemantic(description->format));
                             }
                         }
                     }
                 }
 
-                if (filterNode.has_member(L"buffers"))
+                if (filterNode.has_member("buffers"s))
                 {
-                    auto &buffersNode = filterNode.get(L"buffers");
+                    auto &buffersNode = filterNode.get("buffers"s);
                     if (!buffersNode.is_object())
                     {
                         throw InvalidParameter("Buffer list must be an object");
@@ -254,7 +254,7 @@ namespace Gek
 
                     for (auto &bufferNode : buffersNode.members())
                     {
-                        WString bufferName(bufferNode.name());
+                        std::string bufferName(bufferNode.name());
                         auto &bufferValue = bufferNode.value();
                         if (resourceMap.count(bufferName) > 0)
                         {
@@ -262,29 +262,29 @@ namespace Gek
                         }
 
                         ResourceHandle resource;
-                        if (bufferValue.has_member(L"source"))
+                        if (bufferValue.has_member("source"s))
                         {
-                            WString bufferSource(bufferValue.get(L"source").as_string());
+                            std::string bufferSource(bufferValue.get("source"s).as_string());
                             resources->getShader(bufferSource, MaterialHandle());
                             resources->getFilter(bufferSource);
-                            resource = resources->getResourceHandle(WString::Format(L"%v:%v:resource", bufferName, bufferSource));
+                            resource = resources->getResourceHandle(String::Format("%v:%v:resource", bufferName, bufferSource));
                         }
                         else
                         {
-                            if (!bufferValue.has_member(L"count"))
+                            if (!bufferValue.has_member("count"s))
                             {
                                 throw MissingParameter("Buffer must have a count value");
                             }
 
-                            uint32_t count = evaluate(bufferValue.get(L"count", L"0"), 0);
-                            uint32_t flags = getBufferFlags(bufferValue.get(L"flags", L"0").as_string());
-                            if (bufferValue.has_member(L"stride") || bufferValue.has_member(L"structure"))
+                            uint32_t count = evaluate(bufferValue.get("count"s, 0), 0);
+                            uint32_t flags = getBufferFlags(bufferValue.get("flags"s, 0).as_string());
+                            if (bufferValue.has_member("stride"s) || bufferValue.has_member("structure"s))
                             {
-                                if (!bufferValue.has_member(L"stride"))
+                                if (!bufferValue.has_member("stride"s))
                                 {
                                     throw MissingParameter("Structured buffer required a stride size");
                                 }
-                                else if (!bufferValue.has_member(L"structure"))
+                                else if (!bufferValue.has_member("structure"s))
                                 {
                                     throw MissingParameter("Structured buffer required a structure name");
                                 }
@@ -293,17 +293,17 @@ namespace Gek
                                 description.count = count;
                                 description.flags = flags;
                                 description.type = Video::Buffer::Description::Type::Structured;
-                                description.stride = evaluate(bufferValue.get(L"stride", L"0"), 0);
-                                resource = resources->createBuffer(WString::Format(L"%v:%v:buffer", bufferName, filterName), description);
+                                description.stride = evaluate(bufferValue.get("stride"s, 0), 0);
+                                resource = resources->createBuffer(String::Format("%v:%v:buffer", bufferName, filterName), description);
                             }
-                            else if (bufferValue.has_member(L"format"))
+                            else if (bufferValue.has_member("format"s))
                             {
                                 Video::Buffer::Description description;
                                 description.count = count;
                                 description.flags = flags;
                                 description.type = Video::Buffer::Description::Type::Raw;
-                                description.format = Video::getFormat(bufferValue.get(L"format").as_string());
-                                resource = resources->createBuffer(WString::Format(L"%v:%v:buffer", bufferName, filterName), description);
+                                description.format = Video::getFormat(bufferValue.get("format"s).as_string());
+                                resource = resources->createBuffer(String::Format("%v:%v:buffer", bufferName, filterName), description);
                             }
                             else
                             {
@@ -314,17 +314,17 @@ namespace Gek
                             auto description = resources->getBufferDescription(resource);
                             if (description)
                             {
-                                if (bufferValue.get(L"byteaddress", false).as_bool())
+                                if (bufferValue.get("byteaddress"s, false).as_bool())
                                 {
-                                    resourceSemanticsMap[bufferName] = L"ByteAddressBuffer";
+                                    resourceSemanticsMap[bufferName] = "ByteAddressBuffer";
                                 }
-                                else if (bufferValue.has_member(L"structure"))
+                                else if (bufferValue.has_member("structure"s))
                                 {
-                                    resourceSemanticsMap[bufferName].appendFormat(L"Buffer<%v>", bufferValue.get(L"structure").as_string());
+                                    resourceSemanticsMap[bufferName] += String::Format("Buffer<%v>", bufferValue.get("structure"s).as_string());
                                 }
                                 else
                                 {
-                                    resourceSemanticsMap[bufferName].appendFormat(L"Buffer<%v>", getFormatSemantic(description->format));
+                                    resourceSemanticsMap[bufferName] += String::Format("Buffer<%v>", getFormatSemantic(description->format));
                                 }
                             }
                         }
@@ -336,25 +336,25 @@ namespace Gek
 
                 for (auto &passNode : passesNode.elements())
                 {
-                    if (!passNode.has_member(L"program"))
+                    if (!passNode.has_member("program"s))
                     {
                         throw MissingParameter("Pass required program filename");
                     }
 
-                    if (!passNode.has_member(L"entry"))
+                    if (!passNode.has_member("entry"s))
                     {
                         throw MissingParameter("Pass required program entry point");
                     }
 
                     PassData &pass = *passData++;
 
-                    WString engineData;
-                    if (passNode.has_member(L"engineData"))
+                    std::string engineData;
+                    if (passNode.has_member("engineData"s))
                     {
-                        auto &engineDataNode = passNode.get(L"engineData");
+                        auto &engineDataNode = passNode.get("engineData"s);
                         if (engineDataNode.is_string())
                         {
-                            engineData = passNode.get(L"engineData").as_cstring();
+                            engineData = passNode.get("engineData"s).as_cstring();
                         }
                         else
                         {
@@ -362,10 +362,10 @@ namespace Gek
                         }
                     }
 
-                    if (passNode.has_member(L"mode"))
+                    if (passNode.has_member("mode"s))
                     {
-                        WString mode(passNode.get(L"mode").as_string());
-                        if (mode.compareNoCase(L"compute") == 0)
+						std::string mode(String::GetLower(passNode.get("mode"s).as_string()));
+                        if (mode == "compute"s)
                         {
                             pass.mode = Pass::Mode::Compute;
                         }
@@ -381,12 +381,12 @@ namespace Gek
 
                     if (pass.mode == Pass::Mode::Compute)
                     {
-                        if (!passNode.has_member(L"dispatch"))
+                        if (!passNode.has_member("dispatch"s))
                         {
                             throw MissingParameter("Compute pass requires dispatch member");
                         }
 
-                        auto &dispatch = passNode.get(L"dispatch");
+                        auto &dispatch = passNode.get("dispatch"s);
                         if (dispatch.is_array())
                         {
                             if (dispatch.size() != 3)
@@ -406,16 +406,16 @@ namespace Gek
                     else
                     {
                         engineData +=
-                            L"struct InputPixel\r\n" \
-                            L"{\r\n" \
-                            L"    float4 screen : SV_POSITION;\r\n" \
-                            L"    float2 texCoord : TEXCOORD0;\r\n" \
-                            L"};\r\n" \
-                            L"\r\n";
+                            "struct InputPixel\r\n" \
+                            "{\r\n" \
+                            "    float4 screen : SV_POSITION;\r\n" \
+                            "    float2 texCoord : TEXCOORD0;\r\n" \
+                            "};\r\n" \
+                            "\r\n";
 
-                        WString outputData;
+                        std::string outputData;
                         uint32_t currentStage = 0;
-                        std::unordered_map<WString, WString> renderTargetsMap = getAliasedMap(passNode, L"targets");
+                        std::unordered_map<std::string, std::string> renderTargetsMap = getAliasedMap(passNode, "targets"s);
                         if (!renderTargetsMap.empty())
                         {
                             for (auto &renderTarget : renderTargetsMap)
@@ -430,33 +430,33 @@ namespace Gek
                                 auto description = resources->getTextureDescription(resourceSearch->second);
                                 if (description)
                                 {
-                                    outputData.appendFormat(L"    %v %v : SV_TARGET%v;\r\n", getFormatSemantic(description->format), renderTarget.second, currentStage++);
+                                    outputData += String::Format("    %v %v : SV_TARGET%v;\r\n", getFormatSemantic(description->format), renderTarget.second, currentStage++);
                                 }
                             }
                         }
 
                         if (!outputData.empty())
                         {
-                            engineData.appendFormat(
-                                L"struct OutputPixel\r\n" \
-                                L"{\r\n" \
-                                L"%v" \
-                                L"};\r\n" \
-                                L"\r\n", outputData);
+                            engineData += String::Format(
+                                "struct OutputPixel\r\n" \
+                                "{\r\n" \
+                                "%v" \
+                                "};\r\n" \
+                                "\r\n", outputData);
                         }
 
                         Video::UnifiedBlendStateInformation blendStateInformation;
-                        if (passNode.has_member(L"blendState"))
+                        if (passNode.has_member("blendState"s))
                         {
-                            blendStateInformation.load(passNode.get(L"blendState"));
+                            blendStateInformation.load(passNode.get("blendState"s));
                         }
 
                         pass.blendState = resources->createBlendState(blendStateInformation);
                     }
 
-                    if (passNode.has_member(L"clear"))
+                    if (passNode.has_member("clear"s))
                     {
-                        auto &clearNode = passNode.get(L"clear");
+                        auto &clearNode = passNode.get("clear"s);
                         if (!clearNode.is_object())
                         {
                             throw InvalidParameter("Shader clear list must be an object");
@@ -472,13 +472,13 @@ namespace Gek
                             }
 
                             auto &clearTargetValue = clearTargetNode.value();
-                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue.get(L"type", L"").as_string()), clearTargetValue.get(L"value", L"").as_string())));
+                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue.get("type"s, String::Empty).as_string()), clearTargetValue.get("value"s, String::Empty).as_string())));
                         }
                     }
 
-                    if(passNode.has_member(L"generateMipMaps"))
+                    if(passNode.has_member("generateMipMaps"s))
                     {
-                        auto &generateMipMapsNode = passNode.get(L"generateMipMaps");
+                        auto &generateMipMapsNode = passNode.get("generateMipMaps"s);
                         if (!generateMipMapsNode.is_array())
                         {
                             throw InvalidParameter("Shader generateMipMaps list must be an array");
@@ -496,9 +496,9 @@ namespace Gek
                         }
                     }
 
-                    if (passNode.has_member(L"copy"))
+                    if (passNode.has_member("copy"s))
                     {
-                        auto &copyNode = passNode.get(L"copy");
+                        auto &copyNode = passNode.get("copy"s);
                         if (!copyNode.is_object())
                         {
                             throw InvalidParameter("Shader copy list must be an object");
@@ -522,9 +522,9 @@ namespace Gek
                         }
                     }
 
-                    if (passNode.has_member(L"resolve"))
+                    if (passNode.has_member("resolve"s))
                     {
-                        auto &resolveNode = passNode.get(L"resolve");
+                        auto &resolveNode = passNode.get("resolve"s);
                         if (!resolveNode.is_object())
                         {
                             throw InvalidParameter("Shader copy list must be an object");
@@ -548,9 +548,9 @@ namespace Gek
                         }
                     }
 
-                    WString resourceData;
+                    std::string resourceData;
                     uint32_t nextResourceStage = 0;
-                    std::unordered_map<WString, WString> resourceAliasMap = getAliasedMap(passNode, L"resources");
+                    std::unordered_map<std::string, std::string> resourceAliasMap = getAliasedMap(passNode, "resources"s);
                     for (auto &resourcePair : resourceAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);
@@ -563,28 +563,28 @@ namespace Gek
                         auto semanticsSearch = resourceSemanticsMap.find(resourcePair.first);
                         if (semanticsSearch != std::end(resourceSemanticsMap))
                         {
-                            resourceData.appendFormat(L"    %v %v : register(t%v);\r\n", semanticsSearch->second, resourcePair.second, currentStage);
+                            resourceData += String::Format("    %v %v : register(t%v);\r\n", semanticsSearch->second, resourcePair.second, currentStage);
                         }
                     }
 
                     if (!resourceData.empty())
                     {
-                        engineData.appendFormat(
-                            L"namespace Resources\r\n" \
-                            L"{\r\n" \
-                            L"%v" \
-                            L"};\r\n" \
-                            L"\r\n", resourceData);
+                        engineData += String::Format(
+                            "namespace Resources\r\n" \
+                            "{\r\n" \
+                            "%v" \
+                            "};\r\n" \
+                            "\r\n", resourceData);
                     }
 
-                    WString unorderedAccessData;
+                    std::string unorderedAccessData;
                     uint32_t nextUnorderedStage = 0;
                     if (pass.mode != Pass::Mode::Compute)
                     {
                         nextUnorderedStage = pass.renderTargetList.size();
                     }
 
-                    std::unordered_map<WString, WString> unorderedAccessAliasMap = getAliasedMap(passNode, L"unorderedAccess");
+                    std::unordered_map<std::string, std::string> unorderedAccessAliasMap = getAliasedMap(passNode, "unorderedAccess"s);
                     for (auto &resourcePair : unorderedAccessAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);
@@ -597,27 +597,27 @@ namespace Gek
                         auto semanticsSearch = resourceSemanticsMap.find(resourcePair.first);
                         if (semanticsSearch != std::end(resourceSemanticsMap))
                         {
-                            unorderedAccessData.appendFormat(L"    RW%v %v : register(u%v);\r\n", semanticsSearch->second, resourcePair.second, currentStage);
+                            unorderedAccessData += String::Format("    RW%v %v : register(u%v);\r\n", semanticsSearch->second, resourcePair.second, currentStage);
                         }
                     }
 
                     if (!unorderedAccessData.empty())
                     {
-                        engineData.appendFormat(
-                            L"namespace UnorderedAccess\r\n" \
-                            L"{\r\n" \
-                            L"%v" \
-                            L"};\r\n" \
-                            L"\r\n", unorderedAccessData);
+                        engineData += String::Format(
+                            "namespace UnorderedAccess\r\n" \
+                            "{\r\n" \
+                            "%v" \
+                            "};\r\n" \
+                            "\r\n", unorderedAccessData);
                     }
 
-                    WString entryPoint(passNode.get(L"entry").as_string());
-                    WString name(FileSystem::GetFileName(filterName, passNode.get(L"program").as_cstring()).withExtension(L".hlsl"));
+                    std::string entryPoint(passNode.get("entry"s).as_string());
+                    std::string name(FileSystem::GetFileName(filterName, passNode.get("program"s).as_cstring()).withExtension(".hlsl"s).u8string());
                     Video::PipelineType pipelineType = (pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel);
                     pass.program = resources->loadProgram(pipelineType, name, entryPoint, engineData);
                 }
 
-				log->message("Filter", Plugin::Core::Log::Type::Message, "Filter loaded successfully: %v", filterName);
+				log->message("Filter"s, Plugin::Core::Log::Type::Message, "Filter loaded successfully: %v", filterName);
 			}
 
             ~Filter(void)

@@ -30,11 +30,11 @@ extern "C" __declspec(dllexport) void initializePlugin(                         
     std::string lastClassName;
 
 #define GEK_CONTEXT_ADD_CLASS(CLASSNAME, CLASS)                                                                                     \
-    addClass(L#CLASSNAME, CLASS##CreateInstance);                                                                                   \
-    lastClassName = L#CLASSNAME;
+    addClass(#CLASSNAME, CLASS##CreateInstance);                                                                                   \
+    lastClassName = #CLASSNAME;
 
 #define GEK_CONTEXT_ADD_TYPE(TYPEID)                                                                                                \
-    addType(L#TYPEID, lastClassName);
+    addType(#TYPEID, lastClassName);
 
 #define GEK_CONTEXT_END()                                                                                                           \
 }

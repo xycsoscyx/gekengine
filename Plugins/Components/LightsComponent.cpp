@@ -18,16 +18,16 @@ namespace Gek
         // Plugin::Component
         void save(Components::PointLight const * const data, JSON::Object &componentData) const
         {
-            componentData.set(L"range", data->range);
-            componentData.set(L"radius", data->radius);
-            componentData.set(L"intensity", data->intensity);
+            componentData.set("range"s, data->range);
+            componentData.set("radius"s, data->radius);
+            componentData.set("intensity"s, data->intensity);
         }
 
         void load(Components::PointLight * const data, const JSON::Object &componentData)
         {
-            data->range = getValue(componentData, L"range", 0.0f);
-            data->radius = getValue(componentData, L"radius", 0.0f);
-            data->intensity = getValue(componentData, L"intensity", 0.0f);
+            data->range = getValue(componentData, "range"s, 0.0f);
+            data->radius = getValue(componentData, "radius"s, 0.0f);
+            data->intensity = getValue(componentData, "intensity"s, 0.0f);
 			std::cout << "Range: " << data->range << ", Radius: " << data->radius << ", Intensity: " << data->intensity;
         }
 
@@ -37,9 +37,9 @@ namespace Gek
             ImGui::SetCurrentContext(guiContext);
             auto &lightComponent = *dynamic_cast<Components::PointLight *>(data);
             bool changed =
-                ImGui::Gek::InputFloat("Range", &lightComponent.range, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                ImGui::Gek::InputFloat("Radius", &lightComponent.radius, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                ImGui::Gek::InputFloat("Intensity", &lightComponent.intensity, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
+                GUI::InputFloat("Range", &lightComponent.range, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                GUI::InputFloat("Radius", &lightComponent.radius, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                GUI::InputFloat("Intensity", &lightComponent.intensity, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
             ImGui::SetCurrentContext(nullptr);
             return changed;
         }
@@ -68,22 +68,22 @@ namespace Gek
         // Plugin::Component
         void save(Components::SpotLight const * const data, JSON::Object &componentData) const
         {
-            componentData.set(L"range", data->range);
-            componentData.set(L"radius", data->radius);
-            componentData.set(L"intensity", data->intensity);
-            componentData.set(L"innerAngle", Math::RadiansToDegrees(std::acos(data->innerAngle) * 2.0f));
-            componentData.set(L"outerAngle", Math::RadiansToDegrees(std::acos(data->outerAngle) * 2.0f));
-            componentData.set(L"coneFalloff", data->coneFalloff);
+            componentData.set("range"s, data->range);
+            componentData.set("radius"s, data->radius);
+            componentData.set("intensity"s, data->intensity);
+            componentData.set("innerAngle"s, Math::RadiansToDegrees(std::acos(data->innerAngle) * 2.0f));
+            componentData.set("outerAngle"s, Math::RadiansToDegrees(std::acos(data->outerAngle) * 2.0f));
+            componentData.set("coneFalloff"s, data->coneFalloff);
         }
 
         void load(Components::SpotLight * const data, const JSON::Object &componentData)
         {
-            data->range = getValue(componentData, L"range", 0.0f);
-            data->radius = getValue(componentData, L"radius", 0.0f);
-            data->intensity = getValue(componentData, L"intensity", 0.0f);
-            data->innerAngle = std::cos(Math::DegreesToRadians(getValue(componentData, L"innerAngle", 0.0f)));
-            data->outerAngle = std::cos(Math::DegreesToRadians(getValue(componentData, L"outerAngle", 0.0f)));
-            data->coneFalloff = getValue(componentData, L"coneFalloff", 0.0f);
+            data->range = getValue(componentData, "range"s, 0.0f);
+            data->radius = getValue(componentData, "radius"s, 0.0f);
+            data->intensity = getValue(componentData, "intensity"s, 0.0f);
+            data->innerAngle = std::cos(Math::DegreesToRadians(getValue(componentData, "innerAngle"s, 0.0f)));
+            data->outerAngle = std::cos(Math::DegreesToRadians(getValue(componentData, "outerAngle"s, 0.0f)));
+            data->coneFalloff = getValue(componentData, "coneFalloff"s, 0.0f);
         }
 
         // Edit::Component
@@ -92,12 +92,12 @@ namespace Gek
             ImGui::SetCurrentContext(guiContext);
             auto &lightComponent = *dynamic_cast<Components::SpotLight *>(data);
             bool changed = 
-                ImGui::Gek::InputFloat("Range", &lightComponent.range, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                ImGui::Gek::InputFloat("Radius", &lightComponent.radius, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                ImGui::Gek::InputFloat("Intensity", &lightComponent.intensity, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                ImGui::Gek::InputFloat("Inner Angle", &lightComponent.innerAngle, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                ImGui::Gek::InputFloat("Outer Angle", &lightComponent.outerAngle, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                ImGui::Gek::InputFloat("Cone Falloff", &lightComponent.coneFalloff, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
+                GUI::InputFloat("Range", &lightComponent.range, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                GUI::InputFloat("Radius", &lightComponent.radius, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                GUI::InputFloat("Intensity", &lightComponent.intensity, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                GUI::InputFloat("Inner Angle", &lightComponent.innerAngle, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                GUI::InputFloat("Outer Angle", &lightComponent.outerAngle, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                GUI::InputFloat("Cone Falloff", &lightComponent.coneFalloff, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
             ImGui::SetCurrentContext(nullptr);
             return changed;
         }
@@ -126,12 +126,12 @@ namespace Gek
         // Plugin::Component
         void save(Components::DirectionalLight const * const data, JSON::Object &componentData) const
         {
-            componentData.set(L"intensity", data->intensity);
+            componentData.set("intensity"s, data->intensity);
         }
 
         void load(Components::DirectionalLight * const data, const JSON::Object &componentData)
         {
-            data->intensity = getValue(componentData, L"intensity", 0.0f);
+            data->intensity = getValue(componentData, "intensity"s, 0.0f);
         }
 
         // Edit::Component
@@ -140,7 +140,7 @@ namespace Gek
             ImGui::SetCurrentContext(guiContext);
             auto &lightComponent = *dynamic_cast<Components::DirectionalLight *>(data);
             bool changed = 
-                ImGui::Gek::InputFloat("Intensity", &lightComponent.intensity, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
+                GUI::InputFloat("Intensity", &lightComponent.intensity, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
             ImGui::SetCurrentContext(nullptr);
             return false;
         }

@@ -21,12 +21,12 @@ namespace Gek
             // Plugin::Component
             void save(Components::Static const * const data, JSON::Object &componentData) const
             {
-                componentData.set(L"group", data->group);
+                componentData.set("group"s, data->group);
             }
 
             void load(Components::Static * const data, const JSON::Object &componentData)
             {
-                data->group = getValue(componentData, L"group", WString(L"default"));
+                data->group = getValue(componentData, "group"s, "default"s);
             }
 
             // Edit::Component
@@ -35,7 +35,7 @@ namespace Gek
                 ImGui::SetCurrentContext(guiContext);
                 auto &staticComponent = *dynamic_cast<Components::Static *>(data);
                 bool changed =
-                    ImGui::Gek::InputString("Group", staticComponent.group, ImGuiInputTextFlags_EnterReturnsTrue);
+                    GUI::InputString("Group", staticComponent.group, ImGuiInputTextFlags_EnterReturnsTrue);
                     ImGui::SetCurrentContext(nullptr);
                 return changed;
             }

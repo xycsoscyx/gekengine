@@ -19,7 +19,7 @@ namespace Gek
     {
         GEK_COMPONENT(Static)
         {
-            WString group;
+            std::string group;
         };
 
         GEK_COMPONENT(Physical)
@@ -78,7 +78,7 @@ namespace Gek
 
             virtual Math::Float3 getGravity(Math::Float3 const &position) = 0;
 
-            virtual uint32_t loadSurface(wchar_t const * const surfaceName) = 0;
+            virtual uint32_t loadSurface(std::string const &surfaceName) = 0;
             virtual const Surface &getSurface(uint32_t surfaceIndex) const = 0;
         };
     };

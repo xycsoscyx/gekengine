@@ -122,7 +122,7 @@ namespace Gek
 			}
 		};
 */
-		GEK_CONTEXT_USER(Device, HWND, WString)
+		GEK_CONTEXT_USER(Device, HWND, std::string)
 			, public Audio::Device
 		{
 		private:
@@ -131,23 +131,23 @@ namespace Gek
 			CComQIPtr<IDirectSoundBuffer, &IID_IDirectSoundBuffer> primarySoundBuffer;
 
 		public:
-			Device(Context *context, HWND window, WString device)
+			Device(Context *context, HWND window, std::string device)
 				: ContextRegistration(context)
 			{
 				GEK_REQUIRE(window);
 
 				GUID deviceGUID = DSDEVID_DefaultPlayback;
-				if (device)
+				if (!device.empty())
 				{
 					struct EnumData
 					{
-						WString device;
+						std::wstring device;
 						GUID *deviceGUID;
-					} enumerationData = { device, &deviceGUID };
+					} enumerationData = { String::Widen(String::GetLower(device)), &deviceGUID };
 					DirectSoundEnumerateW([](LPGUID deviceGUID, LPCWSTR description, LPCWSTR module, void *context) -> BOOL
 					{
 						EnumData *enumerationData = static_cast<EnumData *>(context);
-						if (enumerationData->device.compareNoCase(description) == 0)
+						if (enumerationData->device == String::GetLower(std::wstring(description)))
 						{
 							enumerationData->deviceGUID = deviceGUID;
 							return FALSE;

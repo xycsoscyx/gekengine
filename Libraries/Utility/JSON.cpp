@@ -9,10 +9,10 @@ namespace Gek
 
 		Object Load(FileSystem::Path const &filePath, const Object &defaultValue)
 		{
-			WString data(FileSystem::Load(filePath, CString::Empty));
-			std::wistringstream dataStream(data);
-			jsoncons::json_decoder<jsoncons::wjson> decoder;
-			jsoncons::wjson_reader reader(dataStream, decoder);
+			std::string data(FileSystem::Load(filePath, String::Empty));
+			std::istringstream dataStream(data);
+			jsoncons::json_decoder<jsoncons::json> decoder;
+			jsoncons::json_reader reader(dataStream, decoder);
 
 			std::error_code errorCode;
 			reader.read(errorCode);
@@ -30,9 +30,9 @@ namespace Gek
 
         void Save(FileSystem::Path const &filePath, Object const &object)
         {
-            std::wostringstream stream;;
+            std::ostringstream stream;
             stream << jsoncons::pretty_print(object);
-            FileSystem::Save(filePath, CString(stream.str().data()));
+            FileSystem::Save(filePath, stream.str());
         }
     }; // namespace JSON
 }; // namespace Gek

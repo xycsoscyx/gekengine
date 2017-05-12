@@ -28,14 +28,14 @@ namespace Gek
         // Plugin::Component
         void save(Components::Transform const * const data, JSON::Object &componentData) const
         {
-            componentData.set(L"position", data->position);
-            componentData.set(L"rotation", data->rotation);
+            componentData.set("position"s, data->position);
+            componentData.set("rotation"s, data->rotation);
         }
 
         void load(Components::Transform * const data, const JSON::Object &componentData)
         {
-            data->position = getValue(componentData, L"position", Math::Float3::Zero);
-            data->rotation = getValue(componentData, L"rotation", Math::Quaternion::Identity);
+            data->position = getValue(componentData, "position"s, Math::Float3::Zero);
+            data->rotation = getValue(componentData, "rotation"s, Math::Quaternion::Identity);
 			std::cout << "Position: " << data->position.x << ", " << data->position.y << ", " << data->position.z << std::endl;
 		}
 
@@ -44,7 +44,7 @@ namespace Gek
         {
             ImGui::SetCurrentContext(guiContext);
             auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
-            ImGui::Gek::InputFloat3("Position", transformComponent.position.data, 4, ImGuiInputTextFlags_ReadOnly);
+            GUI::InputFloat3("Position", transformComponent.position.data, 4, ImGuiInputTextFlags_ReadOnly);
 
             ImGui::Text("Rotation: ");
             ImGui::SameLine();
@@ -78,7 +78,7 @@ namespace Gek
                 ImGui::InputFloat4("##RotationQuaternion", transformComponent.rotation.data, 4, ImGuiInputTextFlags_ReadOnly);
             }
 
-            ImGui::Gek::InputFloat3("Scale", transformComponent.scale.data, 4, ImGuiInputTextFlags_ReadOnly);
+            GUI::InputFloat3("Scale", transformComponent.scale.data, 4, ImGuiInputTextFlags_ReadOnly);
 
             ImGui::SetCurrentContext(nullptr);
         }
@@ -87,7 +87,7 @@ namespace Gek
         {
             ImGui::SetCurrentContext(guiContext);
             auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
-            ImGui::Gek::InputFloat3("Position", transformComponent.position.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            GUI::InputFloat3("Position", transformComponent.position.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
 
             ImGui::Text("Rotation: ");
             ImGui::SameLine();
@@ -143,7 +143,7 @@ namespace Gek
                 currentGizmoOperation = ImGuizmo::ROTATE;
             }
 
-            ImGui::Gek::InputFloat3("Scale", transformComponent.scale.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            GUI::InputFloat3("Scale", transformComponent.scale.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
 
             ImGui::Separator();
             ImGui::Checkbox("Enable Snap", &useSnap);
@@ -152,17 +152,17 @@ namespace Gek
             switch (currentGizmoOperation)
             {
             case ImGuizmo::TRANSLATE:
-                ImGui::Gek::InputFloat3("Units", snapPosition.data, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                GUI::InputFloat3("Units", snapPosition.data, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 snap = snapPosition.data;
                 break;
 
             case ImGuizmo::ROTATE:
-                ImGui::Gek::InputFloat("Degrees", &snapRotation, 10.0f, 90.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                GUI::InputFloat("Degrees", &snapRotation, 10.0f, 90.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 snap = &snapRotation;
                 break;
 
             case ImGuizmo::SCALE:
-                ImGui::Gek::InputFloat("Size", &snapScale, (1.0f / 10.0f), 1.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                GUI::InputFloat("Size", &snapScale, (1.0f / 10.0f), 1.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 snap = &snapScale;
                 break;
             };
