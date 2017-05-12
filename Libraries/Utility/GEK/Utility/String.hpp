@@ -65,13 +65,13 @@ namespace Gek
 
         std::vector<std::string> Split(const std::string &string, char delimiter, bool clearSpaces = true);
 
-		inline std::string const &Combine(std::string const &string)
+		inline std::string_view const &Combine(std::string_view const &string)
 		{
 			return string;
 		}
 
 		template<typename... PARAMETERS>
-		std::string Combine(std::string const &string, std::string const &section, PARAMETERS&&... arguments)
+		std::string Combine(std::string_view const &string, std::string_view const &section, PARAMETERS&&... arguments)
 		{
 			return Combine((string + section), arguments...);
 		}
@@ -117,10 +117,10 @@ namespace Gek
             return result;
         }
 
-        bool Replace(std::string &string, std::string const &searchFor, std::string const &replaceWith);
+        bool Replace(std::string &string, std::string_view const &searchFor, std::string_view const &replaceWith);
 
-        std::wstring Widen(std::string const &string);
-        std::string Narrow(std::wstring const &string);
+        std::wstring Widen(std::string_view const &string);
+        std::string Narrow(std::wstring_view const &string);
 
         std::string Convert(bool const &value);
         std::string Convert(float const &value);

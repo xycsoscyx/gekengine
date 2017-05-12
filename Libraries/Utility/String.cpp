@@ -64,7 +64,7 @@ namespace Gek
             return tokens;
         }
 
-        bool Replace(std::string &string, std::string const &searchFor, std::string const &replaceWith)
+        bool Replace(std::string &string, std::string_view const &searchFor, std::string_view const &replaceWith)
         {
             bool did_replace = false;
 
@@ -79,12 +79,12 @@ namespace Gek
             return did_replace;
         }
 
-        std::wstring Widen(std::string const &string)
+        std::wstring Widen(std::string_view const &string)
         {
             return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>{}.from_bytes(string.data());
         }
 
-        std::string Narrow(std::wstring const &string)
+        std::string Narrow(std::wstring_view const &string)
         {
             return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>{}.to_bytes(string.data());
         }
