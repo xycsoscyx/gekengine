@@ -28,36 +28,36 @@ namespace Gek
             {
                 GEK_REQUIRE(resources);
 
-                const JSON::Object materialNode = JSON::Load(getContext()->getRootFileName("data"s, "materials"s, materialName).withExtension(".json"s));
+                const JSON::Object materialNode = JSON::Load(getContext()->getRootFileName("data", "materials", materialName).withExtension(".json"));
 
-                if (!materialNode.has_member("shaders"s))
+                if (!materialNode.has_member("shader"))
                 {
                     throw InvalidParameter("Missing shader node encountered");
                 }
 
-                auto &shaderNode = materialNode.get("shader"s);
+                auto &shaderNode = materialNode.get("shader");
                 if (!shaderNode.is_object())
                 {
                     throw InvalidParameter("Shader node must be an object");
                 }
 
-                if (!shaderNode.has_member("name"s))
+                if (!shaderNode.has_member("name"))
                 {
                     throw MissingParameter("Missing shader name encountered");
                 }
 
-                if (!shaderNode.has_member("passes"s))
+                if (!shaderNode.has_member("passes"))
                 {
                     throw MissingParameter("Missing pass list encountered");
                 }
 
-                Engine::Shader *shader = resources->getShader(shaderNode.get("name"s).as_cstring(), materialHandle);
+                Engine::Shader *shader = resources->getShader(shaderNode.get("name").as_cstring(), materialHandle);
                 if (!shader)
                 {
                     throw MissingParameter("Missing shader encountered");
                 }
 
-                auto &passesNode = shaderNode.get("passes"s);
+                auto &passesNode = shaderNode.get("passes");
                 for (auto &passNode : passesNode.members())
                 {
                     std::string passName(passNode.name());
@@ -66,10 +66,10 @@ namespace Gek
                     if (shaderMaterial)
                     {
                         auto &passData = passDataMap[shaderMaterial->identifier];
-                        if (passValue.has_member("renderState"s))
+                        if (passValue.has_member("renderState"))
                         {
                             Video::RenderStateInformation renderStateInformation;
-                            renderStateInformation.load(passValue.get("renderState"s));
+                            renderStateInformation.load(passValue.get("renderState"));
                             passData.renderState = resources->createRenderState(renderStateInformation);
                         }
                         else
@@ -77,12 +77,12 @@ namespace Gek
                             passData.renderState = shaderMaterial->renderState;
                         }
 
-                        if (!passValue.has_member("data"s))
+                        if (!passValue.has_member("data"))
                         {
                             throw MissingParameter("Missing pass data encountered");
                         }
 
-                        auto &passDataNode = passValue.get("data"s);
+                        auto &passDataNode = passValue.get("data");
                         for (const auto &initializer : shaderMaterial->initializerList)
                         {
                             ResourceHandle resourceHandle;
@@ -94,15 +94,15 @@ namespace Gek
                                     throw InvalidParameter("Resource list must be an object");
                                 }
 
-                                if (resourceNode.has_member("file"s))
+                                if (resourceNode.has_member("file"))
                                 {
-                                    std::string resourceFileName(resourceNode.get("file"s).as_string());
-                                    uint32_t flags = getTextureLoadFlags(resourceNode.get("flags"s, 0).as_string());
+                                    std::string resourceFileName(resourceNode.get("file").as_string());
+                                    uint32_t flags = getTextureLoadFlags(resourceNode.get("flags", 0).as_string());
                                     resourceHandle = resources->loadTexture(resourceFileName, flags);
                                 }
-                                else if (resourceNode.has_member("source"s))
+                                else if (resourceNode.has_member("source"))
                                 {
-                                    resourceHandle = resources->getResourceHandle(resourceNode.get("source"s).as_cstring());
+                                    resourceHandle = resources->getResourceHandle(resourceNode.get("source").as_cstring());
                                 }
                                 else
                                 {

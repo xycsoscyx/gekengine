@@ -28,7 +28,7 @@ namespace Gek
             {
                 FileSystem::Find(searchPath, [&](FileSystem::Path const &filePath) -> bool
                 {
-					if (filePath.isFile() && String::GetLower(filePath.getExtension()) == ".dll"s)
+					if (filePath.isFile() && String::GetLower(filePath.getExtension()) == ".dll")
 					{
 						HMODULE module = LoadLibrary(filePath.native().c_str());
 						if (module)

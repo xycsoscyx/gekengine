@@ -565,11 +565,11 @@ namespace Gek
             case Render::Format::R8G8B8A8_UNORM_SRGB:
             case Render::Format::R16G16B16A16_NORM:
             case Render::Format::R8G8B8A8_NORM:
-                return "float4"s;
+                return "float4";
 
             case Render::Format::R32G32B32_FLOAT:
             case Render::Format::R11G11B10_FLOAT:
-                return "float3"s;
+                return "float3";
 
             case Render::Format::R32G32_FLOAT:
             case Render::Format::R16G16_FLOAT:
@@ -577,7 +577,7 @@ namespace Gek
             case Render::Format::R8G8_UNORM:
             case Render::Format::R16G16_NORM:
             case Render::Format::R8G8_NORM:
-                return "float2"s;
+                return "float2";
 
             case Render::Format::R32_FLOAT:
             case Render::Format::R16_FLOAT:
@@ -589,44 +589,44 @@ namespace Gek
             case Render::Format::D24_UNORM_S8_UINT:
             case Render::Format::D32_FLOAT:
             case Render::Format::D16_UNORM:
-                return "float"s;
+                return "float";
 
             case Render::Format::R32G32B32A32_UINT:
             case Render::Format::R16G16B16A16_UINT:
             case Render::Format::R10G10B10A2_UINT:
-                return "uint4"s;
+                return "uint4";
 
             case Render::Format::R8G8B8A8_UINT:
             case Render::Format::R32G32B32_UINT:
-                return "uint3"s;
+                return "uint3";
 
             case Render::Format::R32G32_UINT:
             case Render::Format::R16G16_UINT:
             case Render::Format::R8G8_UINT:
-                return "uint2"s;
+                return "uint2";
 
             case Render::Format::R32_UINT:
             case Render::Format::R16_UINT:
             case Render::Format::R8_UINT:
-                return "uint"s;
+                return "uint";
 
             case Render::Format::R32G32B32A32_INT:
             case Render::Format::R16G16B16A16_INT:
             case Render::Format::R8G8B8A8_INT:
-                return "int4"s;
+                return "int4";
 
             case Render::Format::R32G32B32_INT:
-                return "int3"s;
+                return "int3";
 
             case Render::Format::R32G32_INT:
             case Render::Format::R16G16_INT:
             case Render::Format::R8G8_INT:
-                return "int2"s;
+                return "int2";
 
             case Render::Format::R32_INT:
             case Render::Format::R16_INT:
             case Render::Format::R8_INT:
-                return "int"s;
+                return "int";
             };
 
 			return String::Empty;
@@ -638,7 +638,7 @@ namespace Gek
         template <typename CLASS>
         void setDebugName(CComPtr<CLASS> &object, std::string const &name, std::string const &member = std::string())
         {
-			auto finalName(name + (member.empty() ? "::"s : String::Empty) + (member.empty() ? member : String::Empty));
+			auto finalName(name + (member.empty() ? "::" : String::Empty) + (member.empty() ? member : String::Empty));
             object->SetPrivateData(WKPDID_D3DDebugObjectName, UINT(finalName.size()), finalName.c_str());
         }
 
@@ -1355,7 +1355,7 @@ namespace Gek
                     "\r\n";
 
                 std::string shader(ConversionFunctions);
-                shader.append("struct Vertex\r\n{\r\n"s);
+                shader.append("struct Vertex\r\n{\r\n");
                 uint32_t vertexSemanticIndexList[static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count)] = { 0 };
                 for (const auto &vertexElement : pipelineStateInformation.vertexDeclaration)
                 {
@@ -1364,7 +1364,7 @@ namespace Gek
                     shader += String::Format("    %v %v : %v%v;\r\n", format, vertexElement.name, semantic, vertexSemanticIndexList[static_cast<uint8_t>(vertexElement.semantic)]++);
                 }
 
-                shader.append("};\r\n\r\nstruct Pixel\r\n{\r\n"s);
+                shader.append("};\r\n\r\nstruct Pixel\r\n{\r\n");
                 uint32_t pixelSemanticIndexList[static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count)] = { 0 };
                 for (const auto &pixelElement : pipelineStateInformation.pixelDeclaration)
                 {
@@ -1373,7 +1373,7 @@ namespace Gek
                     shader += String::Format("    %v %v : %v%v;\r\n", format, pixelElement.name, semantic, pixelSemanticIndexList[static_cast<uint8_t>(pixelElement.semantic)]++);
                 }
 
-                shader.append("};\r\n\r\nstruct Output\r\n{\r\n"s);
+                shader.append("};\r\n\r\nstruct Output\r\n{\r\n");
                 uint32_t renderTargetIndex = 0;
                 for (const auto &renderTarget : pipelineStateInformation.renderTargetList)
                 {
@@ -1381,7 +1381,7 @@ namespace Gek
                     shader += String::Format("    %v %v : SV_TARGET%v;\r\n", format, renderTarget.name, renderTargetIndex++);
                 }
 
-                shader.append("};\r\n\r\n"s);
+                shader.append("};\r\n\r\n");
                 return shader;
             }
 
@@ -1627,12 +1627,12 @@ namespace Gek
                         throw Render::CreateObjectFailed("Unable to create pipeline pixel shader");
                     }
 
-                    setDebugName(pipelineState->rasterizerState, name, "RasterizerState"s);
-                    setDebugName(pipelineState->depthStencilState, name, "DepthStencilState"s);
-                    setDebugName(pipelineState->blendState, name, "BlendState"s);
-                    setDebugName(pipelineState->vertexDeclaration, name, "InputLayout"s);
-                    setDebugName(pipelineState->vertexShader, name, "VertexShader"s);
-                    setDebugName(pipelineState->pixelShader, name, "PixelShader"s);
+                    setDebugName(pipelineState->rasterizerState, name, "RasterizerState");
+                    setDebugName(pipelineState->depthStencilState, name, "DepthStencilState");
+                    setDebugName(pipelineState->blendState, name, "BlendState");
+                    setDebugName(pipelineState->vertexDeclaration, name, "InputLayout");
+                    setDebugName(pipelineState->vertexShader, name, "VertexShader");
+                    setDebugName(pipelineState->pixelShader, name, "PixelShader");
                     return pipelineState;
                 });
             }
@@ -2125,23 +2125,23 @@ namespace Gek
 
                     std::string extension(String::GetLower(filePath.getExtension()));
                     std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
-                    if (extension == ".dds"s)
+                    if (extension == ".dds")
                     {
                         load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromDDSMemory(buffer.data(), buffer.size(), 0, nullptr, image); };
                     }
-                    else if (extension == ".tga"s)
+                    else if (extension == ".tga")
                     {
                         load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromTGAMemory(buffer.data(), buffer.size(), nullptr, image); };
                     }
-                    else if (extension == ".png"s)
+                    else if (extension == ".png")
                     {
                         load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_PNG, nullptr, image); };
                     }
-                    else if (extension == ".bmp"s)
+                    else if (extension == ".bmp")
                     {
                         load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_BMP, nullptr, image); };
                     }
-                    else if (extension == ".jpg"s || extension == ".jpeg"s)
+                    else if (extension == ".jpg" || extension == ".jpeg")
                     {
                         load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, nullptr, image); };
                     }
@@ -2173,7 +2173,7 @@ namespace Gek
                     }
 
 					setDebugName(d3dResource, (name.empty() ? filePath.u8string() : name));
-                    setDebugName(d3dShaderResourceView, (name.empty() ? filePath.u8string() : name), "ShaderResourceView"s);
+                    setDebugName(d3dShaderResourceView, (name.empty() ? filePath.u8string() : name), "ShaderResourceView");
                     shaderResourceViewCache.set(handle, d3dShaderResourceView);
 
                     Render::TextureDescription description;

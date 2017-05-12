@@ -7,24 +7,8 @@
 
 using namespace Gek;
 
-void test(std::string const &test)
-{
-	std::cout << test;
-}
-
-template <typename... PARAMETERS>
-void vtest(const PARAMETERS&... values)
-{
-	test(values...);
-}
-
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ wchar_t *strCommandLine, _In_ int nCmdShow)
 {
-	vtest("test");
-	vtest("test"s);
-	vtest(u8"test");
-	vtest(u8"test"s);
-
 	AllocConsole();
 	freopen("CONOUT$", "w", stdout);
 	freopen("CONOUT$", "w", stderr);
@@ -40,7 +24,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         ContextPtr context(Context::Create(rootPath, searchPathList));
         if (true)
         {
-            Plugin::CorePtr core(context->createClass<Plugin::Core>("Engine::Core"s, (Window *)nullptr));
+            Plugin::CorePtr core(context->createClass<Plugin::Core>("Engine::Core", (Window *)nullptr));
             while (core->update())
             {
             };

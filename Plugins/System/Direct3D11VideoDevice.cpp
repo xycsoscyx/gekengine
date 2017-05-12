@@ -2373,16 +2373,16 @@ namespace Gek
                 switch (pipelineType)
                 {
                 case Video::PipelineType::Compute:
-                    return compileProgram(name, "cs_5_0"s, uncompiledProgram, entryFunction);
+                    return compileProgram(name, "cs_5_0", uncompiledProgram, entryFunction);
 
                 case Video::PipelineType::Vertex:
-                    return compileProgram(name, "vs_5_0"s, uncompiledProgram, entryFunction);
+                    return compileProgram(name, "vs_5_0", uncompiledProgram, entryFunction);
 
                 case Video::PipelineType::Geometry:
-                    return compileProgram(name, "gs_5_0"s, uncompiledProgram, entryFunction);
+                    return compileProgram(name, "gs_5_0", uncompiledProgram, entryFunction);
 
                 case Video::PipelineType::Pixel:
-                    return compileProgram(name, "ps_5_0"s, uncompiledProgram, entryFunction);
+                    return compileProgram(name, "ps_5_0", uncompiledProgram, entryFunction);
                 };
 
                 throw Video::CreateObjectFailed("Unknown program pipline encountered");
@@ -2607,23 +2607,23 @@ namespace Gek
 
 				std::string extension(String::GetLower(filePath.getExtension()));
                 std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
-                if (extension == ".dds"s)
+                if (extension == ".dds")
                 {
                     load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromDDSMemory(buffer.data(), buffer.size(), 0, nullptr, image); };
                 }
-                else if (extension == ".tga"s)
+                else if (extension == ".tga")
                 {
                     load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromTGAMemory(buffer.data(), buffer.size(), nullptr, image); };
                 }
-                else if (extension == ".png"s)
+                else if (extension == ".png")
                 {
                     load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_PNG, nullptr, image); };
                 }
-                else if (extension == ".bmp"s)
+                else if (extension == ".bmp")
                 {
                     load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_BMP, nullptr, image); };
                 }
-                else if (extension == ".jpg"s || extension == ".jpeg"s)
+                else if (extension == ".jpg" || extension == ".jpeg")
                 {
                     load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, nullptr, image); };
                 }
@@ -2670,23 +2670,23 @@ namespace Gek
 
 				std::string extension(String::GetLower(filePath.getExtension()));
 				std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::TexMetadata &)> getMetadata;
-                if (extension == ".dds"s)
+                if (extension == ".dds")
                 {
                     getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromDDSMemory(buffer.data(), buffer.size(), 0, metadata); };
                 }
-                else if (extension == ".tga"s)
+                else if (extension == ".tga")
                 {
                     getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromTGAMemory(buffer.data(), buffer.size(), metadata); };
                 }
-                else if (extension == ".png"s)
+                else if (extension == ".png")
                 {
                     getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_PNG, metadata); };
                 }
-                else if (extension == ".bmp"s)
+                else if (extension == ".bmp")
                 {
                     getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_BMP, metadata); };
                 }
-                else if (extension == ".jpg"s || extension == ".jpeg"s)
+                else if (extension == ".jpg" || extension == ".jpeg")
                 {
                     getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, metadata); };
                 }

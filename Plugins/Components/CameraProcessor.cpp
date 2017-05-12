@@ -37,18 +37,18 @@ namespace Gek
         // Plugin::Component
         void save(Components::FirstPersonCamera const * const data, JSON::Object &componentData) const
         {
-            componentData.set("fieldOfView"s, Math::RadiansToDegrees(data->fieldOfView));
-            componentData.set("nearClip"s, data->nearClip);
-            componentData.set("farClip"s, data->farClip);
-            componentData.set("target"s, data->target);
+            componentData.set("fieldOfView", Math::RadiansToDegrees(data->fieldOfView));
+            componentData.set("nearClip", data->nearClip);
+            componentData.set("farClip", data->farClip);
+            componentData.set("target", data->target);
         }
 
         void load(Components::FirstPersonCamera * const data, const JSON::Object &componentData)
         {
-            data->fieldOfView = Math::DegreesToRadians(getValue(componentData, "fieldOfView"s, 90.0f));
-            data->nearClip = getValue(componentData, "nearClip"s, 1.0f);
-            data->farClip = getValue(componentData, "farClip"s, 100.0f);
-            data->target = getValue(componentData, "target"s, std::string());
+            data->fieldOfView = Math::DegreesToRadians(getValue(componentData, "fieldOfView", 90.0f));
+            data->nearClip = getValue(componentData, "nearClip", 1.0f);
+            data->farClip = getValue(componentData, "farClip", 100.0f);
+            data->target = getValue(componentData, "target", std::string());
         }
 
         // Edit::Component

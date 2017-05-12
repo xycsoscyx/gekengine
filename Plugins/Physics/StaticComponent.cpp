@@ -21,12 +21,13 @@ namespace Gek
             // Plugin::Component
             void save(Components::Static const * const data, JSON::Object &componentData) const
             {
-                componentData.set("group"s, data->group);
+                componentData.set("group", data->group);
             }
 
             void load(Components::Static * const data, const JSON::Object &componentData)
             {
-                data->group = getValue(componentData, "group"s, "default"s);
+				static const std::string DefaultGroup("default");
+                data->group = getValue(componentData, "group", DefaultGroup);
             }
 
             // Edit::Component

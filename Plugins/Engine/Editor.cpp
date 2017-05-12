@@ -55,9 +55,9 @@ namespace Gek
                 population->onAction.connect<Editor, &Editor::onAction>(this);
                 population->onUpdate[90].connect<Editor, &Editor::onUpdate>(this);
 
-                auto baseFileName(getContext()->getRootFileName("data"s, "gui"s));
-                deleteTexture = core->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, "delete.png"s), 0);
-                populationButton = core->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, "population.png"s), 0);
+                auto baseFileName(getContext()->getRootFileName("data", "gui"));
+                deleteTexture = core->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, "delete.png"), 0);
+                populationButton = core->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, "population.png"), 0);
 
                 core->getPanelManager()->getPane(ImGui::PanelManager::RIGHT)->addButtonAndWindow(
                     ImGui::Toolbutton("Population", (Video::Object *)populationButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
@@ -261,28 +261,28 @@ namespace Gek
                     return;
                 }
 
-                if (action.name == "turn"s)
+                if (action.name == "turn")
                 {
                     headingAngle += (action.value * 0.01f);
                 }
-                else if (action.name == "tilt"s)
+                else if (action.name == "tilt")
                 {
                     lookingAngle += (action.value * 0.01f);
                     lookingAngle = Math::Clamp(lookingAngle, -Math::Pi * 0.5f, Math::Pi * 0.5f);
                 }
-                else if (action.name == "move_forward"s)
+                else if (action.name == "move_forward")
                 {
                     moveForward = action.state;
                 }
-                else if (action.name == "move_backward"s)
+                else if (action.name == "move_backward")
                 {
                     moveBackward = action.state;
                 }
-                else if (action.name == "strafe_left"s)
+                else if (action.name == "strafe_left")
                 {
                     strafeLeft = action.state;
                 }
-                else if (action.name == "strafe_right"s)
+                else if (action.name == "strafe_right")
                 {
                     strafeRight = action.state;
                 }
@@ -304,8 +304,8 @@ namespace Gek
                     auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
 
                     std::vector<std::string> filters = {
-                        "tonemap"s,
-                        "antialiass"s,
+                        "tonemap",
+                        "antialiass",
                     };
 
                     renderer->queueCamera(viewMatrix, projectionMatrix, 0.5f, 200.0f, ResourceHandle());

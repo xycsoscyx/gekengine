@@ -157,19 +157,19 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                 throw std::exception("No arguments specified for command line parameter");
             }
 
-            if (arguments[0] == "-input"s && ++argumentIndex < argumentCount)
+            if (arguments[0] == "-input" && ++argumentIndex < argumentCount)
             {
                 fileNameInput = String::Narrow(argumentList[argumentIndex]);
             }
-            else if (arguments[0] == "-output"s && ++argumentIndex < argumentCount)
+            else if (arguments[0] == "-output" && ++argumentIndex < argumentCount)
             {
                 fileNameOutput = String::Narrow(argumentList[argumentIndex]);
             }
-            else if (arguments[0] == "-flipwinding"s)
+            else if (arguments[0] == "-flipwinding")
             {
                 flipWinding = true;
             }
-			else if (arguments[0] == "-unitsinfoot"s)
+			else if (arguments[0] == "-unitsinfoot")
 			{
 				if (arguments.size() != 2)
 				{
@@ -253,10 +253,10 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         aiReleaseImport(scene);
 
         auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
-        auto dataPath(FileSystem::GetFileName(rootPath, "Data"s));
+        auto dataPath(FileSystem::GetFileName(rootPath, "Data"));
 
-		std::string texturesPath(String::GetLower(FileSystem::GetFileName(dataPath, "Textures"s).u8string()));
-        auto materialsPath(FileSystem::GetFileName(dataPath, "Materials"s).u8string());
+		std::string texturesPath(String::GetLower(FileSystem::GetFileName(dataPath, "Textures").u8string()));
+        auto materialsPath(FileSystem::GetFileName(dataPath, "Materials").u8string());
 
         std::map<std::string, std::string> albedoToMaterialMap;
         std::function<bool(FileSystem::Path const &)> findMaterials;
@@ -271,17 +271,17 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                 try
                 {
                     const JSON::Object materialNode = JSON::Load(filePath);
-                    auto &shaderNode = materialNode["shader"s];
-                    auto &passesNode = shaderNode["passes"s];
-                    auto &solidNode = passesNode["solid"s];
-                    auto &dataNode = solidNode["data"s];
-                    auto &albedoNode = dataNode["albedo"s];
+                    auto &shaderNode = materialNode["shader"];
+                    auto &passesNode = shaderNode["passes"];
+                    auto &solidNode = passesNode["solid"];
+                    auto &dataNode = solidNode["data"];
+                    auto &albedoNode = dataNode["albedo"];
                     if (albedoNode.is_object())
                     {
-                        if (albedoNode.has_member("file"s))
+                        if (albedoNode.has_member("file"))
                         {
 							std::string materialName(String::GetLower(filePath.withoutExtension().u8string().substr(materialsPath.size() + 1)));
-                            std::string albedoPath(albedoNode["file"s].as_string());
+                            std::string albedoPath(albedoNode["file"].as_string());
                             albedoToMaterialMap[albedoPath] = materialName;
                         }
                     }
@@ -294,7 +294,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             return true;
         };
 
-        auto engineIndex = texturesPath.find("gek engine"s);
+        auto engineIndex = texturesPath.find("gek engine");
         if (engineIndex != std::string::npos)
         {
             // skip hard drive location, jump to known engine structure
@@ -311,11 +311,11 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         for (const auto &modelAlbedo : scenePartMap)
         {
 			std::string albedoName(String::GetLower(FileSystem::Path(modelAlbedo.first).withoutExtension().u8string()));
-            if (albedoName.find("textures\\"s) == 0)
+            if (albedoName.find("textures\\") == 0)
             {
                 albedoName = albedoName.substr(9);
             }
-            else if (albedoName.find("..\\textures\\"s) == 0)
+            else if (albedoName.find("..\\textures\\") == 0)
             {
                 albedoName = albedoName.substr(12);
             }

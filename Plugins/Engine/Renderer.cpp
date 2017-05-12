@@ -403,14 +403,14 @@ namespace Gek
 
             void initializeSystem(void)
             {
-                core->getLog()->message("Renderer"s, Plugin::Core::Log::Type::Message, "Initializing rendering system components");
+                core->getLog()->message("Renderer", Plugin::Core::Log::Type::Message, "Initializing rendering system components");
 
                 Video::SamplerStateInformation pointSamplerStateData;
                 pointSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapPoint;
                 pointSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
                 pointSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
                 pointSamplerState = videoDevice->createSamplerState(pointSamplerStateData);
-                pointSamplerState->setName("renderer:pointSamplerState"s);
+                pointSamplerState->setName("renderer:pointSamplerState");
 
                 Video::SamplerStateInformation linearClampSamplerStateData;
                 linearClampSamplerStateData.maximumAnisotropy = 8;
@@ -418,7 +418,7 @@ namespace Gek
                 linearClampSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
                 linearClampSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
                 linearClampSamplerState = videoDevice->createSamplerState(linearClampSamplerStateData);
-                linearClampSamplerState->setName("renderer:linearClampSamplerState"s);
+                linearClampSamplerState->setName("renderer:linearClampSamplerState");
 
                 Video::SamplerStateInformation linearWrapSamplerStateData;
                 linearWrapSamplerStateData.maximumAnisotropy = 8;
@@ -426,34 +426,34 @@ namespace Gek
                 linearWrapSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Wrap;
                 linearWrapSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
                 linearWrapSamplerState = videoDevice->createSamplerState(linearWrapSamplerStateData);
-                linearWrapSamplerState->setName("renderer:linearWrapSamplerState"s);
+                linearWrapSamplerState->setName("renderer:linearWrapSamplerState");
 
                 Video::UnifiedBlendStateInformation blendStateInformation;
                 blendState = videoDevice->createBlendState(blendStateInformation);
-                blendState->setName("renderer:blendState"s);
+                blendState->setName("renderer:blendState");
 
                 Video::RenderStateInformation renderStateInformation;
                 renderState = videoDevice->createRenderState(renderStateInformation);
-                renderState->setName("renderer:renderState"s);
+                renderState->setName("renderer:renderState");
 
                 Video::DepthStateInformation depthStateInformation;
                 depthState = videoDevice->createDepthState(depthStateInformation);
-                depthState->setName("renderer:depthState"s);
+                depthState->setName("renderer:depthState");
 
                 Video::Buffer::Description constantBufferDescription;
                 constantBufferDescription.stride = sizeof(EngineConstantData);
                 constantBufferDescription.count = 1;
                 constantBufferDescription.type = Video::Buffer::Description::Type::Constant;
                 engineConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
-                engineConstantBuffer->setName("renderer:engineConstantBuffer"s);
+                engineConstantBuffer->setName("renderer:engineConstantBuffer");
 
                 constantBufferDescription.stride = sizeof(CameraConstantData);
                 cameraConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
-                cameraConstantBuffer->setName("renderer:cameraConstantBuffer"s);
+                cameraConstantBuffer->setName("renderer:cameraConstantBuffer");
 
                 constantBufferDescription.stride = sizeof(LightConstantData);
                 lightConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
-                lightConstantBuffer->setName("renderer:lightConstantBuffer"s);
+                lightConstantBuffer->setName("renderer:lightConstantBuffer");
 
                 static const char program[] =
                     "struct Output" \
@@ -482,13 +482,13 @@ namespace Gek
                     "    return inputBuffer[input.screen.xy];" \
                     "}";
 
-                auto compiledVertexProgram = resources->compileProgram(Video::PipelineType::Vertex, "deferredVertexProgram"s, "mainVertexProgram"s, program);
+                auto compiledVertexProgram = resources->compileProgram(Video::PipelineType::Vertex, "deferredVertexProgram", "mainVertexProgram", program);
                 deferredVertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiledVertexProgram.data(), compiledVertexProgram.size());
-                deferredVertexProgram->setName("renderer:deferredVertexProgram"s);
+                deferredVertexProgram->setName("renderer:deferredVertexProgram");
 
-                auto compiledPixelProgram = resources->compileProgram(Video::PipelineType::Pixel, "deferredPixelProgram"s, "mainPixelProgram"s, program);
+                auto compiledPixelProgram = resources->compileProgram(Video::PipelineType::Pixel, "deferredPixelProgram", "mainPixelProgram", program);
                 deferredPixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiledPixelProgram.data(), compiledPixelProgram.size());
-                deferredPixelProgram->setName("renderer:deferredPixelProgram"s);
+                deferredPixelProgram->setName("renderer:deferredPixelProgram");
 
                 Video::Buffer::Description lightBufferDescription;
                 lightBufferDescription.type = Video::Buffer::Description::Type::Structured;
@@ -500,18 +500,18 @@ namespace Gek
                 tileBufferDescription.format = Video::Format::R32G32_UINT;
                 tileBufferDescription.count = GridSize;
                 tileOffsetCountBuffer = videoDevice->createBuffer(tileBufferDescription);
-                tileOffsetCountBuffer->setName("renderer:tileOffsetCountBuffer"s);
+                tileOffsetCountBuffer->setName("renderer:tileOffsetCountBuffer");
 
                 lightIndexList.reserve(GridSize * 10);
                 tileBufferDescription.format = Video::Format::R16_UINT;
                 tileBufferDescription.count = lightIndexList.capacity();
                 lightIndexBuffer = videoDevice->createBuffer(tileBufferDescription);
-                lightIndexBuffer->setName("renderer:lightIndexBuffer"s);
+                lightIndexBuffer->setName("renderer:lightIndexBuffer");
             }
 
             void initializeUI(void)
             {
-                core->getLog()->message("Renderer"s, Plugin::Core::Log::Type::Message, "Initializing user interface data");
+                core->getLog()->message("Renderer", Plugin::Core::Log::Type::Message, "Initializing user interface data");
 
                 static char const vertexShader[] =
                     "cbuffer vertexBuffer : register(b0)" \
@@ -542,9 +542,9 @@ namespace Gek
                     "    return output;" \
                     "}";
 
-                auto &compiled = resources->compileProgram(Video::PipelineType::Vertex, "uiVertexProgram"s, "main"s, vertexShader);
+                auto &compiled = resources->compileProgram(Video::PipelineType::Vertex, "uiVertexProgram", "main", vertexShader);
                 gui.vertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiled.data(), compiled.size());
-                gui.vertexProgram->setName("core:vertexProgram"s);
+                gui.vertexProgram->setName("core:vertexProgram");
 
                 std::vector<Video::InputElement> elementList;
 
@@ -562,14 +562,14 @@ namespace Gek
                 elementList.push_back(element);
 
                 gui.inputLayout = videoDevice->createInputLayout(elementList, compiled.data(), compiled.size());
-                gui.inputLayout->setName("core:inputLayout"s);
+                gui.inputLayout->setName("core:inputLayout");
 
                 Video::Buffer::Description constantBufferDescription;
                 constantBufferDescription.stride = sizeof(Math::Float4x4);
                 constantBufferDescription.count = 1;
                 constantBufferDescription.type = Video::Buffer::Description::Type::Constant;
                 gui.constantBuffer = videoDevice->createBuffer(constantBufferDescription);
-                gui.constantBuffer->setName("core:constantBuffer"s);
+                gui.constantBuffer->setName("core:constantBuffer");
 
                 static char const pixelShader[] =
                     "struct PixelInput" \
@@ -587,9 +587,9 @@ namespace Gek
                     "    return (input.color * uiTexture.Sample(pointSampler, input.texCoord));" \
                     "}";
 
-                compiled = resources->compileProgram(Video::PipelineType::Pixel, "uiPixelProgram"s, "main"s, pixelShader);
+                compiled = resources->compileProgram(Video::PipelineType::Pixel, "uiPixelProgram", "main", pixelShader);
                 gui.pixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiled.data(), compiled.size());
-                gui.pixelProgram->setName("core:pixelProgram"s);
+                gui.pixelProgram->setName("core:pixelProgram");
 
                 Video::UnifiedBlendStateInformation blendStateInformation;
                 blendStateInformation.enable = true;
@@ -600,7 +600,7 @@ namespace Gek
                 blendStateInformation.alphaDestination = Video::BlendStateInformation::Source::Zero;
                 blendStateInformation.alphaOperation = Video::BlendStateInformation::Operation::Add;
                 gui.blendState = videoDevice->createBlendState(blendStateInformation);
-                gui.blendState->setName("core:blendState"s);
+                gui.blendState->setName("core:blendState");
 
                 Video::RenderStateInformation renderStateInformation;
                 renderStateInformation.fillMode = Video::RenderStateInformation::FillMode::Solid;
@@ -608,14 +608,14 @@ namespace Gek
                 renderStateInformation.scissorEnable = true;
                 renderStateInformation.depthClipEnable = true;
                 gui.renderState = videoDevice->createRenderState(renderStateInformation);
-                gui.renderState->setName("core:renderState"s);
+                gui.renderState->setName("core:renderState");
 
                 Video::DepthStateInformation depthStateInformation;
                 depthStateInformation.enable = true;
                 depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
                 depthStateInformation.writeMask = Video::DepthStateInformation::Write::Zero;
                 gui.depthState = videoDevice->createDepthState(depthStateInformation);
-                gui.depthState->setName("core:depthState"s);
+                gui.depthState->setName("core:depthState");
 
                 ImGuiStyle& style = ImGui::GetStyle();
                 //ImGui::SetupImGuiStyle(false, 0.9f);
@@ -685,7 +685,7 @@ namespace Gek
             // ImGui
             void renderUI(ImDrawData *drawData)
             {
-                Plugin::Core::Log::Scope function(core->getLog(), "Render"s, "User Interface Time"s);
+                Plugin::Core::Log::Scope function(core->getLog(), "Render", "User Interface Time");
                 if (!gui.vertexBuffer || gui.vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
                 {
                     Video::Buffer::Description vertexBufferDescription;
@@ -1061,8 +1061,8 @@ namespace Gek
                 GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(population);
 
-                Plugin::Core::Log::Scope function(core->getLog(), "Render"s, "Update Time"s);
-                core->getLog()->setValue("Render"s, "Camera Count"s, cameraQueue.unsafe_size());
+                Plugin::Core::Log::Scope function(core->getLog(), "Render", "Update Time");
+                core->getLog()->setValue("Render", "Camera Count", cameraQueue.unsafe_size());
 
                 while (cameraQueue.try_pop(currentCamera))
                 {
@@ -1070,7 +1070,7 @@ namespace Gek
                     onQueueDrawCalls.emit(currentCamera.viewFrustum, currentCamera.viewMatrix, currentCamera.projectionMatrix);
                     if (!drawCallList.empty())
                     {
-                        core->getLog()->adjustValue("Render"s, "Draw Queue Count"s, drawCallList.size());
+                        core->getLog()->adjustValue("Render", "Draw Queue Count", drawCallList.size());
                         auto backBuffer = videoDevice->getBackBuffer();
                         auto width = backBuffer->getDescription().width;
                         auto height = backBuffer->getDescription().height;
@@ -1156,9 +1156,9 @@ namespace Gek
                             pointLightsDone.get();
                             spotLightsDone.get();
 
-                            core->getLog()->adjustValue("Render"s, "Directional Light Count"s, directionalLightData.lightList.size());
-                            core->getLog()->adjustValue("Render"s, "Point Light Count"s, pointLightData.lightList.size());
-                            core->getLog()->adjustValue("Render"s, "Spot Light Count"s, spotLightData.lightList.size());
+                            core->getLog()->adjustValue("Render", "Directional Light Count", directionalLightData.lightList.size());
+                            core->getLog()->adjustValue("Render", "Point Light Count", pointLightData.lightList.size());
+                            core->getLog()->adjustValue("Render", "Spot Light Count", spotLightData.lightList.size());
 
                             lightIndexList.clear();
                             lightIndexList.reserve(lightIndexCount);
@@ -1322,7 +1322,7 @@ namespace Gek
                         }
 
                         videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                        for (const auto &filterName : { "tonemap"s, "antialias"s })
+                        for (const auto &filterName : { "tonemap", "antialias" })
                         {
                             Engine::Filter * const filter = resources->getFilter(filterName);
                             if (filter)
@@ -1350,14 +1350,14 @@ namespace Gek
                         videoContext->computePipeline()->clearConstantBufferList(2, 0);
                         if (currentCamera.cameraTarget)
                         {
-                            renderOverlay(videoContext, resources->getResourceHandle("screen"s), currentCamera.cameraTarget);
+                            renderOverlay(videoContext, resources->getResourceHandle("screen"), currentCamera.cameraTarget);
                         }
                     }
                 };
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 imGuiIo.DeltaTime = frameTime;
-                core->getLog()->setValue("Render"s, "Frame Rate"s, (1.0f / frameTime));
+                core->getLog()->setValue("Render", "Frame Rate", (1.0f / frameTime));
 
                 auto backBuffer = videoDevice->getBackBuffer();
                 uint32_t width = backBuffer->getDescription().width;
@@ -1370,7 +1370,7 @@ namespace Gek
                 onShowUserInterface.emit(ImGui::GetCurrentContext());
                 ImGui::End();
 
-                renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle("screen"s), ResourceHandle());
+                renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle("screen"), ResourceHandle());
                 ImGui::Render();
 
                 videoDevice->present(false);

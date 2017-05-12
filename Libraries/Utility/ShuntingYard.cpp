@@ -44,28 +44,28 @@ namespace Gek
 	ShuntingYard::ShuntingYard(void)
         : mersineTwister(std::random_device()())
     {
-        variableMap["pi"s] = Math::Pi;
-        variableMap["tau"s] = Math::Tau;
-        variableMap["e"s] = Math::E;
-        variableMap["true"s] = 1.0f;
-        variableMap["false"s] = 0.0f;
+        variableMap["pi"] = Math::Pi;
+        variableMap["tau"] = Math::Tau;
+        variableMap["e"] = Math::E;
+        variableMap["true"] = 1.0f;
+        variableMap["false"] = 0.0f;
 
-        operationsMap.insert({ "^"s, { 4, Associations::Right, nullptr, [](float valueLeft, float valueRight) -> float
+        operationsMap.insert({ "^", { 4, Associations::Right, nullptr, [](float valueLeft, float valueRight) -> float
         {
             return std::pow(valueLeft, valueRight);
         } } });
 
-        operationsMap.insert({ "*"s, { 3, Associations::Left, nullptr, [](float valueLeft, float valueRight) -> float
+        operationsMap.insert({ "*", { 3, Associations::Left, nullptr, [](float valueLeft, float valueRight) -> float
         {
             return (valueLeft * valueRight);
         } } });
 
-        operationsMap.insert({ "/"s, { 3, Associations::Left, nullptr, [](float valueLeft, float valueRight) -> float
+        operationsMap.insert({ "/", { 3, Associations::Left, nullptr, [](float valueLeft, float valueRight) -> float
         {
             return (valueLeft / valueRight);
         } } });
 
-        operationsMap.insert({ "+"s, { 2, Associations::Left, [](float value) -> float
+        operationsMap.insert({ "+", { 2, Associations::Left, [](float value) -> float
         {
             return value;
         }, [](float valueLeft, float valueRight) -> float
@@ -73,7 +73,7 @@ namespace Gek
             return (valueLeft + valueRight);
         } } });
 
-        operationsMap.insert({ "-"s, { 2, Associations::Left, [](float value) -> float
+        operationsMap.insert({ "-", { 2, Associations::Left, [](float value) -> float
         {
             return -value;
         }, [](float valueLeft, float valueRight) -> float
@@ -81,75 +81,75 @@ namespace Gek
             return (valueLeft - valueRight);
         } } });
 
-        functionsMap.insert({ "sin"s, { 1, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "sin", { 1, [](std::stack<float> &stack) -> float
         {
             float value = stack.top();
             return std::sin(value);
         } } });
 
-        functionsMap.insert({ "cos"s, { 1, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "cos", { 1, [](std::stack<float> &stack) -> float
         {
             float value = PopTop(stack);
             return std::cos(value);
         } } });
 
-        functionsMap.insert({ "tan"s, { 1, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "tan", { 1, [](std::stack<float> &stack) -> float
         {
             float value = PopTop(stack);
             return std::tan(value);
         } } });
 
-        functionsMap.insert({ "asin"s, { 1, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "asin", { 1, [](std::stack<float> &stack) -> float
         {
             float value = PopTop(stack);
             return std::asin(value);
         } } });
 
-        functionsMap.insert({ "acos"s, { 1, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "acos", { 1, [](std::stack<float> &stack) -> float
         {
             float value = PopTop(stack);
             return std::acos(value);
         } } });
 
-        functionsMap.insert({ "atan"s, { 1, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "atan", { 1, [](std::stack<float> &stack) -> float
         {
             float value = PopTop(stack);
             return std::atan(value);
         } } });
 
-        functionsMap.insert({ "min"s, { 2, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "min", { 2, [](std::stack<float> &stack) -> float
         {
             float value2 = PopTop(stack);
             float value1 = PopTop(stack);
             return std::min(value1, value2);
         } } });
 
-        functionsMap.insert({ "max"s, { 2, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "max", { 2, [](std::stack<float> &stack) -> float
         {
             float value2 = PopTop(stack);
             float value1 = PopTop(stack);
             return std::max(value1, value2);
         } } });
 
-        functionsMap.insert({ "abs"s, { 1, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "abs", { 1, [](std::stack<float> &stack) -> float
         {
             float value = PopTop(stack);
             return std::abs(value);
         } } });
 
-        functionsMap.insert({ "cei"s, { 1, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "ceil", { 1, [](std::stack<float> &stack) -> float
         {
             float value = PopTop(stack);
             return std::ceil(value);
         } } });
 
-        functionsMap.insert({ "floor"s, { 1, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "floor", { 1, [](std::stack<float> &stack) -> float
         {
             float value = PopTop(stack);
             return std::floor(value);
         } } });
 
-        functionsMap.insert({ "lerp"s, { 3, [](std::stack<float> &stack) -> float
+        functionsMap.insert({ "lerp", { 3, [](std::stack<float> &stack) -> float
         {
             float value3 = PopTop(stack);
             float value2 = PopTop(stack);
@@ -157,7 +157,7 @@ namespace Gek
             return Math::Interpolate(value1, value2, value3);
         } } });
 
-        functionsMap.insert({ "random"s, { 2, [&](std::stack<float> &stack) -> float
+        functionsMap.insert({ "random", { 2, [&](std::stack<float> &stack) -> float
         {
             float value2 = PopTop(stack);
             float value1 = PopTop(stack);
@@ -295,17 +295,17 @@ namespace Gek
             // ) 2 or 2 2
             if (token.type == TokenType::Number && (previous.type == TokenType::Number || previous.type == TokenType::RightParenthesis))
             {
-                infixTokenList.push_back(Token(token.position, TokenType::BinaryOperation, "*"s));
+                infixTokenList.push_back(Token(token.position, TokenType::BinaryOperation, "*"));
             }
             // 2 ( or ) (
             else if (token.type == TokenType::LeftParenthesis && (previous.type == TokenType::Number || previous.type == TokenType::RightParenthesis))
             {
-                infixTokenList.push_back(Token(token.position, TokenType::BinaryOperation, "*"s));
+                infixTokenList.push_back(Token(token.position, TokenType::BinaryOperation, "*"));
             }
             // ) sin or 2 sin
             else if (token.type == TokenType::Function && (previous.type == TokenType::Number || previous.type == TokenType::RightParenthesis))
             {
-                infixTokenList.push_back(Token(token.position, TokenType::BinaryOperation, "*"s));
+                infixTokenList.push_back(Token(token.position, TokenType::BinaryOperation, "*"));
             }
         }
 

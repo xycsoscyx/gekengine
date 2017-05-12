@@ -118,15 +118,15 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                 throw std::exception("No arguments specified for command line parameter");
             }
 
-            if (arguments[0] == "-input"s && ++argumentIndex < argumentCount)
+            if (arguments[0] == "-input" && ++argumentIndex < argumentCount)
             {
                 fileNameInput = String::Narrow(argumentList[argumentIndex]);
             }
-            else if (arguments[0] == "-output"s && ++argumentIndex < argumentCount)
+            else if (arguments[0] == "-output" && ++argumentIndex < argumentCount)
             {
                 fileNameOutput = String::Narrow(argumentList[argumentIndex]);
             }
-			else if (arguments[0] == "-unitsinfoot"s)
+			else if (arguments[0] == "-unitsinfoot")
 			{
 				if (arguments.size() != 2)
 				{

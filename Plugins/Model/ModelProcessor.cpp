@@ -45,12 +45,12 @@ namespace Gek
         // Plugin::Component
         void save(Components::Model const * const data, JSON::Object &componentData) const
         {
-            componentData.set("name"s, data->name);
+            componentData.set("name", data->name);
         }
 
         void load(Components::Model * const data, const JSON::Object &componentData)
         {
-            data->name = getValue(componentData, "name"s, std::string());
+            data->name = getValue(componentData, "name", std::string());
         }
 
         // Edit::Component
@@ -180,7 +180,7 @@ namespace Gek
             GEK_REQUIRE(resources);
             GEK_REQUIRE(renderer);
 
-			log->message("Model"s, Plugin::Core::Log::Type::Message, "Initializing model system");
+			log->message("Model", Plugin::Core::Log::Type::Message, "Initializing model system");
 
             population->onEntityCreated.connect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
             population->onEntityDestroyed.connect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
@@ -188,7 +188,7 @@ namespace Gek
             population->onComponentRemoved.connect<ModelProcessor, &ModelProcessor::onComponentRemoved>(this);
             renderer->onQueueDrawCalls.connect<ModelProcessor, &ModelProcessor::onQueueDrawCalls>(this);
 
-            visual = resources->loadVisual("model"s);
+            visual = resources->loadVisual("model");
 
             Video::Buffer::Description instanceDescription;
             instanceDescription.stride = sizeof(Math::Float4x4);
@@ -196,7 +196,7 @@ namespace Gek
             instanceDescription.type = Video::Buffer::Description::Type::Vertex;
             instanceDescription.flags = Video::Buffer::Description::Flags::Mappable;
             instanceBuffer = videoDevice->createBuffer(instanceDescription);
-            instanceBuffer->setName("model:instances"s);
+            instanceBuffer->setName("model:instances");
         }
 
         ~ModelProcessor(void)
@@ -215,55 +215,55 @@ namespace Gek
             {
                 ProcessorMixin::addEntity(entity, [&](auto &data, auto &modelComponent, auto &transformComponent) -> void
                 {
-                    auto fileName(getContext()->getRootFileName("data"s, "models"s, modelComponent.name).withExtension(".gek"));
+                    auto fileName(getContext()->getRootFileName("data", "models", modelComponent.name).withExtension(".gek"));
                     auto pair = modelMap.insert(std::make_pair(GetHash(modelComponent.name), Model()));
                     if (pair.second)
                     {
-						log->message("Model"s, Plugin::Core::Log::Type::Message, "Queueing model for load: %v", modelComponent.name);
+						log->message("Model", Plugin::Core::Log::Type::Message, "Queueing model for load: %v", modelComponent.name);
 						loadPool.enqueue([this, name = modelComponent.name, fileName, &model = pair.first->second](void) -> void
                         {
-							log->message("Model"s, Plugin::Core::Log::Type::Message, "Reading model header: %v", name);
+							log->message("Model", Plugin::Core::Log::Type::Message, "Reading model header: %v", name);
 
 							static const std::vector<uint8_t> EmptyBuffer;
 							std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer, sizeof(Header)));
 							if (buffer.size() < sizeof(Header))
 							{
-								log->message("Model"s, Plugin::Core::Log::Type::Error, "Model file too small to contain header: %v", fileName);
+								log->message("Model", Plugin::Core::Log::Type::Error, "Model file too small to contain header: %v", fileName);
 								return;
 							}
 
                             Header *header = (Header *)buffer.data();
                             if (header->identifier != *(uint32_t *)"GEKX")
                             {
-								log->message("Model"s, Plugin::Core::Log::Type::Error, "Unknown model file identifier encountered");
+								log->message("Model", Plugin::Core::Log::Type::Error, "Unknown model file identifier encountered");
 								return;
                             }
 
                             if (header->type != 0)
                             {
-								log->message("Model"s, Plugin::Core::Log::Type::Error, "Unsupported model type encountered");
+								log->message("Model", Plugin::Core::Log::Type::Error, "Unsupported model type encountered");
 								return;
 							}
 
                             if (header->version != 6)
                             {
-								log->message("Model"s, Plugin::Core::Log::Type::Error, "Unsupported model version encountered");
+								log->message("Model", Plugin::Core::Log::Type::Error, "Unsupported model version encountered");
 								return;
 							}
 
                             model.boundingBox = header->boundingBox;
-							log->message("Model"s, Plugin::Core::Log::Type::Message, "Model: %v, %v parts", name, header->partCount);
+							log->message("Model", Plugin::Core::Log::Type::Message, "Model: %v, %v parts", name, header->partCount);
 
                             loadPool.enqueue([this, name = name, fileName, &model](void) -> void
                             {
-								log->message("Model"s, Plugin::Core::Log::Type::Message, "Loading model: %v", name);
+								log->message("Model", Plugin::Core::Log::Type::Message, "Loading model: %v", name);
 
 								std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer));
 
 								Header *header = (Header *)buffer.data();
 								if (buffer.size() < (sizeof(Header) + (sizeof(Header::Part) * header->partCount)))
 								{
-									log->message("Model"s, Plugin::Core::Log::Type::Error, "Model file too small to contain part headers: %v", fileName);
+									log->message("Model", Plugin::Core::Log::Type::Error, "Model file too small to contain part headers: %v", fileName);
 									return;
 								}
 
@@ -309,7 +309,7 @@ namespace Gek
                                     part.indexCount = partHeader.indexCount;
                                 }
 							
-								log->message("Model"s, Plugin::Core::Log::Type::Message, "Model successfully loaded: %v", name);
+								log->message("Model", Plugin::Core::Log::Type::Message, "Model successfully loaded: %v", name);
 							});
                         });
                     }
@@ -418,8 +418,8 @@ namespace Gek
                 }
             }
 
-			log->setValue("Model"s, "Entity Count"s, visibleEntities);
-			log->setValue("Model"s, "Model Count"s, visibleModels.size());
+			log->setValue("Model", "Entity Count", visibleEntities);
+			log->setValue("Model", "Model Count", visibleModels.size());
 
 			size_t maximumInstanceCount = 0;
             for (const auto &materialPair : materialMap)
@@ -479,7 +479,7 @@ namespace Gek
                 instanceDescription.type = Video::Buffer::Description::Type::Vertex;
                 instanceDescription.flags = Video::Buffer::Description::Flags::Mappable;
                 instanceBuffer = videoDevice->createBuffer(instanceDescription);
-                instanceBuffer->setName("model:instances"s);
+                instanceBuffer->setName("model:instances");
             }
         }
     };

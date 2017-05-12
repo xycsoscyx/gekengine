@@ -12,17 +12,17 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         std::cout << "GEK Material Creator" << std::endl;
 
         auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
-        auto dataPath(FileSystem::GetFileName(rootPath, "Data"s));
+        auto dataPath(FileSystem::GetFileName(rootPath, "Data"));
 
-		auto texturesPath(FileSystem::GetFileName(dataPath, "Textures"s).u8string());
-		auto materialsPath(FileSystem::GetFileName(dataPath, "Materials"s));
+		auto texturesPath(FileSystem::GetFileName(dataPath, "Textures").u8string());
+		auto materialsPath(FileSystem::GetFileName(dataPath, "Materials"));
 
 		std::function<bool(FileSystem::Path const &)> findMaterials;
 		findMaterials = [&](FileSystem::Path const &materialCollectionPath) -> bool
 		{
 			if (materialCollectionPath.isDirectory())
 			{
-				std::cout << "Collection Found: " << materialCollectionPath.c_str() << std::endl;
+				std::cout << "Collection Found: " << materialCollectionPath.u8string() << std::endl;
 				FileSystem::Find(materialCollectionPath, [&](FileSystem::Path const &textureSetPath) -> bool
 				{
 					if (textureSetPath.isDirectory())
@@ -37,31 +37,31 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                         {
                             uint32_t extensionImportance = 0;
 							std::string extension(String::GetLower(filePath.getExtension()));
-                            if (extension == ".json"s)
+                            if (extension == ".json")
                             {
                                 renderState = JSON::Load(filePath);
                             }
-                            else if (extension == ".dds"s)
+                            else if (extension == ".dds")
                             {
                                 extensionImportance = 0;
                             }
-                            else if (extension == ".png"s)
+                            else if (extension == ".png")
                             {
                                 extensionImportance = 1;
                             }
-                            else if (extension == ".tga"s)
+                            else if (extension == ".tga")
                             {
                                 extensionImportance = 2;
                             }
-                            else if (extension == ".jpg"s || extension == ".jpeg"s)
+                            else if (extension == ".jpg" || extension == ".jpeg")
                             {
                                 extensionImportance = 3;
                             }
-                            else if (extension == ".bmp"s)
+                            else if (extension == ".bmp")
                             {
                                 extensionImportance = 4;
                             }
-                            else if (extension == ".tif"s || extension == ".tiff"s)
+                            else if (extension == ".tif" || extension == ".tiff")
                             {
                                 extensionImportance = 5;
                             }
@@ -72,77 +72,77 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
                             std::string textureName(filePath.withoutExtension().u8string());
 							textureName = String::GetLower(textureName.substr(texturesPath.size() + 1));
-                            if (String::EndsWith(textureName, "basecolor"s) ||
-                                String::EndsWith(textureName, "base_color"s) ||
-                                String::EndsWith(textureName, "diffuse"s) ||
-                                String::EndsWith(textureName, "diffuse_s"s) ||
-                                String::EndsWith(textureName, "albedo"s) ||
-                                String::EndsWith(textureName, "albedo_s"s) ||
-                                String::EndsWith(textureName, "alb"s) ||
-                                String::EndsWith(textureName, "_d"s) ||
-                                String::EndsWith(textureName, "_c"s))
+                            if (String::EndsWith(textureName, "basecolor") ||
+                                String::EndsWith(textureName, "base_color") ||
+                                String::EndsWith(textureName, "diffuse") ||
+                                String::EndsWith(textureName, "diffuse_s") ||
+                                String::EndsWith(textureName, "albedo") ||
+                                String::EndsWith(textureName, "albedo_s") ||
+                                String::EndsWith(textureName, "alb") ||
+                                String::EndsWith(textureName, "_d") ||
+                                String::EndsWith(textureName, "_c"))
                             {
-                                fileMap["albedo"s][extensionImportance] = std::make_pair(filePath, textureName);
+                                fileMap["albedo"][extensionImportance] = std::make_pair(filePath, textureName);
                             }
-                            else if (String::EndsWith(textureName, "normal"s) ||
-                                String::EndsWith(textureName, "normalmap"s) ||
-                                String::EndsWith(textureName, "normalmap_s"s) ||
-                                String::EndsWith(textureName, "_n"s))
+                            else if (String::EndsWith(textureName, "normal") ||
+                                String::EndsWith(textureName, "normalmap") ||
+                                String::EndsWith(textureName, "normalmap_s") ||
+                                String::EndsWith(textureName, "_n"))
                             {
-                                fileMap["normal"s][extensionImportance] = std::make_pair(filePath, textureName);
+                                fileMap["normal"][extensionImportance] = std::make_pair(filePath, textureName);
                             }
-                            else if (String::EndsWith(textureName, "roughness"s) ||
-                                String::EndsWith(textureName, "roughness_s"s) ||
-                                String::EndsWith(textureName, "rough"s) ||
-                                String::EndsWith(textureName, "_r"s))
+                            else if (String::EndsWith(textureName, "roughness") ||
+                                String::EndsWith(textureName, "roughness_s") ||
+                                String::EndsWith(textureName, "rough") ||
+                                String::EndsWith(textureName, "_r"))
                             {
-                                fileMap["roughness"s][extensionImportance] = std::make_pair(filePath, textureName);
+                                fileMap["roughness"][extensionImportance] = std::make_pair(filePath, textureName);
                             }
-                            else if (String::EndsWith(textureName, "metalness"s) ||
-                                String::EndsWith(textureName, "metallic"s) ||
-                                String::EndsWith(textureName, "metal"s) ||
-                                String::EndsWith(textureName, "_m"s))
+                            else if (String::EndsWith(textureName, "metalness") ||
+                                String::EndsWith(textureName, "metallic") ||
+                                String::EndsWith(textureName, "metal") ||
+                                String::EndsWith(textureName, "_m"))
                             {
-                                fileMap["metallic"s][extensionImportance] = std::make_pair(filePath, textureName);
+                                fileMap["metallic"][extensionImportance] = std::make_pair(filePath, textureName);
                             }
 
                             return true;
                         });
 
-                        if (fileMap.count("albedo"s) > 0 && fileMap.count("normal"s) > 0)
+                        if (fileMap.count("albedo") > 0 && fileMap.count("normal") > 0)
                         {
                             JSON::Object dataNode;
                             for(auto &mapSearch : fileMap)
                             {
                                 JSON::Object node;
-                                node["file"s] = std::begin(mapSearch.second)->second.second;
-                                if (mapSearch.first == "albedo"s)
+                                node["file"] = std::begin(mapSearch.second)->second.second;
+                                if (mapSearch.first == "albedo")
                                 {
-                                    node["flags"s] = "sRGB"s;
+                                    node["flags"] = "sRGB";
                                 }
 
                                 dataNode.set(mapSearch.first, node);
                             }
 
-                            auto materialPath(FileSystem::GetFileName(materialsPath, materialName).withExtension(".json"s));
+                            auto materialPath(FileSystem::GetFileName(materialsPath, materialName).withExtension(".json"));
                             FileSystem::MakeDirectoryChain(materialPath.getParentPath());
 
                             JSON::Object solidNode;
-                            solidNode.set("data"s, dataNode);
+                            solidNode.set("data", dataNode);
                             if (!renderState.is_null())
                             {
-                                solidNode.set("renderState"s, renderState);
+                                solidNode.set("renderState", renderState);
                             }
 
                             JSON::Object passesNode;
-                            passesNode.set("solid"s, solidNode);
+                            passesNode.set("solid", solidNode);
 
                             JSON::Object shaderNode;
-                            shaderNode.set("passes"s, passesNode);
-                            shaderNode.set("name"s, "solid"s);
+                            shaderNode.set("passes", passesNode);
+                            shaderNode.set("name", "solid");
 
                             JSON::Object materialNode;
-                            materialNode.set("shader"s, shaderNode);
+                            materialNode.set("shader", shaderNode);
                             JSON::Save(materialPath, materialNode);
                         }
 					}

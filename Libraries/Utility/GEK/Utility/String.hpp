@@ -7,14 +7,13 @@
 /// Last Changed: $Date:   Thu Oct 27 08:51:53 2016 -0700 $
 #pragma once
 
+#include <string_view>
 #include <functional>
 #include <algorithm>
 #include <sstream>
 #include <codecvt>
 #include <string>
 #include <vector>
-
-using namespace std::string_literals;
 
 namespace Gek
 {
@@ -57,8 +56,7 @@ namespace Gek
             return transformed;
         }
 
-		template <typename CONTAINER>
-		bool EndsWith(CONTAINER const & value, CONTAINER const & ending)
+		inline bool EndsWith(std::string_view const & value, std::string_view const & ending)
 		{
 			return ((ending.size() > value.size()) ? false : std::equal(std::rbegin(ending), std::rend(ending), std::rbegin(value)));
 		}

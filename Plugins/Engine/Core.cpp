@@ -80,14 +80,14 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(_window)
             {
-                getLog()->message("Core"s, Log::Type::Message, "Starting GEK Engine"s);
+                getLog()->message("Core", Log::Type::Message, "Starting GEK Engine");
 
                 if (!window)
                 {
                     Window::Description description;
-                    description.className = "GEK_Engine_Demo"s;
-                    description.windowName = "GEK Engine Demo"s;
-                    window = getContext()->createClass<Window>("Default::System::Window"s, description);
+                    description.className = "GEK_Engine_Demo";
+                    description.windowName = "GEK Engine Demo";
+                    window = getContext()->createClass<Window>("Default::System::Window", description);
                 }
 
                 window->onClose.connect<Core, &Core::onClose>(this);
@@ -101,13 +101,13 @@ namespace Gek
                 window->onMousePosition.connect<Core, &Core::onMousePosition>(this);
                 window->onMouseMovement.connect<Core, &Core::onMouseMovement>(this);
 
-                configuration = JSON::Load(getContext()->getRootFileName("config.json"s));
-                if (!configuration.has_member("display"s) || !configuration.get("display"s).has_member("mode"s))
+                configuration = JSON::Load(getContext()->getRootFileName("config.json"));
+                if (!configuration.has_member("display") || !configuration.get("display").has_member("mode"))
                 {
-                    configuration["display"s]["mode"s] = 0;
+                    configuration["display"]["mode"] = 0;
                 }
 
-                previousDisplayMode = currentDisplayMode = configuration["display"s]["mode"s].as_uint();
+                previousDisplayMode = currentDisplayMode = configuration["display"]["mode"].as_uint();
 
                 HRESULT resultValue = CoInitialize(nullptr);
                 if (FAILED(resultValue))
@@ -116,7 +116,7 @@ namespace Gek
                 }
 
                 Video::Device::Description deviceDescription;
-                videoDevice = getContext()->createClass<Video::Device>("Default::Device::Video"s, window.get(), deviceDescription);
+                videoDevice = getContext()->createClass<Video::Device>("Default::Device::Video", window.get(), deviceDescription);
                 displayModeList = videoDevice->getDisplayModeList(deviceDescription.displayFormat);
                 for (const auto &displayMode : displayModeList)
                 {
@@ -124,25 +124,25 @@ namespace Gek
                     switch (displayMode.aspectRatio)
                     {
                     case Video::DisplayMode::AspectRatio::_4x3:
-                        displayModeString.append(" (4x3)"s);
+                        displayModeString.append(" (4x3)");
                         break;
 
                     case Video::DisplayMode::AspectRatio::_16x9:
-                        displayModeString.append(" (16x9)"s);
+                        displayModeString.append(" (16x9)");
                         break;
 
                     case Video::DisplayMode::AspectRatio::_16x10:
-                        displayModeString.append(" (16x10)"s);
+                        displayModeString.append(" (16x10)");
                         break;
                     };
 
                     displayModeStringList.push_back(displayModeString);
                 }
 
-                auto baseFileName(getContext()->getRootFileName("data"s, "gui"s));
-                consoleButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, "console.png"s), 0);
-                performanceButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, "performance.png"s), 0);
-                settingsButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, "settings.png"s), 0);
+                auto baseFileName(getContext()->getRootFileName("data", "gui"));
+                consoleButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, "console.png"), 0);
+                performanceButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, "performance.png"), 0);
+                settingsButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, "settings.png"), 0);
 
                 auto propertiesPane = panelManager.addPane(ImGui::PanelManager::RIGHT, "PropertiesPanel##PropertiesPanel");
                 if (propertiesPane)
@@ -178,15 +178,15 @@ namespace Gek
                 }
 
                 setDisplayMode(currentDisplayMode);
-                population = getContext()->createClass<Plugin::Population>("Engine::Population"s, (Plugin::Core *)this);
-                resources = getContext()->createClass<Engine::Resources>("Engine::Resources"s, (Plugin::Core *)this);
-                renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer"s, (Plugin::Core *)this);
+                population = getContext()->createClass<Plugin::Population>("Engine::Population", (Plugin::Core *)this);
+                resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Plugin::Core *)this);
+                renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Plugin::Core *)this);
                 renderer->onShowUserInterface.connect<Core, &Core::onShowUserInterface>(this);
 
-				getLog()->message("Core"s, Log::Type::Message, "Loading processor plugins");
+				getLog()->message("Core", Log::Type::Message, "Loading processor plugins");
 
                 std::vector<std::string> processorNameList;
-                getContext()->listTypes("ProcessorType"s, [&](std::string const &className) -> void
+                getContext()->listTypes("ProcessorType", [&](std::string const &className) -> void
                 {
                     processorNameList.push_back(className);
                 });
@@ -194,7 +194,7 @@ namespace Gek
                 processorList.reserve(processorNameList.size());
                 for (const auto &processorName : processorNameList)
                 {
-                    getLog()->message("Core"s, Log::Type::Message, "Processor found: %v", processorName);
+                    getLog()->message("Core", Log::Type::Message, "Processor found: %v", processorName);
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(processorName, (Plugin::Core *)this));
                 }
 
@@ -230,9 +230,9 @@ namespace Gek
 
                 window->setVisibility(true);
 
-				getLog()->message("Core"s, Log::Type::Message, "Starting engine");
+				getLog()->message("Core", Log::Type::Message, "Starting engine");
 
-                population->load("demo"s);
+                population->load("demo");
             }
 
             ~Core(void)
@@ -260,14 +260,14 @@ namespace Gek
                 population = nullptr;
                 videoDevice = nullptr;
                 window = nullptr;
-                JSON::Save(getContext()->getRootFileName("config.json"s), configuration);
+                JSON::Save(getContext()->getRootFileName("config.json"), configuration);
                 CoUninitialize();
             }
 
 			void setDisplayMode(uint32_t displayMode)
             {
                 auto &displayModeData = displayModeList[displayMode];
-				getLog()->message("Core"s, Log::Type::Message, String::Format("Setting display mode: %vx%v", displayModeData.width, displayModeData.height));
+				getLog()->message("Core", Log::Type::Message, String::Format("Setting display mode: %vx%v", displayModeData.width, displayModeData.height));
                 if (displayMode >= displayModeList.size())
                 {
                     throw InvalidDisplayMode("Invalid display mode encountered");
@@ -420,7 +420,7 @@ namespace Gek
                     return true;
                 }, this, displayModeStringList.size(), 5))
                 {
-                    configuration["display"s]["mode"s] = currentDisplayMode;
+                    configuration["display"]["mode"] = currentDisplayMode;
                     setDisplayMode(currentDisplayMode);
                     showModeChange = true;
                     modeChangeTimer = 10.0f;
@@ -481,11 +481,11 @@ namespace Gek
                         switch (key)
                         {
                         case VK_F5:
-                            population->save("autosave"s);
+                            population->save("autosave");
                             break;
 
                         case VK_F6:
-                            population->load("autosave"s);
+                            population->load("autosave");
                             break;
                         };
                     }
@@ -497,30 +497,30 @@ namespace Gek
                     {
                     case 'W':
                     case VK_UP:
-                        population->action(Plugin::Population::Action("move_forward"s, state));
+                        population->action(Plugin::Population::Action("move_forward", state));
                         break;
 
                     case 'S':
                     case VK_DOWN:
-                        population->action(Plugin::Population::Action("move_backward"s, state));
+                        population->action(Plugin::Population::Action("move_backward", state));
                         break;
 
                     case 'A':
                     case VK_LEFT:
-                        population->action(Plugin::Population::Action("strafe_left"s, state));
+                        population->action(Plugin::Population::Action("strafe_left", state));
                         break;
 
                     case 'D':
                     case VK_RIGHT:
-                        population->action(Plugin::Population::Action("strafe_right"s, state));
+                        population->action(Plugin::Population::Action("strafe_right", state));
                         break;
 
                     case VK_SPACE:
-                        population->action(Plugin::Population::Action("jump"s, state));
+                        population->action(Plugin::Population::Action("jump", state));
                         break;
 
                     case VK_LCONTROL:
-                        population->action(Plugin::Population::Action("crouch"s, state));
+                        population->action(Plugin::Population::Action("crouch", state));
                         break;
                     };
                 }
@@ -562,8 +562,8 @@ namespace Gek
             {
                 if (population)
                 {
-                    population->action(Plugin::Population::Action("turn"s, xMovement * mouseSensitivity));
-                    population->action(Plugin::Population::Action("tilt"s, yMovement * mouseSensitivity));
+                    population->action(Plugin::Population::Action("turn", xMovement * mouseSensitivity));
+                    population->action(Plugin::Population::Action("tilt", yMovement * mouseSensitivity));
                 }
             }
 
@@ -674,7 +674,7 @@ namespace Gek
             // Plugin::Core
             bool update(void)
             {
-                Core::Scope function(this, "Core"s, "Update Time"s);
+                Core::Scope function(this, "Core", "Update Time");
 
                 window->readEvents();
 

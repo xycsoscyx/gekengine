@@ -73,18 +73,18 @@ namespace Gek
             searchPathList.push_back(pluginPath);
 
             context = Context::Create(rootPath, searchPathList);
-            configuration = JSON::Load(getContext()->getRootFileName("config.json"s));
-            if (!configuration.has_member("display"s) || !configuration.get("display"s).has_member("mode"s))
+            configuration = JSON::Load(getContext()->getRootFileName("config.json"));
+            if (!configuration.has_member("display") || !configuration.get("display").has_member("mode"))
             {
-                configuration["display"s]["mode"s] = 0;
+                configuration["display"]["mode"] = 0;
             }
 
-            previousDisplayMode = currentDisplayMode = configuration["display"s]["mode"s].as_uint();
+            previousDisplayMode = currentDisplayMode = configuration["display"]["mode"].as_uint();
 
             Window::Description windowDescription;
-            windowDescription.className = "GEK_Engine_Demo"s;
-            windowDescription.windowName = "GEK Engine Demo"s;
-            window = getContext()->createClass<Window>("Default::Render::Window"s, windowDescription);
+            windowDescription.className = "GEK_Engine_Demo";
+            windowDescription.windowName = "GEK Engine Demo";
+            window = getContext()->createClass<Window>("Default::Render::Window", windowDescription);
 
             window->onClose.connect<Core, &Core::onClose>(this);
             window->onActivate.connect<Core, &Core::onActivate>(this);
@@ -104,7 +104,7 @@ namespace Gek
             }
 
             Render::Device::Description deviceDescription;
-            renderDevice = getContext()->createClass<Render::Device>("Default::Render::Device"s, window.get(), deviceDescription);
+            renderDevice = getContext()->createClass<Render::Device>("Default::Render::Device", window.get(), deviceDescription);
             displayModeList = renderDevice->getDisplayModeList(deviceDescription.displayFormat);
             for (const auto &displayMode : displayModeList)
             {
@@ -112,25 +112,25 @@ namespace Gek
                 switch (displayMode.aspectRatio)
                 {
                 case Render::DisplayMode::AspectRatio::_4x3:
-                    displayModeString += " (4x3)"s;
+                    displayModeString += " (4x3)";
                     break;
 
                 case Render::DisplayMode::AspectRatio::_16x9:
-                    displayModeString += " (16x9)"s;
+                    displayModeString += " (16x9)";
                     break;
 
                 case Render::DisplayMode::AspectRatio::_16x10:
-                    displayModeString += " (16x10)"s;
+                    displayModeString += " (16x10)";
                     break;
                 };
 
                 displayModeStringList.push_back(displayModeString);
             }
 
-            auto baseFileName(getContext()->getRootFileName("data"s, "gui"s));
-            gui->consoleButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, "console.png"s), 0);
-            gui->performanceButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, "performance.png"s), 0);
-            gui->settingsButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, "settings.png"s), 0);
+            auto baseFileName(getContext()->getRootFileName("data", "gui"));
+            gui->consoleButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, "console.png"), 0);
+            gui->performanceButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, "performance.png"), 0);
+            gui->settingsButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, "settings.png"), 0);
             gui->renderQueue = renderDevice->createQueue(0);
 
             auto consolePane = gui->panelManager.addPane(ImGui::PanelManager::BOTTOM, "ConsolePanel##ConsolePanel");
@@ -204,44 +204,44 @@ namespace Gek
 
             Render::PipelineStateInformation pipelineStateInformation;
             pipelineStateInformation.vertexShader = guiProgram;
-            pipelineStateInformation.vertexShaderEntryFunction = "mainVertexProgram"s;
+            pipelineStateInformation.vertexShaderEntryFunction = "mainVertexProgram";
             pipelineStateInformation.pixelShader = guiProgram;
-            pipelineStateInformation.pixelShaderEntryFunction = "mainPixelProgram"s;
+            pipelineStateInformation.pixelShaderEntryFunction = "mainPixelProgram";
 
             Render::VertexDeclaration vertexDeclaration;
-            vertexDeclaration.name = "position"s;
+            vertexDeclaration.name = "position";
             vertexDeclaration.format = Render::Format::R32G32_FLOAT;
             vertexDeclaration.semantic = Render::VertexDeclaration::Semantic::Position;
             pipelineStateInformation.vertexDeclaration.push_back(vertexDeclaration);
 
-            vertexDeclaration.name = "texCoord"s;
+            vertexDeclaration.name = "texCoord";
             vertexDeclaration.format = Render::Format::R32G32_FLOAT;
             vertexDeclaration.semantic = Render::VertexDeclaration::Semantic::TexCoord;
             pipelineStateInformation.vertexDeclaration.push_back(vertexDeclaration);
 
-            vertexDeclaration.name = "color"s;
+            vertexDeclaration.name = "color";
             vertexDeclaration.format = Render::Format::R8G8B8A8_UNORM;
             vertexDeclaration.semantic = Render::VertexDeclaration::Semantic::Color;
             pipelineStateInformation.vertexDeclaration.push_back(vertexDeclaration);
 
             Render::ElementDeclaration pixelDeclaration;
-            pixelDeclaration.name = "position"s;
+            pixelDeclaration.name = "position";
             pixelDeclaration.format = Render::Format::R32G32B32A32_FLOAT;
             pixelDeclaration.semantic = Render::VertexDeclaration::Semantic::Position;
             pipelineStateInformation.pixelDeclaration.push_back(pixelDeclaration);
 
-            pixelDeclaration.name = "texCoord"s;
+            pixelDeclaration.name = "texCoord";
             pixelDeclaration.format = Render::Format::R32G32_FLOAT;
             pixelDeclaration.semantic = Render::VertexDeclaration::Semantic::TexCoord;
             pipelineStateInformation.pixelDeclaration.push_back(pixelDeclaration);
 
-            pixelDeclaration.name = "color"s;
+            pixelDeclaration.name = "color";
             pixelDeclaration.format = Render::Format::R8G8B8A8_UNORM;
             pixelDeclaration.semantic = Render::VertexDeclaration::Semantic::Color;
             pipelineStateInformation.pixelDeclaration.push_back(pixelDeclaration);
 
             Render::NamedDeclaration targetDeclaration;
-            targetDeclaration.name = "screen"s;
+            targetDeclaration.name = "screen";
             targetDeclaration.format = Render::Format::R8G8B8A8_UNORM_SRGB;
             pipelineStateInformation.renderTargetList.push_back(targetDeclaration);
 
@@ -263,13 +263,13 @@ namespace Gek
             pipelineStateInformation.depthStateInformation.comparisonFunction = Render::ComparisonFunction::LessEqual;
             pipelineStateInformation.depthStateInformation.writeMask = Render::DepthStateInformation::Write::Zero;
 
-            gui->pipelineState = renderDevice->createPipelineState(pipelineStateInformation, "GUI"s);
+            gui->pipelineState = renderDevice->createPipelineState(pipelineStateInformation, "GUI");
 
             Render::BufferDescription constantBufferDescription;
             constantBufferDescription.stride = sizeof(Math::Float4x4);
             constantBufferDescription.count = 1;
             constantBufferDescription.type = Render::BufferDescription::Type::Constant;
-            gui->constantBuffer = renderDevice->createBuffer(constantBufferDescription, nullptr, "GUI::Constants"s);
+            gui->constantBuffer = renderDevice->createBuffer(constantBufferDescription, nullptr, "GUI::Constants");
 
             uint8_t *pixels = nullptr;
             int32_t fontWidth = 0, fontHeight = 0;
@@ -280,7 +280,7 @@ namespace Gek
             fontDescription.width = fontWidth;
             fontDescription.height = fontHeight;
             fontDescription.flags = Render::TextureDescription::Flags::Resource;
-            gui->fontTexture = renderDevice->createTexture(fontDescription, pixels, "GUI::Font"s);
+            gui->fontTexture = renderDevice->createTexture(fontDescription, pixels, "GUI::Font");
             imGuiIo.Fonts->TexID = &gui->fontTexture;
 
             Render::SamplerStateInformation samplerStateInformation;
@@ -288,7 +288,7 @@ namespace Gek
             samplerStateInformation.addressModeU = Render::SamplerStateInformation::AddressMode::Clamp;
             samplerStateInformation.addressModeV = Render::SamplerStateInformation::AddressMode::Clamp;
             samplerStateInformation.addressModeW = Render::SamplerStateInformation::AddressMode::Clamp;
-            gui->samplerState = renderDevice->createSamplerState(samplerStateInformation, "GUI::Sampler"s);
+            gui->samplerState = renderDevice->createSamplerState(samplerStateInformation, "GUI::Sampler");
 
             imGuiIo.UserData = this;
             imGuiIo.RenderDrawListsFn = [](ImDrawData *drawData)

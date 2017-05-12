@@ -18,7 +18,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 		throw std::exception("Input file not found");
 	}
 
-    auto outputFilePath(inputFilePath.withExtension(".dds"s));
+    auto outputFilePath(inputFilePath.withExtension(".dds"));
 	if (outputFilePath.isFile() && outputFilePath.isNewerThan(inputFilePath))
 	{
 		throw std::exception("Input file hasn't changed since last compression");
@@ -32,24 +32,24 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 
 	std::string extension(String::GetLower(inputFilePath.getExtension()));
 	std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
-	if (extension == ".tga"s)
+	if (extension == ".tga")
 	{
 		load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromTGAMemory(buffer.data(), buffer.size(), nullptr, image); };
 	}
-	else if (extension == ".png"s)
+	else if (extension == ".png")
 	{
 		load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_PNG, nullptr, image); };
 	}
-	else if (extension == ".bmp"s)
+	else if (extension == ".bmp")
 	{
 		load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_BMP, nullptr, image); };
 	}
-	else if (extension == ".jpg"s || extension == ".jpeg"s)
+	else if (extension == ".jpg" || extension == ".jpeg")
 	{
 		load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, nullptr, image); };
 	}
 /*
-	else if (extension == ".dds"s)
+	else if (extension == ".dds")
 	{
 		load = std::bind(::DirectX::LoadFromDDSMemory, std::placeholders::_1, std::placeholders::_2, 0, nullptr, std::placeholders::_3);
 	}
@@ -70,13 +70,13 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 	uint32_t flags = ::DirectX::TEX_COMPRESS_PARALLEL;
 	DXGI_FORMAT outputFormat = DXGI_FORMAT_UNKNOWN;
 	std::string inputName(String::GetLower(inputFilePath.withoutExtension().u8string()));
-	if (String::EndsWith(inputName, "basecolor"s) ||
-		String::EndsWith(inputName, "base_color"s) ||
-		String::EndsWith(inputName, "diffuse"s) ||
-		String::EndsWith(inputName, "albedo"s) ||
-		String::EndsWith(inputName, "alb"s) ||
-        String::EndsWith(inputName, "_d"s) ||
-        String::EndsWith(inputName, "_C"s))
+	if (String::EndsWith(inputName, "basecolor") ||
+		String::EndsWith(inputName, "base_color") ||
+		String::EndsWith(inputName, "diffuse") ||
+		String::EndsWith(inputName, "albedo") ||
+		String::EndsWith(inputName, "alb") ||
+        String::EndsWith(inputName, "_d") ||
+        String::EndsWith(inputName, "_c"))
 {
 		useDevice = true;
 		//flags |= ::DirectX::TEX_COMPRESS_SRGB_IN;
@@ -92,23 +92,23 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 			std::cout << "Compressing Albedo: BC7 sRGB" << std::endl;
 		}
 	}
-	else if (String::EndsWith(inputName, "normal"s) ||
-		String::EndsWith(inputName, "_n"s))
+	else if (String::EndsWith(inputName, "normal") ||
+		String::EndsWith(inputName, "_n"))
 	{
 		outputFormat = DXGI_FORMAT_BC5_UNORM;
 		std::cout << "Compressing Normal: BC5" << std::endl;
 	}
-	else if (String::EndsWith(inputName, "roughness"s) ||
-		String::EndsWith(inputName, "rough"s) ||
-		String::EndsWith(inputName, "_r"s))
+	else if (String::EndsWith(inputName, "roughness") ||
+		String::EndsWith(inputName, "rough") ||
+		String::EndsWith(inputName, "_r"))
 	{
 		outputFormat = DXGI_FORMAT_BC4_UNORM;
 		std::cout << "Compressing Roughness: BC4" << std::endl;
 	}
-	else if (String::EndsWith(inputName, "metalness"s) ||
-		String::EndsWith(inputName, "metallic"s) ||
-		String::EndsWith(inputName, "metal"s) ||
-		String::EndsWith(inputName, "_m"s))
+	else if (String::EndsWith(inputName, "metalness") ||
+		String::EndsWith(inputName, "metallic") ||
+		String::EndsWith(inputName, "metal") ||
+		String::EndsWith(inputName, "_m"))
 	{
 		outputFormat = DXGI_FORMAT_BC4_UNORM;
 		std::cout << "Compressing Metallic: BC4" << std::endl;
@@ -171,12 +171,12 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         ContextPtr context(Context::Create(rootPath, searchPathList));
 
         Window::Description description;
-        description.className = "GEK_Engine_Textures"s;
-        description.windowName = "GEK Engine Textures"s;
-        WindowPtr window(context->createClass<Window>("Default::System::Window"s, description));
+        description.className = "GEK_Engine_Textures";
+        description.windowName = "GEK Engine Textures";
+        WindowPtr window(context->createClass<Window>("Default::System::Window", description));
 
         Video::Device::Description deviceDescription;
-        Video::DevicePtr device(context->createClass<Video::Device>("Device::Video::D3D11"s, window.get(), deviceDescription));
+        Video::DevicePtr device(context->createClass<Video::Device>("Device::Video::D3D11", window.get(), deviceDescription));
 
         std::function<bool(FileSystem::Path const &)> searchDirectory;
 		searchDirectory = [&](FileSystem::Path const &filePath) -> bool
@@ -185,7 +185,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 			{
 				FileSystem::Find(filePath, searchDirectory);
 			}
-			else if (filePath.isFile() && filePath.getExtension() != ".dds"s)
+			else if (filePath.isFile() && filePath.getExtension() != ".dds")
 			{
 				try
 				{
@@ -201,7 +201,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		};
 
 		CoInitialize(nullptr);
-		FileSystem::Find(FileSystem::GetFileName(rootPath, "Data"s, "Textures"s), searchDirectory);
+		FileSystem::Find(FileSystem::GetFileName(rootPath, "Data", "Textures"), searchDirectory);
 		CoUninitialize();
 	}
     catch (const std::exception &exception)

@@ -28,14 +28,14 @@ namespace Gek
         // Plugin::Component
         void save(Components::Transform const * const data, JSON::Object &componentData) const
         {
-            componentData.set("position"s, data->position);
-            componentData.set("rotation"s, data->rotation);
+            componentData.set("position", data->position);
+            componentData.set("rotation", data->rotation);
         }
 
         void load(Components::Transform * const data, const JSON::Object &componentData)
         {
-            data->position = getValue(componentData, "position"s, Math::Float3::Zero);
-            data->rotation = getValue(componentData, "rotation"s, Math::Quaternion::Identity);
+            data->position = getValue(componentData, "position", Math::Float3::Zero);
+            data->rotation = getValue(componentData, "rotation", Math::Quaternion::Identity);
 			std::cout << "Position: " << data->position.x << ", " << data->position.y << ", " << data->position.z << std::endl;
 		}
 

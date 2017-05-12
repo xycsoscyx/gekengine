@@ -494,15 +494,15 @@ namespace Gek
 
             std::string getFullProgram(std::string const &name, std::string const &engineData)
             {
-                auto programsPath(getContext()->getRootFileName("data"s, "programs"s));
+                auto programsPath(getContext()->getRootFileName("data", "programs"));
                 auto filePath(FileSystem::GetFileName(programsPath, name));
                 if (filePath.isFile())
                 {
                     auto programDirectory(filePath.getParentPath());
 					std::string baseProgram(FileSystem::Load(filePath, String::Empty));
-                    String::Replace(baseProgram, "\r"s, "$"s);
-					String::Replace(baseProgram, "\n"s, "$"s);
-					String::Replace(baseProgram, "$$"s, "$"s);
+                    String::Replace(baseProgram, "\r", "$");
+					String::Replace(baseProgram, "\n", "$");
+					String::Replace(baseProgram, "$$", "$");
                     auto programLines = String::Split(baseProgram, '$', false);
 
                     std::string uncompiledProgram;
@@ -510,9 +510,9 @@ namespace Gek
                     {
                         if (line.empty())
                         {
-                            uncompiledProgram.append("\r\n"s);
+                            uncompiledProgram.append("\r\n");
                         }
-                        else if (line.find("#include"s) == 0)
+                        else if (line.find("#include") == 0)
                         {
 							std::string includeName(String::GetLower(line.substr(8)));
 							String::Trim(includeName);
@@ -523,7 +523,7 @@ namespace Gek
                             else
                             {
                                 std::string includeData;
-                                if (includeName == "gekengine"s)
+                                if (includeName == "gekengine")
                                 {
                                     includeData = engineData;
                                 }
@@ -554,13 +554,13 @@ namespace Gek
                                 }
 
                                 uncompiledProgram.append(includeData);
-                                uncompiledProgram.append("\r\n"s);
+                                uncompiledProgram.append("\r\n");
                             }
                         }
                         else
                         {
                             uncompiledProgram.append(line);
-                            uncompiledProgram.append("\r\n"s);
+                            uncompiledProgram.append("\r\n");
                         }
                     }
 
@@ -585,8 +585,8 @@ namespace Gek
                 description.width = backBuffer->getDescription().width;
                 description.height = backBuffer->getDescription().height;
                 description.flags = Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource;
-                createTexture("screen"s, description);
-                createTexture("screenBuffer"s, description);
+                createTexture("screen", description);
+                createTexture("screenBuffer", description);
             }
 
             // ResourceRequester
@@ -600,11 +600,11 @@ namespace Gek
                     }
                     catch (const std::exception &exception)
                     {
-                        core->getLog()->message("Resources"s, Plugin::Core::Log::Type::Error, "Error occurred trying to load an external resource: %v", exception.what());
+                        core->getLog()->message("Resources", Plugin::Core::Log::Type::Error, "Error occurred trying to load an external resource: %v", exception.what());
                     }
                     catch (...)
                     {
-                        core->getLog()->message("Resources"s, Plugin::Core::Log::Type::Error, "Unknown error occurred trying to load an external resource");
+                        core->getLog()->message("Resources", Plugin::Core::Log::Type::Error, "Unknown error occurred trying to load an external resource");
                     };
                 });
             }
@@ -614,7 +614,7 @@ namespace Gek
             {
                 auto load = [this, visualName](VisualHandle)->Plugin::VisualPtr
                 {
-                    return getContext()->createClass<Plugin::Visual>("Engine::Visual"s, videoDevice, (Engine::Resources *)this, visualName);
+                    return getContext()->createClass<Plugin::Visual>("Engine::Visual", videoDevice, (Engine::Resources *)this, visualName);
                 };
 
                 auto hash = GetHash(visualName);
@@ -625,7 +625,7 @@ namespace Gek
             {
                 auto load = [this, materialName](MaterialHandle handle)->Engine::MaterialPtr
                 {
-                    return getContext()->createClass<Engine::Material>("Engine::Material"s, (Engine::Resources *)this, materialName, handle);
+                    return getContext()->createClass<Engine::Material>("Engine::Material", (Engine::Resources *)this, materialName, handle);
                 };
 
                 auto hash = GetHash(materialName);
@@ -637,15 +637,15 @@ namespace Gek
                 // iterate over formats in case the texture name has no extension
                 static const std::string formatList[] =
                 {
-                    ""s,
-                    ".dds"s,
-                    ".tga"s,
-                    ".png"s,
-                    ".jpg"s,
-                    ".bmp"s,
+                    "",
+                    ".dds",
+                    ".tga",
+                    ".png",
+                    ".jpg",
+                    ".bmp",
                 };
 
-                auto texturePath(getContext()->getRootFileName("data"s, "textures"s, textureName));
+                auto texturePath(getContext()->getRootFileName("data", "textures", textureName));
                 for (const auto &format : formatList)
                 {
                     auto filePath(texturePath.withExtension(format));
@@ -675,7 +675,7 @@ namespace Gek
             {
                 std::vector<uint8_t> data;
                 Video::Texture::Description description;
-                if (pattern == "color"s)
+                if (pattern == "color")
                 {
                     try
                     {
@@ -727,7 +727,7 @@ namespace Gek
                         throw InvalidParameter("Unable to determine color texture type");
                     };
                 }
-                else if (pattern == "normal"s)
+                else if (pattern == "normal")
                 {
                     Math::Float3 normal(Math::Float3::Zero);
                     if (parameters.is_array() && parameters.size() == 3)
@@ -744,12 +744,12 @@ namespace Gek
 
                     description.format = Video::Format::R8G8B8A8_UNORM;
                 }
-                else if (pattern == "system"s)
+                else if (pattern == "system")
                 {
                     if (parameters.is_string())
                     {
                         std::string type(parameters.as_cstring());
-                        if (type == "debug"s)
+                        if (type == "debug")
                         {
                             data.push_back(255);
                             data.push_back(0);
@@ -757,7 +757,7 @@ namespace Gek
                             data.push_back(255);
                             description.format = Video::Format::R8G8B8A8_UNORM;
                         }
-                        else if (type == "flat"s)
+                        else if (type == "flat")
                         {
                             Math::Float3 normal(0.0f, 0.0f, 1.0f);
                             uint8_t normalData[4] =
@@ -976,8 +976,8 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->adjustValue("Draw"s, "Primitive Count"s, 1.0f);
-                    core->getLog()->adjustValue("Draw"s, "Vertex Count"s, vertexCount);
+                    core->getLog()->adjustValue("Draw", "Primitive Count", 1.0f);
+                    core->getLog()->adjustValue("Draw", "Vertex Count", vertexCount);
                     videoContext->drawPrimitive(vertexCount, firstVertex);
                 }
             }
@@ -986,9 +986,9 @@ namespace Gek
             {
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->adjustValue("Draw"s, "Primitive Count"s, 1.0f);
-                    core->getLog()->adjustValue("Draw"s, "Vertex Count"s, vertexCount);
-                    core->getLog()->adjustValue("Draw"s, "Instance Count"s, instanceCount);
+                    core->getLog()->adjustValue("Draw", "Primitive Count", 1.0f);
+                    core->getLog()->adjustValue("Draw", "Vertex Count", vertexCount);
+                    core->getLog()->adjustValue("Draw", "Instance Count", instanceCount);
                     videoContext->drawInstancedPrimitive(instanceCount, firstInstance, vertexCount, firstVertex);
                 }
             }
@@ -999,8 +999,8 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->adjustValue("Draw"s, "Primitive Count"s, 1.0f);
-                    core->getLog()->adjustValue("Draw"s, "Index Count"s, indexCount);
+                    core->getLog()->adjustValue("Draw", "Primitive Count", 1.0f);
+                    core->getLog()->adjustValue("Draw", "Index Count", indexCount);
                     videoContext->drawIndexedPrimitive(indexCount, firstIndex, firstVertex);
                 }
             }
@@ -1011,9 +1011,9 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->adjustValue("Draw"s, "Primitive Count"s, 1.0f);
-                    core->getLog()->adjustValue("Draw"s, "Index Count"s, indexCount);
-                    core->getLog()->adjustValue("Draw"s, "Instance Count"s, instanceCount);
+                    core->getLog()->adjustValue("Draw", "Primitive Count", 1.0f);
+                    core->getLog()->adjustValue("Draw", "Index Count", indexCount);
+                    core->getLog()->adjustValue("Draw", "Instance Count", instanceCount);
                     videoContext->drawInstancedIndexedPrimitive(instanceCount, firstInstance, indexCount, firstIndex, firstVertex);
                 }
             }
@@ -1024,8 +1024,8 @@ namespace Gek
 
                 if (dispatchValid)
                 {
-                    core->getLog()->adjustValue("Draw"s, "Dispatch Count"s, 1.0f);
-                    core->getLog()->adjustValue("Draw"s, "Thread Count"s, threadGroupCountX * threadGroupCountY * threadGroupCountZ);
+                    core->getLog()->adjustValue("Draw", "Dispatch Count", 1.0f);
+                    core->getLog()->adjustValue("Draw", "Thread Count", threadGroupCountX * threadGroupCountY * threadGroupCountZ);
                     videoContext->dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
                 }
             }
@@ -1052,8 +1052,8 @@ namespace Gek
                 description.width = backBuffer->getDescription().width;
                 description.height = backBuffer->getDescription().height;
                 description.flags = Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource;
-                createTexture("screen"s, description);
-                createTexture("screenBuffer"s, description);
+                createTexture("screen", description);
+                createTexture("screenBuffer", description);
             }
 
             ShaderHandle getMaterialShader(MaterialHandle material) const
@@ -1082,7 +1082,7 @@ namespace Gek
                 std::unique_lock<std::recursive_mutex> lock(shaderMutex);
                 auto load = [this, shaderName](ShaderHandle) -> Engine::ShaderPtr
                 {
-                    return getContext()->createClass<Engine::Shader>("Engine::Shader"s, core->getLog(), videoDevice, (Engine::Resources *)this, core->getPopulation(), shaderName);
+                    return getContext()->createClass<Engine::Shader>("Engine::Shader", core->getLog(), videoDevice, (Engine::Resources *)this, core->getPopulation(), shaderName);
                 };
 
                 auto hash = GetHash(shaderName);
@@ -1099,7 +1099,7 @@ namespace Gek
             {
                 auto load = [this, filterName](ResourceHandle)->Engine::FilterPtr
                 {
-                    return getContext()->createClass<Engine::Filter>("Engine::Filter"s, core->getLog(), videoDevice, (Engine::Resources *)this, core->getPopulation(), filterName);
+                    return getContext()->createClass<Engine::Filter>("Engine::Filter", core->getLog(), videoDevice, (Engine::Resources *)this, core->getPopulation(), filterName);
                 };
 
                 auto hash = GetHash(filterName);
@@ -1139,7 +1139,7 @@ namespace Gek
 
                 auto hash = GetHash(uncompiledProgram);
                 auto cacheExtension = String::Format(".%v.bin", hash);
-                auto cachePath(getContext()->getRootFileName("data"s, "cache"s, name).withExtension(cacheExtension));
+                auto cachePath(getContext()->getRootFileName("data", "cache", name).withExtension(cacheExtension));
 
 				std::vector<uint8_t> compiledProgram;
                 if (cachePath.isFile())
@@ -1152,7 +1152,7 @@ namespace Gek
                 {
 #ifdef _DEBUG
 					auto debugExtension = String::Format(".%v.hlsl", hash);
-					auto debugPath(getContext()->getRootFileName("data"s, "cache"s, name).withExtension(debugExtension));
+					auto debugPath(getContext()->getRootFileName("data", "cache", name).withExtension(debugExtension));
 					FileSystem::Save(debugPath, uncompiledProgram);
 #endif
 					compiledProgram = videoDevice->compileProgram(pipelineType, name, uncompiledProgram, entryFunction);
