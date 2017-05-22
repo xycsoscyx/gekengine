@@ -18,7 +18,7 @@ float3 ConvertNormal(float2 encoded)
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
     // final images will be sRGB format and converted to linear automatically
-    const float4 albedo = float4(1.0f, 1.0f, 1.0f, 1.0f);// Resources::albedo.Sample(Global::LinearWrapSampler, inputPixel.texCoord);
+    const float4 albedo = Resources::albedo.Sample(Global::LinearWrapSampler, inputPixel.texCoord);
 
     [branch]
     if (albedo.a < 0.5)
@@ -42,6 +42,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
 
     OutputPixel outputPixel;
     outputPixel.screen = getSurfaceIrradiance(inputPixel.screen.xy, surfacePosition, surfaceNormal, materialAlbedo, materialRoughness, materialMetallic);
+    outputPixel.albedoBuffer = materialAlbedo;
     outputPixel.normalBuffer = getEncodedNormal(surfaceNormal);
     return outputPixel;
 }

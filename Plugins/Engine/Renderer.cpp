@@ -1322,7 +1322,7 @@ namespace Gek
                         }
 
                         videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                        for (const auto &filterName : { "tonemap", "antialias" })
+                        for (const auto &filterName : { "AmbientOcclusion", "tonemap", "antialias" })
                         {
                             Engine::Filter * const filter = resources->getFilter(filterName);
                             if (filter)

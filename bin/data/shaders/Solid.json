@@ -65,6 +65,10 @@
             "format": "D32_FLOAT",
             "flags": "depth"
         },
+        "albedoBuffer": {
+            "format": "R11G11B10_FLOAT",
+            "flags": "target"
+        },
         "normalBuffer": {
             "format": "R11G11B10_FLOAT",
             "flags": "target"
@@ -86,6 +90,7 @@
             },
             "targets": [
                 "screen",
+                "albedoBuffer",
                 "normalBuffer"
             ]
         }

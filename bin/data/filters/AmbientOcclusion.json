@@ -2,11 +2,15 @@
     "textures": {
         "depthBuffer": {
             "external": "shader",
-            "name":  "solid"
+            "name": "solid"
+        },
+        "albedoBuffer": {
+            "external": "shader",
+            "name": "solid"
         },
         "normalBuffer": {
             "external": "shader",
-            "name":  "solid"
+            "name": "solid"
         },
         "ambientBuffer": {
             "format": "R8_UNORM",
@@ -56,13 +60,17 @@
         {
             "program": "AmbientLighting",
             "entry": "mainPixelProgram",
+            "copy": {
+                "screenBuffer": "screen"
+            },
             "resources": [
-                "ambientBuffer"
+                "ambientBuffer",
+                "albedoBuffer"
             ],
             "blendState": {
                 "enable": true,
-                "colorSource": "Zero",
-                "colorDestination": "SourceColor",
+                "colorSource": "One",
+                "colorDestination": "One",
                 "colorOperation": "Add"
             },
             "targets": [
