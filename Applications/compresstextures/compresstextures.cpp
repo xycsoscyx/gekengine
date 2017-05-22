@@ -24,8 +24,8 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 		throw std::exception("Input file hasn't changed since last compression");
 	}
 
-	std::cout << "Compressing: -> " << inputFilePath << std::endl;
-	std::cout << "             <- " << outputFilePath << std::endl;
+	AtomicWriter() << "Compressing: -> " << inputFilePath << std::endl;
+	AtomicWriter() << "             <- " << outputFilePath << std::endl;
 
 	static const std::vector<uint8_t> EmptyBuffer;
 	std::vector<uint8_t> buffer(FileSystem::Load(inputFilePath, EmptyBuffer));
@@ -84,26 +84,26 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 		if (DirectX::HasAlpha(image.GetMetadata().format))
 		{
 			outputFormat = DXGI_FORMAT_BC7_UNORM_SRGB;
-			std::cout << "Compressing Albedo: BC7 sRGB" << std::endl;
+			AtomicWriter() << "Compressing Albedo: BC7 sRGB" << std::endl;
 		}
 		else
 		{
 			outputFormat = DXGI_FORMAT_BC1_UNORM_SRGB;
-			std::cout << "Compressing Albedo: BC7 sRGB" << std::endl;
+			AtomicWriter() << "Compressing Albedo: BC7 sRGB" << std::endl;
 		}
 	}
 	else if (String::EndsWith(inputName, "normal") ||
 		String::EndsWith(inputName, "_n"))
 	{
 		outputFormat = DXGI_FORMAT_BC5_UNORM;
-		std::cout << "Compressing Normal: BC5" << std::endl;
+		AtomicWriter() << "Compressing Normal: BC5" << std::endl;
 	}
 	else if (String::EndsWith(inputName, "roughness") ||
 		String::EndsWith(inputName, "rough") ||
 		String::EndsWith(inputName, "_r"))
 	{
 		outputFormat = DXGI_FORMAT_BC4_UNORM;
-		std::cout << "Compressing Roughness: BC4" << std::endl;
+		AtomicWriter() << "Compressing Roughness: BC4" << std::endl;
 	}
 	else if (String::EndsWith(inputName, "metalness") ||
 		String::EndsWith(inputName, "metallic") ||
@@ -111,14 +111,14 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 		String::EndsWith(inputName, "_m"))
 	{
 		outputFormat = DXGI_FORMAT_BC4_UNORM;
-		std::cout << "Compressing Metallic: BC4" << std::endl;
+		AtomicWriter() << "Compressing Metallic: BC4" << std::endl;
 	}
 	else
 	{
 		throw std::exception("Unknown material encountered");
 	}
 
-	std::cout << ".loaded.";
+	AtomicWriter() << ".loaded.";
 
 	::DirectX::ScratchImage mipMapChain;
 	resultValue = ::DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), ::DirectX::TEX_FILTER_TRIANGLE, 0, mipMapChain);
@@ -128,7 +128,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 	}
 
 	image = std::move(mipMapChain);
-	std::cout << ".mipmapped.";
+	AtomicWriter() << ".mipmapped.";
 
 	::DirectX::ScratchImage output;
 	if(useDevice)
@@ -146,7 +146,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 		throw std::exception("Unable to compress image");
 	}
 
-	std::cout << ".compressed.";
+	AtomicWriter() << ".compressed.";
 
 	resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, outputFilePath.c_str());
 	if (FAILED(resultValue))
@@ -154,12 +154,12 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 		throw std::exception("Unable to save image");
 	}
 
-	std::cout << ".done!" << std::endl;
+	AtomicWriter() << ".done!" << std::endl;
 }
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    std::cout << "GEK Texture Compressor" << std::endl;
+    AtomicWriter() << "GEK Texture Compressor" << std::endl;
 
     try
     {
@@ -193,12 +193,12 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 				}
 				catch (std::exception const &exception)
 				{
-                    std::cerr << "[warning] Error trying to compress file: " << filePath << std::endl;
-                    std::cerr << exception.what() << std::endl;
+                    AtomicWriter(std::cerr) << "[warning] Error trying to compress file: " << filePath << std::endl;
+                    AtomicWriter(std::cerr) << exception.what() << std::endl;
 				}
                 catch (...)
                 {
-                    std::cerr << "[warning] Unknown error trying to compress file: " << filePath << std::endl;
+                    AtomicWriter(std::cerr) << "[warning] Unknown error trying to compress file: " << filePath << std::endl;
                 };
 			}
 
@@ -211,14 +211,14 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	}
     catch (const std::exception &exception)
     {
-        std::cerr << "GEK Engine - Error" << std::endl;
-		std::cerr << "Caught: " << exception.what() << std::endl;
-		std::cerr << "Type: " << typeid(exception).name() << std::endl;
+        AtomicWriter(std::cerr) << "GEK Engine - Error" << std::endl;
+		AtomicWriter(std::cerr) << "Caught: " << exception.what() << std::endl;
+		AtomicWriter(std::cerr) << "Type: " << typeid(exception).name() << std::endl;
     }
     catch (...)
     {
-        std::cerr << "GEK Engine - Error" << std::endl;
-        std::cerr << "Caught: Non-standard exception" << std::endl;
+        AtomicWriter(std::cerr) << "GEK Engine - Error" << std::endl;
+        AtomicWriter(std::cerr) << "Caught: Non-standard exception" << std::endl;
     };
 
     return 0;

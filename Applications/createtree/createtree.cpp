@@ -5,6 +5,7 @@
 #include "GEK/Utility/Exceptions.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/JSON.hpp"
 #include <unordered_map>
 #include <algorithm>
@@ -93,7 +94,7 @@ void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
                     }
                     else
                     {
-						std::cerr << "! (Mesh " << meshIndex << ") Invalid Face Found: " << faceIndex << " (" << face.mNumIndices << " vertices)" << std::endl;
+						AtomicWriter(std::cerr) << "! (Mesh " << meshIndex << ") Invalid Face Found: " << faceIndex << " (" << face.mNumIndices << " vertices)" << std::endl;
                     }
                 }
 
@@ -142,7 +143,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 {
 	try
     {
-        std::cout << "GEK Part Converter" << std::endl;
+        AtomicWriter() << "GEK Part Converter" << std::endl;
 
         std::string fileNameInput;
         std::string fileNameOutput;
@@ -183,7 +184,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		aiLogStream logStream;
 		logStream.callback = [](char const *message, char *user) -> void
 		{
-			std::cerr << "Assimp: " << message;
+			AtomicWriter(std::cerr) << "Assimp: " << message;
 		};
 
 		logStream.user = nullptr;
@@ -331,7 +332,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             auto materialAlebedoSearch = albedoToMaterialMap.find(albedoName);
             if (materialAlebedoSearch == std::end(albedoToMaterialMap))
             {
-                std::cerr << "! Unable to find material for albedo: " << albedoName << std::endl;
+                AtomicWriter(std::cerr) << "! Unable to find material for albedo: " << albedoName << std::endl;
             }
             else
             {
@@ -359,9 +360,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 			throw std::exception("No valid material models found");
 		}
 
-		std::cout << "> Num. Parts: " << materialPartMap.size() << std::endl;
-		std::cout << "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")" << std::endl;
-		std::cout << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
+		AtomicWriter() << "> Num. Parts: " << materialPartMap.size() << std::endl;
+		AtomicWriter() << "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")" << std::endl;
+		AtomicWriter() << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
 
         NewtonWorld *newtonWorld = NewtonCreate();
         NewtonCollision *newtonCollision = NewtonCreateTreeCollision(newtonWorld, 0);
@@ -374,9 +375,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         NewtonTreeCollisionBeginBuild(newtonCollision);
         for (const auto &material : materialPartMap)
         {
-			std::cout << "-  " << material.first << std::endl;
-            std::cout << "    " << material.second.vertexList.size() << " vertices" << std::endl;
-            std::cout << "    " << material.second.indexList.size() << " indices" << std::endl;
+			AtomicWriter() << "-  " << material.first << std::endl;
+            AtomicWriter() << "    " << material.second.vertexList.size() << " vertices" << std::endl;
+            AtomicWriter() << "    " << material.second.indexList.size() << " indices" << std::endl;
 
             auto &indexList = material.second.indexList;
             auto &vertexList = material.second.vertexList;
@@ -422,16 +423,16 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
     catch (const std::exception &exception)
     {
-		std::cerr << "GEK Engine - Error" << std::endl;
-		std::cerr << "Caught: " << exception.what() << std::endl;
-		std::cerr << "Type: " << typeid(exception).name() << std::endl;
+		AtomicWriter(std::cerr) << "GEK Engine - Error" << std::endl;
+		AtomicWriter(std::cerr) << "Caught: " << exception.what() << std::endl;
+		AtomicWriter(std::cerr) << "Type: " << typeid(exception).name() << std::endl;
 	}
     catch (...)
     {
-        std::cerr << "GEK Engine - Error" << std::endl;
-        std::cerr << "Caught: Non-standard exception" << std::endl;
+        AtomicWriter(std::cerr) << "GEK Engine - Error" << std::endl;
+        AtomicWriter(std::cerr) << "Caught: Non-standard exception" << std::endl;
     };
 
-    std::cout << std::endl;
+    AtomicWriter() << std::endl;
     return 0;
 }

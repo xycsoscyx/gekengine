@@ -1,5 +1,6 @@
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/Context.hpp"
 
 namespace Gek
 {
@@ -20,7 +21,7 @@ namespace Gek
 			if (errorCode)
 			{
 				return defaultValue;
-				std::cerr << errorCode.message() << " at line " << reader.line_number() << " and column " << reader.column_number() << std::endl;
+                AtomicWriter(std::cerr) << errorCode.message() << " at line " << reader.line_number() << " and column " << reader.column_number() << std::endl;
 			}
 			else
 			{

@@ -2357,7 +2357,7 @@ namespace Gek
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
                     auto error = (char const * const)d3dCompilerErrors->GetBufferPointer();
-					std::cerr << "D3DCompile Failed: " << resultValue << " " << error << std::endl;
+                    AtomicWriter(std::cerr) << "D3DCompile Failed: " << resultValue << " " << error << std::endl;
                     throw Video::ProgramCompilationFailed("Unable to compile program");
                 }
 

@@ -574,19 +574,19 @@ namespace Gek
                 switch (logType)
                 {
                 case Log::Type::Message:
-					std::cout << "(" << system << ") " << message << std::endl;
+					AtomicWriter() << "(" << system << ") " << message << std::endl;
                     break;
 
                 case Log::Type::Warning:
-					std::cout << "(" << system << ") WARNING: " << message << std::endl;
+					AtomicWriter() << "(" << system << ") WARNING: " << message << std::endl;
                     break;
 
                 case Log::Type::Error:
-					std::cerr << "(" << system << ") ERROR: " << message << std::endl;
+                    AtomicWriter(std::cerr) << "(" << system << ") ERROR: " << message << std::endl;
                     break;
 
                 case Log::Type::Debug:
-					std::cout << "(" << system << ") DEBUG: " << message << std::endl;
+					AtomicWriter() << "(" << system << ") DEBUG: " << message << std::endl;
                     break;
                 };
             }

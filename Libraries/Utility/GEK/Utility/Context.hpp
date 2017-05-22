@@ -12,11 +12,42 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include <functional>
 #include <typeindex>
+#include <iostream>
 #include <memory>
 #include <vector>
 
 #define GEK_PREDECLARE(TYPE) struct TYPE; using TYPE##Ptr = std::unique_ptr<TYPE>;
 #define GEK_INTERFACE(TYPE) struct TYPE; using TYPE##Ptr = std::unique_ptr<TYPE>; struct TYPE
+
+class AtomicWriter
+{
+    std::ostringstream stream;
+    std::ostream &output;
+
+public:
+    AtomicWriter(std::ostream &output = std::cout)
+        : output(output)
+    {
+    }
+
+    template <typename TYPE>
+    AtomicWriter& operator<<(TYPE const& value)
+    {
+        stream << value;
+        return *this;
+    }
+
+    AtomicWriter& operator<<(std::ostream&(*function)(std::ostream&))
+    {
+        stream << function;
+        return *this;
+    }
+
+    ~AtomicWriter()
+    {
+        output << stream.str();
+    }
+};
 
 namespace Gek
 {

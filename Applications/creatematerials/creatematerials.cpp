@@ -1,5 +1,6 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/JSON.hpp"
 #include <map>
 
@@ -9,7 +10,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 {
     try
     {
-        std::cout << "GEK Material Creator" << std::endl;
+        AtomicWriter() << "GEK Material Creator" << std::endl;
 
         auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
         auto dataPath(FileSystem::GetFileName(rootPath, "Data"));
@@ -22,14 +23,14 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		{
 			if (materialCollectionPath.isDirectory())
 			{
-				std::cout << "Collection Found: " << materialCollectionPath.u8string() << std::endl;
+				AtomicWriter() << "Collection Found: " << materialCollectionPath.u8string() << std::endl;
 				FileSystem::Find(materialCollectionPath, [&](FileSystem::Path const &textureSetPath) -> bool
 				{
 					if (textureSetPath.isDirectory())
 					{
 						std::string materialName(textureSetPath.u8string());
                         materialName = materialName.substr(texturesPath.size() + 1);
-						std::cout << "> Material Found: " << materialName.c_str() << std::endl;
+						AtomicWriter() << "> Material Found: " << materialName.c_str() << std::endl;
 
                         JSON::Object renderState;
                         std::map<std::string, std::map<uint32_t, std::pair<FileSystem::Path, std::string>>> fileMap;
@@ -158,14 +159,14 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
     catch (const std::exception &exception)
     {
-		std::cerr << "GEK Engine - Error" << std::endl;
-		std::cerr << "Caught: " << exception.what() << std::endl;
-		std::cerr << "Type: " << typeid(exception).name() << std::endl;
+		AtomicWriter(std::cerr) << "GEK Engine - Error" << std::endl;
+		AtomicWriter(std::cerr) << "Caught: " << exception.what() << std::endl;
+		AtomicWriter(std::cerr) << "Type: " << typeid(exception).name() << std::endl;
 	}
     catch (...)
     {
-        std::cerr << "GEK Engine - Error" << std::endl;
-        std::cerr << "Caught: Non-standard exception" << std::endl;
+        AtomicWriter(std::cerr) << "GEK Engine - Error" << std::endl;
+        AtomicWriter(std::cerr) << "Caught: Non-standard exception" << std::endl;
     };
 
     return 0;

@@ -3,6 +3,7 @@
 #include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Shapes/AlignedBox.hpp"
 #include "GEK/Utility/Exceptions.hpp"
+#include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/JSON.hpp"
 #include <algorithm>
@@ -104,7 +105,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 {
     try
     {
-        std::cout << "GEK Model Converter" << std::endl;
+        AtomicWriter() << "GEK Model Converter" << std::endl;
 
         std::string fileNameInput;
         std::string fileNameOutput;
@@ -140,7 +141,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		aiLogStream logStream;
 		logStream.callback = [](char const *message, char *user) -> void
 		{
-			std::cerr << "Assimp: " << message;
+			AtomicWriter(std::cerr) << "Assimp: " << message;
 		};
 
 		logStream.user = nullptr;
@@ -203,9 +204,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             throw std::exception("No vertex data found in scene");
 		}
 
-		std::cout << "> Num. Points: " << pointList.size() << std::endl;
-		std::cout << "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")" << std::endl;
-		std::cout << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
+		AtomicWriter() << "> Num. Points: " << pointList.size() << std::endl;
+		AtomicWriter() << "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")" << std::endl;
+		AtomicWriter() << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
 
         NewtonWorld *newtonWorld = NewtonCreate();
         NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointList.size(), pointList.data()->data, sizeof(Math::Float3), 0.025f, 0, Math::Float4x4::Identity.data);
@@ -231,14 +232,14 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
     catch (const std::exception &exception)
     {
-		std::cerr << "GEK Engine - Error" << std::endl;
-		std::cerr << "Caught: " << exception.what() << std::endl;
-		std::cerr << "Type: " << typeid(exception).name() << std::endl;
+		AtomicWriter(std::cerr) << "GEK Engine - Error" << std::endl;
+		AtomicWriter(std::cerr) << "Caught: " << exception.what() << std::endl;
+		AtomicWriter(std::cerr) << "Type: " << typeid(exception).name() << std::endl;
 	}
     catch (...)
     {
-        std::cerr << "GEK Engine - Error" << std::endl;
-        std::cerr << "Caught: Non-standard exception" << std::endl;
+        AtomicWriter(std::cerr) << "GEK Engine - Error" << std::endl;
+        AtomicWriter(std::cerr) << "Caught: Non-standard exception" << std::endl;
     };
 
     return 0;
