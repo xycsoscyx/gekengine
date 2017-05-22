@@ -176,7 +176,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         WindowPtr window(context->createClass<Window>("Default::System::Window", description));
 
         Video::Device::Description deviceDescription;
-        Video::DevicePtr device(context->createClass<Video::Device>("Device::Video::D3D11", window.get(), deviceDescription));
+        Video::DevicePtr device(context->createClass<Video::Device>("Default::Device::Video", window.get(), deviceDescription));
 
         std::function<bool(FileSystem::Path const &)> searchDirectory;
 		searchDirectory = [&](FileSystem::Path const &filePath) -> bool
@@ -191,10 +191,15 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 				{
 					compressTexture(dynamic_cast<Video::Debug::Device *>(device.get()), String::GetLower(filePath.u8string()));
 				}
-				catch (...)
+				catch (std::exception const &exception)
 				{
-					std::cerr << "[warning] Error trying to compress file: " << filePath << std::endl;
-				};
+                    std::cerr << "[warning] Error trying to compress file: " << filePath << std::endl;
+                    std::cerr << exception.what() << std::endl;
+				}
+                catch (...)
+                {
+                    std::cerr << "[warning] Unknown error trying to compress file: " << filePath << std::endl;
+                };
 			}
 
 			return true;

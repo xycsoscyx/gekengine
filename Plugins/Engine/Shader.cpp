@@ -757,7 +757,7 @@ namespace Gek
                                 throw MissingParameter("Material fallback must contain a pattern");
                             }
 
-                            if (!resourceNode.has_member("pattern"))
+                            if (!resourceNode.has_member("parameters"))
                             {
                                 throw MissingParameter("Material pattern must contain a parameters");
                             }

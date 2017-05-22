@@ -759,15 +759,10 @@ namespace Gek
                         }
                         else if (type == "flat")
                         {
-                            Math::Float3 normal(0.0f, 0.0f, 1.0f);
-                            uint8_t normalData[4] =
-                            {
-                                uint8_t(((normal.x + 1.0f) * 0.5f) * 255.0f),
-                                uint8_t(((normal.y + 1.0f) * 0.5f) * 255.0f),
-                                uint8_t(((normal.z + 1.0f) * 0.5f) * 255.0f),
-                                255,
-                            };
-
+                            data.push_back(127);
+                            data.push_back(127);
+                            data.push_back(255);
+                            data.push_back(255);
                             description.format = Video::Format::R8G8B8A8_UNORM;
                         }
                         else

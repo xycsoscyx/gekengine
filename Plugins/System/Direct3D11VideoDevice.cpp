@@ -2356,7 +2356,8 @@ namespace Gek
                 HRESULT resultValue = D3DCompile(uncompiledProgram.c_str(), (uncompiledProgram.size() + 1), name.c_str(), nullptr, nullptr, entryFunction.c_str(), type.c_str(), flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
-					std::cerr << "D3DCompile Failed: " << resultValue << " " << (char const * const)d3dCompilerErrors->GetBufferPointer() << std::endl;
+                    auto error = (char const * const)d3dCompilerErrors->GetBufferPointer();
+					std::cerr << "D3DCompile Failed: " << resultValue << " " << error << std::endl;
                     throw Video::ProgramCompilationFailed("Unable to compile program");
                 }
 

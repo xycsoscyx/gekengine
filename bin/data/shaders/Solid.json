@@ -44,6 +44,11 @@
                 "parameters": "flat"
             },
             {
+                "name": "detail",
+                "pattern": "system",
+                "parameters": "flat"
+            },
+            {
                 "name": "roughness",
                 "pattern": "color",
                 "parameters": 0.5

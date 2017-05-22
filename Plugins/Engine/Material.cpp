@@ -96,13 +96,13 @@ namespace Gek
 
                                 if (resourceNode.has_member("file"))
                                 {
-                                    std::string resourceFileName(resourceNode.get("file").as_string());
+                                    auto fileName = resourceNode.get("file").as_string();
                                     uint32_t flags = getTextureLoadFlags(resourceNode.get("flags", 0).as_string());
-                                    resourceHandle = resources->loadTexture(resourceFileName, flags);
+                                    resourceHandle = resources->loadTexture(fileName, flags);
                                 }
                                 else if (resourceNode.has_member("source"))
                                 {
-                                    resourceHandle = resources->getResourceHandle(resourceNode.get("source").as_cstring());
+                                    resourceHandle = resources->getResourceHandle(resourceNode.get("source").as_string());
                                 }
                                 else
                                 {

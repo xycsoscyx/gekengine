@@ -432,6 +432,6 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         std::cerr << "Caught: Non-standard exception" << std::endl;
     };
 
-    std::cout << "" << std::endl;
+    std::cout << std::endl;
     return 0;
 }
