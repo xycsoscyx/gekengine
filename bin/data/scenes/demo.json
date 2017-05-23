@@ -58,6 +58,26 @@
                 "mass": 250
             }
         },
+        { "Transform": {  "position": [  20,  2,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  20,  4,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  20,  6,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  20,  8,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  20, 10,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [ -20,  2,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [ -20,  4,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [ -20,  6,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [ -20,  8,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [ -20, 10,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  20,  2, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  20,  4, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  20,  6, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  20,  8, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  20, 10, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [ -20,  2, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [ -20,  4, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [ -20,  6, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [ -20,  8, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [ -20, 10, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
         {
             "Template": "BasicPointLight"
         },

@@ -58,11 +58,11 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                             {
                                 extensionImportance = 3;
                             }
-                            else if (extension == ".bmp")
+                            else if (extension == ".tif" || extension == ".tiff")
                             {
                                 extensionImportance = 4;
                             }
-                            else if (extension == ".tif" || extension == ".tiff")
+                            else if (extension == ".bmp")
                             {
                                 extensionImportance = 5;
                             }

@@ -2628,6 +2628,10 @@ namespace Gek
                 {
                     load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, nullptr, image); };
                 }
+                else if (extension == ".tif" || extension == ".tiff")
+                {
+                    load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_TIFF, nullptr, image); };
+                }
 
                 if (!load)
                 {
@@ -2690,6 +2694,10 @@ namespace Gek
                 else if (extension == ".jpg" || extension == ".jpeg")
                 {
                     getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, metadata); };
+                }
+                else if (extension == ".tif" || extension == ".tiff")
+                {
+                    getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_TIFF, metadata); };
                 }
 
                 if (!getMetadata)

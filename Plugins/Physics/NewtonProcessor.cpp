@@ -502,7 +502,8 @@ namespace Gek
 
             const Surface & getSurface(uint32_t surfaceIndex) const
             {
-                return surfaceList[surfaceIndex];
+                static const Surface DefaultSurface;
+                return (surfaceIndex >= surfaceList.size() ? DefaultSurface : surfaceList[surfaceIndex]);
             }
 
             // Processor

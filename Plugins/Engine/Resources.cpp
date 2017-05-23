@@ -642,6 +642,9 @@ namespace Gek
                     ".tga",
                     ".png",
                     ".jpg",
+                    ".jpeg",
+                    ".tif",
+                    ".tiff",
                     ".bmp",
                 };
 

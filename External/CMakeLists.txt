@@ -26,6 +26,7 @@ message("${CMAKE_CURRENT_BINARY_DIR}/assimp/include")
 
 if(WIN32)
     project(DirectXTex)
+    add_definitions(-D_OPENMP)
     file(GLOB SOURCES "DirectXTex/DirectXTex/*.cpp" "DirectXTex/DirectXTex/*.h")
     add_library(DirectXTex STATIC ${SOURCES})
     target_include_directories(DirectXTex PUBLIC "${CMAKE_CURRENT_LIST_DIR}/DirectXTex/DirectXTex")

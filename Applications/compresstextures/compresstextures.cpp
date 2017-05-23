@@ -15,23 +15,25 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 {
 	if (!inputFilePath.isFile())
 	{
-		throw std::exception("Input file not found");
+        AtomicWriter(std::cerr) << "Input file not found: " << inputFilePath.c_str() << std::endl;
+        return;
 	}
 
     auto outputFilePath(inputFilePath.withExtension(".dds"));
 	if (outputFilePath.isFile() && outputFilePath.isNewerThan(inputFilePath))
 	{
-		throw std::exception("Input file hasn't changed since last compression");
-	}
+		AtomicWriter(std::cerr) << "Input file hasn't changed since last compression: " << inputFilePath.c_str() << std::endl;
+        return;
+    }
 
-	AtomicWriter() << "Compressing: -> " << inputFilePath << std::endl;
-	AtomicWriter() << "             <- " << outputFilePath << std::endl;
+    std::string extension(String::GetLower(inputFilePath.getExtension()));
+    if (extension == ".dds")
+    {
+        AtomicWriter(std::cerr) << "Input file is alrady compressed: " << inputFilePath.c_str() << std::endl;
+        return;
+    }
 
-	static const std::vector<uint8_t> EmptyBuffer;
-	std::vector<uint8_t> buffer(FileSystem::Load(inputFilePath, EmptyBuffer));
-
-	std::string extension(String::GetLower(inputFilePath.getExtension()));
-	std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
+    std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
 	if (extension == ".tga")
 	{
 		load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromTGAMemory(buffer.data(), buffer.size(), nullptr, image); };
@@ -44,10 +46,14 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 	{
 		load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_BMP, nullptr, image); };
 	}
-	else if (extension == ".jpg" || extension == ".jpeg")
-	{
-		load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, nullptr, image); };
-	}
+    else if (extension == ".jpg" || extension == ".jpeg")
+    {
+        load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, nullptr, image); };
+    }
+    else if (extension == ".tif" || extension == ".tiff")
+    {
+        load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_TIFF, nullptr, image); };
+    }
 /*
 	else if (extension == ".dds")
 	{
@@ -56,79 +62,105 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 */
 	if (!load)
 	{
-		throw std::exception("Unknown file type listed for input");
-	}
+        AtomicWriter(std::cerr) << "Unknown file type of " << extension << " for input: " << inputFilePath.c_str() << std::endl;
+        return;
+    }
 
-	::DirectX::ScratchImage image;
-	HRESULT resultValue = load(buffer, image);
-	if (FAILED(resultValue))
-	{
-		throw std::exception("Unable to load input file");
-	}
+    static const std::vector<uint8_t> EmptyBuffer;
+    std::vector<uint8_t> buffer(FileSystem::Load(inputFilePath, EmptyBuffer));
+
+    ::DirectX::ScratchImage image;
+    HRESULT resultValue = load(buffer, image);
+    if (FAILED(resultValue))
+    {
+        AtomicWriter(std::cerr) << "Unable to load input file: " << inputFilePath.c_str() << std::endl;
+        return;
+    }
 
     bool useDevice = false;
 	uint32_t flags = ::DirectX::TEX_COMPRESS_PARALLEL;
 	DXGI_FORMAT outputFormat = DXGI_FORMAT_UNKNOWN;
-	std::string inputName(String::GetLower(inputFilePath.withoutExtension().u8string()));
-	if (String::EndsWith(inputName, "basecolor") ||
-		String::EndsWith(inputName, "base_color") ||
-		String::EndsWith(inputName, "diffuse") ||
-		String::EndsWith(inputName, "albedo") ||
-		String::EndsWith(inputName, "alb") ||
-        String::EndsWith(inputName, "_d") ||
-        String::EndsWith(inputName, "_c"))
-{
+	std::string textureName(String::GetLower(inputFilePath.withoutExtension().u8string()));
+    if (String::EndsWith(textureName, "basecolor") ||
+        String::EndsWith(textureName, "base_color") ||
+        String::EndsWith(textureName, "diffuse") ||
+        String::EndsWith(textureName, "diffuse_s") ||
+        String::EndsWith(textureName, "albedo") ||
+        String::EndsWith(textureName, "albedo_s") ||
+        String::EndsWith(textureName, "alb") ||
+        String::EndsWith(textureName, "_d") ||
+        String::EndsWith(textureName, "_c"))
+    {
 		useDevice = true;
 		//flags |= ::DirectX::TEX_COMPRESS_SRGB_IN;
 		//flags |= ::DirectX::TEX_COMPRESS_SRGB_OUT;
 		if (DirectX::HasAlpha(image.GetMetadata().format))
 		{
 			outputFormat = DXGI_FORMAT_BC7_UNORM_SRGB;
-			AtomicWriter() << "Compressing Albedo: BC7 sRGB" << std::endl;
 		}
 		else
 		{
 			outputFormat = DXGI_FORMAT_BC1_UNORM_SRGB;
-			AtomicWriter() << "Compressing Albedo: BC7 sRGB" << std::endl;
 		}
 	}
-	else if (String::EndsWith(inputName, "normal") ||
-		String::EndsWith(inputName, "_n"))
-	{
+    else if (String::EndsWith(textureName, "normal") ||
+        String::EndsWith(textureName, "normalmap") ||
+        String::EndsWith(textureName, "normalmap_s") ||
+        String::EndsWith(textureName, "_n"))
+    {
 		outputFormat = DXGI_FORMAT_BC5_UNORM;
-		AtomicWriter() << "Compressing Normal: BC5" << std::endl;
 	}
-	else if (String::EndsWith(inputName, "roughness") ||
-		String::EndsWith(inputName, "rough") ||
-		String::EndsWith(inputName, "_r"))
+    else if (String::EndsWith(textureName, "roughness") ||
+        String::EndsWith(textureName, "roughness_s") ||
+        String::EndsWith(textureName, "rough") ||
+        String::EndsWith(textureName, "_r"))
+    {
+		outputFormat = DXGI_FORMAT_BC4_UNORM;
+	}
+	else if (String::EndsWith(textureName, "metalness") ||
+		String::EndsWith(textureName, "metallic") ||
+		String::EndsWith(textureName, "metal") ||
+		String::EndsWith(textureName, "_m"))
 	{
 		outputFormat = DXGI_FORMAT_BC4_UNORM;
-		AtomicWriter() << "Compressing Roughness: BC4" << std::endl;
-	}
-	else if (String::EndsWith(inputName, "metalness") ||
-		String::EndsWith(inputName, "metallic") ||
-		String::EndsWith(inputName, "metal") ||
-		String::EndsWith(inputName, "_m"))
-	{
-		outputFormat = DXGI_FORMAT_BC4_UNORM;
-		AtomicWriter() << "Compressing Metallic: BC4" << std::endl;
 	}
 	else
 	{
-		throw std::exception("Unknown material encountered");
-	}
+		AtomicWriter(std::cerr) << "Unable to determine texture material type: " << textureName << std::endl;
+        return;
+    }
 
-	AtomicWriter() << ".loaded.";
+    AtomicWriter() << "Compressing: -> " << inputFilePath << std::endl;
+    AtomicWriter() << "             <- " << outputFilePath << std::endl;
+    switch (outputFormat)
+    {
+    case DXGI_FORMAT_BC7_UNORM_SRGB:
+        AtomicWriter() << "             Albedo BC7" << std::endl;
+        break;
+
+    case DXGI_FORMAT_BC1_UNORM_SRGB:
+        AtomicWriter() << "             Albedo BC1" << std::endl;
+        break;
+
+    case DXGI_FORMAT_BC5_UNORM:
+        AtomicWriter() << "             Normal BC5" << std::endl;
+        break;
+
+    case DXGI_FORMAT_BC4_UNORM:
+        AtomicWriter() << "             Metalness/Roughness BC4" << std::endl;
+        break;
+    };
+
+    AtomicWriter() << "             " << image.GetMetadata().width << " x " << image.GetMetadata().height << std::endl;
 
 	::DirectX::ScratchImage mipMapChain;
 	resultValue = ::DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), ::DirectX::TEX_FILTER_TRIANGLE, 0, mipMapChain);
 	if (FAILED(resultValue))
 	{
-		throw std::exception("Unabole to create mipmap chain");
+		AtomicWriter(std::cerr) << "Unable to create mipmap chain" << std::endl;
 	}
 
 	image = std::move(mipMapChain);
-	AtomicWriter() << ".mipmapped.";
 
 	::DirectX::ScratchImage output;
 	if(useDevice)
@@ -143,18 +175,16 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 
 	if (FAILED(resultValue))
 	{
-		throw std::exception("Unable to compress image");
-	}
-
-	AtomicWriter() << ".compressed.";
+		AtomicWriter(std::cerr) << "Unable to compress image" << std::endl;
+        return;
+    }
 
 	resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, outputFilePath.c_str());
 	if (FAILED(resultValue))
 	{
-		throw std::exception("Unable to save image");
-	}
-
-	AtomicWriter() << ".done!" << std::endl;
+		AtomicWriter(std::cerr) << "Unable to save image" << std::endl;
+        return;
+    }
 }
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
