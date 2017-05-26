@@ -4,9 +4,9 @@
 #include <GEKUtility.hlsl>
 #include <GEKLighting.hlsl>
 
-float3 SampleBilinear(in float2 screenCoord, in float glassLevel)
+float3 SampleBilinear(in float2 screenCoord, in int mipMapLevel)
 {
-    return Resources::glassBuffer.SampleLevel(Global::MipMapSampler, (screenCoord * Shader::TargetPixelSize), glassLevel);
+    return Resources::glassBuffer.Load(int3((screenCoord * Shader::TargetPixelSize), mipMapLevel));
 }
 
 // from http://www.java-gaming.org/index.php?topic=35123.0
@@ -35,11 +35,10 @@ float4 cubicCatmullRom(float x) // cubic_catmullrom(float x)
     return w;
 }
 
-float3 SampleBicubic(in float2 screenCoord, in float glassLevel)
+float3 SampleBicubic(in float2 screenCoord, in int mipMapLevel)
 {
-    int mipLevel = floor(glassLevel);
-    float mipFactor = pow(2.0, mipLevel);
-    screenCoord *= (1.0 / mipFactor);
+    float mipMapScale = pow(2.0, mipMapLevel);
+    screenCoord *= (1.0 / mipMapScale);
 
     screenCoord -= 0.5;
 
@@ -53,12 +52,11 @@ float3 SampleBicubic(in float2 screenCoord, in float glassLevel)
 
     float4 scaleFactor = float4(xCubicFactor.xz + xCubicFactor.yw, yCubicFactor.xz + yCubicFactor.yw);
     float4 texCoord = centerCoord + float4(xCubicFactor.yw, yCubicFactor.yw) / scaleFactor;
-    texCoord *= mipFactor * Shader::TargetPixelSize.xxyy;
 
-    float3 texSample0 = Resources::glassBuffer.SampleLevel(Global::MipMapSampler, texCoord.xz, glassLevel);
-    float3 texSample1 = Resources::glassBuffer.SampleLevel(Global::MipMapSampler, texCoord.yz, glassLevel);
-    float3 texSample2 = Resources::glassBuffer.SampleLevel(Global::MipMapSampler, texCoord.xw, glassLevel);
-    float3 texSample3 = Resources::glassBuffer.SampleLevel(Global::MipMapSampler, texCoord.yw, glassLevel);
+    float3 texSample0 = Resources::glassBuffer.Load(int3(texCoord.xz, mipMapLevel));
+    float3 texSample1 = Resources::glassBuffer.Load(int3(texCoord.yz, mipMapLevel));
+    float3 texSample2 = Resources::glassBuffer.Load(int3(texCoord.xw, mipMapLevel));
+    float3 texSample3 = Resources::glassBuffer.Load(int3(texCoord.yw, mipMapLevel));
 
     float scaleFactorX = scaleFactor.x / (scaleFactor.x + scaleFactor.y);
     float scaleFactorY = scaleFactor.z / (scaleFactor.z + scaleFactor.w);
@@ -68,11 +66,10 @@ float3 SampleBicubic(in float2 screenCoord, in float glassLevel)
         lerp(texSample1, texSample0, scaleFactorX), scaleFactorY);
 }
 // http://vec3.ca/bicubic-filtering-in-fewer-taps/
-float3 SampleBicubicOptimized(in float2 screenCoord, in float glassLevel)
+float3 SampleBicubicOptimized(in float2 screenCoord, in int mipMapLevel)
 {
-    int mipLevel = floor(glassLevel);
-    float mipFactor = pow(2.0, mipLevel);
-    screenCoord *= (1.0 / mipFactor);
+    float mipMapScale = pow(2.0, mipMapLevel);
+    screenCoord *= (1.0 / mipMapScale);
 
     // Calculate the center of the texel to avoid any filtering
     float2 centerCoord = floor(screenCoord - 0.5) + 0.5;
@@ -96,23 +93,19 @@ float3 SampleBicubicOptimized(in float2 screenCoord, in float glassLevel)
     float2 texCoord0 = centerCoord - 1.0 + coordWeightFactor0;
     float2 texCoord1 = centerCoord + 1.0 + coordWeightFactor1;
 
-    texCoord0 *= mipFactor * Shader::TargetPixelSize;
-    texCoord1 *= mipFactor * Shader::TargetPixelSize;
-
     // Sample the texture
     return 
-        (Resources::glassBuffer.SampleLevel(Global::MipMapSampler, float2(texCoord0.x, texCoord0.y), glassLevel) * scalingFactor0.x
-       + Resources::glassBuffer.SampleLevel(Global::MipMapSampler, float2(texCoord1.x, texCoord0.y), glassLevel) * scalingFactor1.x) * scalingFactor0.y
-      + (Resources::glassBuffer.SampleLevel(Global::MipMapSampler, float2(texCoord0.x, texCoord1.y), glassLevel) * scalingFactor0.x
-       + Resources::glassBuffer.SampleLevel(Global::MipMapSampler, float2(texCoord1.x, texCoord1.y), glassLevel) * scalingFactor1.x) * scalingFactor1.y;
+        (Resources::glassBuffer.Load(int3(float2(texCoord0.x, texCoord0.y), mipMapLevel)) * scalingFactor0.x
+       + Resources::glassBuffer.Load(int3(float2(texCoord1.x, texCoord0.y), mipMapLevel)) * scalingFactor1.x) * scalingFactor0.y
+      + (Resources::glassBuffer.Load(int3(float2(texCoord0.x, texCoord1.y), mipMapLevel)) * scalingFactor0.x
+       + Resources::glassBuffer.Load(int3(float2(texCoord1.x, texCoord1.y), mipMapLevel)) * scalingFactor1.x) * scalingFactor1.y;
 }
 
 // https://gist.github.com/TheRealMJP/c83b8c0f46b63f3a88a5986f4fa982b1
-float3 SampleTextureCatmullRom(in float2 screenCoord, in float glassLevel)
+float3 SampleTextureCatmullRom(in float2 screenCoord, in int mipMapLevel)
 {
-    int mipLevel = floor(glassLevel);
-    float mipFactor = pow(2.0, mipLevel);
-    screenCoord *= (1.0 / mipFactor);
+    float mipMapScale = pow(2.0, mipMapLevel);
+    screenCoord *= (1.0 / mipMapScale);
 
     // We're going to sample a a 4x4 grid of texels surrounding the target UV coordinate. We'll do this by rounding
     // down the sample location to get the exact center of our "starting" texel. The starting texel will be at
@@ -141,22 +134,18 @@ float3 SampleTextureCatmullRom(in float2 screenCoord, in float glassLevel)
     float2 texCoord3 = centerCoord + 2;
     float2 screenCoord12 = centerCoord + catmullRomOffset12;
 
-    texCoord0 *= mipFactor * Shader::TargetPixelSize;
-    texCoord3 *= mipFactor * Shader::TargetPixelSize;
-    screenCoord12 *= mipFactor * Shader::TargetPixelSize;
-
     float3 result = 0.0f;
-    result += Resources::glassBuffer.SampleLevel(Global::MipMapSampler, float2(texCoord0.x, texCoord0.y), glassLevel) * catmullRomWeight0.x * catmullRomWeight0.y;
-    result += Resources::glassBuffer.SampleLevel(Global::MipMapSampler, float2(screenCoord12.x, texCoord0.y), glassLevel) * catmullRomWeight12.x * catmullRomWeight0.y;
-    result += Resources::glassBuffer.SampleLevel(Global::MipMapSampler, float2(texCoord3.x, texCoord0.y), glassLevel) * catmullRomWeight3.x * catmullRomWeight0.y;
+    result += Resources::glassBuffer.Load(int3(float2(texCoord0.x, texCoord0.y), mipMapLevel)) * catmullRomWeight0.x * catmullRomWeight0.y;
+    result += Resources::glassBuffer.Load(int3(float2(screenCoord12.x, texCoord0.y), mipMapLevel)) * catmullRomWeight12.x * catmullRomWeight0.y;
+    result += Resources::glassBuffer.Load(int3(float2(texCoord3.x, texCoord0.y), mipMapLevel)) * catmullRomWeight3.x * catmullRomWeight0.y;
 
-    result += Resources::glassBuffer.SampleLevel(Global::MipMapSampler, float2(texCoord0.x, screenCoord12.y), glassLevel) * catmullRomWeight0.x * catmullRomWeight12.y;
-    result += Resources::glassBuffer.SampleLevel(Global::MipMapSampler, float2(screenCoord12.x, screenCoord12.y), glassLevel) * catmullRomWeight12.x * catmullRomWeight12.y;
-    result += Resources::glassBuffer.SampleLevel(Global::MipMapSampler, float2(texCoord3.x, screenCoord12.y), glassLevel) * catmullRomWeight3.x * catmullRomWeight12.y;
+    result += Resources::glassBuffer.Load(int3(float2(texCoord0.x, screenCoord12.y), mipMapLevel)) * catmullRomWeight0.x * catmullRomWeight12.y;
+    result += Resources::glassBuffer.Load(int3(float2(screenCoord12.x, screenCoord12.y), mipMapLevel)) * catmullRomWeight12.x * catmullRomWeight12.y;
+    result += Resources::glassBuffer.Load(int3(float2(texCoord3.x, screenCoord12.y), mipMapLevel)) * catmullRomWeight3.x * catmullRomWeight12.y;
 
-    result += Resources::glassBuffer.SampleLevel(Global::MipMapSampler, float2(texCoord0.x, texCoord3.y), glassLevel) * catmullRomWeight0.x * catmullRomWeight3.y;
-    result += Resources::glassBuffer.SampleLevel(Global::MipMapSampler, float2(screenCoord12.x, texCoord3.y), glassLevel) * catmullRomWeight12.x * catmullRomWeight3.y;
-    result += Resources::glassBuffer.SampleLevel(Global::MipMapSampler, float2(texCoord3.x, texCoord3.y), glassLevel) * catmullRomWeight3.x * catmullRomWeight3.y;
+    result += Resources::glassBuffer.Load(int3(float2(texCoord0.x, texCoord3.y), mipMapLevel)) * catmullRomWeight0.x * catmullRomWeight3.y;
+    result += Resources::glassBuffer.Load(int3(float2(screenCoord12.x, texCoord3.y), mipMapLevel)) * catmullRomWeight12.x * catmullRomWeight3.y;
+    result += Resources::glassBuffer.Load(int3(float2(texCoord3.x, texCoord3.y), mipMapLevel)) * catmullRomWeight3.x * catmullRomWeight3.y;
 
     return result;
 }
@@ -185,8 +174,13 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float materialMetallic = Resources::metallic.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
     float3 surfaceIrradiance = getSurfaceIrradiance(inputPixel.screen.xy, surfacePosition, surfaceNormal, materialAlbedo, 0.25, 0.75);
 
-    float glassRoughness = (materialRoughness * 5.0);
+    float glassLevel = (materialRoughness * 5.0);
+    int mipMapLevel = floor(glassLevel);
+    float glassFactor = (glassLevel - mipMapLevel);
+
     float2 screenCoord = inputPixel.screen.xy * Shader::TargetPixelSize;
-    float3 glassColor = SampleBicubic(inputPixel.screen.xy, glassRoughness);
+    float3 glassLevelA = SampleBicubic(inputPixel.screen.xy, mipMapLevel);
+    float3 glassLevelB = SampleBicubic(inputPixel.screen.xy, (mipMapLevel + 1));
+    float3 glassColor = lerp(glassLevelA, glassLevelB, glassFactor);
     return (surfaceIrradiance + (glassColor * materialAlbedo));
 }
