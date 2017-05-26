@@ -10,16 +10,16 @@ Texture2D           gs_pOutputBuffer        : register(t5);
 
 float4 MainPixelProgram(INPUT kInput) : SV_TARGET
 {
-    float4 nScreen = gs_pOutputBuffer.Sample(gs_pPointSampler, kInput.texCoord);
-    if (gs_pAlbedoBuffer.Sample(gs_pPointSampler, kInput.texCoord).w < 1.0)
+    float4 nScreen = gs_pOutputBuffer.Sample(gs_pBufferSampler, kInput.texCoord);
+    if (gs_pAlbedoBuffer.Sample(gs_pBufferSampler, kInput.texCoord).w < 1.0)
     {
-        float4 nCenterInfo = gs_pInfoBuffer.Sample(gs_pPointSampler, kInput.texCoord);
+        float4 nCenterInfo = gs_pInfoBuffer.Sample(gs_pBufferSampler, kInput.texCoord);
         float nReflectivity = nCenterInfo.w;
         if (nReflectivity > 0.0)
         {
-            float nCenterDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, kInput.texCoord);
+            float nCenterDepth = gs_pDepthBuffer.Sample(gs_pBufferSampler, kInput.texCoord);
             float3 nCenterPosition = GetViewPosition(kInput.texCoord, nCenterDepth);
-            float3 nCenterNormal = DecodeNormal(gs_pNormalBuffer.Sample(gs_pPointSampler, kInput.texCoord));
+            float3 nCenterNormal = DecodeNormal(gs_pNormalBuffer.Sample(gs_pBufferSampler, kInput.texCoord));
 
             float3 nViewNormal = normalize(nCenterPosition);
             float3 nReflection = reflect(nViewNormal, nCenterNormal);
@@ -43,7 +43,7 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
                 nRayPosition += (nReflection.xyz * gs_nStepSize);
                 nTexCoord = mul(Camera::ProjectionMatrix, float4(nRayPosition, 1));
                 nTexCoord.xy = ((((nTexCoord.xy * float2(1.0, -1.0)) / nTexCoord.w) * 0.5) + 0.5);
-                nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nTexCoord.xy);
+                nSampleDepth = gs_pDepthBuffer.Sample(gs_pBufferSampler, nTexCoord.xy);
                 nSamplePosition = GetViewPosition(nTexCoord.xy, nSampleDepth);
                 if (nSamplePosition.z <= nRayPosition.z)
                 {
@@ -65,7 +65,7 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
                     nRayPosition -= (nReflection.xyz * gs_nStepSize / gs_nNumStepsBack);
                     nTexCoord = mul(Camera::ProjectionMatrix, float4(nRayPosition, 1));
                     nTexCoord.xy = ((((nTexCoord.xy * float2(1.0, -1.0)) / nTexCoord.w) * 0.5) + 0.5);
-                    nSampleDepth = gs_pDepthBuffer.Sample(gs_pPointSampler, nTexCoord.xy);
+                    nSampleDepth = gs_pDepthBuffer.Sample(gs_pBufferSampler, nTexCoord.xy);
                     nSamplePosition = GetViewPosition(nTexCoord.xy, nSampleDepth);
                     if (nSamplePosition.z > nRayPosition.z)
                     {
@@ -95,7 +95,7 @@ float4 MainPixelProgram(INPUT kInput) : SV_TARGET
             // COMBINING REFLECTION TO THE ORIGINAL PIXEL COLOR
             if (nReflectivity > 0.0)
             {
-                nScreen = lerp(nScreen, gs_pOutputBuffer.Sample(gs_pPointSampler, nTexCoord.xy), nReflectivity);
+                nScreen = lerp(nScreen, gs_pOutputBuffer.Sample(gs_pBufferSampler, nTexCoord.xy), nReflectivity);
             }
         }
     }

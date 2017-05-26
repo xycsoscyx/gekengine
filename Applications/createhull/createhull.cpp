@@ -2,7 +2,6 @@
 #include "GEK/Math/Vector3.hpp"
 #include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Shapes/AlignedBox.hpp"
-#include "GEK/Utility/Exceptions.hpp"
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/JSON.hpp"
@@ -31,18 +30,20 @@ struct Parameters
     float feetPerUnit = 1.0f;
 };
 
-void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode *node, std::vector<Math::Float3> &pointList, Shapes::AlignedBox &boundingBox)
+bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode *node, std::vector<Math::Float3> &pointList, Shapes::AlignedBox &boundingBox)
 {
     if (node == nullptr)
     {
-        throw std::exception("Invalid model node");
+        AtomicWriter(std::cerr) << "Invalid model node" << std::endl;
+        return false;
     }
 
     if (node->mNumMeshes > 0)
     {
         if (node->mMeshes == nullptr)
         {
-            throw std::exception("Invalid mesh list");
+            AtomicWriter(std::cerr) << "Invalid mesh list" << std::endl;
+            return false;
         }
 
         for (uint32_t meshIndex = 0; meshIndex < node->mNumMeshes; ++meshIndex)
@@ -50,7 +51,8 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
             uint32_t nodeMeshIndex = node->mMeshes[meshIndex];
             if (nodeMeshIndex >= scene->mNumMeshes)
             {
-                throw std::exception("Invalid mesh index");
+                AtomicWriter(std::cerr) << "Invalid mesh index" << std::endl;
+                return false;
             }
 
             const aiMesh *mesh = scene->mMeshes[nodeMeshIndex];
@@ -58,13 +60,15 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
             {
                 if (mesh->mFaces == nullptr)
                 {
-                    throw std::exception("Invalid mesh face list");
+                    AtomicWriter(std::cerr) << "Invalid mesh face list" << std::endl;
+                    return false;
                 }
 
 				if (mesh->mVertices == nullptr)
 				{
-					throw std::exception("Invalid mesh vertex list");
-				}
+					AtomicWriter(std::cerr) << "Invalid mesh vertex list" << std::endl;
+                    return false;
+                }
 
                 for (uint32_t vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex)
                 {
@@ -85,14 +89,20 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
     {
         if (node->mChildren == nullptr)
         {
-            throw std::exception("Invalid child list");
+            AtomicWriter(std::cerr) << "Invalid child list" << std::endl;
+            return false;
         }
 
         for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
         {
-            getMeshes(parameters, scene, node->mChildren[childIndex], pointList, boundingBox);
+            if (!getMeshes(parameters, scene, node->mChildren[childIndex], pointList, boundingBox))
+            {
+                return false;
+            }
         }
     }
+
+    return true;
 }
 
 void serializeCollision(void* const serializeHandle, const void* const buffer, int size)
@@ -103,144 +113,142 @@ void serializeCollision(void* const serializeHandle, const void* const buffer, i
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    try
+    AtomicWriter() << "GEK Model Converter" << std::endl;
+
+    FileSystem::Path fileNameInput;
+    FileSystem::Path fileNameOutput;
+	Parameters parameters;
+    for (int argumentIndex = 1; argumentIndex < argumentCount; ++argumentIndex)
     {
-        AtomicWriter() << "GEK Model Converter" << std::endl;
-
-        std::string fileNameInput;
-        std::string fileNameOutput;
-		Parameters parameters;
-        for (int argumentIndex = 1; argumentIndex < argumentCount; ++argumentIndex)
+		std::string argument(String::Narrow(argumentList[argumentIndex]));
+		std::vector<std::string> arguments(String::Split(String::GetLower(argument), ':'));
+        if (arguments.empty())
         {
-			std::string argument(String::Narrow(argumentList[argumentIndex]));
-			std::vector<std::string> arguments(String::Split(String::GetLower(argument), ':'));
-            if (arguments.empty())
-            {
-                throw std::exception("No arguments specified for command line parameter");
-            }
+            AtomicWriter(std::cerr) << "No arguments specified for command line parameter" << std::endl;
+            return -__LINE__;
+        }
 
-            if (arguments[0] == "-input" && ++argumentIndex < argumentCount)
-            {
-                fileNameInput = String::Narrow(argumentList[argumentIndex]);
-            }
-            else if (arguments[0] == "-output" && ++argumentIndex < argumentCount)
-            {
-                fileNameOutput = String::Narrow(argumentList[argumentIndex]);
-            }
-			else if (arguments[0] == "-unitsinfoot")
+        if (arguments[0] == "-input" && ++argumentIndex < argumentCount)
+        {
+            fileNameInput = argumentList[argumentIndex];
+        }
+        else if (arguments[0] == "-output" && ++argumentIndex < argumentCount)
+        {
+            fileNameOutput = argumentList[argumentIndex];
+        }
+		else if (arguments[0] == "-unitsinfoot")
+		{
+			if (arguments.size() != 2)
 			{
-				if (arguments.size() != 2)
-				{
-					throw std::exception("Missing parameters for unitsInFoot");
-				}
+				AtomicWriter(std::cerr) << "Missing parameters for unitsInFoot" << std::endl;
+                return -__LINE__;
+            }
 
-				parameters.feetPerUnit = (1.0f / (float)String::Convert(arguments[1], 1.0f));
-			}
+			parameters.feetPerUnit = (1.0f / (float)String::Convert(arguments[1], 1.0f));
 		}
-
-		aiLogStream logStream;
-		logStream.callback = [](char const *message, char *user) -> void
-		{
-			AtomicWriter(std::cerr) << "Assimp: " << message;
-		};
-
-		logStream.user = nullptr;
-		aiAttachLogStream(&logStream);
-
-        int notRequiredComponents =
-            aiComponent_TEXCOORDS |
-            aiComponent_NORMALS |
-			aiComponent_TANGENTS_AND_BITANGENTS |
-			aiComponent_COLORS |
-            aiComponent_BONEWEIGHTS |
-            aiComponent_ANIMATIONS |
-            aiComponent_LIGHTS |
-            aiComponent_CAMERAS |
-            aiComponent_TEXTURES |
-            aiComponent_MATERIALS |
-            0;
-
-        unsigned int importFlags =
-            aiProcess_RemoveComponent |
-            aiProcess_OptimizeMeshes |
-            aiProcess_PreTransformVertices |
-            0;
-
-        unsigned int postProcessFlags =
-            aiProcess_JoinIdenticalVertices |
-            aiProcess_FindInvalidData |
-            aiProcess_OptimizeGraph |
-            0;
-
-        aiPropertyStore *propertyStore = aiCreatePropertyStore();
-        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
-        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
-        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
-        auto scene = aiImportFileExWithProperties(fileNameInput.c_str(), importFlags, nullptr, propertyStore);
-        if (scene == nullptr)
-        {
-            throw std::exception("Unable to load scene with Assimp");
-        }
-
-        scene = aiApplyPostProcessing(scene, postProcessFlags);
-        if (scene == nullptr)
-		{
-			throw std::exception("Unable to apply post processing with Assimp");
-		}
-
-        if (!scene->HasMeshes())
-        {
-            throw std::exception("Scene has no meshes");
-        }
-
-		Shapes::AlignedBox boundingBox;
-        std::vector<Math::Float3> pointList;
-        getMeshes(parameters, scene, scene->mRootNode, pointList, boundingBox);
-        aiReleasePropertyStore(propertyStore);
-        aiReleaseImport(scene);
-
-		if (pointList.empty())
-		{
-            throw std::exception("No vertex data found in scene");
-		}
-
-		AtomicWriter() << "> Num. Points: " << pointList.size() << std::endl;
-		AtomicWriter() << "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")" << std::endl;
-		AtomicWriter() << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
-
-        NewtonWorld *newtonWorld = NewtonCreate();
-        NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointList.size(), pointList.data()->data, sizeof(Math::Float3), 0.025f, 0, Math::Float4x4::Identity.data);
-        if (newtonCollision == nullptr)
-        {
-            throw std::exception("Unable to create convex hull collision object");
-        }
-
-        FILE *file = nullptr;
-        _wfopen_s(&file, String::Widen(fileNameOutput).c_str(), L"wb");
-        if (file == nullptr)
-        {
-            throw std::exception("Unable to create output file");
-        }
-
-        Header header;
-        fwrite(&header, sizeof(Header), 1, file);
-        NewtonCollisionSerialize(newtonWorld, newtonCollision, serializeCollision, file);
-        fclose(file);
-
-        NewtonDestroyCollision(newtonCollision);
-        NewtonDestroy(newtonWorld);
-    }
-    catch (const std::exception &exception)
-    {
-		AtomicWriter(std::cerr) << "GEK Engine - Error" << std::endl;
-		AtomicWriter(std::cerr) << "Caught: " << exception.what() << std::endl;
-		AtomicWriter(std::cerr) << "Type: " << typeid(exception).name() << std::endl;
 	}
-    catch (...)
+
+	aiLogStream logStream;
+	logStream.callback = [](char const *message, char *user) -> void
+	{
+		AtomicWriter(std::cerr) << "Assimp: " << message;
+	};
+
+	logStream.user = nullptr;
+	aiAttachLogStream(&logStream);
+
+    int notRequiredComponents =
+        aiComponent_TEXCOORDS |
+        aiComponent_NORMALS |
+		aiComponent_TANGENTS_AND_BITANGENTS |
+		aiComponent_COLORS |
+        aiComponent_BONEWEIGHTS |
+        aiComponent_ANIMATIONS |
+        aiComponent_LIGHTS |
+        aiComponent_CAMERAS |
+        aiComponent_TEXTURES |
+        aiComponent_MATERIALS |
+        0;
+
+    unsigned int importFlags =
+        aiProcess_RemoveComponent |
+        aiProcess_OptimizeMeshes |
+        aiProcess_PreTransformVertices |
+        0;
+
+    unsigned int postProcessFlags =
+        aiProcess_JoinIdenticalVertices |
+        aiProcess_FindInvalidData |
+        aiProcess_OptimizeGraph |
+        0;
+
+    aiPropertyStore *propertyStore = aiCreatePropertyStore();
+    aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
+    aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
+    aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
+    auto scene = aiImportFileExWithProperties(fileNameInput.u8string().c_str(), importFlags, nullptr, propertyStore);
+    if (scene == nullptr)
     {
-        AtomicWriter(std::cerr) << "GEK Engine - Error" << std::endl;
-        AtomicWriter(std::cerr) << "Caught: Non-standard exception" << std::endl;
-    };
+        AtomicWriter(std::cerr) << "Unable to load scene with Assimp" << std::endl;
+        return -__LINE__;
+    }
+
+    scene = aiApplyPostProcessing(scene, postProcessFlags);
+    if (scene == nullptr)
+	{
+		AtomicWriter(std::cerr) << "Unable to apply post processing with Assimp" << std::endl;
+        return -__LINE__;
+    }
+
+    if (!scene->HasMeshes())
+    {
+        AtomicWriter(std::cerr) << "Scene has no meshes" << std::endl;
+        return -__LINE__;
+    }
+
+	Shapes::AlignedBox boundingBox;
+    std::vector<Math::Float3> pointList;
+    if (!getMeshes(parameters, scene, scene->mRootNode, pointList, boundingBox))
+    {
+        return -__LINE__;
+    }
+
+    aiReleasePropertyStore(propertyStore);
+    aiReleaseImport(scene);
+
+	if (pointList.empty())
+	{
+        AtomicWriter(std::cerr) << "No vertex data found in scene" << std::endl;
+        return -__LINE__;
+    }
+
+	AtomicWriter() << "> Num. Points: " << pointList.size() << std::endl;
+	AtomicWriter() << "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")" << std::endl;
+	AtomicWriter() << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
+
+    NewtonWorld *newtonWorld = NewtonCreate();
+    NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointList.size(), pointList.data()->data, sizeof(Math::Float3), 0.025f, 0, Math::Float4x4::Identity.data);
+    if (newtonCollision == nullptr)
+    {
+        AtomicWriter(std::cerr) << "Unable to create convex hull collision object" << std::endl;
+        return -__LINE__;
+    }
+
+    FILE *file = nullptr;
+    _wfopen_s(&file, fileNameOutput.c_str(), L"wb");
+    if (file == nullptr)
+    {
+        AtomicWriter(std::cerr) << "Unable to create output file" << std::endl;
+        return -__LINE__;
+    }
+
+    Header header;
+    fwrite(&header, sizeof(Header), 1, file);
+    NewtonCollisionSerialize(newtonWorld, newtonCollision, serializeCollision, file);
+    fclose(file);
+
+    NewtonDestroyCollision(newtonCollision);
+    NewtonDestroy(newtonWorld);
 
     return 0;
 }

@@ -335,9 +335,9 @@ namespace Gek
             Plugin::Population *population = nullptr;
             Engine::Resources *resources = nullptr;
 
-            Video::ObjectPtr pointSamplerState;
-            Video::ObjectPtr linearClampSamplerState;
-            Video::ObjectPtr linearWrapSamplerState;
+            Video::ObjectPtr bufferSamplerState;
+            Video::ObjectPtr textureSamplerState;
+            Video::ObjectPtr mipmapSamplerState;
             Video::BufferPtr engineConstantBuffer;
             Video::BufferPtr cameraConstantBuffer;
 
@@ -405,28 +405,28 @@ namespace Gek
             {
                 core->getLog()->message("Renderer", Plugin::Core::Log::Type::Message, "Initializing rendering system components");
 
-                Video::SamplerStateInformation pointSamplerStateData;
-                pointSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapPoint;
-                pointSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
-                pointSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
-                pointSamplerState = videoDevice->createSamplerState(pointSamplerStateData);
-                pointSamplerState->setName("renderer:pointSamplerState");
+                Video::SamplerStateInformation bufferSamplerStateData;
+                bufferSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapPoint;
+                bufferSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
+                bufferSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
+                bufferSamplerState = videoDevice->createSamplerState(bufferSamplerStateData);
+                bufferSamplerState->setName("renderer:bufferSamplerState");
 
-                Video::SamplerStateInformation linearClampSamplerStateData;
-                linearClampSamplerStateData.maximumAnisotropy = 8;
-                linearClampSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::Anisotropic;
-                linearClampSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
-                linearClampSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
-                linearClampSamplerState = videoDevice->createSamplerState(linearClampSamplerStateData);
-                linearClampSamplerState->setName("renderer:linearClampSamplerState");
+                Video::SamplerStateInformation textureSamplerStateData;
+                textureSamplerStateData.maximumAnisotropy = 8;
+                textureSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::Anisotropic;
+                textureSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Wrap;
+                textureSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
+                textureSamplerState = videoDevice->createSamplerState(textureSamplerStateData);
+                textureSamplerState->setName("renderer:textureSampler");
 
-                Video::SamplerStateInformation linearWrapSamplerStateData;
-                linearWrapSamplerStateData.maximumAnisotropy = 8;
-                linearWrapSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::Anisotropic;
-                linearWrapSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Wrap;
-                linearWrapSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
-                linearWrapSamplerState = videoDevice->createSamplerState(linearWrapSamplerStateData);
-                linearWrapSamplerState->setName("renderer:linearWrapSamplerState");
+                Video::SamplerStateInformation mipmapSamplerStateData;
+                mipmapSamplerStateData.maximumAnisotropy = 8;
+                mipmapSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapLinear;
+                mipmapSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Wrap;
+                mipmapSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
+                mipmapSamplerState = videoDevice->createSamplerState(mipmapSamplerStateData);
+                mipmapSamplerState->setName("renderer:mipmapSampler");
 
                 Video::UnifiedBlendStateInformation blendStateInformation;
                 blendState = videoDevice->createBlendState(blendStateInformation);
@@ -579,12 +579,12 @@ namespace Gek
                     "    float2 texCoord  : TEXCOORD0;" \
                     "};" \
                     "" \
-                    "sampler pointSampler;" \
+                    "sampler bufferSampler;" \
                     "Texture2D<float4> uiTexture : register(t0);" \
                     "" \
                     "float4 main(PixelInput input) : SV_Target" \
                     "{" \
-                    "    return (input.color * uiTexture.Sample(pointSampler, input.texCoord));" \
+                    "    return (input.color * uiTexture.Sample(bufferSampler, input.texCoord));" \
                     "}";
 
                 compiled = resources->compileProgram(Video::PipelineType::Pixel, "uiPixelProgram", "main", pixelShader);
@@ -762,7 +762,7 @@ namespace Gek
                     videoContext->vertexPipeline()->setProgram(gui.vertexProgram.get());
                     videoContext->vertexPipeline()->setConstantBufferList({ gui.constantBuffer.get() }, 0);
                     videoContext->pixelPipeline()->setProgram(gui.pixelProgram.get());
-                    videoContext->pixelPipeline()->setSamplerStateList({ pointSamplerState.get() }, 0);
+                    videoContext->pixelPipeline()->setSamplerStateList({ bufferSamplerState.get() }, 0);
 
                     videoContext->setBlendState(gui.blendState.get(), Math::Float4::Black, 0xFFFFFFFF);
                     videoContext->setDepthState(gui.depthState.get(), 0);
@@ -1254,7 +1254,7 @@ namespace Gek
                         videoContext->pixelPipeline()->setConstantBufferList(bufferList, 0);
                         videoContext->computePipeline()->setConstantBufferList(bufferList, 0);
 
-                        std::vector<Video::Object *> samplerList = { pointSamplerState.get(), linearClampSamplerState.get(), linearWrapSamplerState.get() };
+                        std::vector<Video::Object *> samplerList = { bufferSamplerState.get(), textureSamplerState.get(), mipmapSamplerState.get() };
                         videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
 
                         videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
@@ -1322,7 +1322,7 @@ namespace Gek
                         }
 
                         videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                        for (const auto &filterName : { "AmbientOcclusion", "tonemap", "antialias" })
+                        for (const auto &filterName : { "tonemap", "antialias" })
                         {
                             Engine::Filter * const filter = resources->getFilter(filterName);
                             if (filter)

@@ -9,9 +9,9 @@ namespace Math
 
 namespace Global
 {
-    SamplerState PointSampler : register(s0);
-    SamplerState LinearClampSampler : register(s1);
-    SamplerState LinearWrapSampler : register(s2);
+    SamplerState BufferSampler : register(s0);
+    SamplerState TextureSampler : register(s1);
+    SamplerState MipMapSampler : register(s2);
 };
 
 namespace Engine
@@ -45,4 +45,5 @@ namespace Shader
     };
 
     static const float2 TargetPixelSize = (1.0 / TargetSize);
+    static const float2 TargetPixelCenter = (0.5 / TargetSize);
 };

@@ -10,13 +10,19 @@ namespace Gek
         {
         }
 
-		Path::Path(std::string const &path)
-			: std::experimental::filesystem::path(path)
-		{
-			make_preferred();
-		}
+        Path::Path(std::string const &path)
+            : std::experimental::filesystem::path(path)
+        {
+            make_preferred();
+        }
 
-		Path::Path(std::experimental::filesystem::path const &path)
+        Path::Path(std::wstring const &path)
+            : std::experimental::filesystem::path(path)
+        {
+            make_preferred();
+        }
+
+        Path::Path(std::experimental::filesystem::path const &path)
 			: std::experimental::filesystem::path(path)
 		{
 			make_preferred();
@@ -29,6 +35,11 @@ namespace Gek
         }
 
         void Path::operator = (std::string const &path)
+        {
+            assign(path);
+        }
+
+        void Path::operator = (std::wstring const &path)
         {
             assign(path);
         }

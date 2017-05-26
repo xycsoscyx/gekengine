@@ -145,8 +145,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     {
         AtomicWriter() << "GEK Part Converter" << std::endl;
 
-        std::string fileNameInput;
-        std::string fileNameOutput;
+        FileSystem::Path fileNameInput;
+        FileSystem::Path fileNameOutput;
 		Parameters parameters;
         bool flipWinding = false;
         for (int argumentIndex = 1; argumentIndex < argumentCount; ++argumentIndex)
@@ -160,11 +160,11 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
             if (arguments[0] == "-input" && ++argumentIndex < argumentCount)
             {
-                fileNameInput = String::Narrow(argumentList[argumentIndex]);
+                fileNameInput = argumentList[argumentIndex];
             }
             else if (arguments[0] == "-output" && ++argumentIndex < argumentCount)
             {
-                fileNameOutput = String::Narrow(argumentList[argumentIndex]);
+                fileNameOutput = argumentList[argumentIndex];
             }
             else if (arguments[0] == "-flipwinding")
             {
@@ -224,7 +224,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
-        auto scene = aiImportFileExWithProperties(fileNameInput.c_str(), importFlags, nullptr, propertyStore);
+        auto scene = aiImportFileExWithProperties(fileNameInput.u8string().c_str(), importFlags, nullptr, propertyStore);
         if (scene == nullptr)
         {
             throw std::exception("Unable to load scene with Assimp");
@@ -399,7 +399,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         NewtonTreeCollisionEndBuild(newtonCollision, 1);
 
         FILE *file = nullptr;
-        _wfopen_s(&file, String::Widen(fileNameOutput).c_str(), L"wb");
+        _wfopen_s(&file, fileNameOutput.c_str(), L"wb");
         if (file == nullptr)
         {
             throw std::exception("Unable to create output file");

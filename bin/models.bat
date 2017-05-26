@@ -1,11 +1,18 @@
-.\debug\createmodel -input data\models\sponza.fbx -output data\models\sponza.gek -flipCoords -smoothAngle:75
+.\debug\createmodel -input data\models\rendering\buddha.obj -output data\models\buddha.gek -forcematerial demo/glass/glass_diffuse
+.\debug\createmodel -input data\models\rendering\mitsuba.obj -output data\models\mitsuba.gek -forcematerial demo/glass/glass_diffuse
+.\debug\createmodel -input data\models\rendering\dragon.obj -output data\models\dragon.gek -forcematerial demo/glass/glass_diffuse
+.\debug\createmodel -input data\models\rendering\teapot.obj -output data\models\teapot.gek -forcematerial demo/glass/glass_diffuse
+.\debug\createmodel -input data\models\rendering\testObj.obj -output data\models\testObj.gek -forcematerial demo/glass/glass_diffuse
 pause
 
-.\debug\createtree -input data\models\sponza.tree.fbx -output data\models\sponza.bin
+.\debug\createmodel -input data\models\rendering\sponza.fbx -output data\models\sponza.gek -flipCoords -smoothAngle:75
 pause
 
-.\debug\createmodel -input data\models\cube.fbx -output data\models\cube.gek -flipCoords
+.\debug\createtree -input data\models\physics\sponza.fbx -output data\models\sponza.bin
 pause
 
-.\debug\createhull -input data\models\cube.hull.fbx -output data\models\cube.bin
+.\debug\createmodel -input data\models\rendering\cube.fbx -output data\models\cube.gek -flipCoords
+pause
+
+.\debug\createhull -input data\models\physics\cube.fbx -output data\models\cube.bin
 pause

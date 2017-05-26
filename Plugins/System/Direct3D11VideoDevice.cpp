@@ -2603,9 +2603,6 @@ namespace Gek
             {
                 GEK_REQUIRE(d3dDevice);
 
-				static const std::vector<uint8_t> EmptyBuffer;
-				std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
-
 				std::string extension(String::GetLower(filePath.getExtension()));
                 std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
                 if (extension == ".dds")
@@ -2638,11 +2635,18 @@ namespace Gek
                     throw Video::InvalidFileType("Unknown texture extension encountered");
                 }
 
+                static const std::vector<uint8_t> EmptyBuffer;
+                std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
+                if (buffer.empty())
+                {
+                    throw Video::LoadFileFailed("Unable to load data from texture file");
+                }
+
                 ::DirectX::ScratchImage image;
                 HRESULT resultValue = load(buffer, image);
                 if (FAILED(resultValue))
                 {
-                    throw Video::LoadFileFailed("Unable to load texture from file");
+                    throw Video::LoadFileFailed("Unable to load image from texture file");
                 }
 
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
@@ -2670,9 +2674,6 @@ namespace Gek
 
             Texture::Description loadTextureDescription(FileSystem::Path const &filePath)
             {
-				static const std::vector<uint8_t> EmptyBuffer;
-				std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer, 1024 * 4));
-
 				std::string extension(String::GetLower(filePath.getExtension()));
 				std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::TexMetadata &)> getMetadata;
                 if (extension == ".dds")
@@ -2703,6 +2704,13 @@ namespace Gek
                 if (!getMetadata)
                 {
                     throw Video::InvalidFileType("Unknown texture extension encountered");
+                }
+
+                static const std::vector<uint8_t> EmptyBuffer;
+                std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer, 1024 * 4));
+                if (buffer.empty())
+                {
+                    throw Video::LoadFileFailed("Unable to load data from texture file");
                 }
 
                 ::DirectX::TexMetadata metadata;

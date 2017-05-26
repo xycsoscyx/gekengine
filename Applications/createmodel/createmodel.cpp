@@ -2,7 +2,6 @@
 #include "GEK/Math/Vector3.hpp"
 #include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Shapes/AlignedBox.hpp"
-#include "GEK/Utility/Exceptions.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/Context.hpp"
@@ -51,20 +50,23 @@ struct Part
 struct Parameters
 {
     float feetPerUnit = 1.0f;
+    std::string forceMaterial;
 };
 
-void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiNode *node, std::unordered_map<std::string, std::vector<Part>> &scenePartMap, Shapes::AlignedBox &boundingBox)
+bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiNode *node, std::unordered_map<std::string, std::vector<Part>> &scenePartMap, Shapes::AlignedBox &boundingBox)
 {
     if (node == nullptr)
     {
-        throw std::exception("Invalid scene node");
+        AtomicWriter(std::cerr) << "Invalid scene node" << std::endl;
+        return false;
     }
 
     if (node->mNumMeshes > 0)
     {
         if (node->mMeshes == nullptr)
         {
-            throw std::exception("Invalid mesh list");
+            AtomicWriter(std::cerr) << "Invalid mesh list" << std::endl;
+            return false;
         }
 
         for (uint32_t meshIndex = 0; meshIndex < node->mNumMeshes; ++meshIndex)
@@ -72,7 +74,8 @@ void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
             uint32_t nodeMeshIndex = node->mMeshes[meshIndex];
             if (nodeMeshIndex >= scene->mNumMeshes)
             {
-                throw std::exception("Invalid mesh index");
+                AtomicWriter(std::cerr) << "Invalid mesh index" << std::endl;
+                return false;
             }
 
             const aiMesh *mesh = scene->mMeshes[nodeMeshIndex];
@@ -80,32 +83,38 @@ void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
             {
                 if (mesh->mFaces == nullptr)
                 {
-                    throw std::exception("Invalid mesh face list");
+                    AtomicWriter(std::cerr) << "Invalid mesh face list" << std::endl;
+                    return false;
                 }
 
                 if (mesh->mVertices == nullptr)
                 {
-                    throw std::exception("Invalid mesh vertex list");
+                    AtomicWriter(std::cerr) << "Invalid mesh vertex list" << std::endl;
+                    return false;
                 }
 
                 if (mesh->mTextureCoords[0] == nullptr)
                 {
-                    throw std::exception("Invalid mesh texture coordinate list");
+                    AtomicWriter(std::cerr) << "Invalid mesh texture coordinate list" << std::endl;
+                    return false;
                 }
 
                 if (mesh->mTangents == nullptr)
                 {
-                    throw std::exception("Invalid mesh tangent list");
+                    AtomicWriter(std::cerr) << "Invalid mesh tangent list" << std::endl;
+                    return false;
                 }
 
                 if (mesh->mBitangents == nullptr)
                 {
-                    throw std::exception("Invalid mesh bitangent list");
+                    AtomicWriter(std::cerr) << "Invalid mesh bitangent list" << std::endl;
+                    return false;
                 }
 
                 if (mesh->mNormals == nullptr)
                 {
-                    throw std::exception("Invalid mesh normal list");
+                    AtomicWriter(std::cerr) << "Invalid mesh normal list" << std::endl;
+                    return false;
                 }
 
                 Part part;
@@ -115,7 +124,8 @@ void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
                     const aiFace &face = mesh->mFaces[faceIndex];
                     if (face.mNumIndices != 3)
                     {
-                        throw std::exception("Non-triangular face encountered");
+                        AtomicWriter(std::cerr) << "Non-triangular face encountered" << std::endl;
+                        return false;
                     }
 
                     uint32_t edgeStartIndex = (faceIndex * 3);
@@ -158,11 +168,18 @@ void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
                         mesh->mNormals[vertexIndex].z);
                 }
 
-                aiString sceneDiffuseMaterial;
-                const aiMaterial *sceneMaterial = scene->mMaterials[mesh->mMaterialIndex];
-                sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
-				std::string materialPath = sceneDiffuseMaterial.C_Str();
-                scenePartMap[materialPath].push_back(std::move(part));
+                if (parameters.forceMaterial.empty())
+                {
+                    aiString sceneDiffuseMaterial;
+                    const aiMaterial *sceneMaterial = scene->mMaterials[mesh->mMaterialIndex];
+                    sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
+                    std::string materialPath = sceneDiffuseMaterial.C_Str();
+                    scenePartMap[materialPath].push_back(std::move(part));
+                }
+                else
+                {
+                    scenePartMap[parameters.forceMaterial].push_back(std::move(part));
+                }
             }
         }
     }
@@ -171,314 +188,331 @@ void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
     {
         if (node->mChildren == nullptr)
         {
-            throw std::exception("Invalid child list");
+            AtomicWriter(std::cerr) << "Invalid child list" << std::endl;
+            return false;
         }
 
         for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
         {
-            getSceneParts(parameters, scene, node->mChildren[childIndex], scenePartMap, boundingBox);
+            if (!getSceneParts(parameters, scene, node->mChildren[childIndex], scenePartMap, boundingBox))
+            {
+                return false;
+            }
         }
     }
+
+    return true;
 }
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    try
+    AtomicWriter() << "GEK Part Converter" << std::endl;
+
+    FileSystem::Path fileNameInput;
+    FileSystem::Path fileNameOutput;
+    Parameters parameters;
+    bool flipCoords = false;
+    bool flipWinding = false;
+    float smoothingAngle = 80.0f;
+    for (int argumentIndex = 1; argumentIndex < argumentCount; ++argumentIndex)
     {
-        AtomicWriter() << "GEK Part Converter" << std::endl;
-
-        std::string fileNameInput;
-        std::string fileNameOutput;
-        Parameters parameters;
-        bool flipCoords = false;
-        bool flipWinding = false;
-        float smoothingAngle = 80.0f;
-        for (int argumentIndex = 1; argumentIndex < argumentCount; ++argumentIndex)
+		std::string argument(String::Narrow(argumentList[argumentIndex]));
+		std::vector<std::string> arguments(String::Split(String::GetLower(argument), ':'));
+        if (arguments.empty())
         {
-			std::string argument(String::Narrow(argumentList[argumentIndex]));
-			std::vector<std::string> arguments(String::Split(String::GetLower(argument), ':'));
-            if (arguments.empty())
+            AtomicWriter(std::cerr) << "No arguments specified for command line parameter" << std::endl;
+            return -__LINE__;
+        }
+
+        if (arguments[0] == "-input" && ++argumentIndex < argumentCount)
+        {
+			fileNameInput = argumentList[argumentIndex];
+        }
+        else if (arguments[0] == "-output" && ++argumentIndex < argumentCount)
+        {
+			fileNameOutput = argumentList[argumentIndex];
+        }
+        else if (arguments[0] == "-flipcoords")
+        {
+            flipCoords = true;
+        }
+        else if (arguments[0] == "-flipwinding")
+        {
+            flipWinding = true;
+        }
+        else if (arguments[0] == "-smoothangle")
+        {
+            if (arguments.size() != 2)
             {
-                throw std::exception("No arguments specified for command line parameter");
+                AtomicWriter(std::cerr) << "Missing parameters for smoothAngle" << std::endl;
+                return -__LINE__;
             }
 
-            if (arguments[0] == "-input" && ++argumentIndex < argumentCount)
+			smoothingAngle = String::Convert(arguments[1], 80.0f);
+        }
+        else if (arguments[0] == "-unitsinfoot")
+        {
+            if (arguments.size() != 2)
             {
-				fileNameInput = String::Narrow(argumentList[argumentIndex]);
+                AtomicWriter(std::cerr) << "Missing parameters for unitsInFoot" << std::endl;
+                return -__LINE__;
             }
-            else if (arguments[0] == "-output" && ++argumentIndex < argumentCount)
+
+			parameters.feetPerUnit = (1.0f / String::Convert(arguments[1], 1.0f));
+        }
+        else if (arguments[0] == "-forcematerial" && ++argumentIndex < argumentCount)
+        {
+            parameters.forceMaterial = String::Narrow(argumentList[argumentIndex]);
+        }
+    }
+
+    aiLogStream logStream;
+    logStream.callback = [](char const *message, char *user) -> void
+    {
+		AtomicWriter(std::cerr) << "Assimp: " << message;
+    };
+
+    logStream.user = nullptr;
+    aiAttachLogStream(&logStream);
+
+    int notRequiredComponents =
+        aiComponent_NORMALS |
+        aiComponent_TANGENTS_AND_BITANGENTS |
+        aiComponent_COLORS |
+        aiComponent_BONEWEIGHTS |
+        aiComponent_ANIMATIONS |
+        aiComponent_LIGHTS |
+        aiComponent_CAMERAS |
+        0;
+
+    unsigned int importFlags =
+        (flipWinding ? aiProcess_FlipWindingOrder : 0) |
+        (flipCoords ? aiProcess_FlipUVs : 0) |
+        aiProcess_OptimizeMeshes |
+        aiProcess_RemoveComponent |
+        aiProcess_SplitLargeMeshes |
+        aiProcess_PreTransformVertices |
+        aiProcess_Triangulate |
+        aiProcess_SortByPType |
+        aiProcess_ImproveCacheLocality |
+        aiProcess_RemoveRedundantMaterials |
+        aiProcess_FindDegenerates |
+        0;
+
+    unsigned int textureProcessFlags =
+        aiProcess_GenUVCoords |
+        aiProcess_GenUVCoords_Sphere |
+        aiProcess_TransformUVCoords |
+        0;
+
+    unsigned int tangentProcessFlags =
+        aiProcess_JoinIdenticalVertices |
+        aiProcess_FindInvalidData |
+        aiProcess_GenSmoothNormals |
+        aiProcess_CalcTangentSpace |
+        aiProcess_OptimizeGraph |
+        0;
+
+    aiPropertyStore *propertyStore = aiCreatePropertyStore();
+    aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
+    aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
+    aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
+    aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
+    aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
+    auto scene = aiImportFileExWithProperties(fileNameInput.u8string().c_str(), importFlags, nullptr, propertyStore);
+    if (scene == nullptr)
+    {
+        AtomicWriter(std::cerr) << "Unable to load scene with Assimp" << std::endl;
+        return -__LINE__;
+    }
+
+    scene = aiApplyPostProcessing(scene, textureProcessFlags);
+    if (scene == nullptr)
+    {
+        AtomicWriter(std::cerr) << "Unable to apply texture post processing with Assimp" << std::endl;
+        return -__LINE__;
+    }
+
+    scene = aiApplyPostProcessing(scene, tangentProcessFlags);
+    if (scene == nullptr)
+    {
+        AtomicWriter(std::cerr) << "Unable to apply tangent post processing with Assimp" << std::endl;
+        return -__LINE__;
+    }
+
+    if (!scene->HasMeshes())
+    {
+        AtomicWriter(std::cerr) << "Scene has no meshes" << std::endl;
+        return -__LINE__;
+    }
+
+    if (!scene->HasMaterials())
+    {
+        AtomicWriter(std::cerr) << "Exporting to model requires materials in scene" << std::endl;
+        return -__LINE__;
+    }
+
+    Shapes::AlignedBox boundingBox;
+    std::unordered_map<std::string, std::vector<Part>> scenePartMap;
+    if (!getSceneParts(parameters, scene, scene->mRootNode, scenePartMap, boundingBox))
+    {
+        return -__LINE__;
+    }
+
+    aiReleasePropertyStore(propertyStore);
+    aiReleaseImport(scene);
+
+    auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
+    auto dataPath(FileSystem::GetFileName(rootPath, "Data"));
+
+	std::string texturesPath(String::GetLower(FileSystem::GetFileName(dataPath, "Textures").u8string()));
+    auto materialsPath(FileSystem::GetFileName(dataPath, "Materials").u8string());
+
+	std::map<std::string, std::string> albedoToMaterialMap;
+    std::function<bool(FileSystem::Path const &)> findMaterials;
+    findMaterials = [&](FileSystem::Path const &filePath) -> bool
+    {
+        if (filePath.isDirectory())
+        {
+            FileSystem::Find(filePath, findMaterials);
+        }
+        else if (filePath.isFile())
+        {
+            const JSON::Object materialNode = JSON::Load(filePath);
+            if (!materialNode.is_empty())
             {
-				fileNameOutput = String::Narrow(argumentList[argumentIndex]);
-            }
-            else if (arguments[0] == "-flipcoords")
-            {
-                flipCoords = true;
-            }
-            else if (arguments[0] == "-flipwinding")
-            {
-                flipWinding = true;
-            }
-            else if (arguments[0] == "-smoothangle")
-            {
-                if (arguments.size() != 2)
+                auto &shaderNode = materialNode.get("shader", JSON::EmptyObject);
+                auto &passesNode = shaderNode.get("passes", JSON::EmptyObject);
+                auto &solidNode = passesNode.get("solid", JSON::EmptyObject);
+                auto &dataNode = solidNode.get("data", JSON::EmptyObject);
+                auto &albedoNode = dataNode.get("albedo", JSON::EmptyObject);
+                if (albedoNode.is_object())
                 {
-                    throw std::exception("Missing parameters for smoothAngle");
-                }
-
-				smoothingAngle = String::Convert(arguments[1], 80.0f);
-            }
-            else if (arguments[0] == "-unitsinfoot")
-            {
-                if (arguments.size() != 2)
-                {
-                    throw std::exception("Missing parameters for unitsInFoot");
-                }
-
-				parameters.feetPerUnit = (1.0f / String::Convert(arguments[1], 1.0f));
-            }
-        }
-
-        aiLogStream logStream;
-        logStream.callback = [](char const *message, char *user) -> void
-        {
-			AtomicWriter(std::cerr) << "Assimp: " << message;
-        };
-
-        logStream.user = nullptr;
-        aiAttachLogStream(&logStream);
-
-        int notRequiredComponents =
-            aiComponent_NORMALS |
-            aiComponent_TANGENTS_AND_BITANGENTS |
-            aiComponent_COLORS |
-            aiComponent_BONEWEIGHTS |
-            aiComponent_ANIMATIONS |
-            aiComponent_LIGHTS |
-            aiComponent_CAMERAS |
-            0;
-
-        unsigned int importFlags =
-            (flipWinding ? aiProcess_FlipWindingOrder : 0) |
-            (flipCoords ? aiProcess_FlipUVs : 0) |
-            aiProcess_OptimizeMeshes |
-            aiProcess_RemoveComponent |
-            aiProcess_SplitLargeMeshes |
-            aiProcess_PreTransformVertices |
-            aiProcess_Triangulate |
-            aiProcess_SortByPType |
-            aiProcess_ImproveCacheLocality |
-            aiProcess_RemoveRedundantMaterials |
-            aiProcess_FindDegenerates |
-            aiProcess_GenUVCoords |
-            aiProcess_TransformUVCoords |
-            0;
-
-        unsigned int postProcessFlags =
-            aiProcess_JoinIdenticalVertices |
-            aiProcess_FindInvalidData |
-            aiProcess_GenSmoothNormals |
-            aiProcess_CalcTangentSpace |
-            aiProcess_OptimizeGraph |
-            0;
-
-        aiPropertyStore *propertyStore = aiCreatePropertyStore();
-        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
-        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
-        aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
-        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
-        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
-        auto scene = aiImportFileExWithProperties(fileNameInput.c_str(), importFlags, nullptr, propertyStore);
-        if (scene == nullptr)
-        {
-            throw std::exception("Unable to load scene with Assimp");
-        }
-
-        scene = aiApplyPostProcessing(scene, postProcessFlags);
-        if (scene == nullptr)
-        {
-            throw std::exception("Unable to apply post processing with Assimp");
-        }
-
-        if (!scene->HasMeshes())
-        {
-            throw std::exception("Scene has no meshes");
-        }
-
-        if (!scene->HasMaterials())
-        {
-            throw std::exception("Exporting to model requires materials in scene");
-        }
-
-        Shapes::AlignedBox boundingBox;
-        std::unordered_map<std::string, std::vector<Part>> scenePartMap;
-        getSceneParts(parameters, scene, scene->mRootNode, scenePartMap, boundingBox);
-
-        aiReleasePropertyStore(propertyStore);
-        aiReleaseImport(scene);
-
-        auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
-        auto dataPath(FileSystem::GetFileName(rootPath, "Data"));
-
-		std::string texturesPath(String::GetLower(FileSystem::GetFileName(dataPath, "Textures").u8string()));
-        auto materialsPath(FileSystem::GetFileName(dataPath, "Materials").u8string());
-
-		std::map<std::string, std::string> albedoToMaterialMap;
-        std::function<bool(FileSystem::Path const &)> findMaterials;
-        findMaterials = [&](FileSystem::Path const &filePath) -> bool
-        {
-            if (filePath.isDirectory())
-            {
-                FileSystem::Find(filePath, findMaterials);
-            }
-            else if (filePath.isFile())
-            {
-                try
-                {
-                    const JSON::Object materialNode = JSON::Load(filePath);
-                    auto &shaderNode = materialNode["shader"];
-                    auto &passesNode = shaderNode["passes"];
-                    auto &solidNode = passesNode["solid"];
-                    auto &dataNode = solidNode["data"];
-                    auto &albedoNode = dataNode["albedo"];
-                    if (albedoNode.is_object())
+                    if (albedoNode.has_member("file"))
                     {
-                        if (albedoNode.has_member("file"))
-                        {
-							std::string materialName(String::GetLower(filePath.withoutExtension().u8string().substr(materialsPath.size() + 1)));
-                            std::string albedoPath(albedoNode["file"].as_string());
-                            albedoToMaterialMap[albedoPath] = materialName;
-                        }
+                        std::string materialName(String::GetLower(filePath.withoutExtension().u8string().substr(materialsPath.size() + 1)));
+                        std::string albedoPath(albedoNode.get("file").as_string());
+                        albedoToMaterialMap[albedoPath] = materialName;
                     }
                 }
-                catch (...)
-                {
-                };
-            }
-
-            return true;
-        };
-
-        auto engineIndex = texturesPath.find("gek engine");
-        if (engineIndex != std::string::npos)
-        {
-            // skip hard drive location, jump to known engine structure
-            texturesPath = texturesPath.substr(engineIndex);
-        }
-
-        FileSystem::Find(materialsPath, findMaterials);
-        if (albedoToMaterialMap.empty())
-        {
-            throw std::exception("Unable to locate any materials");
-        }
-
-        std::unordered_map<std::string, std::vector<Part>> albedoPartMap;
-        for (const auto &modelAlbedo : scenePartMap)
-        {
-			std::string albedoName(String::GetLower(FileSystem::Path(modelAlbedo.first).withoutExtension().u8string()));
-            if (albedoName.find("textures\\") == 0)
-            {
-                albedoName = albedoName.substr(9);
-            }
-            else if (albedoName.find("..\\textures\\") == 0)
-            {
-                albedoName = albedoName.substr(12);
-            }
-            else
-            {
-                auto texturesIndex = albedoName.find(texturesPath);
-                if (texturesIndex != std::string::npos)
-                {
-                    albedoName = albedoName.substr(texturesIndex + texturesPath.length() + 1);
-                }
-            }
-
-            auto materialAlebedoSearch = albedoToMaterialMap.find(albedoName);
-            if (materialAlebedoSearch == std::end(albedoToMaterialMap))
-            {
-                AtomicWriter(std::cerr) << "! Unable to find material for albedo: " << albedoName.c_str() << std::endl;
-            }
-            else
-            {
-                albedoPartMap[materialAlebedoSearch->second] = modelAlbedo.second;
             }
         }
 
-        std::unordered_map<std::string, Part> materialPartMap;
-        for (const auto &multiMaterial : albedoPartMap)
-        {
-            Part &material = materialPartMap[multiMaterial.first];
-            for (const auto &instance : multiMaterial.second)
-            {
-                for (const auto &index : instance.indexList)
-                {
-                    material.indexList.push_back(uint16_t(index + material.vertexPositionList.size()));
-                }
-
-                material.vertexPositionList.insert(std::end(material.vertexPositionList), std::begin(instance.vertexPositionList), std::end(instance.vertexPositionList));
-                material.vertexTexCoordList.insert(std::end(material.vertexTexCoordList), std::begin(instance.vertexTexCoordList), std::end(instance.vertexTexCoordList));
-                material.vertexTangentList.insert(std::end(material.vertexTangentList), std::begin(instance.vertexTangentList), std::end(instance.vertexTangentList));
-                material.vertexBiTangentList.insert(std::end(material.vertexBiTangentList), std::begin(instance.vertexBiTangentList), std::end(instance.vertexBiTangentList));
-                material.vertexNormalList.insert(std::end(material.vertexNormalList), std::begin(instance.vertexNormalList), std::end(instance.vertexNormalList));
-            }
-        }
-
-        if (materialPartMap.empty())
-        {
-            throw std::exception("No valid material models found");
-        }
-
-		AtomicWriter() << "> Num. Parts: " << materialPartMap.size() << std::endl;
-		AtomicWriter() << "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")" << std::endl;
-		AtomicWriter() << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
-
-        FILE *file = nullptr;
-        _wfopen_s(&file, String::Widen(fileNameOutput).c_str(), L"wb");
-        if (file == nullptr)
-        {
-            throw std::exception("Unable to create output file");
-        }
-
-        Header header;
-        header.partCount = materialPartMap.size();
-        header.boundingBox = boundingBox;
-        fwrite(&header, sizeof(Header), 1, file);
-        for (const auto &material : materialPartMap)
-        {
-			std::string name = material.first;
-			AtomicWriter() << "-    Material: " << name << std::endl;
-            AtomicWriter() << "       Num. Vertices: " << material.second.vertexPositionList.size() << std::endl;
-            AtomicWriter() << "       Num. Indices: " << material.second.indexList.size() << std::endl;
-
-            Header::Material materialHeader;
-            std::strncpy(materialHeader.name, name.c_str(), 63);
-            materialHeader.vertexCount = material.second.vertexPositionList.size();
-            materialHeader.indexCount = material.second.indexList.size();
-            fwrite(&materialHeader, sizeof(Header::Material), 1, file);
-        }
-
-        for (const auto &material : materialPartMap)
-        {
-            fwrite(material.second.indexList.data(), sizeof(uint16_t), material.second.indexList.size(), file);
-            fwrite(material.second.vertexPositionList.data(), sizeof(Math::Float3), material.second.vertexPositionList.size(), file);
-            fwrite(material.second.vertexTexCoordList.data(), sizeof(Math::Float2), material.second.vertexTexCoordList.size(), file);
-            fwrite(material.second.vertexTangentList.data(), sizeof(Math::Float3), material.second.vertexTangentList.size(), file);
-            fwrite(material.second.vertexBiTangentList.data(), sizeof(Math::Float3), material.second.vertexBiTangentList.size(), file);
-            fwrite(material.second.vertexNormalList.data(), sizeof(Math::Float3), material.second.vertexNormalList.size(), file);
-        }
-
-        fclose(file);
-    }
-    catch (const std::exception &exception)
-    {
-		AtomicWriter(std::cerr) << "GEK Engine - Error" << std::endl;
-		AtomicWriter(std::cerr) << "Caught: " << exception.what() << std::endl;
-		AtomicWriter(std::cerr) << "Type: " << typeid(exception).name() << std::endl;
-	}
-    catch (...)
-    {
-        AtomicWriter(std::cerr) << "GEK Engine - Error" << std::endl;
-        AtomicWriter(std::cerr) << "Caught: Non-standard exception" << std::endl;
+        return true;
     };
+
+    auto engineIndex = texturesPath.find("gek engine");
+    if (engineIndex != std::string::npos)
+    {
+        // skip hard drive location, jump to known engine structure
+        texturesPath = texturesPath.substr(engineIndex);
+    }
+
+    FileSystem::Find(materialsPath, findMaterials);
+    if (albedoToMaterialMap.empty())
+    {
+        AtomicWriter(std::cerr) << "Unable to locate any materials" << std::endl;
+        return -__LINE__;
+    }
+
+    std::unordered_map<std::string, std::vector<Part>> albedoPartMap;
+    for (const auto &modelAlbedo : scenePartMap)
+    {
+		std::string albedoName(String::GetLower(FileSystem::Path(modelAlbedo.first).withoutExtension().u8string()));
+        if (albedoName.find("textures\\") == 0)
+        {
+            albedoName = albedoName.substr(9);
+        }
+        else if (albedoName.find("..\\textures\\") == 0)
+        {
+            albedoName = albedoName.substr(12);
+        }
+        else
+        {
+            auto texturesIndex = albedoName.find(texturesPath);
+            if (texturesIndex != std::string::npos)
+            {
+                albedoName = albedoName.substr(texturesIndex + texturesPath.length() + 1);
+            }
+        }
+
+        auto materialAlebedoSearch = albedoToMaterialMap.find(albedoName);
+        if (materialAlebedoSearch == std::end(albedoToMaterialMap))
+        {
+            AtomicWriter(std::cerr) << "! Unable to find material for albedo: " << albedoName.c_str() << std::endl;
+        }
+        else
+        {
+            albedoPartMap[materialAlebedoSearch->second] = modelAlbedo.second;
+        }
+    }
+
+    std::unordered_map<std::string, Part> materialPartMap;
+    for (const auto &multiMaterial : albedoPartMap)
+    {
+        Part &material = materialPartMap[multiMaterial.first];
+        for (const auto &instance : multiMaterial.second)
+        {
+            for (const auto &index : instance.indexList)
+            {
+                material.indexList.push_back(uint16_t(index + material.vertexPositionList.size()));
+            }
+
+            material.vertexPositionList.insert(std::end(material.vertexPositionList), std::begin(instance.vertexPositionList), std::end(instance.vertexPositionList));
+            material.vertexTexCoordList.insert(std::end(material.vertexTexCoordList), std::begin(instance.vertexTexCoordList), std::end(instance.vertexTexCoordList));
+            material.vertexTangentList.insert(std::end(material.vertexTangentList), std::begin(instance.vertexTangentList), std::end(instance.vertexTangentList));
+            material.vertexBiTangentList.insert(std::end(material.vertexBiTangentList), std::begin(instance.vertexBiTangentList), std::end(instance.vertexBiTangentList));
+            material.vertexNormalList.insert(std::end(material.vertexNormalList), std::begin(instance.vertexNormalList), std::end(instance.vertexNormalList));
+        }
+    }
+
+    if (materialPartMap.empty())
+    {
+        AtomicWriter(std::cerr) << "No valid material models found" << std::endl;
+        return -__LINE__;
+    }
+
+	AtomicWriter() << "> Num. Parts: " << materialPartMap.size() << std::endl;
+	AtomicWriter() << "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")" << std::endl;
+	AtomicWriter() << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
+
+    FILE *file = nullptr;
+    _wfopen_s(&file, fileNameOutput.c_str(), L"wb");
+    if (file == nullptr)
+    {
+        AtomicWriter(std::cerr) << "Unable to create output file" << std::endl;
+        return -__LINE__;
+    }
+
+    Header header;
+    header.partCount = materialPartMap.size();
+    header.boundingBox = boundingBox;
+    fwrite(&header, sizeof(Header), 1, file);
+    for (const auto &material : materialPartMap)
+    {
+		std::string name = material.first;
+		AtomicWriter() << "-    Material: " << name << std::endl;
+        AtomicWriter() << "       Num. Vertices: " << material.second.vertexPositionList.size() << std::endl;
+        AtomicWriter() << "       Num. Indices: " << material.second.indexList.size() << std::endl;
+
+        Header::Material materialHeader;
+        std::strncpy(materialHeader.name, name.c_str(), 63);
+        materialHeader.vertexCount = material.second.vertexPositionList.size();
+        materialHeader.indexCount = material.second.indexList.size();
+        fwrite(&materialHeader, sizeof(Header::Material), 1, file);
+    }
+
+    for (const auto &material : materialPartMap)
+    {
+        fwrite(material.second.indexList.data(), sizeof(uint16_t), material.second.indexList.size(), file);
+        fwrite(material.second.vertexPositionList.data(), sizeof(Math::Float3), material.second.vertexPositionList.size(), file);
+        fwrite(material.second.vertexTexCoordList.data(), sizeof(Math::Float2), material.second.vertexTexCoordList.size(), file);
+        fwrite(material.second.vertexTangentList.data(), sizeof(Math::Float3), material.second.vertexTangentList.size(), file);
+        fwrite(material.second.vertexBiTangentList.data(), sizeof(Math::Float3), material.second.vertexBiTangentList.size(), file);
+        fwrite(material.second.vertexNormalList.data(), sizeof(Math::Float3), material.second.vertexNormalList.size(), file);
+    }
+
+    fclose(file);
 
     return 0;
 }

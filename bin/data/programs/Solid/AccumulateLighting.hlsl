@@ -18,7 +18,7 @@ float3 ConvertNormal(float2 encoded)
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
     // final images will be sRGB format and converted to linear automatically
-    const float4 albedo = Resources::albedo.Sample(Global::LinearWrapSampler, inputPixel.texCoord);
+    const float4 albedo = Resources::albedo.Sample(Global::TextureSampler, inputPixel.texCoord);
 
     [branch]
     if (albedo.a < 0.5)
@@ -31,14 +31,14 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
 
     const float3x3 viewBasis = float3x3(inputPixel.tangent, inputPixel.biTangent, inputPixel.normal);
 
-    float3 surfaceNormal = ConvertNormal(Resources::normal.Sample(Global::LinearWrapSampler, inputPixel.texCoord).xy);
-    surfaceNormal += (ConvertNormal(Resources::detail.Sample(Global::LinearWrapSampler, inputPixel.texCoord * 5.0f).xy) * detail);
+    float3 surfaceNormal = ConvertNormal(Resources::normal.Sample(Global::TextureSampler, inputPixel.texCoord).xy);
+    surfaceNormal += (ConvertNormal(Resources::detail.Sample(Global::TextureSampler, inputPixel.texCoord * 5.0f).xy) * detail);
     surfaceNormal = normalize(inputPixel.isFrontFacing ? surfaceNormal : -surfaceNormal);
     surfaceNormal = mul(surfaceNormal, viewBasis);
 
     float3 materialAlbedo = albedo.rgb;
-    float materialRoughness = Resources::roughness.Sample(Global::LinearWrapSampler, inputPixel.texCoord);
-    float materialMetallic = Resources::metallic.Sample(Global::LinearWrapSampler, inputPixel.texCoord);
+    float materialRoughness = Resources::roughness.Sample(Global::TextureSampler, inputPixel.texCoord);
+    float materialMetallic = Resources::metallic.Sample(Global::TextureSampler, inputPixel.texCoord);
 
     OutputPixel outputPixel;
     outputPixel.screen = getSurfaceIrradiance(inputPixel.screen.xy, surfacePosition, surfaceNormal, materialAlbedo, materialRoughness, materialMetallic);

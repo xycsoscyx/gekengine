@@ -21,11 +21,13 @@ namespace Gek
 			public std::experimental::filesystem::path
 		{
 			Path(void);
-			Path(std::string const &path);
-			Path(std::experimental::filesystem::path const &path);
+            Path(std::string const &path);
+            Path(std::wstring const &path);
+            Path(std::experimental::filesystem::path const &path);
 			Path(Path const &path);
 
-			void operator = (std::string const &path);
+            void operator = (std::string const &path);
+            void operator = (std::wstring const &path);
 			void operator = (Path const &path);
 
 			void removeFileName(void);
