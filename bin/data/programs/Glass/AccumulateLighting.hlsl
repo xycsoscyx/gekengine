@@ -37,20 +37,23 @@ float4 cubicCatmullRom(float x) // cubic_catmullrom(float x)
 
 float3 SampleBicubic(in float2 screenCoord, in float glassLevel)
 {
+    int mipLevel = floor(glassLevel);
+    float mipFactor = pow(2.0, mipLevel);
+    screenCoord *= (1.0 / mipFactor);
+
     screenCoord -= 0.5;
 
     float2 screenCoordFraction = frac(screenCoord);
     screenCoord -= screenCoordFraction;
 
-    float4 xCubicFactor = cubicCatmullRom(screenCoordFraction.x);
-    float4 yCubicFactor = cubicCatmullRom(screenCoordFraction.y);
+    float4 xCubicFactor = cubic(screenCoordFraction.x);
+    float4 yCubicFactor = cubic(screenCoordFraction.y);
 
     float4 centerCoord = screenCoord.xxyy + float2(-0.5, +1.5).xyxy;
 
     float4 scaleFactor = float4(xCubicFactor.xz + xCubicFactor.yw, yCubicFactor.xz + yCubicFactor.yw);
     float4 texCoord = centerCoord + float4(xCubicFactor.yw, yCubicFactor.yw) / scaleFactor;
-
-    texCoord *= Shader::TargetPixelSize.xxyy;
+    texCoord *= mipFactor * Shader::TargetPixelSize.xxyy;
 
     float3 texSample0 = Resources::glassBuffer.SampleLevel(Global::MipMapSampler, texCoord.xz, glassLevel);
     float3 texSample1 = Resources::glassBuffer.SampleLevel(Global::MipMapSampler, texCoord.yz, glassLevel);
@@ -67,6 +70,10 @@ float3 SampleBicubic(in float2 screenCoord, in float glassLevel)
 // http://vec3.ca/bicubic-filtering-in-fewer-taps/
 float3 SampleBicubicOptimized(in float2 screenCoord, in float glassLevel)
 {
+    int mipLevel = floor(glassLevel);
+    float mipFactor = pow(2.0, mipLevel);
+    screenCoord *= (1.0 / mipFactor);
+
     // Calculate the center of the texel to avoid any filtering
     float2 centerCoord = floor(screenCoord - 0.5) + 0.5;
     float2 screenCoordFraction = screenCoord - centerCoord;
@@ -89,8 +96,8 @@ float3 SampleBicubicOptimized(in float2 screenCoord, in float glassLevel)
     float2 texCoord0 = centerCoord - 1.0 + coordWeightFactor0;
     float2 texCoord1 = centerCoord + 1.0 + coordWeightFactor1;
 
-    texCoord0 *= Shader::TargetPixelSize;
-    texCoord1 *= Shader::TargetPixelSize;
+    texCoord0 *= mipFactor * Shader::TargetPixelSize;
+    texCoord1 *= mipFactor * Shader::TargetPixelSize;
 
     // Sample the texture
     return 
@@ -103,6 +110,10 @@ float3 SampleBicubicOptimized(in float2 screenCoord, in float glassLevel)
 // https://gist.github.com/TheRealMJP/c83b8c0f46b63f3a88a5986f4fa982b1
 float3 SampleTextureCatmullRom(in float2 screenCoord, in float glassLevel)
 {
+    int mipLevel = floor(glassLevel);
+    float mipFactor = pow(2.0, mipLevel);
+    screenCoord *= (1.0 / mipFactor);
+
     // We're going to sample a a 4x4 grid of texels surrounding the target UV coordinate. We'll do this by rounding
     // down the sample location to get the exact center of our "starting" texel. The starting texel will be at
     // location [1, 1] in the grid, where [0, 0] is the top left corner.
@@ -130,9 +141,9 @@ float3 SampleTextureCatmullRom(in float2 screenCoord, in float glassLevel)
     float2 texCoord3 = centerCoord + 2;
     float2 screenCoord12 = centerCoord + catmullRomOffset12;
 
-    texCoord0 *= Shader::TargetPixelSize;
-    texCoord3 *= Shader::TargetPixelSize;
-    screenCoord12 *= Shader::TargetPixelSize;
+    texCoord0 *= mipFactor * Shader::TargetPixelSize;
+    texCoord3 *= mipFactor * Shader::TargetPixelSize;
+    screenCoord12 *= mipFactor * Shader::TargetPixelSize;
 
     float3 result = 0.0f;
     result += Resources::glassBuffer.SampleLevel(Global::MipMapSampler, float2(texCoord0.x, texCoord0.y), glassLevel) * catmullRomWeight0.x * catmullRomWeight0.y;
@@ -172,32 +183,10 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float3 materialAlbedo = albedo.rgb;
     float materialRoughness = Resources::roughness.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
     float materialMetallic = Resources::metallic.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
-    float3 surfaceIrradiance = getSurfaceIrradiance(inputPixel.screen.xy, surfacePosition, surfaceNormal, materialAlbedo, materialRoughness, 1.0);
+    float3 surfaceIrradiance = getSurfaceIrradiance(inputPixel.screen.xy, surfacePosition, surfaceNormal, materialAlbedo, 0.25, 0.75);
 
     float glassRoughness = (materialRoughness * 5.0);
-    if (inputPixel.screen.x > Shader::TargetSize.x * 0.5)
-    {
-        if (inputPixel.screen.y > Shader::TargetSize.y * 0.5)
-        {
-            return SampleBicubic(inputPixel.screen.xy, glassRoughness);
-        }
-        else
-        {
-            return SampleBicubicOptimized(inputPixel.screen.xy, glassRoughness);
-        }
-    }
-    else
-    {
-        if (inputPixel.screen.y > Shader::TargetSize.y * 0.5)
-        {
-            return SampleTextureCatmullRom(inputPixel.screen.xy, glassRoughness);
-        }
-        else
-        {
-            return SampleBilinear(inputPixel.screen.xy, glassRoughness);
-        }
-    }
-
+    float2 screenCoord = inputPixel.screen.xy * Shader::TargetPixelSize;
     float3 glassColor = SampleBicubic(inputPixel.screen.xy, glassRoughness);
     return (surfaceIrradiance + (glassColor * materialAlbedo));
 }
