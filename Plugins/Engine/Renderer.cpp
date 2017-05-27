@@ -337,7 +337,6 @@ namespace Gek
 
             Video::ObjectPtr bufferSamplerState;
             Video::ObjectPtr textureSamplerState;
-            Video::ObjectPtr mipmapSamplerState;
             Video::BufferPtr engineConstantBuffer;
             Video::BufferPtr cameraConstantBuffer;
 
@@ -419,14 +418,6 @@ namespace Gek
                 textureSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
                 textureSamplerState = videoDevice->createSamplerState(textureSamplerStateData);
                 textureSamplerState->setName("renderer:textureSampler");
-
-                Video::SamplerStateInformation mipmapSamplerStateData;
-                mipmapSamplerStateData.maximumAnisotropy = 8;
-                mipmapSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapLinear;
-                mipmapSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Wrap;
-                mipmapSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
-                mipmapSamplerState = videoDevice->createSamplerState(mipmapSamplerStateData);
-                mipmapSamplerState->setName("renderer:mipmapSampler");
 
                 Video::UnifiedBlendStateInformation blendStateInformation;
                 blendState = videoDevice->createBlendState(blendStateInformation);
@@ -1254,7 +1245,7 @@ namespace Gek
                         videoContext->pixelPipeline()->setConstantBufferList(bufferList, 0);
                         videoContext->computePipeline()->setConstantBufferList(bufferList, 0);
 
-                        std::vector<Video::Object *> samplerList = { bufferSamplerState.get(), textureSamplerState.get(), mipmapSamplerState.get() };
+                        std::vector<Video::Object *> samplerList = { bufferSamplerState.get(), textureSamplerState.get(), };
                         videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
 
                         videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);

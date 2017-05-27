@@ -301,7 +301,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
     unsigned int textureProcessFlags =
         aiProcess_GenUVCoords |
-        aiProcess_GenUVCoords_Sphere |
+        //aiProcess_GenUVCoords_Sphere |
         aiProcess_TransformUVCoords |
         0;
 
