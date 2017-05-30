@@ -419,6 +419,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     for (const auto &modelAlbedo : scenePartMap)
     {
 		std::string albedoName(String::GetLower(FileSystem::Path(modelAlbedo.first).withoutExtension().u8string()));
+        AtomicWriter() << "Found Albedo: " << albedoName << std::endl;
         if (albedoName.find("textures\\") == 0)
         {
             albedoName = albedoName.substr(9);
@@ -426,6 +427,10 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         else if (albedoName.find("..\\textures\\") == 0)
         {
             albedoName = albedoName.substr(12);
+        }
+        else if (albedoName.find("..\\..\\textures\\") == 0)
+        {
+            albedoName = albedoName.substr(15);
         }
         else
         {

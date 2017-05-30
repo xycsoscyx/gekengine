@@ -30,11 +30,11 @@ namespace Gek
             void operator = (std::wstring const &path);
 			void operator = (Path const &path);
 
-			void removeFileName(void);
-			void removeExtension(void);
+            Path &removeFileName(void);
+            Path &removeExtension(void);
 
-			void replaceFileName(std::string const &fileName);
-			void replaceExtension(std::string const &extension);
+			Path &replaceFileName(std::string const &fileName);
+            Path &replaceExtension(std::string const &extension);
 
 			Path withExtension(std::string const &extension) const;
 			Path withoutExtension() const;

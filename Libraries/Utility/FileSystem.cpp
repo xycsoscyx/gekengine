@@ -49,24 +49,28 @@ namespace Gek
             assign(path);
         }
 
-        void Path::removeFileName(void)
+        Path &Path::removeFileName(void)
         {
             remove_filename();
+            return (*this);
         }
 
-        void Path::removeExtension(void)
+        Path &Path::removeExtension(void)
         {
             replace_extension(String::Empty);
+            return (*this);
         }
 
-        void Path::replaceFileName(std::string const &fileName)
+        Path &Path::replaceFileName(std::string const &fileName)
         {
             replace_filename(fileName);
+            return (*this);
         }
 
-        void Path::replaceExtension(std::string const &extension)
+        Path &Path::replaceExtension(std::string const &extension)
         {
             replace_extension(extension);
+            return (*this);
         }
 
         Path Path::withExtension(std::string const &extension) const

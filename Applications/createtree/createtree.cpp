@@ -320,6 +320,10 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             {
                 albedoName = albedoName.substr(12);
             }
+            else if (albedoName.find("..\\..\\textures\\") == 0)
+            {
+                albedoName = albedoName.substr(15);
+            }
             else
             {
                 auto texturesIndex = albedoName.find(texturesPath);

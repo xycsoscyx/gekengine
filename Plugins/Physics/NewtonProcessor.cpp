@@ -79,7 +79,6 @@ namespace Gek
             NewtonWorld *newtonWorld = nullptr;
             std::unordered_map<uint32_t, uint32_t> staticSurfaceMap;
 
-            Math::Float3 gravity = Math::Float3(0.0f, -32.174f, 0.0f);
             concurrency::concurrent_vector<Surface> surfaceList;
             concurrency::concurrent_unordered_map<std::size_t, uint32_t> surfaceIndexMap;
             concurrency::concurrent_unordered_map<std::size_t, NewtonCollision *> collisionMap;

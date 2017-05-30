@@ -16,9 +16,9 @@ float4 GetCubicFactors(float v)
     return float4(x, y, z, w) * (1.0 / 6.0);
 }
 
-float3 GetBiCubicSample(in float2 screenCoord, float glassLevel)
+float3 GetBiCubicSample(in float2 screenCoord, float materialClarity)
 {
-    float mipMapLevel = floor(glassLevel);
+    float mipMapLevel = floor(materialClarity * 5.0);
     float mipMapScale = pow(2.0, mipMapLevel);
     screenCoord *= (1.0 / mipMapScale);
 
@@ -36,10 +36,10 @@ float3 GetBiCubicSample(in float2 screenCoord, float glassLevel)
     float4 texCoord = centerCoord + float4(xCubicFactor.yw, yCubicFactor.yw) / scaleFactor;
     texCoord *= mipMapScale * Shader::TargetPixelSize.xxyy;
 
-    float3 texSample0 = Resources::glassBuffer.SampleLevel(Global::TextureSampler, texCoord.xz, glassLevel);
-    float3 texSample1 = Resources::glassBuffer.SampleLevel(Global::TextureSampler, texCoord.yz, glassLevel);
-    float3 texSample2 = Resources::glassBuffer.SampleLevel(Global::TextureSampler, texCoord.xw, glassLevel);
-    float3 texSample3 = Resources::glassBuffer.SampleLevel(Global::TextureSampler, texCoord.yw, glassLevel);
+    float3 texSample0 = Resources::glassBuffer.SampleLevel(Global::TextureSampler, texCoord.xz, materialClarity);
+    float3 texSample1 = Resources::glassBuffer.SampleLevel(Global::TextureSampler, texCoord.yz, materialClarity);
+    float3 texSample2 = Resources::glassBuffer.SampleLevel(Global::TextureSampler, texCoord.xw, materialClarity);
+    float3 texSample3 = Resources::glassBuffer.SampleLevel(Global::TextureSampler, texCoord.yw, materialClarity);
 
     float scaleFactorX = scaleFactor.x / (scaleFactor.x + scaleFactor.y);
     float scaleFactorY = scaleFactor.z / (scaleFactor.z + scaleFactor.w);
@@ -71,9 +71,15 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float3 materialAlbedo = albedo.rgb;
     float materialRoughness = Resources::roughness.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
     float materialMetallic = Resources::metallic.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
-    float3 surfaceIrradiance = getSurfaceIrradiance(inputPixel.screen.xy, surfacePosition, surfaceNormal, materialAlbedo, 0.25, 0.75);
+    float3 surfaceIrradiance = getSurfaceIrradiance(inputPixel.screen.xy, surfacePosition, surfaceNormal, materialAlbedo, materialRoughness, materialMetallic);
 
-    float glassLevel = (materialRoughness * 5.0);
-    float3 glassColor = GetBiCubicSample(inputPixel.screen.xy, glassLevel);
+    float materialThickness = Resources::thickness.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
+    float2 screenCoord = (inputPixel.screen.xy + (surfaceNormal.xy * materialThickness));
+
+    float materialClarity = Resources::clarity.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
+    float3 glassColor = GetBiCubicSample(screenCoord, materialClarity);
+
+    return glassColor;
+
     return (surfaceIrradiance + (glassColor * materialAlbedo));
 }

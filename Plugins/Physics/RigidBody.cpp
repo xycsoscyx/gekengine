@@ -66,10 +66,10 @@ namespace Gek
 				const auto &physical = entity->getComponent<Components::Physical>();
 				const auto &transform = entity->getComponent<Components::Transform>();
 
-                NewtonCollisionSetScale(NewtonBodyGetCollision(newtonBody), 1.0f, 1.0f, 1.0f);
+                //NewtonCollisionSetScale(NewtonBodyGetCollision(newtonBody), 1.0f, 1.0f, 1.0f);
 
                 Math::Float3 gravity(world->getGravity(transform.position));
-                NewtonBodyAddForce(newtonBody, (gravity * physical.mass * 0.1f).data);
+                NewtonBodyAddForce(newtonBody, (gravity * physical.mass).data);
             }
 
             void onSetTransform(const float* const matrixData, int threadHandle)
