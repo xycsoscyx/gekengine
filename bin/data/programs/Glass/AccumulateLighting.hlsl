@@ -16,37 +16,37 @@ float4 GetCubicFactors(float v)
     return float4(x, y, z, w) * (1.0 / 6.0);
 }
 
-float3 GetBiCubicSample(in float2 screenCoord, float materialClarity)
+// https://stackoverflow.com/questions/13501081/efficient-bicubic-filtering-code-in-glsl
+float3 GetBiCubicSample(in float2 screenCoord, float glassLevel)
 {
-    float mipMapLevel = floor(materialClarity * 5.0);
+    float mipMapLevel = floor(glassLevel * 5.0);
     float mipMapScale = pow(2.0, mipMapLevel);
     screenCoord *= (1.0 / mipMapScale);
 
-    screenCoord -= 0.5;
+    float fx = frac(screenCoord.x);
+    float fy = frac(screenCoord.y);
+    screenCoord.x -= fx;
+    screenCoord.y -= fy;
 
-    float2 screenCoordFraction = frac(screenCoord);
-    screenCoord -= screenCoordFraction;
+    float4 xcubic = GetCubicFactors(fx);
+    float4 ycubic = GetCubicFactors(fy);
 
-    float4 xCubicFactor = GetCubicFactors(screenCoordFraction.x);
-    float4 yCubicFactor = GetCubicFactors(screenCoordFraction.y);
+    float4 c = screenCoord.xxyy + float2(-0.5, 1.5).xyxy;
+    float4 s = float4(xcubic.xz + xcubic.yw, ycubic.xz + ycubic.yw);
+    float4 offset = c + float4(xcubic.yw, ycubic.yw) / s;
+    offset *= Shader::TargetPixelSize.xxyy * mipMapScale;
 
-    float4 centerCoord = screenCoord.xxyy + float2(-0.5, +1.5).xyxy;
+    float3 sample0 = Resources::glassBuffer.SampleLevel(Global::TextureSampler, offset.xz, mipMapLevel);
+    float3 sample1 = Resources::glassBuffer.SampleLevel(Global::TextureSampler, offset.yz, mipMapLevel);
+    float3 sample2 = Resources::glassBuffer.SampleLevel(Global::TextureSampler, offset.xw, mipMapLevel);
+    float3 sample3 = Resources::glassBuffer.SampleLevel(Global::TextureSampler, offset.yw, mipMapLevel);
 
-    float4 scaleFactor = float4(xCubicFactor.xz + xCubicFactor.yw, yCubicFactor.xz + yCubicFactor.yw);
-    float4 texCoord = centerCoord + float4(xCubicFactor.yw, yCubicFactor.yw) / scaleFactor;
-    texCoord *= mipMapScale * Shader::TargetPixelSize.xxyy;
-
-    float3 texSample0 = Resources::glassBuffer.SampleLevel(Global::TextureSampler, texCoord.xz, materialClarity);
-    float3 texSample1 = Resources::glassBuffer.SampleLevel(Global::TextureSampler, texCoord.yz, materialClarity);
-    float3 texSample2 = Resources::glassBuffer.SampleLevel(Global::TextureSampler, texCoord.xw, materialClarity);
-    float3 texSample3 = Resources::glassBuffer.SampleLevel(Global::TextureSampler, texCoord.yw, materialClarity);
-
-    float scaleFactorX = scaleFactor.x / (scaleFactor.x + scaleFactor.y);
-    float scaleFactorY = scaleFactor.z / (scaleFactor.z + scaleFactor.w);
+    float sx = s.x / (s.x + s.y);
+    float sy = s.z / (s.z + s.w);
 
     return lerp(
-        lerp(texSample3, texSample2, scaleFactorX),
-        lerp(texSample1, texSample0, scaleFactorX), scaleFactorY);
+        lerp(sample3, sample2, sx),
+        lerp(sample1, sample0, sx), sy);
 }
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
@@ -77,9 +77,6 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float2 screenCoord = (inputPixel.screen.xy + (surfaceNormal.xy * materialThickness));
 
     float materialClarity = Resources::clarity.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
-    float3 glassColor = GetBiCubicSample(screenCoord, materialClarity);
-
-    return glassColor;
-
+    float3 glassColor = GetBiCubicSample(screenCoord, 1.0 - materialClarity);
     return (surfaceIrradiance + (glassColor * materialAlbedo));
 }

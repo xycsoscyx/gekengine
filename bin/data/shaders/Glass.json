@@ -65,7 +65,7 @@
                 "name": "clarity",
                 "bind": "float",
                 "pattern": "color",
-                "parameters": 1,
+                "parameters": 0.5,
                 "type": "Texture2D"
             },
             {
