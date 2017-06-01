@@ -114,12 +114,27 @@ float3 getPositionFromSample(float2 texCoord, float depthSample)
 
 // http://aras-p.info/texts/CompactNormalStorage.html
 // http://jcgt.org/published/0003/02/01/paper.pdf
-float3 getEncodedNormal(float3 n)
+// https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/
+float2 OctWrap(float2 v)
 {
-    return n + 1.0 * 0.5;
+    return (1.0 - abs(v.yx)) * (v.xy >= 0.0 ? 1.0 : -1.0);
 }
 
-float3 getDecodedNormal(float3 n)
+float2 getEncodedNormal(float3 n)
 {
-    return n * 2.0 - 1.0;
+    n /= (abs(n.x) + abs(n.y) + abs(n.z));
+    n.xy = n.z >= 0.0 ? n.xy : OctWrap(n.xy);
+    n.xy = n.xy * 0.5 + 0.5;
+    return n.xy;
+}
+
+float3 getDecodedNormal(float2 encN)
+{
+    encN = encN * 2.0 - 1.0;
+
+    float3 n;
+    n.z = 1.0 - abs(encN.x) - abs(encN.y);
+    n.xy = n.z >= 0.0 ? encN.xy : OctWrap(encN.xy);
+    n = normalize(n);
+    return n;
 }

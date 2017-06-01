@@ -312,7 +312,7 @@ namespace Gek
                     Math::SIMD::cullSpheres(frustum, bufferedEntityCount, shapeXPositionList, shapeYPositionList, shapeZPositionList, shapeRadiusList, visibilityList);
 
                     lightList.clear();
-                    concurrency::parallel_for(0ULL, entityList.size(), [&](size_t index) -> void
+                    concurrency::parallel_for(size_t(0), entityList.size(), [&](size_t index) -> void
                     {
                         if (visibilityList[index])
                         {
@@ -1011,12 +1011,12 @@ namespace Gek
                 removeEntity(entity);
             }
 
-            void onComponentAdded(Plugin::Entity * const entity, const std::type_index &type)
+            void onComponentAdded(Plugin::Entity * const entity)
             {
                 addEntity(entity);
             }
 
-            void onComponentRemoved(Plugin::Entity * const entity, const std::type_index &type)
+            void onComponentRemoved(Plugin::Entity * const entity)
             {
                 removeEntity(entity);
             }
@@ -1049,8 +1049,8 @@ namespace Gek
             // Plugin::Core Slots
             void onUpdate(float frameTime)
             {
-                GEK_REQUIRE(videoDevice);
-                GEK_REQUIRE(population);
+                assert(videoDevice);
+                assert(population);
 
                 Plugin::Core::Log::Scope function(core->getLog(), "Render", "Update Time");
                 core->getLog()->setValue("Render", "Camera Count", cameraQueue.unsafe_size());
@@ -1313,7 +1313,7 @@ namespace Gek
                         }
 
                         videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                        for (const auto &filterName : { "tonemap", "antialias" })
+                        for (const auto &filterName : { "ambientocclusion", "tonemap", "antialias" })
                         {
                             Engine::Filter * const filter = resources->getFilter(filterName);
                             if (filter)

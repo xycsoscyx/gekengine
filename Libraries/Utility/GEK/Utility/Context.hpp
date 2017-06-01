@@ -7,7 +7,6 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK/Utility/Exceptions.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include <functional>
@@ -19,47 +18,12 @@
 #define GEK_PREDECLARE(TYPE) struct TYPE; using TYPE##Ptr = std::unique_ptr<TYPE>;
 #define GEK_INTERFACE(TYPE) struct TYPE; using TYPE##Ptr = std::unique_ptr<TYPE>; struct TYPE
 
-class AtomicWriter
-{
-    std::ostringstream stream;
-    std::ostream &output;
-
-public:
-    AtomicWriter(std::ostream &output = std::cout)
-        : output(output)
-    {
-    }
-
-    template <typename TYPE>
-    AtomicWriter& operator<<(TYPE const& value)
-    {
-        stream << value;
-        return *this;
-    }
-
-    AtomicWriter& operator<<(std::ostream&(*function)(std::ostream&))
-    {
-        stream << function;
-        return *this;
-    }
-
-    ~AtomicWriter()
-    {
-        output << stream.str();
-    }
-};
-
 namespace Gek
 {
     GEK_PREDECLARE(ContextUser);
 
     GEK_INTERFACE(Context)
     {
-        GEK_ADD_EXCEPTION(DuplicateClass);
-        GEK_ADD_EXCEPTION(InvalidPlugin);
-        GEK_ADD_EXCEPTION(ClassNotFound);
-        GEK_ADD_EXCEPTION(InvalidDerivation);
-
         static ContextPtr Create(FileSystem::Path const &rootPath, const std::vector<FileSystem::Path> &searchPathList);
 
         virtual ~Context(void) = default;
@@ -83,7 +47,8 @@ namespace Gek
             auto derivedClass = dynamic_cast<TYPE *>(baseClass.get());
             if (!derivedClass)
             {
-                throw InvalidDerivation("Unable to cast from base context user to requested class");
+                std::cerr << "Unable to cast from base context user to requested class" << std::endl;
+                return nullptr;
             }
 
             std::unique_ptr<TYPE> result(derivedClass);

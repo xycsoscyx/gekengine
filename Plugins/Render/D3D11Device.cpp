@@ -813,13 +813,13 @@ namespace Gek
                     , vertexBufferCache(device->bufferCache)
                     , renderTargetCache(device->renderTargetViewCache)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
                 }
 
                 // Render::Device::Queue
                 void reset(void)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     CComPtr<ID3D11CommandList> commandList;
                     d3dDeviceContext->FinishCommandList(false, &commandList);
@@ -827,42 +827,42 @@ namespace Gek
 
                 void generateMipMaps(Render::ResourceHandle texture)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     d3dDeviceContext->GenerateMips(device->shaderResourceViewCache.get(texture));
                 }
 
                 void resolveSamples(Render::ResourceHandle destination, Render::ResourceHandle source)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     d3dDeviceContext->ResolveSubresource(device->resourceCache.get(destination), 0, device->resourceCache.get(source), 0, DXGI_FORMAT_UNKNOWN);
                 }
 
                 void clearUnorderedAccess(Render::ResourceHandle object, Math::Float4 const &value)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     d3dDeviceContext->ClearUnorderedAccessViewFloat(device->unorderedAccessViewCache.get(object), value.data);
                 }
 
                 void clearUnorderedAccess(Render::ResourceHandle object, Math::UInt4 const &value)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     d3dDeviceContext->ClearUnorderedAccessViewUint(device->unorderedAccessViewCache.get(object), value.data);
                 }
 
                 void clearRenderTarget(Render::ResourceHandle renderTarget, Math::Float4 const &clearColor)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     d3dDeviceContext->ClearRenderTargetView(device->renderTargetViewCache.get(renderTarget), clearColor.data);
                 }
 
                 void clearDepthStencilTarget(Render::ResourceHandle depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     d3dDeviceContext->ClearDepthStencilView(device->depthStencilViewCache.get(depthBuffer),
                         ((flags & Render::ClearFlags::Depth ? D3D11_CLEAR_DEPTH : 0) |
@@ -872,21 +872,21 @@ namespace Gek
 
                 void setViewportList(const std::vector<Render::ViewPort> &viewPortList)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     d3dDeviceContext->RSSetViewports(viewPortList.size(), (D3D11_VIEWPORT *)viewPortList.data());
                 }
 
                 void setScissorList(const std::vector<Math::UInt4> &rectangleList)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     d3dDeviceContext->RSSetScissorRects(rectangleList.size(), (D3D11_RECT *)rectangleList.data());
                 }
 
                 void bindPipelineState(Render::PipelineStateHandle pipelineStateHandle)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     auto pipelineState = device->pipelineStateCache.get(pipelineStateHandle);
                     if (pipelineState)
@@ -903,7 +903,7 @@ namespace Gek
 
                 void bindSamplerStateList(const std::vector<Render::SamplerStateHandle> &list, uint32_t firstStage, uint8_t pipelineFlags)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     if (pipelineFlags & Render::Pipeline::Vertex)
                     {
@@ -918,7 +918,7 @@ namespace Gek
 
                 void bindConstantBufferList(const std::vector<Render::ResourceHandle> &list, uint32_t firstStage, uint8_t pipelineFlags)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     if (pipelineFlags & Render::Pipeline::Vertex)
                     {
@@ -933,7 +933,7 @@ namespace Gek
 
                 void bindResourceList(const std::vector<Render::ResourceHandle> &list, uint32_t firstStage, uint8_t pipelineFlags)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     if (pipelineFlags & Render::Pipeline::Vertex)
                     {
@@ -948,14 +948,14 @@ namespace Gek
 
                 void bindUnorderedAccessList(const std::vector<Render::ResourceHandle> &list, uint32_t firstStage, uint32_t *countList)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     d3dDeviceContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, nullptr, nullptr, firstStage, list.size(), unorderedAccessCache.update(list), countList);
                 }
 
                 void bindIndexBuffer(Render::ResourceHandle indexBuffer, uint32_t offset)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     auto description = device->getBufferDescription(indexBuffer);
                     if (description)
@@ -967,7 +967,7 @@ namespace Gek
 
                 void bindVertexBufferList(const std::vector<Render::ResourceHandle> &vertexBufferList, uint32_t firstSlot, uint32_t *offsetList)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     vertexDataCache[0].clear();
                     vertexDataCache[1].clear();
@@ -986,70 +986,70 @@ namespace Gek
 
                 void bindRenderTargetList(const std::vector<Render::ResourceHandle> &renderTargetList, Render::ResourceHandle depthBuffer)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     d3dDeviceContext->OMSetRenderTargets(renderTargetList.size(), renderTargetCache.update(renderTargetList), nullptr);
                 }
 
                 void drawPrimitive(uint32_t vertexCount, uint32_t firstVertex)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     d3dDeviceContext->Draw(vertexCount, firstVertex);
                 }
 
                 void drawInstancedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     d3dDeviceContext->DrawInstanced(vertexCount, instanceCount, firstVertex, firstInstance);
                 }
 
                 void drawIndexedPrimitive(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     d3dDeviceContext->DrawIndexed(indexCount, firstIndex, firstVertex);
                 }
 
                 void drawInstancedIndexedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     d3dDeviceContext->DrawIndexedInstanced(indexCount, instanceCount, firstIndex, firstVertex, firstInstance);
                 }
 
                 void dispatch(uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     d3dDeviceContext->Dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
                 }
 
                 void drawInstancedPrimitive(Render::ResourceHandle bufferArguments)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
                     
                     d3dDeviceContext->DrawInstancedIndirect(device->bufferCache.get(bufferArguments), 0);
                 }
 
                 void drawInstancedIndexedPrimitive(Render::ResourceHandle bufferArguments)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
                     
                     d3dDeviceContext->DrawIndexedInstancedIndirect(device->bufferCache.get(bufferArguments), 0);
                 }
 
                 void dispatch(Render::ResourceHandle bufferArguments)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
                     
                     d3dDeviceContext->DispatchIndirect(device->bufferCache.get(bufferArguments), 0);
                 }
 
                 void runQueue(Render::QueueHandle queue)
                 {
-                    GEK_REQUIRE(d3dDeviceContext);
+                    assert(d3dDeviceContext);
 
                     auto commandList = device->queueCache.get(queue);
                     if (commandList)
@@ -1088,7 +1088,7 @@ namespace Gek
                 , window(window)
                 , isChildWindow(GetParent((HWND)window->getBaseWindow()) != nullptr)
             {
-                GEK_REQUIRE(window);
+                assert(window);
 
                 UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG
@@ -1206,7 +1206,7 @@ namespace Gek
 
             CComPtr<ID3D11RasterizerState> createRasterizerState(const Render::RasterizerStateInformation &rasterizerStateInformation)
             {
-                GEK_REQUIRE(d3dDevice);
+                assert(d3dDevice);
 
                 D3D11_RASTERIZER_DESC rasterizerDescription;
                 rasterizerDescription.FrontCounterClockwise = rasterizerStateInformation.frontCounterClockwise;
@@ -1232,7 +1232,7 @@ namespace Gek
 
             CComPtr<ID3D11DepthStencilState> createDepthState(const Render::DepthStateInformation &depthStateInformation)
             {
-                GEK_REQUIRE(d3dDevice);
+                assert(d3dDevice);
 
                 D3D11_DEPTH_STENCIL_DESC depthStencilDescription;
                 depthStencilDescription.DepthEnable = depthStateInformation.enable;
@@ -1262,7 +1262,7 @@ namespace Gek
 
             CComPtr<ID3D11BlendState> createBlendState(const Render::BlendStateInformation &blendStateInformation)
             {
-                GEK_REQUIRE(d3dDevice);
+                assert(d3dDevice);
 
                 D3D11_BLEND_DESC blendDescription;
                 blendDescription.AlphaToCoverageEnable = blendStateInformation.alphaToCoverage;
@@ -1387,7 +1387,7 @@ namespace Gek
 
             std::vector<uint8_t> compileShader(std::string const &name, std::string const &type, std::string const &entryFunction, std::string const &shader, const std::string &header)
             {
-                GEK_REQUIRE(d3dDevice);
+                assert(d3dDevice);
 
                 uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
@@ -1504,8 +1504,8 @@ namespace Gek
 
             void setFullScreenState(bool fullScreen)
             {
-                GEK_REQUIRE(d3dDeviceContext);
-                GEK_REQUIRE(dxgiSwapChain);
+                assert(d3dDeviceContext);
+                assert(dxgiSwapChain);
 
                 renderTargetViewCache.set(SwapChain, CComPtr<ID3D11RenderTargetView>(nullptr));
                 d3dDeviceContext->ClearState();
@@ -1528,7 +1528,7 @@ namespace Gek
 
             void setDisplayMode(const Render::DisplayMode &displayMode)
             {
-                GEK_REQUIRE(dxgiSwapChain);
+                assert(dxgiSwapChain);
 
                 renderTargetViewCache.set(SwapChain, CComPtr<ID3D11RenderTargetView>(nullptr));
                 d3dDeviceContext->ClearState();
@@ -1552,7 +1552,7 @@ namespace Gek
 
             void handleResize(void)
             {
-                GEK_REQUIRE(dxgiSwapChain);
+                assert(dxgiSwapChain);
 
                 renderTargetViewCache.set(SwapChain, CComPtr<ID3D11RenderTargetView>(nullptr));
                 d3dDeviceContext->ClearState();
@@ -1639,7 +1639,7 @@ namespace Gek
 
             Render::SamplerStateHandle createSamplerState(const Render::SamplerStateInformation &samplerStateInformation, std::string const &name)
             {
-                GEK_REQUIRE(d3dDevice);
+                assert(d3dDevice);
 
                 return samplerStateCache.insert(samplerStateInformation.getHash(), [this, samplerStateInformation, name = std::string(name)](Render::SamplerStateHandle) -> CComPtr<ID3D11SamplerState>
                 {
@@ -1667,7 +1667,7 @@ namespace Gek
 
             bool mapResource(Render::ResourceHandle resource, void *&data, Render::Map mapping)
             {
-                GEK_REQUIRE(d3dDeviceContext);
+                assert(d3dDeviceContext);
 
                 D3D11_MAP d3dMapping = DirectX::MapList[static_cast<uint8_t>(mapping)];
 
@@ -1687,22 +1687,22 @@ namespace Gek
 
             void unmapResource(Render::ResourceHandle resource)
             {
-                GEK_REQUIRE(d3dDeviceContext);
+                assert(d3dDeviceContext);
 
                 d3dDeviceContext->Unmap(resourceCache.get(resource), 0);
             }
 
             void updateResource(Render::ResourceHandle resource, const void *data)
             {
-                GEK_REQUIRE(d3dDeviceContext);
-                GEK_REQUIRE(data);
+                assert(d3dDeviceContext);
+                assert(data);
 
                 d3dDeviceContext->UpdateSubresource(resourceCache.get(resource), 0, nullptr, data, 0, 0);
             }
 
             void copyResource(Render::ResourceHandle destination, Render::ResourceHandle source)
             {
-                GEK_REQUIRE(d3dDeviceContext);
+                assert(d3dDeviceContext);
 
                 /*
                 auto destinationTexture = dynamic_cast<BaseResourceHandle >(destination);
@@ -1730,8 +1730,8 @@ namespace Gek
 
             Render::ResourceHandle createBuffer(const Render::BufferDescription &description, const void *data, std::string const &name)
             {
-                GEK_REQUIRE(d3dDevice);
-                GEK_REQUIRE(description.count > 0);
+                assert(d3dDevice);
+                assert(description.count > 0);
 
                 auto dataHash = reinterpret_cast<size_t>(data);
                 auto hash = CombineHashes(description.getHash(), dataHash);
@@ -1892,11 +1892,11 @@ namespace Gek
 
             Render::ResourceHandle createTexture(const Render::TextureDescription &description, const void *data, std::string const &name)
             {
-                GEK_REQUIRE(d3dDevice);
-                GEK_REQUIRE(description.format != Render::Format::Unknown);
-                GEK_REQUIRE(description.width != 0);
-                GEK_REQUIRE(description.height != 0);
-                GEK_REQUIRE(description.depth != 0);
+                assert(d3dDevice);
+                assert(description.format != Render::Format::Unknown);
+                assert(description.width != 0);
+                assert(description.height != 0);
+                assert(description.depth != 0);
 
                 auto dataHash = reinterpret_cast<size_t>(data);
                 auto hash = CombineHashes(description.getHash(), dataHash);
@@ -2115,7 +2115,7 @@ namespace Gek
 
             Render::ResourceHandle loadTexture(FileSystem::Path const &filePath, uint32_t flags, std::string const &name)
             {
-                GEK_REQUIRE(d3dDevice);
+                assert(d3dDevice);
 
                 auto hash = GetHash(0xFFFFFFFF, filePath.u8string(), flags);
                 return resourceCache.insert(hash, [this, filePath, flags, name = std::string(name)](Render::ResourceHandle handle)->CComPtr<ID3D11Resource>
@@ -2228,8 +2228,8 @@ namespace Gek
 
             Render::QueueHandle compileQueue(Render::Device::Queue *baseQueue, std::string const &name)
             {
-                GEK_REQUIRE(d3dDevice);
-                GEK_REQUIRE(baseQueue);
+                assert(d3dDevice);
+                assert(baseQueue);
 
                 Queue *queue = dynamic_cast<Queue *>(baseQueue);
                 if (!queue)
@@ -2250,9 +2250,9 @@ namespace Gek
 
             void runQueue(Render::Device::Queue *baseQueue)
             {
-                GEK_REQUIRE(d3dDevice);
-                GEK_REQUIRE(d3dDeviceContext);
-                GEK_REQUIRE(baseQueue);
+                assert(d3dDevice);
+                assert(d3dDeviceContext);
+                assert(baseQueue);
 
                 Queue *queue = dynamic_cast<Queue *>(baseQueue);
                 if (!queue)
@@ -2281,7 +2281,7 @@ namespace Gek
 
             void present(bool waitForVerticalSync)
             {
-                GEK_REQUIRE(dxgiSwapChain);
+                assert(dxgiSwapChain);
 
                 dxgiSwapChain->Present(waitForVerticalSync ? 1 : 0, 0);
             }

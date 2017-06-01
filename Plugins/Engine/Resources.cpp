@@ -61,7 +61,7 @@ namespace Gek
             ResourceCache(ResourceRequester *resources)
                 : resources(resources)
             {
-                GEK_REQUIRE(resources);
+                assert(resources);
             }
 
             virtual ~ResourceCache(void) = default;
@@ -464,15 +464,15 @@ namespace Gek
                 , blendStateCache(this)
                 , loadPool(2)
             {
-                GEK_REQUIRE(core);
-                GEK_REQUIRE(videoDevice);
+                assert(core);
+                assert(videoDevice);
 
                 core->onResize.connect<Resources, &Resources::onResize>(this);
             }
 
             ~Resources(void)
             {
-                GEK_REQUIRE(core);
+                assert(core);
 
                 loadPool.drain();
                 core->onResize.disconnect<Resources, &Resources::onResize>(this);
@@ -480,7 +480,7 @@ namespace Gek
 
             Validate &getValid(Video::Device::Context::Pipeline *videoPipeline)
             {
-                GEK_REQUIRE(videoPipeline);
+                assert(videoPipeline);
 
                 return (videoPipeline->getType() == Video::PipelineType::Compute ? dispatchValid : drawPrimitiveValid);
             }
@@ -928,7 +928,7 @@ static int32_t const minD = minC - subC - 1;
 
             ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description)
             {
-                GEK_REQUIRE(description.count > 0);
+                assert(description.count > 0);
 
                 auto load = [this, bufferName, description](ResourceHandle)->Video::BufferPtr
                 {
@@ -950,8 +950,8 @@ static int32_t const minD = minC - subC - 1;
 
             ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData)
             {
-                GEK_REQUIRE(description.count > 0);
-                GEK_REQUIRE(!staticData.empty());
+                assert(description.count > 0);
+                assert(!staticData.empty());
 
                 auto load = [this, bufferName, description, staticData = move(staticData)](ResourceHandle)->Video::BufferPtr
                 {
@@ -973,7 +973,7 @@ static int32_t const minD = minC - subC - 1;
 
             void setIndexBuffer(Video::Device::Context *videoContext, ResourceHandle resourceHandle, uint32_t offset)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 if (drawPrimitiveValid)
                 {
@@ -988,7 +988,7 @@ static int32_t const minD = minC - subC - 1;
             ObjectCache<Video::Buffer> vertexBufferCache;
             void setVertexBufferList(Video::Device::Context *videoContext, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstSlot, uint32_t *offsetList)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 if (drawPrimitiveValid && (drawPrimitiveValid = vertexBufferCache.set(resourceHandleList, dynamicCache)))
                 {
@@ -999,7 +999,7 @@ static int32_t const minD = minC - subC - 1;
             ObjectCache<Video::Buffer> constantBufferCache;
             void setConstantBufferList(Video::Device::Context::Pipeline *videoPipeline, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstStage)
             {
-                GEK_REQUIRE(videoPipeline);
+                assert(videoPipeline);
 
                 auto &valid = getValid(videoPipeline);
                 if (valid && (valid = constantBufferCache.set(resourceHandleList, dynamicCache)))
@@ -1011,7 +1011,7 @@ static int32_t const minD = minC - subC - 1;
             ObjectCache<Video::Object> resourceCache;
             void setResourceList(Video::Device::Context::Pipeline *videoPipeline, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstStage)
             {
-                GEK_REQUIRE(videoPipeline);
+                assert(videoPipeline);
 
                 auto &valid = getValid(videoPipeline);
                 if (valid && (valid = resourceCache.set(resourceHandleList, dynamicCache)))
@@ -1023,7 +1023,7 @@ static int32_t const minD = minC - subC - 1;
             ObjectCache<Video::Object> unorderedAccessCache;
             void setUnorderedAccessList(Video::Device::Context::Pipeline *videoPipeline, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstStage)
             {
-                GEK_REQUIRE(videoPipeline);
+                assert(videoPipeline);
 
                 auto &valid = getValid(videoPipeline);
                 if (valid && (valid = unorderedAccessCache.set(resourceHandleList, dynamicCache)))
@@ -1034,42 +1034,42 @@ static int32_t const minD = minC - subC - 1;
 
             void clearIndexBuffer(Video::Device::Context *videoContext)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 videoContext->clearIndexBuffer();
             }
 
             void clearVertexBufferList(Video::Device::Context *videoContext, uint32_t count, uint32_t firstSlot)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 videoContext->clearVertexBufferList(count, firstSlot);
             }
 
             void clearConstantBufferList(Video::Device::Context::Pipeline *videoPipeline, uint32_t count, uint32_t firstStage)
             {
-                GEK_REQUIRE(videoPipeline);
+                assert(videoPipeline);
 
                 videoPipeline->clearConstantBufferList(count, firstStage);
             }
 
             void clearResourceList(Video::Device::Context::Pipeline *videoPipeline, uint32_t count, uint32_t firstStage)
             {
-                GEK_REQUIRE(videoPipeline);
+                assert(videoPipeline);
 
                 videoPipeline->clearResourceList(count, firstStage);
             }
 
             void clearUnorderedAccessList(Video::Device::Context::Pipeline *videoPipeline, uint32_t count, uint32_t firstStage)
             {
-                GEK_REQUIRE(videoPipeline);
+                assert(videoPipeline);
 
                 videoPipeline->clearUnorderedAccessList(count, firstStage);
             }
 
             void drawPrimitive(Video::Device::Context *videoContext, uint32_t vertexCount, uint32_t firstVertex)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 if (drawPrimitiveValid)
                 {
@@ -1092,7 +1092,7 @@ static int32_t const minD = minC - subC - 1;
 
             void drawIndexedPrimitive(Video::Device::Context *videoContext, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 if (drawPrimitiveValid)
                 {
@@ -1104,7 +1104,7 @@ static int32_t const minD = minC - subC - 1;
 
             void drawInstancedIndexedPrimitive(Video::Device::Context *videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 if (drawPrimitiveValid)
                 {
@@ -1117,7 +1117,7 @@ static int32_t const minD = minC - subC - 1;
 
             void dispatch(Video::Device::Context *videoContext, uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 if (dispatchValid)
                 {
@@ -1326,7 +1326,7 @@ static int32_t const minD = minC - subC - 1;
 
             void generateMipMaps(Video::Device::Context *videoContext, ResourceHandle resourceHandle)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 auto resource = dynamicCache.getResource(resourceHandle);
                 if (resource)
@@ -1357,7 +1357,7 @@ static int32_t const minD = minC - subC - 1;
 
             void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, Math::Float4 const &value)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 auto resource = dynamicCache.getResource(resourceHandle);
                 if (resource)
@@ -1368,7 +1368,7 @@ static int32_t const minD = minC - subC - 1;
 
             void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, Math::UInt4 const &value)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 auto resource = dynamicCache.getResource(resourceHandle);
                 if (resource)
@@ -1379,7 +1379,7 @@ static int32_t const minD = minC - subC - 1;
 
             void clearRenderTarget(Video::Device::Context *videoContext, ResourceHandle resourceHandle, Math::Float4 const &color)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 auto resource = dynamicCache.getResource(resourceHandle);
                 if (resource)
@@ -1390,7 +1390,7 @@ static int32_t const minD = minC - subC - 1;
 
             void clearDepthStencilTarget(Video::Device::Context *videoContext, ResourceHandle depthBufferHandle, uint32_t flags, float clearDepth, uint32_t clearStencil)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 auto depthBuffer = dynamicCache.getResource(depthBufferHandle);
                 if (depthBuffer)
@@ -1401,8 +1401,8 @@ static int32_t const minD = minC - subC - 1;
 
             void setMaterial(Video::Device::Context *videoContext, Engine::Shader::Pass *pass, MaterialHandle handle)
             {
-                GEK_REQUIRE(videoContext);
-                GEK_REQUIRE(pass);
+                assert(videoContext);
+                assert(pass);
 
                 if (drawPrimitiveValid)
                 {
@@ -1421,7 +1421,7 @@ static int32_t const minD = minC - subC - 1;
 
             void setVisual(Video::Device::Context *videoContext, VisualHandle handle)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 if (drawPrimitiveValid)
                 {
@@ -1435,7 +1435,7 @@ static int32_t const minD = minC - subC - 1;
 
             void setRenderState(Video::Device::Context *videoContext, RenderStateHandle renderStateHandle)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 if (drawPrimitiveValid)
                 {
@@ -1449,7 +1449,7 @@ static int32_t const minD = minC - subC - 1;
 
             void setDepthState(Video::Device::Context *videoContext, DepthStateHandle depthStateHandle, uint32_t stencilReference)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 if (drawPrimitiveValid)
                 {
@@ -1463,7 +1463,7 @@ static int32_t const minD = minC - subC - 1;
 
             void setBlendState(Video::Device::Context *videoContext, BlendStateHandle blendStateHandle, Math::Float4 const &blendFactor, uint32_t sampleMask)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 if (drawPrimitiveValid)
                 {
@@ -1477,7 +1477,7 @@ static int32_t const minD = minC - subC - 1;
 
             void setProgram(Video::Device::Context::Pipeline *videoPipeline, ProgramHandle programHandle)
             {
-                GEK_REQUIRE(videoPipeline);
+                assert(videoPipeline);
 
                 auto &valid = getValid(videoPipeline);
                 if (valid)
@@ -1494,7 +1494,7 @@ static int32_t const minD = minC - subC - 1;
             std::vector<Video::ViewPort> viewPortCache;
             void setRenderTargetList(Video::Device::Context *videoContext, const std::vector<ResourceHandle> &renderTargetHandleList, ResourceHandle *depthBuffer)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 if (drawPrimitiveValid && (drawPrimitiveValid = renderTargetCache.set(renderTargetHandleList, dynamicCache)))
                 {
@@ -1513,7 +1513,7 @@ static int32_t const minD = minC - subC - 1;
 
             void setBackBuffer(Video::Device::Context *videoContext, ResourceHandle *depthBuffer)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
                 
                 auto &renderTargetList = renderTargetCache.get();
                 renderTargetList.resize(1);
@@ -1527,7 +1527,7 @@ static int32_t const minD = minC - subC - 1;
 
             void clearRenderTargetList(Video::Device::Context *videoContext, int32_t count, bool depthBuffer)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
 
                 videoContext->clearRenderTargetList(count, depthBuffer);
             }

@@ -36,10 +36,10 @@ namespace Gek
 
             void load(Components::Player * const data, const JSON::Object &componentData)
             {
-                data->height = getValue(componentData, "height", 0.0f);
-                data->outerRadius = getValue(componentData, "outerRadius", 0.0f);
-                data->innerRadius = getValue(componentData, "innerRadius", 0.0f);
-                data->stairStep = getValue(componentData, "stairStep", 0.0f);
+                data->height = GetValue(JSON::Get(componentData, "height"), 0.0f);
+                data->outerRadius = GetValue(JSON::Get(componentData, "outerRadius"), 0.0f);
+                data->innerRadius = GetValue(JSON::Get(componentData, "innerRadius"), 0.0f);
+                data->stairStep = GetValue(JSON::Get(componentData, "stairStep"), 0.0f);
             }
 
             // Edit::Component

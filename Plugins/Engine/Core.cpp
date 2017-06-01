@@ -57,7 +57,6 @@ namespace Gek
             Video::TexturePtr settingsButton;
 			bool showModeChange = false;
 			float modeChangeTimer = 0.0f;
-            bool editorActive = false;
             bool consoleActive = false;
 
             struct EventHistory
@@ -107,6 +106,7 @@ namespace Gek
                     configuration["display"]["mode"] = 0;
                 }
 
+                auto mode = configuration["display"]["mode"];
                 previousDisplayMode = currentDisplayMode = configuration["display"]["mode"].as_uint();
 
                 HRESULT resultValue = CoInitialize(nullptr);
@@ -574,19 +574,19 @@ namespace Gek
                 switch (logType)
                 {
                 case Log::Type::Message:
-					AtomicWriter() << "(" << system << ") " << message << std::endl;
+					std::cout << "(" << system << ") " << message << std::endl;
                     break;
 
                 case Log::Type::Warning:
-					AtomicWriter() << "(" << system << ") WARNING: " << message << std::endl;
+					std::cout << "(" << system << ") WARNING: " << message << std::endl;
                     break;
 
                 case Log::Type::Error:
-                    AtomicWriter(std::cerr) << "(" << system << ") ERROR: " << message << std::endl;
+                    std::cerr << "(" << system << ") ERROR: " << message << std::endl;
                     break;
 
                 case Log::Type::Debug:
-					AtomicWriter() << "(" << system << ") DEBUG: " << message << std::endl;
+					std::cout << "(" << system << ") DEBUG: " << message << std::endl;
                     break;
                 };
             }
@@ -743,14 +743,22 @@ namespace Gek
                 return engineRunning;
             }
 
-            void setEditorState(bool enabled)
+            JSON::Object getOption(std::string const &system, std::string const &name)
             {
-                editorActive = enabled;
+                return configuration.get(system, JSON::EmptyObject).get(name, JSON::EmptyObject);
             }
 
-            bool isEditorActive(void) const
+            void setOption(std::string const &system, std::string const &name, JSON::Object const &value)
             {
-                return editorActive;
+                configuration[system][name] = value;
+            }
+
+            void deleteOption(std::string const &system, std::string const &name)
+            {
+                if (configuration.has_member(system))
+                {
+                    configuration[system].erase(name);
+                }
             }
 
             Log * getLog(void) const

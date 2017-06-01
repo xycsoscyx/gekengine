@@ -56,7 +56,7 @@ namespace Gek
             , core(core)
             , population(core->getPopulation())
         {
-            GEK_REQUIRE(population);
+            assert(population);
 
             population->onUpdate[50].connect<SpinProcessor, &SpinProcessor::onUpdate>(this);
         }
@@ -69,9 +69,10 @@ namespace Gek
         // Plugin::Population Slots
         void onUpdate(float frameTime)
         {
-            GEK_REQUIRE(population);
+            assert(population);
 
-            if (frameTime > 0.0f && !core->isEditorActive())
+            bool editorActive = core->getOption("editor", "active").as_bool();
+            if (frameTime > 0.0f && !editorActive)
             {
                 population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity * const entity, std::string const &, auto &transformComponent, auto &spinComponent) -> void
                 {

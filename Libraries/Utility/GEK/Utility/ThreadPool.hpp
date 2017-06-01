@@ -55,7 +55,7 @@ namespace Gek
                 Lock lock(queueMutex);
                 if (stop)
                 {
-                    throw std::runtime_error("enqueue on stopped ThreadPool");
+                    return result;
                 }
 
                 taskQueue.emplace([task]()
@@ -76,7 +76,7 @@ namespace Gek
                 Lock lock(queueMutex);
                 if (stop)
                 {
-                    throw std::runtime_error("enqueue on stopped ThreadPool");
+                    return
                 }
 
                 taskQueue.emplace(std::bind(std::forward<FUNCTION>(function), std::forward<PARAMETERS>(arguments)...));

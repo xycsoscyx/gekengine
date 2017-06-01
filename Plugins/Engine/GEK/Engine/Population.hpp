@@ -27,12 +27,6 @@ namespace Gek
 
         GEK_INTERFACE(Population)
         {
-            GEK_ADD_EXCEPTION(FatalError);
-            GEK_ADD_EXCEPTION(InvalidTemplatesBlock);
-            GEK_ADD_EXCEPTION(InvalidPopulationBlock);
-            GEK_ADD_EXCEPTION(InvalidEntityBlock);
-            GEK_ADD_EXCEPTION(EntityNameExists);
-
             struct Action
             {
                 std::string name;
@@ -67,8 +61,8 @@ namespace Gek
             Nano::Signal<void(Plugin::Entity * const entity, std::string const &entityName)> onEntityCreated;
             Nano::Signal<void(Plugin::Entity * const entity)> onEntityDestroyed;
 
-            Nano::Signal<void(Plugin::Entity * const entity, const std::type_index &type)> onComponentAdded;
-            Nano::Signal<void(Plugin::Entity * const entity, const std::type_index &type)> onComponentRemoved;
+            Nano::Signal<void(Plugin::Entity * const entity)> onComponentAdded;
+            Nano::Signal<void(Plugin::Entity * const entity)> onComponentRemoved;
 
             virtual ShuntingYard &getShuntingYard(void) = 0;
 

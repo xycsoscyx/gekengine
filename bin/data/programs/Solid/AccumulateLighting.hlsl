@@ -4,8 +4,6 @@
 #include <GEKUtility.hlsl>
 #include <GEKLighting.hlsl>
 
-static const float DetailMultiplier = 10.0f;
-
 // assume normals are stored as 3Dc format, so generate the Z value
 float3 ConvertNormal(float2 encoded)
 {
@@ -27,12 +25,10 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     }
 
     float3 surfacePosition = inputPixel.position;
-    float detail = saturate(1.0f - (length(surfacePosition) / 10.0f));
 
     const float3x3 viewBasis = float3x3(inputPixel.tangent, inputPixel.biTangent, inputPixel.normal);
 
     float3 surfaceNormal = ConvertNormal(Resources::normal.Sample(Global::TextureSampler, inputPixel.texCoord).xy);
-    surfaceNormal += (ConvertNormal(Resources::detail.Sample(Global::TextureSampler, inputPixel.texCoord * 5.0f).xy) * detail);
     surfaceNormal = normalize(inputPixel.isFrontFacing ? surfaceNormal : -surfaceNormal);
     surfaceNormal = mul(surfaceNormal, viewBasis);
 

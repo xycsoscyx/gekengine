@@ -49,8 +49,10 @@ namespace Gek
                 , population(dynamic_cast<Edit::Population *>(core->getPopulation()))
                 , renderer(core->getRenderer())
             {
-                GEK_REQUIRE(population);
-                GEK_REQUIRE(core);
+                assert(population);
+                assert(core);
+
+                core->setOption("editor", "active", false);
 
                 population->onAction.connect<Editor, &Editor::onAction>(this);
                 population->onUpdate[90].connect<Editor, &Editor::onUpdate>(this);
@@ -77,10 +79,10 @@ namespace Gek
             {
                 ImGui::PushItemWidth(-1.0f);
 
-                bool editorActive = core->isEditorActive();
+                bool editorActive = core->getOption("editor", "active").as_bool();
                 if (ImGui::Checkbox("Editor", &editorActive))
                 {
-                    core->setEditorState(editorActive);
+                    core->setOption("editor", "active", editorActive);
                 }
 
                 auto &entityMap = population->getEntityMap();
@@ -224,7 +226,7 @@ namespace Gek
                                     Plugin::Component::Data *componentData = entityComponentSearch->second.get();
                                     if (component && componentData)
                                     {
-                                        if (core->isEditorActive())
+                                        if (editorActive)
                                         {
                                             Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));
                                             viewMatrix.translation.xyz = position;
@@ -256,7 +258,8 @@ namespace Gek
             // Plugin::Population Slots
             void onAction(Plugin::Population::Action const &action)
             {
-                if (!core->isEditorActive())
+                bool editorActive = core->getOption("editor", "active").as_bool();
+                if (!editorActive)
                 {
                     return;
                 }
@@ -290,7 +293,8 @@ namespace Gek
 
             void onUpdate(float frameTime)
             {
-                if (core->isEditorActive())
+                bool editorActive = core->getOption("editor", "active").as_bool();
+                if (editorActive)
                 {
                     Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));
                     position += (viewMatrix.rz.xyz * (((moveForward ? 1.0f : 0.0f) + (moveBackward ? -1.0f : 0.0f)) * 5.0f) * frameTime);
@@ -302,11 +306,6 @@ namespace Gek
                     const float width = float(backBuffer->getDescription().width);
                     const float height = float(backBuffer->getDescription().height);
                     auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
-
-                    std::vector<std::string> filters = {
-                        "tonemap",
-                        "antialiass",
-                    };
 
                     renderer->queueCamera(viewMatrix, projectionMatrix, 0.5f, 200.0f, ResourceHandle());
                 }

@@ -92,8 +92,8 @@ namespace Gek
                 , renderer(core->getRenderer())
                 , newtonWorld(NewtonCreate())
             {
-                GEK_REQUIRE(core);
-                GEK_REQUIRE(newtonWorld);
+                assert(core);
+                assert(newtonWorld);
 
                 NewtonSetSolverModel(newtonWorld, 1);
 #if NEWTON_MINOR_VERSION < 14
@@ -150,7 +150,7 @@ namespace Gek
                 NewtonDestroyAllBodies(newtonWorld);
                 NewtonInvalidateCache(newtonWorld);
                 NewtonDestroy(newtonWorld);
-                GEK_REQUIRE(NewtonGetMemoryUsed() == 0);
+                assert(NewtonGetMemoryUsed() == 0);
             }
 
             uint32_t getStaticSceneSurface(Math::Float3 const &position, Math::Float3 const &normal)
@@ -186,7 +186,7 @@ namespace Gek
 					core->getLog()->message("Physics", Plugin::Core::Log::Type::Message, "Loading collision model: %v", modelComponent.name);
 
 					static const std::vector<uint8_t> EmptyBuffer;
-					auto filePath = getContext()->getRootFileName("data", "models", modelComponent.name).withExtension(".bin");
+					auto filePath = getContext()->getRootFileName("data", "physics", modelComponent.name).withExtension(".gek");
                     std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
 					if (buffer.size() < sizeof(Header))
 					{
@@ -421,12 +421,12 @@ namespace Gek
                 removeEntity(entity);
             }
 
-            void onComponentAdded(Plugin::Entity * const entity, const std::type_index &type)
+            void onComponentAdded(Plugin::Entity * const entity)
             {
                 addEntity(entity);
             }
 
-            void onComponentRemoved(Plugin::Entity * const entity, const std::type_index &type)
+            void onComponentRemoved(Plugin::Entity * const entity)
             {
                 if (!entity->hasComponents<Components::Transform, Components::Physical>())
                 {
@@ -436,10 +436,11 @@ namespace Gek
 
             void onUpdate(float frameTime)
             {
-                GEK_REQUIRE(population);
-                GEK_REQUIRE(newtonWorld);
+                assert(population);
+                assert(newtonWorld);
 
-                if (frameTime > 0.0f && !core->isEditorActive())
+                bool editorActive = core->getOption("editor", "active").as_bool();
+                if (frameTime > 0.0f && !editorActive)
                 {
                     static const float StepTime = (1.0f / 120.0f);
                     while (frameTime > 0.0f)

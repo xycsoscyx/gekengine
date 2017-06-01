@@ -622,38 +622,38 @@ namespace Gek
                 , geomtrySystemHandler(new GeometryPipeline())
                 , pixelSystemHandler(new PixelPipeline())
             {
-                GEK_REQUIRE(device);
-                GEK_REQUIRE(computeSystemHandler);
-                GEK_REQUIRE(vertexSystemHandler);
-                GEK_REQUIRE(geomtrySystemHandler);
-                GEK_REQUIRE(pixelSystemHandler);
+                assert(device);
+                assert(computeSystemHandler);
+                assert(vertexSystemHandler);
+                assert(geomtrySystemHandler);
+                assert(pixelSystemHandler);
             }
 
             // Video::Context
             Pipeline * const computePipeline(void)
             {
-                GEK_REQUIRE(computeSystemHandler);
+                assert(computeSystemHandler);
 
                 return computeSystemHandler.get();
             }
 
             Pipeline * const vertexPipeline(void)
             {
-                GEK_REQUIRE(vertexSystemHandler);
+                assert(vertexSystemHandler);
 
                 return vertexSystemHandler.get();
             }
 
             Pipeline * const geometryPipeline(void)
             {
-                GEK_REQUIRE(geomtrySystemHandler);
+                assert(geomtrySystemHandler);
 
                 return geomtrySystemHandler.get();
             }
 
             Pipeline * const pixelPipeline(void)
             {
-                GEK_REQUIRE(pixelSystemHandler);
+                assert(pixelSystemHandler);
 
                 return pixelSystemHandler.get();
             }
@@ -794,7 +794,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(window)
             {
-                GEK_REQUIRE(window);
+                assert(window);
 
                 defaultContext = std::make_unique<Context>(this);
             }
@@ -842,7 +842,7 @@ namespace Gek
 
             Video::Device::Context * const getDefaultContext(void)
             {
-                GEK_REQUIRE(defaultContext);
+                assert(defaultContext);
 
                 return defaultContext.get();
             }

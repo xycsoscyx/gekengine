@@ -104,18 +104,21 @@ namespace Gek
 
         bool Path::isFile(void) const
         {
-            return std::experimental::filesystem::is_regular_file(*this);
+            std::error_code errorCode;
+            return std::experimental::filesystem::is_regular_file(*this, errorCode);
         }
 
         bool Path::isDirectory(void) const
         {
-            return std::experimental::filesystem::is_directory(*this);
+            std::error_code errorCode;
+            return std::experimental::filesystem::is_directory(*this, errorCode);
         }
 
         bool Path::isNewerThan(Path const &path) const
         {
-            auto thisWriteTime = std::experimental::filesystem::last_write_time(*this);
-            auto thatWriteTime = std::experimental::filesystem::last_write_time(path);
+            std::error_code errorCode;
+            auto thisWriteTime = std::experimental::filesystem::last_write_time(*this, errorCode);
+            auto thatWriteTime = std::experimental::filesystem::last_write_time(path, errorCode);
             return (thisWriteTime > thatWriteTime);
         }
 
@@ -140,12 +143,14 @@ namespace Gek
 
         void MakeDirectoryChain(Path const &filePath)
         {
-            std::experimental::filesystem::create_directories(filePath);
+            std::error_code errorCode;
+            std::experimental::filesystem::create_directories(filePath, errorCode);
         }
 
         void Find(Path const &rootDirectory, std::function<bool(Path const &)> onFileFound)
 		{
-			for (const auto &fileSearch : std::experimental::filesystem::directory_iterator(rootDirectory))
+            std::error_code errorCode;
+            for (const auto &fileSearch : std::experimental::filesystem::directory_iterator(rootDirectory, errorCode))
 			{
 				onFileFound(fileSearch.path().u8string());
 			}

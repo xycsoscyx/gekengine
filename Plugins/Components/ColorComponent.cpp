@@ -19,12 +19,12 @@ namespace Gek
         // Plugin::Component
         void save(Components::Color const * const data, JSON::Object &componentData) const
         {
-            componentData = data->value;
+            componentData = JSON::To(data->value);
         }
 
         void load(Components::Color * const data, const JSON::Object &componentData)
         {
-            data->value = getValue(componentData, Math::Float4::White);
+            data->value = GetValue(componentData, Math::Float4::White);
         }
 
         // Edit::Component

@@ -20,8 +20,6 @@ namespace Gek
     {
         GEK_INTERFACE(Entity)
         {
-            GEK_ADD_EXCEPTION(ComponentNotFound);
-
             virtual ~Entity(void) = default;
 
             virtual bool hasComponent(const std::type_index &type) const = 0;

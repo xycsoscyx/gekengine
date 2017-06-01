@@ -62,7 +62,7 @@ namespace Gek
 				auto componentSearch = componentMap.find(type);
 				if (componentSearch == std::end(componentMap))
 				{
-					throw ComponentNotFound("Entity does not contain requested component");
+                    return nullptr;
 				}
 
 				return componentSearch->second.get();
@@ -73,7 +73,7 @@ namespace Gek
 				auto componentSearch = componentMap.find(type);
 				if (componentSearch == std::end(componentMap))
 				{
-                    throw ComponentNotFound("Entity does not contain requested component");
+                    return nullptr;
                 }
 
 				return componentSearch->second.get();
@@ -105,7 +105,7 @@ namespace Gek
                 , core(core)
                 , loadPool(1)
             {
-                GEK_REQUIRE(core);
+                assert(core);
 
                 core->getLog()->message("Population", Plugin::Core::Log::Type::Message, "Loading component plugins");
                 getContext()->listTypes("ComponentType", [&](std::string const &className) -> void
@@ -237,104 +237,102 @@ namespace Gek
                 {
                     core->getLog()->message("Population", Plugin::Core::Log::Type::Message, "Loading population: %v", populationName);
 
-                    try
+                    const JSON::Object worldNode = JSON::Load(getContext()->getRootFileName("data", "scenes", populationName).withExtension(".json"));
+                    if (!worldNode.has_member("Population"))
                     {
-                        const JSON::Object worldNode = JSON::Load(getContext()->getRootFileName("data", "scenes", populationName).withExtension(".json"));
-                        if (!worldNode.has_member("Population"))
-                        {
-                            throw InvalidPopulationBlock("Scene must contain a population list");
-                        }
+                        core->getLog()->message("Population", Plugin::Core::Log::Type::Error, "Scene doesn't contain a population node: %v", populationName);
+                        return;
+                    }
 
-                        if (worldNode.has_member("Seed"))
+                    auto &populationNode = worldNode.get("Population");
+                    if (!populationNode.is_array())
+                    {
+                        core->getLog()->message("Population", Plugin::Core::Log::Type::Error, "Scene poplation node is not an array of entities: %v", populationName);
+                        return;
+                    }
+
+                    if (worldNode.has_member("Seed"))
+                    {
+                        shuntingYard.setRandomSeed(worldNode.get("Seed", std::mt19937::default_seed).as_uint());
+                    }
+                    else
+                    {
+                        shuntingYard.setRandomSeed(uint32_t(std::time(nullptr) & 0xFFFFFFFF));
+                    }
+
+                    JSON::Object templatesNode;
+                    if (worldNode.has_member("Templates"))
+                    {
+                        templatesNode = worldNode.get("Templates");
+                        if (!templatesNode.is_object())
                         {
-                            shuntingYard.setRandomSeed(worldNode.get("Seed", std::mt19937::default_seed).as_uint());
+                            templatesNode = JSON::EmptyObject;
+                            core->getLog()->message("Population", Plugin::Core::Log::Type::Warning, "Scene templates node is not an object", populationName);
                         }
                         else
                         {
-                            shuntingYard.setRandomSeed(uint32_t(std::time(nullptr) & 0xFFFFFFFF));
+                            core->getLog()->message("Population", Plugin::Core::Log::Type::Message, "Found templated block");
                         }
+					}
 
-                        JSON::Object templatesNode;
-                        if (worldNode.has_member("Templates"))
-                        {
-                            templatesNode = worldNode.get("Templates");
-                            if (!templatesNode.is_object())
-                            {
-                                throw InvalidTemplatesBlock("Scene Templates must be an object");
-                            }
-
-							core->getLog()->message("Population", Plugin::Core::Log::Type::Message, "Found templated block");
-						}
-
-                        auto &populationNode = worldNode.get("Population");
-                        if (!populationNode.is_array())
-                        {
-                            throw InvalidPopulationBlock("Scene Population must be an array");
-                        }
-
-						core->getLog()->message("Population", Plugin::Core::Log::Type::Message, "Found %v Entity Definitions", populationNode.size());
-                        for (const auto &entityNode : populationNode.elements())
-                        {
-                            if (!entityNode.is_object())
-                            {
-                                throw InvalidEntityBlock("Scene entity must be an object");
-                            }
-
-                            std::vector<JSON::Member> entityComponentList;
-                            if (entityNode.has_member("Template"))
-                            {
-                                auto &templateNode = templatesNode.get(entityNode["Template"].as_string());
-                                for (const auto &componentNode : templateNode.members())
-                                {
-                                    entityComponentList.push_back(componentNode);
-                                }
-                            }
-
-                            for (const auto &componentNode : entityNode.members())
-                            {
-                                auto componentSearch = std::find_if(std::begin(entityComponentList), std::end(entityComponentList), [&](const JSON::Member &componentData) -> bool
-                                {
-                                    return (componentData.name() == componentNode.name());
-                                });
-
-                                if (componentSearch == std::end(entityComponentList))
-                                {
-                                    entityComponentList.push_back(componentNode);
-                                }
-                                else
-                                {
-                                    auto &componentData = (*componentSearch);
-                                    for (const auto &attribute : componentNode.value().members())
-                                    {
-                                        componentData.value().set(attribute.name(), attribute.value());
-                                    }
-                                }
-                            }
-
-                            auto entity(std::make_unique<Entity>());
-                            for (const auto &componentData : entityComponentList)
-                            {
-                                if (componentData.name() != "Name" &&
-                                    componentData.name() != "Template")
-                                {
-                                    std::type_index componentIdentifier(typeid(nullptr));
-                                    addComponent(entity.get(), componentData, &componentIdentifier);
-                                }
-                            }
-
-                            std::string entityName;
-                            if (entityNode.has_member("Name"))
-                            {
-                                entityName = entityNode.get("Name").as_string();
-                            }
-
-                            queueEntity(entity.release(), entityName);
-                        }
-                    }
-                    catch (const std::exception &exception)
+					core->getLog()->message("Population", Plugin::Core::Log::Type::Message, "Found %v Entity Definitions", populationNode.size());
+                    for (const auto &entityNode : populationNode.elements())
                     {
-                        core->getLog()->message("Population", Plugin::Core::Log::Type::Error, "Unable to load population: %v", exception.what());
-                    };
+                        if (!entityNode.is_object())
+                        {
+                            core->getLog()->message("Population", Plugin::Core::Log::Type::Warning, "Found invalid entity node type");
+                            continue;
+                        }
+
+                        std::vector<JSON::Member> entityComponentList;
+                        if (entityNode.has_member("Template"))
+                        {
+                            auto &templateNode = templatesNode.get(entityNode["Template"].as_string());
+                            for (const auto &componentNode : templateNode.members())
+                            {
+                                entityComponentList.push_back(componentNode);
+                            }
+                        }
+
+                        for (const auto &componentNode : entityNode.members())
+                        {
+                            auto componentSearch = std::find_if(std::begin(entityComponentList), std::end(entityComponentList), [&](const JSON::Member &componentData) -> bool
+                            {
+                                return (componentData.name() == componentNode.name());
+                            });
+
+                            if (componentSearch == std::end(entityComponentList))
+                            {
+                                entityComponentList.push_back(componentNode);
+                            }
+                            else
+                            {
+                                auto &componentData = (*componentSearch);
+                                for (const auto &attribute : componentNode.value().members())
+                                {
+                                    componentData.value().set(attribute.name(), attribute.value());
+                                }
+                            }
+                        }
+
+                        auto entity(std::make_unique<Entity>());
+                        for (const auto &componentData : entityComponentList)
+                        {
+                            if (componentData.name() != "Name" &&
+                                componentData.name() != "Template")
+                            {
+                                addComponent(entity.get(), componentData);
+                            }
+                        }
+
+                        std::string entityName;
+                        if (entityNode.has_member("Name"))
+                        {
+                            entityName = entityNode.get("Name").as_string();
+                        }
+
+                        queueEntity(entity.release(), entityName);
+                    }
                 });
             }
 
@@ -352,18 +350,22 @@ namespace Gek
                         auto componentName = componentNameTypeMap.find(type);
                         if (componentName == std::end(componentNameTypeMap))
                         {
-                            throw FatalError("Unknown component name found when trying to save population");
+                            core->getLog()->message("Population", Plugin::Core::Log::Type::Warning, "Unknown component name found when trying to save population: %v", type.name());
                         }
-
-                        auto component = componentMap.find(type);
-                        if (component == std::end(componentMap))
+                        else
                         {
-                            throw FatalError("Unknown component type found when trying to save population");
+                            auto component = componentMap.find(type);
+                            if (component == std::end(componentMap))
+                            {
+                                core->getLog()->message("Population", Plugin::Core::Log::Type::Warning, "Unknown component type found when trying to save population: %v", type.name());
+                            }
+                            else
+                            {
+                                JSON::Object componentData;
+                                component->second->save(data, componentData);
+                                entityData.set(componentName->second, componentData);
+                            }
                         }
-
-                        JSON::Object componentData;
-                        component->second->save(data, componentData);
-                        entityData.set(componentName->second, componentData);
                     });
 
                     population.add(entityData);
@@ -380,8 +382,7 @@ namespace Gek
                 auto entity(std::make_unique<Entity>());
                 for (const auto &componentData : componentList)
                 {
-                    std::type_index componentIdentifier(typeid(nullptr));
-                    addComponent(entity.get(), componentData, &componentIdentifier);
+                    addComponent(entity.get(), componentData);
                 }
 
                 queueEntity(entity.release(), entityName);
@@ -405,9 +406,9 @@ namespace Gek
                 });
             }
 
-            bool addComponent(Entity *entity, const JSON::Member &componentData, std::type_index *componentIdentifier = nullptr)
+            bool addComponent(Entity *entity, const JSON::Member &componentData)
             {
-                GEK_REQUIRE(entity);
+                assert(entity);
 
                 auto componentNameSearch = componentTypeNameMap.find(componentData.name());
                 if (componentNameSearch != std::end(componentTypeNameMap))
@@ -420,11 +421,6 @@ namespace Gek
                         componentManager->load(component.get(), componentData.value());
 
                         entity->addComponent(componentManager, std::move(component));
-                        if (componentIdentifier)
-                        {
-                            (*componentIdentifier) = componentNameSearch->second;
-                        }
-
                         return true;
                     }
                     else
@@ -442,20 +438,19 @@ namespace Gek
 
             void addComponent(Plugin::Entity * const entity, const JSON::Member &componentData)
             {
-                std::type_index componentIdentifier(typeid(nullptr));
-                if (addComponent(static_cast<Entity *>(entity), componentData, &componentIdentifier))
+                if (addComponent(static_cast<Entity *>(entity), componentData))
                 {
-                    onComponentAdded.emit(static_cast<Plugin::Entity *>(entity), componentIdentifier);
+                    onComponentAdded.emit(static_cast<Plugin::Entity *>(entity));
                 }
             }
 
             void removeComponent(Plugin::Entity * const entity, const std::type_index &type)
             {
-                GEK_REQUIRE(entity);
+                assert(entity);
 
                 if (entity->hasComponent(type))
                 {
-                    onComponentRemoved.emit(entity, type);
+                    onComponentRemoved.emit(entity);
                     static_cast<Entity *>(entity)->removeComponent(type);
                 }
             }

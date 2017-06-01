@@ -57,7 +57,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
 {
     if (node == nullptr)
     {
-        AtomicWriter(std::cerr) << "Invalid scene node" << std::endl;
+        std::cerr << "Invalid scene node" << std::endl;
         return false;
     }
 
@@ -65,7 +65,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
     {
         if (node->mMeshes == nullptr)
         {
-            AtomicWriter(std::cerr) << "Invalid mesh list" << std::endl;
+            std::cerr << "Invalid mesh list" << std::endl;
             return false;
         }
 
@@ -74,7 +74,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
             uint32_t nodeMeshIndex = node->mMeshes[meshIndex];
             if (nodeMeshIndex >= scene->mNumMeshes)
             {
-                AtomicWriter(std::cerr) << "Invalid mesh index" << std::endl;
+                std::cerr << "Invalid mesh index" << std::endl;
                 return false;
             }
 
@@ -83,37 +83,37 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
             {
                 if (mesh->mFaces == nullptr)
                 {
-                    AtomicWriter(std::cerr) << "Invalid mesh face list" << std::endl;
+                    std::cerr << "Invalid mesh face list" << std::endl;
                     return false;
                 }
 
                 if (mesh->mVertices == nullptr)
                 {
-                    AtomicWriter(std::cerr) << "Invalid mesh vertex list" << std::endl;
+                    std::cerr << "Invalid mesh vertex list" << std::endl;
                     return false;
                 }
 
                 if (mesh->mTextureCoords[0] == nullptr)
                 {
-                    AtomicWriter(std::cerr) << "Invalid mesh texture coordinate list" << std::endl;
+                    std::cerr << "Invalid mesh texture coordinate list" << std::endl;
                     return false;
                 }
 
                 if (mesh->mTangents == nullptr)
                 {
-                    AtomicWriter(std::cerr) << "Invalid mesh tangent list" << std::endl;
+                    std::cerr << "Invalid mesh tangent list" << std::endl;
                     return false;
                 }
 
                 if (mesh->mBitangents == nullptr)
                 {
-                    AtomicWriter(std::cerr) << "Invalid mesh bitangent list" << std::endl;
+                    std::cerr << "Invalid mesh bitangent list" << std::endl;
                     return false;
                 }
 
                 if (mesh->mNormals == nullptr)
                 {
-                    AtomicWriter(std::cerr) << "Invalid mesh normal list" << std::endl;
+                    std::cerr << "Invalid mesh normal list" << std::endl;
                     return false;
                 }
 
@@ -124,7 +124,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
                     const aiFace &face = mesh->mFaces[faceIndex];
                     if (face.mNumIndices != 3)
                     {
-                        AtomicWriter(std::cerr) << "Non-triangular face encountered" << std::endl;
+                        std::cerr << "Non-triangular face encountered" << std::endl;
                         return false;
                     }
 
@@ -188,7 +188,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
     {
         if (node->mChildren == nullptr)
         {
-            AtomicWriter(std::cerr) << "Invalid child list" << std::endl;
+            std::cerr << "Invalid child list" << std::endl;
             return false;
         }
 
@@ -206,7 +206,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    AtomicWriter() << "GEK Part Converter" << std::endl;
+    std::cout << "GEK Part Converter" << std::endl;
 
     FileSystem::Path fileNameInput;
     FileSystem::Path fileNameOutput;
@@ -220,7 +220,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		std::vector<std::string> arguments(String::Split(String::GetLower(argument), ':'));
         if (arguments.empty())
         {
-            AtomicWriter(std::cerr) << "No arguments specified for command line parameter" << std::endl;
+            std::cerr << "No arguments specified for command line parameter" << std::endl;
             return -__LINE__;
         }
 
@@ -244,7 +244,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         {
             if (arguments.size() != 2)
             {
-                AtomicWriter(std::cerr) << "Missing parameters for smoothAngle" << std::endl;
+                std::cerr << "Missing parameters for smoothAngle" << std::endl;
                 return -__LINE__;
             }
 
@@ -254,7 +254,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         {
             if (arguments.size() != 2)
             {
-                AtomicWriter(std::cerr) << "Missing parameters for unitsInFoot" << std::endl;
+                std::cerr << "Missing parameters for unitsInFoot" << std::endl;
                 return -__LINE__;
             }
 
@@ -269,7 +269,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     aiLogStream logStream;
     logStream.callback = [](char const *message, char *user) -> void
     {
-		AtomicWriter(std::cerr) << "Assimp: " << message;
+		std::cerr << "Assimp: " << message;
     };
 
     logStream.user = nullptr;
@@ -322,33 +322,33 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     auto scene = aiImportFileExWithProperties(fileNameInput.u8string().c_str(), importFlags, nullptr, propertyStore);
     if (scene == nullptr)
     {
-        AtomicWriter(std::cerr) << "Unable to load scene with Assimp" << std::endl;
+        std::cerr << "Unable to load scene with Assimp" << std::endl;
         return -__LINE__;
     }
 
     scene = aiApplyPostProcessing(scene, textureProcessFlags);
     if (scene == nullptr)
     {
-        AtomicWriter(std::cerr) << "Unable to apply texture post processing with Assimp" << std::endl;
+        std::cerr << "Unable to apply texture post processing with Assimp" << std::endl;
         return -__LINE__;
     }
 
     scene = aiApplyPostProcessing(scene, tangentProcessFlags);
     if (scene == nullptr)
     {
-        AtomicWriter(std::cerr) << "Unable to apply tangent post processing with Assimp" << std::endl;
+        std::cerr << "Unable to apply tangent post processing with Assimp" << std::endl;
         return -__LINE__;
     }
 
     if (!scene->HasMeshes())
     {
-        AtomicWriter(std::cerr) << "Scene has no meshes" << std::endl;
+        std::cerr << "Scene has no meshes" << std::endl;
         return -__LINE__;
     }
 
     if (!scene->HasMaterials())
     {
-        AtomicWriter(std::cerr) << "Exporting to model requires materials in scene" << std::endl;
+        std::cerr << "Exporting to model requires materials in scene" << std::endl;
         return -__LINE__;
     }
 
@@ -411,7 +411,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     FileSystem::Find(materialsPath, findMaterials);
     if (albedoToMaterialMap.empty())
     {
-        AtomicWriter(std::cerr) << "Unable to locate any materials" << std::endl;
+        std::cerr << "Unable to locate any materials" << std::endl;
         return -__LINE__;
     }
 
@@ -419,7 +419,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     for (const auto &modelAlbedo : scenePartMap)
     {
 		std::string albedoName(String::GetLower(FileSystem::Path(modelAlbedo.first).withoutExtension().u8string()));
-        AtomicWriter() << "Found Albedo: " << albedoName << std::endl;
+        std::cout << "Found Albedo: " << albedoName << std::endl;
         if (albedoName.find("textures\\") == 0)
         {
             albedoName = albedoName.substr(9);
@@ -444,7 +444,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         auto materialAlebedoSearch = albedoToMaterialMap.find(albedoName);
         if (materialAlebedoSearch == std::end(albedoToMaterialMap))
         {
-            AtomicWriter(std::cerr) << "! Unable to find material for albedo: " << albedoName.c_str() << std::endl;
+            std::cerr << "! Unable to find material for albedo: " << albedoName.c_str() << std::endl;
         }
         else
         {
@@ -473,19 +473,19 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
     if (materialPartMap.empty())
     {
-        AtomicWriter(std::cerr) << "No valid material models found" << std::endl;
+        std::cerr << "No valid material models found" << std::endl;
         return -__LINE__;
     }
 
-	AtomicWriter() << "> Num. Parts: " << materialPartMap.size() << std::endl;
-	AtomicWriter() << "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")" << std::endl;
-	AtomicWriter() << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
+	std::cout << "> Num. Parts: " << materialPartMap.size() << std::endl;
+	std::cout << "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")" << std::endl;
+	std::cout << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
 
     FILE *file = nullptr;
     _wfopen_s(&file, fileNameOutput.c_str(), L"wb");
     if (file == nullptr)
     {
-        AtomicWriter(std::cerr) << "Unable to create output file" << std::endl;
+        std::cerr << "Unable to create output file" << std::endl;
         return -__LINE__;
     }
 
@@ -496,9 +496,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     for (const auto &material : materialPartMap)
     {
 		std::string name = material.first;
-		AtomicWriter() << "-    Material: " << name << std::endl;
-        AtomicWriter() << "       Num. Vertices: " << material.second.vertexPositionList.size() << std::endl;
-        AtomicWriter() << "       Num. Indices: " << material.second.indexList.size() << std::endl;
+		std::cout << "-    Material: " << name << std::endl;
+        std::cout << "       Num. Vertices: " << material.second.vertexPositionList.size() << std::endl;
+        std::cout << "       Num. Indices: " << material.second.indexList.size() << std::endl;
 
         Header::Material materialHeader;
         std::strncpy(materialHeader.name, name.c_str(), 63);

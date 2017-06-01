@@ -26,8 +26,8 @@ namespace Gek
                 : ContextRegistration(context)
                 , videoDevice(videoDevice)
             {
-                GEK_REQUIRE(videoDevice);
-                GEK_REQUIRE(resources);
+                assert(videoDevice);
+                assert(resources);
 
                 const JSON::Object visualNode = JSON::Load(getContext()->getRootFileName("data", "visuals", visualName).withExtension(".json"));
 

@@ -73,9 +73,9 @@ namespace Gek
                 , population(population)
                 , filterName(filterName)
             {
-                GEK_REQUIRE(videoDevice);
-                GEK_REQUIRE(resources);
-                GEK_REQUIRE(population);
+                assert(videoDevice);
+                assert(resources);
+                assert(population);
 
                 reload();
 
@@ -782,7 +782,7 @@ namespace Gek
 
             Pass::Iterator begin(Video::Device::Context *videoContext)
             {
-                GEK_REQUIRE(videoContext);
+                assert(videoContext);
                 return Pass::Iterator(passList.empty() ? nullptr : new PassImplementation(videoContext, this, std::begin(passList), std::end(passList)));
             }
         };

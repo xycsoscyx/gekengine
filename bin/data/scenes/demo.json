@@ -3,23 +3,23 @@
     "Templates": {
         "BasicPointLight": {
             "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ 0, "random(0,pi*2)", 0 ]
+                "position": [ "random(-45, 45)", "random(5, 40)", "random(-15, 15)" ],
+                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
             },
             "PointLight": {
                 "radius": "random(0.5, 2.0)",
-                "range": "random(10, 20)",
+                "range": "random(10, 30)",
                 "intensity": "random(1, 10)"
             },
             "Color": [ "random(0, 1)", "random(0, 1)", "random(0, 1)" ]
         },
         "BasicSpotLight": {
             "Transform": {
-                "position": [ "random(-45, 45)", "random(5, 30)", "random(-20, 20)" ],
-                "rotation": [ 0, "random(0,pi*2)", 0 ]
+                "position": [ "random(-45, 45)", "random(5, 40)", "random(-15, 15)" ],
+                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
             },
             "SpotLight": {
-                "range": "random(10, 20)",
+                "range": "random(10, 30)",
                 "innerAngle": "random(30,60)",
                 "outerAngle": "random(75,120)",
                 "coneFalloff": "random(0.5, 4.0)",
@@ -32,11 +32,10 @@
     "Population": [
         {
             "Transform": { },
-            "Model": {
-                "name": "sponza"
-            },
+            "Model": "sponza",
             "Physical": { }
         },
+
         {
             "Name": "player",
             "Transform": {
@@ -58,625 +57,68 @@
                 "mass": 250
             }
         },
-        { "Transform": {  "position": [  20,  2,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [  20,  4,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [  20,  6,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [  20,  8,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [  20, 10,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [ -20,  2,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [ -20,  4,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [ -20,  6,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [ -20,  8,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [ -20, 10,  4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [  20,  2, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [  20,  4, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [  20,  6, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [  20,  8, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [  20, 10, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [ -20,  2, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [ -20,  4, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [ -20,  6, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [ -20,  8, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        { "Transform": {  "position": [ -20, 10, -4 ], "rotation": [ 0, 0, 0, 1] }, "Model": { "name": "cube" }, "Physical": { "mass": 100 } },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicPointLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        },
-        {
-            "Template": "BasicSpotLight"
-        }
+        
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        { "Transform": {  "position": [  "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ], "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ] }, "Model": "cube", "Physical": { "mass": 100 } },
+        
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+        { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" }, { "Template": "BasicPointLight" },
+
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" },
+        { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }, { "Template": "BasicSpotLight" }
     ]
 }

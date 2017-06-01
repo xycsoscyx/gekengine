@@ -25,8 +25,8 @@ namespace Gek
                 : world(static_cast<Newton::World *>(NewtonWorldGetUserData(newtonWorld)))
                 , entity(entity)
             {
-                GEK_REQUIRE(world);
-                GEK_REQUIRE(entity);
+                assert(world);
+                assert(entity);
 
 				const auto &physical = entity->getComponent<Components::Physical>();
 				const auto &transform = entity->getComponent<Components::Transform>();

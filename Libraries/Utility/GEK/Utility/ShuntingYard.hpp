@@ -27,7 +27,7 @@ namespace Gek
             std::string & appendFormat(char const *formatting, TYPE const &value, PARAMETERS... arguments)
 			{
 				auto message(Format(formatting, value, arguments...));
-                AtomicWriter() << message << std::endl;
+                std::cout << message << std::endl;
 				return append(message);
 			}
 		};

@@ -27,7 +27,7 @@ namespace Gek
             void load(Components::Static * const data, const JSON::Object &componentData)
             {
 				static const std::string DefaultGroup("default");
-                data->group = getValue(componentData, "group", DefaultGroup);
+                data->group = GetValue(JSON::Get(componentData, "group"), DefaultGroup);
             }
 
             // Edit::Component

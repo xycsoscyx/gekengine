@@ -15,21 +15,21 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 {
 	if (!inputFilePath.isFile())
 	{
-        AtomicWriter(std::cerr) << "Input file not found: " << inputFilePath.c_str() << std::endl;
+        std::cerr << "Input file not found: " << inputFilePath.c_str() << std::endl;
         return;
 	}
 
     auto outputFilePath(inputFilePath.withExtension(".dds"));
 	if (outputFilePath.isFile() && outputFilePath.isNewerThan(inputFilePath))
 	{
-		AtomicWriter(std::cerr) << "Input file hasn't changed since last compression: " << inputFilePath.c_str() << std::endl;
+		std::cerr << "Input file hasn't changed since last compression: " << inputFilePath.c_str() << std::endl;
         return;
     }
 
     std::string extension(String::GetLower(inputFilePath.getExtension()));
     if (extension == ".dds")
     {
-        AtomicWriter(std::cerr) << "Input file is alrady compressed: " << inputFilePath.c_str() << std::endl;
+        std::cerr << "Input file is alrady compressed: " << inputFilePath.c_str() << std::endl;
         return;
     }
 
@@ -62,7 +62,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 */
 	if (!load)
 	{
-        AtomicWriter(std::cerr) << "Unknown file type of " << extension << " for input: " << inputFilePath.c_str() << std::endl;
+        std::cerr << "Unknown file type of " << extension << " for input: " << inputFilePath.c_str() << std::endl;
         return;
     }
 
@@ -73,7 +73,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
     HRESULT resultValue = load(buffer, image);
     if (FAILED(resultValue))
     {
-        AtomicWriter(std::cerr) << "Unable to load input file: " << inputFilePath.c_str() << std::endl;
+        std::cerr << "Unable to load input file: " << inputFilePath.c_str() << std::endl;
         return;
     }
 
@@ -126,38 +126,38 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 	}
 	else
 	{
-		AtomicWriter(std::cerr) << "Unable to determine texture material type: " << textureName << std::endl;
+		std::cerr << "Unable to determine texture material type: " << textureName << std::endl;
         return;
     }
 
-    AtomicWriter() << "Compressing: -> " << inputFilePath << std::endl;
-    AtomicWriter() << "             <- " << outputFilePath << std::endl;
+    std::cout << "Compressing: -> " << inputFilePath << std::endl;
+    std::cout << "             <- " << outputFilePath << std::endl;
     switch (outputFormat)
     {
     case DXGI_FORMAT_BC7_UNORM_SRGB:
-        AtomicWriter() << "             Albedo BC7" << std::endl;
+        std::cout << "             Albedo BC7" << std::endl;
         break;
 
     case DXGI_FORMAT_BC1_UNORM_SRGB:
-        AtomicWriter() << "             Albedo BC1" << std::endl;
+        std::cout << "             Albedo BC1" << std::endl;
         break;
 
     case DXGI_FORMAT_BC5_UNORM:
-        AtomicWriter() << "             Normal BC5" << std::endl;
+        std::cout << "             Normal BC5" << std::endl;
         break;
 
     case DXGI_FORMAT_BC4_UNORM:
-        AtomicWriter() << "             Metalness/Roughness BC4" << std::endl;
+        std::cout << "             Metalness/Roughness BC4" << std::endl;
         break;
     };
 
-    AtomicWriter() << "             " << image.GetMetadata().width << " x " << image.GetMetadata().height << std::endl;
+    std::cout << "             " << image.GetMetadata().width << " x " << image.GetMetadata().height << std::endl;
 
 	::DirectX::ScratchImage mipMapChain;
 	resultValue = ::DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), ::DirectX::TEX_FILTER_TRIANGLE, 0, mipMapChain);
 	if (FAILED(resultValue))
 	{
-		AtomicWriter(std::cerr) << "Unable to create mipmap chain" << std::endl;
+		std::cerr << "Unable to create mipmap chain" << std::endl;
 	}
 
 	image = std::move(mipMapChain);
@@ -175,21 +175,21 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 
 	if (FAILED(resultValue))
 	{
-		AtomicWriter(std::cerr) << "Unable to compress image" << std::endl;
+		std::cerr << "Unable to compress image" << std::endl;
         return;
     }
 
 	resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, outputFilePath.c_str());
 	if (FAILED(resultValue))
 	{
-		AtomicWriter(std::cerr) << "Unable to save image" << std::endl;
+		std::cerr << "Unable to save image" << std::endl;
         return;
     }
 }
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    AtomicWriter() << "GEK Texture Compressor" << std::endl;
+    std::cout << "GEK Texture Compressor" << std::endl;
 
     try
     {
@@ -223,12 +223,12 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 				}
 				catch (std::exception const &exception)
 				{
-                    AtomicWriter(std::cerr) << "[warning] Error trying to compress file: " << filePath << std::endl;
-                    AtomicWriter(std::cerr) << exception.what() << std::endl;
+                    std::cerr << "[warning] Error trying to compress file: " << filePath << std::endl;
+                    std::cerr << exception.what() << std::endl;
 				}
                 catch (...)
                 {
-                    AtomicWriter(std::cerr) << "[warning] Unknown error trying to compress file: " << filePath << std::endl;
+                    std::cerr << "[warning] Unknown error trying to compress file: " << filePath << std::endl;
                 };
 			}
 
@@ -241,14 +241,14 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	}
     catch (const std::exception &exception)
     {
-        AtomicWriter(std::cerr) << "GEK Engine - Error" << std::endl;
-		AtomicWriter(std::cerr) << "Caught: " << exception.what() << std::endl;
-		AtomicWriter(std::cerr) << "Type: " << typeid(exception).name() << std::endl;
+        std::cerr << "GEK Engine - Error" << std::endl;
+		std::cerr << "Caught: " << exception.what() << std::endl;
+		std::cerr << "Type: " << typeid(exception).name() << std::endl;
     }
     catch (...)
     {
-        AtomicWriter(std::cerr) << "GEK Engine - Error" << std::endl;
-        AtomicWriter(std::cerr) << "Caught: Non-standard exception" << std::endl;
+        std::cerr << "GEK Engine - Error" << std::endl;
+        std::cerr << "Caught: Non-standard exception" << std::endl;
     };
 
     return 0;

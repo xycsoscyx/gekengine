@@ -44,11 +44,6 @@
                 "parameters": "flat"
             },
             {
-                "name": "detail",
-                "pattern": "system",
-                "parameters": "flat"
-            },
-            {
                 "name": "roughness",
                 "pattern": "color",
                 "parameters": 0.5
@@ -70,7 +65,7 @@
             "flags": "target"
         },
         "normalBuffer": {
-            "format": "R11G11B10_FLOAT",
+            "format": "R8G8_UNORM",
             "flags": "target"
         }
     },

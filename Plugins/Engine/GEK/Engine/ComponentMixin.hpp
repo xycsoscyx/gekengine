@@ -58,197 +58,10 @@ namespace Gek
                 return std::make_unique<COMPONENT>();
             }
 
-            bool getValue(JSON::Object const &data, bool defaultValue)
-            {
-				switch (data.type_id())
-				{
-				case jsoncons::value_type::small_string_t:
-				case jsoncons::value_type::string_t:
-					return population->getShuntingYard().evaluate(data.as_string(), defaultValue) != 0.0f;
-
-				case jsoncons::value_type::bool_t:
-					return data.var_.bool_data_cast()->value();
-
-				case jsoncons::value_type::double_t:
-					return data.var_.double_data_cast()->value() != 0.0;
-
-				case jsoncons::value_type::integer_t:
-					return data.var_.integer_data_cast()->value() != 0;
-
-				case jsoncons::value_type::uinteger_t:
-					return data.var_.uinteger_data_cast()->value() != 0;
-
-				default:
-					return defaultValue;
-				};
-			}
-
-            int32_t getValue(JSON::Object const &data, int32_t defaultValue)
-            {
-				switch (data.type_id())
-				{
-				case jsoncons::value_type::small_string_t:
-				case jsoncons::value_type::string_t:
-					return static_cast<int32_t>(population->getShuntingYard().evaluate(data.as_string(), defaultValue));
-
-				case jsoncons::value_type::double_t:
-					return static_cast<int64_t>(data.var_.double_data_cast()->value());
-
-				case jsoncons::value_type::integer_t:
-					return static_cast<int64_t>(data.var_.integer_data_cast()->value());
-
-				case jsoncons::value_type::uinteger_t:
-					return static_cast<int64_t>(data.var_.uinteger_data_cast()->value());
-
-				case jsoncons::value_type::bool_t:
-					return data.var_.bool_data_cast()->value() ? 1 : 0;
-
-				default:
-					return defaultValue;
-				};
-			}
-
-            uint32_t getValue(JSON::Object const &data, uint32_t defaultValue)
-            {
-				switch (data.type_id())
-				{
-				case jsoncons::value_type::small_string_t:
-				case jsoncons::value_type::string_t:
-					return static_cast<uint32_t>(population->getShuntingYard().evaluate(data.as_string(), defaultValue));
-
-				case jsoncons::value_type::double_t:
-					return static_cast<uint32_t>(data.var_.double_data_cast()->value());
-
-				case jsoncons::value_type::integer_t:
-					return static_cast<uint32_t>(data.var_.integer_data_cast()->value());
-
-				case jsoncons::value_type::uinteger_t:
-					return static_cast<uint32_t>(data.var_.uinteger_data_cast()->value());
-
-				case jsoncons::value_type::bool_t:
-					return data.var_.bool_data_cast()->value() ? 1 : 0;
-
-				default:
-					return defaultValue;
-				};
-			}
-
-            float getValue(JSON::Object const &data, float defaultValue)
-            {
-				switch (data.type_id())
-				{
-				case jsoncons::value_type::small_string_t:
-				case jsoncons::value_type::string_t:
-					return population->getShuntingYard().evaluate(data.as_string(), defaultValue);
-
-				case jsoncons::value_type::double_t:
-					return static_cast<float>(data.var_.double_data_cast()->value());
-
-				case jsoncons::value_type::integer_t:
-					return static_cast<float>(data.var_.integer_data_cast()->value());
-
-				case jsoncons::value_type::uinteger_t:
-					return static_cast<float>(data.var_.uinteger_data_cast()->value());
-
-				case jsoncons::value_type::bool_t:
-					return data.var_.bool_data_cast()->value() ? 1.0f : 0.0f;
-
-				default:
-					return defaultValue;
-				};
-			}
-
             template <typename TYPE>
-            Math::Vector2<TYPE> getValue(JSON::Object const &data, Math::Vector2<TYPE> const &defaultValue)
+            TYPE GetValue(JSON::Object const &object, TYPE defaultValue)
             {
-                if (data.is_array() && data.size() == 2)
-                {
-                    return Math::Vector2<TYPE>(
-                        getValue(data.at(0), defaultValue.x),
-                        getValue(data.at(1), defaultValue.y));
-                }
-
-                return defaultValue;
-            }
-
-            template <typename TYPE>
-            Math::Vector3<TYPE> getValue(JSON::Object const &data, Math::Vector3<TYPE> const &defaultValue)
-            {
-                if (data.is_array() && data.size() == 3)
-                {
-                    return Math::Vector3<TYPE>(
-                        getValue(data.at(0), defaultValue.x),
-                        getValue(data.at(1), defaultValue.y),
-                        getValue(data.at(2), defaultValue.z));
-                }
-
-                return defaultValue;
-            }
-
-            template <typename TYPE>
-            Math::Vector4<TYPE> getValue(JSON::Object const &data, Math::Vector4<TYPE> const &defaultValue)
-            {
-				if (data.is_array())
-				{
-					if (data.size() == 3)
-					{
-						return Math::Vector4<TYPE>(
-							getValue(data.at(0), defaultValue.x),
-							getValue(data.at(1), defaultValue.y),
-							getValue(data.at(2), defaultValue.z), 1.0f);
-					}
-					else if (data.size() == 4)
-					{
-						return Math::Vector4<TYPE>(
-							getValue(data.at(0), defaultValue.x),
-							getValue(data.at(1), defaultValue.y),
-							getValue(data.at(2), defaultValue.z),
-							getValue(data.at(3), defaultValue.w));
-					}
-				}
-
-                return defaultValue;
-            }
-
-            Math::Quaternion getValue(JSON::Object const &data, Math::Quaternion const &defaultValue)
-            {
-                if (data.is_array())
-                {
-                    if (data.size() == 3)
-                    {
-                        return Math::Quaternion::FromEuler(
-                            getValue(data.at(0), defaultValue.x),
-                            getValue(data.at(1), defaultValue.y),
-                            getValue(data.at(2), defaultValue.z));
-                    }
-                    else if (data.size() == 4)
-                    {
-                        return Math::Quaternion(
-                            getValue(data.at(0), defaultValue.x),
-                            getValue(data.at(1), defaultValue.y),
-                            getValue(data.at(2), defaultValue.z),
-                            getValue(data.at(3), defaultValue.w));
-                    }
-                }
-
-                return defaultValue;
-            }
-
-            std::string getValue(JSON::Object const &data, std::string const &defaultValue)
-            {
-                return data.as_string();
-            }
-
-            template <typename TYPE>
-            TYPE getValue(JSON::Object const &componentData, std::string const &name, TYPE const &defaultValue)
-            {
-                if (componentData.is_object() && componentData.has_member(name))
-                {
-                    auto &data = componentData.get(name);
-                    return getValue(data, defaultValue);
-                }
-
-                return defaultValue;
+                return JSON::From(object, population->getShuntingYard(), defaultValue);
             }
 
             virtual void save(COMPONENT const * const component, JSON::Object &componentData) const { };
@@ -288,7 +101,7 @@ namespace Gek
 
             void addEntity(Plugin::Entity * const entity, std::function<void(Data &data, REQUIRED&... components)> onAdded)
             {
-                GEK_REQUIRE(entity);
+                assert(entity);
 
                 if (entity->hasComponents<REQUIRED...>())
                 {
@@ -302,7 +115,7 @@ namespace Gek
 
             void removeEntity(Plugin::Entity * const entity)
             {
-                GEK_REQUIRE(entity);
+                assert(entity);
 
                 auto entitySearch = entityDataMap.find(entity);
                 if (entitySearch != std::end(entityDataMap))
@@ -318,7 +131,7 @@ namespace Gek
 
             void listEntities(std::function<void(Plugin::Entity * const entity, Data &data, REQUIRED&... components)> onEntity)
             {
-                GEK_REQUIRE(onEntity);
+                assert(onEntity);
 
                 std::for_each(std::begin(entityDataMap), std::end(entityDataMap), [&](auto &entitySearch) -> void
                 {
@@ -328,7 +141,7 @@ namespace Gek
 
             void parallelListEntities(std::function<void(Plugin::Entity * const entity, Data &data, REQUIRED&... components)> onEntity)
             {
-                GEK_REQUIRE(onEntity);
+                assert(onEntity);
 
                 concurrency::parallel_for_each(std::begin(entityDataMap), std::end(entityDataMap), [&](auto &entitySearch) -> void
                 {

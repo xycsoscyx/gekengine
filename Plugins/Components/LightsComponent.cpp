@@ -25,10 +25,10 @@ namespace Gek
 
         void load(Components::PointLight * const data, const JSON::Object &componentData)
         {
-            data->range = getValue(componentData, "range", 0.0f);
-            data->radius = getValue(componentData, "radius", 0.0f);
-            data->intensity = getValue(componentData, "intensity", 0.0f);
-			AtomicWriter() << "Range: " << data->range << ", Radius: " << data->radius << ", Intensity: " << data->intensity << std::endl;
+            data->range = GetValue(JSON::Get(componentData, "range"), 0.0f);
+            data->radius = GetValue(JSON::Get(componentData, "radius"), 0.0f);
+            data->intensity = GetValue(JSON::Get(componentData, "intensity"), 0.0f);
+			std::cout << "Range: " << data->range << ", Radius: " << data->radius << ", Intensity: " << data->intensity << std::endl;
         }
 
         // Edit::Component
@@ -78,12 +78,12 @@ namespace Gek
 
         void load(Components::SpotLight * const data, const JSON::Object &componentData)
         {
-            data->range = getValue(componentData, "range", 0.0f);
-            data->radius = getValue(componentData, "radius", 0.0f);
-            data->intensity = getValue(componentData, "intensity", 0.0f);
-            data->innerAngle = std::cos(Math::DegreesToRadians(getValue(componentData, "innerAngle", 0.0f)));
-            data->outerAngle = std::cos(Math::DegreesToRadians(getValue(componentData, "outerAngle", 0.0f)));
-            data->coneFalloff = getValue(componentData, "coneFalloff", 0.0f);
+            data->range = GetValue(JSON::Get(componentData, "range"), 0.0f);
+            data->radius = GetValue(JSON::Get(componentData, "radius"), 0.0f);
+            data->intensity = GetValue(JSON::Get(componentData, "intensity"), 0.0f);
+            data->innerAngle = std::cos(Math::DegreesToRadians(GetValue(JSON::Get(componentData, "innerAngle"), 0.0f)));
+            data->outerAngle = std::cos(Math::DegreesToRadians(GetValue(JSON::Get(componentData, "outerAngle"), 0.0f)));
+            data->coneFalloff = GetValue(JSON::Get(componentData, "coneFalloff"), 0.0f);
         }
 
         // Edit::Component
@@ -131,7 +131,7 @@ namespace Gek
 
         void load(Components::DirectionalLight * const data, const JSON::Object &componentData)
         {
-            data->intensity = getValue(componentData, "intensity", 0.0f);
+            data->intensity = GetValue(JSON::Get(componentData, "intensity"), 0.0f);
         }
 
         // Edit::Component

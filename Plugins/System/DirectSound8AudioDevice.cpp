@@ -37,7 +37,7 @@ namespace Gek
 			// AudioSample
 			void setFrequency(uint32_t frequency)
 			{
-				GEK_REQUIRE(directSoundBuffer);
+				assert(directSoundBuffer);
 
 				if (frequency == -1)
 				{
@@ -51,7 +51,7 @@ namespace Gek
 
 			void setVolume(float volume)
 			{
-				GEK_REQUIRE(directSoundBuffer);
+				assert(directSoundBuffer);
 
 				directSoundBuffer->SetVolume(uint32_t((DSBVOLUME_MAX - DSBVOLUME_MIN) * volume) + DSBVOLUME_MIN);
 			}
@@ -69,13 +69,13 @@ namespace Gek
 			// Audio::Effect
 			void setPan(float pan)
 			{
-				GEK_REQUIRE(directSoundBuffer);
+				assert(directSoundBuffer);
 				directSoundBuffer->SetPan(uint32_t((DSBPAN_RIGHT - DSBPAN_LEFT) * pan) + DSBPAN_LEFT);
 			}
 
 			void play(bool loop)
 			{
-				GEK_REQUIRE(directSoundBuffer);
+				assert(directSoundBuffer);
 
 				DWORD dwStatus = 0;
 				if (SUCCEEDED(directSoundBuffer->GetStatus(&dwStatus)) && !(dwStatus & DSBSTATUS_PLAYING))
@@ -101,7 +101,7 @@ namespace Gek
 			// Audio::Sound
 			void setDistance(float minimum, float maximum)
 			{
-				GEK_REQUIRE(directSound8Buffer3D);
+				assert(directSound8Buffer3D);
 
 				directSound8Buffer3D->SetMinDistance(minimum, DS3D_DEFERRED);
 				directSound8Buffer3D->SetMaxDistance(maximum, DS3D_DEFERRED);
@@ -109,8 +109,8 @@ namespace Gek
 
 			void play(Math::Float3 const &origin, bool loop)
 			{
-				GEK_REQUIRE(directSound8Buffer3D);
-				GEK_REQUIRE(directSoundBuffer);
+				assert(directSound8Buffer3D);
+				assert(directSoundBuffer);
 
 				directSound8Buffer3D->SetPosition(origin.x, origin.y, origin.z, DS3D_DEFERRED);
 
@@ -134,7 +134,7 @@ namespace Gek
 			Device(Context *context, HWND window, std::string device)
 				: ContextRegistration(context)
 			{
-				GEK_REQUIRE(window);
+				assert(window);
 
 				GUID deviceGUID = DSDEVID_DefaultPlayback;
 				if (!device.empty())
@@ -207,14 +207,14 @@ namespace Gek
 			// Audio::Device
 			void setVolume(float volume)
 			{
-				GEK_REQUIRE(primarySoundBuffer);
+				assert(primarySoundBuffer);
 
 				primarySoundBuffer->SetVolume(uint32_t((DSBVOLUME_MAX - DSBVOLUME_MIN) * volume) + DSBVOLUME_MIN);
 			}
 
 			float getVolume(void)
 			{
-				GEK_REQUIRE(primarySoundBuffer);
+				assert(primarySoundBuffer);
 
 				long volumeNumber = 0;
 				if (FAILED(primarySoundBuffer->GetVolume(&volumeNumber)))
@@ -227,7 +227,7 @@ namespace Gek
 
 			void setListener(Math::Float4x4 const &matrix)
 			{
-				GEK_REQUIRE(directSoundListener);
+				assert(directSoundListener);
 
 				directSoundListener->SetPosition(matrix.translation.x, matrix.translation.y, matrix.translation.z, DS3D_DEFERRED);
 				directSoundListener->SetOrientation(matrix.rz.x, matrix.rz.y, matrix.rz.z, matrix.ry.x, matrix.ry.y, matrix.ry.z, DS3D_DEFERRED);
@@ -236,21 +236,21 @@ namespace Gek
 
 			void setDistanceFactor(float factor)
 			{
-				GEK_REQUIRE(directSoundListener);
+				assert(directSoundListener);
 
 				directSoundListener->SetDistanceFactor(factor, DS3D_DEFERRED);
 			}
 
 			void setDopplerFactor(float factor)
 			{
-				GEK_REQUIRE(directSoundListener);
+				assert(directSoundListener);
 
 				directSoundListener->SetDopplerFactor(factor, DS3D_DEFERRED);
 			}
 
 			void setRollOffFactor(float factor)
 			{
-				GEK_REQUIRE(directSoundListener);
+				assert(directSoundListener);
 
 				directSoundListener->SetRolloffFactor(factor, DS3D_DEFERRED);
 			}
@@ -267,7 +267,7 @@ namespace Gek
 /*
 			Audio::EffectPtr loadEffect(FileSystem::Path const &filePath)
 			{
-				GEK_REQUIRE(directSound);
+				assert(directSound);
 
 				CComPtr<IDirectSoundBuffer> directSoundBuffer(loadFromFile(fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL));
 
@@ -282,7 +282,7 @@ namespace Gek
 
 			Audio::SoundPtr loadSound(FileSystem::Path const &filePath)
 			{
-				GEK_REQUIRE(directSound);
+				assert(directSound);
 
 				CComPtr<IDirectSoundBuffer> directSoundBuffer(loadFromFile(fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL));
 
@@ -303,8 +303,8 @@ namespace Gek
 
 			Audio::EffectPtr copyEffect(Audio::Effect *source)
 			{
-				GEK_REQUIRE(directSound);
-				GEK_REQUIRE(source);
+				assert(directSound);
+				assert(source);
 
 				CComPtr<IDirectSoundBuffer> directSoundBuffer;
 				HRESULT resultValue = directSound->DuplicateSoundBuffer(dynamic_cast<Effect *>(source)->directSoundBuffer.p, &directSoundBuffer);
@@ -324,8 +324,8 @@ namespace Gek
 
 			Audio::SoundPtr copySound(Audio::Sound *source)
 			{
-				GEK_REQUIRE(directSound);
-				GEK_REQUIRE(source);
+				assert(directSound);
+				assert(source);
 
 				CComPtr<IDirectSoundBuffer> directSoundBuffer;
 				HRESULT resultValue = directSound->DuplicateSoundBuffer(dynamic_cast<Sound *>(source)->directSoundBuffer.p, &directSoundBuffer);

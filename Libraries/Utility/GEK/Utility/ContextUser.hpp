@@ -7,36 +7,36 @@
 /// Last Changed: $Date:   Thu Oct 13 20:39:05 2016 +0000 $
 #pragma once
 
-#include "GEK/Utility/Exceptions.hpp"
 #include "GEK/Utility/Context.hpp"
 #include <unordered_map>
+#include <assert.h>
 
 #define GEK_CONTEXT_USER(CLASS, ...) struct CLASS : public ContextRegistration<CLASS, __VA_ARGS__>
 
-#define GEK_REGISTER_CONTEXT_USER(CLASS)                                                                                            \
-ContextUserPtr CLASS##CreateInstance(Context *context, void *typelessArguments, std::vector<std::type_index> &argumentTypes)        \
-{                                                                                                                                   \
-    return CLASS::createObject(context, typelessArguments, argumentTypes);                                                          \
+#define GEK_REGISTER_CONTEXT_USER(CLASS)                                                                                                    \
+ContextUserPtr CLASS##CreateInstance(Context *context, void *typelessArguments, std::vector<std::type_index> &argumentTypes)                \
+{                                                                                                                                           \
+    return CLASS::createObject(context, typelessArguments, argumentTypes);                                                                  \
 }
 
-#define GEK_DECLARE_CONTEXT_USER(CLASS)                                                                                             \
+#define GEK_DECLARE_CONTEXT_USER(CLASS)                                                                                                     \
 extern ContextUserPtr CLASS##CreateInstance(Context *, void *, std::vector<std::type_index> &);
 
-#define GEK_CONTEXT_BEGIN(SOURCENAME)                                                                                               \
-extern "C" __declspec(dllexport) void initializePlugin(                                                                             \
-    std::function<void(std::string const &, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)>)> addClass,\
+#define GEK_CONTEXT_BEGIN(SOURCENAME)                                                                                                       \
+extern "C" __declspec(dllexport) void initializePlugin(                                                                                     \
+    std::function<void(std::string const &, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)>)> addClass,    \
     std::function<void(std::string const &, std::string const &)> addType)                                                                  \
-{                                                                                                                                   \
+{                                                                                                                                           \
     std::string lastClassName;
 
-#define GEK_CONTEXT_ADD_CLASS(CLASSNAME, CLASS)                                                                                     \
-    addClass(#CLASSNAME, CLASS##CreateInstance);                                                                                   \
+#define GEK_CONTEXT_ADD_CLASS(CLASSNAME, CLASS)                                                                                             \
+    addClass(#CLASSNAME, CLASS##CreateInstance);                                                                                            \
     lastClassName = #CLASSNAME;
 
-#define GEK_CONTEXT_ADD_TYPE(TYPEID)                                                                                                \
+#define GEK_CONTEXT_ADD_TYPE(TYPEID)                                                                                                        \
     addType(#TYPEID, lastClassName);
 
-#define GEK_CONTEXT_END()                                                                                                           \
+#define GEK_CONTEXT_END()                                                                                                                   \
 }
 
 namespace Gek
@@ -49,9 +49,6 @@ namespace Gek
 
     GEK_INTERFACE(ContextUser)
     {
-        GEK_ADD_EXCEPTION(InvalidParameterCount);
-        GEK_ADD_EXCEPTION(InvalidParameterType);
-
         virtual ~ContextUser(void) = default;
     };
 
@@ -84,16 +81,17 @@ namespace Gek
         template<std::size_t... SIZE>
         static ContextUserPtr createFromPackedArguments(Context *context, const std::tuple<PARAMETERS...>& packedArguments, std::index_sequence<SIZE...> sequence, std::vector<std::type_index> &argumentTypes)
         {
-            auto argumentCount = sequence.size();
-            if (argumentTypes.size() != argumentCount)
+            if (argumentTypes.size() != sequence.size())
             {
-                throw ContextUser::InvalidParameterCount("Invalid number of arguments passed to constructor");
+                std::cerr << "Invalid number of arguments passed to constructor, received " << sequence.size() << ", expected " << argumentTypes.size() << std::endl;
+                return nullptr;
             }
 
             std::vector<std::type_index> expectedTypes = { typeid(PARAMETERS)... };
             if (expectedTypes != argumentTypes)
             {
-                throw ContextUser::InvalidParameterType("Mismatched types passed to constructor");
+                std::cerr << "Parameter types passed to creator don't match constructor types" << std::endl;
+                return nullptr;
             }
 
             return createBase(context, std::get<SIZE>(packedArguments)...);

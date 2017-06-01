@@ -45,10 +45,10 @@ namespace Gek
 
         void load(Components::FirstPersonCamera * const data, const JSON::Object &componentData)
         {
-            data->fieldOfView = Math::DegreesToRadians(getValue(componentData, "fieldOfView", 90.0f));
-            data->nearClip = getValue(componentData, "nearClip", 1.0f);
-            data->farClip = getValue(componentData, "farClip", 100.0f);
-            data->target = getValue(componentData, "target", std::string());
+            data->fieldOfView = Math::DegreesToRadians(GetValue(JSON::Get(componentData, "fieldOfView"), 90.0f));
+            data->nearClip = GetValue(JSON::Get(componentData, "nearClip"), 1.0f);
+            data->farClip = GetValue(JSON::Get(componentData, "farClip"), 100.0f);
+            data->target = GetValue(JSON::Get(componentData, "target"), std::string());
         }
 
         // Edit::Component
@@ -100,9 +100,9 @@ namespace Gek
             , resources(core->getResources())
             , renderer(core->getRenderer())
         {
-            GEK_REQUIRE(population);
-            GEK_REQUIRE(resources);
-            GEK_REQUIRE(renderer);
+            assert(population);
+            assert(resources);
+            assert(renderer);
 
             population->onEntityCreated.connect<CameraProcessor, &CameraProcessor::onEntityCreated>(this);
             population->onEntityDestroyed.connect<CameraProcessor, &CameraProcessor::onEntityDestroyed>(this);
@@ -149,12 +149,12 @@ namespace Gek
             removeEntity(entity);
         }
 
-        void onComponentAdded(Plugin::Entity * const entity, const std::type_index &type)
+        void onComponentAdded(Plugin::Entity * const entity)
         {
             addEntity(entity);
         }
 
-        void onComponentRemoved(Plugin::Entity * const entity, const std::type_index &type)
+        void onComponentRemoved(Plugin::Entity * const entity)
         {
             removeEntity(entity);
         }
@@ -162,9 +162,10 @@ namespace Gek
         // Plugin::Population Slots
         void onUpdate(float frameTime)
         {
-            GEK_REQUIRE(renderer);
+            assert(renderer);
 
-            if (frameTime > 0.0f && !core->isEditorActive())
+            bool editorActive = core->getOption("editor", "active").as_bool();
+            if (frameTime > 0.0f && !editorActive)
             {
                 parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void
                 {

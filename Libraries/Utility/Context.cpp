@@ -36,7 +36,7 @@ namespace Gek
 							InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "initializePlugin");
 							if (initializePlugin)
 							{
-								initializePlugin([this](std::string const &className, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)> creator) -> void
+								initializePlugin([this, filePath = filePath.u8string()](std::string const &className, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)> creator) -> void
 								{
 									if (classMap.count(className) == 0)
 									{
@@ -44,7 +44,7 @@ namespace Gek
 									}
 									else
 									{
-                                        throw DuplicateClass("Duplicate class found in plugin library");
+                                        std::cerr << "Skipping duplicate class from plugin: " << className << ", from: " << filePath << std::endl;
 									}
 								}, [this](std::string const &typeName, std::string const &className) -> void
 								{
@@ -60,7 +60,7 @@ namespace Gek
 						}
 						else
 						{
-							throw InvalidPlugin("Unable to load plugin");
+                            std::cerr << "Unable to load plugin: " << filePath.u8string() << std::endl;
 						}
 					}
 
@@ -90,7 +90,8 @@ namespace Gek
             auto classSearch = classMap.find(className);
             if (classSearch == std::end(classMap))
             {
-                throw ClassNotFound("Unable to locate class in plugin library");
+                std::cerr << "Requested class doesn't exist: " << className << std::endl;
+                return nullptr;
             }
 
             return (*classSearch).second((Context *)this, typelessArguments, argumentTypes);
@@ -98,7 +99,7 @@ namespace Gek
 
         void listTypes(std::string const &typeName, std::function<void(std::string const &)> onType) const
         {
-            GEK_REQUIRE(onType);
+            assert(onType);
 
             auto typeRange = typeMap.equal_range(typeName);
             for (auto typeSearch = typeRange.first; typeSearch != typeRange.second; ++typeSearch)

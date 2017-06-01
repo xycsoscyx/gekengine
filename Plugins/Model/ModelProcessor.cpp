@@ -50,7 +50,7 @@ namespace Gek
 
         void load(Components::Model * const data, const JSON::Object &componentData)
         {
-            data->name = getValue(componentData, "name", std::string());
+            data->name = GetValue(componentData, String::Empty);
         }
 
         // Edit::Component
@@ -174,11 +174,11 @@ namespace Gek
             , renderer(core->getRenderer())
             , loadPool(1)
         {
-			GEK_REQUIRE(log);
-			GEK_REQUIRE(videoDevice);
-			GEK_REQUIRE(population);
-            GEK_REQUIRE(resources);
-            GEK_REQUIRE(renderer);
+			assert(log);
+			assert(videoDevice);
+			assert(population);
+            assert(resources);
+            assert(renderer);
 
 			log->message("Model", Plugin::Core::Log::Type::Message, "Initializing model system");
 
@@ -333,12 +333,12 @@ namespace Gek
             removeEntity(entity);
         }
 
-        void onComponentAdded(Plugin::Entity * const entity, const std::type_index &type)
+        void onComponentAdded(Plugin::Entity * const entity)
         {
             addEntity(entity);
         }
 
-        void onComponentRemoved(Plugin::Entity * const entity, const std::type_index &type)
+        void onComponentRemoved(Plugin::Entity * const entity)
         {
             removeEntity(entity);
         }
@@ -350,7 +350,7 @@ namespace Gek
         // Plugin::Renderer Slots
         void onQueueDrawCalls(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)
         {
-            GEK_REQUIRE(renderer);
+            assert(renderer);
 
             const auto entityCount = getEntityCount();
             auto buffer = (entityCount % 4);

@@ -83,12 +83,13 @@ namespace Gek
 			if (std::experimental::filesystem::is_regular_file(filePath))
 			{
 				CONTAINER buffer;
-				auto size = std::experimental::filesystem::file_size(filePath);
-				size = (limitReadSize == 0 ? size : std::min(size, limitReadSize));
+                std::error_code errorCode;
+				auto size = std::experimental::filesystem::file_size(filePath, errorCode);
+                size = (errorCode ? 0 : (limitReadSize == 0 ? size : std::min(size, limitReadSize)));
 				if (size > 0)
 				{
 					// Need to use fopen since STL methods break up the reads to multiple small calls
-					FILE *file = _wfopen(filePath.native().c_str(), L"rb");
+					FILE *file = fopen(filePath.u8string().c_str(), "rb");
 					if (file != nullptr)
 					{
 						buffer.resize(size);
@@ -110,8 +111,7 @@ namespace Gek
 		void Save(Path const &filePath, CONTAINER const &buffer)
 		{
 			MakeDirectoryChain(filePath.getParentPath());
-
-			FILE *file = _wfopen(filePath.native().c_str(), L"w+b");
+			FILE *file = fopen(filePath.u8string().c_str(), "w+b");
 			if (file != nullptr)
 			{
 				auto wrote = fwrite(buffer.data(), buffer.size(), 1, file);

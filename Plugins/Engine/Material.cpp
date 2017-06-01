@@ -26,7 +26,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , resources(resources)
             {
-                GEK_REQUIRE(resources);
+                assert(resources);
 
                 const JSON::Object materialNode = JSON::Load(getContext()->getRootFileName("data", "materials", materialName).withExtension(".json"));
 

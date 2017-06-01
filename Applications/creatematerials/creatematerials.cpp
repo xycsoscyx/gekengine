@@ -10,7 +10,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 {
     try
     {
-        AtomicWriter() << "GEK Material Creator" << std::endl;
+        std::cout << "GEK Material Creator" << std::endl;
 
         auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
         auto dataPath(FileSystem::GetFileName(rootPath, "Data"));
@@ -23,20 +23,20 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		{
 			if (materialCollectionPath.isDirectory())
 			{
-				AtomicWriter() << "Collection Found: " << materialCollectionPath.u8string() << std::endl;
+				std::cout << "Collection Found: " << materialCollectionPath.u8string() << std::endl;
 				FileSystem::Find(materialCollectionPath, [&](FileSystem::Path const &textureSetPath) -> bool
 				{
 					if (textureSetPath.isDirectory())
 					{
 						std::string materialName(textureSetPath.u8string());
                         materialName = materialName.substr(texturesPath.size() + 1);
-						AtomicWriter() << "> Material Found: " << materialName << std::endl;
+						std::cout << "> Material Found: " << materialName << std::endl;
 
                         JSON::Object renderState;
                         std::map<std::string, std::map<uint32_t, std::pair<FileSystem::Path, std::string>>> fileMap;
                         FileSystem::Find(textureSetPath, [&](FileSystem::Path const &filePath) -> bool
                         {
-                            AtomicWriter() << ">> File Found: " << filePath.u8string() << std::endl;
+                            std::cout << ">> File Found: " << filePath.u8string() << std::endl;
 
                             uint32_t extensionImportance = 0;
 							std::string extension(String::GetLower(filePath.getExtension()));
@@ -86,7 +86,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                                 String::EndsWith(textureName, "_c"))
                             {
                                 fileMap["albedo"][extensionImportance] = std::make_pair(filePath, textureName);
-                                AtomicWriter() << "Found Albedo: " << filePath.u8string() << std::endl;
+                                std::cout << "Found Albedo: " << filePath.u8string() << std::endl;
                             }
                             else if (String::EndsWith(textureName, "normal") ||
                                 String::EndsWith(textureName, "normalmap") ||
@@ -94,7 +94,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                                 String::EndsWith(textureName, "_n"))
                             {
                                 fileMap["normal"][extensionImportance] = std::make_pair(filePath, textureName);
-                                AtomicWriter() << "Found Normal: " << filePath.u8string() << std::endl;
+                                std::cout << "Found Normal: " << filePath.u8string() << std::endl;
                             }
                             else if (String::EndsWith(textureName, "roughness") ||
                                 String::EndsWith(textureName, "roughness_s") ||
@@ -102,13 +102,13 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                                 String::EndsWith(textureName, "_r"))
                             {
                                 fileMap["roughness"][extensionImportance] = std::make_pair(filePath, textureName);
-                                AtomicWriter() << "Found Roughness: " << filePath.u8string() << std::endl;
+                                std::cout << "Found Roughness: " << filePath.u8string() << std::endl;
                             }
                             else if (String::EndsWith(textureName, "specular") ||
                                 String::EndsWith(textureName, "_s"))
                             {
                                 fileMap["specular"][extensionImportance] = std::make_pair(filePath, textureName);
-                                AtomicWriter() << "Found Specular: " << filePath.u8string() << std::endl;
+                                std::cout << "Found Specular: " << filePath.u8string() << std::endl;
                             }
                             else if (String::EndsWith(textureName, "metalness") ||
                                 String::EndsWith(textureName, "metallic") ||
@@ -116,34 +116,34 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                                 String::EndsWith(textureName, "_m"))
                             {
                                 fileMap["metallic"][extensionImportance] = std::make_pair(filePath, textureName);
-                                AtomicWriter() << "Found Metallic: " << filePath.u8string() << std::endl;
+                                std::cout << "Found Metallic: " << filePath.u8string() << std::endl;
                             }
                             else if (String::EndsWith(textureName, "clarity"))
                             {
                                 fileMap["clarity"][extensionImportance] = std::make_pair(filePath, textureName);
-                                AtomicWriter() << "Found Clarity: " << filePath.u8string() << std::endl;
+                                std::cout << "Found Clarity: " << filePath.u8string() << std::endl;
                             }
                             else if (String::EndsWith(textureName, "thickness"))
                             {
                                 fileMap["thickness"][extensionImportance] = std::make_pair(filePath, textureName);
-                                AtomicWriter() << "Found Thickness: " << filePath.u8string() << std::endl;
+                                std::cout << "Found Thickness: " << filePath.u8string() << std::endl;
                             }
                             else if (String::EndsWith(textureName, "height") ||
                                 String::EndsWith(textureName, "displace"))
                             {
                                 fileMap["height"][extensionImportance] = std::make_pair(filePath, textureName);
-                                AtomicWriter() << "Found Height: " << filePath.u8string() << std::endl;
+                                std::cout << "Found Height: " << filePath.u8string() << std::endl;
                             }
                             else if (String::EndsWith(textureName, "ambientocclusion") ||
                                 String::EndsWith(textureName, "occlusion") ||
                                 String::EndsWith(textureName, "ao"))
                             {
                                 fileMap["occlusion"][extensionImportance] = std::make_pair(filePath, textureName);
-                                AtomicWriter() << "Found Occlusion: " << filePath.u8string() << std::endl;
+                                std::cout << "Found Occlusion: " << filePath.u8string() << std::endl;
                             }
                             else
                             {
-                                AtomicWriter() << "Unknown map type found: " << textureName << std::endl;
+                                std::cout << "Unknown map type found: " << textureName << std::endl;
                             }
 
                             return true;
@@ -164,7 +164,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                                     auto sourceFilePath(filePath);
                                     filePath.replaceFileName(mapType + filePath.getExtension());
                                     textureName = FileSystem::Path(textureName).replaceFileName(mapType).u8string();
-                                    AtomicWriter() << "Renaming " << sourceFilePath.u8string() << " to " << filePath.u8string() << ", named " << textureName << std::endl;
+                                    std::cout << "Renaming " << sourceFilePath.u8string() << " to " << filePath.u8string() << ", named " << textureName << std::endl;
                                     std::experimental::filesystem::rename(sourceFilePath, filePath);
                                 }
 
@@ -219,14 +219,14 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
     catch (const std::exception &exception)
     {
-		AtomicWriter(std::cerr) << "GEK Engine - Error" << std::endl;
-		AtomicWriter(std::cerr) << "Caught: " << exception.what() << std::endl;
-		AtomicWriter(std::cerr) << "Type: " << typeid(exception).name() << std::endl;
+		std::cerr << "GEK Engine - Error" << std::endl;
+		std::cerr << "Caught: " << exception.what() << std::endl;
+		std::cerr << "Type: " << typeid(exception).name() << std::endl;
 	}
     catch (...)
     {
-        AtomicWriter(std::cerr) << "GEK Engine - Error" << std::endl;
-        AtomicWriter(std::cerr) << "Caught: Non-standard exception" << std::endl;
+        std::cerr << "GEK Engine - Error" << std::endl;
+        std::cerr << "Caught: Non-standard exception" << std::endl;
     };
 
     return 0;

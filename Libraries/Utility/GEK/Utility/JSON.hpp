@@ -13,82 +13,8 @@
 #include "GEK/Math/Quaternion.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/ShuntingYard.hpp"
 #include <jsoncons/json.hpp>
-
-namespace jsoncons
-{
-    template<class Json>
-    struct json_type_traits<Json, float>
-    {
-        static bool is(Json const &object)
-        {
-            return object.is_double();
-        }
-
-        static float as(Json const &object)
-        {
-            return float(object.as_double());
-        }
-
-        static Json to_json(float const &value)
-        {
-            return double(value);
-        }
-    };
-
-    template<typename TYPE, class Json>
-    struct json_type_traits<Json, Gek::Math::Vector2<TYPE>>
-    {
-        static Json to_json(Gek::Math::Vector2<TYPE> const &value)
-        {
-            return Json::array {
-                value.x,
-                value.y
-            };
-        }
-    };
-
-    template<typename TYPE, class Json>
-    struct json_type_traits<Json, Gek::Math::Vector3<TYPE>>
-    {
-        static Json to_json(Gek::Math::Vector3<TYPE> const &value)
-        {
-            return Json::array {
-                value.x,
-                value.y,
-                value.z
-            };
-        }
-    };
-
-    template<typename TYPE, class Json>
-    struct json_type_traits<Json, Gek::Math::Vector4<TYPE>>
-    {
-        static Json to_json(Gek::Math::Vector4<TYPE> const &value)
-        {
-            return Json::array {
-                value.x,
-                value.y,
-                value.z,
-                value.w
-            };
-        }
-    };
-
-    template<class Json>
-    struct json_type_traits<Json, Gek::Math::Quaternion>
-    {
-        static Json to_json(Gek::Math::Quaternion const &value)
-        {
-            return Json::array {
-                value.x,
-                value.y,
-                value.z,
-                value.w
-            };
-        }
-    };
-};
 
 namespace Gek
 {
@@ -100,7 +26,30 @@ namespace Gek
 
 		extern const Object EmptyObject;
 
-        Object Load(FileSystem::Path const &filePath, const Object &defaultValue = EmptyObject);
+        Object Load(FileSystem::Path const &filePath, Object const &defaultValue = EmptyObject);
         void Save(FileSystem::Path const &filePath, Object const &object);
-	}; // namespace JSON
+
+        JSON::Object const &Get(Object const &object, std::string const &name, Object const &defaultValue = EmptyObject);
+        JSON::Object const &At(Object const &object, size_t index, Object const &defaultValue = EmptyObject);
+
+        float From(JSON::Object const &object, ShuntingYard &parser, float defaultValue = 0.0f);
+        Math::Float2 From(JSON::Object const &object, ShuntingYard &parser, Math::Float2 const &defaultValue = Math::Float2::Zero);
+        Math::Float3 From(JSON::Object const &object, ShuntingYard &parser, Math::Float3 const &defaultValue = Math::Float3::Zero);
+        Math::Float4 From(JSON::Object const &object, ShuntingYard &parser, Math::Float4 const &defaultValue = Math::Float4::Zero);
+        Math::Quaternion From(JSON::Object const &object, ShuntingYard &parser, Math::Quaternion const &defaultValue = Math::Quaternion::Identity);
+        int32_t From(JSON::Object const &object, ShuntingYard &parser, int32_t defaultValue = 0);
+        uint32_t From(JSON::Object const &object, ShuntingYard &parser, uint32_t defaultValue = 0);
+        bool From(JSON::Object const &object, ShuntingYard &parser, bool defaultValue = false);
+        std::string From(JSON::Object const &object, ShuntingYard &parser, std::string const &defaultValue = String::Empty);
+
+        JSON::Object To(float value);
+        JSON::Object To(Math::Float2 const &value);
+        JSON::Object To(Math::Float3 const &value);
+        JSON::Object To(Math::Float4 const &value);
+        JSON::Object To(Math::Quaternion const &value);
+        JSON::Object To(int32_t value);
+        JSON::Object To(uint32_t value);
+        JSON::Object To(bool value);
+        JSON::Object To(std::string const &value);
+    }; // namespace JSON
 }; // namespace Gek

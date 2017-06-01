@@ -34,7 +34,7 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
 {
     if (node == nullptr)
     {
-        AtomicWriter(std::cerr) << "Invalid model node" << std::endl;
+        std::cerr << "Invalid model node" << std::endl;
         return false;
     }
 
@@ -42,7 +42,7 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
     {
         if (node->mMeshes == nullptr)
         {
-            AtomicWriter(std::cerr) << "Invalid mesh list" << std::endl;
+            std::cerr << "Invalid mesh list" << std::endl;
             return false;
         }
 
@@ -51,7 +51,7 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
             uint32_t nodeMeshIndex = node->mMeshes[meshIndex];
             if (nodeMeshIndex >= scene->mNumMeshes)
             {
-                AtomicWriter(std::cerr) << "Invalid mesh index" << std::endl;
+                std::cerr << "Invalid mesh index" << std::endl;
                 return false;
             }
 
@@ -60,13 +60,13 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
             {
                 if (mesh->mFaces == nullptr)
                 {
-                    AtomicWriter(std::cerr) << "Invalid mesh face list" << std::endl;
+                    std::cerr << "Invalid mesh face list" << std::endl;
                     return false;
                 }
 
 				if (mesh->mVertices == nullptr)
 				{
-					AtomicWriter(std::cerr) << "Invalid mesh vertex list" << std::endl;
+					std::cerr << "Invalid mesh vertex list" << std::endl;
                     return false;
                 }
 
@@ -89,7 +89,7 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
     {
         if (node->mChildren == nullptr)
         {
-            AtomicWriter(std::cerr) << "Invalid child list" << std::endl;
+            std::cerr << "Invalid child list" << std::endl;
             return false;
         }
 
@@ -113,7 +113,7 @@ void serializeCollision(void* const serializeHandle, const void* const buffer, i
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    AtomicWriter() << "GEK Model Converter" << std::endl;
+    std::cout << "GEK Model Converter" << std::endl;
 
     FileSystem::Path fileNameInput;
     FileSystem::Path fileNameOutput;
@@ -124,7 +124,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		std::vector<std::string> arguments(String::Split(String::GetLower(argument), ':'));
         if (arguments.empty())
         {
-            AtomicWriter(std::cerr) << "No arguments specified for command line parameter" << std::endl;
+            std::cerr << "No arguments specified for command line parameter" << std::endl;
             return -__LINE__;
         }
 
@@ -140,7 +140,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		{
 			if (arguments.size() != 2)
 			{
-				AtomicWriter(std::cerr) << "Missing parameters for unitsInFoot" << std::endl;
+				std::cerr << "Missing parameters for unitsInFoot" << std::endl;
                 return -__LINE__;
             }
 
@@ -151,7 +151,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	aiLogStream logStream;
 	logStream.callback = [](char const *message, char *user) -> void
 	{
-		AtomicWriter(std::cerr) << "Assimp: " << message;
+		std::cerr << "Assimp: " << message;
 	};
 
 	logStream.user = nullptr;
@@ -189,20 +189,20 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     auto scene = aiImportFileExWithProperties(fileNameInput.u8string().c_str(), importFlags, nullptr, propertyStore);
     if (scene == nullptr)
     {
-        AtomicWriter(std::cerr) << "Unable to load scene with Assimp" << std::endl;
+        std::cerr << "Unable to load scene with Assimp" << std::endl;
         return -__LINE__;
     }
 
     scene = aiApplyPostProcessing(scene, postProcessFlags);
     if (scene == nullptr)
 	{
-		AtomicWriter(std::cerr) << "Unable to apply post processing with Assimp" << std::endl;
+		std::cerr << "Unable to apply post processing with Assimp" << std::endl;
         return -__LINE__;
     }
 
     if (!scene->HasMeshes())
     {
-        AtomicWriter(std::cerr) << "Scene has no meshes" << std::endl;
+        std::cerr << "Scene has no meshes" << std::endl;
         return -__LINE__;
     }
 
@@ -218,19 +218,19 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
 	if (pointList.empty())
 	{
-        AtomicWriter(std::cerr) << "No vertex data found in scene" << std::endl;
+        std::cerr << "No vertex data found in scene" << std::endl;
         return -__LINE__;
     }
 
-	AtomicWriter() << "> Num. Points: " << pointList.size() << std::endl;
-	AtomicWriter() << "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")" << std::endl;
-	AtomicWriter() << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
+	std::cout << "> Num. Points: " << pointList.size() << std::endl;
+	std::cout << "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")" << std::endl;
+	std::cout << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
 
     NewtonWorld *newtonWorld = NewtonCreate();
     NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointList.size(), pointList.data()->data, sizeof(Math::Float3), 0.025f, 0, Math::Float4x4::Identity.data);
     if (newtonCollision == nullptr)
     {
-        AtomicWriter(std::cerr) << "Unable to create convex hull collision object" << std::endl;
+        std::cerr << "Unable to create convex hull collision object" << std::endl;
         return -__LINE__;
     }
 
@@ -238,7 +238,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     _wfopen_s(&file, fileNameOutput.c_str(), L"wb");
     if (file == nullptr)
     {
-        AtomicWriter(std::cerr) << "Unable to create output file" << std::endl;
+        std::cerr << "Unable to create output file" << std::endl;
         return -__LINE__;
     }
 
