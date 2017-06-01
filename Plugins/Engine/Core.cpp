@@ -101,18 +101,13 @@ namespace Gek
                 window->onMouseMovement.connect<Core, &Core::onMouseMovement>(this);
 
                 configuration = JSON::Load(getContext()->getRootFileName("config.json"));
-                if (!configuration.has_member("display") || !configuration.get("display").has_member("mode"))
-                {
-                    configuration["display"]["mode"] = 0;
-                }
-
-                auto mode = configuration["display"]["mode"];
-                previousDisplayMode = currentDisplayMode = configuration["display"]["mode"].as_uint();
+                previousDisplayMode = currentDisplayMode = JSON::From(JSON::Get(JSON::Get(configuration, "display"), "mode"), ShuntingYard(), 0);
+                configuration["display"]["mode"] = currentDisplayMode;
 
                 HRESULT resultValue = CoInitialize(nullptr);
                 if (FAILED(resultValue))
                 {
-                    throw InitializationFailed("Failed call to CoInitialize");
+                    //throw InitializationFailed("Failed call to CoInitialize");
                 }
 
                 Video::Device::Description deviceDescription;
@@ -268,15 +263,13 @@ namespace Gek
             {
                 auto &displayModeData = displayModeList[displayMode];
 				getLog()->message("Core", Log::Type::Message, String::Format("Setting display mode: %vx%v", displayModeData.width, displayModeData.height));
-                if (displayMode >= displayModeList.size())
+                if (displayMode < displayModeList.size())
                 {
-                    throw InvalidDisplayMode("Invalid display mode encountered");
+                    currentDisplayMode = displayMode;
+                    videoDevice->setDisplayMode(displayModeData);
+                    window->move();
+                    onResize.emit();
                 }
-
-                currentDisplayMode = displayMode;
-                videoDevice->setDisplayMode(displayModeData);
-                window->move();
-                onResize.emit();
             }
 
             // ImGui
@@ -745,7 +738,7 @@ namespace Gek
 
             JSON::Object getOption(std::string const &system, std::string const &name)
             {
-                return configuration.get(system, JSON::EmptyObject).get(name, JSON::EmptyObject);
+                return JSON::Get(JSON::Get(configuration, system), name);
             }
 
             void setOption(std::string const &system, std::string const &name, JSON::Object const &value)

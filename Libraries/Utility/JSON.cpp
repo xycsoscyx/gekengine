@@ -6,7 +6,8 @@ namespace Gek
 {
     namespace JSON
     {
-		const Object EmptyObject = Object();
+        const Object EmptyObject = Object();
+        const Array EmptyArray = Array();
 
 		Object Load(FileSystem::Path const &filePath, const Object &defaultValue)
 		{
@@ -36,14 +37,15 @@ namespace Gek
             FileSystem::Save(filePath, stream.str());
         }
 
+        Members GetMembers(Object const &object)
+        {
+            return (object.is_object() ? object.object_range() : EmptyObject.object_range());
+        }
+
         Object const &Get(Object const &object, std::string const &name, Object const &defaultValue)
         {
-            switch (object.type_id())
+            if (object.type_id() == jsoncons::value_type::object_t)
             {
-            case jsoncons::value_type::empty_object_t:
-                return defaultValue;
-
-            case jsoncons::value_type::object_t:
                 auto objectSearch = object.find(name);
                 if (objectSearch != object.object_range().end())
                 {
@@ -53,9 +55,14 @@ namespace Gek
                 {
                     return defaultValue;
                 }
-            };
+            }
 
             return defaultValue;
+        }
+
+        Elements GetElements(Object const &object)
+        {
+            return (object.is_array() ? object.array_range() : Elements(std::begin(EmptyArray), std::end(EmptyArray)));
         }
 
         Object const &At(Object const &object, size_t index, Object const &defaultValue)

@@ -23,14 +23,20 @@ namespace Gek
         using Object = jsoncons::json;
         using Member = Object::member_type;
         using Array = Object::array;
+        using Members = jsoncons::range<Object::const_object_iterator>;
+        using Elements = jsoncons::range<Object::const_array_iterator>;
 
-		extern const Object EmptyObject;
+        extern const Object EmptyObject;
+        extern const Array EmptyArray;
 
         Object Load(FileSystem::Path const &filePath, Object const &defaultValue = EmptyObject);
         void Save(FileSystem::Path const &filePath, Object const &object);
 
-        JSON::Object const &Get(Object const &object, std::string const &name, Object const &defaultValue = EmptyObject);
-        JSON::Object const &At(Object const &object, size_t index, Object const &defaultValue = EmptyObject);
+        Members GetMembers(Object const &object);
+        Object const &Get(Object const &object, std::string const &name, Object const &defaultValue = EmptyObject);
+
+        Elements GetElements(Object const &object);
+        Object const &At(Object const &object, size_t index, Object const &defaultValue = EmptyObject);
 
         float From(JSON::Object const &object, ShuntingYard &parser, float defaultValue = 0.0f);
         Math::Float2 From(JSON::Object const &object, ShuntingYard &parser, Math::Float2 const &defaultValue = Math::Float2::Zero);

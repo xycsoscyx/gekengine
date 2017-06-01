@@ -25,10 +25,6 @@ namespace Gek
 
         GEK_INTERFACE(Core)
         {
-            GEK_ADD_EXCEPTION(InitializationFailed);
-            GEK_ADD_EXCEPTION(InvalidDisplayMode);
-            GEK_ADD_EXCEPTION(InvalidOptionName);
-
             GEK_INTERFACE(Log)
             {
                 class Scope
