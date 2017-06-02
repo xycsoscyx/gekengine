@@ -45,7 +45,7 @@ namespace Gek
         // Plugin::Component
         void save(Components::Model const * const data, JSON::Object &componentData) const
         {
-            componentData.set("name", data->name);
+            componentData = JSON::To(data->name);
         }
 
         void load(Components::Model * const data, const JSON::Object &componentData)

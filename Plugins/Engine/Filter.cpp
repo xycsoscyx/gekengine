@@ -27,6 +27,7 @@ namespace Gek
         public:
             struct PassData
             {
+                bool valid = false;
                 Pass::Mode mode = Pass::Mode::Deferred;
                 Math::Float4 blendFactor = Math::Float4::Zero;
                 BlendStateHandle blendState;
@@ -120,17 +121,13 @@ namespace Gek
                     auto &textureValue = textureNode.value();
                     if (resourceMap.count(textureName) > 0)
                     {
-                        throw ResourceAlreadyListed("Texture name same as already listed resource");
+                        log->message("Filter", Plugin::Core::Log::Type::Warning, "Duplicate resource name encountered: %v", textureName);
+                        continue;
                     }
 
                     ResourceHandle resource;
-                    if (textureValue.has_member("external"))
+                    if (textureValue.has_member("external") && textureValue.has_member("name"))
                     {
-                        if (!textureValue.has_member("name"))
-                        {
-                            throw MissingParameter("External texture requires a name");
-                        }
-
 						std::string externalName(textureValue.get("name").as_string());
 						std::string externalSource(String::GetLower(textureValue.get("external").as_string()));
 						if (externalSource == "shader")
@@ -148,10 +145,6 @@ namespace Gek
                             uint32_t flags = getTextureLoadFlags(textureValue.get("flags", 0).as_string());
                             resource = resources->loadTexture(externalName, flags);
                         }
-                        else
-                        {
-                            throw InvalidParameter("Unknown source for external texture");
-                        }
                     }
                     else if (textureValue.has_member("file"))
                     {
@@ -162,47 +155,41 @@ namespace Gek
                     {
                         Video::Texture::Description description(backBufferDescription);
                         description.format = Video::getFormat(textureValue.get("format").as_string());
-                        if (description.format == Video::Format::Unknown)
+                        if (description.format != Video::Format::Unknown)
                         {
-                            throw InvalidParameter("Invalid texture format specified");
-                        }
-
-                        if (textureValue.has_member("size"))
-                        {
-                            auto &size = textureValue.get("size");
-                            if (size.is_array())
+                            if (textureValue.has_member("size"))
                             {
-                                auto dimensions = size.size();
-                                switch (dimensions)
+                                auto &size = textureValue.get("size");
+                                if (size.is_array())
                                 {
-                                case 3:
-                                    description.depth = evaluate(size.at(2), 1);
+                                    auto dimensions = size.size();
+                                    switch (dimensions)
+                                    {
+                                    case 3:
+                                        description.depth = evaluate(size.at(2), 1);
 
-                                case 2:
-                                    description.height = evaluate(size.at(1), 1);
+                                    case 2:
+                                        description.height = evaluate(size.at(1), 1);
 
-                                case 1:
-                                    description.width = evaluate(size.at(0), 1);
-                                    break;
+                                    case 1:
+                                        description.width = evaluate(size.at(0), 1);
+                                        break;
 
-                                default:
-                                    throw InvalidParameter("Texture size array must be 1, 2, or 3 dimensions");
-                                };
+                                    default:
+                                        throw InvalidParameter("Texture size array must be 1, 2, or 3 dimensions");
+                                    };
+                                }
+                                else
+                                {
+                                    description.width = evaluate(size, 1);
+                                }
                             }
-                            else
-                            {
-                                description.width = evaluate(size, 1);
-                            }
+
+                            description.sampleCount = textureValue.get("ampleCount", 1).as_uint();
+                            description.flags = getTextureFlags(textureValue.get("flags", 0).as_string());
+                            description.mipMapCount = evaluate(textureValue.get("mipmaps", 1), 1);
+                            resource = resources->createTexture(String::Format("%v:%v:resource", textureName, filterName), description);
                         }
-
-                        description.sampleCount = textureValue.get("ampleCount", 1).as_uint();
-                        description.flags = getTextureFlags(textureValue.get("flags", 0).as_string());
-                        description.mipMapCount = evaluate(textureValue.get("mipmaps", 1), 1);
-                        resource = resources->createTexture(String::Format("%v:%v:resource", textureName, filterName), description);
-                    }
-                    else
-                    {
-                        throw InvalidParameter("Texture must contain a source, a filename, or a format");
                     }
 
                     resourceMap[textureName] = resource;
@@ -231,7 +218,8 @@ namespace Gek
                     auto &bufferValue = bufferNode.value();
                     if (resourceMap.count(bufferName) > 0)
                     {
-                        throw ResourceAlreadyListed("Buffer name same as already listed resource");
+                        log->message("Filter", Plugin::Core::Log::Type::Warning, "Duplicate resource name encountered: %v", bufferName);
+                        continue;
                     }
 
                     ResourceHandle resource;
@@ -242,26 +230,12 @@ namespace Gek
                         resources->getFilter(bufferSource);
                         resource = resources->getResourceHandle(String::Format("%v:%v:resource", bufferName, bufferSource));
                     }
-                    else
+                    else if (bufferValue.has_member("count"))
                     {
-                        if (!bufferValue.has_member("count"))
-                        {
-                            throw MissingParameter("Buffer must have a count value");
-                        }
-
                         uint32_t count = evaluate(bufferValue.get("count", 0), 0);
                         uint32_t flags = getBufferFlags(bufferValue.get("flags", 0).as_string());
-                        if (bufferValue.has_member("stride") || bufferValue.has_member("structure"))
+                        if (bufferValue.has_member("stride") && bufferValue.has_member("structure"))
                         {
-                            if (!bufferValue.has_member("stride"))
-                            {
-                                throw MissingParameter("Structured buffer required a stride size");
-                            }
-                            else if (!bufferValue.has_member("structure"))
-                            {
-                                throw MissingParameter("Structured buffer required a structure name");
-                            }
-
                             Video::Buffer::Description description;
                             description.count = count;
                             description.flags = flags;
@@ -277,10 +251,6 @@ namespace Gek
                             description.type = Video::Buffer::Description::Type::Raw;
                             description.format = Video::getFormat(bufferValue.get("format").as_string());
                             resource = resources->createBuffer(String::Format("%v:%v:buffer", bufferName, filterName), description);
-                        }
-                        else
-                        {
-                            throw MissingParameter("Buffer must be either be fixed format or structured, or referenced from another shader");
                         }
 
                         resourceMap[bufferName] = resource;
@@ -306,20 +276,20 @@ namespace Gek
                 auto &passesNode = JSON::Get(filterNode, "passes");
                 passList.resize(passesNode.size());
                 auto passData = std::begin(passList);
-
-                for (auto &passNode : passesNode.elements())
+                for (auto &passNode : JSON::GetElements(passesNode))
                 {
+                    PassData &pass = *passData++;
                     if (!passNode.has_member("program"))
                     {
-                        throw MissingParameter("Pass required program filename");
+                        log->message("Filter", Plugin::Core::Log::Type::Warning, "Pass missing program data");
+                        continue;
                     }
 
                     if (!passNode.has_member("entry"))
                     {
-                        throw MissingParameter("Pass required program entry point");
+                        log->message("Filter", Plugin::Core::Log::Type::Warning, "Pass missing program entrypoint");
+                        continue;
                     }
-
-                    PassData &pass = *passData++;
 
                     std::string engineData;
                     if (passNode.has_member("engineData"))
@@ -328,10 +298,6 @@ namespace Gek
                         if (engineDataNode.is_string())
                         {
                             engineData = passNode.get("engineData").as_cstring();
-                        }
-                        else
-                        {
-                            throw MissingParameter("Engine data needs to be a regular string");
                         }
                     }
 
@@ -356,7 +322,8 @@ namespace Gek
                     {
                         if (!passNode.has_member("dispatch"))
                         {
-                            throw MissingParameter("Compute pass requires dispatch member");
+                            log->message("Filter", Plugin::Core::Log::Type::Warning, "Compute pass missing dispatch size");
+                            continue;
                         }
 
                         auto &dispatch = passNode.get("dispatch");
@@ -364,7 +331,8 @@ namespace Gek
                         {
                             if (dispatch.size() != 3)
                             {
-                                throw InvalidParameter("Dispatch array must have only 3 values");
+                                log->message("Filter", Plugin::Core::Log::Type::Warning, "Compute pass must contain the [XYZ] values");
+                                continue;
                             }
 
                             pass.dispatchWidth = evaluate(dispatch.at(0), 1);
@@ -396,14 +364,20 @@ namespace Gek
                                 auto resourceSearch = resourceMap.find(renderTarget.first);
                                 if (resourceSearch == std::end(resourceMap))
                                 {
-                                    throw UnlistedRenderTarget("Missing render target encountered");
+                                    log->message("Filter", Plugin::Core::Log::Type::Warning, "Unable to find render target for pass: %v", renderTarget.first);
                                 }
-
-                                pass.renderTargetList.push_back(resourceSearch->second);
-                                auto description = resources->getTextureDescription(resourceSearch->second);
-                                if (description)
+                                else
                                 {
-                                    outputData += String::Format("    %v %v : SV_TARGET%v;\r\n", getFormatSemantic(description->format), renderTarget.second, currentStage++);
+                                    auto description = resources->getTextureDescription(resourceSearch->second);
+                                    if (description)
+                                    {
+                                        pass.renderTargetList.push_back(resourceSearch->second);
+                                        outputData += String::Format("    %v %v : SV_TARGET%v;\r\n", getFormatSemantic(description->format), renderTarget.second, currentStage++);
+                                    }
+                                    else
+                                    {
+                                        log->message("Filter", Plugin::Core::Log::Type::Warning, "Unable to get description for render target: %v", renderTarget.first);
+                                    }
                                 }
                             }
                         }
@@ -443,7 +417,7 @@ namespace Gek
                             {
                                 throw MissingParameter("Missing clear target encountered");
                             }
-
+                               
                             auto &clearTargetValue = clearTargetNode.value();
                             pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue.get("type", String::Empty).as_string()), clearTargetValue.get("value", String::Empty).as_string())));
                         }

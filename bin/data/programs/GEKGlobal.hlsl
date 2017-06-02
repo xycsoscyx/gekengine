@@ -11,6 +11,7 @@ namespace Global
 {
     SamplerState BufferSampler : register(s0);
     SamplerState TextureSampler : register(s1);
+    SamplerState MipMapSampler : register(s2);
 };
 
 namespace Engine

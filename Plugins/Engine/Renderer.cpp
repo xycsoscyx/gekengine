@@ -337,6 +337,7 @@ namespace Gek
 
             Video::ObjectPtr bufferSamplerState;
             Video::ObjectPtr textureSamplerState;
+            Video::ObjectPtr mipMapSamplerState;
             Video::BufferPtr engineConstantBuffer;
             Video::BufferPtr cameraConstantBuffer;
 
@@ -417,7 +418,15 @@ namespace Gek
                 textureSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Wrap;
                 textureSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
                 textureSamplerState = videoDevice->createSamplerState(textureSamplerStateData);
-                textureSamplerState->setName("renderer:textureSampler");
+                textureSamplerState->setName("renderer:textureSamplerState");
+
+                Video::SamplerStateInformation mipMapSamplerStateData;
+                mipMapSamplerStateData.maximumAnisotropy = 8;
+                mipMapSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapLinear;
+                mipMapSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
+                mipMapSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
+                mipMapSamplerState = videoDevice->createSamplerState(mipMapSamplerStateData);
+                mipMapSamplerState->setName("renderer:mipMapSamplerState");
 
                 Video::UnifiedBlendStateInformation blendStateInformation;
                 blendState = videoDevice->createBlendState(blendStateInformation);
@@ -1245,7 +1254,7 @@ namespace Gek
                         videoContext->pixelPipeline()->setConstantBufferList(bufferList, 0);
                         videoContext->computePipeline()->setConstantBufferList(bufferList, 0);
 
-                        std::vector<Video::Object *> samplerList = { bufferSamplerState.get(), textureSamplerState.get(), };
+                        std::vector<Video::Object *> samplerList = { bufferSamplerState.get(), textureSamplerState.get(), mipMapSamplerState.get(), };
                         videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
 
                         videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
@@ -1313,7 +1322,7 @@ namespace Gek
                         }
 
                         videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                        for (const auto &filterName : { "ambientocclusion", "tonemap", "antialias" })
+                        for (const auto &filterName : { "tonemap", "antialias" })
                         {
                             Engine::Filter * const filter = resources->getFilter(filterName);
                             if (filter)
