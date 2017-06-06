@@ -57,7 +57,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float3 surfacePosition = inputPixel.position;
 
     const float3x3 viewBasis = float3x3(inputPixel.tangent, inputPixel.biTangent, inputPixel.normal);
-    //float3x3 viewBasis = getCoTangentFrame(inputPixel.position, inputPixel.normal, inputPixel.screenCoord);
+    //float3x3 viewBasis = GetCoTangentFrame(inputPixel.position, inputPixel.normal, inputPixel.screenCoord);
 
     float3 surfaceNormal;
     // assume normals are stored as 3Dc format, so generate the Z value

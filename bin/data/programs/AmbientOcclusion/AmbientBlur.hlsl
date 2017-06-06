@@ -20,7 +20,7 @@ float getGaussianWeight(float offset)
 
 float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    const float surfaceDepth = getLinearDepthFromSample(Resources::depthBuffer[inputPixel.screen.xy]);
+    const float surfaceDepth = GetLinearDepthFromSampleDepth(Resources::depthBuffer[inputPixel.screen.xy]);
     float totalOcclusion = 0.0;
     float totalWeight = 0.0;
 
@@ -28,7 +28,7 @@ float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     for (int tapIndex = -Defines::GaussianRadius; tapIndex <= Defines::GaussianRadius; ++tapIndex)
     {
         const int2 tapCoord = (inputPixel.screen.xy + (Defines::BlurAxis * tapIndex));
-        const float tapDepth = getLinearDepthFromSample(Resources::depthBuffer[tapCoord]);
+        const float tapDepth = GetLinearDepthFromSampleDepth(Resources::depthBuffer[tapCoord]);
         const float tapOcclusion = Resources::inputBuffer[tapCoord];
 
         // spatial domain: offset gaussian tap

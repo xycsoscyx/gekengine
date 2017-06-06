@@ -15,7 +15,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     }
 
     const float3x3 viewBasis = float3x3(inputPixel.tangent, inputPixel.biTangent, inputPixel.normal);
-	//float3x3 viewBasis = getCoTangentFrame(inputPixel.position, inputPixel.normal, inputPixel.texCoord);
+	//float3x3 viewBasis = GetCoTangentFrame(inputPixel.position, inputPixel.normal, inputPixel.texCoord);
 
     float3 normal;
     // assume normals are stored as 3Dc format, so generate the Z value
@@ -30,6 +30,6 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     outputPixel.albedoBuffer = albedo.rgb;
     outputPixel.materialBuffer.x = Resources::roughness.Sample(Global::TextureSampler, inputPixel.texCoord);
     outputPixel.materialBuffer.y = Resources::metallic.Sample(Global::TextureSampler, inputPixel.texCoord);
-    outputPixel.normalBuffer = getEncodedNormal(normal);
+    outputPixel.normalBuffer = GetEncodedNormal(normal);
     return outputPixel;
 }

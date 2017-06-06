@@ -61,7 +61,7 @@ float3 getExposedColor(float3 color, float averageLuminance, float threshold, ou
 // Logarithmic mapping
 float3 getToneMapLogarithmic(float3 color)
 {
-    const float pixelLuminance = getLuminance(color);
+    const float pixelLuminance = GetLuminance(color);
     const float toneMappedLuminance = (log10(1.0 + pixelLuminance) / log10(1.0 + Defines::WhiteLevel));
     return toneMappedLuminance * pow((color / pixelLuminance), Defines::LuminanceSaturation);
 }
@@ -69,7 +69,7 @@ float3 getToneMapLogarithmic(float3 color)
 // Drago's Logarithmic mapping
 float3 getToneMapDragoLogarithmic(float3 color)
 {
-    const float pixelLuminance = getLuminance(color);
+    const float pixelLuminance = GetLuminance(color);
     float toneMappedLuminance = log10(1.0 + pixelLuminance);
     toneMappedLuminance /= log10(1.0 + Defines::WhiteLevel);
     //toneMappedLuminance /= log10(2.0 + 8.0 * ((pixelLuminance / Defines::WhiteLevel) * log10(Defines::Bias) / log10(0.5)));
@@ -81,7 +81,7 @@ float3 getToneMapDragoLogarithmic(float3 color)
 // Exponential mapping
 float3 getToneMapExponential(float3 color)
 {
-    const float pixelLuminance = getLuminance(color);
+    const float pixelLuminance = GetLuminance(color);
     float toneMappedLuminance = 1 - exp(-pixelLuminance / Defines::WhiteLevel);
     return toneMappedLuminance * pow(color / pixelLuminance, Defines::LuminanceSaturation);
 }
@@ -89,7 +89,7 @@ float3 getToneMapExponential(float3 color)
 // Applies Reinhard's basic tone mapping operator
 float3 getToneMapReinhard(float3 color)
 {
-    const float pixelLuminance = getLuminance(color);
+    const float pixelLuminance = GetLuminance(color);
     float toneMappedLuminance = pixelLuminance / (pixelLuminance + 1.0);
     return toneMappedLuminance * pow(color / pixelLuminance, Defines::LuminanceSaturation);
 }
@@ -97,7 +97,7 @@ float3 getToneMapReinhard(float3 color)
 // Applies Reinhard's modified tone mapping operator
 float3 getToneMapReinhardModified(float3 color)
 {
-    const float pixelLuminance = getLuminance(color);
+    const float pixelLuminance = GetLuminance(color);
     float toneMappedLuminance = pixelLuminance * (1.0 + pixelLuminance / (Defines::WhiteLevel * Defines::WhiteLevel)) / (1.0 + pixelLuminance);
     return toneMappedLuminance * pow(color / pixelLuminance, Defines::LuminanceSaturation);
 }
@@ -132,7 +132,7 @@ float3 getToneMapFilmicU2(float3 color)
 
 float3 getToneMappedColor(float3 color, float averageLuminance, float threshold, out float Exposure)
 {
-    const float pixelLuminance = getLuminance(color);
+    const float pixelLuminance = GetLuminance(color);
     color = getExposedColor(color, averageLuminance, threshold, Exposure);
     switch (Defines::TechniqueMode)
     {
@@ -171,7 +171,7 @@ float3 getToneMappedColor(float3 color, float averageLuminance, float threshold,
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     const float3 baseColor = Resources::screenBuffer[inputPixel.screen.xy];
-    const float averageLuminance = Resources::averageLuminanceBuffer.Load(0);
+    const float averageLuminance = Resources::averageLuminanceBuffer[0];
 
     float Exposure = 0.0;
     return getToneMappedColor(baseColor, averageLuminance, 0.0, Exposure);

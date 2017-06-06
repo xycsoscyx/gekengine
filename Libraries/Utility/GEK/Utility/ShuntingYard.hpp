@@ -19,19 +19,6 @@ namespace Gek
     class ShuntingYard
     {
     public:
-		class Logger
-			: public std::string
-		{
-		public:
-			template<typename TYPE, typename... PARAMETERS>
-            std::string & appendFormat(char const *formatting, TYPE const &value, PARAMETERS... arguments)
-			{
-				auto message(Format(formatting, value, arguments...));
-                std::cout << message << std::endl;
-				return append(message);
-			}
-		};
-
         enum class Associations : uint8_t
         {
             Left = 0,
@@ -50,22 +37,27 @@ namespace Gek
             Function,
         };
 
+        enum class OperandType : uint8_t
+        {
+            Unknown = 0,
+            Number,
+            UnaryOperation,
+            BinaryOperation,
+            Function,
+        };
+
         struct Token
         {
-			size_t position = -1;
             TokenType type = TokenType::Unknown;
             uint32_t parameterCount = 0;
             std::string string;
             float value = 0.0f;
 
-            Token(size_t position, TokenType type = TokenType::Unknown);
-            Token(size_t position, TokenType type, std::string const &string, uint32_t parameterCount = 0);
-			Token(size_t position, float value);
+            Token(TokenType type = TokenType::Unknown);
+            Token(TokenType type, std::string const &string, uint32_t parameterCount = 0);
+			Token(float value);
         };
 
-        using TokenList = std::vector<Token>;
-
-    private:
         struct Operation
         {
             int precedence;
@@ -80,12 +72,34 @@ namespace Gek
             std::function<float(std::stack<float> &)> function;
         };
 
+        struct Operand
+        {
+            OperandType type = OperandType::Unknown;
+            union
+            {
+                float value;
+                Operation *operation;
+                Function *function;
+            };
+
+            Operand(void);
+            Operand(Token const &token);
+            Operand(Token const &token, Operation *operation);
+            Operand(Token const &token, Function *function);
+
+        };
+
+        using TokenList = std::vector<Token>;
+        using OperandList = std::vector<Operand>;
+
     private:
+        uint32_t seed = std::mt19937::default_seed;
         std::unordered_map<std::string, float> variableMap;
         std::unordered_map<std::string, Operation> operationsMap;
         std::unordered_map<std::string, Function> functionsMap;
         std::mt19937 mersineTwister;
-        uint32_t seed = std::mt19937::default_seed;
+
+        std::unordered_map<size_t, OperandList> cache;
 
     public:
         ShuntingYard(void);
@@ -93,9 +107,9 @@ namespace Gek
         void setRandomSeed(uint32_t seed);
         uint32_t getRandomSeed(void);
 
-        TokenList getTokenList(std::string const &expression, std::string &logMessage = Logger());
-        float evaluate(TokenList &rpnTokenList, float defaultValue, std::string &logMessage = Logger());
-        float evaluate(std::string const &expression, float defaultValue, std::string &logMessage = Logger());
+        OperandList getTokenList(std::string const &expression);
+        float evaluate(OperandList &rpnOperandList, float defaultValue);
+        float evaluate(std::string const &expression, float defaultValue);
 
     private:
         bool isNumber(std::string const &token);
@@ -111,10 +125,11 @@ namespace Gek
         bool isValidReturnType(const Token &token);
 
     private:
-		bool insertToken(TokenList &infixTokenList, Token &token, std::string &logMessage);
-        bool parseSubTokens(TokenList &infixTokenList, std::string const &token, size_t position, std::string &logMessage);
-        TokenList convertExpressionToInfix(std::string const &expression, std::string &logMessage);
-        TokenList convertInfixToReversePolishNotation(const TokenList &infixTokenList, std::string &logMessage);
-        float evaluateReversePolishNotation(const TokenList &rpnTokenList, float defaultValue, std::string &logMessage);
+        Operand getOperand(Token const &token);
+		bool insertToken(TokenList &infixTokenList, Token &token);
+        bool parseSubTokens(TokenList &infixTokenList, std::string const &token, size_t position);
+        TokenList convertExpressionToInfix(std::string const &expression);
+        OperandList convertInfixToReversePolishNotation(const TokenList &infixTokenList);
+        float evaluateReversePolishNotation(const OperandList &rpnOperandList, float defaultValue);
     };
 }; // namespace Gek

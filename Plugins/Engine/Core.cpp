@@ -72,14 +72,13 @@ namespace Gek
             using SystemHistoryMap = concurrency::concurrent_unordered_map<std::string, EventHistoryMap>;
 
             SystemHistoryMap systemHistoryMap;
-            std::vector<std::tuple<std::string, Log::Type, std::string>> logList;
 
         public:
             Core(Context *context, Window *_window)
                 : ContextRegistration(context)
                 , window(_window)
             {
-                getLog()->message("Core", Log::Type::Message, "Starting GEK Engine");
+                std::cout << "Starting GEK Engine" << std::endl;
 
                 if (!window)
                 {
@@ -178,7 +177,7 @@ namespace Gek
                 renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Plugin::Core *)this);
                 renderer->onShowUserInterface.connect<Core, &Core::onShowUserInterface>(this);
 
-				getLog()->message("Core", Log::Type::Message, "Loading processor plugins");
+                std::cout << "Loading processor plugins" << std::endl;
 
                 std::vector<std::string> processorNameList;
                 getContext()->listTypes("ProcessorType", [&](std::string const &className) -> void
@@ -189,7 +188,7 @@ namespace Gek
                 processorList.reserve(processorNameList.size());
                 for (const auto &processorName : processorNameList)
                 {
-                    getLog()->message("Core", Log::Type::Message, "Processor found: %v", processorName);
+                    std::cout << "Processor found: " << processorName << std::endl;
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(processorName, (Plugin::Core *)this));
                 }
 
@@ -225,7 +224,7 @@ namespace Gek
 
                 window->setVisibility(true);
 
-				getLog()->message("Core", Log::Type::Message, "Starting engine");
+				std::cout << "Starting engine" << std::endl;
 
                 population->load("demo");
             }
@@ -262,7 +261,7 @@ namespace Gek
 			void setDisplayMode(uint32_t displayMode)
             {
                 auto &displayModeData = displayModeList[displayMode];
-				getLog()->message("Core", Log::Type::Message, String::Format("Setting display mode: %vx%v", displayModeData.width, displayModeData.height));
+				std::cout << "Setting display mode: " << displayModeData.width << "x" << displayModeData.height << std::endl;
                 if (displayMode < displayModeList.size())
                 {
                     currentDisplayMode = displayMode;
@@ -279,39 +278,14 @@ namespace Gek
                 listBoxSize.y -= ImGui::GetTextLineHeightWithSpacing();
                 if (ImGui::ListBoxHeader("##empty", listBoxSize))
                 {
-                    const auto logCount = logList.size();
+                    const auto logCount = 0;// logList.size();
                     ImGuiListClipper clipper(logCount, ImGui::GetTextLineHeightWithSpacing());
                     while (clipper.Step())
                     {
                         for (int logIndex = clipper.DisplayStart; logIndex < clipper.DisplayEnd; ++logIndex)
                         {
-                            const auto &log = logList[logIndex];
-                            const auto &system = std::get<0>(log);
-                            const auto &type = std::get<1>(log);
-                            const auto &message = std::get<2>(log);
-
-                            ImVec4 color;
-                            switch (type)
-                            {
-                            case Log::Type::Message:
-                                color = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
-                                break;
-
-                            case Log::Type::Warning:
-                                color = ImVec4(0.5f, 0.5f, 0.0f, 1.0f);
-                                break;
-
-                            case Log::Type::Error:
-                                color = ImVec4(0.5f, 0.0f, 0.0f, 1.0f);
-                                break;
-
-                            case Log::Type::Debug:
-                                color = ImVec4(0.0f, 0.5f, 0.5f, 1.0f);
-                                break;
-                            };
-
                             ImGui::PushID(logIndex);
-                            ImGui::TextColored(color, String::Format("%v: %v", system, message).c_str());
+                            //ImGui::TextColored(color, String::Format("%v: %v", system, message).c_str());
                             ImGui::PopID();
                         }
                     };
@@ -561,29 +535,6 @@ namespace Gek
             }
 
             // Plugin::Core::Log
-            void message(std::string const &system, Log::Type logType, std::string const &message)
-            {
-                logList.push_back(std::make_tuple(system, logType, message));
-                switch (logType)
-                {
-                case Log::Type::Message:
-					std::cout << "(" << system << ") " << message << std::endl;
-                    break;
-
-                case Log::Type::Warning:
-					std::cout << "(" << system << ") WARNING: " << message << std::endl;
-                    break;
-
-                case Log::Type::Error:
-                    std::cerr << "(" << system << ") ERROR: " << message << std::endl;
-                    break;
-
-                case Log::Type::Debug:
-					std::cout << "(" << system << ") DEBUG: " << message << std::endl;
-                    break;
-                };
-            }
-
             void beginEvent(std::string const &system, std::string const &name)
             {
                 auto &eventData = systemHistoryMap[system][name];

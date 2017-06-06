@@ -97,7 +97,7 @@ namespace Gek
                     return population->getShuntingYard().evaluate(value, defaultValue);
                 };
 
-                log->message("Filter", Plugin::Core::Log::Type::Message, "Loading filter: %v", filterName);
+                std::cout << "Loading filter: " << filterName << std::endl;
 				
 				passList.clear();
 
@@ -121,7 +121,7 @@ namespace Gek
                     auto &textureValue = textureNode.value();
                     if (resourceMap.count(textureName) > 0)
                     {
-                        log->message("Filter", Plugin::Core::Log::Type::Warning, "Duplicate resource name encountered: %v", textureName);
+                        std::cerr << "Duplicate resource name encountered: " << textureName << std::endl;
                         continue;
                     }
 
@@ -176,7 +176,7 @@ namespace Gek
                                         break;
 
                                     default:
-                                        throw InvalidParameter("Texture size array must be 1, 2, or 3 dimensions");
+                                        continue;
                                     };
                                 }
                                 else
@@ -218,7 +218,7 @@ namespace Gek
                     auto &bufferValue = bufferNode.value();
                     if (resourceMap.count(bufferName) > 0)
                     {
-                        log->message("Filter", Plugin::Core::Log::Type::Warning, "Duplicate resource name encountered: %v", bufferName);
+                        std::cerr << "Duplicate resource name encountered: " << bufferName << std::endl;
                         continue;
                     }
 
@@ -281,13 +281,13 @@ namespace Gek
                     PassData &pass = *passData++;
                     if (!passNode.has_member("program"))
                     {
-                        log->message("Filter", Plugin::Core::Log::Type::Warning, "Pass missing program data");
+                        std::cerr << "Pass missing program data" << std::endl;
                         continue;
                     }
 
                     if (!passNode.has_member("entry"))
                     {
-                        log->message("Filter", Plugin::Core::Log::Type::Warning, "Pass missing program entrypoint");
+                        std::cerr << "Pass missing program entrypoint" << std::endl;
                         continue;
                     }
 
@@ -322,7 +322,7 @@ namespace Gek
                     {
                         if (!passNode.has_member("dispatch"))
                         {
-                            log->message("Filter", Plugin::Core::Log::Type::Warning, "Compute pass missing dispatch size");
+                            std::cerr << "Compute pass missing dispatch size" << std::endl;
                             continue;
                         }
 
@@ -331,7 +331,7 @@ namespace Gek
                         {
                             if (dispatch.size() != 3)
                             {
-                                log->message("Filter", Plugin::Core::Log::Type::Warning, "Compute pass must contain the [XYZ] values");
+                                std::cerr << "Compute pass must contain the [XYZ] values" << std::endl;
                                 continue;
                             }
 
@@ -364,7 +364,7 @@ namespace Gek
                                 auto resourceSearch = resourceMap.find(renderTarget.first);
                                 if (resourceSearch == std::end(resourceMap))
                                 {
-                                    log->message("Filter", Plugin::Core::Log::Type::Warning, "Unable to find render target for pass: %v", renderTarget.first);
+                                    std::cerr << "Unable to find render target for pass: " << renderTarget.first << std::endl;
                                 }
                                 else
                                 {
@@ -376,7 +376,7 @@ namespace Gek
                                     }
                                     else
                                     {
-                                        log->message("Filter", Plugin::Core::Log::Type::Warning, "Unable to get description for render target: %v", renderTarget.first);
+                                        std::cerr << "Unable to get description for render target: " << renderTarget.first << std::endl;
                                     }
                                 }
                             }
@@ -564,7 +564,7 @@ namespace Gek
                     pass.program = resources->loadProgram(pipelineType, name, entryPoint, engineData);
                 }
 
-				log->message("Filter", Plugin::Core::Log::Type::Message, "Filter loaded successfully: %v", filterName);
+				std::cout << "Filter loaded successfully: " << filterName << std::endl;
 			}
 
             ~Filter(void)

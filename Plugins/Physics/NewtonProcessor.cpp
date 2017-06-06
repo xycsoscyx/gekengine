@@ -183,33 +183,33 @@ namespace Gek
                 {
                     collisionMap[hash] = nullptr;
 
-					core->getLog()->message("Physics", Plugin::Core::Log::Type::Message, "Loading collision model: %v", modelComponent.name);
+                    std::cout << "Loading collision model: " << modelComponent.name << std::endl;
 
 					static const std::vector<uint8_t> EmptyBuffer;
 					auto filePath = getContext()->getRootFileName("data", "physics", modelComponent.name).withExtension(".gek");
                     std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
 					if (buffer.size() < sizeof(Header))
 					{
-						core->getLog()->message("Physics", Plugin::Core::Log::Type::Error, "File too small to be collision model: %v", modelComponent.name);
+						std::cerr << "File too small to be collision model: " << modelComponent.name << std::endl;
 						return nullptr;
 					}
 
                     Header *header = (Header *)buffer.data();
                     if (header->identifier != *(uint32_t *)"GEKX")
                     {
-						core->getLog()->message("Physics", Plugin::Core::Log::Type::Error, "Unknown model file identifier encountered: %v", modelComponent.name);
+						std::cerr << "Unknown model file identifier encountered: " << modelComponent.name << std::endl;
 						return nullptr;
                     }
 
                     if (header->version != 2)
                     {
-						core->getLog()->message("Physics", Plugin::Core::Log::Type::Error, "Unsupported model version encountered (requires: 2, has: %v): %v", header->version, modelComponent.name);
+                        std::cerr << "Unsupported model version encountered (requires: 2, has: " << header->version << "): " << modelComponent.name << std::endl;
 						return nullptr;
 					}
 
                     if (header->newtonVersion != NewtonWorldGetVersion())
                     {
-						core->getLog()->message("Physics", Plugin::Core::Log::Type::Error, "Model created with different version of Newton Dynamics (requires: %v, has: %v): %v", NewtonWorldGetVersion(), header->newtonVersion, modelComponent.name);
+						std::cerr << "Model created with different version of Newton Dynamics (requires: " << NewtonWorldGetVersion() << ", has: " << header->newtonVersion << "): " << modelComponent.name << std::endl;
 						return nullptr;
 					}
 
@@ -234,7 +234,7 @@ namespace Gek
 
                     if (header->type == 1)
                     {
-						core->getLog()->message("Physics", Plugin::Core::Log::Type::Message, "Loading hull collision: %v", modelComponent.name);
+						std::cout << "Loading hull collision: " << modelComponent.name << std::endl;
 
 						HullHeader *hullHeader = (HullHeader *)header;
                         DeSerializationData data(buffer, (uint8_t *)&hullHeader->serializationData[0]);
@@ -242,7 +242,7 @@ namespace Gek
                     }
                     else if (header->type == 2)
                     {
-						core->getLog()->message("Physics", Plugin::Core::Log::Type::Message, "Loading tree collision: %v", modelComponent.name);
+						std::cout << "Loading tree collision: " << modelComponent.name << std::endl;
 						
 						TreeHeader *treeHeader = (TreeHeader *)header;
                         for (uint32_t materialIndex = 0; materialIndex < treeHeader->materialCount; ++materialIndex)
@@ -256,13 +256,13 @@ namespace Gek
                     }
                     else
                     {
-						core->getLog()->message("Physics", Plugin::Core::Log::Type::Error, "Unsupported model type encountered: %v", modelComponent.name);
+						std::cerr << "Unsupported model type encountered: " << modelComponent.name << std::endl;
 						return nullptr;
                     }
 
                     if (newtonCollision == nullptr)
                     {
-						core->getLog()->message("Physics", Plugin::Core::Log::Type::Error, "Unable to create model collision object: %v", modelComponent.name);
+						std::cerr << "Unable to create model collision object: " << modelComponent.name << std::endl;
 						return nullptr;
 					}
 
@@ -271,7 +271,7 @@ namespace Gek
                     NewtonCollisionSetMatrix(newtonCollision, Math::Float4x4::Identity.data);
                     collisionMap[hash] = newtonCollision;
 
-					core->getLog()->message("Physics", Plugin::Core::Log::Type::Message, "Collision model successfully loaded: %v", modelComponent.name);
+					std::cout << "Collision model successfully loaded: " << modelComponent.name << std::endl;
 				}
 
                 return newtonCollision;
@@ -279,7 +279,7 @@ namespace Gek
 
             NewtonCollision *getStaticGroup(std::string const &name)
             {
-                auto hash = GetHash(String::Format("tatic:%v", name));
+                auto hash = GetHash(String::Format("static:%v", name));
                 auto collisionSearch = collisionMap.find(hash);
                 if (collisionSearch != std::end(collisionMap))
                 {

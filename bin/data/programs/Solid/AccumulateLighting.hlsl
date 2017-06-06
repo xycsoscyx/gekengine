@@ -39,6 +39,6 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     OutputPixel outputPixel;
     outputPixel.screen = getSurfaceIrradiance(inputPixel.screen.xy, surfacePosition, surfaceNormal, materialAlbedo, materialRoughness, materialMetallic);
     outputPixel.albedoBuffer = materialAlbedo;
-    outputPixel.normalBuffer = getEncodedNormal(surfaceNormal);
+    outputPixel.normalBuffer = GetEncodedNormal(surfaceNormal);
     return outputPixel;
 }

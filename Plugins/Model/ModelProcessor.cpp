@@ -180,7 +180,7 @@ namespace Gek
             assert(resources);
             assert(renderer);
 
-			log->message("Model", Plugin::Core::Log::Type::Message, "Initializing model system");
+            std::cout << "Initializing model system" << std::endl;
 
             population->onEntityCreated.connect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
             population->onEntityDestroyed.connect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
@@ -219,51 +219,51 @@ namespace Gek
                     auto pair = modelMap.insert(std::make_pair(GetHash(modelComponent.name), Model()));
                     if (pair.second)
                     {
-						log->message("Model", Plugin::Core::Log::Type::Message, "Queueing model for load: %v", modelComponent.name);
+                        std::cout << "Queueing model for load: " << modelComponent.name << std::endl;
 						loadPool.enqueue([this, name = modelComponent.name, fileName, &model = pair.first->second](void) -> void
                         {
-							log->message("Model", Plugin::Core::Log::Type::Message, "Reading model header: %v", name);
+							std::cout << "Reading model header: " << name << std::endl;
 
 							static const std::vector<uint8_t> EmptyBuffer;
 							std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer, sizeof(Header)));
 							if (buffer.size() < sizeof(Header))
 							{
-								log->message("Model", Plugin::Core::Log::Type::Error, "Model file too small to contain header: %v", fileName);
+								std::cerr << "Model file too small to contain header: " << fileName << std::endl;
 								return;
 							}
 
                             Header *header = (Header *)buffer.data();
                             if (header->identifier != *(uint32_t *)"GEKX")
                             {
-								log->message("Model", Plugin::Core::Log::Type::Error, "Unknown model file identifier encountered");
+								std::cerr << "Unknown model file identifier encountered (requires: GEKX, has: " << header->identifier << "): " << fileName << std::endl;
 								return;
                             }
 
                             if (header->type != 0)
                             {
-								log->message("Model", Plugin::Core::Log::Type::Error, "Unsupported model type encountered");
+								std::cerr << "Unsupported model type encountered (requires: 0, has: " << header->type << "): " << fileName << std::endl;
 								return;
 							}
 
                             if (header->version != 6)
                             {
-								log->message("Model", Plugin::Core::Log::Type::Error, "Unsupported model version encountered");
+                                std::cerr << "Unsupported model version encountered (requires: 6, has: " << header->version << "): " << fileName << std::endl;
 								return;
 							}
 
                             model.boundingBox = header->boundingBox;
-							log->message("Model", Plugin::Core::Log::Type::Message, "Model: %v, %v parts", name, header->partCount);
+                            std::cout << "Model: " << name << ", " << header->partCount << " parts" << std::endl;
 
                             loadPool.enqueue([this, name = name, fileName, &model](void) -> void
                             {
-								log->message("Model", Plugin::Core::Log::Type::Message, "Loading model: %v", name);
+								std::cout << "Loading model: " << name << std::endl;
 
 								std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer));
 
 								Header *header = (Header *)buffer.data();
 								if (buffer.size() < (sizeof(Header) + (sizeof(Header::Part) * header->partCount)))
 								{
-									log->message("Model", Plugin::Core::Log::Type::Error, "Model file too small to contain part headers: %v", fileName);
+									std::cerr << "Model file too small to contain part headers: " << fileName << std::endl;
 									return;
 								}
 
@@ -309,7 +309,7 @@ namespace Gek
                                     part.indexCount = partHeader.indexCount;
                                 }
 							
-								log->message("Model", Plugin::Core::Log::Type::Message, "Model successfully loaded: %v", name);
+								std::cout << "Model successfully loaded: " << name << std::endl;
 							});
                         });
                     }

@@ -12,49 +12,47 @@
 
 namespace Defines
 {
-    static const float Radius = 1;
+    static const float Radius = 1.5;
     static const float RadiusSquared = pow(Defines::Radius, 2.0);
     static const float RadiusCubed = pow(Defines::Radius, 3.0);
-    static const uint TapCount = 24;
+    static const int TapCount = 24;
     static const float InverseTapCount = rcp(Defines::TapCount);
-    static const float SpiralTurnCount = 17;
-    static const float Intensity = 2;
-    static const float IntensityDivR6 = Defines::Intensity / pow(Defines::Radius, 6.0f);
-    static const float Bias = 0.2;
-    static const uint FalloffFunction = HighQuality;
+    static const float SpiralTurns = 17;
+    static const float SpiralDegrees = (SpiralTurns * Math::Pi * 2.0);
+    static const float Intensity = 10;
+    static const float IntensityModified = Defines::Intensity / pow(Defines::Radius, 6.0);
+    static const float Bias = 0.1;
     static const float Epsilon = 0.001;
+
+    static const int FalloffFunction = FalloffSmooth;
 }; // namespace Defines
 
 /** Returns a unit vector and a screen-space Defines::Radius for the tap on a unit disk (the caller should scale by the actual disk Defines::Radius) */
-float2 getTapLocation(int tapIndex, float spinAngle, out float tapRadius)
+float2 GetTapOffset(float tapIndex, float spinAngle)
 {
     // Radius relative to tapRadius
-    const float alpha = float(tapIndex + 0.5) * Defines::InverseTapCount;
-    const float angle = alpha * (Defines::SpiralTurnCount * 6.28) + spinAngle;
-
-    tapRadius = alpha;
+    const float alpha = ((tapIndex + 0.5) * Defines::InverseTapCount);
+    const float angle = ((alpha * Defines::SpiralDegrees) + spinAngle);
 
     float2 tapOffset;
     sincos(angle, tapOffset.y, tapOffset.x);
-    return tapOffset;
+    return tapOffset * alpha;
 }
 
 /** Read the camera-space position of the point at screen-space pixel ssP */
-float3 getPosition(float2 ssP)
+float3 GetPositionFromDepthBuffer(float2 texCoord)
 {
-    const float depth = Resources::depthBuffer.SampleLevel(Global::BufferSampler, ssP, 0);
-    return getPositionFromSample(ssP, depth);
-}
-
-/** Read the camera-space position of the point at screen-space pixel ssP + tapOffset * tapRadius.  Assumes length(tapOffset) == 1 */
-float3 getOffsetPosition(float2 texCoord, float2 tapOffset, float tapRadius)
-{
-    const float2 tapCoord = tapRadius*tapOffset + texCoord;
-    return getPosition(tapCoord);
+    const float depth = Resources::depthBuffer[texCoord * Shader::TargetSize];
+    return GetPositionFromSampleDepth(texCoord, depth);
 }
 
 /**
-Compute the occlusion due to sample with index \a i about the pixel at \a texCoord that corresponds to camera-space point \a surfacePosition with unit normal \a surfaceNormal, using maximum screen-space sampling Defines::Radius \a diskRadius
+Compute the occlusion due to sample with index
+\a i about the pixel at
+\a texCoord that corresponds to camera-space point
+\a surfacePosition with unit normal
+\a surfaceNormal, using maximum screen-space sampling Defines::Radius
+\a diskRadius
 
 Note that units of H() the HPG12 paper are meters, not unitless.  The whole falloff/sampling function is therefore unitless.  this implementation, we factor out (9 / Defines::Radius).
 
@@ -63,14 +61,12 @@ Four versions of the falloff function are implemented below
 float getAmbientObscurance(float2 texCoord, float3 surfacePosition, float3 surfaceNormal, float diskRadius, int tapIndex, float randomPatternRotationAngle)
 {
     // Offset on the unit disk, spun for this pixel
-    float tapRadius;
-    const float2 tapOffset = getTapLocation(tapIndex, randomPatternRotationAngle, tapRadius);
-    tapRadius *= diskRadius;
+    const float2 tapOffset = (GetTapOffset(tapIndex, randomPatternRotationAngle) * diskRadius);
 
     // The occluding point camera space
-    const float3 tapPosition = getOffsetPosition(texCoord, tapOffset, tapRadius);
+    const float3 tapPosition = GetPositionFromDepthBuffer(tapOffset + texCoord);
 
-    const float3 deltaVector = tapPosition - surfacePosition;
+    const float3 deltaVector = (tapPosition - surfacePosition);
 
     const float deltaAngle = dot(deltaVector, deltaVector);
     const float normalAngle = dot(deltaVector, surfaceNormal);
@@ -122,17 +118,17 @@ float getAmbientObscurance(float2 texCoord, float3 surfacePosition, float3 surfa
 // https://github.com/PeterTh/gedosato/blob/master/pack/assets/dx9/SAO.fx
 float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    const float3 surfacePosition = getPosition(inputPixel.texCoord);
-    const float3 surfaceNormal = getDecodedNormal(Resources::normalBuffer.Sample(Global::BufferSampler, inputPixel.texCoord));
+    const float3 surfacePosition = GetPositionFromDepthBuffer(inputPixel.texCoord);
+    const float3 surfaceNormal = GetDecodedNormal(Resources::normalBuffer[inputPixel.screen.xy]);
 
     // McGuire noise function
     // Hash function used the HPG12 AlchemyAO paper
-    const float randomPatternRotationAngle = (getNoise(inputPixel.screen.xy) * 10.0);
-    const float diskRadius = (-1.0 *  Defines::Radius / max(surfacePosition.z, 0.1f));
+    const float randomPatternRotationAngle = (GetNoise(inputPixel.screen.xy) * 10.0);
+    const float diskRadius = (1.0 * Defines::Radius / max(surfacePosition.z, 0.1f));
     float totalOcclusion = 0.0;
 
     [unroll]
-    for (uint tapIndex = 0; tapIndex < Defines::TapCount; ++tapIndex)
+    for (int tapIndex = 0; tapIndex < Defines::TapCount; ++tapIndex)
     {
         totalOcclusion += getAmbientObscurance(inputPixel.texCoord, surfacePosition, surfaceNormal, diskRadius, tapIndex, randomPatternRotationAngle);
     }
@@ -146,7 +142,7 @@ float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     }
     else
     {
-        totalOcclusion = max(0.0f, 1.0f - totalOcclusion * Defines::IntensityDivR6 * (5.0f / Defines::TapCount));
+        totalOcclusion = max(0.0f, 1.0f - totalOcclusion * Defines::IntensityModified * (5.0f / Defines::TapCount));
     }
 
     // Anti-tone map to reduce contrast and drag dark region farther

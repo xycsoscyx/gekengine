@@ -9,9 +9,8 @@ namespace Math
 
 namespace Global
 {
-    SamplerState BufferSampler : register(s0);
-    SamplerState TextureSampler : register(s1);
-    SamplerState MipMapSampler : register(s2);
+    SamplerState TextureSampler : register(s0);
+    SamplerState MipMapSampler : register(s1);
 };
 
 namespace Engine

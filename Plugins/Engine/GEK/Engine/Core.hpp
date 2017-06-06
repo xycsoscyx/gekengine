@@ -48,23 +48,7 @@ namespace Gek
                     }
                 };
 
-                enum class Type : uint8_t
-                {
-                    Message = 0,
-                    Warning,
-                    Error,
-                    Debug,
-                };
-
                 virtual ~Log(void) = default;
-
-                virtual void message(std::string const &system, Type logType, std::string const &message) = 0;
-
-				template<typename TYPE, typename... PARAMETERS>
-				void message(std::string const &system, Type logType, char const *formatting, TYPE const &value, PARAMETERS... arguments)
-                {
-					message(system, logType, String::Format(formatting, value, arguments...));
-                }
 
                 virtual void beginEvent(std::string const &system, std::string const &name) = 0;
                 virtual void endEvent(std::string const &system, std::string const &name) = 0;
