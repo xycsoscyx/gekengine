@@ -68,7 +68,7 @@
                 "albedoBuffer"
             ],
             "blendState": {
-                "enable": false,
+                "enable": true,
                 "colorSource": "One",
                 "colorDestination": "One",
                 "colorOperation": "Add"

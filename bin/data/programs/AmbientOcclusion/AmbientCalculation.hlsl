@@ -12,19 +12,19 @@
 
 namespace Defines
 {
-    static const float Radius = 1.5;
+    static const float Radius = 1;
     static const float RadiusSquared = pow(Defines::Radius, 2.0);
     static const float RadiusCubed = pow(Defines::Radius, 3.0);
     static const int TapCount = 24;
     static const float InverseTapCount = rcp(Defines::TapCount);
     static const float SpiralTurns = 17;
     static const float SpiralDegrees = (SpiralTurns * Math::Pi * 2.0);
-    static const float Intensity = 10;
+    static const float Intensity = 2;
     static const float IntensityModified = Defines::Intensity / pow(Defines::Radius, 6.0);
-    static const float Bias = 0.1;
-    static const float Epsilon = 0.001;
+    static const float Bias = 0.2;
+    static const float Epsilon = 0.01;
 
-    static const int FalloffFunction = FalloffSmooth;
+    static const int FalloffFunction = HighQuality;
 }; // namespace Defines
 
 /** Returns a unit vector and a screen-space Defines::Radius for the tap on a unit disk (the caller should scale by the actual disk Defines::Radius) */
