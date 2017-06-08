@@ -25,3 +25,6 @@
 [submodule "External/imgui-addons"]
 	path = External/imgui-addons
 	url = https://github.com/Flix01/imgui.git
+[submodule "External/json11"]
+	path = External/json11
+	url = https://github.com/dropbox/json11

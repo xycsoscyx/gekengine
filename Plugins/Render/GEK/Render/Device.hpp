@@ -18,6 +18,7 @@
 #include <unordered_map>
 #include <functional>
 #include <memory>
+#include <array>
 
 #ifdef _WINDLL
 #   define DLL_API __declspec(dllexport)

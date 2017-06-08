@@ -103,6 +103,10 @@ namespace Gek
                 shaderConstantBuffer->setName(String::Format("%v:shaderConstantBuffer", shaderName));
             }
 
+            bool validate(JSON::Object const &shader)
+            {
+            }
+
             void reload(void)
             {
                 std::cout << "Loading shader: " << shaderName << std::endl;

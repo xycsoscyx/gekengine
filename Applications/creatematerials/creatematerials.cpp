@@ -169,41 +169,41 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                                 }
 
                                 JSON::Object node;
-                                node["file"] = textureName;
+                                JSON::GetObject(node).insert(std::make_pair("file", textureName));
                                 if (mapType == "albedo")
                                 {
-                                    node["flags"] = "sRGB";
+                                    JSON::GetObject(node).insert(std::make_pair("flags", "sRGB"));
                                 }
 
-                                dataNode.set(mapType, node);
+                                JSON::GetObject(dataNode).insert(std::make_pair(mapType, node));
                             }
 
                             auto materialPath(FileSystem::GetFileName(materialsPath, materialName).withExtension(".json"));
                             FileSystem::MakeDirectoryChain(materialPath.getParentPath());
 
                             JSON::Object solidNode;
-                            solidNode.set("data", dataNode);
+                            JSON::GetObject(solidNode).insert(std::make_pair("data", dataNode));
                             if (!renderState.is_null())
                             {
-                                solidNode.set("renderState", renderState);
+                                JSON::GetObject(solidNode).insert(std::make_pair("renderState", renderState));
                             }
 
                             JSON::Object passesNode;
-                            passesNode.set("solid", solidNode);
+                            JSON::GetObject(passesNode).insert(std::make_pair("solid", solidNode));
 
                             JSON::Object shaderNode;
-                            shaderNode.set("passes", passesNode);
+                            JSON::GetObject(shaderNode).insert(std::make_pair("passes", passesNode));
                             if (fileMap.count("clarity") > 0)
                             {
-                                shaderNode.set("name", "glass");
+                                JSON::GetObject(shaderNode).insert(std::make_pair("name", "glass"));
                             }
                             else
                             {
-                                shaderNode.set("name", "solid");
+                                JSON::GetObject(shaderNode).insert(std::make_pair("name", "solid"));
                             }
 
                             JSON::Object materialNode;
-                            materialNode.set("shader", shaderNode);
+                            JSON::GetObject(materialNode).insert(std::make_pair("shader", "shaderNode"));
                             JSON::Save(materialPath, materialNode);
                         }
 					}

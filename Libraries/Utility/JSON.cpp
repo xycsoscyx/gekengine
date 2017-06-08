@@ -7,295 +7,184 @@ namespace Gek
     namespace JSON
     {
         const Object EmptyObject = Object();
-        const Array EmptyArray = Array();
 
 		Object Load(FileSystem::Path const &filePath, const Object &defaultValue)
 		{
+            std::string error;
 			std::string data(FileSystem::Load(filePath, String::Empty));
-			std::istringstream dataStream(data);
-			jsoncons::json_decoder<jsoncons::json> decoder;
-			jsoncons::json_reader reader(dataStream, decoder);
-
-			std::error_code errorCode;
-			reader.read(errorCode);
-
-			if (errorCode)
-			{
-				return defaultValue;
-                std::cerr << errorCode.message() << " at line " << reader.line_number() << " and column " << reader.column_number() << std::endl;
-			}
-			else
-			{
-				return decoder.get_result();
-			}
+            auto object = json11::Json::parse(data, error);
+            if (error.empty())
+            {
+                return defaultValue;
+            }
+            else
+            {
+                return object;
+            }
 		}
 
         void Save(FileSystem::Path const &filePath, Object const &object)
         {
-            std::ostringstream stream;
-            stream << jsoncons::pretty_print(object);
-            FileSystem::Save(filePath, stream.str());
+            auto dump = object.dump();
+            FileSystem::Save(filePath, dump);
         }
 
-        Members GetMembers(Object const &object)
+        Object::object &GetObject(Object &object)
         {
-            return (object.is_object() ? object.object_range() : EmptyObject.object_range());
+            return const_cast<Object::object &>(object.object_items());
         }
 
-        Object const &Get(Object const &object, std::string const &name, Object const &defaultValue)
+        Object::array &GetArray(Object &object)
         {
-            if (object.type_id() == jsoncons::value_type::object_t)
+            return const_cast<Object::array &>(object.array_items());
+        }
+
+        std::string From(JSON::Object const &data, std::string const &defaultValue)
+        {
+            switch (data.type())
             {
-                auto objectSearch = object.find(name);
-                if (objectSearch != object.object_range().end())
-                {
-                    return objectSearch->value();
-                }
-                else
-                {
-                    return defaultValue;
-                }
-            }
+            case json11::Json::Type::STRING:
+                return data.string_value();
 
-            return defaultValue;
-        }
+            case json11::Json::Type::BOOL:
+                return String::Format("%v", data.bool_value());
 
-        Elements GetElements(Object const &object)
-        {
-            return (object.is_array() ? object.array_range() : Elements(std::begin(EmptyArray), std::end(EmptyArray)));
-        }
-
-        Object const &At(Object const &object, size_t index, Object const &defaultValue)
-        {
-            return (object.is_array() ? object.at(index) : defaultValue);
-        }
-
-        float From(JSON::Object const &data, ShuntingYard &parser, float defaultValue)
-        {
-            switch (data.type_id())
-            {
-            case jsoncons::value_type::small_string_t:
-            case jsoncons::value_type::string_t:
-                return parser.evaluate(data.as_string(), defaultValue);
-
-            case jsoncons::value_type::double_t:
-                return static_cast<float>(data.var_.double_data_cast()->value());
-
-            case jsoncons::value_type::integer_t:
-                return static_cast<float>(data.var_.integer_data_cast()->value());
-
-            case jsoncons::value_type::uinteger_t:
-                return static_cast<float>(data.var_.uinteger_data_cast()->value());
-
-            case jsoncons::value_type::bool_t:
-                return data.var_.bool_data_cast()->value() ? 1.0f : 0.0f;
+            case json11::Json::Type::NUMBER:
+                return String::Format("%v", data.number_value());
 
             default:
                 return defaultValue;
             };
         }
 
-        Math::Float2 From(JSON::Object const &data, ShuntingYard &parser, Math::Float2 const &defaultValue)
+        bool From(JSON::Object const &data, bool defaultValue)
         {
-            if (data.is_array() && data.size() == 2)
+            switch (data.type())
+            {
+            case json11::Json::Type::STRING:
+                return String::Convert<bool>(data.string_value(), defaultValue);
+
+            case json11::Json::Type::BOOL:
+                return data.bool_value();
+
+            case json11::Json::Type::NUMBER:
+                return (data.int_value() != 0);
+
+            default:
+                return defaultValue;
+            };
+        }
+
+        int32_t From(JSON::Object const &data, int32_t defaultValue)
+        {
+            switch (data.type())
+            {
+            case json11::Json::Type::STRING:
+                return String::Convert<int32_t>(data.string_value(), defaultValue);
+
+            case json11::Json::Type::NUMBER:
+                return data.int_value();
+
+            case json11::Json::Type::BOOL:
+                return (data.bool_value() ? 1 : 0);
+
+            default:
+                return defaultValue;
+            };
+        }
+
+        float From(JSON::Object const &data, float defaultValue)
+        {
+            switch (data.type())
+            {
+            case json11::Json::Type::STRING:
+                return String::Convert<float>(data.string_value(), defaultValue);
+
+            case json11::Json::Type::NUMBER:
+                return static_cast<float>(data.number_value());
+
+            case json11::Json::Type::BOOL:
+                return (data.bool_value() ? 1.0f : 0.0f);
+
+            default:
+                return defaultValue;
+            };
+        }
+
+        Math::Float2 From(JSON::Object const &data, Math::Float2 const &defaultValue)
+        {
+            if (data.is_array() && data.array_items().size() == 2)
             {
                 return Math::Float2(
-                    From(data.at(0), parser, defaultValue.x),
-                    From(data.at(1), parser, defaultValue.y));
+                    From(data[0], defaultValue.x),
+                    From(data[1], defaultValue.y));
             }
 
             return defaultValue;
         }
 
-        Math::Float3 From(JSON::Object const &data, ShuntingYard &parser, Math::Float3 const &defaultValue)
+        Math::Float3 From(JSON::Object const &data, Math::Float3 const &defaultValue)
         {
-            if (data.is_array() && data.size() == 3)
+            if (data.is_array() && data.array_items().size() == 3)
             {
                 return Math::Float3(
-                    From(data.at(0), parser, defaultValue.x),
-                    From(data.at(1), parser, defaultValue.y),
-                    From(data.at(2), parser, defaultValue.z));
+                    From(data[0], defaultValue.x),
+                    From(data[1], defaultValue.y),
+                    From(data[2], defaultValue.y));
             }
 
             return defaultValue;
         }
 
-        Math::Float4 From(JSON::Object const &data, ShuntingYard &parser, Math::Float4 const &defaultValue)
+        Math::Float4 From(JSON::Object const &data, Math::Float4 const &defaultValue)
         {
             if (data.is_array())
             {
-                if (data.size() == 3)
+                if (data.array_items().size() == 3)
                 {
                     return Math::Float4(
-                        From(data.at(0), parser, defaultValue.x),
-                        From(data.at(1), parser, defaultValue.y),
-                        From(data.at(2), parser, defaultValue.z), 1.0f);
+                        From(data[0], defaultValue.x),
+                        From(data[1], defaultValue.y),
+                        From(data[2], defaultValue.z), 1.0f);
                 }
-                else if (data.size() == 4)
+                else if (data.array_items().size() == 4)
                 {
                     return Math::Float4(
-                        From(data.at(0), parser, defaultValue.x),
-                        From(data.at(1), parser, defaultValue.y),
-                        From(data.at(2), parser, defaultValue.z),
-                        From(data.at(3), parser, defaultValue.w));
+                        From(data[0], defaultValue.x),
+                        From(data[1], defaultValue.y),
+                        From(data[2], defaultValue.z),
+                        From(data[3], defaultValue.w));
                 }
             }
 
             return defaultValue;
         }
 
-        Math::Quaternion From(JSON::Object const &data, ShuntingYard &parser, Math::Quaternion const &defaultValue)
+        Math::Quaternion From(JSON::Object const &data, Math::Quaternion const &defaultValue)
         {
             if (data.is_array())
             {
-                if (data.size() == 3)
+                if (data.array_items().size() == 3)
                 {
                     return Math::Quaternion::FromEuler(
-                        From(data.at(0), parser, defaultValue.x),
-                        From(data.at(1), parser, defaultValue.y),
-                        From(data.at(2), parser, defaultValue.z));
+                        From(data[0], defaultValue.x),
+                        From(data[1], defaultValue.y),
+                        From(data[2], defaultValue.z));
                 }
-                else if (data.size() == 4)
+                else if (data.array_items().size() == 4)
                 {
                     return Math::Quaternion(
-                        From(data.at(0), parser, defaultValue.x),
-                        From(data.at(1), parser, defaultValue.y),
-                        From(data.at(2), parser, defaultValue.z),
-                        From(data.at(3), parser, defaultValue.w));
+                        From(data[0], defaultValue.x),
+                        From(data[1], defaultValue.y),
+                        From(data[2], defaultValue.z),
+                        From(data[3], defaultValue.w));
                 }
             }
 
             return defaultValue;
         }
 
-        int32_t From(JSON::Object const &data, ShuntingYard &parser, int32_t defaultValue)
-        {
-            switch (data.type_id())
-            {
-            case jsoncons::value_type::small_string_t:
-            case jsoncons::value_type::string_t:
-                return static_cast<int32_t>(parser.evaluate(data.as_string(), defaultValue));
-
-            case jsoncons::value_type::double_t:
-                return static_cast<int64_t>(data.var_.double_data_cast()->value());
-
-            case jsoncons::value_type::integer_t:
-                return static_cast<int64_t>(data.var_.integer_data_cast()->value());
-
-            case jsoncons::value_type::uinteger_t:
-                return static_cast<int64_t>(data.var_.uinteger_data_cast()->value());
-
-            case jsoncons::value_type::bool_t:
-                return data.var_.bool_data_cast()->value() ? 1 : 0;
-
-            default:
-                return defaultValue;
-            };
-        }
-
-        uint32_t From(JSON::Object const &data, ShuntingYard &parser, uint32_t defaultValue)
-        {
-            switch (data.type_id())
-            {
-            case jsoncons::value_type::small_string_t:
-            case jsoncons::value_type::string_t:
-                return static_cast<uint32_t>(parser.evaluate(data.as_string(), defaultValue));
-
-            case jsoncons::value_type::double_t:
-                return static_cast<uint32_t>(data.var_.double_data_cast()->value());
-
-            case jsoncons::value_type::integer_t:
-                return static_cast<uint32_t>(data.var_.integer_data_cast()->value());
-
-            case jsoncons::value_type::uinteger_t:
-                return static_cast<uint32_t>(data.var_.uinteger_data_cast()->value());
-
-            case jsoncons::value_type::bool_t:
-                return data.var_.bool_data_cast()->value() ? 1 : 0;
-
-            default:
-                return defaultValue;
-            };
-        }
-
-        bool From(JSON::Object const &data, ShuntingYard &parser, bool defaultValue)
-        {
-            switch (data.type_id())
-            {
-            case jsoncons::value_type::small_string_t:
-            case jsoncons::value_type::string_t:
-                return parser.evaluate(data.as_string(), defaultValue) != 0.0f;
-
-            case jsoncons::value_type::bool_t:
-                return data.var_.bool_data_cast()->value();
-
-            case jsoncons::value_type::double_t:
-                return data.var_.double_data_cast()->value() != 0.0;
-
-            case jsoncons::value_type::integer_t:
-                return data.var_.integer_data_cast()->value() != 0;
-
-            case jsoncons::value_type::uinteger_t:
-                return data.var_.uinteger_data_cast()->value() != 0;
-
-            default:
-                return defaultValue;
-            };
-        }
-
-        std::string From(JSON::Object const &data, ShuntingYard &parser, std::string const &defaultValue)
-        {
-            return data.as_string();
-        }
-
-        JSON::Object To(float value)
-        {
-            return value;
-        }
-
-        JSON::Object To(Math::Float2 const &value)
-        {
-            return Array {
-                value.x,
-                value.y,
-            };
-        }
-
-        JSON::Object To(Math::Float3 const &value)
-        {
-            return Array{
-                value.x,
-                value.y,
-                value.z,
-            };
-        }
-
-        JSON::Object To(Math::Float4 const &value)
-        {
-            return Array{
-                value.x,
-                value.y,
-                value.z,
-                value.w
-            };
-        }
-
-        JSON::Object To(Math::Quaternion const &value)
-        {
-            return Array{
-                value.x,
-                value.y,
-                value.z,
-                value.w
-            };
-        }
-
-        JSON::Object To(int32_t value)
-        {
-            return value;
-        }
-
-        JSON::Object To(uint32_t value)
+        JSON::Object To(std::string const &value)
         {
             return value;
         }
@@ -305,9 +194,51 @@ namespace Gek
             return value;
         }
 
-        JSON::Object To(std::string const &value)
+        JSON::Object To(int32_t value)
         {
             return value;
+        }
+
+        JSON::Object To(float value)
+        {
+            return value;
+        }
+
+        JSON::Object To(Math::Float2 const &value)
+        {
+            return json11::Json::array({
+                value.x,
+                value.y,
+            });
+        }
+
+        JSON::Object To(Math::Float3 const &value)
+        {
+            return json11::Json::array({
+                value.x,
+                value.y,
+                value.z,
+            });
+        }
+
+        JSON::Object To(Math::Float4 const &value)
+        {
+            return json11::Json::array({
+                value.x,
+                value.y,
+                value.z,
+                value.w
+            });
+        }
+
+        JSON::Object To(Math::Quaternion const &value)
+        {
+            return json11::Json::array({
+                value.x,
+                value.y,
+                value.z,
+                value.w
+            });
         }
     }; // namespace JSON
 }; // namespace Gek
