@@ -1,9 +1,9 @@
  addons/imguifilesystem/imguifilesystem.cpp         | 47 ++++++++++++----------
  addons/imguinodegrapheditor/imguinodegrapheditor.h |  2 +-
  addons/imguipanelmanager/imguipanelmanager.cpp     |  2 +-
- addons/imguipanelmanager/imguipanelmanager.h       |  3 +-
+ addons/imguipanelmanager/imguipanelmanager.h       |  5 ++-
  imgui.h                                            |  2 +
- 5 files changed, 31 insertions(+), 25 deletions(-)
+ 5 files changed, 32 insertions(+), 26 deletions(-)
 
 diff --git a/addons/imguifilesystem/imguifilesystem.cpp b/addons/imguifilesystem/imguifilesystem.cpp
 index 99fde8f..682fcf7 100644
@@ -97,7 +97,7 @@ index a66f5da..7f5d68e 100644
  
      if (dirty)  {
 diff --git a/addons/imguipanelmanager/imguipanelmanager.h b/addons/imguipanelmanager/imguipanelmanager.h
-index 5895092..e5d477e 100644
+index 5895092..81bf185 100644
 --- a/addons/imguipanelmanager/imguipanelmanager.h
 +++ b/addons/imguipanelmanager/imguipanelmanager.h
 @@ -71,10 +71,11 @@ struct PanelManager {
@@ -107,9 +107,10 @@ index 5895092..e5d477e 100644
 +        bool previewOnHover;
          mutable float hoverReleaseTimer;
          mutable int hoverReleaseIndex;
-         Pane(Position _pos,const char* name)
+-        Pane(Position _pos,const char* name)
 -        : bar(name),pos(_pos),visible(true),allowHoverOnTogglableWindows(false),hoverReleaseTimer(-1),hoverReleaseIndex(-1)
-+        : bar(name),pos(_pos),visible(true),allowHoverOnTogglableWindows(false),previewOnHover(true),hoverReleaseTimer(-1),hoverReleaseIndex(-1)
++        Pane(Position _pos, const char* name)
++             : bar(name), pos(_pos), visible(true), allowHoverOnTogglableWindows(false), previewOnHover(true), hoverReleaseTimer(-1), hoverReleaseIndex(-1)
          {}
          ~Pane() {clear();}
          void clear() {

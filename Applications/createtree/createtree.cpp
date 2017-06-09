@@ -269,18 +269,27 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             }
             else if (filePath.isFile())
             {
-                const JSON::Object materialNode = JSON::Load(filePath);
-                auto &shaderNode = materialNode["shader"];
-                auto &passesNode = shaderNode["passes"];
-                auto &solidNode = passesNode["solid"];
-                auto &dataNode = solidNode["data"];
-                auto &albedoNode = dataNode["albedo"];
-                auto albedoPath = albedoNode["file"].string_value();
-                if (!albedoPath.empty())
+                try
                 {
-					std::string materialName(String::GetLower(filePath.withoutExtension().u8string().substr(materialsPath.size() + 1)));
-                    albedoToMaterialMap[albedoPath] = materialName;
+                    const JSON::Object materialNode = JSON::Load(filePath);
+                    auto &shaderNode = materialNode["shader"];
+                    auto &passesNode = shaderNode["passes"];
+                    auto &solidNode = passesNode["solid"];
+                    auto &dataNode = solidNode["data"];
+                    auto &albedoNode = dataNode["albedo"];
+                    if (albedoNode.is_object())
+                    {
+                        if (albedoNode.has_member("file"))
+                        {
+							std::string materialName(String::GetLower(filePath.withoutExtension().u8string().substr(materialsPath.size() + 1)));
+                            std::string albedoPath(albedoNode["file"].as_string());
+                            albedoToMaterialMap[albedoPath] = materialName;
+                        }
+                    }
                 }
+                catch (...)
+                {
+                };
             }
 
             return true;

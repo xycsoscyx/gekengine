@@ -13,38 +13,49 @@
 #include "GEK/Math/Quaternion.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
-#include <json11.hpp>
+#include "GEK/Utility/ShuntingYard.hpp"
+#include <jsoncons/json.hpp>
 
 namespace Gek
 {
     namespace JSON
     {
-        using Object = json11::Json;
+        using Object = jsoncons::json;
+        using Member = Object::member_type;
+        using Array = Object::array;
+        using Members = jsoncons::range<Object::const_object_iterator>;
+        using Elements = jsoncons::range<Object::const_array_iterator>;
 
         extern const Object EmptyObject;
+        extern const Array EmptyArray;
 
         Object Load(FileSystem::Path const &filePath, Object const &defaultValue = EmptyObject);
         void Save(FileSystem::Path const &filePath, Object const &object);
 
-        Object::object &GetObject(Object &object);
-        Object::array &GetArray(Object &object);
+        Members GetMembers(Object const &object);
+        Object const &Get(Object const &object, std::string const &name, Object const &defaultValue = EmptyObject);
 
-        std::string From(Object const &object, std::string const &defaultValue = String::Empty);
-        bool From(Object const &object, bool defaultValue = false);
-        int32_t From(Object const &object, int32_t defaultValue = 0);
-        float From(Object const &object, float defaultValue = 0.0f);
-        Math::Float2 From(Object const &object, Math::Float2 const &defaultValue = Math::Float2::Zero);
-        Math::Float3 From(Object const &object, Math::Float3 const &defaultValue = Math::Float3::Zero);
-        Math::Float4 From(Object const &object, Math::Float4 const &defaultValue = Math::Float4::Zero);
-        Math::Quaternion From(Object const &object, Math::Quaternion const &defaultValue = Math::Quaternion::Identity);
+        Elements GetElements(Object const &object);
+        Object const &At(Object const &object, size_t index, Object const &defaultValue = EmptyObject);
 
-        Object To(std::string const &value);
-        Object To(bool value);
-        Object To(int32_t value);
-        Object To(float value);
-        Object To(Math::Float2 const &value);
-        Object To(Math::Float3 const &value);
-        Object To(Math::Float4 const &value);
-        Object To(Math::Quaternion const &value);
+        float From(JSON::Object const &object, ShuntingYard &parser, float defaultValue = 0.0f);
+        Math::Float2 From(JSON::Object const &object, ShuntingYard &parser, Math::Float2 const &defaultValue = Math::Float2::Zero);
+        Math::Float3 From(JSON::Object const &object, ShuntingYard &parser, Math::Float3 const &defaultValue = Math::Float3::Zero);
+        Math::Float4 From(JSON::Object const &object, ShuntingYard &parser, Math::Float4 const &defaultValue = Math::Float4::Zero);
+        Math::Quaternion From(JSON::Object const &object, ShuntingYard &parser, Math::Quaternion const &defaultValue = Math::Quaternion::Identity);
+        int32_t From(JSON::Object const &object, ShuntingYard &parser, int32_t defaultValue = 0);
+        uint32_t From(JSON::Object const &object, ShuntingYard &parser, uint32_t defaultValue = 0);
+        bool From(JSON::Object const &object, ShuntingYard &parser, bool defaultValue = false);
+        std::string From(JSON::Object const &object, ShuntingYard &parser, std::string const &defaultValue = String::Empty);
+
+        JSON::Object To(float value);
+        JSON::Object To(Math::Float2 const &value);
+        JSON::Object To(Math::Float3 const &value);
+        JSON::Object To(Math::Float4 const &value);
+        JSON::Object To(Math::Quaternion const &value);
+        JSON::Object To(int32_t value);
+        JSON::Object To(uint32_t value);
+        JSON::Object To(bool value);
+        JSON::Object To(std::string const &value);
     }; // namespace JSON
 }; // namespace Gek
