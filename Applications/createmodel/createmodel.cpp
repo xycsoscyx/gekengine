@@ -378,14 +378,12 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         }
         else if (filePath.isFile())
         {
-            const JSON::Object materialNode = JSON::Load(filePath);
-            if (!materialNode.is_empty())
-            {
-                auto &shaderNode = materialNode.get("shader", JSON::EmptyObject);
-                auto &passesNode = shaderNode.get("passes", JSON::EmptyObject);
-                auto &solidNode = passesNode.get("solid", JSON::EmptyObject);
-                auto &dataNode = solidNode.get("data", JSON::EmptyObject);
-                auto &albedoNode = dataNode.get("albedo", JSON::EmptyObject);
+            const JSON materialNode = JSON::Load(filePath);
+            auto &shaderNode = materialNode.get("shader", JSON::EmptyObject);
+            auto &passesNode = shaderNode.get("passes", JSON::EmptyObject);
+            auto &solidNode = passesNode.get("solid", JSON::EmptyObject);
+            auto &dataNode = solidNode.get("data", JSON::EmptyObject);
+            auto &albedoNode = dataNode.get("albedo", JSON::EmptyObject);
                 if (albedoNode.is_object())
                 {
                     if (albedoNode.has_member("file"))
