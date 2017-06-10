@@ -74,7 +74,7 @@ namespace Gek
 
             context = Context::Create(rootPath, searchPathList);
             configuration = JSON::Load(getContext()->getRootFileName("config.json"));
-            previousDisplayMode = currentDisplayMode = JSON::From(JSON::Get(JSON::Get(configuration, "display"), "mode"), ShuntingYard(), 0);
+            previousDisplayMode = currentDisplayMode = JSON::Reference(configuration).get("display").get("mode").convert(0);
             configuration["display"]["mode"] = currentDisplayMode;
 
             Window::Description windowDescription;

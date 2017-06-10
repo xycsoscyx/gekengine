@@ -237,80 +237,41 @@ namespace Gek
                 {
                     std::cout << "Loading population: " << populationName << std::endl;
 
-                    const JSON::Object worldNode = JSON::Load(getContext()->getRootFileName("data", "scenes", populationName).withExtension(".json"));
-                    if (!worldNode.has_member("Population"))
-                    {
-                        std::cerr << "Scene doesn't contain a population node: " << populationName << std::endl;
-                        return;
-                    }
+                    JSON::Instance worldNode = JSON::Load(getContext()->getRootFileName("data", "scenes", populationName).withExtension(".json"));
+                    shuntingYard.setRandomSeed(worldNode.get("Seed").convert(uint32_t(std::time(nullptr) & 0xFFFFFFFF)));
 
+                    auto templatesNode = worldNode.get("Templates");
                     auto &populationNode = worldNode.get("Population");
-                    if (!populationNode.is_array())
+                    std::cout << "Found " << populationNode.getArray().size() << " Entity Definitions" << std::endl;
+                    for (const auto &entityNode : populationNode.getArray())
                     {
-                        std::cerr << "Scene poplation node is not an array of entities: " << populationName << std::endl;
-                        return;
-                    }
-
-                    if (worldNode.has_member("Seed"))
-                    {
-                        shuntingYard.setRandomSeed(worldNode.get("Seed", std::mt19937::default_seed).as_uint());
-                    }
-                    else
-                    {
-                        shuntingYard.setRandomSeed(uint32_t(std::time(nullptr) & 0xFFFFFFFF));
-                    }
-
-                    JSON::Object templatesNode;
-                    if (worldNode.has_member("Templates"))
-                    {
-                        templatesNode = worldNode.get("Templates");
-                        if (!templatesNode.is_object())
-                        {
-                            templatesNode = JSON::EmptyObject;
-                            std::cerr << "Scene templates node is not an object: " << populationName << std::endl;
-                        }
-                        else
-                        {
-                            std::cout << "Found templated block" << std::endl;
-                        }
-					}
-
-					std::cout << "Found " << populationNode.size() << " Entity Definitions" << std::endl;
-                    for (const auto &entityNode : populationNode.elements())
-                    {
-                        if (!entityNode.is_object())
-                        {
-                            std::cerr << "Found invalid entity node type" << std::endl;
-                            continue;
-                        }
-
-                        std::vector<JSON::Member> entityComponentList;
+                        std::vector<Component> entityComponentList;
                         if (entityNode.has_member("Template"))
                         {
                             auto &templateNode = templatesNode.get(entityNode["Template"].as_string());
-                            for (const auto &componentNode : templateNode.members())
+                            for (const auto &componentNode : templateNode.getMembers())
                             {
-                                entityComponentList.push_back(componentNode);
+                                entityComponentList.push_back(std::make_pair(componentNode.name(), componentNode.value()));
                             }
                         }
 
                         for (const auto &componentNode : entityNode.members())
                         {
-                            auto componentSearch = std::find_if(std::begin(entityComponentList), std::end(entityComponentList), [&](const JSON::Member &componentData) -> bool
+                            auto componentSearch = std::find_if(std::begin(entityComponentList), std::end(entityComponentList), [&](Component const &componentData) -> bool
                             {
-                                return (componentData.name() == componentNode.name());
+                                return (componentData.first == componentNode.name());
                             });
 
                             if (componentSearch == std::end(entityComponentList))
                             {
-                                entityComponentList.push_back(componentNode);
+                                entityComponentList.push_back(std::make_pair(componentNode.name(), componentNode.value()));
                             }
                             else
                             {
                                 auto &componentData = (*componentSearch);
                                 for (const auto &attribute : componentNode.value().members())
                                 {
-                                    componentData.value().set(attribute.name(), attribute.value());
+                                    componentData.second[attribute.name()] = attribute.value();
                                 }
                             }
                         }
@@ -318,8 +279,8 @@ namespace Gek
                         auto entity(std::make_unique<Entity>());
                         for (const auto &componentData : entityComponentList)
                         {
-                            if (componentData.name() != "Name" &&
-                                componentData.name() != "Template")
+                            if (componentData.first != "Name" &&
+                                componentData.first != "Template")
                             {
                                 addComponent(entity.get(), componentData);
                             }
@@ -338,11 +299,11 @@ namespace Gek
 
             void save(std::string const &populationName)
             {
-                JSON::Array population;
+                JSON::Object population = JSON::EmptyArray;
                 for (const auto &entityPair : entityMap)
                 {
-                    JSON::Object entityData;
-                    entityData.set("Name", entityPair.first);
+                    JSON::Object entityData = JSON::EmptyObject;
+                    entityData["Name"] = entityPair.first;
 
                     Entity *entity = static_cast<Entity *>(entityPair.second.get());
                     entity->listComponents([&](const std::type_index &type, const Plugin::Component::Data *data) -> void
@@ -363,7 +324,7 @@ namespace Gek
                             {
                                 JSON::Object componentData;
                                 component->second->save(data, componentData);
-                                entityData.set(componentName->second, componentData);
+                                entityData[componentName->second] = componentData;
                             }
                         }
                     });
@@ -372,12 +333,12 @@ namespace Gek
                 }
 
                 JSON::Object scene;
-                scene.set("Population", population);
-                scene.set("Seed", shuntingYard.getRandomSeed());
-                JSON::Save(getContext()->getRootFileName("data", "scenes", populationName).withExtension(".json"), scene);
+                scene["Population"] = population;
+                scene["Seed"] = shuntingYard.getRandomSeed();
+                JSON::Reference(scene).save(getContext()->getRootFileName("data", "scenes", populationName).withExtension(".json"));
             }
 
-            Plugin::Entity *createEntity(std::string const &entityName, const std::vector<JSON::Member> &componentList)
+            Plugin::Entity *createEntity(std::string const &entityName, const std::vector<Component> &componentList)
             {
                 auto entity(std::make_unique<Entity>());
                 for (const auto &componentData : componentList)
@@ -406,11 +367,11 @@ namespace Gek
                 });
             }
 
-            bool addComponent(Entity *entity, const JSON::Member &componentData)
+            bool addComponent(Entity *entity, Component const &componentData)
             {
                 assert(entity);
 
-                auto componentNameSearch = componentTypeNameMap.find(componentData.name());
+                auto componentNameSearch = componentTypeNameMap.find(componentData.first);
                 if (componentNameSearch != std::end(componentTypeNameMap))
                 {
                     auto componentSearch = componentMap.find(componentNameSearch->second);
@@ -418,7 +379,7 @@ namespace Gek
                     {
                         Plugin::Component *componentManager = componentSearch->second.get();
                         auto component(componentManager->create());
-                        componentManager->load(component.get(), componentData.value());
+                        componentManager->load(component.get(), componentData.second);
 
                         entity->addComponent(componentManager, std::move(component));
                         return true;
@@ -430,13 +391,13 @@ namespace Gek
                 }
                 else
                 {
-                    std::cerr << "Entity contains unknown component: " << componentData.name() << std::endl;
+                    std::cerr << "Entity contains unknown component: " << componentData.first << std::endl;
                 }
 
                 return false;
             }
 
-            void addComponent(Plugin::Entity * const entity, const JSON::Member &componentData)
+            void addComponent(Plugin::Entity * const entity, Component const &componentData)
             {
                 if (addComponent(static_cast<Entity *>(entity), componentData))
                 {

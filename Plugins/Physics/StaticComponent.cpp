@@ -24,10 +24,10 @@ namespace Gek
                 componentData.set("group", data->group);
             }
 
-            void load(Components::Static * const data, const JSON::Object &componentData)
+            void load(Components::Static * const data, JSON::Reference componentData)
             {
 				static const std::string DefaultGroup("default");
-                data->group = GetValue(JSON::Get(componentData, "group"), DefaultGroup);
+                data->group = parse(componentData.get("group"), DefaultGroup);
             }
 
             // Edit::Component

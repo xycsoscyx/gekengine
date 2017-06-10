@@ -79,7 +79,7 @@ namespace Gek
             {
                 ImGui::PushItemWidth(-1.0f);
 
-                bool editorActive = core->getOption("editor", "active").as_bool();
+                bool editorActive = core->getOption("editor", "active").convert(false);
                 if (ImGui::Checkbox("Editor", &editorActive))
                 {
                     core->setOption("editor", "active", editorActive);
@@ -167,7 +167,7 @@ namespace Gek
                                             std::advance(componentSearch, componentIndex);
                                             if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
                                             {
-                                                JSON::Member componentData(componentSearch->second->getName(), JSON::Object());
+                                                auto componentData = std::make_pair(componentSearch->second->getName(), JSON::EmptyObject);
                                                 population->addComponent(entity, componentData);
                                                 ImGui::CloseCurrentPopup();
                                             }
@@ -258,7 +258,7 @@ namespace Gek
             // Plugin::Population Slots
             void onAction(Plugin::Population::Action const &action)
             {
-                bool editorActive = core->getOption("editor", "active").as_bool();
+                bool editorActive = core->getOption("editor", "active").convert(false);
                 if (!editorActive)
                 {
                     return;
@@ -293,7 +293,7 @@ namespace Gek
 
             void onUpdate(float frameTime)
             {
-                bool editorActive = core->getOption("editor", "active").as_bool();
+                bool editorActive = core->getOption("editor", "active").convert(false);
                 if (editorActive)
                 {
                     Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));

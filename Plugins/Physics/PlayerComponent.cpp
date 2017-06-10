@@ -34,12 +34,12 @@ namespace Gek
                 componentData.set("stairStep", data->stairStep);
             }
 
-            void load(Components::Player * const data, const JSON::Object &componentData)
+            void load(Components::Player * const data, JSON::Reference componentData)
             {
-                data->height = GetValue(JSON::Get(componentData, "height"), 0.0f);
-                data->outerRadius = GetValue(JSON::Get(componentData, "outerRadius"), 0.0f);
-                data->innerRadius = GetValue(JSON::Get(componentData, "innerRadius"), 0.0f);
-                data->stairStep = GetValue(JSON::Get(componentData, "stairStep"), 0.0f);
+                data->height = parse(componentData.get("height"), 0.0f);
+                data->outerRadius = parse(componentData.get("outerRadius"), 0.0f);
+                data->innerRadius = parse(componentData.get("innerRadius"), 0.0f);
+                data->stairStep = parse(componentData.get("stairStep"), 0.0f);
             }
 
             // Edit::Component

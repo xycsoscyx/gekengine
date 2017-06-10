@@ -406,7 +406,7 @@ namespace Gek
             // Plugin::Population Slots
 			void onAction(Plugin::Population::Action const &action)
 			{
-                bool editorActive = core->getOption("editor", "active").as_bool();
+                bool editorActive = core->getOption("editor", "active").convert(false);
                 if (editorActive)
                 {
                     return;

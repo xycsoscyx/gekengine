@@ -182,35 +182,23 @@ namespace Gek
         return (flags | Video::Buffer::Description::Flags::Resource);
     }
 
-    std::unordered_map<std::string, std::string> getAliasedMap(const JSON::Object &parent, std::string const &name)
+    std::unordered_map<std::string, std::string> getAliasedMap(JSON::Reference parent, std::string const &name)
     {
         std::unordered_map<std::string, std::string> aliasedMap;
-        if (parent.has_member(name))
+        auto &object = parent.get(name);
+        for (auto &element : object.getArray())
         {
-            auto &object = parent.get(name);
-            if (object.is_array())
+            if (element.is_string())
             {
-                for (auto &element : object.elements())
-                {
-                    if (element.is_string())
-                    {
-                        std::string name(element.as_string());
-                        aliasedMap[name] = name;
-                    }
-                    else if (element.is_object() && !element.empty())
-                    {
-                        auto &member = element.begin_members();
-                        std::string name(member->name());
-                        std::string value(member->value().as_string());
-                        aliasedMap[name] = value;
-                    }
-                    else
-                    {
-                    }
-                }
+                std::string name(element.as_string());
+                aliasedMap[name] = name;
             }
-            else
+            else if (element.is_object() && !element.empty())
             {
+                auto &member = element.begin_members();
+                std::string name(member->name());
+                std::string value(member->value().as_string());
+                aliasedMap[name] = value;
             }
         }
 

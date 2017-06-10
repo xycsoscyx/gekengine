@@ -32,7 +32,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                         materialName = materialName.substr(texturesPath.size() + 1);
 						std::cout << "> Material Found: " << materialName << std::endl;
 
-                        jsoncons::json renderState;
+                        JSON::Object renderState;
                         std::map<std::string, std::map<uint32_t, std::pair<FileSystem::Path, std::string>>> fileMap;
                         FileSystem::Find(textureSetPath, [&](FileSystem::Path const &filePath) -> bool
                         {
@@ -151,7 +151,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
                         if (!fileMap.empty())
                         {
-                            jsoncons::json dataNode;
+                            JSON::Object dataNode;
                             for(auto &mapSearch : fileMap)
                             {
                                 auto mapType(String::GetLower(mapSearch.first));
@@ -168,7 +168,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                                     std::experimental::filesystem::rename(sourceFilePath, filePath);
                                 }
 
-                                jsoncons::json node;
+                                JSON::Object node;
                                 node["file"] = textureName;
                                 if (mapType == "albedo")
                                 {
@@ -181,30 +181,30 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                             auto materialPath(FileSystem::GetFileName(materialsPath, materialName).withExtension(".json"));
                             FileSystem::MakeDirectoryChain(materialPath.getParentPath());
 
-                            jsoncons::json solidNode;
-                            solidNode.set("data", dataNode);
+                            JSON::Object solidNode;
+                            solidNode["data"] = dataNode;
                             if (!renderState.is_null())
                             {
-                                solidNode.set("renderState", renderState);
+                                solidNode["renderState"] = renderState;
                             }
 
-                            jsoncons::json passesNode;
-                            passesNode.set("solid", solidNode);
+                            JSON::Object passesNode;
+                            passesNode["solid"] = solidNode;
 
-                            jsoncons::json shaderNode;
+                            JSON::Object shaderNode;
                             shaderNode.set("passes", passesNode);
                             if (fileMap.count("clarity") > 0)
                             {
-                                shaderNode.set("name", "glass");
+                                shaderNode["name"] = "glass";
                             }
                             else
                             {
-                                shaderNode.set("name", "solid");
+                                shaderNode["name"] = "solid";
                             }
 
-                            jsoncons::json materialNode;
-                            materialNode.set("shader", shaderNode);
-                            JSON::Save(materialPath, materialNode);
+                            JSON::Object materialNode;
+                            materialNode["shader"] = shaderNode;
+                            JSON::Reference(materialNode).save(materialPath);
                         }
 					}
 

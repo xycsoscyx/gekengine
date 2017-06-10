@@ -221,7 +221,7 @@ namespace Gek
                 return data[axis];
             }
 
-            operator const TYPE *() const
+            operator TYPE const *() const
             {
                 return data;
             }

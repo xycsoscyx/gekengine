@@ -100,7 +100,7 @@ namespace Gek
                 window->onMouseMovement.connect<Core, &Core::onMouseMovement>(this);
 
                 configuration = JSON::Load(getContext()->getRootFileName("config.json"));
-                previousDisplayMode = currentDisplayMode = JSON::From(JSON::Get(JSON::Get(configuration, "display"), "mode"), ShuntingYard(), 0);
+                previousDisplayMode = currentDisplayMode = JSON::Reference(configuration).get("display").get("mode").convert(0);
                 configuration["display"]["mode"] = currentDisplayMode;
 
                 HRESULT resultValue = CoInitialize(nullptr);
@@ -254,7 +254,7 @@ namespace Gek
                 population = nullptr;
                 videoDevice = nullptr;
                 window = nullptr;
-                JSON::Save(getContext()->getRootFileName("config.json"), configuration);
+                JSON::Reference(configuration).save(getContext()->getRootFileName("config.json"));
                 CoUninitialize();
             }
 
@@ -687,9 +687,9 @@ namespace Gek
                 return engineRunning;
             }
 
-            JSON::Object getOption(std::string const &system, std::string const &name)
+            JSON::Reference getOption(std::string const &system, std::string const &name)
             {
-                return JSON::Get(JSON::Get(configuration, system), name);
+                return JSON::Reference(configuration).get(system).get(name);
             }
 
             void setOption(std::string const &system, std::string const &name, JSON::Object const &value)

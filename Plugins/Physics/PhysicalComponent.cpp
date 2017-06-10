@@ -24,9 +24,9 @@ namespace Gek
                 componentData.set("mass", data->mass);
             }
 
-            void load(Components::Physical * const data, const JSON::Object &componentData)
+            void load(Components::Physical * const data, JSON::Reference componentData)
             {
-                data->mass = GetValue(JSON::Get(componentData, "mass"), 0.0f);
+                data->mass = parse(componentData.get("mass"), 0.0f);
             }
 
             // Edit::Component

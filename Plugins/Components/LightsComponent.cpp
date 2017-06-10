@@ -23,11 +23,11 @@ namespace Gek
             componentData.set("intensity", data->intensity);
         }
 
-        void load(Components::PointLight * const data, const JSON::Object &componentData)
+        void load(Components::PointLight * const data, JSON::Reference componentData)
         {
-            data->range = GetValue(JSON::Get(componentData, "range"), 0.0f);
-            data->radius = GetValue(JSON::Get(componentData, "radius"), 0.0f);
-            data->intensity = GetValue(JSON::Get(componentData, "intensity"), 0.0f);
+            data->range = parse(componentData.get("range"), 0.0f);
+            data->radius = parse(componentData.get("radius"), 0.0f);
+            data->intensity = parse(componentData.get("intensity"), 0.0f);
 			std::cout << "Range: " << data->range << ", Radius: " << data->radius << ", Intensity: " << data->intensity << std::endl;
         }
 
@@ -76,14 +76,14 @@ namespace Gek
             componentData.set("coneFalloff", data->coneFalloff);
         }
 
-        void load(Components::SpotLight * const data, const JSON::Object &componentData)
+        void load(Components::SpotLight * const data, JSON::Reference componentData)
         {
-            data->range = GetValue(JSON::Get(componentData, "range"), 0.0f);
-            data->radius = GetValue(JSON::Get(componentData, "radius"), 0.0f);
-            data->intensity = GetValue(JSON::Get(componentData, "intensity"), 0.0f);
-            data->innerAngle = std::cos(Math::DegreesToRadians(GetValue(JSON::Get(componentData, "innerAngle"), 0.0f)));
-            data->outerAngle = std::cos(Math::DegreesToRadians(GetValue(JSON::Get(componentData, "outerAngle"), 0.0f)));
-            data->coneFalloff = GetValue(JSON::Get(componentData, "coneFalloff"), 0.0f);
+            data->range = parse(componentData.get("range"), 0.0f);
+            data->radius = parse(componentData.get("radius"), 0.0f);
+            data->intensity = parse(componentData.get("intensity"), 0.0f);
+            data->innerAngle = std::cos(Math::DegreesToRadians(parse(componentData.get("innerAngle"), 0.0f)));
+            data->outerAngle = std::cos(Math::DegreesToRadians(parse(componentData.get("outerAngle"), 0.0f)));
+            data->coneFalloff = parse(componentData.get("coneFalloff"), 0.0f);
         }
 
         // Edit::Component
@@ -129,9 +129,9 @@ namespace Gek
             componentData.set("intensity", data->intensity);
         }
 
-        void load(Components::DirectionalLight * const data, const JSON::Object &componentData)
+        void load(Components::DirectionalLight * const data, JSON::Reference componentData)
         {
-            data->intensity = GetValue(JSON::Get(componentData, "intensity"), 0.0f);
+            data->intensity = parse(componentData.get("intensity"), 0.0f);
         }
 
         // Edit::Component

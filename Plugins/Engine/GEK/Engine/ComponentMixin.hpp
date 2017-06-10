@@ -59,20 +59,20 @@ namespace Gek
             }
 
             template <typename TYPE>
-            TYPE GetValue(JSON::Object const &object, TYPE defaultValue)
+            TYPE parse(JSON::Reference object, TYPE defaultValue)
             {
-                return JSON::From(object, population->getShuntingYard(), defaultValue);
+                return object.parse(population->getShuntingYard(), defaultValue);
             }
 
             virtual void save(COMPONENT const * const component, JSON::Object &componentData) const { };
-            virtual void load(COMPONENT * const component, JSON::Object const &componentData) { };
+            virtual void load(COMPONENT * const component, JSON::Reference componentData) { };
 
             void save(Plugin::Component::Data const * const component, JSON::Object &componentData) const
             {
                 save(static_cast<COMPONENT const * const>(component), componentData);
             }
 
-            void load(Plugin::Component::Data * const component, JSON::Object const &componentData)
+            void load(Plugin::Component::Data * const component, JSON::Reference componentData)
             {
                 load(static_cast<COMPONENT * const>(component), componentData);
             }

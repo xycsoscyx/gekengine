@@ -37,7 +37,7 @@ namespace Gek
 
             virtual std::unique_ptr<Data> create(void) = 0;
             virtual void save(Data const * const data, JSON::Object &componentData) const = 0;
-            virtual void load(Data * const data, const JSON::Object &componentData) = 0;
+            virtual void load(Data * const data, JSON::Reference componentData) = 0;
         };
     }; // namespace Plugin
 

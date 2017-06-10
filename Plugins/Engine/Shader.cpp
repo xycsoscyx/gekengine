@@ -107,11 +107,9 @@ namespace Gek
             {
                 std::cout << "Loading shader: " << shaderName << std::endl;
 
-				static auto evaluate = [&](const JSON::Object &data, float defaultValue) -> float
+				static auto evaluate = [&](JSON::Reference data, float defaultValue) -> float
 				{
-					std::string value(data.to_string());
-					String::Trim(value, [](char ch) { return (ch != '\"'); });
-					return population->getShuntingYard().evaluate(value, defaultValue);
+                    return data.parse(population->getShuntingYard(), defaultValue);
 				};
 				
 				uint32_t passIndex = 0;
@@ -121,62 +119,54 @@ namespace Gek
                 auto backBuffer = videoDevice->getBackBuffer();
                 auto &backBufferDescription = backBuffer->getDescription();
 
-                const JSON::Object shaderNode = JSON::Load(getContext()->getRootFileName("data", "shaders", shaderName).withExtension(".json"));
-                auto &passesNode = shaderNode.get("passes", JSON::EmptyObject);
-                auto &materialNode = shaderNode.get("material", JSON::EmptyObject);
-				auto &inputNode = shaderNode.get("input", JSON::Array());
+                JSON::Instance shaderNode = JSON::Load(getContext()->getRootFileName("data", "shaders", shaderName).withExtension(".json"));
+                auto passesNode = shaderNode.get("passes");
+                auto materialNode = shaderNode.get("material");
+                auto inputNode = shaderNode.get("input");
 
 				std::string inputData;
-                if (shaderNode.has_member("input"))
+                uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
+                for (auto &elementNode : inputNode.getArray())
                 {
-                    if (!inputNode.is_array())
+                    if (!elementNode.has_member("name"))
                     {
-                        throw InvalidParameter("Vertex input layout must be an array of elements");
+                        throw InvalidParameter("Vertex input element must name a name");
                     }
 
-                    uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
-                    for (auto &elementNode : inputNode.elements())
+                    std::string name(elementNode.get("name").as_string());
+                    if (elementNode.has_member("system"))
                     {
-                        if (!elementNode.has_member("name"))
+                        std::string system(String::GetLower(elementNode.get("system").as_string()));
+                        if (system == "isfrontfacing")
                         {
-                            throw InvalidParameter("Vertex input element must name a name");
+                            inputData += String::Format("    uint %v : SV_IsFrontFace;\r\n", name);
+                        }
+                        else if (system == "sampleindex")
+                        {
+                            inputData += String::Format("    uint %v : SV_SampleIndex;\r\n", name);
+                        }
+                    }
+                    else
+                    {
+                        if (!elementNode.has_member("semantic"))
+                        {
+                            throw InvalidParameter("Input elements require semantic type");
                         }
 
-                        std::string name(elementNode.get("name").as_string());
-                        if (elementNode.has_member("system"))
+                        if (!elementNode.has_member("format"))
                         {
-                            std::string system(String::GetLower(elementNode.get("system").as_string()));
-                            if (system == "isfrontfacing")
-                            {
-                                inputData += String::Format("    uint %v : SV_IsFrontFace;\r\n", name);
-                            }
-                            else if (system == "sampleindex")
-                            {
-                                inputData += String::Format("    uint %v : SV_SampleIndex;\r\n", name);
-                            }
+                            throw MissingParameter("Input elements require a format");
                         }
-                        else
+
+                        Video::Format format = Video::getFormat(elementNode.get("format").as_string());
+                        if (format == Video::Format::Unknown)
                         {
-                            if (!elementNode.has_member("semantic"))
-                            {
-                                throw InvalidParameter("Input elements require semantic type");
-                            }
-
-                            if (!elementNode.has_member("format"))
-                            {
-                                throw MissingParameter("Input elements require a format");
-                            }
-
-                            Video::Format format = Video::getFormat(elementNode.get("format").as_string());
-                            if (format == Video::Format::Unknown)
-                            {
-                                throw InvalidParameter("Unknown input element format specified");
-                            }
-
-                            auto semantic = Video::InputElement::getSemantic(elementNode.get("semantic").as_string());
-                            auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
-                            inputData += String::Format("    %v %v : %v%v;\r\n", getFormatSemantic(format), name, videoDevice->getSemanticMoniker(semantic), semanticIndex);
+                            throw InvalidParameter("Unknown input element format specified");
                         }
+
+                        auto semantic = Video::InputElement::getSemantic(elementNode.get("semantic").as_string());
+                        auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
+                        inputData += String::Format("    %v %v : %v%v;\r\n", getFormatSemantic(format), name, videoDevice->getSemanticMoniker(semantic), semanticIndex);
                     }
                 }
 
@@ -238,205 +228,189 @@ namespace Gek
                 resourceMap["screenBuffer"] = resources->getResourceHandle("screenBuffer");
                 resourceSemanticsMap["screen"] = resourceSemanticsMap["screenBuffer"] = "Texture2D<float3>";
 
-                if (shaderNode.has_member("textures"))
+                auto texturesNode = shaderNode.get("textures");
+                for (auto &textureNode : texturesNode.getMembers())
                 {
-                    auto &texturesNode = shaderNode.get("textures");
-                    if (!texturesNode.is_object())
+                    std::string textureName(textureNode.name());
+                    auto &textureValue = textureNode.value();
+                    if (resourceMap.count(textureName) > 0)
                     {
-                        throw InvalidParameter("Texture list must be an object");
+                        throw ResourceAlreadyListed("Texture name same as already listed resource");
                     }
 
-                    for (auto &textureNode : texturesNode.members())
+                    ResourceHandle resource;
+                    if (textureValue.has_member("external"))
                     {
-                        std::string textureName(textureNode.name());
-                        auto &textureValue = textureNode.value();
-                        if (resourceMap.count(textureName) > 0)
+                        if (!textureValue.has_member("name"))
                         {
-                            throw ResourceAlreadyListed("Texture name same as already listed resource");
+                            throw MissingParameter("External texture requires a name");
                         }
 
-                        ResourceHandle resource;
-                        if (textureValue.has_member("external"))
+                        std::string externalName(textureValue.get("name").as_string());
+						std::string externalSource(String::GetLower(textureValue.get("external").as_string()));
+						if (externalSource == "shader")
                         {
-                            if (!textureValue.has_member("name"))
+                            auto requiredShader = resources->getShader(externalName, MaterialHandle());
+                            if (requiredShader)
                             {
-                                throw MissingParameter("External texture requires a name");
-                            }
-
-                            std::string externalName(textureValue.get("name").as_string());
-							std::string externalSource(String::GetLower(textureValue.get("external").as_string()));
-							if (externalSource == "shader")
-                            {
-                                auto requiredShader = resources->getShader(externalName, MaterialHandle());
-                                if (requiredShader)
-                                {
-                                    requiredShaderSet.insert(resources->getShader(externalName, MaterialHandle()));
-                                    resource = resources->getResourceHandle(String::Format("%v:%v:resource", textureName, externalName));
-                                }
-                            }
-                            else if (externalSource == "filter")
-                            {
-                                resources->getFilter(externalName);
+                                requiredShaderSet.insert(resources->getShader(externalName, MaterialHandle()));
                                 resource = resources->getResourceHandle(String::Format("%v:%v:resource", textureName, externalName));
                             }
-                            else if (externalSource == "file")
-                            {
-                                uint32_t flags = getTextureLoadFlags(textureValue.get("flags", 0).as_string());
-                                resource = resources->loadTexture(externalName, flags);
-                            }
-                            else
-                            {
-                                throw InvalidParameter("Unknown source for external texture");
-                            }
                         }
-                        else if (textureValue.has_member("format"))
+                        else if (externalSource == "filter")
                         {
-                            Video::Texture::Description description(backBufferDescription);
-                            description.format = Video::getFormat(textureValue.get("format", String::Empty).as_string());
-                            if (description.format == Video::Format::Unknown)
-                            {
-                                throw InvalidParameter("Invalid texture format specified");
-                            }
-
-                            if (textureValue.has_member("size"))
-                            {
-                                auto &size = textureValue.get("size");
-                                if (size.is_array())
-                                {
-                                    auto dimensions = size.size();
-                                    switch (dimensions)
-                                    {
-                                    case 3:
-                                        description.depth = evaluate(size.at(2), 1);
-
-                                    case 2:
-                                        description.height = evaluate(size.at(1), 1);
-
-                                    case 1:
-                                        description.width = evaluate(size.at(0), 1);
-                                        break;
-
-                                    default:
-                                        throw InvalidParameter("Texture size array must be 1, 2, or 3 dimensions");
-                                    };
-                                }
-                                else
-                                {
-                                    description.width = evaluate(size, 1);
-                                }
-                            }
-
-                            description.sampleCount = textureValue.get("sampleCount", 1).as_uint();
-                            description.flags = getTextureFlags(textureValue.get("flags", 0).as_string());
-                            description.mipMapCount = evaluate(textureValue.get("mipmaps", 1), 1);
-                            resource = resources->createTexture(String::Format("%v:%v:resource", textureName, shaderName), description);
+                            resources->getFilter(externalName);
+                            resource = resources->getResourceHandle(String::Format("%v:%v:resource", textureName, externalName));
+                        }
+                        else if (externalSource == "file")
+                        {
+                            uint32_t flags = getTextureLoadFlags(textureValue.get("flags", 0).as_string());
+                            resource = resources->loadTexture(externalName, flags);
                         }
                         else
                         {
-                            throw InvalidParameter("Texture must contain a source, a filename, or a format");
+                            throw InvalidParameter("Unknown source for external texture");
+                        }
+                    }
+                    else if (textureValue.has_member("format"))
+                    {
+                        Video::Texture::Description description(backBufferDescription);
+                        description.format = Video::getFormat(textureValue.get("format", String::Empty).as_string());
+                        if (description.format == Video::Format::Unknown)
+                        {
+                            throw InvalidParameter("Invalid texture format specified");
                         }
 
-                        resourceMap[textureName] = resource;
-                        auto description = resources->getTextureDescription(resource);
-                        if (description)
+                        if (textureValue.has_member("size"))
                         {
-                            if (description->depth > 1)
+                            auto &size = textureValue.get("size");
+                            if (size.is_array())
                             {
-                                resourceSemanticsMap[textureName] = String::Format("Texture3D<%v>", getFormatSemantic(description->format));
-                            }
-                            else if (description->height > 1 || description->width == 1)
-                            {
-                                resourceSemanticsMap[textureName] = String::Format("Texture2D<%v>", getFormatSemantic(description->format));
+                                auto dimensions = size.size();
+                                switch (dimensions)
+                                {
+                                case 3:
+                                    description.depth = evaluate(size.at(2), 1);
+
+                                case 2:
+                                    description.height = evaluate(size.at(1), 1);
+
+                                case 1:
+                                    description.width = evaluate(size.at(0), 1);
+                                    break;
+
+                                default:
+                                    throw InvalidParameter("Texture size array must be 1, 2, or 3 dimensions");
+                                };
                             }
                             else
                             {
-                                resourceSemanticsMap[textureName] = String::Format("Texture1D<%v>", getFormatSemantic(description->format));
+                                description.width = evaluate(size, 1);
                             }
+                        }
+
+                        description.sampleCount = textureValue.get("sampleCount", 1).as_uint();
+                        description.flags = getTextureFlags(textureValue.get("flags", 0).as_string());
+                        description.mipMapCount = evaluate(textureValue.get("mipmaps", 1), 1);
+                        resource = resources->createTexture(String::Format("%v:%v:resource", textureName, shaderName), description);
+                    }
+                    else
+                    {
+                        throw InvalidParameter("Texture must contain a source, a filename, or a format");
+                    }
+
+                    resourceMap[textureName] = resource;
+                    auto description = resources->getTextureDescription(resource);
+                    if (description)
+                    {
+                        if (description->depth > 1)
+                        {
+                            resourceSemanticsMap[textureName] = String::Format("Texture3D<%v>", getFormatSemantic(description->format));
+                        }
+                        else if (description->height > 1 || description->width == 1)
+                        {
+                            resourceSemanticsMap[textureName] = String::Format("Texture2D<%v>", getFormatSemantic(description->format));
+                        }
+                        else
+                        {
+                            resourceSemanticsMap[textureName] = String::Format("Texture1D<%v>", getFormatSemantic(description->format));
                         }
                     }
                 }
 
-                if (shaderNode.has_member("buffers"))
+                auto buffersNode = shaderNode.get("buffers");
+                for (auto &bufferNode : buffersNode.getMembers())
                 {
-                    auto &buffersNode = shaderNode.get("buffers");
-                    if (!buffersNode.is_object())
+                    std::string bufferName(bufferNode.name());
+                    auto &bufferValue = bufferNode.value();
+                    if (resourceMap.count(bufferName) > 0)
                     {
-                        throw InvalidParameter("Buffer list must be an object");
+                        throw ResourceAlreadyListed("Buffer name same as already listed resource");
                     }
 
-                    for (auto &bufferNode : buffersNode.members())
+                    ResourceHandle resource;
+                    if (bufferValue.has_member("source"))
                     {
-                        std::string bufferName(bufferNode.name());
-                        auto &bufferValue = bufferNode.value();
-                        if (resourceMap.count(bufferName) > 0)
+                        std::string bufferSource(bufferValue.get("source").as_string());
+                        requiredShaderSet.insert(resources->getShader(bufferSource, MaterialHandle()));
+                        resource = resources->getResourceHandle(String::Format("%v:%v:resource", bufferName, bufferSource));
+                    }
+                    else
+                    {
+                        if (!bufferValue.has_member("count"))
                         {
-                            throw ResourceAlreadyListed("Buffer name same as already listed resource");
+                            throw MissingParameter("Buffer must have a count value");
                         }
 
-                        ResourceHandle resource;
-                        if (bufferValue.has_member("source"))
+						uint32_t count = evaluate(bufferValue.get("count", 0), 0);
+                        uint32_t flags = getBufferFlags(bufferValue.get("flags", 0).as_string());
+                        if (bufferValue.has_member("stride") || bufferValue.has_member("structure"))
                         {
-                            std::string bufferSource(bufferValue.get("source").as_string());
-                            requiredShaderSet.insert(resources->getShader(bufferSource, MaterialHandle()));
-                            resource = resources->getResourceHandle(String::Format("%v:%v:resource", bufferName, bufferSource));
+                            if (!bufferValue.has_member("stride"))
+                            {
+                                throw MissingParameter("Structured buffer required a stride size");
+                            }
+                            else if (!bufferValue.has_member("structure"))
+                            {
+                                throw MissingParameter("Structured buffer required a structure name");
+                            }
+
+                            Video::Buffer::Description description;
+                            description.count = count;
+                            description.flags = flags;
+                            description.type = Video::Buffer::Description::Type::Structured;
+                            description.stride = evaluate(bufferValue.get("stride", 0), 0);
+                            resource = resources->createBuffer(String::Format("%v:%v:buffer", bufferName, shaderName), description);
+                        }
+                        else if (bufferValue.has_member("format"))
+                        {
+                            Video::Buffer::Description description;
+                            description.count = count;
+                            description.flags = flags;
+                            description.type = Video::Buffer::Description::Type::Raw;
+                            description.format = Video::getFormat(bufferValue.get("format").as_string());
+                            resource = resources->createBuffer(String::Format("%v:%v:buffer", bufferName, shaderName), description);
                         }
                         else
                         {
-                            if (!bufferValue.has_member("count"))
-                            {
-                                throw MissingParameter("Buffer must have a count value");
-                            }
+                            throw MissingParameter("Buffer must be either be fixed format or structured, or referenced from another shader");
+                        }
 
-							uint32_t count = evaluate(bufferValue.get("count", 0), 0);
-                            uint32_t flags = getBufferFlags(bufferValue.get("flags", 0).as_string());
-                            if (bufferValue.has_member("stride") || bufferValue.has_member("structure"))
+                        resourceMap[bufferName] = resource;
+                        auto description = resources->getBufferDescription(resource);
+                        if (description)
+                        {
+                            if (bufferValue.get("byteaddress", false).as_bool())
                             {
-                                if (!bufferValue.has_member("stride"))
-                                {
-                                    throw MissingParameter("Structured buffer required a stride size");
-                                }
-                                else if (!bufferValue.has_member("structure"))
-                                {
-                                    throw MissingParameter("Structured buffer required a structure name");
-                                }
-
-                                Video::Buffer::Description description;
-                                description.count = count;
-                                description.flags = flags;
-                                description.type = Video::Buffer::Description::Type::Structured;
-                                description.stride = evaluate(bufferValue.get("stride", 0), 0);
-                                resource = resources->createBuffer(String::Format("%v:%v:buffer", bufferName, shaderName), description);
+                                resourceSemanticsMap[bufferName] = "ByteAddressBuffer";
                             }
-                            else if (bufferValue.has_member("format"))
+                            else if (bufferValue.has_member("structure"))
                             {
-                                Video::Buffer::Description description;
-                                description.count = count;
-                                description.flags = flags;
-                                description.type = Video::Buffer::Description::Type::Raw;
-                                description.format = Video::getFormat(bufferValue.get("format").as_string());
-                                resource = resources->createBuffer(String::Format("%v:%v:buffer", bufferName, shaderName), description);
+                                resourceSemanticsMap[bufferName] += String::Format("Buffer<%v>", bufferValue.get("structure").as_string());
                             }
                             else
                             {
-                                throw MissingParameter("Buffer must be either be fixed format or structured, or referenced from another shader");
-                            }
-
-                            resourceMap[bufferName] = resource;
-                            auto description = resources->getBufferDescription(resource);
-                            if (description)
-                            {
-                                if (bufferValue.get("byteaddress", false).as_bool())
-                                {
-                                    resourceSemanticsMap[bufferName] = "ByteAddressBuffer";
-                                }
-                                else if (bufferValue.has_member("structure"))
-                                {
-                                    resourceSemanticsMap[bufferName] += String::Format("Buffer<%v>", bufferValue.get("structure").as_string());
-                                }
-                                else
-                                {
-                                    resourceSemanticsMap[bufferName] += String::Format("Buffer<%v>", getFormatSemantic(description->format));
-                                }
+                                resourceSemanticsMap[bufferName] += String::Format("Buffer<%v>", getFormatSemantic(description->format));
                             }
                         }
                     }
@@ -448,21 +422,10 @@ namespace Gek
                     drawOrder += requiredShader->getDrawOrder();
                 }
 
-                passList.resize(passesNode.size());
+                passList.resize(passesNode.getArray().size());
                 auto passData = std::begin(passList);
-
-                for (auto &passNode : passesNode.elements())
+                for (auto &passNode : passesNode.getArray())
                 {
-                    if (!passNode.has_member("program"))
-                    {
-                        throw MissingParameter("Pass required program filename");
-                    }
-
-                    if (!passNode.has_member("entry"))
-                    {
-                        throw MissingParameter("Pass required program entry point");
-                    }
-
                     PassData &pass = *passData++;
                     pass.identifier = std::distance(std::begin(passList), passData);
 
@@ -730,22 +693,12 @@ namespace Gek
                     uint32_t nextResourceStage(pass.lighting ? 5 : 0);
                     if (pass.mode == Pass::Mode::Forward)
                     {
-                        if (!passNode.has_member("material"))
-                        {
-                            throw MissingParameter("Forward pass requires material name");
-                        }
-
                         std::string passMaterial(passNode.get("material").as_string());
-                        auto &namedMaterialNode = materialNode.get(passMaterial);
-                        if (!namedMaterialNode.is_array())
-                        {
-                            throw MissingParameter("Material list must be an array");
-                        }
-
                         forwardPassMap[passMaterial] = &pass;
 
+                        auto &namedMaterialNode = materialNode.get(passMaterial);
                         std::unordered_map<std::string, ResourceHandle> materialMap;
-                        for (auto &resourceNode : namedMaterialNode.elements())
+                        for (auto &resourceNode : namedMaterialNode.getArray())
                         {
                             if (!resourceNode.has_member("name"))
                             {

@@ -28,37 +28,16 @@ namespace Gek
             {
                 assert(resources);
 
-                const JSON::Object materialNode = JSON::Load(getContext()->getRootFileName("data", "materials", materialName).withExtension(".json"));
-
-                if (!materialNode.has_member("shader"))
-                {
-                    throw InvalidParameter("Missing shader node encountered");
-                }
-
+                JSON::Instance materialNode = JSON::Load(getContext()->getRootFileName("data", "materials", materialName).withExtension(".json"));
                 auto &shaderNode = materialNode.get("shader");
-                if (!shaderNode.is_object())
-                {
-                    throw InvalidParameter("Shader node must be an object");
-                }
-
-                if (!shaderNode.has_member("name"))
-                {
-                    throw MissingParameter("Missing shader name encountered");
-                }
-
-                if (!shaderNode.has_member("passes"))
-                {
-                    throw MissingParameter("Missing pass list encountered");
-                }
-
-                Engine::Shader *shader = resources->getShader(shaderNode.get("name").as_cstring(), materialHandle);
+                Engine::Shader *shader = resources->getShader(shaderNode.get("name").convert(String::Empty), materialHandle);
                 if (!shader)
                 {
                     throw MissingParameter("Missing shader encountered");
                 }
 
                 auto &passesNode = shaderNode.get("passes");
-                for (auto &passNode : passesNode.members())
+                for (auto &passNode : passesNode.getMembers())
                 {
                     std::string passName(passNode.name());
                     auto &passValue = passNode.value();

@@ -45,12 +45,12 @@ namespace Gek
         // Plugin::Component
         void save(Components::Model const * const data, JSON::Object &componentData) const
         {
-            componentData = JSON::To(data->name);
+            componentData = data->name;
         }
 
-        void load(Components::Model * const data, const JSON::Object &componentData)
+        void load(Components::Model * const data, JSON::Reference componentData)
         {
-            data->name = GetValue(componentData, String::Empty);
+            data->name = parse(componentData, String::Empty);
         }
 
         // Edit::Component

@@ -90,11 +90,9 @@ namespace Gek
 
             void reload(void)
             {
-                auto evaluate = [&](const JSON::Object &data, float defaultValue) -> float
+                auto evaluate = [&](JSON::Reference data, float defaultValue) -> float
                 {
-                    std::string value(data.to_string());
-                    String::Trim(value, [](char ch) { return (ch != '\"'); });
-                    return population->getShuntingYard().evaluate(value, defaultValue);
+                    return data.parse(population->getShuntingYard(), defaultValue);
                 };
 
                 std::cout << "Loading filter: " << filterName << std::endl;
@@ -112,10 +110,9 @@ namespace Gek
                 depthState = resources->createDepthState(Video::DepthStateInformation());
                 renderState = resources->createRenderState(Video::RenderStateInformation());
 
-                const JSON::Object filterNode = JSON::Load(getContext()->getRootFileName("data", "filters", filterName).withExtension(".json"));
-
-                auto &texturesNode = JSON::Get(filterNode, "textures");
-                for (auto &textureNode : JSON::GetMembers(texturesNode))
+                JSON::Instance filterNode = JSON::Load(getContext()->getRootFileName("data", "filters", filterName).withExtension(".json"));
+                auto texturesNode = filterNode.get("textures");
+                for (auto &textureNode : texturesNode.getMembers())
                 {
                     std::string textureName(textureNode.name());
                     auto &textureValue = textureNode.value();
@@ -211,8 +208,8 @@ namespace Gek
                     }
                 }
 
-                auto &buffersNode = JSON::Get(filterNode, "buffers");
-                for (auto &bufferNode : JSON::GetMembers(buffersNode))
+                auto buffersNode = filterNode.get("buffers");
+                for (auto &bufferNode : buffersNode.getMembers())
                 {
                     std::string bufferName(bufferNode.name());
                     auto &bufferValue = bufferNode.value();
@@ -273,10 +270,11 @@ namespace Gek
                     }
                 }
 
-                auto &passesNode = JSON::Get(filterNode, "passes");
-                passList.resize(passesNode.size());
+                auto &passesNode = filterNode.get("passes");
+                passList.resize(passesNode.getArray().size());
                 auto passData = std::begin(passList);
-                for (auto &passNode : JSON::GetElements(passesNode))
+
+                for (auto &passNode : passesNode.getArray())
                 {
                     PassData &pass = *passData++;
                     if (!passNode.has_member("program"))

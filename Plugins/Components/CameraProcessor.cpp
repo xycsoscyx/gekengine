@@ -37,18 +37,18 @@ namespace Gek
         // Plugin::Component
         void save(Components::FirstPersonCamera const * const data, JSON::Object &componentData) const
         {
-            componentData.set("fieldOfView", Math::RadiansToDegrees(data->fieldOfView));
-            componentData.set("nearClip", data->nearClip);
-            componentData.set("farClip", data->farClip);
-            componentData.set("target", data->target);
+            componentData["fieldOfView"] = Math::RadiansToDegrees(data->fieldOfView);
+            componentData["nearClip"] = data->nearClip;
+            componentData["farClip"] = data->farClip;
+            componentData["target"] = data->target;
         }
 
-        void load(Components::FirstPersonCamera * const data, const JSON::Object &componentData)
+        void load(Components::FirstPersonCamera * const data, JSON::Reference componentData)
         {
-            data->fieldOfView = Math::DegreesToRadians(GetValue(JSON::Get(componentData, "fieldOfView"), 90.0f));
-            data->nearClip = GetValue(JSON::Get(componentData, "nearClip"), 1.0f);
-            data->farClip = GetValue(JSON::Get(componentData, "farClip"), 100.0f);
-            data->target = GetValue(JSON::Get(componentData, "target"), std::string());
+            data->fieldOfView = Math::DegreesToRadians(parse(componentData.get("fieldOfView"), 90.0f));
+            data->nearClip = parse(componentData.get("nearClip"), 1.0f);
+            data->farClip = parse(componentData.get("farClip"), 100.0f);
+            data->target = parse(componentData.get("target"), String::Empty);
         }
 
         // Edit::Component
@@ -164,7 +164,7 @@ namespace Gek
         {
             assert(renderer);
 
-            bool editorActive = core->getOption("editor", "active").as_bool();
+            bool editorActive = core->getOption("editor", "active").convert(false);
             if (frameTime > 0.0f && !editorActive)
             {
                 parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void

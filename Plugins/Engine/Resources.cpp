@@ -741,90 +741,78 @@ namespace Gek
                 return ResourceHandle();
             }
 
-            ResourceHandle createPattern(std::string const &pattern, const JSON::Object &parameters)
+            ResourceHandle createPattern(std::string const &pattern, JSON::Reference parameters)
             {
+                auto lowerPattern = String::GetLower(pattern);
+
                 std::vector<uint8_t> data;
                 Video::Texture::Description description;
-                if (pattern == "color")
+                if (lowerPattern == "color")
                 {
-                    try
+                    switch (parameters.getArray().size())
                     {
-                        if (parameters.is_array())
+                    case 1:
+                        data.push_back(parameters.at(0).convert(255));
+                        description.format = Video::Format::R8_UNORM;
+                        break;
+
+                    case 2:
+                        data.push_back(parameters.at(0).convert(255));
+                        data.push_back(parameters.at(1).convert(255));
+                        description.format = Video::Format::R8G8_UNORM;
+                        break;
+
+                    case 3:
+                        data.push_back(parameters.at(0).convert(255));
+                        data.push_back(parameters.at(1).convert(255));
+                        data.push_back(parameters.at(2).convert(255));
+                        data.push_back(0);
+                        description.format = Video::Format::R8G8B8A8_UNORM;
+                        break;
+
+                    case 4:
+                        data.push_back(parameters.at(0).convert(255));
+                        data.push_back(parameters.at(1).convert(255));
+                        data.push_back(parameters.at(2).convert(255));
+                        data.push_back(parameters.at(3).convert(255));
+                        description.format = Video::Format::R8G8B8A8_UNORM;
+                        break;
+
+                    default:
+                        if (true)
                         {
-                            switch (parameters.size())
+                            if (parameters.isFloat())
                             {
-                            case 1:
-                                data.push_back(parameters.at(0).as_uint());
-                                description.format = Video::Format::R8_UNORM;
-                                break;
+                                union
+                                {
+                                    float value;
+                                    uint8_t quarters[4];
+                                };
 
-                            case 2:
-                                data.push_back(parameters.at(0).as_uint());
-                                data.push_back(parameters.at(1).as_uint());
-                                description.format = Video::Format::R8G8_UNORM;
-                                break;
-
-                            case 3:
-                                data.push_back(parameters.at(0).as_uint());
-                                data.push_back(parameters.at(1).as_uint());
-                                data.push_back(parameters.at(2).as_uint());
-                                data.push_back(0);
-                                description.format = Video::Format::R8G8B8A8_UNORM;
-                                break;
-
-                            case 4:
-                                data.push_back(parameters.at(0).as_uint());
-                                data.push_back(parameters.at(1).as_uint());
-                                data.push_back(parameters.at(2).as_uint());
-                                data.push_back(parameters.at(3).as_uint());
-                                description.format = Video::Format::R8G8B8A8_UNORM;
-                                break;
-                            };
-                        }
-                        else if (parameters.is<float>() || parameters.is_integer() || parameters.is_uinteger())
-                        {
-                            union
-                            {
-                                float value;
-                                uint8_t quarters[4];
-                            };
-
-                            value = parameters.as<float>();
-                            if (value <= 1.0f)
-                            {
-                                data.push_back(uint8_t(value * 255.0f));
-                                description.format = Video::Format::R8_UNORM;
-                            }
-                            else
-                            {
+                                value = parameters.convert(1.0f);
                                 data.push_back(quarters[0]);
                                 data.push_back(quarters[1]);
                                 data.push_back(quarters[2]);
                                 data.push_back(quarters[3]);
                                 description.format = Video::Format::R32_FLOAT;
                             }
+                            else
+                            {
+                                data.push_back(parameters.convert(255));
+                                description.format = Video::Format::R8_UNORM;
+                            }
                         }
-                    }
-                    catch (...)
-                    {
-                        throw InvalidParameter("Unable to determine color texture type");
                     };
                 }
-                else if (pattern == "normal")
+                else if (lowerPattern == "normal")
                 {
-                    Math::Float3 normal(Math::Float3::Zero);
-                    if (parameters.is_array() && parameters.size() == 3)
-                    {
-                        normal.x = parameters.at(0).as<float>();
-                        normal.y = parameters.at(1).as<float>();
-                        normal.z = parameters.at(2).as<float>();
-                    }
-
                     union
                     {
                         uint16_t halves[2];
                         uint8_t quarters[4];
                     };
+
+                    Math::Float3 normal = parameters.convert(Math::Float3::Zero);
 
                     Float16Compressor compressor;
                     halves[0] = compressor.compress(normal.x);
@@ -834,47 +822,29 @@ namespace Gek
                     data.push_back(quarters[2]);
                     data.push_back(quarters[3]);
 
-                    //data.push_back(uint8_t(((normal.x + 1.0f) * 0.5f) * 255.0f));
-                    //data.push_back(uint8_t(((normal.y + 1.0f) * 0.5f) * 255.0f));
-                    //data.push_back(uint8_t(((normal.z + 1.0f) * 0.5f) * 255.0f));
-                    //data.push_back(255);
-
                     description.format = Video::Format::R16G16_FLOAT;
                 }
-                else if (pattern == "system")
+                else if (lowerPattern == "system")
                 {
-                    if (parameters.is_string())
+                    std::string type(String::GetLower(parameters.convert(String::Empty)));
+                    if (type == "debug")
                     {
-                        std::string type(parameters.as_cstring());
-                        if (type == "debug")
-                        {
-                            data.push_back(255);
-                            data.push_back(0);
-                            data.push_back(255);
-                            data.push_back(255);
-                            description.format = Video::Format::R8G8B8A8_UNORM;
-                        }
-                        else if (type == "flat")
-                        {
-                            data.push_back(127);
-                            data.push_back(127);
-                            data.push_back(255);
-                            data.push_back(255);
-                            description.format = Video::Format::R8G8B8A8_UNORM;
-                        }
-                        else
-                        {
-                            throw InvalidParameter("Unknown system pattern encountered");
-                        }
+                        data.push_back(255);    data.push_back(0);      data.push_back(255);    data.push_back(255);
+                        data.push_back(255);    data.push_back(255);    data.push_back(255);    data.push_back(255);
+                        data.push_back(255);    data.push_back(255);    data.push_back(255);    data.push_back(255);
+                        data.push_back(255);    data.push_back(0);      data.push_back(255);    data.push_back(255);
+                        description.format = Video::Format::R8G8B8A8_UNORM;
+                        description.width = 2;
+                        description.height = 2;
                     }
-                    else
+                    else if (type == "flat")
                     {
-                        throw InvalidParameter("Unknown pattern attribute encountered");
+                        data.push_back(127);
+                        data.push_back(127);
+                        data.push_back(255);
+                        data.push_back(255);
+                        description.format = Video::Format::R8G8B8A8_UNORM;
                     }
-                }
-                else
-                {
-                    throw InvalidParameter("Unknown texture pattern encountered");
                 }
 
                 if (description.format == Video::Format::Unknown)
@@ -882,8 +852,8 @@ namespace Gek
                     throw InvalidParameter("Invalid color format encountered");
                 }
 
-                std::string name(String::Format("%v:%v", pattern, parameters.to_string()));
                 description.flags = Video::Texture::Description::Flags::Resource;
+                std::string name(String::Format("%v:%v", pattern, parameters.convert(String::Empty)));
                 auto load = [this, name, description, data = move(data)](ResourceHandle) mutable -> Video::TexturePtr
                 {
                     auto texture = videoDevice->createTexture(description, data.data());

@@ -69,9 +69,10 @@ namespace Gek
             virtual void load(std::string const &populationName) = 0;
             virtual void save(std::string const &populationName) = 0;
 
-            virtual Plugin::Entity *createEntity(std::string const &entityName, const std::vector<JSON::Member> &componentList = std::vector<JSON::Member>()) = 0;
+            using Component = std::pair<std::string, JSON::Object>;
+            virtual Plugin::Entity *createEntity(std::string const &entityName, const std::vector<Component> &componentList = std::vector<Component>()) = 0;
             virtual void killEntity(Plugin::Entity * const entity) = 0;
-            virtual void addComponent(Plugin::Entity * const entity, const JSON::Member &componentData) = 0;
+            virtual void addComponent(Plugin::Entity * const entity, Component const &componentData) = 0;
             virtual void removeComponent(Plugin::Entity * const entity, const std::type_index &type) = 0;
 
             virtual void listEntities(std::function<void(Plugin::Entity * const entity, std::string const &entityName)> onEntity) const = 0;

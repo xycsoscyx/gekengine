@@ -65,7 +65,7 @@ namespace Gek
 
             virtual bool update(void) = 0;
 
-            virtual JSON::Object getOption(std::string const &system, std::string const &name) = 0;
+            virtual JSON::Reference getOption(std::string const &system, std::string const &name) = 0;
             virtual void setOption(std::string const &system, std::string const &name, JSON::Object const &value) = 0;
             virtual void deleteOption(std::string const &system, std::string const &name) = 0;
 

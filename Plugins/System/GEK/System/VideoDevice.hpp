@@ -219,7 +219,7 @@ namespace Gek
             bool multisampleEnable = false;
             bool antialiasedLineEnable = false;
 
-            void load(const JSON::Object &object);
+            void load(JSON::Reference object);
             size_t getHash(void) const;
         };
 
@@ -250,7 +250,7 @@ namespace Gek
                 Operation passOperation = Operation::Keep;
                 ComparisonFunction comparisonFunction = ComparisonFunction::Always;
 
-                void load(const JSON::Object &object);
+                void load(JSON::Reference object);
                 size_t getHash(void) const;
             };
 
@@ -263,7 +263,7 @@ namespace Gek
             StencilStateInformation stencilFrontState;
             StencilStateInformation stencilBackState;
 
-            void load(const JSON::Object &object);
+            void load(JSON::Reference object);
             size_t getHash(void) const;
         };
 
@@ -324,7 +324,7 @@ namespace Gek
             Operation alphaOperation = Operation::Add;
             uint8_t writeMask = Mask::RGBA;
 
-            void load(const JSON::Object &object);
+            void load(JSON::Reference object);
             size_t getHash(void) const;
         };
 
@@ -333,7 +333,7 @@ namespace Gek
         {
             bool alphaToCoverage = false;
 
-            void load(const JSON::Object &object);
+            void load(JSON::Reference object);
             size_t getHash(void) const;
         };
 
@@ -342,7 +342,7 @@ namespace Gek
             bool alphaToCoverage = false;
             std::array<BlendStateInformation, 8> targetStates;
 
-            void load(const JSON::Object &object);
+            void load(JSON::Reference object);
             size_t getHash(void) const;
         };
 
@@ -408,7 +408,7 @@ namespace Gek
             float minimumMipLevel = 0.0f;
             float maximumMipLevel = Math::Infinity;
 
-            void load(const JSON::Object &object);
+            void load(JSON::Reference object);
             size_t getHash(void) const;
         };
 

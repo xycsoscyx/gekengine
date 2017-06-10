@@ -439,7 +439,7 @@ namespace Gek
                 assert(population);
                 assert(newtonWorld);
 
-                bool editorActive = core->getOption("editor", "active").as_bool();
+                bool editorActive = core->getOption("editor", "active").convert(false);
                 if (frameTime > 0.0f && !editorActive)
                 {
                     static const float StepTime = (1.0f / 120.0f);
@@ -473,28 +473,21 @@ namespace Gek
                 else
                 {
                     surfaceIndexMap[hash] = 0;
-                    try
+                    JSON::Instance materialNode = JSON::Load(getContext()->getRootFileName("data", "materials", surfaceName).withExtension(".json"));
+                    if (materialNode.getObject().has_member("surface"))
                     {
-                        const JSON::Object materialNode = JSON::Load(getContext()->getRootFileName("data", "materials", surfaceName).withExtension(".json"));
+                        Surface surface;
+                        auto surfaceNode = materialNode.get("surface");
+                        surface.ghost = surfaceNode.get("ghost").convert(surface.ghost);
+                        surface.staticFriction = surfaceNode.get("static_friction").convert(surface.staticFriction);
+                        surface.kineticFriction = surfaceNode.get("kinetic_friction").convert(surface.kineticFriction);
+                        surface.elasticity = surfaceNode.get("elasticity").convert(surface.elasticity);
+                        surface.softness = surfaceNode.get("softness").convert(surface.softness);
 
-                        auto &surfaceNode = materialNode.get("surface");
-                        if (surfaceNode.is_object())
-                        {
-                            Surface surface;
-                            surface.ghost = surfaceNode.get("ghost", surface.ghost).as_bool();
-                            surface.staticFriction = surfaceNode.get("static_friction", surface.staticFriction).as<float>();
-                            surface.kineticFriction = surfaceNode.get("kinetic_friction", surface.kineticFriction).as<float>();
-                            surface.elasticity = surfaceNode.get("elasticity", surface.elasticity).as<float>();
-                            surface.softness = surfaceNode.get("softness", surface.softness).as<float>();
-
-                            surfaceIndex = surfaceList.size();
-                            surfaceList.push_back(surface);
-                            surfaceIndexMap[hash] = surfaceIndex;
-                        }
+                        surfaceIndex = surfaceList.size();
+                        surfaceList.push_back(surface);
+                        surfaceIndexMap[hash] = surfaceIndex;
                     }
-                    catch (const std::exception &)
-                    {
-                    };
                 }
 
                 return surfaceIndex;
