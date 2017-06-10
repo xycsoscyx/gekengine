@@ -128,7 +128,8 @@ namespace Gek
 
         struct Instance
         {
-            Math::Float4x4 transform;
+            Math::Float4 color = Math::Float4::White;
+            Math::Float4x4 transform = Math::Float4x4::Identity;
         };
 
         struct DrawData
@@ -405,7 +406,7 @@ namespace Gek
                     auto &model = *entitySearch->second.model;
                     ++entitySearch;
 
-					visibleModels.insert(&model);
+					visibleModels.insert((Model *)&model);
 					visibleEntities++;
 
                     auto modelViewMatrix(transformComponent.getMatrix() * viewMatrix);

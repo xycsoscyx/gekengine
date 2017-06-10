@@ -11,7 +11,16 @@ namespace Gek
 
         std::string Parse(ShuntingYard &shuntingYard, Object const &object, std::string const &defaultValue)
         {
-            return object.as_string();
+            switch (object.type_id())
+            {
+            case jsoncons::value_type::null_t:
+            case jsoncons::value_type::array_t:
+            case jsoncons::value_type::object_t:
+                return String::Empty;
+
+            default:
+                return object.as_string();
+            };
         }
 
         bool Parse(ShuntingYard &shuntingYard, Object const &object, bool defaultValue)
@@ -232,7 +241,16 @@ namespace Gek
 
         std::string Convert(Object const &object, std::string const &defaultValue)
         {
-            return object.as_string();
+            switch (object.type_id())
+            {
+            case jsoncons::value_type::null_t:
+            case jsoncons::value_type::array_t:
+            case jsoncons::value_type::object_t:
+                return String::Empty;
+
+            default:
+                return object.as_string();
+            };
         }
 
         bool Convert(Object const &object, bool defaultValue)
