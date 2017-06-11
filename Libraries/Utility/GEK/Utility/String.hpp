@@ -20,21 +20,22 @@ namespace Gek
     namespace String
     {
         extern const std::string Empty;
+        extern const std::locale Locale;
 
         template <typename CONTAINER>
-        void TrimLeft(CONTAINER &string, std::function<bool(typename CONTAINER::value_type)> checkElement = [](typename CONTAINER::value_type ch) { return !std::isspace(ch, std::locale::classic()); })
+        void TrimLeft(CONTAINER &string, std::function<bool(typename CONTAINER::value_type)> checkElement = [](typename CONTAINER::value_type ch) { return !std::isspace(ch, Locale); })
         {
             string.erase(std::begin(string), std::find_if(std::begin(string), std::end(string), checkElement));
         }
 
         template <typename CONTAINER>
-        void TrimRight(CONTAINER &string, std::function<bool(typename CONTAINER::value_type)> checkElement = [](typename CONTAINER::value_type ch) { return !std::isspace(ch, std::locale::classic()); })
+        void TrimRight(CONTAINER &string, std::function<bool(typename CONTAINER::value_type)> checkElement = [](typename CONTAINER::value_type ch) { return !std::isspace(ch, Locale); })
         {
             string.erase(std::find_if(std::rbegin(string), std::rend(string), checkElement).base(), std::end(string));
         }
 
         template <typename CONTAINER>
-        void Trim(CONTAINER &string, std::function<bool(typename CONTAINER::value_type)> checkElement = [](typename CONTAINER::value_type ch) { return !std::isspace(ch, std::locale::classic()); })
+        void Trim(CONTAINER &string, std::function<bool(typename CONTAINER::value_type)> checkElement = [](typename CONTAINER::value_type ch) { return !std::isspace(ch, Locale); })
         {
             TrimLeft(string, checkElement);
             TrimRight(string, checkElement);

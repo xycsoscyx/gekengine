@@ -112,22 +112,12 @@ namespace Gek
         float evaluate(std::string const &expression, float defaultValue);
 
     private:
-        bool isNumber(std::string const &token);
-        bool isOperation(std::string const &token);
-        bool isFunction(std::string const &token);
-        bool isLeftParenthesis(std::string const &token);
-        bool isRightParenthesis(std::string const &token);
-        bool isParenthesis(std::string const &token);
-        bool isSeparator(std::string const &token);
         bool isAssociative(std::string const &token, const Associations &type);
         int comparePrecedence(std::string const &token1, std::string const &token2);
-        TokenType getTokenType(std::string const &token);
-        bool isValidReturnType(const Token &token);
 
     private:
         Operand getOperand(Token const &token);
 		bool insertToken(TokenList &infixTokenList, Token &token);
-        bool parseSubTokens(TokenList &infixTokenList, std::string const &token, size_t position);
         TokenList convertExpressionToInfix(std::string const &expression);
         OperandList convertInfixToReversePolishNotation(const TokenList &infixTokenList);
         float evaluateReversePolishNotation(const OperandList &rpnOperandList, float defaultValue);

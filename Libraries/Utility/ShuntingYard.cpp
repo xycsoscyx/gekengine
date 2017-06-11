@@ -224,41 +224,6 @@ namespace Gek
         return evaluateReversePolishNotation(rpnOperandList, defaultValue);
     }
 
-    bool ShuntingYard::isNumber(std::string const &token)
-    {
-        return std::regex_search(token, SearchNumber);
-    }
-
-    bool ShuntingYard::isOperation(std::string const &token)
-    {
-        return (operationsMap.count(token) > 0);
-    }
-
-    bool ShuntingYard::isFunction(std::string const &token)
-    {
-        return (functionsMap.count(token) > 0);
-    }
-
-    bool ShuntingYard::isLeftParenthesis(std::string const &token)
-    {
-        return (token.size() == 1 && token.at(0) == '(');
-    }
-
-    bool ShuntingYard::isRightParenthesis(std::string const &token)
-    {
-        return (token.size() == 1 && token.at(0) == ')');
-    }
-
-    bool ShuntingYard::isParenthesis(std::string const &token)
-    {
-        return (isLeftParenthesis(token) || isRightParenthesis(token));
-    }
-
-    bool ShuntingYard::isSeparator(std::string const &token)
-    {
-        return (token.size() == 1 && token.at(0) == ',');
-    }
-
     bool ShuntingYard::isAssociative(std::string const &token, const Associations &type)
     {
         auto &p = operationsMap.find(token)->second;
@@ -270,50 +235,6 @@ namespace Gek
         auto &p1 = operationsMap.find(token1)->second;
         auto &p2 = operationsMap.find(token2)->second;
         return p1.precedence - p2.precedence;
-    }
-
-    ShuntingYard::TokenType ShuntingYard::getTokenType(std::string const &token)
-    {
-        if (isSeparator(token))
-        {
-            return TokenType::Separator;
-        }
-        else if (isLeftParenthesis(token))
-        {
-            return TokenType::LeftParenthesis;
-        }
-        else if (isRightParenthesis(token))
-        {
-            return TokenType::RightParenthesis;
-        }
-        else if (isOperation(token))
-        {
-            return TokenType::BinaryOperation;
-        }
-        else if (isFunction(token))
-        {
-            return TokenType::Function;
-        }
-        else if (isNumber(token))
-        {
-            return TokenType::Number;
-        }
-
-        return TokenType::Unknown;
-    }
-
-    bool ShuntingYard::isValidReturnType(const Token &token)
-    {
-        switch (token.type)
-        {
-        case TokenType::Number:
-        case TokenType::Function:
-        case TokenType::UnaryOperation:
-            return true;
-
-        default:
-            return false;
-        };
     }
 
     ShuntingYard::Operand ShuntingYard::getOperand(Token const &token)
@@ -334,11 +255,6 @@ namespace Gek
                 }
 
                 auto &operation = operationSearch->second;
-                if (!operation.unaryFunction)
-                {
-                    return Operand();
-                }
-
                 return Operand(token, &operation);
             }
 
@@ -389,31 +305,34 @@ namespace Gek
 
         if (token.type == TokenType::BinaryOperation)
         {
-            if (token.string.size() == 1 && (token.string.at(0) == '-' || token.string.at(0) == '+'))
+            if (token.string.size() == 1)
             {
-                // -3 or -sin
-                if (infixTokenList.empty())
+                if (token.string.at(0) == '-' || token.string.at(0) == '+')
                 {
-                    token.type = TokenType::UnaryOperation;
-                }
-                else
-                {
-                    const Token &previous = infixTokenList.back();
+                    // -3 or -sin
+                    if (infixTokenList.empty())
+                    {
+                        token.type = TokenType::UnaryOperation;
+                    }
+                    else
+                    {
+                        const Token &previous = infixTokenList.back();
 
-                    // 2+-3 or sin(1)*-1
-                    if (previous.type == TokenType::BinaryOperation || previous.type == TokenType::UnaryOperation)
-                    {
-                        token.type = TokenType::UnaryOperation;
-                    }
-                    // (-3)
-                    else if (previous.type == TokenType::LeftParenthesis)
-                    {
-                        token.type = TokenType::UnaryOperation;
-                    }
-                    // ,-3
-                    else if (previous.type == TokenType::Separator)
-                    {
-                        token.type = TokenType::UnaryOperation;
+                        // 2+-3 or sin(1)*-1
+                        if (previous.type == TokenType::BinaryOperation || previous.type == TokenType::UnaryOperation)
+                        {
+                            token.type = TokenType::UnaryOperation;
+                        }
+                        // (-3)
+                        else if (previous.type == TokenType::LeftParenthesis)
+                        {
+                            token.type = TokenType::UnaryOperation;
+                        }
+                        // ,-3
+                        else if (previous.type == TokenType::Separator)
+                        {
+                            token.type = TokenType::UnaryOperation;
+                        }
                     }
                 }
             }
@@ -423,77 +342,153 @@ namespace Gek
 		return true;
     }
 
-    bool ShuntingYard::parseSubTokens(TokenList &infixTokenList, std::string const &token, size_t position)
-    {
-        for (std::sregex_iterator tokenSearch(std::begin(token), std::end(token), SearchWord), end; tokenSearch != end; ++tokenSearch)
-        {
-            auto match = *tokenSearch;
-            if (match[1].matched) // variable
-            {
-                std::string value(match.str(1));
-                auto variableSearch = variableMap.find(value);
-                if (variableSearch != std::end(variableMap))
-                {
-                    insertToken(infixTokenList, Token(variableSearch->second));
-                    continue;
-                }
-
-                auto functionSearch = functionsMap.find(value);
-                if (functionSearch != std::end(functionsMap))
-                {
-                    insertToken(infixTokenList, Token(TokenType::Function, functionSearch->first));
-                    continue;
-                }
-
-				return false;
-            }
-            else if(match[2].matched) // number
-            {
-                float value(String::Convert(match.str(2), 0.0f));
-                insertToken(infixTokenList, Token(value));
-            }
-        }
-
-		return true;
-    }
-
+    static const auto locale = std::locale::classic();
     ShuntingYard::TokenList ShuntingYard::convertExpressionToInfix(std::string const &expression)
     {
         std::string runningToken;
         TokenList infixTokenList;
-        for (size_t position = 0; position < expression.size(); ++position)
+        auto insertWord = [&](void)
         {
-            std::string nextToken(1U, expression.at(position));
-            if (isOperation(nextToken) || isParenthesis(nextToken) || isSeparator(nextToken))
+            auto variableSearch = variableMap.find(runningToken);
+            if (variableSearch != std::end(variableMap))
+            {
+                insertToken(infixTokenList, Token(variableSearch->second));
+            }
+
+            auto functionSearch = functionsMap.find(runningToken);
+            if (functionSearch != std::end(functionsMap))
+            {
+                insertToken(infixTokenList, Token(TokenType::Function, functionSearch->first));
+            }
+        };
+
+        auto insertNumber = [&](void)
+        {
+            insertToken(infixTokenList, Token(String::Convert(runningToken, 0.0f)));
+        };
+
+        auto insertOperation = [&](void)
+        {
+            auto operationSearch = operationsMap.find(runningToken);
+            if (operationSearch != std::end(operationsMap))
+            {
+                insertToken(infixTokenList, Token(TokenType::BinaryOperation, operationSearch->first));
+            }
+        };
+
+        enum class RunningType : uint8_t
+        {
+            None = 0,
+            Word,
+            Number,
+            Operation,
+        };
+
+        auto getStartingType = [&](char nextCharacter) -> RunningType
+        {
+            if (std::isalpha(nextCharacter, locale))
+            {
+                return RunningType::Word;
+            }
+            else if (nextCharacter == '-' ||
+                nextCharacter == '+' ||
+                nextCharacter == '.' ||
+                std::isdigit(nextCharacter, locale))
+            {
+                return RunningType::Number;
+            }
+
+            return RunningType::Operation;
+        };
+
+        auto getNextType = [&](char nextCharacter) -> RunningType
+        {
+            if (std::isalpha(nextCharacter, locale))
+            {
+                return RunningType::Word;
+            }
+            else if (nextCharacter == '-' ||
+                nextCharacter == '+' ||
+                nextCharacter == '.' ||
+                nextCharacter == 'e' ||
+                nextCharacter == 'E' ||
+                std::isdigit(nextCharacter, locale))
+            {
+                return RunningType::Number;
+            }
+
+            return RunningType::Operation;
+        };
+
+        RunningType runningType = RunningType::None;
+        auto insertRunningType = [&](void)
+        {
+            switch (runningType)
+            {
+            case RunningType::Word:
+                insertWord();
+                break;
+
+            case RunningType::Number:
+                insertNumber();
+                break;
+
+            case RunningType::Operation:
+                insertOperation();
+                break;
+            };
+
+            runningToken.clear();
+        };
+
+        for (auto nextCharacter : expression)
+        {
+            if (nextCharacter == '(' ||
+                nextCharacter == ')' ||
+                nextCharacter == ',' ||
+                nextCharacter == ' ')
             {
                 if (!runningToken.empty())
                 {
-                    parseSubTokens(infixTokenList, runningToken, position);
-                    runningToken.clear();
+                    insertRunningType();
                 }
 
-                insertToken(infixTokenList, Token(getTokenType(nextToken), nextToken));
+                switch (nextCharacter)
+                {
+                case '(':
+                    insertToken(infixTokenList, Token(TokenType::LeftParenthesis));
+                    break;
+
+                case ')':
+                    insertToken(infixTokenList, Token(TokenType::RightParenthesis));
+                    break;
+
+                case ',':
+                    insertToken(infixTokenList, Token(TokenType::Separator));
+                    break;
+                };
+            }
+            else if (runningToken.empty())
+            {
+                runningType = getStartingType(nextCharacter);
+                runningToken += nextCharacter;
             }
             else
             {
-                if (nextToken.size() == 1 && nextToken.at(0) == ' ')
+                auto nextRunningType = getNextType(nextCharacter);
+                if (nextRunningType != runningType)
                 {
-                    if (!runningToken.empty())
-                    {
-                        parseSubTokens(infixTokenList, runningToken, position);
-                        runningToken.clear();
-                    }
+                    insertRunningType();
+                    runningType = nextRunningType;
                 }
-                else
-                {
-                    runningToken.append(nextToken);
-                }
+
+                runningToken += nextCharacter;
             }
         }
 
         if (!runningToken.empty())
         {
-            parseSubTokens(infixTokenList, runningToken, (expression.size() - runningToken.size()));
+            insertRunningType();
         }
 
         return infixTokenList;

@@ -221,10 +221,13 @@ namespace Gek
             {
                 if (object.size() == 3)
                 {
-                    return Math::Quaternion::FromEuler(
-                        Parse(shuntingYard, object.at(0), defaultValue.x),
-                        Parse(shuntingYard, object.at(1), defaultValue.y),
-                        Parse(shuntingYard, object.at(2), defaultValue.z));
+                    float pitch = Parse(shuntingYard, object.at(0), Math::Infinity);
+                    float yaw = Parse(shuntingYard, object.at(1), Math::Infinity);
+                    float roll = Parse(shuntingYard, object.at(2), Math::Infinity);
+                    if (pitch != Math::Infinity && yaw != Math::Infinity && roll != Math::Infinity)
+                    {
+                        return Math::Quaternion::FromEuler(pitch, yaw, roll);
+                    }
                 }
                 else if (object.size() == 4)
                 {
@@ -387,7 +390,8 @@ namespace Gek
                     return Math::Float4(
                         Convert(object.at(0), defaultValue.x),
                         Convert(object.at(1), defaultValue.y),
-                        Convert(object.at(2), defaultValue.z), 1.0f);
+                        Convert(object.at(2), defaultValue.z),
+                        defaultValue.z);
                 }
                 else if (object.size() == 4)
                 {
@@ -408,10 +412,13 @@ namespace Gek
             {
                 if (object.size() == 3)
                 {
-                    return Math::Quaternion::FromEuler(
-                        Convert(object.at(0), defaultValue.x),
-                        Convert(object.at(1), defaultValue.y),
-                        Convert(object.at(2), defaultValue.z));
+                    float pitch = Convert(object.at(0), Math::Infinity);
+                    float yaw = Convert(object.at(1), Math::Infinity);
+                    float roll = Convert(object.at(2), Math::Infinity);
+                    if (pitch != Math::Infinity && yaw != Math::Infinity && roll != Math::Infinity)
+                    {
+                        return Math::Quaternion::FromEuler(pitch, yaw, roll);
+                    }
                 }
                 else if (object.size() == 4)
                 {

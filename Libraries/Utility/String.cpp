@@ -14,6 +14,7 @@ namespace Gek
     namespace String
     {
         const std::string Empty;
+        const std::locale Locale = std::locale::classic();
 
         std::string Join(std::vector<std::string> const &list, char delimiter, bool initialDelimiter)
         {
