@@ -2,16 +2,10 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility//Hash.hpp"
 #include "GEK/Math/Common.hpp"
-#include <regex>
 
 // https://blog.kallisti.net.rz.xyz/2008/02/extension-to-the-shunting-yard-algorithm-to-allow-variable-numbers-of-arguments-to-functions/
-
 namespace Gek
 {
-    #define SEARCH_NUMBER "([+-]?(?:(?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))(?:e\\d+)?)"
-    static const std::regex SearchNumber(SEARCH_NUMBER, std::regex::ECMAScript | std::regex::icase | std::regex::optimize);
-    static const std::regex SearchWord("([a-z]+)|" SEARCH_NUMBER, std::regex::ECMAScript | std::regex::icase | std::regex::optimize);
-    static const ShuntingYard::TokenList EmptyTokenList;
     static const ShuntingYard::OperandList EmptyOperandList;
 
 	template <typename TYPE>
