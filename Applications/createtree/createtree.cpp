@@ -94,7 +94,7 @@ void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
                     }
                     else
                     {
-						WriteOutput(std::cerr, "! (Mesh " << meshIndex << ") Invalid Face Found: " << faceIndex << " (" << face.mNumIndices << " vertices)");
+						WriteOutput(std::cerr, "! (Mesh %v) Invalid Face Found: %v (%v vertices)", meshIndex, faceIndex, face.mNumIndices);
                     }
                 }
 
@@ -184,7 +184,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		aiLogStream logStream;
 		logStream.callback = [](char const *message, char *user) -> void
 		{
-			WriteOutput(std::cerr, "Assimp: " << message;
+			WriteOutput(std::cerr, "Assimp: %v", message);
 		};
 
 		logStream.user = nullptr;
@@ -324,7 +324,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             auto materialAlebedoSearch = albedoToMaterialMap.find(albedoName);
             if (materialAlebedoSearch == std::end(albedoToMaterialMap))
             {
-                WriteOutput(std::cerr, "! Unable to find material for albedo: " << albedoName);
+                WriteOutput(std::cerr, "! Unable to find material for albedo: %v", albedoName);
             }
             else
             {
@@ -352,9 +352,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 			throw std::exception("No valid material models found");
 		}
 
-		WriteOutput(std::cout, "> Num. Parts: " << materialPartMap.size());
-		WriteOutput(std::cout, "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")");
-		WriteOutput(std::cout, "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")");
+		WriteOutput(std::cout, "> Num. Parts: %v", materialPartMap.size());
+        WriteOutput(std::cout, "< Size: Minimum[%v, %v, %v]", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
+        WriteOutput(std::cout, "< Size: Maximum[%v, %v, %v]", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
 
         NewtonWorld *newtonWorld = NewtonCreate();
         NewtonCollision *newtonCollision = NewtonCreateTreeCollision(newtonWorld, 0);
@@ -367,9 +367,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         NewtonTreeCollisionBeginBuild(newtonCollision);
         for (const auto &material : materialPartMap)
         {
-			WriteOutput(std::cout, "-  " << material.first);
-            WriteOutput(std::cout, "    " << material.second.vertexList.size() << " vertices");
-            WriteOutput(std::cout, "    " << material.second.indexList.size() << " indices");
+			WriteOutput(std::cout, "-  %v", material.first);
+            WriteOutput(std::cout, "    %v vertices", material.second.vertexList.size());
+            WriteOutput(std::cout, "    %v indices", material.second.indexList.size());
 
             auto &indexList = material.second.indexList;
             auto &vertexList = material.second.vertexList;
@@ -416,8 +416,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     catch (const std::exception &exception)
     {
 		WriteOutput(std::cerr, "GEK Engine - Error");
-		WriteOutput(std::cerr, "Caught: " << exception.what());
-		WriteOutput(std::cerr, "Type: " << typeid(exception).name());
+		WriteOutput(std::cerr, "Caught: %v", exception.what());
+		WriteOutput(std::cerr, "Type: %v", typeid(exception).name());
 	}
     catch (...)
     {
@@ -425,6 +425,5 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         WriteOutput(std::cerr, "Caught: Non-standard exception");
     };
 
-    WriteOutput(std::cout, std::endl;
     return 0;
 }

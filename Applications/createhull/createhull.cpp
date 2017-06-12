@@ -151,7 +151,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	aiLogStream logStream;
 	logStream.callback = [](char const *message, char *user) -> void
 	{
-		WriteOutput(std::cerr, "Assimp: %v", message;
+		WriteOutput(std::cerr, "Assimp: %v", message);
 	};
 
 	logStream.user = nullptr;
@@ -223,8 +223,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
 
 	WriteOutput(std::cout, "> Num. Points: %v", pointList.size());
-	WriteOutput(std::cout, "< Size: Min(%v", boundingBox.minimum.x << ", %v", boundingBox.minimum.y << ", %v", boundingBox.minimum.z << ")");
-	WriteOutput(std::cout, "<       Max(%v", boundingBox.maximum.x << ", %v", boundingBox.maximum.y << ", %v", boundingBox.maximum.z << ")");
+    WriteOutput(std::cout, "< Size: Minimum[%v, %v, %v]", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
+    WriteOutput(std::cout, "< Size: Maximum[%v, %v, %v]", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
 
     NewtonWorld *newtonWorld = NewtonCreate();
     NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointList.size(), pointList.data()->data, sizeof(Math::Float3), 0.025f, 0, Math::Float4x4::Identity.data);

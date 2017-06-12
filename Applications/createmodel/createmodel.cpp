@@ -269,7 +269,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     aiLogStream logStream;
     logStream.callback = [](char const *message, char *user) -> void
     {
-		WriteOutput(std::cerr, "Assimp: %v", message;
+		WriteOutput(std::cerr, "Assimp: %v", message);
     };
 
     logStream.user = nullptr;
@@ -469,8 +469,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
 
 	WriteOutput(std::cout, "> Num. Parts: %v", materialPartMap.size());
-	WriteOutput(std::cout, "< Size: Min(%v", boundingBox.minimum.x << ", %v", boundingBox.minimum.y << ", %v", boundingBox.minimum.z << ")");
-	WriteOutput(std::cout, "<       Max(%v", boundingBox.maximum.x << ", %v", boundingBox.maximum.y << ", %v", boundingBox.maximum.z << ")");
+    WriteOutput(std::cout, "< Size: Minimum[%v, %v, %v]", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
+    WriteOutput(std::cout, "< Size: Maximum[%v, %v, %v]", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
 
     FILE *file = nullptr;
     _wfopen_s(&file, fileNameOutput.c_str(), L"wb");

@@ -62,7 +62,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 */
 	if (!load)
 	{
-        WriteOutput(std::cerr, "Unknown file type of %v", extension << " for input: %v", inputFilePath.c_str());
+        WriteOutput(std::cerr, "Unknown file type of %v for input: %v", extension, inputFilePath.c_str());
         return;
     }
 
@@ -151,7 +151,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
         break;
     };
 
-    WriteOutput(std::cout, "             %v", image.GetMetadata().width << " x %v", image.GetMetadata().height);
+    WriteOutput(std::cout, "             %vx%v", image.GetMetadata().width, image.GetMetadata().height);
 
 	::DirectX::ScratchImage mipMapChain;
 	resultValue = ::DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), ::DirectX::TEX_FILTER_TRIANGLE, 0, mipMapChain);
