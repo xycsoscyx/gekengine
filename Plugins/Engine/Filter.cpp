@@ -95,7 +95,7 @@ namespace Gek
                     return data.parse(population->getShuntingYard(), defaultValue);
                 };
 
-                std::cout << "Loading filter: " << filterName << std::endl;
+                WriteOutput(std::cout, "Loading filter: %v", filterName);
 				
 				passList.clear();
 
@@ -118,7 +118,7 @@ namespace Gek
                     auto &textureValue = textureNode.value();
                     if (resourceMap.count(textureName) > 0)
                     {
-                        std::cerr << "Duplicate resource name encountered: " << textureName << std::endl;
+                        WriteOutput(std::cerr, "Duplicate resource name encountered: %v", textureName);
                         continue;
                     }
 
@@ -215,7 +215,7 @@ namespace Gek
                     auto &bufferValue = bufferNode.value();
                     if (resourceMap.count(bufferName) > 0)
                     {
-                        std::cerr << "Duplicate resource name encountered: " << bufferName << std::endl;
+                        WriteOutput(std::cerr, "Duplicate resource name encountered: %v", bufferName);
                         continue;
                     }
 
@@ -279,13 +279,13 @@ namespace Gek
                     PassData &pass = *passData++;
                     if (!passNode.has_member("program"))
                     {
-                        std::cerr << "Pass missing program data" << std::endl;
+                        WriteOutput(std::cerr, "Pass missing program data");
                         continue;
                     }
 
                     if (!passNode.has_member("entry"))
                     {
-                        std::cerr << "Pass missing program entrypoint" << std::endl;
+                        WriteOutput(std::cerr, "Pass missing program entrypoint");
                         continue;
                     }
 
@@ -320,7 +320,7 @@ namespace Gek
                     {
                         if (!passNode.has_member("dispatch"))
                         {
-                            std::cerr << "Compute pass missing dispatch size" << std::endl;
+                            WriteOutput(std::cerr, "Compute pass missing dispatch size");
                             continue;
                         }
 
@@ -329,7 +329,7 @@ namespace Gek
                         {
                             if (dispatch.size() != 3)
                             {
-                                std::cerr << "Compute pass must contain the [XYZ] values" << std::endl;
+                                WriteOutput(std::cerr, "Compute pass must contain the [XYZ] values");
                                 continue;
                             }
 
@@ -362,7 +362,7 @@ namespace Gek
                                 auto resourceSearch = resourceMap.find(renderTarget.first);
                                 if (resourceSearch == std::end(resourceMap))
                                 {
-                                    std::cerr << "Unable to find render target for pass: " << renderTarget.first << std::endl;
+                                    WriteOutput(std::cerr, "Unable to find render target for pass: %v", renderTarget.first);
                                 }
                                 else
                                 {
@@ -374,7 +374,7 @@ namespace Gek
                                     }
                                     else
                                     {
-                                        std::cerr << "Unable to get description for render target: " << renderTarget.first << std::endl;
+                                        WriteOutput(std::cerr, "Unable to get description for render target: %v", renderTarget.first);
                                     }
                                 }
                             }
@@ -562,7 +562,7 @@ namespace Gek
                     pass.program = resources->loadProgram(pipelineType, name, entryPoint, engineData);
                 }
 
-				std::cout << "Filter loaded successfully: " << filterName << std::endl;
+				WriteOutput(std::cout, "Filter loaded successfully: %v", filterName);
 			}
 
             ~Filter(void)

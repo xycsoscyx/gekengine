@@ -47,7 +47,7 @@ namespace Gek
             auto derivedClass = dynamic_cast<TYPE *>(baseClass.get());
             if (!derivedClass)
             {
-                std::cerr << "Unable to cast from base context user to requested class" << std::endl;
+                WriteOutput(std::cerr, "Unable to cast from base context user to requested class");
                 return nullptr;
             }
 

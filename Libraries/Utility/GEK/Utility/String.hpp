@@ -17,6 +17,12 @@
 
 namespace Gek
 {
+    template<typename... PARAMETERS>
+    void WriteOutput(std::ostream &stream, char const *formatting, PARAMETERS&&... arguments)
+    {
+        stream << String::Format(formatting, std::move(arguments)...);
+    }
+
     namespace String
     {
         extern const std::string Empty;

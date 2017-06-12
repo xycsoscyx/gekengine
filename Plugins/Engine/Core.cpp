@@ -78,7 +78,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(_window)
             {
-                std::cout << "Starting GEK Engine" << std::endl;
+                WriteOutput(std::cout, "Starting GEK Engine");
 
                 if (!window)
                 {
@@ -177,7 +177,7 @@ namespace Gek
                 renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Plugin::Core *)this);
                 renderer->onShowUserInterface.connect<Core, &Core::onShowUserInterface>(this);
 
-                std::cout << "Loading processor plugins" << std::endl;
+                WriteOutput(std::cout, "Loading processor plugins");
 
                 std::vector<std::string> processorNameList;
                 getContext()->listTypes("ProcessorType", [&](std::string const &className) -> void
@@ -188,7 +188,7 @@ namespace Gek
                 processorList.reserve(processorNameList.size());
                 for (const auto &processorName : processorNameList)
                 {
-                    std::cout << "Processor found: " << processorName << std::endl;
+                    WriteOutput(std::cout, "Processor found: %v", processorName);
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(processorName, (Plugin::Core *)this));
                 }
 
@@ -224,7 +224,7 @@ namespace Gek
 
                 window->setVisibility(true);
 
-				std::cout << "Starting engine" << std::endl;
+				WriteOutput(std::cout, "Starting engine");
 
                 population->load("demo");
             }
@@ -261,7 +261,7 @@ namespace Gek
 			void setDisplayMode(uint32_t displayMode)
             {
                 auto &displayModeData = displayModeList[displayMode];
-				std::cout << "Setting display mode: " << displayModeData.width << "x" << displayModeData.height << std::endl;
+				WriteOutput(std::cout, "Setting display mode: %vx%v", displayModeData.width, displayModeData.height);
                 if (displayMode < displayModeList.size())
                 {
                     currentDisplayMode = displayMode;

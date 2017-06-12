@@ -34,7 +34,7 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
 {
     if (node == nullptr)
     {
-        std::cerr << "Invalid model node" << std::endl;
+        WriteOutput(std::cerr, "Invalid model node");
         return false;
     }
 
@@ -42,7 +42,7 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
     {
         if (node->mMeshes == nullptr)
         {
-            std::cerr << "Invalid mesh list" << std::endl;
+            WriteOutput(std::cerr, "Invalid mesh list");
             return false;
         }
 
@@ -51,7 +51,7 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
             uint32_t nodeMeshIndex = node->mMeshes[meshIndex];
             if (nodeMeshIndex >= scene->mNumMeshes)
             {
-                std::cerr << "Invalid mesh index" << std::endl;
+                WriteOutput(std::cerr, "Invalid mesh index");
                 return false;
             }
 
@@ -60,13 +60,13 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
             {
                 if (mesh->mFaces == nullptr)
                 {
-                    std::cerr << "Invalid mesh face list" << std::endl;
+                    WriteOutput(std::cerr, "Invalid mesh face list");
                     return false;
                 }
 
 				if (mesh->mVertices == nullptr)
 				{
-					std::cerr << "Invalid mesh vertex list" << std::endl;
+					WriteOutput(std::cerr, "Invalid mesh vertex list");
                     return false;
                 }
 
@@ -89,7 +89,7 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
     {
         if (node->mChildren == nullptr)
         {
-            std::cerr << "Invalid child list" << std::endl;
+            WriteOutput(std::cerr, "Invalid child list");
             return false;
         }
 
@@ -113,7 +113,7 @@ void serializeCollision(void* const serializeHandle, const void* const buffer, i
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    std::cout << "GEK Model Converter" << std::endl;
+    WriteOutput(std::cout, "GEK Model Converter");
 
     FileSystem::Path fileNameInput;
     FileSystem::Path fileNameOutput;
@@ -124,7 +124,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		std::vector<std::string> arguments(String::Split(String::GetLower(argument), ':'));
         if (arguments.empty())
         {
-            std::cerr << "No arguments specified for command line parameter" << std::endl;
+            WriteOutput(std::cerr, "No arguments specified for command line parameter");
             return -__LINE__;
         }
 
@@ -140,7 +140,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		{
 			if (arguments.size() != 2)
 			{
-				std::cerr << "Missing parameters for unitsInFoot" << std::endl;
+				WriteOutput(std::cerr, "Missing parameters for unitsInFoot");
                 return -__LINE__;
             }
 
@@ -151,7 +151,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	aiLogStream logStream;
 	logStream.callback = [](char const *message, char *user) -> void
 	{
-		std::cerr << "Assimp: " << message;
+		WriteOutput(std::cerr, "Assimp: %v", message;
 	};
 
 	logStream.user = nullptr;
@@ -189,20 +189,20 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     auto scene = aiImportFileExWithProperties(fileNameInput.u8string().c_str(), importFlags, nullptr, propertyStore);
     if (scene == nullptr)
     {
-        std::cerr << "Unable to load scene with Assimp" << std::endl;
+        WriteOutput(std::cerr, "Unable to load scene with Assimp");
         return -__LINE__;
     }
 
     scene = aiApplyPostProcessing(scene, postProcessFlags);
     if (scene == nullptr)
 	{
-		std::cerr << "Unable to apply post processing with Assimp" << std::endl;
+		WriteOutput(std::cerr, "Unable to apply post processing with Assimp");
         return -__LINE__;
     }
 
     if (!scene->HasMeshes())
     {
-        std::cerr << "Scene has no meshes" << std::endl;
+        WriteOutput(std::cerr, "Scene has no meshes");
         return -__LINE__;
     }
 
@@ -218,19 +218,19 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
 	if (pointList.empty())
 	{
-        std::cerr << "No vertex data found in scene" << std::endl;
+        WriteOutput(std::cerr, "No vertex data found in scene");
         return -__LINE__;
     }
 
-	std::cout << "> Num. Points: " << pointList.size() << std::endl;
-	std::cout << "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")" << std::endl;
-	std::cout << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
+	WriteOutput(std::cout, "> Num. Points: %v", pointList.size());
+	WriteOutput(std::cout, "< Size: Min(%v", boundingBox.minimum.x << ", %v", boundingBox.minimum.y << ", %v", boundingBox.minimum.z << ")");
+	WriteOutput(std::cout, "<       Max(%v", boundingBox.maximum.x << ", %v", boundingBox.maximum.y << ", %v", boundingBox.maximum.z << ")");
 
     NewtonWorld *newtonWorld = NewtonCreate();
     NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointList.size(), pointList.data()->data, sizeof(Math::Float3), 0.025f, 0, Math::Float4x4::Identity.data);
     if (newtonCollision == nullptr)
     {
-        std::cerr << "Unable to create convex hull collision object" << std::endl;
+        WriteOutput(std::cerr, "Unable to create convex hull collision object");
         return -__LINE__;
     }
 
@@ -238,7 +238,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     _wfopen_s(&file, fileNameOutput.c_str(), L"wb");
     if (file == nullptr)
     {
-        std::cerr << "Unable to create output file" << std::endl;
+        WriteOutput(std::cerr, "Unable to create output file");
         return -__LINE__;
     }
 

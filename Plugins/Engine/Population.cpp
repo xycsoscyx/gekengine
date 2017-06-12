@@ -107,20 +107,20 @@ namespace Gek
             {
                 assert(core);
 
-                std::cout << "Loading component plugins" << std::endl;
+                WriteOutput(std::cout, "Loading component plugins");
                 getContext()->listTypes("ComponentType", [&](std::string const &className) -> void
                 {
-                    std::cout << "Component found: " << className << std::endl;
+                    WriteOutput(std::cout, "Component found: %v", className);
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className, static_cast<Plugin::Population *>(this)));
                     if (componentMap.count(component->getIdentifier()) > 0)
                     {
-                        std::cerr << "Duplicate component identifier found: Class(" << className << "), Identifier(" << component->getIdentifier().name() << ")" << std::endl;
+                        WriteOutput(std::cerr, "Duplicate component identifier found: Class(%v), Identifier(%v)", className, component->getIdentifier().name());
                         return;
                     }
 
                     if (componentNameTypeMap.count(component->getIdentifier()) > 0)
                     {
-                        std::cerr << "Duplicate component name found: Class(" << className << "), Name(" << component->getName() << ")" << std::endl;
+                        WriteOutput(std::cerr, "Duplicate component name found: Class(%v), Name(%v)", className, component->getName());
                         return;
                     }
 
@@ -150,7 +150,7 @@ namespace Gek
                     auto entityName(requestedName.empty() ? String::Format("unnamed_%v", ++uniqueEntityIdentifier) : requestedName);
                     if (entityMap.count(requestedName) > 0)
                     {
-                        std::cerr << "Unable to add entity to scene: " << entityName << std::endl;
+                        WriteOutput(std::cerr, "Unable to add entity to scene: %v", entityName);
                     }
                     else
                     {
@@ -235,14 +235,14 @@ namespace Gek
             {
                 loadPool.enqueue([this, populationName](void) -> void
                 {
-                    std::cout << "Loading population: " << populationName << std::endl;
+                    WriteOutput(std::cout, "Loading population: %v", populationName);
 
                     JSON::Instance worldNode = JSON::Load(getContext()->getRootFileName("data", "scenes", populationName).withExtension(".json"));
                     shuntingYard.setRandomSeed(worldNode.get("Seed").convert(uint32_t(std::time(nullptr) & 0xFFFFFFFF)));
 
                     auto templatesNode = worldNode.get("Templates");
                     auto &populationNode = worldNode.get("Population");
-                    std::cout << "Found " << populationNode.getArray().size() << " Entity Definitions" << std::endl;
+                    WriteOutput(std::cout, "Found %v Entity Definitions", populationNode.getArray().size());
                     for (const auto &entityNode : populationNode.getArray())
                     {
                         std::vector<Component> entityComponentList;
@@ -311,14 +311,14 @@ namespace Gek
                         auto componentName = componentNameTypeMap.find(type);
                         if (componentName == std::end(componentNameTypeMap))
                         {
-                            std::cerr << "Unknown component name found when trying to save population: " << type.name() << std::endl;
+                            WriteOutput(std::cerr, "Unknown component name found when trying to save population: %v", type.name());
                         }
                         else
                         {
                             auto component = componentMap.find(type);
                             if (component == std::end(componentMap))
                             {
-                                std::cerr << "Unknown component type found when trying to save population: " << type.name() << std::endl;
+                                WriteOutput(std::cerr, "Unknown component type found when trying to save population: %v", type.name());
                             }
                             else
                             {
@@ -386,12 +386,12 @@ namespace Gek
                     }
                     else
                     {
-                        std::cerr << "Entity contains unknown component identifier: " << componentNameSearch->second.name() << std::endl;
+                        WriteOutput(std::cerr, "Entity contains unknown component identifier: %v", componentNameSearch->second.name());
                     }
                 }
                 else
                 {
-                    std::cerr << "Entity contains unknown component: " << componentData.first << std::endl;
+                    WriteOutput(std::cerr, "Entity contains unknown component: %v", componentData.first);
                 }
 
                 return false;

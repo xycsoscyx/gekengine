@@ -94,7 +94,7 @@ void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
                     }
                     else
                     {
-						std::cerr << "! (Mesh " << meshIndex << ") Invalid Face Found: " << faceIndex << " (" << face.mNumIndices << " vertices)" << std::endl;
+						WriteOutput(std::cerr, "! (Mesh " << meshIndex << ") Invalid Face Found: " << faceIndex << " (" << face.mNumIndices << " vertices)");
                     }
                 }
 
@@ -143,7 +143,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 {
 	try
     {
-        std::cout << "GEK Part Converter" << std::endl;
+        WriteOutput(std::cout, "GEK Part Converter");
 
         FileSystem::Path fileNameInput;
         FileSystem::Path fileNameOutput;
@@ -184,7 +184,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		aiLogStream logStream;
 		logStream.callback = [](char const *message, char *user) -> void
 		{
-			std::cerr << "Assimp: " << message;
+			WriteOutput(std::cerr, "Assimp: " << message;
 		};
 
 		logStream.user = nullptr;
@@ -324,7 +324,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             auto materialAlebedoSearch = albedoToMaterialMap.find(albedoName);
             if (materialAlebedoSearch == std::end(albedoToMaterialMap))
             {
-                std::cerr << "! Unable to find material for albedo: " << albedoName << std::endl;
+                WriteOutput(std::cerr, "! Unable to find material for albedo: " << albedoName);
             }
             else
             {
@@ -352,9 +352,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 			throw std::exception("No valid material models found");
 		}
 
-		std::cout << "> Num. Parts: " << materialPartMap.size() << std::endl;
-		std::cout << "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")" << std::endl;
-		std::cout << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
+		WriteOutput(std::cout, "> Num. Parts: " << materialPartMap.size());
+		WriteOutput(std::cout, "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")");
+		WriteOutput(std::cout, "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")");
 
         NewtonWorld *newtonWorld = NewtonCreate();
         NewtonCollision *newtonCollision = NewtonCreateTreeCollision(newtonWorld, 0);
@@ -367,9 +367,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         NewtonTreeCollisionBeginBuild(newtonCollision);
         for (const auto &material : materialPartMap)
         {
-			std::cout << "-  " << material.first << std::endl;
-            std::cout << "    " << material.second.vertexList.size() << " vertices" << std::endl;
-            std::cout << "    " << material.second.indexList.size() << " indices" << std::endl;
+			WriteOutput(std::cout, "-  " << material.first);
+            WriteOutput(std::cout, "    " << material.second.vertexList.size() << " vertices");
+            WriteOutput(std::cout, "    " << material.second.indexList.size() << " indices");
 
             auto &indexList = material.second.indexList;
             auto &vertexList = material.second.vertexList;
@@ -415,16 +415,16 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
     catch (const std::exception &exception)
     {
-		std::cerr << "GEK Engine - Error" << std::endl;
-		std::cerr << "Caught: " << exception.what() << std::endl;
-		std::cerr << "Type: " << typeid(exception).name() << std::endl;
+		WriteOutput(std::cerr, "GEK Engine - Error");
+		WriteOutput(std::cerr, "Caught: " << exception.what());
+		WriteOutput(std::cerr, "Type: " << typeid(exception).name());
 	}
     catch (...)
     {
-        std::cerr << "GEK Engine - Error" << std::endl;
-        std::cerr << "Caught: Non-standard exception" << std::endl;
+        WriteOutput(std::cerr, "GEK Engine - Error");
+        WriteOutput(std::cerr, "Caught: Non-standard exception");
     };
 
-    std::cout << std::endl;
+    WriteOutput(std::cout, std::endl;
     return 0;
 }

@@ -181,7 +181,7 @@ namespace Gek
             assert(resources);
             assert(renderer);
 
-            std::cout << "Initializing model system" << std::endl;
+            WriteOutput(std::cout, "Initializing model system");
 
             population->onEntityCreated.connect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
             population->onEntityDestroyed.connect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
@@ -220,51 +220,50 @@ namespace Gek
                     auto pair = modelMap.insert(std::make_pair(GetHash(modelComponent.name), Model()));
                     if (pair.second)
                     {
-                        std::cout << "Queueing model for load: " << modelComponent.name << std::endl;
+                        WriteOutput(std::cout, "Queueing model for load: %v", modelComponent.name);
 						loadPool.enqueue([this, name = modelComponent.name, fileName, &model = pair.first->second](void) -> void
                         {
-							std::cout << "Reading model header: " << name << std::endl;
+							WriteOutput(std::cout, "Reading model header: %v", name);
 
 							static const std::vector<uint8_t> EmptyBuffer;
 							std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer, sizeof(Header)));
 							if (buffer.size() < sizeof(Header))
 							{
-								std::cerr << "Model file too small to contain header: " << fileName << std::endl;
+								WriteOutput(std::cerr, "Model file too small to contain header: %v", fileName);
 								return;
 							}
 
                             Header *header = (Header *)buffer.data();
                             if (header->identifier != *(uint32_t *)"GEKX")
                             {
-								std::cerr << "Unknown model file identifier encountered (requires: GEKX, has: " << header->identifier << "): " << fileName << std::endl;
+								WriteOutput(std::cerr, "Unknown model file identifier encountered (requires: GEKX, has: %v): %v", header->identifier, fileName);
 								return;
                             }
 
                             if (header->type != 0)
                             {
-								std::cerr << "Unsupported model type encountered (requires: 0, has: " << header->type << "): " << fileName << std::endl;
+								WriteOutput(std::cerr, "Unsupported model type encountered (requires: 0, has: %v): %v", header->type, fileName);
 								return;
 							}
 
                             if (header->version != 6)
                             {
-                                std::cerr << "Unsupported model version encountered (requires: 6, has: " << header->version << "): " << fileName << std::endl;
+                                WriteOutput(std::cerr, "Unsupported model version encountered (requires: 6, has: %v): %v", header->version, fileName);
 								return;
 							}
 
                             model.boundingBox = header->boundingBox;
-                            std::cout << "Model: " << name << ", " << header->partCount << " parts" << std::endl;
-
+                            WriteOutput(std::cout, "Model: %v, %v parts", name, header->partCount);
                             loadPool.enqueue([this, name = name, fileName, &model](void) -> void
                             {
-								std::cout << "Loading model: " << name << std::endl;
+								WriteOutput(std::cout, "Loading model: %v", name);
 
 								std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer));
 
 								Header *header = (Header *)buffer.data();
 								if (buffer.size() < (sizeof(Header) + (sizeof(Header::Part) * header->partCount)))
 								{
-									std::cerr << "Model file too small to contain part headers: " << fileName << std::endl;
+									WriteOutput(std::cerr, "Model file too small to contain part headers: %v", fileName);
 									return;
 								}
 
@@ -310,7 +309,7 @@ namespace Gek
                                     part.indexCount = partHeader.indexCount;
                                 }
 							
-								std::cout << "Model successfully loaded: " << name << std::endl;
+								WriteOutput(std::cout, "Model successfully loaded: %v", name);
 							});
                         });
                     }

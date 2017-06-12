@@ -444,8 +444,8 @@ namespace Gek
             reader.read(errorCode);
             if (errorCode)
             {
+                WriteOutput(std::cerr, "%v, at line %v, and column %v", errorCode.message(), reader.line_number(), reader.column_number());
                 return EmptyObject;
-                std::cerr << errorCode.message() << " at line " << reader.line_number() << " and column " << reader.column_number() << std::endl;
             }
             else
             {

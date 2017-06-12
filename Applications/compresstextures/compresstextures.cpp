@@ -15,21 +15,21 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 {
 	if (!inputFilePath.isFile())
 	{
-        std::cerr << "Input file not found: " << inputFilePath.c_str() << std::endl;
+        WriteOutput(std::cerr, "Input file not found: %v", inputFilePath.c_str());
         return;
 	}
 
     auto outputFilePath(inputFilePath.withExtension(".dds"));
 	if (outputFilePath.isFile() && outputFilePath.isNewerThan(inputFilePath))
 	{
-		std::cerr << "Input file hasn't changed since last compression: " << inputFilePath.c_str() << std::endl;
+		WriteOutput(std::cerr, "Input file hasn't changed since last compression: %v", inputFilePath.c_str());
         return;
     }
 
     std::string extension(String::GetLower(inputFilePath.getExtension()));
     if (extension == ".dds")
     {
-        std::cerr << "Input file is alrady compressed: " << inputFilePath.c_str() << std::endl;
+        WriteOutput(std::cerr, "Input file is alrady compressed: %v", inputFilePath.c_str());
         return;
     }
 
@@ -62,7 +62,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 */
 	if (!load)
 	{
-        std::cerr << "Unknown file type of " << extension << " for input: " << inputFilePath.c_str() << std::endl;
+        WriteOutput(std::cerr, "Unknown file type of %v", extension << " for input: %v", inputFilePath.c_str());
         return;
     }
 
@@ -73,7 +73,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
     HRESULT resultValue = load(buffer, image);
     if (FAILED(resultValue))
     {
-        std::cerr << "Unable to load input file: " << inputFilePath.c_str() << std::endl;
+        WriteOutput(std::cerr, "Unable to load input file: %v", inputFilePath.c_str());
         return;
     }
 
@@ -126,38 +126,38 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 	}
 	else
 	{
-		std::cerr << "Unable to determine texture material type: " << textureName << std::endl;
+		WriteOutput(std::cerr, "Unable to determine texture material type: %v", textureName);
         return;
     }
 
-    std::cout << "Compressing: -> " << inputFilePath << std::endl;
-    std::cout << "             <- " << outputFilePath << std::endl;
+    WriteOutput(std::cout, "Compressing: -> %v", inputFilePath);
+    WriteOutput(std::cout, "             <- %v", outputFilePath);
     switch (outputFormat)
     {
     case DXGI_FORMAT_BC7_UNORM_SRGB:
-        std::cout << "             Albedo BC7" << std::endl;
+        WriteOutput(std::cout, "             Albedo BC7");
         break;
 
     case DXGI_FORMAT_BC1_UNORM_SRGB:
-        std::cout << "             Albedo BC1" << std::endl;
+        WriteOutput(std::cout, "             Albedo BC1");
         break;
 
     case DXGI_FORMAT_BC5_UNORM:
-        std::cout << "             Normal BC5" << std::endl;
+        WriteOutput(std::cout, "             Normal BC5");
         break;
 
     case DXGI_FORMAT_BC4_UNORM:
-        std::cout << "             Metalness/Roughness BC4" << std::endl;
+        WriteOutput(std::cout, "             Metalness/Roughness BC4");
         break;
     };
 
-    std::cout << "             " << image.GetMetadata().width << " x " << image.GetMetadata().height << std::endl;
+    WriteOutput(std::cout, "             %v", image.GetMetadata().width << " x %v", image.GetMetadata().height);
 
 	::DirectX::ScratchImage mipMapChain;
 	resultValue = ::DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), ::DirectX::TEX_FILTER_TRIANGLE, 0, mipMapChain);
 	if (FAILED(resultValue))
 	{
-		std::cerr << "Unable to create mipmap chain" << std::endl;
+		WriteOutput(std::cerr, "Unable to create mipmap chain");
 	}
 
 	image = std::move(mipMapChain);
@@ -175,21 +175,21 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 
 	if (FAILED(resultValue))
 	{
-		std::cerr << "Unable to compress image" << std::endl;
+		WriteOutput(std::cerr, "Unable to compress image");
         return;
     }
 
 	resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, outputFilePath.c_str());
 	if (FAILED(resultValue))
 	{
-		std::cerr << "Unable to save image" << std::endl;
+		WriteOutput(std::cerr, "Unable to save image");
         return;
     }
 }
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    std::cout << "GEK Texture Compressor" << std::endl;
+    WriteOutput(std::cout, "GEK Texture Compressor");
 
     try
     {
@@ -223,12 +223,12 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 				}
 				catch (std::exception const &exception)
 				{
-                    std::cerr << "[warning] Error trying to compress file: " << filePath << std::endl;
-                    std::cerr << exception.what() << std::endl;
+                    WriteOutput(std::cerr, "[warning] Error trying to compress file: %v", filePath);
+                    WriteOutput(std::cerr, exception.what());
 				}
                 catch (...)
                 {
-                    std::cerr << "[warning] Unknown error trying to compress file: " << filePath << std::endl;
+                    WriteOutput(std::cerr, "[warning] Unknown error trying to compress file: %v", filePath);
                 };
 			}
 
@@ -241,14 +241,14 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	}
     catch (const std::exception &exception)
     {
-        std::cerr << "GEK Engine - Error" << std::endl;
-		std::cerr << "Caught: " << exception.what() << std::endl;
-		std::cerr << "Type: " << typeid(exception).name() << std::endl;
+        WriteOutput(std::cerr, "GEK Engine - Error");
+		WriteOutput(std::cerr, "Caught: %v", exception.what());
+		WriteOutput(std::cerr, "Type: %v", typeid(exception).name());
     }
     catch (...)
     {
-        std::cerr << "GEK Engine - Error" << std::endl;
-        std::cerr << "Caught: Non-standard exception" << std::endl;
+        WriteOutput(std::cerr, "GEK Engine - Error");
+        WriteOutput(std::cerr, "Caught: Non-standard exception");
     };
 
     return 0;

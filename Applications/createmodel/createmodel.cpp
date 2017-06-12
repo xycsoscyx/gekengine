@@ -57,7 +57,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
 {
     if (node == nullptr)
     {
-        std::cerr << "Invalid scene node" << std::endl;
+        WriteOutput(std::cerr, "Invalid scene node");
         return false;
     }
 
@@ -65,7 +65,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
     {
         if (node->mMeshes == nullptr)
         {
-            std::cerr << "Invalid mesh list" << std::endl;
+            WriteOutput(std::cerr, "Invalid mesh list");
             return false;
         }
 
@@ -74,7 +74,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
             uint32_t nodeMeshIndex = node->mMeshes[meshIndex];
             if (nodeMeshIndex >= scene->mNumMeshes)
             {
-                std::cerr << "Invalid mesh index" << std::endl;
+                WriteOutput(std::cerr, "Invalid mesh index");
                 return false;
             }
 
@@ -83,37 +83,37 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
             {
                 if (mesh->mFaces == nullptr)
                 {
-                    std::cerr << "Invalid mesh face list" << std::endl;
+                    WriteOutput(std::cerr, "Invalid mesh face list");
                     return false;
                 }
 
                 if (mesh->mVertices == nullptr)
                 {
-                    std::cerr << "Invalid mesh vertex list" << std::endl;
+                    WriteOutput(std::cerr, "Invalid mesh vertex list");
                     return false;
                 }
 
                 if (mesh->mTextureCoords[0] == nullptr)
                 {
-                    std::cerr << "Invalid mesh texture coordinate list" << std::endl;
+                    WriteOutput(std::cerr, "Invalid mesh texture coordinate list");
                     return false;
                 }
 
                 if (mesh->mTangents == nullptr)
                 {
-                    std::cerr << "Invalid mesh tangent list" << std::endl;
+                    WriteOutput(std::cerr, "Invalid mesh tangent list");
                     return false;
                 }
 
                 if (mesh->mBitangents == nullptr)
                 {
-                    std::cerr << "Invalid mesh bitangent list" << std::endl;
+                    WriteOutput(std::cerr, "Invalid mesh bitangent list");
                     return false;
                 }
 
                 if (mesh->mNormals == nullptr)
                 {
-                    std::cerr << "Invalid mesh normal list" << std::endl;
+                    WriteOutput(std::cerr, "Invalid mesh normal list");
                     return false;
                 }
 
@@ -124,7 +124,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
                     const aiFace &face = mesh->mFaces[faceIndex];
                     if (face.mNumIndices != 3)
                     {
-                        std::cerr << "Non-triangular face encountered" << std::endl;
+                        WriteOutput(std::cerr, "Non-triangular face encountered");
                         return false;
                     }
 
@@ -188,7 +188,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
     {
         if (node->mChildren == nullptr)
         {
-            std::cerr << "Invalid child list" << std::endl;
+            WriteOutput(std::cerr, "Invalid child list");
             return false;
         }
 
@@ -206,7 +206,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    std::cout << "GEK Part Converter" << std::endl;
+    WriteOutput(std::cout, "GEK Part Converter");
 
     FileSystem::Path fileNameInput;
     FileSystem::Path fileNameOutput;
@@ -220,7 +220,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		std::vector<std::string> arguments(String::Split(String::GetLower(argument), ':'));
         if (arguments.empty())
         {
-            std::cerr << "No arguments specified for command line parameter" << std::endl;
+            WriteOutput(std::cerr, "No arguments specified for command line parameter");
             return -__LINE__;
         }
 
@@ -244,7 +244,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         {
             if (arguments.size() != 2)
             {
-                std::cerr << "Missing parameters for smoothAngle" << std::endl;
+                WriteOutput(std::cerr, "Missing parameters for smoothAngle");
                 return -__LINE__;
             }
 
@@ -254,7 +254,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         {
             if (arguments.size() != 2)
             {
-                std::cerr << "Missing parameters for unitsInFoot" << std::endl;
+                WriteOutput(std::cerr, "Missing parameters for unitsInFoot");
                 return -__LINE__;
             }
 
@@ -269,7 +269,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     aiLogStream logStream;
     logStream.callback = [](char const *message, char *user) -> void
     {
-		std::cerr << "Assimp: " << message;
+		WriteOutput(std::cerr, "Assimp: %v", message;
     };
 
     logStream.user = nullptr;
@@ -322,33 +322,33 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     auto scene = aiImportFileExWithProperties(fileNameInput.u8string().c_str(), importFlags, nullptr, propertyStore);
     if (scene == nullptr)
     {
-        std::cerr << "Unable to load scene with Assimp" << std::endl;
+        WriteOutput(std::cerr, "Unable to load scene with Assimp");
         return -__LINE__;
     }
 
     scene = aiApplyPostProcessing(scene, textureProcessFlags);
     if (scene == nullptr)
     {
-        std::cerr << "Unable to apply texture post processing with Assimp" << std::endl;
+        WriteOutput(std::cerr, "Unable to apply texture post processing with Assimp");
         return -__LINE__;
     }
 
     scene = aiApplyPostProcessing(scene, tangentProcessFlags);
     if (scene == nullptr)
     {
-        std::cerr << "Unable to apply tangent post processing with Assimp" << std::endl;
+        WriteOutput(std::cerr, "Unable to apply tangent post processing with Assimp");
         return -__LINE__;
     }
 
     if (!scene->HasMeshes())
     {
-        std::cerr << "Scene has no meshes" << std::endl;
+        WriteOutput(std::cerr, "Scene has no meshes");
         return -__LINE__;
     }
 
     if (!scene->HasMaterials())
     {
-        std::cerr << "Exporting to model requires materials in scene" << std::endl;
+        WriteOutput(std::cerr, "Exporting to model requires materials in scene");
         return -__LINE__;
     }
 
@@ -402,7 +402,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     FileSystem::Find(materialsPath, findMaterials);
     if (albedoToMaterialMap.empty())
     {
-        std::cerr << "Unable to locate any materials" << std::endl;
+        WriteOutput(std::cerr, "Unable to locate any materials");
         return -__LINE__;
     }
 
@@ -410,7 +410,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     for (const auto &modelAlbedo : scenePartMap)
     {
 		std::string albedoName(String::GetLower(FileSystem::Path(modelAlbedo.first).withoutExtension().u8string()));
-        std::cout << "Found Albedo: " << albedoName << std::endl;
+        WriteOutput(std::cout, "Found Albedo: %v", albedoName);
         if (albedoName.find("textures\\") == 0)
         {
             albedoName = albedoName.substr(9);
@@ -435,7 +435,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         auto materialAlebedoSearch = albedoToMaterialMap.find(albedoName);
         if (materialAlebedoSearch == std::end(albedoToMaterialMap))
         {
-            std::cerr << "! Unable to find material for albedo: " << albedoName.c_str() << std::endl;
+            WriteOutput(std::cerr, "! Unable to find material for albedo: %v", albedoName.c_str());
         }
         else
         {
@@ -464,19 +464,19 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
     if (materialPartMap.empty())
     {
-        std::cerr << "No valid material models found" << std::endl;
+        WriteOutput(std::cerr, "No valid material models found");
         return -__LINE__;
     }
 
-	std::cout << "> Num. Parts: " << materialPartMap.size() << std::endl;
-	std::cout << "< Size: Min(" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << ")" << std::endl;
-	std::cout << "<       Max(" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << ")" << std::endl;
+	WriteOutput(std::cout, "> Num. Parts: %v", materialPartMap.size());
+	WriteOutput(std::cout, "< Size: Min(%v", boundingBox.minimum.x << ", %v", boundingBox.minimum.y << ", %v", boundingBox.minimum.z << ")");
+	WriteOutput(std::cout, "<       Max(%v", boundingBox.maximum.x << ", %v", boundingBox.maximum.y << ", %v", boundingBox.maximum.z << ")");
 
     FILE *file = nullptr;
     _wfopen_s(&file, fileNameOutput.c_str(), L"wb");
     if (file == nullptr)
     {
-        std::cerr << "Unable to create output file" << std::endl;
+        WriteOutput(std::cerr, "Unable to create output file");
         return -__LINE__;
     }
 
@@ -487,9 +487,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     for (const auto &material : materialPartMap)
     {
 		std::string name = material.first;
-		std::cout << "-    Material: " << name << std::endl;
-        std::cout << "       Num. Vertices: " << material.second.vertexPositionList.size() << std::endl;
-        std::cout << "       Num. Indices: " << material.second.indexList.size() << std::endl;
+		WriteOutput(std::cout, "-    Material: %v", name);
+        WriteOutput(std::cout, "       Num. Vertices: %v", material.second.vertexPositionList.size());
+        WriteOutput(std::cout, "       Num. Indices: %v", material.second.indexList.size());
 
         Header::Material materialHeader;
         std::strncpy(materialHeader.name, name.c_str(), 63);

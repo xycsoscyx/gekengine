@@ -403,7 +403,7 @@ namespace Gek
 
             void initializeSystem(void)
             {
-                std::cout << "Initializing rendering system components" << std::endl;
+                WriteOutput(std::cout, "Initializing rendering system components");
 
                 Video::SamplerStateInformation bufferSamplerStateData;
                 bufferSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapPoint;
@@ -511,7 +511,7 @@ namespace Gek
 
             void initializeUI(void)
             {
-                std::cout << "Initializing user interface data" << std::endl;
+                WriteOutput(std::cout, "Initializing user interface data");
 
                 static char const vertexShader[] =
                     "cbuffer vertexBuffer : register(b0)" \

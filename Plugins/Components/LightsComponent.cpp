@@ -28,7 +28,7 @@ namespace Gek
             data->range = parse(componentData.get("range"), 0.0f);
             data->radius = parse(componentData.get("radius"), 0.0f);
             data->intensity = parse(componentData.get("intensity"), 0.0f);
-			std::cout << "Range: " << data->range << ", Radius: " << data->radius << ", Intensity: " << data->intensity << std::endl;
+            WriteOutput(std::cout, "Range: %v, Radius: %v, Intensity: %v", data->range, data->radius, data->intensity);
         }
 
         // Edit::Component

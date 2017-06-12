@@ -105,7 +105,7 @@ namespace Gek
 
             void reload(void)
             {
-                std::cout << "Loading shader: " << shaderName << std::endl;
+                WriteOutput(std::cout, "Loading shader: %v", shaderName);
 
 				static auto evaluate = [&](JSON::Reference data, float defaultValue) -> float
 				{
@@ -818,7 +818,7 @@ namespace Gek
                     pass.program = resources->loadProgram(pipelineType, name, entryPoint, engineData);
                 }
 
-				std::cout << "Shader loaded successfully: " << shaderName << std::endl;
+				WriteOutput(std::cout, "Shader loaded successfully: %v", shaderName);
 			}
 
             // Shader

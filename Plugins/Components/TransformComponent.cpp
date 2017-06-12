@@ -36,7 +36,7 @@ namespace Gek
         {
             data->position = parse(componentData.get("position"), Math::Float3::Zero);
             data->rotation = parse(componentData.get("rotation"), Math::Quaternion::Identity);
-            std::cout << "Position: " << data->position.x << ", " << data->position.y << ", " << data->position.z << std::endl;
+            WriteOutput(std::cout, "Position: [%v, %v, %v]", data->position.x, data->position.y, data->position.z);
 		}
 
         // Edit::Component

@@ -44,7 +44,7 @@ namespace Gek
 									}
 									else
 									{
-                                        std::cerr << "Skipping duplicate class from plugin: " << className << ", from: " << filePath << std::endl;
+                                        WriteOutput(std::cerr, "Skipping duplicate class from plugin: %v, from: %v", className, filePath);
 									}
 								}, [this](std::string const &typeName, std::string const &className) -> void
 								{
@@ -60,7 +60,7 @@ namespace Gek
 						}
 						else
 						{
-                            std::cerr << "Unable to load plugin: " << filePath.u8string() << std::endl;
+                            WriteOutput(std::cerr, "Unable to load plugin: %v", filePath.u8string());
 						}
 					}
 
@@ -90,7 +90,7 @@ namespace Gek
             auto classSearch = classMap.find(className);
             if (classSearch == std::end(classMap))
             {
-                std::cerr << "Requested class doesn't exist: " << className << std::endl;
+                WriteOutput(std::cerr, "Requested class doesn't exist: %v", className);
                 return nullptr;
             }
 
