@@ -35,9 +35,14 @@ namespace Gek
         ~LockedWrite()
         {
             (*this) << std::endl;
-            std::lock_guard<std::mutex> guard(mutex);
-            stream << str();
-            stream.flush();
+            if (IsDebuggerPresent())
+            {
+                OutputDebugStringA(str().c_str());
+            }
+            else
+            {
+                stream << str();
+            }
         }
     };
 

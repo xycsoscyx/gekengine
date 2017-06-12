@@ -212,114 +212,110 @@ namespace Gek
 
         void addEntity(Plugin::Entity * const entity)
         {
-            try
+            ProcessorMixin::addEntity(entity, [&](auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
-                ProcessorMixin::addEntity(entity, [&](auto &data, auto &modelComponent, auto &transformComponent) -> void
+                auto pair = modelMap.insert(std::make_pair(GetHash(modelComponent.name), Model()));
+                if (pair.second)
                 {
-                    auto fileName(getContext()->getRootFileName("data", "models", modelComponent.name).withExtension(".gek"));
-                    auto pair = modelMap.insert(std::make_pair(GetHash(modelComponent.name), Model()));
-                    if (pair.second)
+                    LockedWrite{std::cout} << String::Format("Queueing model for load: %v", modelComponent.name);
+                    loadPool.enqueue([this, name = modelComponent.name, &model = pair.first->second](void) -> void
                     {
-                        LockedWrite{std::cout} << String::Format("Queueing model for load: %v", modelComponent.name);
-						loadPool.enqueue([this, name = modelComponent.name, fileName, &model = pair.first->second](void) -> void
+                        auto fileName(getContext()->getRootFileName("data", "models", name).withExtension(".gek"));
+                        if (!fileName.isFile())
                         {
-							LockedWrite{std::cout} << String::Format("Reading model header: %v", name);
+							LockedWrite{std::cerr} << String::Format("Model file not found: %v", fileName);
+                            return;
+                        }
+                        
+                        static const std::vector<uint8_t> EmptyBuffer;
+						std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer, sizeof(Header)));
+						if (buffer.size() < sizeof(Header))
+						{
+							LockedWrite{std::cerr} << String::Format("Model file too small to contain header: %v", fileName);
+							return;
+						}
 
-							static const std::vector<uint8_t> EmptyBuffer;
-							std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer, sizeof(Header)));
-							if (buffer.size() < sizeof(Header))
+                        Header *header = (Header *)buffer.data();
+                        if (header->identifier != *(uint32_t *)"GEKX")
+                        {
+							LockedWrite{std::cerr} << String::Format("Unknown model file identifier encountered (requires: GEKX, has: %v): %v", header->identifier, fileName);
+							return;
+                        }
+
+                        if (header->type != 0)
+                        {
+							LockedWrite{std::cerr} << String::Format("Unsupported model type encountered (requires: 0, has: %v): %v", header->type, fileName);
+							return;
+						}
+
+                        if (header->version != 6)
+                        {
+                            LockedWrite{std::cerr} << String::Format("Unsupported model version encountered (requires: 6, has: %v): %v", header->version, fileName);
+							return;
+						}
+
+                        model.boundingBox = header->boundingBox;
+                        LockedWrite{std::cout} << String::Format("Model: %v, %v parts", name, header->partCount);
+                        loadPool.enqueue([this, name = name, fileName, &model](void) -> void
+                        {
+							std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer));
+
+							Header *header = (Header *)buffer.data();
+							if (buffer.size() < (sizeof(Header) + (sizeof(Header::Part) * header->partCount)))
 							{
-								LockedWrite{std::cerr} << String::Format("Model file too small to contain header: %v", fileName);
+								LockedWrite{std::cerr} << String::Format("Model file too small to contain part headers: %v", fileName);
 								return;
 							}
 
-                            Header *header = (Header *)buffer.data();
-                            if (header->identifier != *(uint32_t *)"GEKX")
+                            model.partList.resize(header->partCount);
+                            uint8_t *bufferData = (uint8_t *)&header->partList[header->partCount];
+                            for (uint32_t partIndex = 0; partIndex < header->partCount; ++partIndex)
                             {
-								LockedWrite{std::cerr} << String::Format("Unknown model file identifier encountered (requires: GEKX, has: %v): %v", header->identifier, fileName);
-								return;
+                                Header::Part &partHeader = header->partList[partIndex];
+								Model::Part &part = model.partList[partIndex];
+
+                                part.material = resources->loadMaterial(partHeader.name);
+
+                                Video::Buffer::Description indexBufferDescription;
+                                indexBufferDescription.format = Video::Format::R16_UINT;
+                                indexBufferDescription.count = partHeader.indexCount;
+                                indexBufferDescription.type = Video::Buffer::Description::Type::Index;
+                                part.indexBuffer = resources->createBuffer(String::Format("model:indices:%v:%v", name, partIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
+                                bufferData += (sizeof(uint16_t) * partHeader.indexCount);
+
+                                Video::Buffer::Description vertexBufferDescription;
+                                vertexBufferDescription.stride = sizeof(Math::Float3);
+                                vertexBufferDescription.count = partHeader.vertexCount;
+                                vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
+                                part.vertexBufferList[0] = resources->createBuffer(String::Format("model:positions:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
+
+                                vertexBufferDescription.stride = sizeof(Math::Float2);
+                                part.vertexBufferList[1] = resources->createBuffer(String::Format("model:texcoords:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
+                                bufferData += (sizeof(Math::Float2) * partHeader.vertexCount);
+
+                                vertexBufferDescription.stride = sizeof(Math::Float3);
+                                part.vertexBufferList[2] = resources->createBuffer(String::Format("model:tangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
+
+                                vertexBufferDescription.stride = sizeof(Math::Float3);
+                                part.vertexBufferList[3] = resources->createBuffer(String::Format("model:bitangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
+
+                                vertexBufferDescription.stride = sizeof(Math::Float3);
+                                part.vertexBufferList[4] = resources->createBuffer(String::Format("model:normals:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
+
+                                part.indexCount = partHeader.indexCount;
                             }
-
-                            if (header->type != 0)
-                            {
-								LockedWrite{std::cerr} << String::Format("Unsupported model type encountered (requires: 0, has: %v): %v", header->type, fileName);
-								return;
-							}
-
-                            if (header->version != 6)
-                            {
-                                LockedWrite{std::cerr} << String::Format("Unsupported model version encountered (requires: 6, has: %v): %v", header->version, fileName);
-								return;
-							}
-
-                            model.boundingBox = header->boundingBox;
-                            LockedWrite{std::cout} << String::Format("Model: %v, %v parts", name, header->partCount);
-                            loadPool.enqueue([this, name = name, fileName, &model](void) -> void
-                            {
-								LockedWrite{std::cout} << String::Format("Loading model: %v", name);
-
-								std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer));
-
-								Header *header = (Header *)buffer.data();
-								if (buffer.size() < (sizeof(Header) + (sizeof(Header::Part) * header->partCount)))
-								{
-									LockedWrite{std::cerr} << String::Format("Model file too small to contain part headers: %v", fileName);
-									return;
-								}
-
-                                model.partList.resize(header->partCount);
-                                uint8_t *bufferData = (uint8_t *)&header->partList[header->partCount];
-                                for (uint32_t partIndex = 0; partIndex < header->partCount; ++partIndex)
-                                {
-                                    Header::Part &partHeader = header->partList[partIndex];
-									Model::Part &part = model.partList[partIndex];
-
-                                    part.material = resources->loadMaterial(partHeader.name);
-
-                                    Video::Buffer::Description indexBufferDescription;
-                                    indexBufferDescription.format = Video::Format::R16_UINT;
-                                    indexBufferDescription.count = partHeader.indexCount;
-                                    indexBufferDescription.type = Video::Buffer::Description::Type::Index;
-                                    part.indexBuffer = resources->createBuffer(String::Format("model:indices:%v:%v", name, partIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
-                                    bufferData += (sizeof(uint16_t) * partHeader.indexCount);
-
-                                    Video::Buffer::Description vertexBufferDescription;
-                                    vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    vertexBufferDescription.count = partHeader.vertexCount;
-                                    vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
-                                    part.vertexBufferList[0] = resources->createBuffer(String::Format("model:positions:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                    bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
-
-                                    vertexBufferDescription.stride = sizeof(Math::Float2);
-                                    part.vertexBufferList[1] = resources->createBuffer(String::Format("model:texcoords:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
-                                    bufferData += (sizeof(Math::Float2) * partHeader.vertexCount);
-
-                                    vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    part.vertexBufferList[2] = resources->createBuffer(String::Format("model:tangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                    bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
-
-                                    vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    part.vertexBufferList[3] = resources->createBuffer(String::Format("model:bitangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                    bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
-
-                                    vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    part.vertexBufferList[4] = resources->createBuffer(String::Format("model:normals:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                    bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
-
-                                    part.indexCount = partHeader.indexCount;
-                                }
 							
-								LockedWrite{std::cout} << String::Format("Model successfully loaded: %v", name);
-							});
-                        });
-                    }
+							LockedWrite{std::cout} << String::Format("Model successfully loaded: %v", name);
+						});
+                    });
+                }
 
-                    data.model = &pair.first->second;
-                });
-            }
-            catch (...)
-            {
-            };
+                data.model = &pair.first->second;
+            });
         }
 
         // Plugin::Population Slots
