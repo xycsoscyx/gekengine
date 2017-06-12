@@ -181,7 +181,7 @@ namespace Gek
             assert(resources);
             assert(renderer);
 
-            WriteOutput(std::cout, "Initializing model system");
+            LockedWrite{std::cout} << String::Format("Initializing model system");
 
             population->onEntityCreated.connect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
             population->onEntityDestroyed.connect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
@@ -220,50 +220,50 @@ namespace Gek
                     auto pair = modelMap.insert(std::make_pair(GetHash(modelComponent.name), Model()));
                     if (pair.second)
                     {
-                        WriteOutput(std::cout, "Queueing model for load: %v", modelComponent.name);
+                        LockedWrite{std::cout} << String::Format("Queueing model for load: %v", modelComponent.name);
 						loadPool.enqueue([this, name = modelComponent.name, fileName, &model = pair.first->second](void) -> void
                         {
-							WriteOutput(std::cout, "Reading model header: %v", name);
+							LockedWrite{std::cout} << String::Format("Reading model header: %v", name);
 
 							static const std::vector<uint8_t> EmptyBuffer;
 							std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer, sizeof(Header)));
 							if (buffer.size() < sizeof(Header))
 							{
-								WriteOutput(std::cerr, "Model file too small to contain header: %v", fileName);
+								LockedWrite{std::cerr} << String::Format("Model file too small to contain header: %v", fileName);
 								return;
 							}
 
                             Header *header = (Header *)buffer.data();
                             if (header->identifier != *(uint32_t *)"GEKX")
                             {
-								WriteOutput(std::cerr, "Unknown model file identifier encountered (requires: GEKX, has: %v): %v", header->identifier, fileName);
+								LockedWrite{std::cerr} << String::Format("Unknown model file identifier encountered (requires: GEKX, has: %v): %v", header->identifier, fileName);
 								return;
                             }
 
                             if (header->type != 0)
                             {
-								WriteOutput(std::cerr, "Unsupported model type encountered (requires: 0, has: %v): %v", header->type, fileName);
+								LockedWrite{std::cerr} << String::Format("Unsupported model type encountered (requires: 0, has: %v): %v", header->type, fileName);
 								return;
 							}
 
                             if (header->version != 6)
                             {
-                                WriteOutput(std::cerr, "Unsupported model version encountered (requires: 6, has: %v): %v", header->version, fileName);
+                                LockedWrite{std::cerr} << String::Format("Unsupported model version encountered (requires: 6, has: %v): %v", header->version, fileName);
 								return;
 							}
 
                             model.boundingBox = header->boundingBox;
-                            WriteOutput(std::cout, "Model: %v, %v parts", name, header->partCount);
+                            LockedWrite{std::cout} << String::Format("Model: %v, %v parts", name, header->partCount);
                             loadPool.enqueue([this, name = name, fileName, &model](void) -> void
                             {
-								WriteOutput(std::cout, "Loading model: %v", name);
+								LockedWrite{std::cout} << String::Format("Loading model: %v", name);
 
 								std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer));
 
 								Header *header = (Header *)buffer.data();
 								if (buffer.size() < (sizeof(Header) + (sizeof(Header::Part) * header->partCount)))
 								{
-									WriteOutput(std::cerr, "Model file too small to contain part headers: %v", fileName);
+									LockedWrite{std::cerr} << String::Format("Model file too small to contain part headers: %v", fileName);
 									return;
 								}
 
@@ -309,7 +309,7 @@ namespace Gek
                                     part.indexCount = partHeader.indexCount;
                                 }
 							
-								WriteOutput(std::cout, "Model successfully loaded: %v", name);
+								LockedWrite{std::cout} << String::Format("Model successfully loaded: %v", name);
 							});
                         });
                     }

@@ -78,7 +78,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(_window)
             {
-                WriteOutput(std::cout, "Starting GEK Engine");
+                LockedWrite{std::cout} << String::Format("Starting GEK Engine");
 
                 if (!window)
                 {
@@ -177,7 +177,7 @@ namespace Gek
                 renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Plugin::Core *)this);
                 renderer->onShowUserInterface.connect<Core, &Core::onShowUserInterface>(this);
 
-                WriteOutput(std::cout, "Loading processor plugins");
+                LockedWrite{std::cout} << String::Format("Loading processor plugins");
 
                 std::vector<std::string> processorNameList;
                 getContext()->listTypes("ProcessorType", [&](std::string const &className) -> void
@@ -188,7 +188,7 @@ namespace Gek
                 processorList.reserve(processorNameList.size());
                 for (const auto &processorName : processorNameList)
                 {
-                    WriteOutput(std::cout, "Processor found: %v", processorName);
+                    LockedWrite{std::cout} << String::Format("Processor found: %v", processorName);
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(processorName, (Plugin::Core *)this));
                 }
 
@@ -224,7 +224,7 @@ namespace Gek
 
                 window->setVisibility(true);
 
-				WriteOutput(std::cout, "Starting engine");
+				LockedWrite{std::cout} << String::Format("Starting engine");
 
                 population->load("demo");
             }
@@ -261,7 +261,7 @@ namespace Gek
 			void setDisplayMode(uint32_t displayMode)
             {
                 auto &displayModeData = displayModeList[displayMode];
-				WriteOutput(std::cout, "Setting display mode: %vx%v", displayModeData.width, displayModeData.height);
+				LockedWrite{std::cout} << String::Format("Setting display mode: %vx%v", displayModeData.width, displayModeData.height);
                 if (displayMode < displayModeList.size())
                 {
                     currentDisplayMode = displayMode;

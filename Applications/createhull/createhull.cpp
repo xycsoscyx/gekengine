@@ -34,7 +34,7 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
 {
     if (node == nullptr)
     {
-        WriteOutput(std::cerr, "Invalid model node");
+        LockedWrite{std::cerr} << String::Format("Invalid model node");
         return false;
     }
 
@@ -42,7 +42,7 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
     {
         if (node->mMeshes == nullptr)
         {
-            WriteOutput(std::cerr, "Invalid mesh list");
+            LockedWrite{std::cerr} << String::Format("Invalid mesh list");
             return false;
         }
 
@@ -51,7 +51,7 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
             uint32_t nodeMeshIndex = node->mMeshes[meshIndex];
             if (nodeMeshIndex >= scene->mNumMeshes)
             {
-                WriteOutput(std::cerr, "Invalid mesh index");
+                LockedWrite{std::cerr} << String::Format("Invalid mesh index");
                 return false;
             }
 
@@ -60,13 +60,13 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
             {
                 if (mesh->mFaces == nullptr)
                 {
-                    WriteOutput(std::cerr, "Invalid mesh face list");
+                    LockedWrite{std::cerr} << String::Format("Invalid mesh face list");
                     return false;
                 }
 
 				if (mesh->mVertices == nullptr)
 				{
-					WriteOutput(std::cerr, "Invalid mesh vertex list");
+					LockedWrite{std::cerr} << String::Format("Invalid mesh vertex list");
                     return false;
                 }
 
@@ -89,7 +89,7 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
     {
         if (node->mChildren == nullptr)
         {
-            WriteOutput(std::cerr, "Invalid child list");
+            LockedWrite{std::cerr} << String::Format("Invalid child list");
             return false;
         }
 
@@ -113,7 +113,7 @@ void serializeCollision(void* const serializeHandle, const void* const buffer, i
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    WriteOutput(std::cout, "GEK Model Converter");
+    LockedWrite{std::cout} << String::Format("GEK Model Converter");
 
     FileSystem::Path fileNameInput;
     FileSystem::Path fileNameOutput;
@@ -124,7 +124,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		std::vector<std::string> arguments(String::Split(String::GetLower(argument), ':'));
         if (arguments.empty())
         {
-            WriteOutput(std::cerr, "No arguments specified for command line parameter");
+            LockedWrite{std::cerr} << String::Format("No arguments specified for command line parameter");
             return -__LINE__;
         }
 
@@ -140,7 +140,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		{
 			if (arguments.size() != 2)
 			{
-				WriteOutput(std::cerr, "Missing parameters for unitsInFoot");
+				LockedWrite{std::cerr} << String::Format("Missing parameters for unitsInFoot");
                 return -__LINE__;
             }
 
@@ -151,7 +151,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	aiLogStream logStream;
 	logStream.callback = [](char const *message, char *user) -> void
 	{
-		WriteOutput(std::cerr, "Assimp: %v", message);
+		LockedWrite{std::cerr} << String::Format("Assimp: %v", message);
 	};
 
 	logStream.user = nullptr;
@@ -189,20 +189,20 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     auto scene = aiImportFileExWithProperties(fileNameInput.u8string().c_str(), importFlags, nullptr, propertyStore);
     if (scene == nullptr)
     {
-        WriteOutput(std::cerr, "Unable to load scene with Assimp");
+        LockedWrite{std::cerr} << String::Format("Unable to load scene with Assimp");
         return -__LINE__;
     }
 
     scene = aiApplyPostProcessing(scene, postProcessFlags);
     if (scene == nullptr)
 	{
-		WriteOutput(std::cerr, "Unable to apply post processing with Assimp");
+		LockedWrite{std::cerr} << String::Format("Unable to apply post processing with Assimp");
         return -__LINE__;
     }
 
     if (!scene->HasMeshes())
     {
-        WriteOutput(std::cerr, "Scene has no meshes");
+        LockedWrite{std::cerr} << String::Format("Scene has no meshes");
         return -__LINE__;
     }
 
@@ -218,19 +218,19 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
 	if (pointList.empty())
 	{
-        WriteOutput(std::cerr, "No vertex data found in scene");
+        LockedWrite{std::cerr} << String::Format("No vertex data found in scene");
         return -__LINE__;
     }
 
-	WriteOutput(std::cout, "> Num. Points: %v", pointList.size());
-    WriteOutput(std::cout, "< Size: Minimum[%v, %v, %v]", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
-    WriteOutput(std::cout, "< Size: Maximum[%v, %v, %v]", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
+	LockedWrite{std::cout} << String::Format("> Num. Points: %v", pointList.size());
+    LockedWrite{std::cout} << String::Format("< Size: Minimum[%v, %v, %v]", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
+    LockedWrite{std::cout} << String::Format("< Size: Maximum[%v, %v, %v]", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
 
     NewtonWorld *newtonWorld = NewtonCreate();
     NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointList.size(), pointList.data()->data, sizeof(Math::Float3), 0.025f, 0, Math::Float4x4::Identity.data);
     if (newtonCollision == nullptr)
     {
-        WriteOutput(std::cerr, "Unable to create convex hull collision object");
+        LockedWrite{std::cerr} << String::Format("Unable to create convex hull collision object");
         return -__LINE__;
     }
 
@@ -238,7 +238,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     _wfopen_s(&file, fileNameOutput.c_str(), L"wb");
     if (file == nullptr)
     {
-        WriteOutput(std::cerr, "Unable to create output file");
+        LockedWrite{std::cerr} << String::Format("Unable to create output file");
         return -__LINE__;
     }
 

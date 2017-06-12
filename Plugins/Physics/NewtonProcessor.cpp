@@ -183,33 +183,33 @@ namespace Gek
                 {
                     collisionMap[hash] = nullptr;
 
-                    WriteOutput(std::cout, "Loading collision model: %v", modelComponent.name);
+                    LockedWrite{std::cout} << String::Format("Loading collision model: %v", modelComponent.name);
 
 					static const std::vector<uint8_t> EmptyBuffer;
 					auto filePath = getContext()->getRootFileName("data", "physics", modelComponent.name).withExtension(".gek");
                     std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
 					if (buffer.size() < sizeof(Header))
 					{
-						WriteOutput(std::cerr, "File too small to be collision model: %v", modelComponent.name);
+						LockedWrite{std::cerr} << String::Format("File too small to be collision model: %v", modelComponent.name);
 						return nullptr;
 					}
 
                     Header *header = (Header *)buffer.data();
                     if (header->identifier != *(uint32_t *)"GEKX")
                     {
-						WriteOutput(std::cerr, "Unknown model file identifier encountered: %v", modelComponent.name);
+						LockedWrite{std::cerr} << String::Format("Unknown model file identifier encountered: %v", modelComponent.name);
 						return nullptr;
                     }
 
                     if (header->version != 2)
                     {
-                        WriteOutput(std::cerr, "Unsupported model version encountered (requires: 2, has: %v): %v", header->version, modelComponent.name);
+                        LockedWrite{std::cerr} << String::Format("Unsupported model version encountered (requires: 2, has: %v): %v", header->version, modelComponent.name);
 						return nullptr;
 					}
 
                     if (header->newtonVersion != NewtonWorldGetVersion())
                     {
-						WriteOutput(std::cerr, "Model created with different version of Newton Dynamics (requires: %v, has: %v): %v", NewtonWorldGetVersion(), header->newtonVersion, modelComponent.name);
+						LockedWrite{std::cerr} << String::Format("Model created with different version of Newton Dynamics (requires: %v, has: %v): %v", NewtonWorldGetVersion(), header->newtonVersion, modelComponent.name);
 						return nullptr;
 					}
 
@@ -234,7 +234,7 @@ namespace Gek
 
                     if (header->type == 1)
                     {
-						WriteOutput(std::cout, "Loading hull collision: %v", modelComponent.name);
+						LockedWrite{std::cout} << String::Format("Loading hull collision: %v", modelComponent.name);
 
 						HullHeader *hullHeader = (HullHeader *)header;
                         DeSerializationData data(buffer, (uint8_t *)&hullHeader->serializationData[0]);
@@ -242,7 +242,7 @@ namespace Gek
                     }
                     else if (header->type == 2)
                     {
-						WriteOutput(std::cout, "Loading tree collision: %v", modelComponent.name);
+						LockedWrite{std::cout} << String::Format("Loading tree collision: %v", modelComponent.name);
 						
 						TreeHeader *treeHeader = (TreeHeader *)header;
                         for (uint32_t materialIndex = 0; materialIndex < treeHeader->materialCount; ++materialIndex)
@@ -256,13 +256,13 @@ namespace Gek
                     }
                     else
                     {
-						WriteOutput(std::cerr, "Unsupported model type encountered: %v", modelComponent.name);
+						LockedWrite{std::cerr} << String::Format("Unsupported model type encountered: %v", modelComponent.name);
 						return nullptr;
                     }
 
                     if (newtonCollision == nullptr)
                     {
-						WriteOutput(std::cerr, "Unable to create model collision object: %v", modelComponent.name);
+						LockedWrite{std::cerr} << String::Format("Unable to create model collision object: %v", modelComponent.name);
 						return nullptr;
 					}
 
@@ -271,7 +271,7 @@ namespace Gek
                     NewtonCollisionSetMatrix(newtonCollision, Math::Float4x4::Identity.data);
                     collisionMap[hash] = newtonCollision;
 
-					WriteOutput(std::cout, "Collision model successfully loaded: %v", modelComponent.name);
+					LockedWrite{std::cout} << String::Format("Collision model successfully loaded: %v", modelComponent.name);
 				}
 
                 return newtonCollision;

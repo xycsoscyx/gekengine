@@ -94,7 +94,7 @@ void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
                     }
                     else
                     {
-						WriteOutput(std::cerr, "! (Mesh %v) Invalid Face Found: %v (%v vertices)", meshIndex, faceIndex, face.mNumIndices);
+						LockedWrite{std::cerr} << String::Format("! (Mesh %v) Invalid Face Found: %v (%v vertices)", meshIndex, faceIndex, face.mNumIndices);
                     }
                 }
 
@@ -143,7 +143,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 {
 	try
     {
-        WriteOutput(std::cout, "GEK Part Converter");
+        LockedWrite{std::cout} << String::Format("GEK Part Converter");
 
         FileSystem::Path fileNameInput;
         FileSystem::Path fileNameOutput;
@@ -184,7 +184,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		aiLogStream logStream;
 		logStream.callback = [](char const *message, char *user) -> void
 		{
-			WriteOutput(std::cerr, "Assimp: %v", message);
+			LockedWrite{std::cerr} << String::Format("Assimp: %v", message);
 		};
 
 		logStream.user = nullptr;
@@ -324,7 +324,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             auto materialAlebedoSearch = albedoToMaterialMap.find(albedoName);
             if (materialAlebedoSearch == std::end(albedoToMaterialMap))
             {
-                WriteOutput(std::cerr, "! Unable to find material for albedo: %v", albedoName);
+                LockedWrite{std::cerr} << String::Format("! Unable to find material for albedo: %v", albedoName);
             }
             else
             {
@@ -352,9 +352,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 			throw std::exception("No valid material models found");
 		}
 
-		WriteOutput(std::cout, "> Num. Parts: %v", materialPartMap.size());
-        WriteOutput(std::cout, "< Size: Minimum[%v, %v, %v]", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
-        WriteOutput(std::cout, "< Size: Maximum[%v, %v, %v]", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
+		LockedWrite{std::cout} << String::Format("> Num. Parts: %v", materialPartMap.size());
+        LockedWrite{std::cout} << String::Format("< Size: Minimum[%v, %v, %v]", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
+        LockedWrite{std::cout} << String::Format("< Size: Maximum[%v, %v, %v]", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
 
         NewtonWorld *newtonWorld = NewtonCreate();
         NewtonCollision *newtonCollision = NewtonCreateTreeCollision(newtonWorld, 0);
@@ -367,9 +367,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         NewtonTreeCollisionBeginBuild(newtonCollision);
         for (const auto &material : materialPartMap)
         {
-			WriteOutput(std::cout, "-  %v", material.first);
-            WriteOutput(std::cout, "    %v vertices", material.second.vertexList.size());
-            WriteOutput(std::cout, "    %v indices", material.second.indexList.size());
+			LockedWrite{std::cout} << String::Format("-  %v", material.first);
+            LockedWrite{std::cout} << String::Format("    %v vertices", material.second.vertexList.size());
+            LockedWrite{std::cout} << String::Format("    %v indices", material.second.indexList.size());
 
             auto &indexList = material.second.indexList;
             auto &vertexList = material.second.vertexList;
@@ -415,14 +415,14 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
     catch (const std::exception &exception)
     {
-		WriteOutput(std::cerr, "GEK Engine - Error");
-		WriteOutput(std::cerr, "Caught: %v", exception.what());
-		WriteOutput(std::cerr, "Type: %v", typeid(exception).name());
+		LockedWrite{std::cerr} << String::Format("GEK Engine - Error");
+		LockedWrite{std::cerr} << String::Format("Caught: %v", exception.what());
+		LockedWrite{std::cerr} << String::Format("Type: %v", typeid(exception).name());
 	}
     catch (...)
     {
-        WriteOutput(std::cerr, "GEK Engine - Error");
-        WriteOutput(std::cerr, "Caught: Non-standard exception");
+        LockedWrite{std::cerr} << String::Format("GEK Engine - Error");
+        LockedWrite{std::cerr} << String::Format("Caught: Non-standard exception");
     };
 
     return 0;

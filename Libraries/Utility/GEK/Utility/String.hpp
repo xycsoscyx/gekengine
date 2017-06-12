@@ -7,6 +7,7 @@
 /// Last Changed: $Date:   Thu Oct 27 08:51:53 2016 -0700 $
 #pragma once
 
+#include <Windows.h>
 #include <string_view>
 #include <functional>
 #include <algorithm>
@@ -14,14 +15,31 @@
 #include <codecvt>
 #include <string>
 #include <vector>
+#include <ppl.h>
 
 namespace Gek
 {
-    template<typename... PARAMETERS>
-    void WriteOutput(std::ostream &stream, char const *formatting, PARAMETERS&&... arguments)
+    class LockedWrite
+        : public std::ostringstream
     {
-        stream << String::Format(formatting, std::move(arguments)...);
-    }
+    private:
+        static std::mutex mutex;
+        std::ostream &stream;
+
+    public:
+        LockedWrite(std::ostream &stream)
+            : stream(stream)
+        {
+        }
+
+        ~LockedWrite()
+        {
+            (*this) << std::endl;
+            std::lock_guard<std::mutex> guard(mutex);
+            stream << str();
+            stream.flush();
+        }
+    };
 
     namespace String
     {
