@@ -47,7 +47,7 @@ namespace Gek
             auto derivedClass = dynamic_cast<TYPE *>(baseClass.get());
             if (!derivedClass)
             {
-                LockedWrite{std::cerr} << String::Format("Unable to cast from base context user to requested class");
+                LockedWrite{ std::cerr } << String::Format("Unable to cast from base context user to requested class");
                 return nullptr;
             }
 

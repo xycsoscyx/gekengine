@@ -403,7 +403,7 @@ namespace Gek
 
             void initializeSystem(void)
             {
-                LockedWrite{std::cout} << String::Format("Initializing rendering system components");
+                LockedWrite{ std::cout } << String::Format("Initializing rendering system components");
 
                 Video::SamplerStateInformation bufferSamplerStateData;
                 bufferSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapPoint;
@@ -511,7 +511,7 @@ namespace Gek
 
             void initializeUI(void)
             {
-                LockedWrite{std::cout} << String::Format("Initializing user interface data");
+                LockedWrite{ std::cout } << String::Format("Initializing user interface data");
 
                 static char const vertexShader[] =
                     "cbuffer vertexBuffer : register(b0)" \

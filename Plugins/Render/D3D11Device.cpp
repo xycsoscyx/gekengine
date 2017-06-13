@@ -1405,7 +1405,7 @@ namespace Gek
                 HRESULT resultValue = D3DCompile(fullShader.c_str(), (fullShader.size() + 1), name.c_str(), nullptr, nullptr, entryFunction.c_str(), type.c_str(), flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
-					LockedWrite{std::cerr} << String::Format("D3DCompile Failed (%v): %v", resultValue, (char const * const)d3dCompilerErrors->GetBufferPointer());
+					LockedWrite{ std::cerr } << String::Format("D3DCompile Failed (%v): %v", resultValue, (char const * const)d3dCompilerErrors->GetBufferPointer());
                     throw Render::ProgramCompilationFailed("Unable to compile shader");
                 }
 

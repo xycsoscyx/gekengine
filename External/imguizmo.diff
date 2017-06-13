@@ -1,0 +1,15 @@
+ ImGuizmo.cpp | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/ImGuizmo.cpp b/ImGuizmo.cpp
+index a762772..7743d4e 100644
+--- a/ImGuizmo.cpp
++++ b/ImGuizmo.cpp
+@@ -21,7 +21,6 @@
+ // SOFTWARE.
+ 
+ #include "imgui.h"
+-#define IMGUI_DEFINE_MATH_OPERATORS
+ #include "imgui_internal.h"
+ #include "ImGuizmo.h"
+ 

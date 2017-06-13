@@ -90,14 +90,15 @@ namespace Gek
 
             void reload(void)
             {
-                auto evaluate = [&](JSON::Reference data, float defaultValue) -> float
+                LockedWrite{ std::cout } << String::Format("Loading filter: %v", filterName);
+				
+                ShuntingYard shuntingYard(population->getShuntingYard());
+                static auto evaluate = [&](JSON::Reference data, float defaultValue) -> float
                 {
-                    return data.parse(population->getShuntingYard(), defaultValue);
+                    return data.parse(shuntingYard, defaultValue);
                 };
 
-                LockedWrite{std::cout} << String::Format("Loading filter: %v", filterName);
-				
-				passList.clear();
+                passList.clear();
 
                 std::unordered_map<std::string, ResourceHandle> resourceMap;
                 std::unordered_map<std::string, std::string> resourceSemanticsMap;
@@ -110,83 +111,70 @@ namespace Gek
                 depthState = resources->createDepthState(Video::DepthStateInformation());
                 renderState = resources->createRenderState(Video::RenderStateInformation());
 
-                JSON::Instance filterNode = JSON::Load(getContext()->getRootFileName("data", "filters", filterName).withExtension(".json"));
-                auto texturesNode = filterNode.get("textures");
-                for (auto &textureNode : texturesNode.getMembers())
+                const JSON::Instance filterNode = JSON::Load(getContext()->getRootFileName("data", "filters", filterName).withExtension(".json"));
+
+                for (auto &baseTextureNode : filterNode.get("textures").getMembers())
                 {
-                    std::string textureName(textureNode.name());
-                    auto &textureValue = textureNode.value();
+                    std::string textureName(baseTextureNode.name());
                     if (resourceMap.count(textureName) > 0)
                     {
-                        LockedWrite{std::cerr} << String::Format("Duplicate resource name encountered: %v", textureName);
+                        LockedWrite{ std::cout } << String::Format("Texture name same as already listed resource: %v", textureName);
                         continue;
                     }
 
+                    JSON::Reference textureNode(baseTextureNode.value());
+
                     ResourceHandle resource;
-                    if (textureValue.has_member("external") && textureValue.has_member("name"))
+                    std::string externalName(textureNode.get("name").convert(String::Empty));
+                    std::string externalSource(String::GetLower(textureNode.get("external").convert(String::Empty)));
+                    if (externalSource == "shader")
                     {
-						std::string externalName(textureValue.get("name").as_string());
-						std::string externalSource(String::GetLower(textureValue.get("external").as_string()));
-						if (externalSource == "shader")
+                        auto requiredShader = resources->getShader(externalName, MaterialHandle());
+                        if (requiredShader)
                         {
-                            resources->getShader(externalName, MaterialHandle());
                             resource = resources->getResourceHandle(String::Format("%v:%v:resource", textureName, externalName));
                         }
-                        else if (externalSource == "filter")
-                        {
-                            resources->getFilter(externalName);
-                            resource = resources->getResourceHandle(String::Format("%v:%v:resource", textureName, externalName));
-                        }
-                        else if (externalSource == "file")
-                        {
-                            uint32_t flags = getTextureLoadFlags(textureValue.get("flags", 0).as_string());
-                            resource = resources->loadTexture(externalName, flags);
-                        }
                     }
-                    else if (textureValue.has_member("file"))
+                    else if (externalSource == "filter")
                     {
-                        uint32_t flags = getTextureLoadFlags(textureValue.get("flags", 0).as_string());
-                        resource = resources->loadTexture(textureValue.get("file").as_cstring(), flags);
+                        resources->getFilter(externalName);
+                        resource = resources->getResourceHandle(String::Format("%v:%v:resource", textureName, externalName));
                     }
-                    else if (textureValue.has_member("format"))
+                    else if (externalSource == "file")
+                    {
+                        uint32_t flags = getTextureLoadFlags(textureNode.get("flags").convert(String::Empty));
+                        resource = resources->loadTexture(externalName, flags);
+                    }
+                    else
                     {
                         Video::Texture::Description description(backBufferDescription);
-                        description.format = Video::getFormat(textureValue.get("format").as_string());
-                        if (description.format != Video::Format::Unknown)
+                        description.format = Video::getFormat(textureNode.get("format").convert(String::Empty));
+                        auto &size = textureNode.get("size");
+                        if (size.isFloat())
                         {
-                            if (textureValue.has_member("size"))
-                            {
-                                auto &size = textureValue.get("size");
-                                if (size.is_array())
-                                {
-                                    auto dimensions = size.size();
-                                    switch (dimensions)
-                                    {
-                                    case 3:
-                                        description.depth = evaluate(size.at(2), 1);
-
-                                    case 2:
-                                        description.height = evaluate(size.at(1), 1);
-
-                                    case 1:
-                                        description.width = evaluate(size.at(0), 1);
-                                        break;
-
-                                    default:
-                                        continue;
-                                    };
-                                }
-                                else
-                                {
-                                    description.width = evaluate(size, 1);
-                                }
-                            }
-
-                            description.sampleCount = textureValue.get("ampleCount", 1).as_uint();
-                            description.flags = getTextureFlags(textureValue.get("flags", 0).as_string());
-                            description.mipMapCount = evaluate(textureValue.get("mipmaps", 1), 1);
-                            resource = resources->createTexture(String::Format("%v:%v:resource", textureName, filterName), description);
+                            description.width = evaluate(size, 1);
                         }
+                        else
+                        {
+                            auto &sizeArray = size.getArray();
+                            switch (sizeArray.size())
+                            {
+                            case 3:
+                                description.depth = evaluate(size.at(2), 1);
+
+                            case 2:
+                                description.height = evaluate(size.at(1), 1);
+
+                            case 1:
+                                description.width = evaluate(size.at(0), 1);
+                                break;
+                            };
+                        }
+
+                        description.sampleCount = textureNode.get("sampleCount").convert(1);
+                        description.flags = getTextureFlags(textureNode.get("flags").convert(String::Empty));
+                        description.mipMapCount = evaluate(textureNode.get("mipmaps"), 1);
+                        resource = resources->createTexture(String::Format("%v:%v:resource", textureName, filterName), description);
                     }
 
                     resourceMap[textureName] = resource;
@@ -208,45 +196,44 @@ namespace Gek
                     }
                 }
 
-                auto buffersNode = filterNode.get("buffers");
-                for (auto &bufferNode : buffersNode.getMembers())
+                for (auto &baseBufferNode : filterNode.get("buffers").getMembers())
                 {
-                    std::string bufferName(bufferNode.name());
-                    auto &bufferValue = bufferNode.value();
+                    std::string bufferName(baseBufferNode.name());
                     if (resourceMap.count(bufferName) > 0)
                     {
-                        LockedWrite{std::cerr} << String::Format("Duplicate resource name encountered: %v", bufferName);
+                        LockedWrite{ std::cout } << String::Format("Texture name same as already listed resource: %v", bufferName);
                         continue;
                     }
 
+                    JSON::Reference bufferValue(baseBufferNode.value());
+
                     ResourceHandle resource;
-                    if (bufferValue.has_member("source"))
+                    std::string bufferSource(bufferValue.get("source").convert(String::Empty));
+                    if (!bufferSource.empty())
                     {
-                        std::string bufferSource(bufferValue.get("source").as_string());
-                        resources->getShader(bufferSource, MaterialHandle());
-                        resources->getFilter(bufferSource);
                         resource = resources->getResourceHandle(String::Format("%v:%v:resource", bufferName, bufferSource));
                     }
-                    else if (bufferValue.has_member("count"))
+                    else
                     {
-                        uint32_t count = evaluate(bufferValue.get("count", 0), 0);
-                        uint32_t flags = getBufferFlags(bufferValue.get("flags", 0).as_string());
-                        if (bufferValue.has_member("stride") && bufferValue.has_member("structure"))
+                        uint32_t count = evaluate(bufferValue.get("count"), 0);
+                        uint32_t flags = getBufferFlags(bufferValue.get("flags").convert(String::Empty));
+                        auto format = bufferValue.get("format").convert(String::Empty);
+                        if (format.empty())
                         {
                             Video::Buffer::Description description;
                             description.count = count;
                             description.flags = flags;
                             description.type = Video::Buffer::Description::Type::Structured;
-                            description.stride = evaluate(bufferValue.get("stride", 0), 0);
+                            description.stride = evaluate(bufferValue.get("stride"), 0);
                             resource = resources->createBuffer(String::Format("%v:%v:buffer", bufferName, filterName), description);
                         }
-                        else if (bufferValue.has_member("format"))
+                        else
                         {
                             Video::Buffer::Description description;
                             description.count = count;
                             description.flags = flags;
                             description.type = Video::Buffer::Description::Type::Raw;
-                            description.format = Video::getFormat(bufferValue.get("format").as_string());
+                            description.format = Video::getFormat(format);
                             resource = resources->createBuffer(String::Format("%v:%v:buffer", bufferName, filterName), description);
                         }
 
@@ -254,17 +241,14 @@ namespace Gek
                         auto description = resources->getBufferDescription(resource);
                         if (description)
                         {
-                            if (bufferValue.get("byteaddress", false).as_bool())
+                            if (bufferValue.get("byteaddress").convert(false))
                             {
                                 resourceSemanticsMap[bufferName] = "ByteAddressBuffer";
                             }
-                            else if (bufferValue.has_member("structure"))
-                            {
-                                resourceSemanticsMap[bufferName] += String::Format("Buffer<%v>", bufferValue.get("structure").as_string());
-                            }
                             else
                             {
-                                resourceSemanticsMap[bufferName] += String::Format("Buffer<%v>", getFormatSemantic(description->format));
+                                auto structure = bufferValue.get("structure").convert(String::Empty);
+                                resourceSemanticsMap[bufferName] += String::Format("Buffer<%v>", structure.empty() ? getFormatSemantic(description->format) : structure);
                             }
                         }
                     }
@@ -273,43 +257,17 @@ namespace Gek
                 auto &passesNode = filterNode.get("passes");
                 passList.resize(passesNode.getArray().size());
                 auto passData = std::begin(passList);
-
-                for (auto &passNode : passesNode.getArray())
+                for (auto &basePassNode : passesNode.getArray())
                 {
                     PassData &pass = *passData++;
-                    if (!passNode.has_member("program"))
-                    {
-                        LockedWrite{std::cerr} << String::Format("Pass missing program data");
-                        continue;
-                    }
 
-                    if (!passNode.has_member("entry"))
-                    {
-                        LockedWrite{std::cerr} << String::Format("Pass missing program entrypoint");
-                        continue;
-                    }
+                    JSON::Reference passNode(basePassNode);
 
-                    std::string engineData;
-                    if (passNode.has_member("engineData"))
+                    std::string engineData = passNode.get("engineData").convert(String::Empty);
+                    std::string mode(String::GetLower(passNode.get("mode").convert(String::Empty)));
+                    if (mode == "compute")
                     {
-                        auto &engineDataNode = passNode.get("engineData");
-                        if (engineDataNode.is_string())
-                        {
-                            engineData = passNode.get("engineData").as_cstring();
-                        }
-                    }
-
-                    if (passNode.has_member("mode"))
-                    {
-						std::string mode(String::GetLower(passNode.get("mode").as_string()));
-                        if (mode == "compute")
-                        {
-                            pass.mode = Pass::Mode::Compute;
-                        }
-                        else
-                        {
-                            pass.mode = Pass::Mode::Deferred;
-                        }
+                        pass.mode = Pass::Mode::Compute;
                     }
                     else
                     {
@@ -318,28 +276,20 @@ namespace Gek
 
                     if (pass.mode == Pass::Mode::Compute)
                     {
-                        if (!passNode.has_member("dispatch"))
-                        {
-                            LockedWrite{std::cerr} << String::Format("Compute pass missing dispatch size");
-                            continue;
-                        }
-
                         auto &dispatch = passNode.get("dispatch");
-                        if (dispatch.is_array())
+                        if (dispatch.isFloat())
                         {
-                            if (dispatch.size() != 3)
-                            {
-                                LockedWrite{std::cerr} << String::Format("Compute pass must contain the [XYZ] values");
-                                continue;
-                            }
-
-                            pass.dispatchWidth = evaluate(dispatch.at(0), 1);
-                            pass.dispatchHeight = evaluate(dispatch.at(1), 1);
-                            pass.dispatchDepth = evaluate(dispatch.at(1), 1);
+                            pass.dispatchWidth = pass.dispatchHeight = pass.dispatchDepth = evaluate(dispatch, 1);
                         }
                         else
                         {
-                            pass.dispatchWidth = pass.dispatchHeight = pass.dispatchDepth = evaluate(dispatch, 1);
+                            auto &dispatchArray = dispatch.getArray();
+                            if (dispatchArray.size() == 3)
+                            {
+                                pass.dispatchWidth = evaluate(dispatch.at(0), 1);
+                                pass.dispatchHeight = evaluate(dispatch.at(1), 1);
+                                pass.dispatchDepth = evaluate(dispatch.at(2), 1);
+                            }
                         }
                     }
                     else
@@ -362,7 +312,7 @@ namespace Gek
                                 auto resourceSearch = resourceMap.find(renderTarget.first);
                                 if (resourceSearch == std::end(resourceMap))
                                 {
-                                    LockedWrite{std::cerr} << String::Format("Unable to find render target for pass: %v", renderTarget.first);
+                                    LockedWrite{ std::cerr } << String::Format("Unable to find render target for pass: %v", renderTarget.first);
                                 }
                                 else
                                 {
@@ -374,7 +324,7 @@ namespace Gek
                                     }
                                     else
                                     {
-                                        LockedWrite{std::cerr} << String::Format("Unable to get description for render target: %v", renderTarget.first);
+                                        LockedWrite{ std::cerr } << String::Format("Unable to get description for render target: %v", renderTarget.first);
                                     }
                                 }
                             }
@@ -391,105 +341,87 @@ namespace Gek
                         }
 
                         Video::UnifiedBlendStateInformation blendStateInformation;
-                        if (passNode.has_member("blendState"))
-                        {
-                            blendStateInformation.load(passNode.get("blendState"));
-                        }
-
+                        blendStateInformation.load(passNode.get("blendState"));
                         pass.blendState = resources->createBlendState(blendStateInformation);
                     }
 
-                    if (passNode.has_member("clear"))
+                    for (auto &baseClearTargetNode : passNode.get("clear").getMembers())
                     {
-                        auto &clearNode = passNode.get("clear");
-                        if (!clearNode.is_object())
+                        auto resourceName = baseClearTargetNode.name();
+                        auto resourceSearch = resourceMap.find(resourceName);
+                        if (resourceSearch != std::end(resourceMap))
                         {
-                            throw InvalidParameter("Shader clear list must be an object");
+                            JSON::Reference clearTargetNode(baseClearTargetNode.value());
+                            auto clearType = getClearType(clearTargetNode.get("type").convert(String::Empty));
+                            auto clearValue = clearTargetNode.get("value").convert(String::Empty);
+                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(clearType, clearValue)));
                         }
-
-                        for (auto &clearTargetNode : clearNode.members())
+                        else
                         {
-                            auto &clearTargetName = clearTargetNode.name();
-                            auto resourceSearch = resourceMap.find(clearTargetName);
-                            if (resourceSearch == std::end(resourceMap))
-                            {
-                                throw MissingParameter("Missing clear target encountered");
-                            }
-                               
-                            auto &clearTargetValue = clearTargetNode.value();
-                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue.get("type", String::Empty).as_string()), clearTargetValue.get("value", String::Empty).as_string())));
+                            LockedWrite{ std::cerr } << String::Format("Missing clear target encountered: %v", resourceName);
                         }
                     }
 
-                    if(passNode.has_member("generateMipMaps"))
+                    for (auto &baseGenerateMipMapsNode : passNode.get("generateMipMaps").getArray())
                     {
-                        auto &generateMipMapsNode = passNode.get("generateMipMaps");
-                        if (!generateMipMapsNode.is_array())
+                        JSON::Reference generateMipMapNode(baseGenerateMipMapsNode);
+                        auto resourceName = generateMipMapNode.convert(String::Empty);
+                        auto resourceSearch = resourceMap.find(resourceName);
+                        if (resourceSearch != std::end(resourceMap))
                         {
-                            throw InvalidParameter("Shader generateMipMaps list must be an array");
-                        }
-
-                        for (auto &generateMipMaps : generateMipMapsNode.elements())
-                        {
-                            auto resourceSearch = resourceMap.find(generateMipMaps.as_string());
-                            if (resourceSearch == std::end(resourceMap))
-                            {
-                                throw InvalidParameter("Missing mipmap generation target encountered");
-                            }
-
                             pass.generateMipMapsList.push_back(resourceSearch->second);
                         }
-                    }
-
-                    if (passNode.has_member("copy"))
-                    {
-                        auto &copyNode = passNode.get("copy");
-                        if (!copyNode.is_object())
+                        else
                         {
-                            throw InvalidParameter("Shader copy list must be an object");
-                        }
-
-                        for (auto &copy : copyNode.members())
-                        {
-                            auto nameSearch = resourceMap.find(copy.name());
-                            if (nameSearch == std::end(resourceMap))
-                            {
-                                throw InvalidParameter("Missing copy target encountered");
-                            }
-
-                            auto valueSearch = resourceMap.find(copy.value().as_string());
-                            if (valueSearch == std::end(resourceMap))
-                            {
-                                throw InvalidParameter("Missing copy source encountered");
-                            }
-
-                            pass.copyResourceMap[nameSearch->second] = valueSearch->second;
+                            LockedWrite{ std::cerr } << String::Format("Missing mipmap generation target encountered: %v", resourceName);
                         }
                     }
 
-                    if (passNode.has_member("resolve"))
+                    for (auto &baseCopyNode : passNode.get("copy").getMembers())
                     {
-                        auto &resolveNode = passNode.get("resolve");
-                        if (!resolveNode.is_object())
+                        auto targetResourceName = baseCopyNode.name();
+                        auto nameSearch = resourceMap.find(targetResourceName);
+                        if (nameSearch != std::end(resourceMap))
                         {
-                            throw InvalidParameter("Shader copy list must be an object");
+                            JSON::Reference copyNode(baseCopyNode.value());
+                            auto sourceResourceName = copyNode.convert(String::Empty);
+                            auto valueSearch = resourceMap.find(sourceResourceName);
+                            if (valueSearch != std::end(resourceMap))
+                            {
+                                pass.copyResourceMap[nameSearch->second] = valueSearch->second;
+                            }
+                            else
+                            {
+                                LockedWrite{ std::cerr } << String::Format("Missing copy source encountered: %v", sourceResourceName);
+                            }
                         }
-
-                        for (auto &resolve : resolveNode.members())
+                        else
                         {
-                            auto nameSearch = resourceMap.find(resolve.name());
-                            if (nameSearch == std::end(resourceMap))
-                            {
-                                throw InvalidParameter("Missing resolve target encountered");
-                            }
+                            LockedWrite{ std::cerr } << String::Format("Missing copy target encountered: %v", targetResourceName);
+                        }
+                    }
 
-                            auto valueSearch = resourceMap.find(resolve.value().as_string());
-                            if (valueSearch == std::end(resourceMap))
+                    for (auto &baseResolveNode : passNode.get("resolve").getMembers())
+                    {
+                        auto targetResourceName = baseResolveNode.name();
+                        auto nameSearch = resourceMap.find(targetResourceName);
+                        if (nameSearch != std::end(resourceMap))
+                        {
+                            JSON::Reference resolveNode(baseResolveNode.value());
+                            auto sourceResourceName = resolveNode.convert(String::Empty);
+                            auto valueSearch = resourceMap.find(sourceResourceName);
+                            if (valueSearch != std::end(resourceMap))
                             {
-                                throw InvalidParameter("Missing resolve source encountered");
+                                pass.resolveSampleMap[nameSearch->second] = valueSearch->second;
                             }
-
-                            pass.resolveSampleMap[nameSearch->second] = valueSearch->second;
+                            else
+                            {
+                                LockedWrite{ std::cerr } << String::Format("Missing resolve source encountered: %v", sourceResourceName);
+                            }
+                        }
+                        else
+                        {
+                            LockedWrite{ std::cerr } << String::Format("Missing resolve target encountered: %v", targetResourceName);
                         }
                     }
 
@@ -556,13 +488,14 @@ namespace Gek
                             "\r\n", unorderedAccessData);
                     }
 
-                    std::string entryPoint(passNode.get("entry").as_string());
-                    std::string name(FileSystem::GetFileName(filterName, passNode.get("program").as_cstring()).withExtension(".hlsl").u8string());
+                    std::string entryPoint(passNode.get("entry").convert(String::Empty));
+                    auto programName = passNode.get("program").convert(String::Empty);
+                    std::string fileName(FileSystem::GetFileName(filterName, programName).withExtension(".hlsl").u8string());
                     Video::PipelineType pipelineType = (pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel);
-                    pass.program = resources->loadProgram(pipelineType, name, entryPoint, engineData);
+                    pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
                 }
 
-				LockedWrite{std::cout} << String::Format("Filter loaded successfully: %v", filterName);
+				LockedWrite{ std::cout } << String::Format("Filter loaded successfully: %v", filterName);
 			}
 
             ~Filter(void)

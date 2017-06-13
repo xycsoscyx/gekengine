@@ -57,7 +57,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
 {
     if (node == nullptr)
     {
-        LockedWrite{std::cerr} << String::Format("Invalid scene node");
+        LockedWrite{ std::cerr } << String::Format("Invalid scene node");
         return false;
     }
 
@@ -65,7 +65,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
     {
         if (node->mMeshes == nullptr)
         {
-            LockedWrite{std::cerr} << String::Format("Invalid mesh list");
+            LockedWrite{ std::cerr } << String::Format("Invalid mesh list");
             return false;
         }
 
@@ -74,7 +74,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
             uint32_t nodeMeshIndex = node->mMeshes[meshIndex];
             if (nodeMeshIndex >= scene->mNumMeshes)
             {
-                LockedWrite{std::cerr} << String::Format("Invalid mesh index");
+                LockedWrite{ std::cerr } << String::Format("Invalid mesh index");
                 return false;
             }
 
@@ -83,37 +83,37 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
             {
                 if (mesh->mFaces == nullptr)
                 {
-                    LockedWrite{std::cerr} << String::Format("Invalid mesh face list");
+                    LockedWrite{ std::cerr } << String::Format("Invalid mesh face list");
                     return false;
                 }
 
                 if (mesh->mVertices == nullptr)
                 {
-                    LockedWrite{std::cerr} << String::Format("Invalid mesh vertex list");
+                    LockedWrite{ std::cerr } << String::Format("Invalid mesh vertex list");
                     return false;
                 }
 
                 if (mesh->mTextureCoords[0] == nullptr)
                 {
-                    LockedWrite{std::cerr} << String::Format("Invalid mesh texture coordinate list");
+                    LockedWrite{ std::cerr } << String::Format("Invalid mesh texture coordinate list");
                     return false;
                 }
 
                 if (mesh->mTangents == nullptr)
                 {
-                    LockedWrite{std::cerr} << String::Format("Invalid mesh tangent list");
+                    LockedWrite{ std::cerr } << String::Format("Invalid mesh tangent list");
                     return false;
                 }
 
                 if (mesh->mBitangents == nullptr)
                 {
-                    LockedWrite{std::cerr} << String::Format("Invalid mesh bitangent list");
+                    LockedWrite{ std::cerr } << String::Format("Invalid mesh bitangent list");
                     return false;
                 }
 
                 if (mesh->mNormals == nullptr)
                 {
-                    LockedWrite{std::cerr} << String::Format("Invalid mesh normal list");
+                    LockedWrite{ std::cerr } << String::Format("Invalid mesh normal list");
                     return false;
                 }
 
@@ -124,7 +124,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
                     const aiFace &face = mesh->mFaces[faceIndex];
                     if (face.mNumIndices != 3)
                     {
-                        LockedWrite{std::cerr} << String::Format("Non-triangular face encountered");
+                        LockedWrite{ std::cerr } << String::Format("Non-triangular face encountered");
                         return false;
                     }
 
@@ -188,7 +188,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
     {
         if (node->mChildren == nullptr)
         {
-            LockedWrite{std::cerr} << String::Format("Invalid child list");
+            LockedWrite{ std::cerr } << String::Format("Invalid child list");
             return false;
         }
 
@@ -206,7 +206,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    LockedWrite{std::cout} << String::Format("GEK Part Converter");
+    LockedWrite{ std::cout } << String::Format("GEK Part Converter");
 
     FileSystem::Path fileNameInput;
     FileSystem::Path fileNameOutput;
@@ -220,7 +220,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		std::vector<std::string> arguments(String::Split(String::GetLower(argument), ':'));
         if (arguments.empty())
         {
-            LockedWrite{std::cerr} << String::Format("No arguments specified for command line parameter");
+            LockedWrite{ std::cerr } << String::Format("No arguments specified for command line parameter");
             return -__LINE__;
         }
 
@@ -244,7 +244,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         {
             if (arguments.size() != 2)
             {
-                LockedWrite{std::cerr} << String::Format("Missing parameters for smoothAngle");
+                LockedWrite{ std::cerr } << String::Format("Missing parameters for smoothAngle");
                 return -__LINE__;
             }
 
@@ -254,7 +254,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         {
             if (arguments.size() != 2)
             {
-                LockedWrite{std::cerr} << String::Format("Missing parameters for unitsInFoot");
+                LockedWrite{ std::cerr } << String::Format("Missing parameters for unitsInFoot");
                 return -__LINE__;
             }
 
@@ -269,7 +269,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     aiLogStream logStream;
     logStream.callback = [](char const *message, char *user) -> void
     {
-		LockedWrite{std::cerr} << String::Format("Assimp: %v", message);
+		LockedWrite{ std::cerr } << String::Format("Assimp: %v", message);
     };
 
     logStream.user = nullptr;
@@ -322,33 +322,33 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     auto scene = aiImportFileExWithProperties(fileNameInput.u8string().c_str(), importFlags, nullptr, propertyStore);
     if (scene == nullptr)
     {
-        LockedWrite{std::cerr} << String::Format("Unable to load scene with Assimp");
+        LockedWrite{ std::cerr } << String::Format("Unable to load scene with Assimp");
         return -__LINE__;
     }
 
     scene = aiApplyPostProcessing(scene, textureProcessFlags);
     if (scene == nullptr)
     {
-        LockedWrite{std::cerr} << String::Format("Unable to apply texture post processing with Assimp");
+        LockedWrite{ std::cerr } << String::Format("Unable to apply texture post processing with Assimp");
         return -__LINE__;
     }
 
     scene = aiApplyPostProcessing(scene, tangentProcessFlags);
     if (scene == nullptr)
     {
-        LockedWrite{std::cerr} << String::Format("Unable to apply tangent post processing with Assimp");
+        LockedWrite{ std::cerr } << String::Format("Unable to apply tangent post processing with Assimp");
         return -__LINE__;
     }
 
     if (!scene->HasMeshes())
     {
-        LockedWrite{std::cerr} << String::Format("Scene has no meshes");
+        LockedWrite{ std::cerr } << String::Format("Scene has no meshes");
         return -__LINE__;
     }
 
     if (!scene->HasMaterials())
     {
-        LockedWrite{std::cerr} << String::Format("Exporting to model requires materials in scene");
+        LockedWrite{ std::cerr } << String::Format("Exporting to model requires materials in scene");
         return -__LINE__;
     }
 
@@ -402,7 +402,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     FileSystem::Find(materialsPath, findMaterials);
     if (albedoToMaterialMap.empty())
     {
-        LockedWrite{std::cerr} << String::Format("Unable to locate any materials");
+        LockedWrite{ std::cerr } << String::Format("Unable to locate any materials");
         return -__LINE__;
     }
 
@@ -410,7 +410,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     for (const auto &modelAlbedo : scenePartMap)
     {
 		std::string albedoName(String::GetLower(FileSystem::Path(modelAlbedo.first).withoutExtension().u8string()));
-        LockedWrite{std::cout} << String::Format("Found Albedo: %v", albedoName);
+        LockedWrite{ std::cout } << String::Format("Found Albedo: %v", albedoName);
         if (albedoName.find("textures\\") == 0)
         {
             albedoName = albedoName.substr(9);
@@ -435,7 +435,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         auto materialAlebedoSearch = albedoToMaterialMap.find(albedoName);
         if (materialAlebedoSearch == std::end(albedoToMaterialMap))
         {
-            LockedWrite{std::cerr} << String::Format("! Unable to find material for albedo: %v", albedoName.c_str());
+            LockedWrite{ std::cerr } << String::Format("! Unable to find material for albedo: %v", albedoName.c_str());
         }
         else
         {
@@ -464,19 +464,19 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
     if (materialPartMap.empty())
     {
-        LockedWrite{std::cerr} << String::Format("No valid material models found");
+        LockedWrite{ std::cerr } << String::Format("No valid material models found");
         return -__LINE__;
     }
 
-	LockedWrite{std::cout} << String::Format("> Num. Parts: %v", materialPartMap.size());
-    LockedWrite{std::cout} << String::Format("< Size: Minimum[%v, %v, %v]", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
-    LockedWrite{std::cout} << String::Format("< Size: Maximum[%v, %v, %v]", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
+	LockedWrite{ std::cout } << String::Format("> Num. Parts: %v", materialPartMap.size());
+    LockedWrite{ std::cout } << String::Format("< Size: Minimum[%v, %v, %v]", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
+    LockedWrite{ std::cout } << String::Format("< Size: Maximum[%v, %v, %v]", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
 
     FILE *file = nullptr;
     _wfopen_s(&file, fileNameOutput.c_str(), L"wb");
     if (file == nullptr)
     {
-        LockedWrite{std::cerr} << String::Format("Unable to create output file");
+        LockedWrite{ std::cerr } << String::Format("Unable to create output file");
         return -__LINE__;
     }
 
@@ -487,9 +487,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     for (const auto &material : materialPartMap)
     {
 		std::string name = material.first;
-		LockedWrite{std::cout} << String::Format("-    Material: %v", name);
-        LockedWrite{std::cout} << String::Format("       Num. Vertices: %v", material.second.vertexPositionList.size());
-        LockedWrite{std::cout} << String::Format("       Num. Indices: %v", material.second.indexList.size());
+		LockedWrite{ std::cout } << String::Format("-    Material: %v", name);
+        LockedWrite{ std::cout } << String::Format("       Num. Vertices: %v", material.second.vertexPositionList.size());
+        LockedWrite{ std::cout } << String::Format("       Num. Indices: %v", material.second.indexList.size());
 
         Header::Material materialHeader;
         std::strncpy(materialHeader.name, name.c_str(), 63);

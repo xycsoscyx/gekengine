@@ -28,11 +28,17 @@ namespace Gek
     {
     }
 
-	ShuntingYard::Token::Token(float value)
+    ShuntingYard::Token::Token(float value)
         : type(TokenType::Number)
-		, value(value)
-	{
-	}
+        , value(value)
+    {
+    }
+
+    ShuntingYard::Token::Token(float *variable)
+        : type(TokenType::Number)
+        , variable(variable)
+    {
+    }
 
     ShuntingYard::Operand::Operand(void)
         : type(OperandType::Unknown)
@@ -41,8 +47,16 @@ namespace Gek
 
     ShuntingYard::Operand::Operand(Token const &token)
     {
-        type = OperandType::Number;
-        value = token.value;
+        if (token.variable)
+        {
+            type = OperandType::Variable;
+            variable = token.variable;
+        }
+        else
+        {
+            type = OperandType::Number;
+            value = token.value;
+        }
     }
 
     ShuntingYard::Operand::Operand(Token const &token, Operation *operation)
@@ -180,6 +194,31 @@ namespace Gek
             std::uniform_real_distribution<float> uniformRealDistribution(value1, value2);
             return uniformRealDistribution(mersineTwister);
         } } });
+    }
+
+    ShuntingYard::ShuntingYard(ShuntingYard const &shuntingYard)
+        : seed(shuntingYard.seed)
+        , variableMap(shuntingYard.variableMap)
+        , operationsMap(shuntingYard.operationsMap)
+        , functionsMap(shuntingYard.functionsMap)
+        , mersineTwister(shuntingYard.mersineTwister)
+        , cache(shuntingYard.cache)
+    {
+    }
+
+    void ShuntingYard::setVariable(std::string const &name, float value)
+    {
+        variableMap[name] = value;
+    }
+
+    void ShuntingYard::setOperation(std::string const &name, int precedence, Associations association, std::function<float(float value)> &unaryFunction, std::function<float(float valueLeft, float valueRight)> &binaryFunction)
+    {
+        operationsMap[name] = { precedence, association, unaryFunction, binaryFunction };
+    }
+
+    void ShuntingYard::setFunction(std::string const &name, uint32_t parameterCount, std::function<float(std::stack<float> &)> &function)
+    {
+        functionsMap[name] = { parameterCount, function };
     }
 
     void ShuntingYard::setRandomSeed(uint32_t seed)
@@ -346,7 +385,7 @@ namespace Gek
             auto variableSearch = variableMap.find(runningToken);
             if (variableSearch != std::end(variableMap))
             {
-                insertToken(infixTokenList, Token(variableSearch->second));
+                insertToken(infixTokenList, Token(&variableSearch->second));
             }
 
             auto functionSearch = functionsMap.find(runningToken);
@@ -643,6 +682,10 @@ namespace Gek
             {
             case OperandType::Number:
                 stack.push(operand.value);
+                break;
+
+            case OperandType::Variable:
+                stack.push(*operand.variable);
                 break;
 
             case OperandType::UnaryOperation:

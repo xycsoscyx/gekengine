@@ -41,6 +41,7 @@ namespace Gek
         {
             Unknown = 0,
             Number,
+            Variable,
             UnaryOperation,
             BinaryOperation,
             Function,
@@ -52,10 +53,12 @@ namespace Gek
             uint32_t parameterCount = 0;
             std::string string;
             float value = 0.0f;
+            float *variable = nullptr;
 
             Token(TokenType type = TokenType::Unknown);
             Token(TokenType type, std::string const &string, uint32_t parameterCount = 0);
-			Token(float value);
+            Token(float value);
+            Token(float *variable);
         };
 
         struct Operation
@@ -78,6 +81,7 @@ namespace Gek
             union
             {
                 float value;
+                float *variable;
                 Operation *operation;
                 Function *function;
             };
@@ -103,6 +107,11 @@ namespace Gek
 
     public:
         ShuntingYard(void);
+        ShuntingYard(ShuntingYard const &shuntingYard);
+
+        void setVariable(std::string const &name, float value);
+        void setOperation(std::string const &name, int precedence, Associations association, std::function<float(float value)> &unaryFunction, std::function<float(float valueLeft, float valueRight)> &binaryFunction);
+        void setFunction(std::string const &name, uint32_t parameterCount, std::function<float(std::stack<float> &)> &function);
 
         void setRandomSeed(uint32_t seed);
         uint32_t getRandomSeed(void);

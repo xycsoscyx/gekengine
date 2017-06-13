@@ -15,21 +15,21 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 {
 	if (!inputFilePath.isFile())
 	{
-        LockedWrite{std::cerr} << String::Format("Input file not found: %v", inputFilePath.c_str());
+        LockedWrite{ std::cerr } << String::Format("Input file not found: %v", inputFilePath.c_str());
         return;
 	}
 
     auto outputFilePath(inputFilePath.withExtension(".dds"));
 	if (outputFilePath.isFile() && outputFilePath.isNewerThan(inputFilePath))
 	{
-		LockedWrite{std::cerr} << String::Format("Input file hasn't changed since last compression: %v", inputFilePath.c_str());
+		LockedWrite{ std::cerr } << String::Format("Input file hasn't changed since last compression: %v", inputFilePath.c_str());
         return;
     }
 
     std::string extension(String::GetLower(inputFilePath.getExtension()));
     if (extension == ".dds")
     {
-        LockedWrite{std::cerr} << String::Format("Input file is alrady compressed: %v", inputFilePath.c_str());
+        LockedWrite{ std::cerr } << String::Format("Input file is alrady compressed: %v", inputFilePath.c_str());
         return;
     }
 
@@ -62,7 +62,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 */
 	if (!load)
 	{
-        LockedWrite{std::cerr} << String::Format("Unknown file type of %v for input: %v", extension, inputFilePath.c_str());
+        LockedWrite{ std::cerr } << String::Format("Unknown file type of %v for input: %v", extension, inputFilePath.c_str());
         return;
     }
 
@@ -73,7 +73,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
     HRESULT resultValue = load(buffer, image);
     if (FAILED(resultValue))
     {
-        LockedWrite{std::cerr} << String::Format("Unable to load input file: %v", inputFilePath.c_str());
+        LockedWrite{ std::cerr } << String::Format("Unable to load input file: %v", inputFilePath.c_str());
         return;
     }
 
@@ -126,38 +126,38 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 	}
 	else
 	{
-		LockedWrite{std::cerr} << String::Format("Unable to determine texture material type: %v", textureName);
+		LockedWrite{ std::cerr } << String::Format("Unable to determine texture material type: %v", textureName);
         return;
     }
 
-    LockedWrite{std::cout} << String::Format("Compressing: -> %v", inputFilePath);
-    LockedWrite{std::cout} << String::Format("             <- %v", outputFilePath);
+    LockedWrite{ std::cout } << String::Format("Compressing: -> %v", inputFilePath);
+    LockedWrite{ std::cout } << String::Format("             <- %v", outputFilePath);
     switch (outputFormat)
     {
     case DXGI_FORMAT_BC7_UNORM_SRGB:
-        LockedWrite{std::cout} << String::Format("             Albedo BC7");
+        LockedWrite{ std::cout } << String::Format("             Albedo BC7");
         break;
 
     case DXGI_FORMAT_BC1_UNORM_SRGB:
-        LockedWrite{std::cout} << String::Format("             Albedo BC1");
+        LockedWrite{ std::cout } << String::Format("             Albedo BC1");
         break;
 
     case DXGI_FORMAT_BC5_UNORM:
-        LockedWrite{std::cout} << String::Format("             Normal BC5");
+        LockedWrite{ std::cout } << String::Format("             Normal BC5");
         break;
 
     case DXGI_FORMAT_BC4_UNORM:
-        LockedWrite{std::cout} << String::Format("             Metalness/Roughness BC4");
+        LockedWrite{ std::cout } << String::Format("             Metalness/Roughness BC4");
         break;
     };
 
-    LockedWrite{std::cout} << String::Format("             %vx%v", image.GetMetadata().width, image.GetMetadata().height);
+    LockedWrite{ std::cout } << String::Format("             %vx%v", image.GetMetadata().width, image.GetMetadata().height);
 
 	::DirectX::ScratchImage mipMapChain;
 	resultValue = ::DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), ::DirectX::TEX_FILTER_TRIANGLE, 0, mipMapChain);
 	if (FAILED(resultValue))
 	{
-		LockedWrite{std::cerr} << String::Format("Unable to create mipmap chain");
+		LockedWrite{ std::cerr } << String::Format("Unable to create mipmap chain");
 	}
 
 	image = std::move(mipMapChain);
@@ -175,21 +175,21 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 
 	if (FAILED(resultValue))
 	{
-		LockedWrite{std::cerr} << String::Format("Unable to compress image");
+		LockedWrite{ std::cerr } << String::Format("Unable to compress image");
         return;
     }
 
 	resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, outputFilePath.c_str());
 	if (FAILED(resultValue))
 	{
-		LockedWrite{std::cerr} << String::Format("Unable to save image");
+		LockedWrite{ std::cerr } << String::Format("Unable to save image");
         return;
     }
 }
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    LockedWrite{std::cout} << String::Format("GEK Texture Compressor");
+    LockedWrite{ std::cout } << String::Format("GEK Texture Compressor");
 
     try
     {
@@ -223,12 +223,12 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 				}
 				catch (std::exception const &exception)
 				{
-                    LockedWrite{std::cerr} << String::Format("[warning] Error trying to compress file: %v", filePath);
-                    LockedWrite{std::cerr} << String::Format(exception.what());
+                    LockedWrite{ std::cerr } << String::Format("[warning] Error trying to compress file: %v", filePath);
+                    LockedWrite{ std::cerr } << String::Format(exception.what());
 				}
                 catch (...)
                 {
-                    LockedWrite{std::cerr} << String::Format("[warning] Unknown error trying to compress file: %v", filePath);
+                    LockedWrite{ std::cerr } << String::Format("[warning] Unknown error trying to compress file: %v", filePath);
                 };
 			}
 
@@ -241,14 +241,14 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	}
     catch (const std::exception &exception)
     {
-        LockedWrite{std::cerr} << String::Format("GEK Engine - Error");
-		LockedWrite{std::cerr} << String::Format("Caught: %v", exception.what());
-		LockedWrite{std::cerr} << String::Format("Type: %v", typeid(exception).name());
+        LockedWrite{ std::cerr } << String::Format("GEK Engine - Error");
+		LockedWrite{ std::cerr } << String::Format("Caught: %v", exception.what());
+		LockedWrite{ std::cerr } << String::Format("Type: %v", typeid(exception).name());
     }
     catch (...)
     {
-        LockedWrite{std::cerr} << String::Format("GEK Engine - Error");
-        LockedWrite{std::cerr} << String::Format("Caught: Non-standard exception");
+        LockedWrite{ std::cerr } << String::Format("GEK Engine - Error");
+        LockedWrite{ std::cerr } << String::Format("Caught: Non-standard exception");
     };
 
     return 0;

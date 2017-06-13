@@ -181,7 +181,7 @@ namespace Gek
             assert(resources);
             assert(renderer);
 
-            LockedWrite{std::cout} << String::Format("Initializing model system");
+            LockedWrite{ std::cout } << String::Format("Initializing model system");
 
             population->onEntityCreated.connect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
             population->onEntityDestroyed.connect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
@@ -217,13 +217,13 @@ namespace Gek
                 auto pair = modelMap.insert(std::make_pair(GetHash(modelComponent.name), Model()));
                 if (pair.second)
                 {
-                    LockedWrite{std::cout} << String::Format("Queueing model for load: %v", modelComponent.name);
+                    LockedWrite{ std::cout } << String::Format("Queueing model for load: %v", modelComponent.name);
                     loadPool.enqueue([this, name = modelComponent.name, &model = pair.first->second](void) -> void
                     {
                         auto fileName(getContext()->getRootFileName("data", "models", name).withExtension(".gek"));
                         if (!fileName.isFile())
                         {
-							LockedWrite{std::cerr} << String::Format("Model file not found: %v", fileName);
+							LockedWrite{ std::cerr } << String::Format("Model file not found: %v", fileName);
                             return;
                         }
                         
@@ -231,31 +231,31 @@ namespace Gek
 						std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer, sizeof(Header)));
 						if (buffer.size() < sizeof(Header))
 						{
-							LockedWrite{std::cerr} << String::Format("Model file too small to contain header: %v", fileName);
+							LockedWrite{ std::cerr } << String::Format("Model file too small to contain header: %v", fileName);
 							return;
 						}
 
                         Header *header = (Header *)buffer.data();
                         if (header->identifier != *(uint32_t *)"GEKX")
                         {
-							LockedWrite{std::cerr} << String::Format("Unknown model file identifier encountered (requires: GEKX, has: %v): %v", header->identifier, fileName);
+							LockedWrite{ std::cerr } << String::Format("Unknown model file identifier encountered (requires: GEKX, has: %v): %v", header->identifier, fileName);
 							return;
                         }
 
                         if (header->type != 0)
                         {
-							LockedWrite{std::cerr} << String::Format("Unsupported model type encountered (requires: 0, has: %v): %v", header->type, fileName);
+							LockedWrite{ std::cerr } << String::Format("Unsupported model type encountered (requires: 0, has: %v): %v", header->type, fileName);
 							return;
 						}
 
                         if (header->version != 6)
                         {
-                            LockedWrite{std::cerr} << String::Format("Unsupported model version encountered (requires: 6, has: %v): %v", header->version, fileName);
+                            LockedWrite{ std::cerr } << String::Format("Unsupported model version encountered (requires: 6, has: %v): %v", header->version, fileName);
 							return;
 						}
 
                         model.boundingBox = header->boundingBox;
-                        LockedWrite{std::cout} << String::Format("Model: %v, %v parts", name, header->partCount);
+                        LockedWrite{ std::cout } << String::Format("Model: %v, %v parts", name, header->partCount);
                         loadPool.enqueue([this, name = name, fileName, &model](void) -> void
                         {
 							std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer));
@@ -263,7 +263,7 @@ namespace Gek
 							Header *header = (Header *)buffer.data();
 							if (buffer.size() < (sizeof(Header) + (sizeof(Header::Part) * header->partCount)))
 							{
-								LockedWrite{std::cerr} << String::Format("Model file too small to contain part headers: %v", fileName);
+								LockedWrite{ std::cerr } << String::Format("Model file too small to contain part headers: %v", fileName);
 								return;
 							}
 
@@ -309,7 +309,7 @@ namespace Gek
                                 part.indexCount = partHeader.indexCount;
                             }
 							
-							LockedWrite{std::cout} << String::Format("Model successfully loaded: %v", name);
+							LockedWrite{ std::cout } << String::Format("Model successfully loaded: %v", name);
 						});
                     });
                 }

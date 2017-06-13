@@ -588,52 +588,42 @@ namespace Gek
                         {
 							std::string includeName(String::GetLower(line.substr(8)));
 							String::Trim(includeName);
-                            if (includeName.empty())
+
+                            std::string includeData;
+                            if (includeName == "gekengine")
                             {
-                                throw InvalidIncludeName("Empty include encountered");
+                                includeData = engineData;
                             }
                             else
                             {
-                                std::string includeData;
-                                if (includeName == "gekengine")
+                                auto includeType = includeName.at(0);
+                                includeName = includeName.substr(1, includeName.length() - 2);
+                                if (includeType == '\"')
                                 {
-                                    includeData = engineData;
-                                }
-                                else
-                                {
-                                    auto includeType = includeName.at(0);
-                                    includeName = includeName.substr(1, includeName.length() - 2);
-                                    if (includeType == '\"')
+                                    auto localPath(FileSystem::GetFileName(programDirectory, includeName));
+                                    if (localPath.isFile())
                                     {
-                                        auto localPath(FileSystem::GetFileName(programDirectory, includeName));
-                                        if (localPath.isFile())
-                                        {
-											includeData = FileSystem::Load(localPath, String::Empty);
-                                        }
-                                    }
-                                    else if (includeType == '<')
-                                    {
-                                        auto rootPath(FileSystem::GetFileName(programsPath, includeName));
-                                        if (rootPath.isFile())
-                                        {
-											includeData = FileSystem::Load(rootPath, String::Empty);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        throw InvalidIncludeType("Invalid include definition encountered");
+										includeData = FileSystem::Load(localPath, String::Empty);
                                     }
                                 }
-
-                                uncompiledProgram.append(includeData);
-                                uncompiledProgram.append("\r\n");
+                                else if (includeType == '<')
+                                {
+                                    auto rootPath(FileSystem::GetFileName(programsPath, includeName));
+                                    if (rootPath.isFile())
+                                    {
+										includeData = FileSystem::Load(rootPath, String::Empty);
+                                    }
+                                }
                             }
+
+                            uncompiledProgram.append(includeData);
                         }
                         else
                         {
                             uncompiledProgram.append(line);
-                            uncompiledProgram.append("\r\n");
                         }
+
+                        uncompiledProgram.append("\r\n");
                     }
 
                     return uncompiledProgram;
@@ -845,11 +835,6 @@ namespace Gek
                         data.push_back(255);
                         description.format = Video::Format::R8G8B8A8_UNORM;
                     }
-                }
-
-                if (description.format == Video::Format::Unknown)
-                {
-                    throw InvalidParameter("Invalid color format encountered");
                 }
 
                 description.flags = Video::Texture::Description::Flags::Resource;
