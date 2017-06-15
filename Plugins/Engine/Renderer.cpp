@@ -31,15 +31,16 @@ namespace Gek
 {
     namespace Implementation
     {
+        static const int32_t GridWidth = 16;
+        static const int32_t GridHeight = 8;
+        static const int32_t GridDepth = 24;
+        static const int32_t GridSize = (GridWidth * GridHeight * GridDepth);
+        static const Math::Float4 Negate(Math::Float2(-1.0f), Math::Float2(1.0f));
+        static const Math::Float4 GridDimensions(GridWidth, GridWidth, GridHeight, GridHeight);
+
         GEK_CONTEXT_USER(Renderer, Plugin::Core *)
             , public Plugin::Renderer
         {
-        public:
-            static const uint32_t GridWidth = 16;
-            static const uint32_t GridHeight = 8;
-            static const uint32_t GridDepth = 24;
-            static const uint32_t GridSize = (GridWidth * GridHeight * GridDepth);
-
         public:
             struct DirectionalLightData
             {
@@ -685,7 +686,6 @@ namespace Gek
             // ImGui
             void renderUI(ImDrawData *drawData)
             {
-                Plugin::Core::Log::Scope function(core->getLog(), "Render", "User Interface Time");
                 if (!gui.vertexBuffer || gui.vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
                 {
                     Video::Buffer::Description vertexBufferDescription;
@@ -807,33 +807,33 @@ namespace Gek
             // Clustered Lighting
             inline Math::Float3 getLightDirection(Math::Quaternion const &quaternion) const
             {
-                float xx(quaternion.x * quaternion.x);
-                float yy(quaternion.y * quaternion.y);
-                float zz(quaternion.z * quaternion.z);
-                float ww(quaternion.w * quaternion.w);
-                float length(xx + yy + zz + ww);
+                const float xx(quaternion.x * quaternion.x);
+                const float yy(quaternion.y * quaternion.y);
+                const float zz(quaternion.z * quaternion.z);
+                const float ww(quaternion.w * quaternion.w);
+                const float length(xx + yy + zz + ww);
                 if (length == 0.0f)
                 {
                     return Math::Float3(0.0f, 1.0f, 0.0f);
                 }
                 else
                 {
-                    float determinant(1.0f / length);
-                    float xy(quaternion.x * quaternion.y);
-                    float xw(quaternion.x * quaternion.w);
-                    float yz(quaternion.y * quaternion.z);
-                    float zw(quaternion.z * quaternion.w);
+                    const float determinant(1.0f / length);
+                    const float xy(quaternion.x * quaternion.y);
+                    const float xw(quaternion.x * quaternion.w);
+                    const float yz(quaternion.y * quaternion.z);
+                    const float zw(quaternion.z * quaternion.w);
                     return -Math::Float3((2.0f * (xy - zw) * determinant), ((-xx + yy - zz + ww) * determinant), (2.0f * (yz + xw) * determinant));
                 }
             }
 
             inline void updateClipRegionRoot(float tangentCoordinate, float lightCoordinate, float lightDepth, float radius, float radiusSquared, float lightRangeSquared, float cameraScale, float& minimum, float& maximum) const
             {
-                float nz = ((radius - tangentCoordinate * lightCoordinate) / lightDepth);
-                float pz = ((lightRangeSquared - radiusSquared) / (lightDepth - (nz / tangentCoordinate) * lightCoordinate));
+                const float nz = ((radius - tangentCoordinate * lightCoordinate) / lightDepth);
+                const float pz = ((lightRangeSquared - radiusSquared) / (lightDepth - (nz / tangentCoordinate) * lightCoordinate));
                 if (pz > 0.0f)
                 {
-                    float clip = (-nz * cameraScale / tangentCoordinate);
+                    const float clip = (-nz * cameraScale / tangentCoordinate);
                     if (tangentCoordinate > 0.0f)
                     {
                         // Left side boundary
@@ -849,17 +849,17 @@ namespace Gek
 
             inline void updateClipRegion(float lightCoordinate, float lightDepth, float radius, float cameraScale, float& minimum, float& maximum) const
             {
-                float radiusSquared = (radius * radius);
-                float lightDepthSquared = (lightDepth * lightDepth);
-                float lightCoordinateSquared = (lightCoordinate * lightCoordinate);
-                float lightRangeSquared = (lightCoordinateSquared + lightDepthSquared);
-                float distanceSquared = ((radiusSquared * lightCoordinateSquared) - (lightRangeSquared * (radiusSquared - lightDepthSquared)));
+                const float radiusSquared = (radius * radius);
+                const float lightDepthSquared = (lightDepth * lightDepth);
+                const float lightCoordinateSquared = (lightCoordinate * lightCoordinate);
+                const float lightRangeSquared = (lightCoordinateSquared + lightDepthSquared);
+                const float distanceSquared = ((radiusSquared * lightCoordinateSquared) - (lightRangeSquared * (radiusSquared - lightDepthSquared)));
                 if (distanceSquared > 0.0f)
                 {
-                    float projectedRadius = (radius * lightCoordinate);
-                    float distance = std::sqrt(distanceSquared);
-                    float positiveTangent = ((projectedRadius + distance) / lightRangeSquared);
-                    float negativeTangent = ((projectedRadius - distance) / lightRangeSquared);
+                    const float projectedRadius = (radius * lightCoordinate);
+                    const float distance = std::sqrt(distanceSquared);
+                    const float positiveTangent = ((projectedRadius + distance) / lightRangeSquared);
+                    const float negativeTangent = ((projectedRadius - distance) / lightRangeSquared);
                     updateClipRegionRoot(positiveTangent, lightCoordinate, lightDepth, radius, radiusSquared, lightRangeSquared, cameraScale, minimum, maximum);
                     updateClipRegionRoot(negativeTangent, lightCoordinate, lightDepth, radius, radiusSquared, lightRangeSquared, cameraScale, minimum, maximum);
                 }
@@ -882,80 +882,68 @@ namespace Gek
 
             inline Math::Float4 getScreenBounds(Math::Float3 const &position, float range) const
             {
-                auto clipBounds((getClipBounds(position, range) + 1.0f) * 0.5f);
+                const auto clipBounds((getClipBounds(position, range) + 1.0f) * 0.5f);
                 return Math::Float4(clipBounds.x, (1.0f - clipBounds.w), clipBounds.z, (1.0f - clipBounds.y));
             }
 
             bool isSeparated(float x, float y, float z, Math::Float3 const &position, float range) const
             {
                 // sub-frustrum bounds in view space       
-                float minimumZ = (z - 0) * 1.0f / GridDepth * (currentCamera.farClip - currentCamera.nearClip) + currentCamera.nearClip;
-                float maximumZ = (z + 1) * 1.0f / GridDepth * (currentCamera.farClip - currentCamera.nearClip) + currentCamera.nearClip;
+                const float depthScale = (1.0f / GridDepth * (currentCamera.farClip - currentCamera.nearClip) + currentCamera.nearClip);
+                const float minimumZ = (z * depthScale);
+                const float maximumZ = ((z + 1.0f) * depthScale);
 
-                static const Math::Float4 Negate(Math::Float2(-1.0f), Math::Float2(1.0f));
-                static const Math::Float4 GridDimensions(GridWidth, GridWidth, GridHeight, GridHeight);
-
-                Math::Float4 tileBounds(x, (x + 1.0f), y, (y + 1.0f));
-                Math::Float4 projectionScale(Math::Float2(currentCamera.projectionMatrix.rx.x), Math::Float2(currentCamera.projectionMatrix.ry.y));
-                auto minimum = Negate * (1.0f - 2.0f / GridDimensions * tileBounds) * minimumZ / projectionScale;
-                auto maximum = Negate * (1.0f - 2.0f / GridDimensions * tileBounds) * maximumZ / projectionScale;
+                const Math::Float4 tileBounds(x, (x + 1.0f), y, (y + 1.0f));
+                const Math::Float4 projectionScale(Math::Float2(currentCamera.projectionMatrix.rx.x), Math::Float2(currentCamera.projectionMatrix.ry.y));
+                const auto gridScale = (Negate * (1.0f - 2.0f / GridDimensions * tileBounds));
+                const auto minimum = (gridScale * minimumZ / projectionScale);
+                const auto maximum = (gridScale * maximumZ / projectionScale);
 
                 // heuristic plane separation test - works pretty well in practice
-                Math::Float3 minimumZcenter((minimum.x + minimum.y) * 0.5f, (minimum.z + minimum.w) * 0.5f, minimumZ);
-                Math::Float3 maximumZcenter((maximum.x + maximum.y) * 0.5f, (maximum.z + maximum.w) * 0.5f, maximumZ);
-                Math::Float3 center((minimumZcenter + maximumZcenter) * 0.5f);
-                Math::Float3 normal((center - position).getNormal());
+                const Math::Float3 minimumZcenter(((minimum.x + minimum.y) * 0.5f), ((minimum.z + minimum.w) * 0.5f), minimumZ);
+                const Math::Float3 maximumZcenter(((maximum.x + maximum.y) * 0.5f), ((maximum.z + maximum.w) * 0.5f), maximumZ);
+                const Math::Float3 center((minimumZcenter + maximumZcenter) * 0.5f);
+                const Math::Float3 normal((center - position).getNormal());
 
                 // compute distance of all corners to the tangent plane, with a few shortcuts (saves 14 muls)
                 Math::Float2 tileCorners(-normal.dot(position));
-                tileCorners.minimum += std::min(normal.x * minimum.x, normal.x * minimum.y);
-                tileCorners.minimum += std::min(normal.y * minimum.z, normal.y * minimum.w);
-                tileCorners.minimum += normal.z * minimumZ;
-                tileCorners.maximum += std::min(normal.x * maximum.x, normal.x * maximum.y);
-                tileCorners.maximum += std::min(normal.y * maximum.z, normal.y * maximum.w);
-                tileCorners.maximum += normal.z * maximumZ;
+                tileCorners.minimum += std::min((normal.x * minimum.x), (normal.x * minimum.y));
+                tileCorners.minimum += std::min((normal.y * minimum.z), (normal.y * minimum.w));
+                tileCorners.minimum += (normal.z * minimumZ);
+                tileCorners.maximum += std::min((normal.x * maximum.x), (normal.x * maximum.y));
+                tileCorners.maximum += std::min((normal.y * maximum.z), (normal.y * maximum.w));
+                tileCorners.maximum += (normal.z * maximumZ);
                 return (std::min(tileCorners.minimum, tileCorners.maximum) > range);
             }
 
             void addLightCluster(Math::Float3 const &position, float range, uint32_t lightIndex, bool pointLight)
             {
-                Math::Float4 screenBounds(getScreenBounds(position, range));
-
-                static const Math::Int2 GridDimensions(GridWidth, GridHeight);
-                Math::Int4 gridBounds(
-                    int32_t(std::floor(screenBounds.x * GridWidth)),
-                    int32_t(std::floor(screenBounds.y * GridHeight)),
-                    int32_t(std::ceil(screenBounds.z * GridWidth)),
-                    int32_t(std::ceil(screenBounds.w * GridHeight))
+                const Math::Float4 screenBounds(getScreenBounds(position, range));
+                const Math::Int4 gridBounds(
+                    std::max(0, int32_t(std::floor(screenBounds.x * GridWidth))),
+                    std::max(0, int32_t(std::floor(screenBounds.y * GridHeight))),
+                    std::min(int32_t(std::ceil(screenBounds.z * GridWidth)), GridWidth),
+                    std::min(int32_t(std::ceil(screenBounds.w * GridHeight)), GridHeight)
                 );
 
-                gridBounds[0] = (gridBounds[0] < 0 ? 0 : gridBounds[0]);
-                gridBounds[1] = (gridBounds[1] < 0 ? 0 : gridBounds[1]);
-                gridBounds[2] = (gridBounds[2] > GridWidth ? GridWidth : gridBounds[2]);
-                gridBounds[3] = (gridBounds[3] > GridHeight ? GridHeight : gridBounds[3]);
-
-                float centerDepth = ((position.z - currentCamera.nearClip) / (currentCamera.farClip - currentCamera.nearClip));
-                float rangeDepth = (range / (currentCamera.farClip - currentCamera.nearClip));
-
-                Math::Int2 depthBounds(
-                    int32_t(std::floor((centerDepth - rangeDepth) * GridDepth)),
-                    int32_t(std::ceil((centerDepth + rangeDepth) * GridDepth))
+                const float centerDepth = ((position.z - currentCamera.nearClip) / (currentCamera.farClip - currentCamera.nearClip));
+                const float rangeDepth = (range / (currentCamera.farClip - currentCamera.nearClip));
+                const Math::Int2 depthBounds(
+                    std::max(0, int32_t(std::floor((centerDepth - rangeDepth) * GridDepth))),
+                    std::min(int32_t(std::ceil((centerDepth + rangeDepth) * GridDepth)), GridDepth)
                 );
-
-                depthBounds[0] = (depthBounds[0] < 0 ? 0 : depthBounds[0]);
-                depthBounds[1] = (depthBounds[1] > GridDepth ? GridDepth : depthBounds[1]);
 
                 concurrency::parallel_for(depthBounds.minimum, depthBounds.maximum, [&](auto z) -> void
                 {
-                    uint32_t zSlice = (z * GridHeight);
+                    const uint32_t zSlice = (z * GridHeight);
                     for (auto y = gridBounds.minimum.y; y < gridBounds.maximum.y; ++y)
                     {
-                        uint32_t ySlize = ((zSlice + y) * GridWidth);
+                        const uint32_t ySlize = ((zSlice + y) * GridWidth);
                         for (auto x = gridBounds.minimum.x; x < gridBounds.maximum.x; ++x)
                         {
                             if (!isSeparated(float(x), float(y), float(z), position, range))
                             {
-                                uint32_t gridIndex = (ySlize + x);
+                                const uint32_t gridIndex = (ySlize + x);
                                 auto &gridData = tileLightIndexList[gridIndex];
                                 if (pointLight)
                                 {
@@ -975,8 +963,8 @@ namespace Gek
 
             void addLight(Plugin::Entity * const entity, const Components::PointLight &lightComponent)
             {
-                auto &transformComponent = entity->getComponent<Components::Transform>();
-                auto &colorComponent = entity->getComponent<Components::Color>();
+                const auto &transformComponent = entity->getComponent<Components::Transform>();
+                const auto &colorComponent = entity->getComponent<Components::Color>();
 
                 auto lightIterator = pointLightData.lightList.grow_by(1);
                 PointLightData &lightData = (*lightIterator);
@@ -985,14 +973,14 @@ namespace Gek
                 lightData.radius = lightComponent.radius;
                 lightData.range = lightComponent.range;
 
-                auto lightIndex = std::distance(std::begin(pointLightData.lightList), lightIterator);
+                const auto lightIndex = std::distance(std::begin(pointLightData.lightList), lightIterator);
                 addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, true);
             }
 
             void addLight(Plugin::Entity * const entity, const Components::SpotLight &lightComponent)
             {
-                auto &transformComponent = entity->getComponent<Components::Transform>();
-                auto &colorComponent = entity->getComponent<Components::Color>();
+                const auto &transformComponent = entity->getComponent<Components::Transform>();
+                const auto &colorComponent = entity->getComponent<Components::Color>();
 
                 auto lightIterator = spotLightData.lightList.grow_by(1);
                 SpotLightData &lightData = (*lightIterator);
@@ -1005,7 +993,7 @@ namespace Gek
                 lightData.outerAngle = lightComponent.outerAngle;
                 lightData.coneFalloff = lightComponent.coneFalloff;
 
-                auto lightIndex = std::distance(std::begin(spotLightData.lightList), lightIterator);
+                const auto lightIndex = std::distance(std::begin(spotLightData.lightList), lightIterator);
                 addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, false);
             }
 
@@ -1061,19 +1049,15 @@ namespace Gek
                 assert(videoDevice);
                 assert(population);
 
-                Plugin::Core::Log::Scope function(core->getLog(), "Render", "Update Time");
-                core->getLog()->setValue("Render", "Camera Count", cameraQueue.unsafe_size());
-
                 while (cameraQueue.try_pop(currentCamera))
                 {
                     drawCallList.clear();
                     onQueueDrawCalls.emit(currentCamera.viewFrustum, currentCamera.viewMatrix, currentCamera.projectionMatrix);
                     if (!drawCallList.empty())
                     {
-                        core->getLog()->adjustValue("Render", "Draw Queue Count", drawCallList.size());
-                        auto backBuffer = videoDevice->getBackBuffer();
-                        auto width = backBuffer->getDescription().width;
-                        auto height = backBuffer->getDescription().height;
+                        const auto backBuffer = videoDevice->getBackBuffer();
+                        const auto width = backBuffer->getDescription().width;
+                        const auto height = backBuffer->getDescription().height;
 
                         concurrency::parallel_sort(std::begin(drawCallList), std::end(drawCallList), [](const DrawCallValue &leftValue, const DrawCallValue &rightValue) -> bool
                         {
@@ -1114,9 +1098,9 @@ namespace Gek
                                 directionalLightData.lightList.reserve(directionalLightData.entityList.size());
                                 std::for_each(std::begin(directionalLightData.entityList), std::end(directionalLightData.entityList), [&](Plugin::Entity * const entity) -> void
                                 {
-                                    auto &transformComponent = entity->getComponent<Components::Transform>();
-                                    auto &colorComponent = entity->getComponent<Components::Color>();
-                                    auto &lightComponent = entity->getComponent<Components::DirectionalLight>();
+                                    const auto &transformComponent = entity->getComponent<Components::Transform>();
+                                    const auto &colorComponent = entity->getComponent<Components::Color>();
+                                    const auto &lightComponent = entity->getComponent<Components::DirectionalLight>();
 
                                     DirectionalLightData lightData;
                                     lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
@@ -1156,16 +1140,12 @@ namespace Gek
                             pointLightsDone.get();
                             spotLightsDone.get();
 
-                            core->getLog()->adjustValue("Render", "Directional Light Count", directionalLightData.lightList.size());
-                            core->getLog()->adjustValue("Render", "Point Light Count", pointLightData.lightList.size());
-                            core->getLog()->adjustValue("Render", "Spot Light Count", spotLightData.lightList.size());
-
                             lightIndexList.clear();
                             lightIndexList.reserve(lightIndexCount);
                             for (uint32_t tileIndex = 0; tileIndex < GridSize; ++tileIndex)
                             {
                                 auto &tileOffsetCount = tileOffsetCountList[tileIndex];
-                                auto &tileLightIndex = tileLightIndexList[tileIndex];
+                                const auto &tileLightIndex = tileLightIndexList[tileIndex];
                                 tileOffsetCount.indexOffset = lightIndexList.size();
                                 tileOffsetCount.pointLightCount = uint16_t(tileLightIndex.pointLightList.size() & 0xFFFF);
                                 tileOffsetCount.spotLightCount = uint16_t(tileLightIndex.spotLightList.size() & 0xFFFF);
@@ -1357,7 +1337,6 @@ namespace Gek
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 imGuiIo.DeltaTime = frameTime;
-                core->getLog()->setValue("Render", "Frame Rate", (1.0f / frameTime));
 
                 auto backBuffer = videoDevice->getBackBuffer();
                 uint32_t width = backBuffer->getDescription().width;

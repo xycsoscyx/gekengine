@@ -23,7 +23,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Shader, Plugin::Core::Log *, Video::Device *, Engine::Resources *, Plugin::Population *, std::string)
+        GEK_CONTEXT_USER(Shader, Video::Device *, Engine::Resources *, Plugin::Population *, std::string)
             , public Engine::Shader
         {
         public:
@@ -66,7 +66,6 @@ namespace Gek
             };
 
         private:
-			Plugin::Core::Log *log = nullptr;
             Video::Device *videoDevice = nullptr;
             Engine::Resources *resources = nullptr;
             Plugin::Population *population = nullptr;
@@ -81,9 +80,8 @@ namespace Gek
             bool lightingRequired = false;
 
         public:
-            Shader(Context *context, Plugin::Core::Log *log, Video::Device *videoDevice, Engine::Resources *resources, Plugin::Population *population, std::string shaderName)
+            Shader(Context *context, Video::Device *videoDevice, Engine::Resources *resources, Plugin::Population *population, std::string shaderName)
                 : ContextRegistration(context)
-				, log(log)
                 , videoDevice(videoDevice)
                 , resources(resources)
                 , population(population)
@@ -144,6 +142,7 @@ namespace Gek
                         auto semantic = Video::InputElement::getSemantic(elementNode.get("semantic").convert(String::Empty));
                         auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)];
                         semanticIndexList[static_cast<uint8_t>(semantic)] += count;
+
                         inputData += String::Format("    %v %v : %v%v;\r\n", getFormatSemantic(format, count), name, videoDevice->getSemanticMoniker(semantic), semanticIndex);
                     }
                 }
@@ -719,9 +718,9 @@ namespace Gek
                 return lightingRequired;
             }
 
-            Pass::Mode preparePass(Video::Device::Context *videoContext, PassData &pass)
+            Pass::Mode preparePass(Video::Device::Context *videoContext, PassData const &pass)
             {
-                for (auto &clearTarget : pass.clearResourceMap)
+                for (const auto &clearTarget : pass.clearResourceMap)
                 {
                     switch (clearTarget.second.type)
                     {
@@ -739,12 +738,12 @@ namespace Gek
                     };
                 }
 
-                for (auto &copyResource : pass.copyResourceMap)
+                for (const auto &copyResource : pass.copyResourceMap)
                 {
                     resources->copyResource(copyResource.first, copyResource.second);
                 }
 
-                for (auto &resource : pass.generateMipMapsList)
+                for (const auto &resource : pass.generateMipMapsList)
                 {
                     resources->generateMipMaps(videoContext, resource);
                 }
@@ -821,7 +820,7 @@ namespace Gek
                 return pass.mode;
             }
 
-            void clearPass(Video::Device::Context *videoContext, PassData &pass)
+            void clearPass(Video::Device::Context *videoContext, PassData const &pass)
             {
                 Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
                 if (!pass.resourceList.empty())

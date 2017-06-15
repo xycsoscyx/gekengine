@@ -101,7 +101,7 @@ namespace Gek
     std::string getFormatSemantic(Video::Format format, uint32_t count)
     {
         std::string semantic(getFormatSemantic(format));
-        if (count > 0)
+        if (count > 1)
         {
             semantic += String::Format("x%v", count);
         }

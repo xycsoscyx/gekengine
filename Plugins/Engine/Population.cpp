@@ -196,8 +196,6 @@ namespace Gek
 
             void update(float frameTime)
             {
-                Plugin::Core::Log::Scope function(core->getLog(), "Population", "Update Time");
-
                 if (frameTime == 0.0f)
                 {
                     actionQueue.clear();
@@ -222,8 +220,6 @@ namespace Gek
                 {
                     entityAction();
                 };
-
-                core->getLog()->setValue("Population", "Entity Count", entityMap.size());
             }
 
             void action(Action const &action)

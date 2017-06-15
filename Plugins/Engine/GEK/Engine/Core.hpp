@@ -25,38 +25,6 @@ namespace Gek
 
         GEK_INTERFACE(Core)
         {
-            GEK_INTERFACE(Log)
-            {
-                class Scope
-                {
-                private:
-                    Log *log = nullptr;
-                    std::string system, name;
-
-                public:
-                    Scope(Log *log, std::string const &system, std::string const &name)
-                        : log(log)
-                        , system(system)
-                        , name(name)
-                    {
-                        log->beginEvent(system, name);
-                    }
-
-                    ~Scope(void)
-                    {
-                        log->endEvent(system, name);
-                    }
-                };
-
-                virtual ~Log(void) = default;
-
-                virtual void beginEvent(std::string const &system, std::string const &name) = 0;
-                virtual void endEvent(std::string const &system, std::string const &name) = 0;
-
-                virtual void setValue(std::string const &system, std::string const &name, float value) = 0;
-                virtual void adjustValue(std::string const &system, std::string const &name, float value) = 0;
-            };
-
             Nano::Signal<void(void)> onResize;
             Nano::Signal<void(ImGuiContext *context, ImGui::PanelManagerWindowData &windowData)> OnSettingsPanel;
             Nano::Signal<void(void)> onExit;
@@ -69,7 +37,6 @@ namespace Gek
             virtual void setOption(std::string const &system, std::string const &name, JSON::Object const &value) = 0;
             virtual void deleteOption(std::string const &system, std::string const &name) = 0;
 
-            virtual Log * getLog(void) const = 0;
             virtual Window * getWindow(void) const = 0;
             virtual Video::Device * getVideoDevice(void) const = 0;
 

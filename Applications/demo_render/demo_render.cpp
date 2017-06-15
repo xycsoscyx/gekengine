@@ -96,7 +96,7 @@ namespace Gek
             HRESULT resultValue = CoInitialize(nullptr);
             if (FAILED(resultValue))
             {
-                throw std::exception("Failed call to CoInitialize");
+                throw std::exception("Call to CoInitialize failed");
             }
 
             Render::Device::Description deviceDescription;
@@ -317,100 +317,99 @@ namespace Gek
         void setDisplayMode(uint32_t displayMode)
         {
             auto &displayModeData = displayModeList[displayMode];
-            if (displayMode >= displayModeList.size())
+            if (displayMode < displayModeList.size())
             {
-                throw std::exception("Invalid display mode encountered");
+                currentDisplayMode = displayMode;
+                renderDevice->setDisplayMode(displayModeData);
+                window->move();
             }
-
-            currentDisplayMode = displayMode;
-            renderDevice->setDisplayMode(displayModeData);
-            window->move();
         }
 
-        bool update(void)
+        void run(void)
         {
-            window->readEvents();
-
-            auto description = renderDevice->getTextureDescription(Render::Device::SwapChain);
-
-            ImGuiIO &imGuiIo = ImGui::GetIO();
-
-            uint32_t width = description->width;
-            uint32_t height = description->height;
-            imGuiIo.DisplaySize = ImVec2(float(width), float(height));
-            float barWidth = float(width);
-
-            gui->panelManager.setDisplayPortion(ImVec4(0, 0, width, height));
-
-            // Read keyboard modifiers inputs
-            imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-            imGuiIo.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-            imGuiIo.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
-            imGuiIo.KeySuper = false;
-            // imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
-            // imGuiIo.MousePos : filled by WM_MOUSEMOVE events
-            // imGuiIo.MouseDown : filled by WM_*BUTTON* events
-            // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
-
-            ImGui::NewFrame();
-            ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-            ImGui::Begin("GEK Engine", nullptr, ImVec2(0, 0), 0.0f, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
-            if (windowActive)
+            while (engineRunning)
             {
-                if (showCursor)
+                window->readEvents();
+
+                auto description = renderDevice->getTextureDescription(Render::Device::SwapChain);
+
+                ImGuiIO &imGuiIo = ImGui::GetIO();
+
+                uint32_t width = description->width;
+                uint32_t height = description->height;
+                imGuiIo.DisplaySize = ImVec2(float(width), float(height));
+                float barWidth = float(width);
+
+                gui->panelManager.setDisplayPortion(ImVec4(0, 0, width, height));
+
+                // Read keyboard modifiers inputs
+                imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+                imGuiIo.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+                imGuiIo.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+                imGuiIo.KeySuper = false;
+                // imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
+                // imGuiIo.MousePos : filled by WM_MOUSEMOVE events
+                // imGuiIo.MouseDown : filled by WM_*BUTTON* events
+                // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
+
+                ImGui::NewFrame();
+                ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+                ImGui::Begin("GEK Engine", nullptr, ImVec2(0, 0), 0.0f, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
+                if (windowActive)
                 {
-                    if (showModeChange)
+                    if (showCursor)
                     {
-                        ImGui::SetNextWindowPosCenter();
-                        ImGui::Begin("Keep Display Mode", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
-                        ImGui::Text("Keep Display Mode?");
-
-                        if (ImGui::Button("Yes"))
+                        if (showModeChange)
                         {
-                            showModeChange = false;
-                            previousDisplayMode = currentDisplayMode;
+                            ImGui::SetNextWindowPosCenter();
+                            ImGui::Begin("Keep Display Mode", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
+                            ImGui::Text("Keep Display Mode?");
+
+                            if (ImGui::Button("Yes"))
+                            {
+                                showModeChange = false;
+                                previousDisplayMode = currentDisplayMode;
+                            }
+
+                            ImGui::SameLine();
+                            modeChangeTimer -= 0.001f;
+                            if (modeChangeTimer <= 0.0f || ImGui::Button("No"))
+                            {
+                                showModeChange = false;
+                                setDisplayMode(previousDisplayMode);
+                            }
+
+                            ImGui::Text(String::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)).c_str());
+
+                            ImGui::End();
                         }
-
-                        ImGui::SameLine();
-                        modeChangeTimer -= 0.001f;
-                        if (modeChangeTimer <= 0.0f || ImGui::Button("No"))
-                        {
-                            showModeChange = false;
-                            setDisplayMode(previousDisplayMode);
-                        }
-
-                        ImGui::Text(String::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)).c_str());
-
-                        ImGui::End();
                     }
                 }
-            }
 
-            if (!windowActive)
-            {
-                ImGui::SetNextWindowPosCenter();
-                ImGui::Begin("GEK Engine##Paused", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoCollapse);
-                ImGui::Dummy(ImVec2(200, 0));
-                ImGui::Text("Paused");
+                if (!windowActive)
+                {
+                    ImGui::SetNextWindowPosCenter();
+                    ImGui::Begin("GEK Engine##Paused", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoCollapse);
+                    ImGui::Dummy(ImVec2(200, 0));
+                    ImGui::Text("Paused");
+                    ImGui::End();
+                }
+
+                if (windowActive && !showCursor)
+                {
+                    auto rectangle = window->getScreenRectangle();
+                    window->setCursorPosition(Math::Int2(
+                        int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
+                        int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
+                }
+
+                gui->panelManager.render();
+
                 ImGui::End();
-            }
 
-            if (windowActive && !showCursor)
-            {
-                auto rectangle = window->getScreenRectangle();
-                window->setCursorPosition(Math::Int2(
-                    int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
-                    int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
-            }
-
-            gui->panelManager.render();
-
-            ImGui::End();
-
-            ImGui::Render();
-            renderDevice->present(false);
-
-            return engineRunning;
+                ImGui::Render();
+                renderDevice->present(false);
+            };
         }
 
         // ImGui Callbacks
@@ -434,16 +433,14 @@ namespace Gek
                 vertexBufferDescription.flags = Render::BufferDescription::Flags::Mappable;
                 switch (sizeof(ImDrawIdx))
                 {
-                case 2:
-                    vertexBufferDescription.format = Render::Format::R16_UINT;
-                    break;
-
                 case 4:
                     vertexBufferDescription.format = Render::Format::R32_UINT;
                     break;
 
+                case 2:
                 default:
-                    throw std::exception("Index buffer can only be 16bit or 32bit");
+                    vertexBufferDescription.format = Render::Format::R16_UINT;
+                    break;
                 };
 
                 gui->indexBuffer = renderDevice->createBuffer(vertexBufferDescription);
@@ -655,20 +652,13 @@ namespace Gek
 
 int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstance, _In_ PWSTR commandLine, _In_ int commandShow)
 {
-	try
+    try
     {
         Gek::Core core;
-        while (core.update())
-        {
-        };
+        core.run();
     }
-    catch (const std::exception &exception)
+    catch (std::exception const &exception)
     {
-        MessageBoxA(nullptr, String::Format("Caught: %v\r\nType: %v", exception.what(), typeid(exception).name()).c_str(), "GEK Engine - Error", MB_OK | MB_ICONERROR);
-    }
-    catch (...)
-    {
-        MessageBoxA(nullptr, "Caught: Non-standard exception", "GEK Engine - Error", MB_OK | MB_ICONERROR);
     };
 
     return 0;

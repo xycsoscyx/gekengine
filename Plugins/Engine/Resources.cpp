@@ -1023,8 +1023,6 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->adjustValue("Draw", "Primitive Count", 1.0f);
-                    core->getLog()->adjustValue("Draw", "Vertex Count", vertexCount);
                     videoContext->drawPrimitive(vertexCount, firstVertex);
                 }
             }
@@ -1033,9 +1031,6 @@ namespace Gek
             {
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->adjustValue("Draw", "Primitive Count", 1.0f);
-                    core->getLog()->adjustValue("Draw", "Vertex Count", vertexCount);
-                    core->getLog()->adjustValue("Draw", "Instance Count", instanceCount);
                     videoContext->drawInstancedPrimitive(instanceCount, firstInstance, vertexCount, firstVertex);
                 }
             }
@@ -1046,8 +1041,6 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->adjustValue("Draw", "Primitive Count", 1.0f);
-                    core->getLog()->adjustValue("Draw", "Index Count", indexCount);
                     videoContext->drawIndexedPrimitive(indexCount, firstIndex, firstVertex);
                 }
             }
@@ -1058,9 +1051,6 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    core->getLog()->adjustValue("Draw", "Primitive Count", 1.0f);
-                    core->getLog()->adjustValue("Draw", "Index Count", indexCount);
-                    core->getLog()->adjustValue("Draw", "Instance Count", instanceCount);
                     videoContext->drawInstancedIndexedPrimitive(instanceCount, firstInstance, indexCount, firstIndex, firstVertex);
                 }
             }
@@ -1071,8 +1061,6 @@ namespace Gek
 
                 if (dispatchValid)
                 {
-                    core->getLog()->adjustValue("Draw", "Dispatch Count", 1.0f);
-                    core->getLog()->adjustValue("Draw", "Thread Count", threadGroupCountX * threadGroupCountY * threadGroupCountZ);
                     videoContext->dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
                 }
             }
@@ -1129,7 +1117,7 @@ namespace Gek
                 std::unique_lock<std::recursive_mutex> lock(shaderMutex);
                 auto load = [this, shaderName](ShaderHandle) -> Engine::ShaderPtr
                 {
-                    return getContext()->createClass<Engine::Shader>("Engine::Shader", core->getLog(), videoDevice, (Engine::Resources *)this, core->getPopulation(), shaderName);
+                    return getContext()->createClass<Engine::Shader>("Engine::Shader", videoDevice, (Engine::Resources *)this, core->getPopulation(), shaderName);
                 };
 
                 auto hash = GetHash(shaderName);
@@ -1146,7 +1134,7 @@ namespace Gek
             {
                 auto load = [this, filterName](ResourceHandle)->Engine::FilterPtr
                 {
-                    return getContext()->createClass<Engine::Filter>("Engine::Filter", core->getLog(), videoDevice, (Engine::Resources *)this, core->getPopulation(), filterName);
+                    return getContext()->createClass<Engine::Filter>("Engine::Filter", videoDevice, (Engine::Resources *)this, core->getPopulation(), filterName);
                 };
 
                 auto hash = GetHash(filterName);
@@ -1442,7 +1430,7 @@ namespace Gek
 
             ObjectCache<Video::Target> renderTargetCache;
             std::vector<Video::ViewPort> viewPortCache;
-            void setRenderTargetList(Video::Device::Context *videoContext, const std::vector<ResourceHandle> &renderTargetHandleList, ResourceHandle *depthBuffer)
+            void setRenderTargetList(Video::Device::Context *videoContext, const std::vector<ResourceHandle> &renderTargetHandleList, ResourceHandle const *depthBuffer)
             {
                 assert(videoContext);
 

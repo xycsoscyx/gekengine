@@ -19,7 +19,6 @@ namespace Gek
     {
         GEK_CONTEXT_USER(Core, Window *)
             , public Plugin::Core
-            , public Plugin::Core::Log
         {
         public:
             struct Command
@@ -534,31 +533,6 @@ namespace Gek
                 }
             }
 
-            // Plugin::Core::Log
-            void beginEvent(std::string const &system, std::string const &name)
-            {
-                auto &eventData = systemHistoryMap[system][name];
-                eventData.current = timer.getImmediateTime();
-            }
-
-            void endEvent(std::string const &system, std::string const &name)
-            {
-                auto &eventData = systemHistoryMap[system][name];
-                eventData.current = (timer.getImmediateTime() - eventData.current) * 1000.0f;
-            }
-
-            void setValue(std::string const &system, std::string const &name, float value)
-            {
-                auto &eventData = systemHistoryMap[system][name];
-                eventData.current = value;
-            }
-
-            void adjustValue(std::string const &system, std::string const &name, float value)
-            {
-                auto &eventData = systemHistoryMap[system][name];
-                eventData.current = ((std::isnan(eventData.current) ? 0.0f : eventData.current) + value);
-            }
-
             // Renderer
             void onShowUserInterface(ImGuiContext * const guiContext)
             {
@@ -618,8 +592,6 @@ namespace Gek
             // Plugin::Core
             bool update(void)
             {
-                Core::Scope function(this, "Core", "Update Time");
-
                 window->readEvents();
 
                 timer.update();
@@ -703,11 +675,6 @@ namespace Gek
                 {
                     configuration[system].erase(name);
                 }
-            }
-
-            Log * getLog(void) const
-            {
-                return (Plugin::Core::Log *)this;
             }
 
             Window * getWindow(void) const

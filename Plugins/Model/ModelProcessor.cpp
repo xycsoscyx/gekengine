@@ -147,7 +147,6 @@ namespace Gek
         };
 
     private:
-		Plugin::Core::Log *log = nullptr;
         Video::Device *videoDevice = nullptr;
         Plugin::Population *population = nullptr;
         Plugin::Resources *resources = nullptr;
@@ -165,17 +164,20 @@ namespace Gek
         std::vector<float, AlignedAllocator<float, 16>> transformList[16];
         std::vector<bool> visibilityList;
 
+        using InstanceList = concurrency::concurrent_vector<Math::Float4x4>;
+        using PartMap = concurrency::concurrent_unordered_map<const Model::Part *, InstanceList>;
+        using MaterialMap = concurrency::concurrent_unordered_map<MaterialHandle, PartMap>;
+        MaterialMap materialMap;
+
     public:
         ModelProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
-			, log(core->getLog())
             , videoDevice(core->getVideoDevice())
             , population(core->getPopulation())
             , resources(core->getResources())
             , renderer(core->getRenderer())
             , loadPool(1)
         {
-			assert(log);
 			assert(videoDevice);
 			assert(population);
             assert(resources);
@@ -339,10 +341,6 @@ namespace Gek
             removeEntity(entity);
         }
 
-        using InstanceList = concurrency::concurrent_vector<Math::Float4x4>;
-        using PartMap = concurrency::concurrent_unordered_map<const Model::Part *, InstanceList>;
-        using MaterialMap = concurrency::concurrent_unordered_map<MaterialHandle, PartMap>;
-
         // Plugin::Renderer Slots
         void onQueueDrawCalls(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)
         {
@@ -351,20 +349,16 @@ namespace Gek
             const auto entityCount = getEntityCount();
             auto buffer = (entityCount % 4);
             buffer = (buffer ? (4 - buffer) : buffer);
-            auto bufferedEntityCount = (entityCount + buffer);
-            halfSizeXList.reserve(bufferedEntityCount);
-            halfSizeYList.reserve(bufferedEntityCount);
-            halfSizeZList.reserve(bufferedEntityCount);
-            halfSizeXList.clear();
-            halfSizeYList.clear();
-            halfSizeZList.clear();
-
+            const auto bufferedEntityCount = (entityCount + buffer);
+            halfSizeXList.resize(bufferedEntityCount);
+            halfSizeYList.resize(bufferedEntityCount);
+            halfSizeZList.resize(bufferedEntityCount);
             for (auto &elementList : transformList)
             {
-                elementList.reserve(bufferedEntityCount);
-                elementList.clear();
+                elementList.resize(bufferedEntityCount);
             }
 
+            size_t entityIndex = 0;
             listEntities([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
                 Model &model = *data.model;
@@ -374,23 +368,20 @@ namespace Gek
                 Math::Float4x4 matrix(transformComponent.getMatrix());
                 matrix.translation.xyz += modelCenter;
 
-                halfSizeXList.push_back(modelSize.x);
-                halfSizeYList.push_back(modelSize.y);
-                halfSizeZList.push_back(modelSize.z);
+                halfSizeXList[entityIndex] = modelSize.x;
+                halfSizeYList[entityIndex] = modelSize.y;
+                halfSizeZList[entityIndex] = modelSize.z;
                 for (size_t element = 0; element < 16; ++element)
                 {
-                    transformList[element].push_back(matrix.data[element]);
+                    transformList[element][entityIndex] = matrix.data[element];
                 }
+
+                entityIndex++;
             });
 
             visibilityList.resize(bufferedEntityCount);
-
             Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedEntityCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
 
-			size_t visibleEntities = 0;
-			std::set<Model *> visibleModels;
-
-            MaterialMap materialMap;
             auto entitySearch = std::begin(entityDataMap);
             for (size_t entityIndex = 0; entityIndex < entityCount; ++entityIndex)
             {
@@ -400,9 +391,6 @@ namespace Gek
                     auto &transformComponent = entity->getComponent<Components::Transform>();
                     auto &model = *entitySearch->second.model;
                     ++entitySearch;
-
-					visibleModels.insert((Model *)&model);
-					visibleEntities++;
 
                     auto modelViewMatrix(transformComponent.getMatrix() * viewMatrix);
                     concurrency::parallel_for_each(std::begin(model.partList), std::end(model.partList), [&](const Model::Part &part) -> void
@@ -414,35 +402,32 @@ namespace Gek
                 }
             }
 
-			log->setValue("Model", "Entity Count", visibleEntities);
-			log->setValue("Model", "Model Count", visibleModels.size());
-
 			size_t maximumInstanceCount = 0;
-            for (const auto &materialPair : materialMap)
+            for (auto &materialPair : materialMap)
             {
-                auto material = materialPair.first;
+                const auto material = materialPair.first;
                 auto &partMap = materialPair.second;
 
                 size_t partInstanceCount = 0;
                 for (const auto &partPair : partMap)
                 {
-                    auto part = partPair.first;
-                    auto &partInstanceList = partPair.second;
+                    const auto part = partPair.first;
+                    const auto &partInstanceList = partPair.second;
                     partInstanceCount += partInstanceList.size();
                 }
 
-                std::vector<DrawData> drawDataList;
-                drawDataList.reserve(partMap.size());
-
-                std::vector<Math::Float4x4> instanceList;
-                instanceList.reserve(partInstanceCount);
-
-                for (const auto &partPair : partMap)
+                std::vector<DrawData> drawDataList(partMap.size());
+                std::vector<Math::Float4x4> instanceList(partInstanceCount);
+                for (auto &partPair : partMap)
                 {
                     auto part = partPair.first;
-                    auto &partInstanceList = partPair.second;
-                    drawDataList.push_back(DrawData(instanceList.size(), partInstanceList.size(), part));
-                    instanceList.insert(std::end(instanceList), std::begin(partInstanceList), std::end(partInstanceList));
+                    if (part)
+                    {
+                        auto &partInstanceList = partPair.second;
+                        drawDataList.push_back(DrawData(instanceList.size(), partInstanceList.size(), part));
+                        instanceList.insert(std::end(instanceList), std::begin(partInstanceList), std::end(partInstanceList));
+                        partInstanceList.clear();
+                    }
                 }
 
                 maximumInstanceCount = std::max(maximumInstanceCount, instanceList.size());
@@ -453,14 +438,15 @@ namespace Gek
                     {
                         std::copy(std::begin(instanceList), std::end(instanceList), instanceData);
                         videoDevice->unmapBuffer(instanceBuffer.get());
-
                         videoContext->setVertexBufferList({ instanceBuffer.get() }, 5);
-
                         for (const auto &drawData : drawDataList)
                         {
-                            resources->setVertexBufferList(videoContext, drawData.part->vertexBufferList, 0);
-                            resources->setIndexBuffer(videoContext, drawData.part->indexBuffer, 0);
-                            resources->drawInstancedIndexedPrimitive(videoContext, drawData.instanceCount, drawData.instanceStart, drawData.part->indexCount, 0, 0);
+                            if (drawData.part)
+                            {
+                                resources->setVertexBufferList(videoContext, drawData.part->vertexBufferList, 0);
+                                resources->setIndexBuffer(videoContext, drawData.part->indexBuffer, 0);
+                                resources->drawInstancedIndexedPrimitive(videoContext, drawData.instanceCount, drawData.instanceStart, drawData.part->indexCount, 0, 0);
+                            }
                         }
                     }
                 }));
