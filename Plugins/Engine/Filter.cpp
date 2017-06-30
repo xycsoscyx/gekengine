@@ -21,7 +21,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Filter, Video::Device *, Engine::Resources *, Plugin::Population *, std::string)
+        GEK_CONTEXT_USER(Filter, Plugin::Core *, std::string)
             , public Engine::Filter
         {
         public:
@@ -52,6 +52,7 @@ namespace Gek
             };
 
         private:
+            Plugin::Core *core = nullptr;
             Video::Device *videoDevice = nullptr;
             Engine::Resources *resources = nullptr;
             Plugin::Population *population = nullptr;
@@ -65,11 +66,12 @@ namespace Gek
             std::vector<PassData> passList;
 
         public:
-            Filter(Context *context, Video::Device *videoDevice, Engine::Resources *resources, Plugin::Population *population, std::string filterName)
+            Filter(Context *context, Plugin::Core *core, std::string filterName)
                 : ContextRegistration(context)
-                , videoDevice(videoDevice)
-                , resources(resources)
-                , population(population)
+                , core(core)
+                , videoDevice(core->getVideoDevice())
+                , resources(dynamic_cast<Engine::Resources *>(core->getResources()))
+                , population(core->getPopulation())
                 , filterName(filterName)
             {
                 assert(videoDevice);
@@ -91,6 +93,12 @@ namespace Gek
                 LockedWrite{ std::cout } << String::Format("Loading filter: %v", filterName);
 				
                 ShuntingYard shuntingYard(population->getShuntingYard());
+                auto options = core->getOption("filters", filterName);
+                for (auto &value : options.getMembers())
+                {
+                    shuntingYard.setVariable(value.name(), JSON::Reference(value.value()).convert(0.0f));
+                }
+
                 static auto evaluate = [&](JSON::Reference data, float defaultValue) -> float
                 {
                     return data.parse(shuntingYard, defaultValue);
@@ -100,9 +108,6 @@ namespace Gek
 
                 std::unordered_map<std::string, ResourceHandle> resourceMap;
                 std::unordered_map<std::string, std::string> resourceSemanticsMap;
-                resourceMap["screen"] = resources->getResourceHandle("screen");
-                resourceMap["screenBuffer"] = resources->getResourceHandle("screenBuffer");
-                resourceSemanticsMap["screen"] = resourceSemanticsMap["screenBuffer"] = "Texture2D<float3>";
 
                 auto backBuffer = videoDevice->getBackBuffer();
                 auto &backBufferDescription = backBuffer->getDescription();

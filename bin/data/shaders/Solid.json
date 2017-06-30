@@ -67,6 +67,10 @@
         "normalBuffer": {
             "format": "R8G8_UNORM",
             "flags": "target"
+        },
+        "finalBuffer": {
+            "format": "R11G11B10_FLOAT",
+            "flags": "target"
         }
     },
     "passes": [
@@ -84,7 +88,7 @@
                 "clear": 1
             },
             "targets": [
-                "screen",
+                "finalBuffer",
                 "albedoBuffer",
                 "normalBuffer"
             ]

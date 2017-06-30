@@ -79,6 +79,10 @@
         "normalBuffer": {
             "format": "R8G8_NORM",
             "flags": "target"
+        },
+        "finalBuffer": {
+            "format": "R11G11B10_FLOAT",
+            "flags": "target"
         }
     },
     "passes": [
@@ -111,7 +115,7 @@
                 "depthBuffer"
             ],
             "targets": [
-                "screen"
+                "finalBuffer"
             ]
         }
     ]

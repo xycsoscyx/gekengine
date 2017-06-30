@@ -152,7 +152,10 @@ namespace Gek
             std::error_code errorCode;
             for (const auto &fileSearch : std::experimental::filesystem::directory_iterator(rootDirectory, errorCode))
 			{
-				onFileFound(fileSearch.path().u8string());
+                if (!onFileFound(fileSearch.path().u8string()))
+                {
+                    return;
+                }
 			}
 		}
     } // namespace FileSystem

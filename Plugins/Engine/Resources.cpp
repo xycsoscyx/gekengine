@@ -640,15 +640,6 @@ namespace Gek
                 programCache.clear();
                 shaderCache.reload();
                 filterCache.reload();
-
-                auto backBuffer = videoDevice->getBackBuffer();
-                Video::Texture::Description description;
-                description.format = Video::Format::R11G11B10_FLOAT;
-                description.width = backBuffer->getDescription().width;
-                description.height = backBuffer->getDescription().height;
-                description.flags = Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource;
-                createTexture("screen", description);
-                createTexture("screenBuffer", description);
             }
 
             // ResourceRequester
@@ -1080,15 +1071,6 @@ namespace Gek
                 renderStateCache.clear();
                 depthStateCache.clear();
                 blendStateCache.clear();
-
-                auto backBuffer = videoDevice->getBackBuffer();
-                Video::Texture::Description description;
-                description.format = Video::Format::R11G11B10_FLOAT;
-                description.width = backBuffer->getDescription().width;
-                description.height = backBuffer->getDescription().height;
-                description.flags = Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource;
-                createTexture("screen", description);
-                createTexture("screenBuffer", description);
             }
 
             ShaderHandle getMaterialShader(MaterialHandle material) const
@@ -1117,7 +1099,7 @@ namespace Gek
                 std::unique_lock<std::recursive_mutex> lock(shaderMutex);
                 auto load = [this, shaderName](ShaderHandle) -> Engine::ShaderPtr
                 {
-                    return getContext()->createClass<Engine::Shader>("Engine::Shader", videoDevice, (Engine::Resources *)this, core->getPopulation(), shaderName);
+                    return getContext()->createClass<Engine::Shader>("Engine::Shader", core, shaderName);
                 };
 
                 auto hash = GetHash(shaderName);
@@ -1134,7 +1116,7 @@ namespace Gek
             {
                 auto load = [this, filterName](ResourceHandle)->Engine::FilterPtr
                 {
-                    return getContext()->createClass<Engine::Filter>("Engine::Filter", videoDevice, (Engine::Resources *)this, core->getPopulation(), filterName);
+                    return getContext()->createClass<Engine::Filter>("Engine::Filter", core, filterName);
                 };
 
                 auto hash = GetHash(filterName);

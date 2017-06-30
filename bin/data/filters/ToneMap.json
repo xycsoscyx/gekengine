@@ -1,13 +1,14 @@
 {
     "textures": {
+        "copyFinalBuffer": {
+            "format": "R11G11B10_FLOAT",
+            "flags": "target"
+        },
         "luminanceBuffer": {
             "format": "R16_FLOAT",
             "flags": "target",
             "mipmaps": 0
         }
-    },
-    "options": {
-
     },
     "buffers": {
         "averageLuminanceBuffer": {
@@ -21,7 +22,7 @@
             "program": "CalculateLuminance",
             "entry": "mainPixelProgram",
             "resources": [
-                "screen"
+                { "finalBuffer": "inputBuffer" }
             ],
             "targets": [
                 "luminanceBuffer"
@@ -46,14 +47,14 @@
             "program": "ToneMap",
             "entry": "mainPixelProgram",
             "copy": {
-                "screenBuffer": "screen"
+                "copyFinalBuffer": "finalBuffer"
             },
             "resources": [
                 "averageLuminanceBuffer",
-                "screenBuffer"
+                { "copyFinalBuffer": "inputBuffer" }
             ],
             "targets": [
-                "screen"
+                "finalBuffer"
             ]
         }
     ]

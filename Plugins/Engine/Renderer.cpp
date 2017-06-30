@@ -1328,10 +1328,7 @@ namespace Gek
                         videoContext->vertexPipeline()->clearConstantBufferList(2, 0);
                         videoContext->pixelPipeline()->clearConstantBufferList(2, 0);
                         videoContext->computePipeline()->clearConstantBufferList(2, 0);
-                        if (currentCamera.cameraTarget)
-                        {
-                            renderOverlay(videoContext, resources->getResourceHandle("screen"), currentCamera.cameraTarget);
-                        }
+                        // TODO: Render to camera target
                     }
                 };
 
@@ -1344,12 +1341,16 @@ namespace Gek
                 imGuiIo.DisplaySize = ImVec2(float(width), float(height));
 
                 ImGui::NewFrame();
-                ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-                ImGui::Begin("GEK Engine", nullptr, ImVec2(0, 0), 0.0f, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
-                onShowUserInterface.emit(ImGui::GetCurrentContext());
-                ImGui::End();
+                ImGui::SetNextWindowSize(imGuiIo.DisplaySize);
+                if (ImGui::Begin("GEK Engine", nullptr, ImVec2(0, 0), 0.0f, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar))
+                {
+                    onShowUserInterface.emit(ImGui::GetCurrentContext());
+                    ImGui::End();
+                }
 
-                renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle("screen"), ResourceHandle());
+                bool editorActive = core->getOption("editor", "active").convert(false);
+                // TODO: Render to editor or screen
+
                 ImGui::Render();
 
                 videoDevice->present(false);

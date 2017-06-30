@@ -44,8 +44,6 @@ namespace Gek
             virtual Plugin::Resources * getResources(void) const = 0;
             virtual Plugin::Renderer * getRenderer(void) const = 0;
 
-            virtual ImGui::PanelManager * getPanelManager(void) = 0;
-
             virtual void listProcessors(std::function<void(Plugin::Processor *)> onProcessor) = 0;
         };
     }; // namespace Engine

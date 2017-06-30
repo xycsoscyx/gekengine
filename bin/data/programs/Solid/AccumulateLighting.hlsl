@@ -37,7 +37,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     float materialMetallic = Resources::metallic.Sample(Global::TextureSampler, inputPixel.texCoord);
 
     OutputPixel outputPixel;
-    outputPixel.screen = getSurfaceIrradiance(inputPixel.screen.xy, surfacePosition, surfaceNormal, materialAlbedo, materialRoughness, materialMetallic);
+    outputPixel.finalBuffer = getSurfaceIrradiance(inputPixel.screen.xy, surfacePosition, surfaceNormal, materialAlbedo, materialRoughness, materialMetallic);
     outputPixel.albedoBuffer = materialAlbedo;
     outputPixel.normalBuffer = GetEncodedNormal(surfaceNormal);
     return outputPixel;

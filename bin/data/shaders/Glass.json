@@ -79,8 +79,8 @@
     },
     "textures": {
         "depthBuffer": {
-            "external": "shader",
-            "name":  "solid"
+        },
+        "finalBuffer": {
         },
         "glassBuffer": {
             "format": "R11G11B10_FLOAT",
@@ -102,7 +102,7 @@
                 "writeMask": "All"
             },
             "copy": {
-                "glassBuffer": "screen"
+                "glassBuffer": "finalBuffer"
             },
             "generateMipMaps": [
                 "glassBuffer"
@@ -111,7 +111,7 @@
                 "glassBuffer"
             ],
             "targets": [
-                "screen"
+                "finalBuffer"
             ]
         }
     ]

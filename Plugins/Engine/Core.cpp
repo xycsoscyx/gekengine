@@ -32,11 +32,13 @@ namespace Gek
             bool windowActive = false;
             bool engineRunning = false;
 
-            int currentDisplayMode = 0;
-			int previousDisplayMode = 0;
             Video::DisplayModeList displayModeList;
             std::vector<std::string> displayModeStringList;
-            bool fullScreen = false;
+            struct Display
+            {
+                int mode = -1;
+                bool fullScreen = false;
+            } current, previous, next;
            
             JSON::Object configuration;
             ShuntingYard shuntingYard;
@@ -49,28 +51,6 @@ namespace Gek
             Engine::ResourcesPtr resources;
             std::vector<Plugin::ProcessorPtr> processorList;
             Plugin::PopulationPtr population;
-
-            ImGui::PanelManager panelManager;
-            Video::TexturePtr consoleButton;
-            Video::TexturePtr performanceButton;
-            Video::TexturePtr settingsButton;
-			bool showModeChange = false;
-			float modeChangeTimer = 0.0f;
-            bool consoleActive = false;
-
-            struct EventHistory
-            {
-                float current = Math::NotANumber;
-                float minimum = 0.0f;
-                float maximum = 0.0f;
-                std::vector<float> data;
-            };
-
-            static const uint32_t HistoryLength = 100;
-            using EventHistoryMap = concurrency::concurrent_unordered_map<std::string, EventHistory>;
-            using SystemHistoryMap = concurrency::concurrent_unordered_map<std::string, EventHistoryMap>;
-
-            SystemHistoryMap systemHistoryMap;
 
         public:
             Core(Context *context, Window *_window)
@@ -99,8 +79,6 @@ namespace Gek
                 window->onMouseMovement.connect<Core, &Core::onMouseMovement>(this);
 
                 configuration = JSON::Load(getContext()->getRootFileName("config.json"));
-                previousDisplayMode = currentDisplayMode = JSON::Reference(configuration).get("display").get("mode").convert(0);
-                configuration["display"]["mode"] = currentDisplayMode;
 
                 HRESULT resultValue = CoInitialize(nullptr);
                 if (FAILED(resultValue))
@@ -132,45 +110,8 @@ namespace Gek
                     displayModeStringList.push_back(displayModeString);
                 }
 
-                auto baseFileName(getContext()->getRootFileName("data", "gui"));
-                consoleButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, "console.png"), 0);
-                performanceButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, "performance.png"), 0);
-                settingsButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, "settings.png"), 0);
+                setDisplayMode(JSON::Reference(configuration).get("display").get("mode").convert(0));
 
-                auto propertiesPane = panelManager.addPane(ImGui::PanelManager::RIGHT, "PropertiesPanel##PropertiesPanel");
-                if (propertiesPane)
-                {
-                    propertiesPane->previewOnHover = false;
-                }
-
-                auto consolePane = panelManager.addPane(ImGui::PanelManager::BOTTOM, "ConsolePanel##ConsolePanel");
-                if (consolePane)
-                {
-                    consolePane->previewOnHover = false;
-
-                    consolePane->addButtonAndWindow(
-                        ImGui::Toolbutton("Console", (Video::Object *)consoleButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
-                        ImGui::PanelManagerPaneAssociatedWindow("Console", -1, [](ImGui::PanelManagerWindowData &windowData) -> void
-                    {
-                        ((Core *)windowData.userData)->drawConsole(windowData);
-                    }, this, ImGuiWindowFlags_NoScrollbar));
-
-                    consolePane->addButtonAndWindow(
-                        ImGui::Toolbutton("Performance", (Video::Object *)performanceButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
-                        ImGui::PanelManagerPaneAssociatedWindow("Performance", -1, [](ImGui::PanelManagerWindowData &windowData) -> void
-                    {
-                        ((Core *)windowData.userData)->drawPerformance(windowData);
-                    }, this, ImGuiWindowFlags_NoScrollbar));
-
-                    consolePane->addButtonAndWindow(
-                        ImGui::Toolbutton("Settings", (Video::Object *)settingsButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
-                        ImGui::PanelManagerPaneAssociatedWindow("Settings", -1, [](ImGui::PanelManagerWindowData &windowData) -> void
-                    {
-                        ((Core *)windowData.userData)->drawSettings(windowData);
-                    }, this, ImGuiWindowFlags_NoScrollbar));
-                }
-
-                setDisplayMode(currentDisplayMode);
                 population = getContext()->createClass<Plugin::Population>("Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Plugin::Core *)this);
                 renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Plugin::Core *)this);
@@ -218,14 +159,35 @@ namespace Gek
                 imGuiIo.KeyMap[ImGuiKey_Z] = 'Z';
                 imGuiIo.MouseDrawCursor = false;
 
+                auto &style = ImGui::GetStyle();
+                style.Colors[ImGuiCol_WindowBg] = ImVec4(0.25f, 0.25f, 0.25f, 1.0f);
+                style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
+                style.WindowRounding = 8.0f;
+                style.FrameRounding = 5.0f;
+
+                auto convert = [](const ImVec4& in) -> auto
+                {
+                    ImU32 out;
+                    out = ((ImU32)(in.x * 255.0f)) << IM_COL32_R_SHIFT;
+                    out |= ((ImU32)(in.y * 255.0f)) << IM_COL32_G_SHIFT;
+                    out |= ((ImU32)(in.z * 255.0f)) << IM_COL32_B_SHIFT;
+                    out |= ((ImU32)(in.w * 255.0f)) << IM_COL32_A_SHIFT;
+                    return out;
+                };
+
+                auto &tabStyle = ImGui::TabLabelStyle::Get();
+                tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelActive] = tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabel] = convert(style.Colors[ImGuiCol_ButtonActive]);
+                tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelHovered] = tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelSelectedHovered] = convert(style.Colors[ImGuiCol_ButtonHovered]);
+                tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelSelected] = tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelSelectedActive] = convert(style.Colors[ImGuiCol_Button]);
+                tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelText] = tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelSelectedText] = convert(style.Colors[ImGuiCol_Text]);
+                ImGui::TabWindow::SetWindowContentDrawerCallback(&globalTabContentProvider, this);
+
                 windowActive = true;
                 engineRunning = true;
 
                 window->setVisibility(true);
-
+                setFullScreen(JSON::Reference(configuration).get("display").get("fullScreen").convert(false));
 				LockedWrite{ std::cout } << String::Format("Starting engine");
-
-                population->load("demo");
             }
 
             ~Core(void)
@@ -242,11 +204,6 @@ namespace Gek
                 window->onMousePosition.disconnect<Core, &Core::onMousePosition>(this);
                 window->onMouseMovement.disconnect<Core, &Core::onMouseMovement>(this);
 
-                panelManager.clear();
-                consoleButton = nullptr;
-                performanceButton = nullptr;
-                settingsButton = nullptr;
-
                 processorList.clear();
                 renderer = nullptr;
                 resources = nullptr;
@@ -257,144 +214,49 @@ namespace Gek
                 CoUninitialize();
             }
 
-			void setDisplayMode(uint32_t displayMode)
+            bool setFullScreen(bool requestFullScreen)
             {
-                auto &displayModeData = displayModeList[displayMode];
-				LockedWrite{ std::cout } << String::Format("Setting display mode: %vx%v", displayModeData.width, displayModeData.height);
-                if (displayMode < displayModeList.size())
+                if (current.fullScreen != requestFullScreen)
                 {
-                    currentDisplayMode = displayMode;
-                    videoDevice->setDisplayMode(displayModeData);
-                    window->move();
-                    onResize.emit();
-                }
-            }
-
-            // ImGui
-            void drawConsole(ImGui::PanelManagerWindowData &windowData)
-            {
-                auto listBoxSize = (windowData.size - (ImGui::GetStyle().WindowPadding * 2.0f));
-                listBoxSize.y -= ImGui::GetTextLineHeightWithSpacing();
-                if (ImGui::ListBoxHeader("##empty", listBoxSize))
-                {
-                    const auto logCount = 0;// logList.size();
-                    ImGuiListClipper clipper(logCount, ImGui::GetTextLineHeightWithSpacing());
-                    while (clipper.Step())
-                    {
-                        for (int logIndex = clipper.DisplayStart; logIndex < clipper.DisplayEnd; ++logIndex)
-                        {
-                            ImGui::PushID(logIndex);
-                            //ImGui::TextColored(color, String::Format("%v: %v", system, message).c_str());
-                            ImGui::PopID();
-                        }
-                    };
-
-                    ImGui::ListBoxFooter();
-                }
-            }
-
-            std::string selectedEvent;
-            std::string selectedSystem;
-            void drawPerformance(ImGui::PanelManagerWindowData &windowData)
-            {
-                if (systemHistoryMap.empty())
-                {
-                    return;
-                }
-
-                auto clientSize = (windowData.size - (ImGui::GetStyle().WindowPadding * 2.0f));
-                clientSize.y -= ImGui::GetTextLineHeightWithSpacing();
-
-                ImGui::BeginGroup();
-                ImVec2 eventSize(300.0f, clientSize.y);
-                if (ImGui::BeginChildFrame(ImGui::GetCurrentWindow()->GetID("##systemEventTree"), eventSize))
-                {
-                    for (const auto &systemPair : systemHistoryMap)
-                    {
-                        uint32_t flags = ImGuiTreeNodeFlags_CollapsingHeader;
-                        if (systemPair.first == selectedSystem)
-                        {
-                            flags |= ImGuiTreeNodeFlags_DefaultOpen;
-                        }
-
-                        if (ImGui::TreeNodeEx(systemPair.first.c_str(), flags))
-                        {
-                            for (const auto &eventPair : systemPair.second)
-                            {
-                                bool isSelected = (eventPair.first == selectedEvent);
-                                isSelected = ImGui::Selectable(eventPair.first.c_str(), &isSelected);
-                                if (isSelected)
-                                {
-                                    selectedSystem = systemPair.first;
-                                    selectedEvent = eventPair.first;
-                                }
-                            }
-
-                            ImGui::TreePop();
-                        }
-                    }
-
-                    ImGui::EndChildFrame();
-                }
-
-                ImGui::EndGroup();
-                auto systemSearch = systemHistoryMap.find(selectedSystem);
-                if (systemSearch != std::end(systemHistoryMap))
-                {
-                    auto &eventHistoryMap = systemSearch->second;
-                    auto eventSearch = eventHistoryMap.find(selectedEvent);
-                    if (eventSearch != std::end(eventHistoryMap))
-                    {
-                        auto &selectedEvent = eventSearch->second;
-                        if (!selectedEvent.data.empty())
-                        {
-                            ImGui::SameLine();
-                            ImVec2 historySize((clientSize.x - 300.0f - ImGui::GetStyle().WindowPadding.x), clientSize.y);
-                            GUI::PlotHistogram("##historyHistogram", [](void *userData, int index) -> float
-                            {
-                                auto &data = *(std::vector<float> *)userData;
-                                return (index < int(data.size()) ? data[index] : 0.0f);
-                            }, &selectedEvent.data, HistoryLength, 0, 0.0f, selectedEvent.maximum, historySize);
-                        }
-                    }
-                }
-            }
-
-            void drawSettings(ImGui::PanelManagerWindowData &windowData)
-            {
-                if (ImGui::Checkbox("FullScreen", &fullScreen))
-                {
-                    if (fullScreen)
+                    current.fullScreen = requestFullScreen;
+                    configuration["display"]["fullScreen"] = requestFullScreen;
+                    if (requestFullScreen)
                     {
                         window->move(Math::Int2::Zero);
                     }
 
-                    videoDevice->setFullScreenState(fullScreen);
+                    videoDevice->setFullScreenState(requestFullScreen);
                     onResize.emit();
-                    if (!fullScreen)
+                    if (!requestFullScreen)
                     {
                         window->move();
                     }
-                }
 
-                ImGui::PushItemWidth(350.0f);
-                if (GUI::ListBox("Display Mode", &currentDisplayMode, [](void *data, int index, const char **text) -> bool
-                {
-                    Core *core = static_cast<Core *>(data);
-                    auto &mode = core->displayModeStringList[index];
-                    (*text) = mode.c_str();
                     return true;
-                }, this, displayModeStringList.size(), 5))
-                {
-                    configuration["display"]["mode"] = currentDisplayMode;
-                    setDisplayMode(currentDisplayMode);
-                    showModeChange = true;
-                    modeChangeTimer = 10.0f;
                 }
 
-                ImGui::PopItemWidth();
+                return false;
+            }
 
-                OnSettingsPanel.emit(ImGui::GetCurrentContext(), windowData);
+			bool setDisplayMode(uint32_t requestDisplayMode)
+            {
+                if (current.mode != requestDisplayMode)
+                {
+                    auto &displayModeData = displayModeList[requestDisplayMode];
+                    LockedWrite{ std::cout } << String::Format("Setting display mode: %vx%v", displayModeData.width, displayModeData.height);
+                    if (requestDisplayMode < displayModeList.size())
+                    {
+                        current.mode = requestDisplayMode;
+                        configuration["display"]["mode"] = requestDisplayMode;
+                        videoDevice->setDisplayMode(displayModeData);
+                        window->move();
+                        onResize.emit();
+
+                        return true;
+                    }
+                }
+
+                return false;
             }
 
             // Window slots
@@ -534,59 +396,277 @@ namespace Gek
             }
 
             // Renderer
+            bool showLoadMenu = false;
+            int currentSelectedScene = 0;
+            bool showSettings = false;
+            bool showModeChange = false;
+            float modeChangeTimer = 0.0f;
             void onShowUserInterface(ImGuiContext * const guiContext)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                panelManager.setDisplayPortion(ImVec4(0, 0, imGuiIo.DisplaySize.x, imGuiIo.DisplaySize.y));
-
-                float frameTime = timer.getUpdateTime();
-                if (windowActive)
+                if (imGuiIo.MouseDrawCursor)
                 {
-                    if (imGuiIo.MouseDrawCursor)
+                    ImGui::BeginMainMenuBar();
+                    ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5.0f, 10.0f));
+                    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5.0f, 10.0f));
+                    if (ImGui::BeginMenu("File"))
                     {
-                        if (showModeChange)
+                        if (ImGui::MenuItem("Load", "CTRL+L"))
                         {
-                            ImGui::SetNextWindowPosCenter();
-                            ImGui::Begin("Keep Display Mode", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
-                            ImGui::Text("Keep Display Mode?");
-
-                            if (ImGui::Button("Yes"))
-                            {
-                                showModeChange = false;
-                                previousDisplayMode = currentDisplayMode;
-                            }
-
-                            ImGui::SameLine();
-                            modeChangeTimer -= frameTime;
-                            if (modeChangeTimer <= 0.0f || ImGui::Button("No"))
-                            {
-                                showModeChange = false;
-                                setDisplayMode(previousDisplayMode);
-                            }
-
-                            ImGui::Text(String::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)).c_str());
-
-                            ImGui::End();
+                            showLoadMenu = true;
+                            currentSelectedScene = 0;
                         }
+
+                        if (ImGui::MenuItem("Save", "CTRL+S"))
+                        {
+                            population->save("demo_save");
+                        }
+
+                        ImGui::Separator();
+                        if (ImGui::MenuItem("Settings", "CTRL+O"))
+                        {
+                            showSettings = true;
+                            next = current;
+                        }
+
+                        ImGui::Separator();
+                        if (ImGui::MenuItem("Quit", "CTRL+Q"))
+                        {
+                            onClose();
+                        }
+
+                        ImGui::EndMenu();
+                    }
+
+                    if (ImGui::BeginMenu("Edit"))
+                    {
+                        if (ImGui::MenuItem("Undo", "CTRL+Z"))
+                        {
+                        }
+
+                        if (ImGui::MenuItem("Redo", "CTRL+Y", false, false))
+                        {
+                        }
+
+                        ImGui::Separator();
+                        if (ImGui::MenuItem("Cut", "CTRL+X"))
+                        {
+                        }
+
+                        if (ImGui::MenuItem("Copy", "CTRL+C"))
+                        {
+                        }
+
+                        if (ImGui::MenuItem("Paste", "CTRL+V"))
+                        {
+                        }
+
+                        ImGui::EndMenu();
+                    }
+
+                    ImGui::PopStyleVar(2);
+                    ImGui::EndMainMenuBar();
+                    showSettingsWindow();
+                    showDisplayBackup();
+                    showLoadWindow();
+                }
+            }
+
+            static void globalTabContentProvider(ImGui::TabWindow::TabLabel *tab, ImGui::TabWindow &parent, void *userData)
+            {
+                auto core = reinterpret_cast<Core *>(userData);
+                core->tabContentProvider(tab, parent);
+            }
+
+            void tabContentProvider(ImGui::TabWindow::TabLabel *tab, ImGui::TabWindow &parent)
+            {
+                auto &style = ImGui::GetStyle();
+                auto frameColor = style.Colors[ImGuiCol_FrameBg];
+                if (&parent == &settingsTabs && tab)
+                {
+                    ImGui::PushStyleColor(ImGuiCol_FrameBg, style.Colors[ImGuiCol_Button]);
+                    auto currentSize = ImGui::GetCurrentWindowRead()->Size;
+                    float frameWidth = (currentSize.x - (style.FramePadding.x * 2.0f));
+                    float frameHeight = (currentSize.y - ((ImGui::GetTextLineHeightWithSpacing() - style.FramePadding.y) * 2.0f) - style.ItemSpacing.y);
+                    if (ImGui::BeginChildFrame(tab->userInt, ImVec2(frameWidth, frameHeight)))
+                    {
+                        ImGui::PushStyleColor(ImGuiCol_FrameBg, frameColor);
+                        switch (tab->userInt)
+                        {
+                        case 0:
+                            break;
+
+                        case 1:
+                            ImGui::PushItemWidth(-1.0f);
+                            GUI::ListBox("Display Mode", &next.mode, [](void *data, int index, const char **text) -> bool
+                            {
+                                Core *core = static_cast<Core *>(data);
+                                auto &mode = core->displayModeStringList[index];
+                                (*text) = mode.c_str();
+                                return true;
+                            }, this, displayModeStringList.size(), 5);
+
+                            ImGui::PopItemWidth();
+                            ImGui::SameLine();
+                            ImGui::Text(" ");
+
+                            ImGui::Spacing();
+                            ImGui::Checkbox("FullScreen", &next.fullScreen);
+                            break;
+
+                        case 2:
+                            break;
+                        };
+
+                        ImGui::PopStyleColor();
+                        ImGui::EndChildFrame();
+                    }
+
+                    ImGui::PopStyleColor();
+                    float buttonPositionY = (currentSize.y - ((ImGui::GetTextLineHeightWithSpacing() - style.FramePadding.y) * 2.0f));
+                    float buttonPositionX = (currentSize.x - ((100.0f + style.FramePadding.x) * 2.0f) - style.ItemSpacing.x);
+                    ImGui::SetCursorPos(ImVec2((buttonPositionX * 0.5f), buttonPositionY));
+                    if (ImGui::Button("Accept", ImVec2(100.0f, -1.0f)))
+                    {
+                        switch (tab->userInt)
+                        {
+                        case 0:
+                            break;
+
+                        case 1:
+                            if (true)
+                            {
+                                bool changedDisplayMode = setDisplayMode(next.mode);
+                                bool changedFullScreen = setFullScreen(next.fullScreen);
+                                if (changedDisplayMode || changedFullScreen)
+                                {
+                                    previous = current;
+                                    showModeChange = true;
+                                    modeChangeTimer = 10.0f;
+                                }
+                            }
+
+                            break;
+
+                        case 2:
+                            break;
+                        };
+
+                        showSettings = false;
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("Cancel", ImVec2(100.0f, -1.0f)))
+                    {
+                        showSettings = false;
+                    }
+                }
+            }
+
+            ImGui::TabWindow settingsTabs;
+            void showSettingsWindow(void)
+            {
+                ImGui::SetNextWindowSize(ImVec2(500, 500));
+                if (showSettings && ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_AlwaysAutoResize))
+                {
+                    if (!settingsTabs.isInited())
+                    {
+                        struct TabData
+                        {
+                            char *name;
+                            char *tooltop;
+                            int id;
+                        } data[] =
+                        {
+                            { "   Display   ", "Display Mode Settings", 0, },
+                            { "   Visual   ", "Visual and Graphics Settings", 1, },
+                            { "   Audio   ", "Sound and Playback Settings", 2, },
+                        };
+
+                        for (auto &tab : data)
+                        {
+                            settingsTabs.addTabLabel(tab.name, tab.tooltop, false, false, nullptr, nullptr, tab.id);
+                        }
+                    }
+
+                    settingsTabs.render();
+                    ImGui::End();
+                }
+            }
+
+            void showDisplayBackup(void)
+            {
+                if (showModeChange)
+                {
+                    ImGui::SetNextWindowPosCenter();
+                    ImGui::Begin("Keep Display Mode", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
+                    ImGui::Text("Keep Display Mode?");
+
+                    if (ImGui::Button("Yes"))
+                    {
+                        showModeChange = false;
+                        previous = current;
+                    }
+
+                    ImGui::SameLine();
+                    if (modeChangeTimer <= 0.0f || ImGui::Button("No"))
+                    {
+                        showModeChange = false;
+                        setDisplayMode(previous.mode);
+                        setFullScreen(previous.fullScreen);
+                    }
+
+                    ImGui::Text(String::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)).c_str());
+
+                    ImGui::End();
+                }
+            }
+
+            void showLoadWindow(void)
+            {
+                if (showLoadMenu && ImGui::Begin("Load", &showLoadMenu, ImGuiWindowFlags_AlwaysAutoResize))
+                {
+                    std::vector<std::string> scenes;
+                    FileSystem::Find(getContext()->getRootFileName("data", "scenes"), [&scenes](FileSystem::Path const &filePath) -> bool
+                    {
+                        if (filePath.isFile())
+                        {
+                            scenes.push_back(filePath.withoutExtension().getFileName());
+                        }
+
+                        return true;
+                    });
+
+                    if (scenes.empty())
+                    {
+                        ImGui::Text("No scenes found");
                     }
                     else
                     {
-                        auto rectangle = window->getScreenRectangle();
-                        window->setCursorPosition(Math::Int2(
-                            int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
-                            int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
+                        ImGui::PushItemWidth(350.0f);
+                        GUI::ListBox("Scenes", &currentSelectedScene, [](void *data, int index, const char **output) -> bool
+                        {
+                            auto scenes = (std::vector<std::string> *)data;
+                            (*output) = scenes->at(index).c_str();
+                            return true;
+                        }, (void *)&scenes, scenes.size(), 10);
+
+                        if (ImGui::Button("Load"))
+                        {
+                            showLoadMenu = false;
+                            population->load(scenes[currentSelectedScene]);
+                        }
+
+                        ImGui::SameLine();
                     }
-                }
-                else
-                {
-                    ImGui::SetNextWindowPosCenter();
-                    ImGui::Begin("GEK Engine##Paused", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoCollapse);
-                    ImGui::Dummy(ImVec2(200, 0));
-                    ImGui::Text("Paused");
+
+                    if (ImGui::Button("Cancel"))
+                    {
+                        showLoadMenu = false;
+                    }
+
                     ImGui::End();
                 }
-
-                panelManager.render();
             }
 
             // Plugin::Core
@@ -610,6 +690,7 @@ namespace Gek
                 if (windowActive)
                 {
                     float frameTime = timer.getUpdateTime();
+                    modeChangeTimer -= frameTime;
                     if (imGuiIo.MouseDrawCursor)
                     {
                         population->update(0.0f);
@@ -617,42 +698,6 @@ namespace Gek
                     else
                     {
                         population->update(frameTime);
-                    }
-
-                    for (auto &systemPair : systemHistoryMap)
-                    {
-                        auto &historyMap = systemPair.second;
-                        concurrency::parallel_for_each(std::begin(historyMap), std::end(historyMap), [&](EventHistoryMap::value_type &eventPair) -> void
-                        {
-                            static const auto adapt = [](float current, float target, float frameTime) -> float
-                            {
-                                return (current + ((target - current) * (1.0 - exp(-frameTime * 1.25f))));
-                            };
-
-                            auto &eventData = eventPair.second;
-                            if (!std::isnan(eventData.current))
-                            {
-                                eventData.data.push_back(eventPair.second.current);
-                                if (eventData.data.size() > HistoryLength)
-                                {
-                                    auto iterator = std::begin(eventData.data);
-                                    eventData.data.erase(iterator);
-                                }
-
-                                if (eventData.data.size() == 1)
-                                {
-                                    eventData.maximum = eventData.minimum = eventData.current;
-                                }
-                                else
-                                {
-                                    auto minmax = std::minmax_element(std::begin(eventData.data), std::end(eventData.data));
-                                    eventData.minimum = adapt(eventData.minimum, *minmax.first, frameTime);
-                                    eventData.maximum = adapt(eventData.maximum, *minmax.second, frameTime);
-                                }
-
-                                eventData.current = Math::NotANumber;
-                            }
-                        });
                     }
                 }
 
@@ -700,11 +745,6 @@ namespace Gek
             Plugin::Renderer * getRenderer(void) const
             {
                 return renderer.get();
-            }
-
-            ImGui::PanelManager * getPanelManager(void)
-            {
-                return &panelManager;
             }
 
             void listProcessors(std::function<void(Plugin::Processor *)> onProcessor)

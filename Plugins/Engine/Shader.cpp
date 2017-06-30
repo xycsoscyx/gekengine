@@ -23,7 +23,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Shader, Video::Device *, Engine::Resources *, Plugin::Population *, std::string)
+        GEK_CONTEXT_USER(Shader, Plugin::Core *, std::string)
             , public Engine::Shader
         {
         public:
@@ -66,6 +66,7 @@ namespace Gek
             };
 
         private:
+            Plugin::Core *core = nullptr;
             Video::Device *videoDevice = nullptr;
             Engine::Resources *resources = nullptr;
             Plugin::Population *population = nullptr;
@@ -80,11 +81,12 @@ namespace Gek
             bool lightingRequired = false;
 
         public:
-            Shader(Context *context, Video::Device *videoDevice, Engine::Resources *resources, Plugin::Population *population, std::string shaderName)
+            Shader(Context *context, Plugin::Core *core, std::string shaderName)
                 : ContextRegistration(context)
-                , videoDevice(videoDevice)
-                , resources(resources)
-                , population(population)
+                , core(core)
+                , videoDevice(core->getVideoDevice())
+                , resources(dynamic_cast<Engine::Resources *>(core->getResources()))
+                , population(core->getPopulation())
                 , shaderName(shaderName)
             {
                 assert(videoDevice);
@@ -104,6 +106,61 @@ namespace Gek
             void reload(void)
             {
                 LockedWrite{ std::cout } << String::Format("Loading shader: %v", shaderName);
+
+                std::string defineData;
+                auto options = core->getOption("shaders", shaderName);
+                for (auto &optionPair : options.getMembers())
+                {
+                    auto name = optionPair.name();
+                    JSON::Reference value(optionPair.value());
+                    auto &valueArray = value.getArray();
+                    if (valueArray.size() > 0)
+                    {
+                        switch (valueArray.size())
+                        {
+                        case 1:
+                            defineData += String::Format("static const float %v = %v;\r\n", name,
+                                JSON::Reference(valueArray[0]).convert(0.0f));
+                            break;
+
+                        case 2:
+                            defineData += String::Format("static const float2 %v = float2(%v, %v);\r\n", name,
+                                JSON::Reference(valueArray[0]).convert(0.0f),
+                                JSON::Reference(valueArray[1]).convert(0.0f));
+                            break;
+
+                        case 3:
+                            defineData += String::Format("static const float3 %v = float3(%v, %v, %v);\r\n", name,
+                                JSON::Reference(valueArray[0]).convert(0.0f),
+                                JSON::Reference(valueArray[1]).convert(0.0f),
+                                JSON::Reference(valueArray[2]).convert(0.0f));
+                            break;
+
+                        case 4:
+                            defineData += String::Format("static const float4 %v = float4(%v, %v, %v, %v)\r\n", name,
+                                JSON::Reference(valueArray[0]).convert(0.0f),
+                                JSON::Reference(valueArray[1]).convert(0.0f),
+                                JSON::Reference(valueArray[2]).convert(0.0f),
+                                JSON::Reference(valueArray[3]).convert(0.0f));
+                            break;
+                        };
+                    }
+                    else
+                    {
+                        if (value.getObject().is_bool())
+                        {
+                            defineData += String::Format("static const bool %v = %v", name, value.convert(false));
+                        }
+                        else if (value.getObject().is_integer())
+                        {
+                            defineData += String::Format("static const int %v = %v", name, value.convert(0));
+                        }
+                        else
+                        {
+                            defineData += String::Format("static const float %v = %v", name, value.convert(0.0f));
+                        }
+                    }
+                }
 
                 ShuntingYard shuntingYard(population->getShuntingYard());
 				static auto evaluate = [&](JSON::Reference data, float defaultValue) -> float
@@ -200,10 +257,6 @@ namespace Gek
                 std::unordered_map<std::string, ResourceHandle> resourceMap;
                 std::unordered_map<std::string, std::string> resourceSemanticsMap;
                 std::unordered_set<Engine::Shader *> requiredShaderSet;
-
-                resourceMap["screen"] = resources->getResourceHandle("screen");
-                resourceMap["screenBuffer"] = resources->getResourceHandle("screenBuffer");
-                resourceSemanticsMap["screen"] = resourceSemanticsMap["screenBuffer"] = "Texture2D<float3>";
 
                 for (auto &baseTextureNode : shaderNode.get("textures").getMembers())
                 {

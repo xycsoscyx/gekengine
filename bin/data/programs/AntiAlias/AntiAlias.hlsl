@@ -15,11 +15,11 @@ namespace Defines
 //texture reads can be a bottleneck
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    const float3 colorMD = Resources::screenBuffer[inputPixel.screen.xy];
-    const float3 colorNW = Resources::screenBuffer[inputPixel.screen.xy + float2(-1, +1)];
-    const float3 colorNE = Resources::screenBuffer[inputPixel.screen.xy + float2(+1, +1)];
-    const float3 colorSW = Resources::screenBuffer[inputPixel.screen.xy + float2(-1, -1)];
-    const float3 colorSE = Resources::screenBuffer[inputPixel.screen.xy + float2(+1, -1)];
+    const float3 colorMD = Resources::inputBuffer[inputPixel.screen.xy];
+    const float3 colorNW = Resources::inputBuffer[inputPixel.screen.xy + float2(-1, +1)];
+    const float3 colorNE = Resources::inputBuffer[inputPixel.screen.xy + float2(+1, +1)];
+    const float3 colorSW = Resources::inputBuffer[inputPixel.screen.xy + float2(-1, -1)];
+    const float3 colorSE = Resources::inputBuffer[inputPixel.screen.xy + float2(+1, -1)];
 
     const float luminanceMD = GetLuminance(colorMD);
     const float luminanceNW = GetLuminance(colorNW);
@@ -37,12 +37,12 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     const float recipricalDirection = 1.0 / (min(abs(direction.x), abs(direction.y)) + dirReduce);
     direction = min(Defines::SpanMaximum, max(-Defines::SpanMaximum, direction * recipricalDirection)) * Shader::TargetPixelSize;
 
-    float3 colorA = Resources::screenBuffer[inputPixel.screen.xy + direction * (1.0 / 3.0 - 0.5)];
-    colorA += Resources::screenBuffer[inputPixel.screen.xy + direction * (2.0 / 3.0 - 0.5)];
+    float3 colorA = Resources::inputBuffer[inputPixel.screen.xy + direction * (1.0 / 3.0 - 0.5)];
+    colorA += Resources::inputBuffer[inputPixel.screen.xy + direction * (2.0 / 3.0 - 0.5)];
     colorA *= 0.5;
 
-    float3 colorB = Resources::screenBuffer[inputPixel.screen.xy + direction * -0.5];
-    colorB += Resources::screenBuffer[inputPixel.screen.xy + direction * 0.5];
+    float3 colorB = Resources::inputBuffer[inputPixel.screen.xy + direction * -0.5];
+    colorB += Resources::inputBuffer[inputPixel.screen.xy + direction * 0.5];
     colorB = ((colorA * 0.5) + (0.25 * colorB));
 
     const float luminanceB = GetLuminance(colorB);
