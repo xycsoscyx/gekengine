@@ -1,4 +1,7 @@
 {
+    "requires": [
+        "solid"
+    ],
     "textures": {
         "depthBuffer": {
         },
@@ -17,6 +20,7 @@
             "flags": "target"
         }
     },
+    "output": "finalBuffer",
     "passes": [
         {
             "program": "AmbientCalculation",

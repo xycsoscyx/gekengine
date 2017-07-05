@@ -77,6 +77,9 @@
             }
         ]
     },
+    "requires": [
+        "solid"
+    ],
     "textures": {
         "depthBuffer": {
         },
@@ -88,6 +91,7 @@
             "mipmaps": 6
         }
     },
+    "output": "finalBuffer",
     "passes": [
         {
             "program": "AccumulateLighting",

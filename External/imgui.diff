@@ -1,11 +1,11 @@
  addons/imguifilesystem/imguifilesystem.cpp         | 47 ++++++++++++----------
  addons/imguinodegrapheditor/imguinodegrapheditor.h |  2 +-
  addons/imguipanelmanager/imguipanelmanager.cpp     |  2 +-
- addons/imguipanelmanager/imguipanelmanager.h       |  3 +-
+ addons/imguipanelmanager/imguipanelmanager.h       |  5 ++-
  imgui.cpp                                          |  2 -
  imgui.h                                            |  2 +
  imgui_draw.cpp                                     |  2 -
- 7 files changed, 31 insertions(+), 29 deletions(-)
+ 7 files changed, 32 insertions(+), 30 deletions(-)
 
 diff --git a/addons/imguifilesystem/imguifilesystem.cpp b/addons/imguifilesystem/imguifilesystem.cpp
 index 99fde8f..682fcf7 100644
@@ -86,7 +86,7 @@ index 4357df2..8d82d20 100644
  
  class NodeGraphEditor
 diff --git a/addons/imguipanelmanager/imguipanelmanager.cpp b/addons/imguipanelmanager/imguipanelmanager.cpp
-index a66f5da..a73f95f 100644
+index a66f5da..7f5d68e 100644
 --- a/addons/imguipanelmanager/imguipanelmanager.cpp
 +++ b/addons/imguipanelmanager/imguipanelmanager.cpp
 @@ -862,7 +862,7 @@ void ImGui::PanelManager::Pane::AssociatedWindow::draw(const ImGui::PanelManager
@@ -94,12 +94,12 @@ index a66f5da..a73f95f 100644
      const bool togglableAndVisible = togglable && button->isDown;
      const bool selected = (this==pane.getSelectedWindow());
 -    const bool hovered = !selected && (pane.allowHoverOnTogglableWindows ? !togglableAndVisible : !togglable) && (this==pane.getHoverWindow() || persistHoverFocus);
-+    const bool hovered = pane.previewOnHover ? (!selected && (pane.allowHoverOnTogglableWindows ? !togglableAndVisible : !togglable) && (this == pane.getHoverWindow() || persistHoverFocus)) : false;
++    const bool hovered = pane.previewOnHover ? !selected && (pane.allowHoverOnTogglableWindows ? !togglableAndVisible : !togglable) && (this == pane.getHoverWindow() || persistHoverFocus) : false;
      if (!togglableAndVisible && !selected && !hovered) return;
  
      if (dirty)  {
 diff --git a/addons/imguipanelmanager/imguipanelmanager.h b/addons/imguipanelmanager/imguipanelmanager.h
-index 5895092..e5d477e 100644
+index 5895092..81bf185 100644
 --- a/addons/imguipanelmanager/imguipanelmanager.h
 +++ b/addons/imguipanelmanager/imguipanelmanager.h
 @@ -71,10 +71,11 @@ struct PanelManager {
@@ -109,17 +109,18 @@ index 5895092..e5d477e 100644
 +        bool previewOnHover;
          mutable float hoverReleaseTimer;
          mutable int hoverReleaseIndex;
-         Pane(Position _pos,const char* name)
+-        Pane(Position _pos,const char* name)
 -        : bar(name),pos(_pos),visible(true),allowHoverOnTogglableWindows(false),hoverReleaseTimer(-1),hoverReleaseIndex(-1)
-+        : bar(name),pos(_pos),visible(true),allowHoverOnTogglableWindows(false),previewOnHover(true),hoverReleaseTimer(-1),hoverReleaseIndex(-1)
++        Pane(Position _pos, const char* name)
++             : bar(name), pos(_pos), visible(true), allowHoverOnTogglableWindows(false), previewOnHover(true), hoverReleaseTimer(-1), hoverReleaseIndex(-1)
          {}
          ~Pane() {clear();}
          void clear() {
 diff --git a/imgui.cpp b/imgui.cpp
-index 5b1d4f2..1e505f8 100644
+index 6d182e7..b53abf0 100644
 --- a/imgui.cpp
 +++ b/imgui.cpp
-@@ -616,8 +616,6 @@
+@@ -618,8 +618,6 @@
  #endif
  
  #include "imgui.h"
@@ -129,7 +130,7 @@ index 5b1d4f2..1e505f8 100644
  
  #include <ctype.h>      // toupper, isprint
 diff --git a/imgui.h b/imgui.h
-index d77c56c..a8a2555 100644
+index 8bca83f..63973d7 100644
 --- a/imgui.h
 +++ b/imgui.h
 @@ -8,6 +8,8 @@
@@ -142,7 +143,7 @@ index d77c56c..a8a2555 100644
  #include "imconfig.h"       // User-editable configuration file
  #endif
 diff --git a/imgui_draw.cpp b/imgui_draw.cpp
-index fa7cac5..248204a 100644
+index 9630450..c498c72 100644
 --- a/imgui_draw.cpp
 +++ b/imgui_draw.cpp
 @@ -13,8 +13,6 @@

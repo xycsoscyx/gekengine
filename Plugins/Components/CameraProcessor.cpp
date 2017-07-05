@@ -131,7 +131,6 @@ namespace Gek
                     description.format = Video::Format::R8G8B8A8_UNORM_SRGB;
                     description.width = backBuffer->getDescription().width;
                     description.height = backBuffer->getDescription().height;
-                    description.sampleCount = 4;
                     description.flags = Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource;
                     data.target = resources->createTexture(String::Format("camera:%v", cameraComponent.target), description);
                 }

@@ -252,7 +252,7 @@ namespace Gek
                 ResourceCache::clear();
             }
 
-            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::size_t parameters, std::function<TypePtr(HANDLE)> &&load)
+            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::size_t parameters, std::function<TypePtr(HANDLE)> &&load, bool forceCache)
             {
                 HANDLE handle;
                 if (requestedLoadSet.count(hash) > 0)
@@ -261,14 +261,17 @@ namespace Gek
                     if (resourceSearch != std::end(resourceHandleMap))
                     {
                         HANDLE handle = resourceSearch->second;
-                        auto loadParametersSearch = loadParameters.find(handle);
-                        if (loadParametersSearch == std::end(loadParameters) || loadParametersSearch->second != parameters)
+                        if (!forceCache)
                         {
-                            loadParameters[handle] = parameters;
-                            resources->addRequest([this, handle, load = move(load)](void) -> void
+                            auto loadParametersSearch = loadParameters.find(handle);
+                            if (loadParametersSearch == std::end(loadParameters) || loadParametersSearch->second != parameters)
                             {
-                                setResource(handle, load(handle));
-                            });
+                                loadParameters[handle] = parameters;
+                                resources->addRequest([this, handle, load = move(load)](void) -> void
+                                {
+                                    setResource(handle, load(handle));
+                                });
+                            }
                         }
 
                         return std::make_pair(false, handle);
@@ -708,7 +711,7 @@ namespace Gek
                         };
 
                         auto hash = GetHash(textureName);
-                        auto resource = dynamicCache.getHandle(hash, flags, std::move(load));
+                        auto resource = dynamicCache.getHandle(hash, flags, std::move(load), false);
                         if (resource.first)
                         {
                             auto description = videoDevice->loadTextureDescription(filePath);
@@ -838,7 +841,7 @@ namespace Gek
                 };
 
                 auto hash = GetHash(name);
-                auto resource = dynamicCache.getHandle(hash, 0, std::move(load));
+                auto resource = dynamicCache.getHandle(hash, 0, std::move(load), false);
                 if (resource.first)
                 {
                     textureDescriptionMap.insert(std::make_pair(resource.second, description));
@@ -847,7 +850,7 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createTexture(std::string const &textureName, const Video::Texture::Description &description)
+            ResourceHandle createTexture(std::string const &textureName, const Video::Texture::Description &description, bool forceCache)
             {
                 auto load = [this, textureName, description](ResourceHandle)->Video::TexturePtr
                 {
@@ -858,7 +861,7 @@ namespace Gek
 
                 auto hash = GetHash(textureName);
                 auto parameters = description.getHash();
-                auto resource = dynamicCache.getHandle(hash, parameters, std::move(load));
+                auto resource = dynamicCache.getHandle(hash, parameters, std::move(load), forceCache);
                 if (resource.first)
                 {
                     textureDescriptionMap.insert(std::make_pair(resource.second, description));
@@ -867,7 +870,7 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description)
+            ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, bool forceCache)
             {
                 assert(description.count > 0);
 
@@ -880,7 +883,7 @@ namespace Gek
 
                 auto hash = GetHash(bufferName);
                 auto parameters = description.getHash();
-                auto resource = dynamicCache.getHandle(hash, parameters, std::move(load));
+                auto resource = dynamicCache.getHandle(hash, parameters, std::move(load), forceCache);
                 if (resource.first)
                 {
                     bufferDescriptionMap.insert(std::make_pair(resource.second, description));
@@ -889,7 +892,7 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData)
+            ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData, bool forceCache)
             {
                 assert(description.count > 0);
                 assert(!staticData.empty());
@@ -903,7 +906,7 @@ namespace Gek
 
                 auto hash = GetHash(bufferName);
                 auto parameters = reinterpret_cast<std::size_t>(staticData.data());
-                auto resource = dynamicCache.getHandle(hash, parameters, std::move(load));
+                auto resource = dynamicCache.getHandle(hash, parameters, std::move(load), forceCache);
                 if (resource.first)
                 {
                     bufferDescriptionMap.insert(std::make_pair(resource.second, description));

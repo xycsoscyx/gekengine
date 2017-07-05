@@ -67,6 +67,11 @@ namespace Gek
                 return object;
             }
 
+            bool isEmpty(void) const
+            {
+                return object.empty();
+            }
+
             bool isFloat() const
             {
                 return object.is_double();
@@ -87,6 +92,11 @@ namespace Gek
             auto getMembers(void) const
             {
                 return (object.is_object() ? ((Object const &)object).object_range() : EmptyObject.object_range());
+            }
+
+            bool has(std::string const &name) const
+            {
+                return (object.is_object() ? object.has_key(name) : false);
             }
 
             Typeless<Object const &> get(std::string const &name) const

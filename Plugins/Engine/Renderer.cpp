@@ -1349,6 +1349,7 @@ namespace Gek
                 }
 
                 bool editorActive = core->getOption("editor", "active").convert(false);
+                renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle("finalBuffer"), ResourceHandle());
                 // TODO: Render to editor or screen
 
                 ImGui::Render();

@@ -1,5 +1,10 @@
 {
+    "requires": [
+        "solid"
+    ],
     "textures": {
+        "finalBuffer": {
+        },
         "copyFinalBuffer": {
             "format": "R11G11B10_FLOAT",
             "flags": "target"
@@ -17,6 +22,7 @@
             "count": 1
         }
     },
+    "output": "finalBuffer",
     "passes": [
         {
             "program": "CalculateLuminance",

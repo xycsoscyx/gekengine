@@ -440,6 +440,11 @@ namespace Gek
 
                     if (ImGui::BeginMenu("Edit"))
                     {
+                        if (ImGui::MenuItem("Enable", "CTRL+E"))
+                        {
+                        }
+
+                        ImGui::Separator();
                         if (ImGui::MenuItem("Undo", "CTRL+Z"))
                         {
                         }

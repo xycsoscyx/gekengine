@@ -34,9 +34,9 @@ namespace Gek
             virtual ResourceHandle loadTexture(std::string const &textureName, uint32_t flags) = 0;
             virtual ResourceHandle createPattern(std::string const &pattern, JSON::Reference parameters) = 0;
 
-            virtual ResourceHandle createTexture(std::string const &textureName, const Video::Texture::Description &description) = 0;
-            virtual ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description) = 0;
-            virtual ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData) = 0;
+            virtual ResourceHandle createTexture(std::string const &textureName, const Video::Texture::Description &description, bool forceCache = false) = 0;
+            virtual ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, bool forceCache = false) = 0;
+            virtual ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData, bool forceCache = false) = 0;
 
             template <typename TYPE>
             ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, const TYPE *staticData)

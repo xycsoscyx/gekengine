@@ -1,4 +1,7 @@
 {
+    "requires": [
+        "solid"
+    ],
     "textures": {
         "depthBuffer": {
         },
@@ -9,6 +12,7 @@
             "flags": "target"
         }
     },
+    "output": "finalBuffer",
     "passes": [
         {
             "program": "AntiAlias",
@@ -17,7 +21,7 @@
                 "copyFinalBuffer": "finalBuffer"
             },
             "resources": [
-                { "copyFinalBuffer" : "inputBuffer" },
+                { "copyFinalBuffer": "inputBuffer" },
                 "depthBuffer"
             ],
             "targets": [

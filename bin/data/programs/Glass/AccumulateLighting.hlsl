@@ -23,6 +23,10 @@ float3 GetBiCubicSample(in float2 screenCoord, float glassLevel)
     float mipMapScale = pow(2.0, mipMapLevel);
     screenCoord *= (1.0 / mipMapScale);
 
+    uint width, height, mipMapCount;
+    Resources::glassBuffer.GetDimensions(0, width, height, mipMapCount);
+    float2 pixelSize = (1.0f / float2(width, height));
+
     float fx = frac(screenCoord.x);
     float fy = frac(screenCoord.y);
     screenCoord.x -= fx;
@@ -34,7 +38,7 @@ float3 GetBiCubicSample(in float2 screenCoord, float glassLevel)
     float4 c = screenCoord.xxyy + float2(-0.5, 1.5).xyxy;
     float4 s = float4(xcubic.xz + xcubic.yw, ycubic.xz + ycubic.yw);
     float4 offset = c + float4(xcubic.yw, ycubic.yw) / s;
-    offset *= Shader::TargetPixelSize.xxyy * mipMapScale;
+    offset *= pixelSize.xxyy * mipMapScale;
 
     float3 sample0 = Resources::glassBuffer.SampleLevel(Global::MipMapSampler, offset.xz, mipMapLevel);
     float3 sample1 = Resources::glassBuffer.SampleLevel(Global::MipMapSampler, offset.yz, mipMapLevel);

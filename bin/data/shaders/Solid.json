@@ -73,6 +73,7 @@
             "flags": "target"
         }
     },
+    "output": "finalBuffer",
     "passes": [
         {
             "program": "AccumulateLighting",

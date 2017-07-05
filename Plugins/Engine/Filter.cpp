@@ -115,6 +115,10 @@ namespace Gek
                 renderState = resources->createRenderState(Video::RenderStateInformation());
 
                 const JSON::Instance filterNode = JSON::Load(getContext()->getRootFileName("data", "filters", filterName).withExtension(".json"));
+                for (auto &required : filterNode.get("required").getArray())
+                {
+                    resources->getShader(JSON::Reference(required).convert(String::Empty), MaterialHandle());
+                }
 
                 for (auto &baseTextureNode : filterNode.get("textures").getMembers())
                 {
@@ -125,28 +129,13 @@ namespace Gek
                         continue;
                     }
 
-                    JSON::Reference textureNode(baseTextureNode.value());
-
                     ResourceHandle resource;
-                    std::string externalName(textureNode.get("name").convert(String::Empty));
-                    std::string externalSource(String::GetLower(textureNode.get("external").convert(String::Empty)));
-                    if (externalSource == "shader")
+                    JSON::Reference textureNode(baseTextureNode.value());
+                    if (textureNode.has("file"))
                     {
-                        auto requiredShader = resources->getShader(externalName, MaterialHandle());
-                        if (requiredShader)
-                        {
-                            resource = resources->getResourceHandle(String::Format("%v:%v:resource", textureName, externalName));
-                        }
-                    }
-                    else if (externalSource == "filter")
-                    {
-                        resources->getFilter(externalName);
-                        resource = resources->getResourceHandle(String::Format("%v:%v:resource", textureName, externalName));
-                    }
-                    else if (externalSource == "file")
-                    {
+                        std::string fileName(textureNode.get("file").convert(String::Empty));
                         uint32_t flags = getTextureLoadFlags(textureNode.get("flags").convert(String::Empty));
-                        resource = resources->loadTexture(externalName, flags);
+                        resource = resources->loadTexture(fileName, flags);
                     }
                     else
                     {
@@ -177,13 +166,13 @@ namespace Gek
                         description.sampleCount = textureNode.get("sampleCount").convert(1);
                         description.flags = getTextureFlags(textureNode.get("flags").convert(String::Empty));
                         description.mipMapCount = evaluate(textureNode.get("mipmaps"), 1);
-                        resource = resources->createTexture(String::Format("%v:%v:resource", textureName, filterName), description);
+                        resource = resources->createTexture(textureName, description, true);
                     }
 
-                    resourceMap[textureName] = resource;
                     auto description = resources->getTextureDescription(resource);
                     if (description)
                     {
+                        resourceMap[textureName] = resource;
                         if (description->depth > 1)
                         {
                             resourceSemanticsMap[textureName] = String::Format("Texture3D<%v>", getFormatSemantic(description->format));
@@ -210,45 +199,32 @@ namespace Gek
 
                     JSON::Reference bufferValue(baseBufferNode.value());
 
-                    ResourceHandle resource;
-                    std::string bufferSource(bufferValue.get("source").convert(String::Empty));
-                    if (!bufferSource.empty())
+                    Video::Buffer::Description description;
+                    description.count = evaluate(bufferValue.get("count"), 0);
+                    description.flags = getBufferFlags(bufferValue.get("flags").convert(String::Empty));
+                    if (bufferValue.has("format"))
                     {
-                        resource = resources->getResourceHandle(String::Format("%v:%v:resource", bufferName, bufferSource));
+                        description.type = Video::Buffer::Description::Type::Raw;
+                        description.format = Video::getFormat(bufferValue.get("format").convert(String::Empty));
                     }
                     else
                     {
-                        uint32_t count = evaluate(bufferValue.get("count"), 0);
-                        uint32_t flags = getBufferFlags(bufferValue.get("flags").convert(String::Empty));
-                        auto format = bufferValue.get("format").convert(String::Empty);
-                        if (format.empty())
+                        description.type = Video::Buffer::Description::Type::Structured;
+                        description.stride = evaluate(bufferValue.get("stride"), 0);
+                    }
+
+                    auto resource = resources->createBuffer(bufferName, description, true);
+                    if (resource)
+                    {
+                        resourceMap[bufferName] = resource;
+                        if (bufferValue.get("byteaddress").convert(false))
                         {
-                            Video::Buffer::Description description;
-                            description.count = count;
-                            description.flags = flags;
-                            description.type = Video::Buffer::Description::Type::Structured;
-                            description.stride = evaluate(bufferValue.get("stride"), 0);
-                            resource = resources->createBuffer(String::Format("%v:%v:buffer", bufferName, filterName), description);
+                            resourceSemanticsMap[bufferName] = "ByteAddressBuffer";
                         }
                         else
                         {
-                            Video::Buffer::Description description;
-                            description.count = count;
-                            description.flags = flags;
-                            description.type = Video::Buffer::Description::Type::Raw;
-                            description.format = Video::getFormat(format);
-                            resource = resources->createBuffer(String::Format("%v:%v:buffer", bufferName, filterName), description);
-                        }
-
-                        resourceMap[bufferName] = resource;
-                        auto description = resources->getBufferDescription(resource);
-                        if (description)
-                        {
-                            if (bufferValue.get("byteaddress").convert(false))
-                            {
-                                resourceSemanticsMap[bufferName] = "ByteAddressBuffer";
-                            }
-                            else
+                            auto description = resources->getBufferDescription(resource);
+                            if (description != nullptr)
                             {
                                 auto structure = bufferValue.get("structure").convert(String::Empty);
                                 resourceSemanticsMap[bufferName] += String::Format("Buffer<%v>", structure.empty() ? getFormatSemantic(description->format) : structure);

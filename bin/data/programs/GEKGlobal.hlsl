@@ -34,15 +34,3 @@ namespace Camera
         float4x4 ProjectionMatrix;
     };
 };
-
-namespace Shader
-{
-    cbuffer Constants : register(b2)
-    {
-        float2 TargetSize;
-        float buffer[2];
-    };
-
-    static const float2 TargetPixelSize = (1.0 / TargetSize);
-    static const float2 TargetPixelCenter = (0.5 / TargetSize);
-};
