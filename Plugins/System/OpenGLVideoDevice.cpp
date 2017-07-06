@@ -951,6 +951,11 @@ namespace Gek
                 return std::make_unique<ViewTexture>(Video::Texture::Description());
             }
 
+            Video::TexturePtr loadTexture(void const *buffer, size_t size, uint32_t flags)
+            {
+                return std::make_unique<ViewTexture>(Video::Texture::Description());
+            }
+
             Texture::Description loadTextureDescription(FileSystem::Path const &filePath)
             {
                 return Texture::Description();

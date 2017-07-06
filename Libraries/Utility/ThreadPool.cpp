@@ -43,7 +43,7 @@ namespace Gek
 			workerList.emplace_back([this](void) -> void
 			{
 #ifdef _WIN32
-				CoInitialize(nullptr);
+                CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
 #endif
 				for (;;)
 				{

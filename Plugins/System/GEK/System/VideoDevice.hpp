@@ -658,6 +658,7 @@ namespace Gek
             virtual ObjectPtr createSamplerState(const Video::SamplerStateInformation &samplerState) = 0;
 
             virtual TexturePtr createTexture(const Texture::Description &description, const void *data = nullptr) = 0;
+            virtual TexturePtr loadTexture(void const *buffer, size_t size, uint32_t flags) = 0;
             virtual TexturePtr loadTexture(FileSystem::Path const &filePath, uint32_t flags) = 0;
             virtual Texture::Description loadTextureDescription(FileSystem::Path const &filePath) = 0;
 

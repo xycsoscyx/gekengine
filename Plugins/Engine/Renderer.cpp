@@ -684,6 +684,8 @@ namespace Gek
             }
 
             // ImGui
+            std::vector<Math::UInt4> scissorBoxList = std::vector<Math::UInt4>(1);
+            std::vector<Video::Object *> textureList = std::vector<Video::Object *>(1);
             void renderUI(ImDrawData *drawData)
             {
                 if (!gui.vertexBuffer || gui.vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
@@ -782,15 +784,13 @@ namespace Gek
                             }
                             else
                             {
-                                std::vector<Math::UInt4> scissorBoxList(1);
                                 scissorBoxList[0].minimum.x = uint32_t(command->ClipRect.x);
                                 scissorBoxList[0].minimum.y = uint32_t(command->ClipRect.y);
                                 scissorBoxList[0].maximum.x = uint32_t(command->ClipRect.z);
                                 scissorBoxList[0].maximum.y = uint32_t(command->ClipRect.w);
                                 videoContext->setScissorList(scissorBoxList);
 
-                                std::vector<Video::Object *> textureList(1);
-                                textureList[0] = (Video::Object *)command->TextureId;
+                                textureList[0] = reinterpret_cast<Video::Object *>(command->TextureId);
                                 videoContext->pixelPipeline()->setResourceList(textureList, 0);
 
                                 videoContext->drawIndexedPrimitive(command->ElemCount, indexOffset, vertexOffset);
@@ -1348,14 +1348,7 @@ namespace Gek
                 imGuiIo.DisplaySize = ImVec2(float(width), float(height));
 
                 ImGui::NewFrame();
-                ImGui::SetNextWindowSize(imGuiIo.DisplaySize);
-                if (ImGui::Begin("GEK Engine", nullptr, imGuiIo.DisplaySize, 0.0f, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar))
-                {
-                    onShowUserInterface.emit(ImGui::GetCurrentContext());
-                }
-
-                ImGui::End();
-
+                onShowUserInterface.emit(ImGui::GetCurrentContext());
                 ImGui::Render();
 
                 videoDevice->present(false);

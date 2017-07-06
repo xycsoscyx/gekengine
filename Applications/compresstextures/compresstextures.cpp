@@ -235,7 +235,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 			return true;
 		};
 
-		CoInitialize(nullptr);
+        CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
 		FileSystem::Find(FileSystem::GetFileName(rootPath, "Data", "Textures"), searchDirectory);
 		CoUninitialize();
 	}

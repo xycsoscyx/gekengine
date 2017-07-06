@@ -93,7 +93,7 @@ namespace Gek
             window->onMousePosition.connect<Core, &Core::onMousePosition>(this);
             window->onMouseMovement.connect<Core, &Core::onMouseMovement>(this);
 
-            HRESULT resultValue = CoInitialize(nullptr);
+            HRESULT resultValue = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
             if (FAILED(resultValue))
             {
                 throw std::exception("Call to CoInitialize failed");

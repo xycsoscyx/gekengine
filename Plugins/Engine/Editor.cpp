@@ -28,6 +28,8 @@ namespace Gek
             Edit::Population *population = nullptr;
             Plugin::Renderer *renderer = nullptr;
 
+            Video::TexturePtr dockPanelIcon;
+
             float headingAngle = 0.0f;
             float lookingAngle = 0.0f;
             Math::Float3 position = Math::Float3::Zero;
@@ -52,6 +54,14 @@ namespace Gek
                 population->onUpdate[90].connect<Editor, &Editor::onUpdate>(this);
 
                 renderer->onShowUserInterface.connect<Editor, &Editor::onShowUserInterface>(this);
+
+                if (!ImGui::TabWindow::DockPanelIconTextureID)
+                {
+                    int iconSize = 0;
+                    void const *iconBuffer = ImGui::TabWindow::GetDockPanelIconImagePng(&iconSize);
+                    dockPanelIcon = core->getVideoDevice()->loadTexture(iconBuffer, iconSize, 0);
+                    ImGui::TabWindow::DockPanelIconTextureID = dynamic_cast<Video::Object *>(dockPanelIcon.get());
+                }
             }
 
             ~Editor(void)
@@ -60,24 +70,127 @@ namespace Gek
 
                 population->onUpdate[90].disconnect<Editor, &Editor::onUpdate>(this);
                 population->onAction.disconnect<Editor, &Editor::onAction>(this);
+
+                ImGui::ShutdownDock();
             }
 
             // Renderer
+            Edit::Entity *selectedEntity = nullptr;
             void showEntities(void)
             {
-                //ImGui::SetNextDock(ImGuiDockSlot_Left);
-                if (ImGui::BeginDock("Entities"))
+                if (ImGui::BeginDock("Entities", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize, ImVec2(100.0f, -1.0f)))
                 {
+                    if (ImGui::Button("Create Entity", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
+                    {
+                        ImGui::OpenPopup("Entity Name");
+                    }
+
+                    if (ImGui::BeginPopup("Entity Name"))
+                    {
+                        std::string name;
+                        if (GUI::InputString("Name", name, ImGuiInputTextFlags_EnterReturnsTrue))
+                        {
+                            population->createEntity(name);
+                            ImGui::CloseCurrentPopup();
+                        }
+
+                        ImGui::EndPopup();
+                    }
+
+                    auto &entityMap = population->getEntityMap();
+                    for (auto &entitySearch : entityMap)
+                    {
+                        ImGui::PushID(entitySearch.second.get());
+                        if (ImGui::Button("X", ImVec2(9, 9)))
+                        {
+                            population->killEntity(entitySearch.second.get());
+                        }
+
+                        ImGui::PopID();
+                        ImGui::SameLine();
+                        ImGui::SetItemAllowOverlap();
+                        if (ImGui::Selectable(entitySearch.first.c_str(), (entitySearch.second.get() == selectedEntity)))
+                        {
+                            selectedEntity = dynamic_cast<Edit::Entity *>(entitySearch.second.get());
+                        }
+                    }
                 }
 
                 ImGui::EndDock();
             }
 
+            int selectedComponent = 0;
             void showComponents(void)
             {
-                //ImGui::SetNextDock(ImGuiDockSlot_Right);
-                if (ImGui::BeginDock("Components"))
+                const auto backBuffer = core->getVideoDevice()->getBackBuffer();
+                const float width = float(backBuffer->getDescription().width);
+                const float height = float(backBuffer->getDescription().height);
+                const auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
+
+                Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));
+                viewMatrix.translation.xyz = position;
+                viewMatrix.invert();
+
+                if (ImGui::BeginDock("Components", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize, ImVec2(100.0f, -1.0f)))
                 {
+                    if (selectedEntity)
+                    {
+                        if (ImGui::Button("Add Component", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
+                        {
+                            ImGui::OpenPopup("Select Component");
+                        }
+
+                        if (ImGui::BeginPopup("Select Component"))
+                        {
+                            const auto &componentMap = population->getComponentMap();
+                            const auto componentCount = componentMap.size();
+                            if (ImGui::ListBoxHeader("##Components", componentCount, 7))
+                            {
+                                ImGuiListClipper clipper(componentCount, ImGui::GetTextLineHeightWithSpacing());
+                                while (clipper.Step())
+                                {
+                                    for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
+                                    {
+                                        auto componentSearch = std::begin(componentMap);
+                                        std::advance(componentSearch, componentIndex);
+                                        if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
+                                        {
+                                            auto componentData = std::make_pair(componentSearch->second->getName(), JSON::EmptyObject);
+                                            population->addComponent(selectedEntity, componentData);
+                                            ImGui::CloseCurrentPopup();
+                                        }
+                                    }
+                                };
+
+                                ImGui::ListBoxFooter();
+                            }
+
+                            ImGui::EndPopup();
+                        }
+
+                        const auto &entityComponentMap = selectedEntity->getComponentMap();
+                        for (auto &componentSearch : entityComponentMap)
+                        {
+                            if (ImGui::BeginChildFrame(componentSearch.first.hash_code(), ImVec2(0.0f, 0.0f), ImGuiWindowFlags_AlwaysAutoResize))
+                            {
+                                ImGui::Text(componentSearch.first.name() + 7);
+                                Edit::Component *component = population->getComponent(componentSearch.first);
+                                Plugin::Component::Data *componentData = componentSearch.second.get();
+                                if (component && componentData)
+                                {
+                                    ImGui::PushItemWidth(-1.0f);
+                                    if (component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, selectedEntity, componentData))
+                                    {
+                                        onModified.emit(selectedEntity, componentSearch.first);
+                                    }
+
+                                    ImGui::PopItemWidth();
+                                }
+                            }
+
+                            ImGui::EndChildFrame();
+                        }
+                    }
                 }
 
                 ImGui::EndDock();
@@ -85,9 +198,9 @@ namespace Gek
 
             void showTools(void)
             {
-                //ImGui::SetNextDock(ImGuiDockSlot_Top);
-                if (ImGui::BeginDock("Tools"))
+                if (ImGui::BeginDock("Tools", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize, ImVec2(-1.0f, 50.0f)))
                 {
+                    ImGui::Button("Tools");
                 }
 
                 ImGui::EndDock();
@@ -95,9 +208,9 @@ namespace Gek
 
             void showResources(void)
             {
-                //ImGui::SetNextDock(ImGuiDockSlot_Bottom);
-                if (ImGui::BeginDock("Resources"))
+                if (ImGui::BeginDock("Resources", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize, ImVec2(-1.0f, 100.0f)))
                 {
+                    ImGui::Button("Resources");
                 }
 
                 ImGui::EndDock();
@@ -105,9 +218,9 @@ namespace Gek
 
             void showScene(void)
             {
-                //ImGui::SetNextDock(ImGuiDockSlot_None);
-                if (ImGui::BeginDock("Scene"))
+                if (ImGui::BeginDock("Scene", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize, ImVec2(-1.0f, -1.0f)))
                 {
+                    ImGui::Button("Scene");
                 }
 
                 ImGui::EndDock();
@@ -122,25 +235,23 @@ namespace Gek
                 }
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                auto displayPosition = ImVec2(0.0f, 0.0f);
-                auto displaySize = imGuiIo.DisplaySize;
-                if (imGuiIo.MouseDrawCursor)
-                {
-                    displayPosition.y = ImGui::GetTextLineHeightWithSpacing();
-                }
-
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(3.0f, 3.0f));
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-                ImGui::SetNextWindowPos(displayPosition);
-                if (ImGui::Begin("Editor", nullptr, displaySize, 0.0f, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize))
+                ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+                if (ImGui::Begin("Editor", nullptr, imGuiIo.DisplaySize, 0.75f, ImGuiWindowFlags_NoTitleBar | (imGuiIo.MouseDrawCursor ? ImGuiWindowFlags_MenuBar : 0) | ImGuiWindowFlags_NoSavedSettings))
                 {
                     ImGui::BeginDockspace();
 
-                    showEntities();
-                    showTools();
+                    ImGui::SetNextDock(ImGuiDockSlot_None);
                     showScene();
-                    showResources();
+                    ImGui::SetNextDock(ImGuiDockSlot_Left | ImGuiDockSlot_FromRoot);
+                    showEntities();
+                    ImGui::SetNextDock(ImGuiDockSlot_Right | ImGuiDockSlot_FromRoot);
                     showComponents();
+                    ImGui::SetNextDock(ImGuiDockSlot_Top | ImGuiDockSlot_FromRoot);
+                    showTools();
+                    ImGui::SetNextDock(ImGuiDockSlot_Bottom | ImGuiDockSlot_FromRoot);
+                    showResources();
 
                     ImGui::EndDockspace();
                 }

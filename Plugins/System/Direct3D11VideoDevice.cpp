@@ -631,7 +631,7 @@ namespace Gek
             {
             }
 
-			void setName(std::string const &name)
+            void setName(std::string const &name)
             {
                 setDebugName(d3dObject, name);
             }
@@ -665,8 +665,8 @@ namespace Gek
             {
             }
 
-			void setName(std::string const &name)
-			{
+            void setName(std::string const &name)
+            {
                 setDebugName(d3dObject, name);
             }
         };
@@ -693,8 +693,8 @@ namespace Gek
 
             virtual ~Buffer(void) = default;
 
-			void setName(std::string const &name)
-			{
+            void setName(std::string const &name)
+            {
                 setDebugName(d3dObject, name);
                 setDebugName(Resource::d3dObject, name);
                 setDebugName(ShaderResourceView::d3dObject, name);
@@ -754,8 +754,8 @@ namespace Gek
             {
             }
 
-			void setName(std::string const &name)
-			{
+            void setName(std::string const &name)
+            {
                 setDebugName(Resource::d3dObject, name);
                 setDebugName(ShaderResourceView::d3dObject, name);
                 setDebugName(UnorderedAccessView::d3dObject, name);
@@ -772,8 +772,8 @@ namespace Gek
         public:
             Target(const Video::Texture::Description &description)
                 : BaseTexture(description)
-				, viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(description.width), float(description.height)), 0.0f, 1.0f)
-			{
+                , viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(description.width), float(description.height)), 0.0f, 1.0f)
+            {
             }
 
             virtual ~Target(void) = default;
@@ -806,8 +806,8 @@ namespace Gek
 
             virtual ~TargetTexture(void) = default;
 
-			void setName(std::string const &name)
-			{
+            void setName(std::string const &name)
+            {
                 setDebugName(Resource::d3dObject, name);
                 setDebugName(RenderTargetView::d3dObject, name);
             }
@@ -1396,7 +1396,7 @@ namespace Gek
                     assert(d3dDeviceContext);
                     assert(depthBuffer);
 
-                    d3dDeviceContext->ClearDepthStencilView(getObject<DepthTexture>(depthBuffer), 
+                    d3dDeviceContext->ClearDepthStencilView(getObject<DepthTexture>(depthBuffer),
                         ((flags & Video::ClearFlags::Depth ? D3D11_CLEAR_DEPTH : 0) |
                         (flags & Video::ClearFlags::Stencil ? D3D11_CLEAR_STENCIL : 0)),
                         clearDepth, clearStencil);
@@ -1482,7 +1482,7 @@ namespace Gek
                 void setVertexBufferList(const std::vector<Video::Buffer *> &vertexBufferList, uint32_t firstSlot, uint32_t *offsetList)
                 {
                     assert(d3dDeviceContext);
-                    
+
                     uint32_t vertexBufferCount = UINT(vertexBufferList.size());
                     vertexBufferStrideCache.resize(vertexBufferCount);
                     vertexBufferOffsetsCache.resize(vertexBufferCount);
@@ -1785,7 +1785,7 @@ namespace Gek
 
                 d3dDeviceContext->ClearState();
                 backBuffer = nullptr;
-                
+
                 HRESULT resultValue = dxgiSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
                 if (FAILED(resultValue))
                 {
@@ -2341,14 +2341,14 @@ namespace Gek
             {
                 assert(d3dDevice);
 
-				uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
+                uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
                 flags |= D3DCOMPILE_DEBUG;
-				flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
-				flags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
+                flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+                flags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
 #else
-				flags |= D3DCOMPILE_SKIP_VALIDATION;
-				flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
+                flags |= D3DCOMPILE_SKIP_VALIDATION;
+                flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif
 
                 CComPtr<ID3DBlob> d3dShaderBlob;
@@ -2602,7 +2602,7 @@ namespace Gek
             {
                 assert(d3dDevice);
 
-				std::string extension(String::GetLower(filePath.getExtension()));
+                std::string extension(String::GetLower(filePath.getExtension()));
                 std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
                 if (extension == ".dds")
                 {
@@ -2671,10 +2671,57 @@ namespace Gek
                 return std::make_unique<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, description);
             }
 
+            Video::TexturePtr loadTexture(void const *buffer, size_t size, uint32_t flags)
+            {
+                HRESULT resultValue = E_FAIL;
+                ::DirectX::ScratchImage image;
+                if (FAILED(resultValue = ::DirectX::LoadFromDDSMemory(buffer, size, 0, nullptr, image)))
+                {
+                    if (FAILED(resultValue = ::DirectX::LoadFromTGAMemory(buffer, size, nullptr, image)))
+                    {
+                        if (FAILED(resultValue = ::DirectX::LoadFromWICMemory(buffer, size, ::DirectX::WIC_CODEC_PNG, nullptr, image)))
+                        {
+                            if (FAILED(resultValue = ::DirectX::LoadFromWICMemory(buffer, size, ::DirectX::WIC_CODEC_BMP, nullptr, image)))
+                            {
+                                if (FAILED(resultValue = ::DirectX::LoadFromWICMemory(buffer, size, ::DirectX::WIC_CODEC_JPEG, nullptr, image)))
+                                {
+                                    if (FAILED(resultValue = ::DirectX::LoadFromWICMemory(buffer, size, ::DirectX::WIC_CODEC_TIFF, nullptr, image)))
+                                    {
+                                        throw Video::LoadFileFailed("Unable to load image from texture file");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
+                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), image.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, (flags & Video::TextureLoadFlags::sRGB), &d3dShaderResourceView);
+                if (FAILED(resultValue) || !d3dShaderResourceView)
+                {
+                    throw Video::CreateObjectFailed("Unable to create texture shader resource view");
+                }
+
+                CComPtr<ID3D11Resource> d3dResource;
+                d3dShaderResourceView->GetResource(&d3dResource);
+                if (FAILED(resultValue) || !d3dResource)
+                {
+                    throw Video::CreateObjectFailed("Unable to get texture resource");
+                }
+
+                Video::Texture::Description description;
+                description.width = image.GetMetadata().width;
+                description.height = image.GetMetadata().height;
+                description.depth = image.GetMetadata().depth;
+                description.format = DirectX::getFormat(image.GetMetadata().format);
+                description.mipMapCount = image.GetMetadata().mipLevels;
+                return std::make_unique<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, description);
+            }
+
             Texture::Description loadTextureDescription(FileSystem::Path const &filePath)
             {
-				std::string extension(String::GetLower(filePath.getExtension()));
-				std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::TexMetadata &)> getMetadata;
+                std::string extension(String::GetLower(filePath.getExtension()));
+                std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::TexMetadata &)> getMetadata;
                 if (extension == ".dds")
                 {
                     getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromDDSMemory(buffer.data(), buffer.size(), 0, metadata); };
