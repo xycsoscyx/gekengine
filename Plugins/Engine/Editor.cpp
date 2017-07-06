@@ -36,9 +36,6 @@ namespace Gek
             bool strafeLeft = false;
             bool strafeRight = false;
 
-            uint32_t selectedEntity = 0;
-            uint32_t selectedComponent = 0;
-
         public:
             Editor(Context *context, Plugin::Core *core)
                 : ContextRegistration(context)
@@ -53,12 +50,103 @@ namespace Gek
 
                 population->onAction.connect<Editor, &Editor::onAction>(this);
                 population->onUpdate[90].connect<Editor, &Editor::onUpdate>(this);
+
+                renderer->onShowUserInterface.connect<Editor, &Editor::onShowUserInterface>(this);
             }
 
             ~Editor(void)
             {
+                renderer->onShowUserInterface.disconnect<Editor, &Editor::onShowUserInterface>(this);
+
                 population->onUpdate[90].disconnect<Editor, &Editor::onUpdate>(this);
                 population->onAction.disconnect<Editor, &Editor::onAction>(this);
+            }
+
+            // Renderer
+            void showEntities(void)
+            {
+                //ImGui::SetNextDock(ImGuiDockSlot_Left);
+                if (ImGui::BeginDock("Entities"))
+                {
+                }
+
+                ImGui::EndDock();
+            }
+
+            void showComponents(void)
+            {
+                //ImGui::SetNextDock(ImGuiDockSlot_Right);
+                if (ImGui::BeginDock("Components"))
+                {
+                }
+
+                ImGui::EndDock();
+            }
+
+            void showTools(void)
+            {
+                //ImGui::SetNextDock(ImGuiDockSlot_Top);
+                if (ImGui::BeginDock("Tools"))
+                {
+                }
+
+                ImGui::EndDock();
+            }
+
+            void showResources(void)
+            {
+                //ImGui::SetNextDock(ImGuiDockSlot_Bottom);
+                if (ImGui::BeginDock("Resources"))
+                {
+                }
+
+                ImGui::EndDock();
+            }
+
+            void showScene(void)
+            {
+                //ImGui::SetNextDock(ImGuiDockSlot_None);
+                if (ImGui::BeginDock("Scene"))
+                {
+                }
+
+                ImGui::EndDock();
+            }
+
+            void onShowUserInterface(ImGuiContext * const guiContext)
+            {
+                bool editorActive = core->getOption("editor", "active").convert(false);
+                if (!editorActive)
+                {
+                    return;
+                }
+
+                ImGuiIO &imGuiIo = ImGui::GetIO();
+                auto displayPosition = ImVec2(0.0f, 0.0f);
+                auto displaySize = imGuiIo.DisplaySize;
+                if (imGuiIo.MouseDrawCursor)
+                {
+                    displayPosition.y = ImGui::GetTextLineHeightWithSpacing();
+                }
+
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+                ImGui::SetNextWindowPos(displayPosition);
+                if (ImGui::Begin("Editor", nullptr, displaySize, 0.0f, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize))
+                {
+                    ImGui::BeginDockspace();
+
+                    showEntities();
+                    showTools();
+                    showScene();
+                    showResources();
+                    showComponents();
+
+                    ImGui::EndDockspace();
+                }
+
+                ImGui::End();
+                ImGui::PopStyleVar(2);
             }
 
             // Plugin::Population Slots

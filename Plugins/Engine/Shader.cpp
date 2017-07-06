@@ -66,6 +66,7 @@ namespace Gek
             Plugin::Population *population = nullptr;
 
             std::string shaderName;
+            std::string output;
             uint32_t drawOrder = 0;
 
             std::vector<PassData> passList;
@@ -161,6 +162,8 @@ namespace Gek
                 auto &backBufferDescription = backBuffer->getDescription();
 
                 const JSON::Instance shaderNode = JSON::Load(getContext()->getRootFileName("data", "shaders", shaderName).withExtension(".json"));
+
+                output = shaderNode.get("output").convert(String::Empty);
 
                 drawOrder = shaderNode.get("required").getArray().size();
                 for (auto &required : shaderNode.get("required").getArray())
@@ -905,6 +908,11 @@ namespace Gek
                     return (*current).lighting;
                 }
             };
+
+            std::string const &getOutput(void) const
+            {
+                return output;
+            }
 
             Pass::Iterator begin(Video::Device::Context *videoContext, Math::Float4x4 const &viewMatrix, const Shapes::Frustum &viewFrustum)
             {

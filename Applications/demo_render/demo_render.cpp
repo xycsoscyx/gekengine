@@ -631,10 +631,10 @@ namespace Gek
             };
         }
 
-        void onMouseWheel(int32_t offset)
+        void onMouseWheel(float numberOfRotations)
         {
             ImGuiIO &imGuiIo = ImGui::GetIO();
-            imGuiIo.MouseWheel += (offset > 0 ? +1.0f : -1.0f);
+            imGuiIo.MouseWheel += numberOfRotations;
         }
 
         void onMousePosition(int32_t xPosition, int32_t yPosition)

@@ -176,11 +176,14 @@ namespace Gek
                 };
 
                 auto &tabStyle = ImGui::TabLabelStyle::Get();
-                tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelActive] = tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabel] = convert(style.Colors[ImGuiCol_ButtonActive]);
+                tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelActive] = tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabel] = convert(style.Colors[ImGuiCol_Button]);
                 tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelHovered] = tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelSelectedHovered] = convert(style.Colors[ImGuiCol_ButtonHovered]);
-                tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelSelected] = tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelSelectedActive] = convert(style.Colors[ImGuiCol_Button]);
+                tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelSelected] = tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelSelectedActive] = convert(style.Colors[ImGuiCol_ButtonActive]);
                 tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelText] = tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelSelectedText] = convert(style.Colors[ImGuiCol_Text]);
-                ImGui::TabWindow::SetWindowContentDrawerCallback(&globalTabContentProvider, this);
+                ImGui::TabWindow::SetWindowContentDrawerCallback([](ImGui::TabWindow::TabLabel *tab, ImGui::TabWindow &parent, void *userData) -> void
+                {
+                    reinterpret_cast<Core *>(userData)->tabContentProvider(tab, parent);
+                }, this);
 
                 windowActive = true;
                 engineRunning = true;
@@ -373,10 +376,10 @@ namespace Gek
                 };
             }
 
-            void onMouseWheel(int32_t offset)
+            void onMouseWheel(float numberOfRotations)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                imGuiIo.MouseWheel += (offset > 0 ? +1.0f : -1.0f);
+                imGuiIo.MouseWheel += numberOfRotations;
             }
 
             void onMousePosition(int32_t xPosition, int32_t yPosition)
@@ -440,8 +443,10 @@ namespace Gek
 
                     if (ImGui::BeginMenu("Edit"))
                     {
-                        if (ImGui::MenuItem("Enable", "CTRL+E"))
+                        bool editorEnabled = JSON::Reference(configuration).get("editor").get("active").convert(false);
+                        if (ImGui::MenuItem("Enable", "CTRL+E", &editorEnabled))
                         {
+                            configuration["editor"]["active"] = editorEnabled;
                         }
 
                         ImGui::Separator();
@@ -477,12 +482,6 @@ namespace Gek
                 }
             }
 
-            static void globalTabContentProvider(ImGui::TabWindow::TabLabel *tab, ImGui::TabWindow &parent, void *userData)
-            {
-                auto core = reinterpret_cast<Core *>(userData);
-                core->tabContentProvider(tab, parent);
-            }
-
             void tabContentProvider(ImGui::TabWindow::TabLabel *tab, ImGui::TabWindow &parent)
             {
                 auto &style = ImGui::GetStyle();
@@ -499,9 +498,6 @@ namespace Gek
                         switch (tab->userInt)
                         {
                         case 0:
-                            break;
-
-                        case 1:
                             ImGui::PushItemWidth(-1.0f);
                             GUI::ListBox("Display Mode", &next.mode, [](void *data, int index, const char **text) -> bool
                             {
@@ -519,13 +515,17 @@ namespace Gek
                             ImGui::Checkbox("FullScreen", &next.fullScreen);
                             break;
 
+                        case 1:
+                            break;
+
                         case 2:
                             break;
                         };
 
                         ImGui::PopStyleColor();
-                        ImGui::EndChildFrame();
                     }
+
+                    ImGui::EndChildFrame();
 
                     ImGui::PopStyleColor();
                     float buttonPositionY = (currentSize.y - ((ImGui::GetTextLineHeightWithSpacing() - style.FramePadding.y) * 2.0f));
@@ -571,30 +571,34 @@ namespace Gek
             ImGui::TabWindow settingsTabs;
             void showSettingsWindow(void)
             {
-                ImGui::SetNextWindowSize(ImVec2(500, 500));
-                if (showSettings && ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_AlwaysAutoResize))
+                if (showSettings)
                 {
-                    if (!settingsTabs.isInited())
+                    ImGui::SetNextWindowSize(ImVec2(500, 500));
+                    if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_AlwaysAutoResize))
                     {
-                        struct TabData
+                        if (!settingsTabs.isInited())
                         {
-                            char *name;
-                            char *tooltop;
-                            int id;
-                        } data[] =
-                        {
-                            { "   Display   ", "Display Mode Settings", 0, },
-                            { "   Visual   ", "Visual and Graphics Settings", 1, },
-                            { "   Audio   ", "Sound and Playback Settings", 2, },
-                        };
+                            struct TabData
+                            {
+                                char *name;
+                                char *tooltop;
+                                int id;
+                            } data[] =
+                            {
+                                { "   Display   ", "Display Mode Settings", 0, },
+                                { "   Visual   ", "Visual and Graphics Settings", 1, },
+                                { "   Audio   ", "Sound and Playback Settings", 2, },
+                            };
 
-                        for (auto &tab : data)
-                        {
-                            settingsTabs.addTabLabel(tab.name, tab.tooltop, false, false, nullptr, nullptr, tab.id);
+                            for (auto &tab : data)
+                            {
+                                settingsTabs.addTabLabel(tab.name, tab.tooltop, false, false, nullptr, nullptr, tab.id);
+                            }
                         }
+
+                        settingsTabs.render();
                     }
 
-                    settingsTabs.render();
                     ImGui::End();
                 }
             }
@@ -604,24 +608,26 @@ namespace Gek
                 if (showModeChange)
                 {
                     ImGui::SetNextWindowPosCenter();
-                    ImGui::Begin("Keep Display Mode", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
-                    ImGui::Text("Keep Display Mode?");
-
-                    if (ImGui::Button("Yes"))
+                    if (ImGui::Begin("Keep Display Mode", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
                     {
-                        showModeChange = false;
-                        previous = current;
-                    }
+                        ImGui::Text("Keep Display Mode?");
 
-                    ImGui::SameLine();
-                    if (modeChangeTimer <= 0.0f || ImGui::Button("No"))
-                    {
-                        showModeChange = false;
-                        setDisplayMode(previous.mode);
-                        setFullScreen(previous.fullScreen);
-                    }
+                        if (ImGui::Button("Yes"))
+                        {
+                            showModeChange = false;
+                            previous = current;
+                        }
 
-                    ImGui::Text(String::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)).c_str());
+                        ImGui::SameLine();
+                        if (modeChangeTimer <= 0.0f || ImGui::Button("No"))
+                        {
+                            showModeChange = false;
+                            setDisplayMode(previous.mode);
+                            setFullScreen(previous.fullScreen);
+                        }
+
+                        ImGui::Text(String::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)).c_str());
+                    }
 
                     ImGui::End();
                 }
@@ -629,45 +635,48 @@ namespace Gek
 
             void showLoadWindow(void)
             {
-                if (showLoadMenu && ImGui::Begin("Load", &showLoadMenu, ImGuiWindowFlags_AlwaysAutoResize))
+                if (showLoadMenu)
                 {
-                    std::vector<std::string> scenes;
-                    FileSystem::Find(getContext()->getRootFileName("data", "scenes"), [&scenes](FileSystem::Path const &filePath) -> bool
+                    if (ImGui::Begin("Load", &showLoadMenu, ImGuiWindowFlags_AlwaysAutoResize))
                     {
-                        if (filePath.isFile())
+                        std::vector<std::string> scenes;
+                        FileSystem::Find(getContext()->getRootFileName("data", "scenes"), [&scenes](FileSystem::Path const &filePath) -> bool
                         {
-                            scenes.push_back(filePath.withoutExtension().getFileName());
+                            if (filePath.isFile())
+                            {
+                                scenes.push_back(filePath.withoutExtension().getFileName());
+                            }
+
+                            return true;
+                        });
+
+                        if (scenes.empty())
+                        {
+                            ImGui::Text("No scenes found");
+                        }
+                        else
+                        {
+                            ImGui::PushItemWidth(350.0f);
+                            GUI::ListBox("Scenes", &currentSelectedScene, [](void *data, int index, const char **output) -> bool
+                            {
+                                auto scenes = (std::vector<std::string> *)data;
+                                (*output) = scenes->at(index).c_str();
+                                return true;
+                            }, (void *)&scenes, scenes.size(), 10);
+
+                            if (ImGui::Button("Load"))
+                            {
+                                showLoadMenu = false;
+                                population->load(scenes[currentSelectedScene]);
+                            }
+
+                            ImGui::SameLine();
                         }
 
-                        return true;
-                    });
-
-                    if (scenes.empty())
-                    {
-                        ImGui::Text("No scenes found");
-                    }
-                    else
-                    {
-                        ImGui::PushItemWidth(350.0f);
-                        GUI::ListBox("Scenes", &currentSelectedScene, [](void *data, int index, const char **output) -> bool
-                        {
-                            auto scenes = (std::vector<std::string> *)data;
-                            (*output) = scenes->at(index).c_str();
-                            return true;
-                        }, (void *)&scenes, scenes.size(), 10);
-
-                        if (ImGui::Button("Load"))
+                        if (ImGui::Button("Cancel"))
                         {
                             showLoadMenu = false;
-                            population->load(scenes[currentSelectedScene]);
                         }
-
-                        ImGui::SameLine();
-                    }
-
-                    if (ImGui::Button("Cancel"))
-                    {
-                        showLoadMenu = false;
                     }
 
                     ImGui::End();

@@ -45,7 +45,7 @@ namespace Gek
 
         Nano::Signal<void(bool &showCursor)> onSetCursor;
         Nano::Signal<void(Button button, bool state)> onMouseClicked;
-        Nano::Signal<void(int32_t offset)> onMouseWheel;
+        Nano::Signal<void(float numberOfRotations)> onMouseWheel;
         Nano::Signal<void(int32_t xPosition, int32_t yPosition)> onMousePosition;
         Nano::Signal<void(int32_t xMovement, int32_t yMovement)> onMouseMovement;
 

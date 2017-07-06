@@ -1049,6 +1049,8 @@ namespace Gek
                 assert(videoDevice);
                 assert(population);
 
+                videoDevice->getDefaultContext()->clearRenderTarget(videoDevice->getBackBuffer(), Math::Float4::Zero);
+
                 while (cameraQueue.try_pop(currentCamera))
                 {
                     drawCallList.clear();
@@ -1252,11 +1254,15 @@ namespace Gek
                             }, 0);
                         }
 
+                        std::string finalOutput;
                         for (const auto &shaderDrawCallList : drawCallSetMap)
                         {
                             for (const auto &shaderDrawCall : shaderDrawCallList.second)
                             {
                                 auto &shader = shaderDrawCall.shader;
+
+                                finalOutput = shader->getOutput();
+
                                 for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentCamera.viewFrustum); pass; pass = pass->next())
                                 {
                                     resources->startResourceBlock();
@@ -1302,11 +1308,12 @@ namespace Gek
                         }
 
                         videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                        for (const auto &filterName : { "tonemap", "antialias" })
+                        for (const auto &filterName : { "ambientocclusion", "tonemap", "antialias" })
                         {
                             Engine::Filter * const filter = resources->getFilter(filterName);
                             if (filter)
                             {
+                                finalOutput = filter->getOutput();
                                 for (auto pass = filter->begin(videoContext); pass; pass = pass->next())
                                 {
                                     switch (pass->prepare())
@@ -1328,7 +1335,7 @@ namespace Gek
                         videoContext->vertexPipeline()->clearConstantBufferList(2, 0);
                         videoContext->pixelPipeline()->clearConstantBufferList(2, 0);
                         videoContext->computePipeline()->clearConstantBufferList(2, 0);
-                        // TODO: Render to camera target
+                        renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(finalOutput), currentCamera.cameraTarget);
                     }
                 };
 
@@ -1342,15 +1349,12 @@ namespace Gek
 
                 ImGui::NewFrame();
                 ImGui::SetNextWindowSize(imGuiIo.DisplaySize);
-                if (ImGui::Begin("GEK Engine", nullptr, ImVec2(0, 0), 0.0f, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar))
+                if (ImGui::Begin("GEK Engine", nullptr, imGuiIo.DisplaySize, 0.0f, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar))
                 {
                     onShowUserInterface.emit(ImGui::GetCurrentContext());
-                    ImGui::End();
                 }
 
-                bool editorActive = core->getOption("editor", "active").convert(false);
-                renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle("finalBuffer"), ResourceHandle());
-                // TODO: Render to editor or screen
+                ImGui::End();
 
                 ImGui::Render();
 

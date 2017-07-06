@@ -73,7 +73,7 @@ namespace Gek
                             break;
 
                         case WM_MOUSEWHEEL:
-                            window->onMouseWheel.emit(GET_WHEEL_DELTA_WPARAM(wParam));
+                            window->onMouseWheel.emit(float(GET_WHEEL_DELTA_WPARAM(wParam)) / float(WHEEL_DELTA));
                             break;
 
                         case WM_MOUSEMOVE:

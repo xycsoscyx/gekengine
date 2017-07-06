@@ -58,6 +58,7 @@ namespace Gek
             Plugin::Population *population = nullptr;
 
             std::string filterName;
+            std::string output;
 
             Video::BufferPtr filterConstantBuffer;
 
@@ -115,6 +116,9 @@ namespace Gek
                 renderState = resources->createRenderState(Video::RenderStateInformation());
 
                 const JSON::Instance filterNode = JSON::Load(getContext()->getRootFileName("data", "filters", filterName).withExtension(".json"));
+
+                output = filterNode.get("output").convert(String::Empty);
+
                 for (auto &required : filterNode.get("required").getArray())
                 {
                     resources->getShader(JSON::Reference(required).convert(String::Empty), MaterialHandle());
@@ -636,6 +640,11 @@ namespace Gek
                     filterNode->clearPass(videoContext, (*current));
                 }
             };
+
+            std::string const &getOutput(void) const
+            {
+                return output;
+            }
 
             Pass::Iterator begin(Video::Device::Context *videoContext)
             {
