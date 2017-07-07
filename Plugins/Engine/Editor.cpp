@@ -14,6 +14,7 @@
 #include "GEK/Components/Transform.hpp"
 #include <concurrent_vector.h>
 #include <ppl.h>
+#include <set>
 
 namespace Gek
 {
@@ -78,6 +79,8 @@ namespace Gek
             Edit::Entity *selectedEntity = nullptr;
             void showEntities(void)
             {
+                bool deleteEntities = false;
+                std::set<Plugin::Entity *> deleteEntitieSet;
                 if (ImGui::BeginDock("Entities", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize, ImVec2(100.0f, 0.0f)))
                 {
                     auto &entityMap = population->getEntityMap();
@@ -86,7 +89,8 @@ namespace Gek
                         ImGui::PushID(entitySearch.second.get());
                         if (ImGui::Button(ICON_MD_DELETE_FOREVER))
                         {
-                            population->killEntity(entitySearch.second.get());
+                            deleteEntitieSet.insert(entitySearch.second.get());
+                            ImGui::OpenPopup("ConfirmEntityDelete");
                         }
 
                         ImGui::PopID();
@@ -97,9 +101,36 @@ namespace Gek
                             selectedEntity = dynamic_cast<Edit::Entity *>(entitySearch.second.get());
                         }
                     }
+
+                    if (ImGui::BeginPopup("ConfirmEntityDelete"))
+                    {
+                        ImGui::Text("Are you sure you want to delete this entitiy?");
+
+                        ImGui::Dummy(ImVec2(ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x - ImGui::GetStyle().ItemSpacing.x - 100, 0.0f));
+
+                        ImGui::SameLine();
+                        if (ImGui::Button("Yes", ImVec2(50.0f, 25.0f)))
+                        {
+                            deleteEntities = true;
+                            ImGui::CloseCurrentPopup();
+                        }
+
+                        ImGui::SameLine();
+                        if (ImGui::Button("No", ImVec2(50.0f, 25.0f)))
+                        {
+                            ImGui::CloseCurrentPopup();
+                        }
+
+                        ImGui::EndPopup();
+                    }
+
                 }
 
                 ImGui::EndDock();
+                for (auto &entity : deleteEntities ? deleteEntitieSet : std::set<Plugin::Entity *>())
+                {
+                    population->killEntity(entity);
+                }
             }
 
             int selectedComponent = 0;
@@ -114,11 +145,14 @@ namespace Gek
                 viewMatrix.translation.xyz = position;
                 viewMatrix.invert();
 
+                bool deleteComponents = false;
+                std::set<std::type_index> deleteComponentSet;
                 if (ImGui::BeginDock("Components", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize, ImVec2(100.0f, 0.0f)))
                 {
                     if (selectedEntity)
                     {
-                        std::vector<std::type_index> deleteComponents;
+                        std::string name;
+                        UI::InputString("Name", name);
                         const auto &entityComponentMap = selectedEntity->getComponentMap();
                         for (auto &componentSearch : entityComponentMap)
                         {
@@ -126,32 +160,54 @@ namespace Gek
                             Plugin::Component::Data *componentData = componentSearch.second.get();
                             if (component && componentData)
                             {
-                                ImGui::PushItemWidth(-1.0f);
                                 if (ImGui::Button(ICON_MD_DELETE_FOREVER))
                                 {
-                                    deleteComponents.push_back(componentSearch.first);
+                                    deleteComponentSet.insert(componentSearch.first);
+                                    ImGui::OpenPopup("ConfirmComponentDelete");
                                 }
 
                                 ImGui::SameLine();
-                                ImGui::Button(component->getName().c_str(), ImVec2(-1.0f, 0));
-                                if (component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, selectedEntity, componentData))
+                                if (ImGui::TreeNodeEx(component->getName().c_str(), ImGuiTreeNodeFlags_DefaultOpen))
                                 {
-                                    onModified.emit(selectedEntity, componentSearch.first);
-                                }
+                                    if (component->onUserInterface(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, selectedEntity, componentData))
+                                    {
+                                        onModified.emit(selectedEntity, componentSearch.first);
+                                    }
 
-                                ImGui::PopItemWidth();
-                                ImGui::Dummy(ImVec2(20.0f, 20.0f));
+                                    ImGui::TreePop();
+                                }
                             }
                         }
 
-                        for (auto &component : deleteComponents)
+                        if (ImGui::BeginPopup("ConfirmComponentDelete"))
                         {
-                            population->removeComponent(selectedEntity, component);
+                            ImGui::Text("Are you sure you want to delete this component?");
+
+                            ImGui::Dummy(ImVec2(ImGui::GetWindowWidth() - ImGui::GetStyle().WindowPadding.x - ImGui::GetStyle().ItemSpacing.x - 100, 0.0f));
+
+                            ImGui::SameLine();
+                            if (ImGui::Button("Yes", ImVec2(50.0f, 25.0f)))
+                            {
+                                deleteComponents = true;
+                                ImGui::CloseCurrentPopup();
+                            }
+
+                            ImGui::SameLine();
+                            if (ImGui::Button("No", ImVec2(50.0f, 25.0f)))
+                            {
+                                ImGui::CloseCurrentPopup();
+                            }
+
+                            ImGui::EndPopup();
                         }
                     }
                 }
 
                 ImGui::EndDock();
+                for (auto &component : deleteComponents ? deleteComponentSet : std::set<std::type_index>())
+                {
+                    population->removeComponent(selectedEntity, component);
+                }
             }
 
             void showTools(void)
@@ -160,26 +216,32 @@ namespace Gek
                 {
                     if (ImGui::Button(ICON_MD_ACCOUNT_BOX))
                     {
-                        if (ImGui::BeginPopup("New Entity Name"))
+                        ImGui::OpenPopup("NewEntity");
+                    }
+
+                    if (ImGui::BeginPopup("NewEntity"))
+                    {
+                        ImGui::Text("New Entity Name:");
+
+                        std::string name;
+                        if (UI::InputString("##name", name, ImGuiInputTextFlags_EnterReturnsTrue))
                         {
-                            ImGui::Text("New Entity Name:");
-
-                            std::string name;
-                            if (UI::InputString("##name", name, ImGuiInputTextFlags_EnterReturnsTrue))
-                            {
-                                population->createEntity(name);
-                                ImGui::CloseCurrentPopup();
-                            }
-
-                            ImGui::EndPopup();
+                            population->createEntity(name);
+                            ImGui::CloseCurrentPopup();
                         }
+
+                        ImGui::EndPopup();
                     }
 
                     ImGui::SameLine();
                     if (ImGui::Button(ICON_MD_PLAYLIST_ADD))
                     {
-                        ImGui::Text("Add New Component");
+                        ImGui::OpenPopup("NewComponent");
+                    }
 
+                    if (ImGui::BeginPopup("NewComponent"))
+                    {
+                        ImGui::Text("New Component Type");
                         const auto &componentMap = population->getComponentMap();
                         const auto componentCount = componentMap.size();
                         if (ImGui::ListBoxHeader("##Components", componentCount, 7))

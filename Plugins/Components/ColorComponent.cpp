@@ -28,23 +28,13 @@ namespace Gek
         }
 
         // Edit::Component
-        bool ui(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data, uint32_t flags)
+        bool onUserInterface(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &colorComponent = *dynamic_cast<Components::Color *>(data);
             bool changed = ImGui::ColorCombo("##Color", (ImVec4 *)&colorComponent.value, true, ImGui::GetWindowContentRegionWidth());
             ImGui::SetCurrentContext(nullptr);
             return changed;
-        }
-
-        void show(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
-        {
-            ui(guiContext, entity, data, 0);
-        }
-
-        bool edit(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
-        {
-            return ui(guiContext, entity, data, 0);
         }
     };
 

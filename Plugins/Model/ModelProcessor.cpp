@@ -54,23 +54,13 @@ namespace Gek
         }
 
         // Edit::Component
-        bool ui(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data, uint32_t flags)
+        bool onUserInterface(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &modelComponent = *dynamic_cast<Components::Model *>(data);
-            bool changed = UI::InputString("Model", modelComponent.name, flags);
+            bool changed = UI::InputString("Model", modelComponent.name, 0);
             ImGui::SetCurrentContext(nullptr);
             return changed;
-        }
-
-        void show(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
-        {
-            ui(guiContext, entity, data, ImGuiInputTextFlags_ReadOnly);
-        }
-
-        bool edit(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
-        {
-            return ui(guiContext, entity, data, 0);
         }
     };
 

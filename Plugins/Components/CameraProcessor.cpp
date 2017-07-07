@@ -52,27 +52,37 @@ namespace Gek
         }
 
         // Edit::Component
-        bool ui(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data, uint32_t flags)
+        bool onUserInterface(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &firstPersonCameraComponent = *dynamic_cast<Components::FirstPersonCamera *>(data);
-            bool changed =
-                ImGui::InputFloat("Field of View", &firstPersonCameraComponent.fieldOfView, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                ImGui::InputFloat("Near Clip", &firstPersonCameraComponent.nearClip, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                ImGui::InputFloat("Far Clip", &firstPersonCameraComponent.farClip, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                UI::InputString("Target", firstPersonCameraComponent.target, flags);
+
+            bool changed = false;
+
+            ImGui::PushItemWidth(-1.0f);
+            ImGui::AlignFirstTextHeightToWidgets();
+            ImGui::Text("Field of View");
+            ImGui::SameLine();
+            changed |= ImGui::InputFloat("##fieldOfView", &firstPersonCameraComponent.fieldOfView, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+
+            ImGui::AlignFirstTextHeightToWidgets();
+            ImGui::Text("Near Clip");
+            ImGui::SameLine();
+            changed |= ImGui::InputFloat("##nearClip", &firstPersonCameraComponent.nearClip, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+
+            ImGui::AlignFirstTextHeightToWidgets();
+            ImGui::Text("Far Clip");
+            ImGui::SameLine();
+            changed |= ImGui::InputFloat("##farClip", &firstPersonCameraComponent.farClip, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+
+            ImGui::AlignFirstTextHeightToWidgets();
+            ImGui::Text("Target");
+            ImGui::SameLine();
+            changed |= UI::InputString("##target", firstPersonCameraComponent.target, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            ImGui::PopItemWidth();
+
             ImGui::SetCurrentContext(nullptr);
             return changed;
-        }
-
-        void show(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
-        {
-            ui(guiContext, entity, data, ImGuiInputTextFlags_ReadOnly);
-        }
-
-        bool edit(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
-        {
-            return ui(guiContext, entity, data, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
         }
     };
 

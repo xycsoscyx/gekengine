@@ -48,8 +48,7 @@ namespace Gek
         {
             virtual ~Component(void) = default;
             
-            virtual void show(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data) = 0;
-            virtual bool edit(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data) = 0;
+            virtual bool onUserInterface(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data) = 0;
         };
     }; // namespace Edit
 }; // namespace Gek

@@ -40,50 +40,7 @@ namespace Gek
 		}
 
         // Edit::Component
-        void show(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
-        {
-            ImGui::SetCurrentContext(guiContext);
-            auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
-            ImGui::InputFloat3("Position", transformComponent.position.data, 4, ImGuiInputTextFlags_ReadOnly);
-
-            ImGui::Text("Rotation: ");
-            ImGui::SameLine();
-            ImGui::Checkbox("Euler", &showEuler);
-            if (showEuler)
-            {
-                ImGui::SameLine();
-                if (ImGui::RadioButton("Degrees", !showRadians))
-                {
-                    showRadians = false;
-                }
-
-                ImGui::SameLine();
-                if (ImGui::RadioButton("Radians", showRadians))
-                {
-                    showRadians = true;
-                }
-
-                auto euler(transformComponent.rotation.getEuler());
-                if (!showRadians)
-                {
-                    euler.x = Math::RadiansToDegrees(euler.x);
-                    euler.y = Math::RadiansToDegrees(euler.y);
-                    euler.z = Math::RadiansToDegrees(euler.z);
-                }
-
-                ImGui::InputFloat3("##RotationEuler", euler.data, 4, ImGuiInputTextFlags_ReadOnly);
-            }
-            else
-            {
-                ImGui::InputFloat4("##RotationQuaternion", transformComponent.rotation.data, 4, ImGuiInputTextFlags_ReadOnly);
-            }
-
-            ImGui::InputFloat3("Scale", transformComponent.scale.data, 4, ImGuiInputTextFlags_ReadOnly);
-
-            ImGui::SetCurrentContext(nullptr);
-        }
-
-        bool edit(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
+        bool onUserInterface(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
