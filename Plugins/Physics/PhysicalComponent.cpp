@@ -32,9 +32,12 @@ namespace Gek
             // Edit::Component
             bool onUserInterface(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
             {
+                bool changed = false;
                 ImGui::SetCurrentContext(guiContext);
+                ImGui::PushItemWidth(-1.0f);
+
                 auto &physicalComponent = *dynamic_cast<Components::Physical *>(data);
-                bool changed =
+
                     ImGui::InputFloat("Mass", &physicalComponent.mass, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 ImGui::SetCurrentContext(nullptr);
                 return changed;

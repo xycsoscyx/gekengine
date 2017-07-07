@@ -36,10 +36,26 @@ namespace Gek
         {
             ImGui::SetCurrentContext(guiContext);
             auto &lightComponent = *dynamic_cast<Components::PointLight *>(data);
-            bool changed =
-                ImGui::InputFloat("Range", &lightComponent.range, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank) |
-                ImGui::InputFloat("Radius", &lightComponent.radius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank) |
-                ImGui::InputFloat("Intensity", &lightComponent.intensity, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            bool changed = false;
+
+            ImGui::PushItemWidth(-1.0f);
+            ImGui::AlignFirstTextHeightToWidgets();
+            ImGui::Text("Range");
+            ImGui::SameLine();
+            changed |= ImGui::InputFloat("##range", &lightComponent.range, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+
+            ImGui::PushItemWidth(-1.0f);
+            ImGui::AlignFirstTextHeightToWidgets();
+            ImGui::Text("Radius");
+            ImGui::SameLine();
+            changed |= ImGui::InputFloat("##radius", &lightComponent.radius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+
+            ImGui::PushItemWidth(-1.0f);
+            ImGui::AlignFirstTextHeightToWidgets();
+            ImGui::Text("Intensity");
+            ImGui::SameLine();
+            changed |= ImGui::InputFloat("##intensity", &lightComponent.intensity, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+
             ImGui::SetCurrentContext(nullptr);
             return changed;
         }
@@ -79,15 +95,43 @@ namespace Gek
         // Edit::Component
         bool onUserInterface(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
+            bool changed = false;
             ImGui::SetCurrentContext(guiContext);
+            ImGui::PushItemWidth(-1.0f);
+
             auto &lightComponent = *dynamic_cast<Components::SpotLight *>(data);
-            bool changed =
-                ImGui::InputFloat("Range", &lightComponent.range, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank) |
-                ImGui::InputFloat("Radius", &lightComponent.radius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank) |
-                ImGui::InputFloat("Intensity", &lightComponent.intensity, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank) |
-                ImGui::InputFloat("Inner Angle", &lightComponent.innerAngle, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank) |
-                ImGui::InputFloat("Outer Angle", &lightComponent.outerAngle, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank) |
-                ImGui::InputFloat("Cone Falloff", &lightComponent.coneFalloff, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+
+            ImGui::AlignFirstTextHeightToWidgets();
+            ImGui::Text("Range");
+            ImGui::SameLine();
+            changed |= ImGui::InputFloat("##range", &lightComponent.range, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+
+            ImGui::AlignFirstTextHeightToWidgets();
+            ImGui::Text("Radius");
+            ImGui::SameLine();
+            changed |= ImGui::InputFloat("##radius", &lightComponent.radius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+
+            ImGui::AlignFirstTextHeightToWidgets();
+            ImGui::Text("Intensity");
+            ImGui::SameLine();
+            changed |= ImGui::InputFloat("##intensity", &lightComponent.intensity, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+
+            ImGui::AlignFirstTextHeightToWidgets();
+            ImGui::Text("Inner Angle");
+            ImGui::SameLine();
+            changed |= ImGui::InputFloat("##innerAngle", &lightComponent.innerAngle, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+
+            ImGui::AlignFirstTextHeightToWidgets();
+            ImGui::Text("Outer Angle");
+            ImGui::SameLine();
+            changed |= ImGui::InputFloat("##outerAngle", &lightComponent.outerAngle, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+
+            ImGui::AlignFirstTextHeightToWidgets();
+            ImGui::Text("Cone Falloff");
+            ImGui::SameLine();
+            changed |= ImGui::InputFloat("##coneFalloff", &lightComponent.coneFalloff, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+
+            ImGui::PopItemWidth();
             ImGui::SetCurrentContext(nullptr);
             return changed;
         }
@@ -117,10 +161,18 @@ namespace Gek
         // Edit::Component
         bool onUserInterface(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
+            bool changed = false;
             ImGui::SetCurrentContext(guiContext);
+            ImGui::PushItemWidth(-1.0f);
+
             auto &lightComponent = *dynamic_cast<Components::DirectionalLight *>(data);
-            bool changed =
-                ImGui::InputFloat("Intensity", &lightComponent.intensity, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+
+            ImGui::AlignFirstTextHeightToWidgets();
+            ImGui::Text("Intensity");
+            ImGui::SameLine();
+            changed |= ImGui::InputFloat("##intensity", &lightComponent.intensity, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+
+            ImGui::PopItemWidth();
             ImGui::SetCurrentContext(nullptr);
             return false;
         }

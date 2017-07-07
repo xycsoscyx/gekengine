@@ -30,9 +30,18 @@ namespace Gek
         // Edit::Component
         bool onUserInterface(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
+            bool changed = false;
             ImGui::SetCurrentContext(guiContext);
+            ImGui::PushItemWidth(-1.0f);
+
             auto &colorComponent = *dynamic_cast<Components::Color *>(data);
-            bool changed = ImGui::ColorCombo("##Color", (ImVec4 *)&colorComponent.value, true, ImGui::GetWindowContentRegionWidth());
+
+            ImGui::AlignFirstTextHeightToWidgets();
+            ImGui::Text("Color");
+            ImGui::SameLine();
+            changed |= ImGui::ColorCombo("##color", (ImVec4 *)&colorComponent.value, true, ImGui::GetWindowContentRegionWidth());
+
+            ImGui::PopItemWidth();
             ImGui::SetCurrentContext(nullptr);
             return changed;
         }

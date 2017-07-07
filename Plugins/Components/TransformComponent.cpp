@@ -42,8 +42,11 @@ namespace Gek
         // Edit::Component
         bool onUserInterface(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
+            bool changed = false;
             ImGui::SetCurrentContext(guiContext);
+
             auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
+
             ImGui::InputFloat3("Position", transformComponent.position.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
 
             ImGui::Text("Rotation: ");
@@ -136,10 +139,10 @@ namespace Gek
             {
                 transformComponent.rotation = rotation;
                 transformComponent.position = position;
-                return true;
+                changed = true;
             }
 
-            return false;
+            return changed;
         }
     };
 

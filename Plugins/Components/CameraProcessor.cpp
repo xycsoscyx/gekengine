@@ -54,12 +54,12 @@ namespace Gek
         // Edit::Component
         bool onUserInterface(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
+            bool changed = false;
             ImGui::SetCurrentContext(guiContext);
+            ImGui::PushItemWidth(-1.0f);
+
             auto &firstPersonCameraComponent = *dynamic_cast<Components::FirstPersonCamera *>(data);
 
-            bool changed = false;
-
-            ImGui::PushItemWidth(-1.0f);
             ImGui::AlignFirstTextHeightToWidgets();
             ImGui::Text("Field of View");
             ImGui::SameLine();
@@ -79,8 +79,8 @@ namespace Gek
             ImGui::Text("Target");
             ImGui::SameLine();
             changed |= UI::InputString("##target", firstPersonCameraComponent.target, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-            ImGui::PopItemWidth();
 
+            ImGui::PopItemWidth();
             ImGui::SetCurrentContext(nullptr);
             return changed;
         }
