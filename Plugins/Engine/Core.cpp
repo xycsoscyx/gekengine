@@ -159,115 +159,6 @@ namespace Gek
                 imGuiIo.KeyMap[ImGuiKey_Z] = 'Z';
                 imGuiIo.MouseDrawCursor = false;
 
-                auto &style = ImGui::GetStyle();
-
-                style.AntiAliasedLines = true;
-                style.AntiAliasedShapes = true;
-
-                style.WindowRounding = 2;
-                style.ChildWindowRounding = 2;
-
-                style.ScrollbarSize = 16;
-                style.ScrollbarRounding = 3;
-
-                style.GrabRounding = 2;
-
-                style.ItemSpacing.x = 10;
-                style.ItemSpacing.y = 4;
-
-                style.IndentSpacing = 22;
-
-                style.FramePadding.x = 6;
-                style.FramePadding.y = 4;
-
-                style.Alpha = 1.0f;
-                style.FrameRounding = 3.0f;
-
-                style.Colors[ImGuiCol_Text] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
-                style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);
-                style.Colors[ImGuiCol_WindowBg] = ImVec4(0.94f, 0.94f, 0.94f, 0.94f);
-                style.Colors[ImGuiCol_ChildWindowBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-                style.Colors[ImGuiCol_PopupBg] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-                style.Colors[ImGuiCol_Border] = ImVec4(0.00f, 0.00f, 0.00f, 0.39f);
-                style.Colors[ImGuiCol_BorderShadow] = ImVec4(1.00f, 1.00f, 1.00f, 0.10f);
-                style.Colors[ImGuiCol_FrameBg] = ImVec4(1.00f, 1.00f, 1.00f, 0.94f);
-                style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.40f);
-                style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
-                style.Colors[ImGuiCol_TitleBg] = ImVec4(0.96f, 0.96f, 0.96f, 1.00f);
-                style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(1.00f, 1.00f, 1.00f, 0.51f);
-                style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.82f, 0.82f, 0.82f, 1.00f);
-                style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.86f, 0.86f, 0.86f, 1.00f);
-                style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.98f, 0.98f, 0.98f, 0.53f);
-                style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.69f, 0.69f, 0.69f, 1.00f);
-                style.Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.59f, 0.59f, 0.59f, 1.00f);
-                style.Colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.49f, 0.49f, 0.49f, 1.00f);
-                style.Colors[ImGuiCol_ComboBg] = ImVec4(0.86f, 0.86f, 0.86f, 0.99f);
-                style.Colors[ImGuiCol_CheckMark] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
-                style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.24f, 0.52f, 0.88f, 1.00f);
-                style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
-                style.Colors[ImGuiCol_Button] = ImVec4(0.26f, 0.59f, 0.98f, 0.40f);
-                style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
-                style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.06f, 0.53f, 0.98f, 1.00f);
-                style.Colors[ImGuiCol_Header] = ImVec4(0.26f, 0.59f, 0.98f, 0.31f);
-                style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
-                style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
-                style.Colors[ImGuiCol_Column] = ImVec4(0.39f, 0.39f, 0.39f, 1.00f);
-                style.Colors[ImGuiCol_ColumnHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.78f);
-                style.Colors[ImGuiCol_ColumnActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
-                style.Colors[ImGuiCol_ResizeGrip] = ImVec4(1.00f, 1.00f, 1.00f, 0.50f);
-                style.Colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
-                style.Colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
-                style.Colors[ImGuiCol_CloseButton] = ImVec4(0.59f, 0.59f, 0.59f, 0.50f);
-                style.Colors[ImGuiCol_CloseButtonHovered] = ImVec4(0.98f, 0.39f, 0.36f, 1.00f);
-                style.Colors[ImGuiCol_CloseButtonActive] = ImVec4(0.98f, 0.39f, 0.36f, 1.00f);
-                style.Colors[ImGuiCol_PlotLines] = ImVec4(0.39f, 0.39f, 0.39f, 1.00f);
-                style.Colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
-                style.Colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
-                style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
-                style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
-
-                // Comment this for light theme
-                for (int i = 0; i <= ImGuiCol_COUNT; i++) {
-                    ImVec4& col = style.Colors[i];
-                    float H, S, V;
-                    ImGui::ColorConvertRGBtoHSV(col.x, col.y, col.z, H, S, V);
-
-                    if (S < 0.1f) {
-                        V = 1.0f - V;
-                    }
-                    ImGui::ColorConvertHSVtoRGB(H, S, V, col.x, col.y, col.z);
-                    if (col.w < 1.00f) {
-                        col.w *= 0.98f;
-                    }
-                }
-
-                style.Colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.0f, 0.0f, 0.0f, 0.9f);
-
-                //style.Colors[ImGuiCol_WindowBg] = ImVec4(0.25f, 0.25f, 0.25f, 1.0f);
-                //style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
-                //style.WindowRounding = 8.0f;
-                //style.FrameRounding = 5.0f;
-
-                auto convert = [](const ImVec4& in) -> auto
-                {
-                    ImU32 out;
-                    out = ((ImU32)(in.x * 255.0f)) << IM_COL32_R_SHIFT;
-                    out |= ((ImU32)(in.y * 255.0f)) << IM_COL32_G_SHIFT;
-                    out |= ((ImU32)(in.z * 255.0f)) << IM_COL32_B_SHIFT;
-                    out |= ((ImU32)(in.w * 255.0f)) << IM_COL32_A_SHIFT;
-                    return out;
-                };
-
-                auto &tabStyle = ImGui::TabLabelStyle::Get();
-                tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelActive] = tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabel] = convert(style.Colors[ImGuiCol_Button]);
-                tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelHovered] = tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelSelectedHovered] = convert(style.Colors[ImGuiCol_ButtonHovered]);
-                tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelSelected] = tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelSelectedActive] = convert(style.Colors[ImGuiCol_ButtonActive]);
-                tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelText] = tabStyle.colors[ImGui::TabLabelStyle::Col_TabLabelSelectedText] = convert(style.Colors[ImGuiCol_Text]);
-                ImGui::TabWindow::SetWindowContentDrawerCallback([](ImGui::TabWindow::TabLabel *tab, ImGui::TabWindow &parent, void *userData) -> void
-                {
-                    reinterpret_cast<Core *>(userData)->tabContentProvider(tab, parent);
-                }, this);
-
                 windowActive = true;
                 engineRunning = true;
 
@@ -512,7 +403,7 @@ namespace Gek
                         if (ImGui::MenuItem("Settings", "CTRL+O"))
                         {
                             showSettings = true;
-                            next = current;
+                            next = previous = current;
                         }
 
                         ImGui::Separator();
@@ -565,121 +456,74 @@ namespace Gek
                 }
             }
 
-            void tabContentProvider(ImGui::TabWindow::TabLabel *tab, ImGui::TabWindow &parent)
-            {
-                auto &style = ImGui::GetStyle();
-                auto frameColor = style.Colors[ImGuiCol_FrameBg];
-                if (&parent == &settingsTabs && tab)
-                {
-                    ImGui::PushStyleColor(ImGuiCol_FrameBg, style.Colors[ImGuiCol_Button]);
-                    auto currentSize = ImGui::GetCurrentWindowRead()->Size;
-                    float frameWidth = (currentSize.x - (style.FramePadding.x * 2.0f));
-                    float frameHeight = (currentSize.y - ((ImGui::GetTextLineHeightWithSpacing() - style.FramePadding.y) * 2.0f) - style.ItemSpacing.y);
-                    if (ImGui::BeginChildFrame(tab->userInt, ImVec2(frameWidth, frameHeight)))
-                    {
-                        ImGui::PushStyleColor(ImGuiCol_FrameBg, frameColor);
-                        switch (tab->userInt)
-                        {
-                        case 0:
-                            ImGui::PushItemWidth(-1.0f);
-                            GUI::ListBox("Display Mode", &next.mode, [](void *data, int index, const char **text) -> bool
-                            {
-                                Core *core = static_cast<Core *>(data);
-                                auto &mode = core->displayModeStringList[index];
-                                (*text) = mode.c_str();
-                                return true;
-                            }, this, displayModeStringList.size(), 5);
-
-                            ImGui::PopItemWidth();
-                            ImGui::SameLine();
-                            ImGui::Text(" ");
-
-                            ImGui::Spacing();
-                            ImGui::Checkbox("FullScreen", &next.fullScreen);
-                            break;
-
-                        case 1:
-                            break;
-
-                        case 2:
-                            break;
-                        };
-
-                        ImGui::PopStyleColor();
-                    }
-
-                    ImGui::EndChildFrame();
-
-                    ImGui::PopStyleColor();
-                    float buttonPositionY = (currentSize.y - ((ImGui::GetTextLineHeightWithSpacing() - style.FramePadding.y) * 2.0f));
-                    float buttonPositionX = (currentSize.x - ((100.0f + style.FramePadding.x) * 2.0f) - style.ItemSpacing.x);
-                    ImGui::SetCursorPos(ImVec2((buttonPositionX * 0.5f), buttonPositionY));
-                    if (ImGui::Button("Accept", ImVec2(100.0f, -1.0f)))
-                    {
-                        switch (tab->userInt)
-                        {
-                        case 0:
-                            break;
-
-                        case 1:
-                            if (true)
-                            {
-                                bool changedDisplayMode = setDisplayMode(next.mode);
-                                bool changedFullScreen = setFullScreen(next.fullScreen);
-                                if (changedDisplayMode || changedFullScreen)
-                                {
-                                    previous = current;
-                                    showModeChange = true;
-                                    modeChangeTimer = 10.0f;
-                                }
-                            }
-
-                            break;
-
-                        case 2:
-                            break;
-                        };
-
-                        showSettings = false;
-                    }
-
-                    ImGui::SameLine();
-                    if (ImGui::Button("Cancel", ImVec2(100.0f, -1.0f)))
-                    {
-                        showSettings = false;
-                    }
-                }
-            }
-
             ImGui::TabWindow settingsTabs;
             void showSettingsWindow(void)
             {
                 if (showSettings)
                 {
-                    ImGui::SetNextWindowSize(ImVec2(500, 500));
-                    if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_AlwaysAutoResize))
+                    auto settingsSize = ImVec2(500, 500);
+                    ImGui::SetNextWindowSize(settingsSize);
+                    if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_ShowBorders))
                     {
-                        if (!settingsTabs.isInited())
+                        auto &style = ImGui::GetStyle();
+                        auto frameColor = style.Colors[ImGuiCol_FrameBg];
+                        ImGui::PushStyleColor(ImGuiCol_FrameBg, style.Colors[ImGuiCol_Button]);
+                        if (ImGui::BeginChildFrame(0, ImVec2(0.0f, 0.0f), ImGuiWindowFlags_AlwaysAutoResize))
                         {
-                            struct TabData
+                            ImGui::PushStyleColor(ImGuiCol_FrameBg, frameColor);
+                            ImGui::BeginTabBar("Settings#left_tabs_bar");
+                            if (ImGui::AddTab("Display"))
                             {
-                                char *name;
-                                char *tooltop;
-                                int id;
-                            } data[] =
-                            {
-                                { "   Display   ", "Display Mode Settings", 0, },
-                                { "   Visual   ", "Visual and Graphics Settings", 1, },
-                                { "   Audio   ", "Sound and Playback Settings", 2, },
-                            };
+                                ImGui::PushItemWidth(ImGui::GetWindowWidth() - 2.0f * (style.WindowPadding.x + style.FramePadding.x));
+                                ImGui::ListBox("Display Mode", &next.mode, [](void *data, int index, const char **text) -> bool
+                                {
+                                    Core *core = static_cast<Core *>(data);
+                                    auto &mode = core->displayModeStringList[index];
+                                    (*text) = mode.c_str();
+                                    return true;
+                                }, this, displayModeStringList.size(), 10);
 
-                            for (auto &tab : data)
-                            {
-                                settingsTabs.addTabLabel(tab.name, tab.tooltop, false, false, nullptr, nullptr, tab.id);
+                                ImGui::PopItemWidth();
+                                ImGui::Spacing();
+                                ImGui::Checkbox("FullScreen", &next.fullScreen);
                             }
+
+                            if (ImGui::AddTab("Visual"))
+                            {
+                            }
+
+                            if (ImGui::AddTab("Audio"))
+                            {
+                            }
+
+                            ImGui::EndTabBar();
+                            ImGui::PopStyleColor();
                         }
 
-                        settingsTabs.render();
+                        float buttonPositionX = (ImGui::GetWindowWidth() - (200.0f + style.ItemSpacing.x)) * 0.5f;
+                        float buttonPositionY = (ImGui::GetWindowHeight() - style.WindowPadding.y - style.FramePadding.y - 25.0f);
+                        ImGui::SetCursorPos(ImVec2(buttonPositionX, buttonPositionY));
+                        if (ImGui::Button("Accept", ImVec2(100.0f, 25.0f)))
+                        {
+                            bool changedDisplayMode = setDisplayMode(next.mode);
+                            bool changedFullScreen = setFullScreen(next.fullScreen);
+                            if (changedDisplayMode || changedFullScreen)
+                            {
+                                showModeChange = true;
+                                modeChangeTimer = 10.0f;
+                            }
+
+                            showSettings = false;
+                        }
+
+                        ImGui::SameLine();
+                        if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)))
+                        {
+                            showSettings = false;
+                        }
+
+                        ImGui::EndChildFrame();
+                        ImGui::PopStyleColor();
                     }
 
                     ImGui::End();
@@ -691,18 +535,21 @@ namespace Gek
                 if (showModeChange)
                 {
                     ImGui::SetNextWindowPosCenter();
-                    if (ImGui::Begin("Keep Display Mode", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                    if (ImGui::Begin("Keep Display Mode", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_ShowBorders))
                     {
                         ImGui::Text("Keep Display Mode?");
 
-                        if (ImGui::Button("Yes"))
+                        auto &style = ImGui::GetStyle();
+                        float buttonPositionX = (ImGui::GetWindowWidth() - (200.0f + style.ItemSpacing.x)) * 0.5f;
+                        ImGui::SetCursorPos(ImVec2(buttonPositionX, ImGui::GetCursorPosY()));
+                        if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)))
                         {
                             showModeChange = false;
                             previous = current;
                         }
 
                         ImGui::SameLine();
-                        if (modeChangeTimer <= 0.0f || ImGui::Button("No"))
+                        if (modeChangeTimer <= 0.0f || ImGui::Button("No", ImVec2(100.0f, 25.0f)))
                         {
                             showModeChange = false;
                             setDisplayMode(previous.mode);
@@ -720,8 +567,9 @@ namespace Gek
             {
                 if (showLoadMenu)
                 {
-                    if (ImGui::Begin("Load", &showLoadMenu, ImGuiWindowFlags_AlwaysAutoResize))
+                    if (ImGui::Begin("Load", &showLoadMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_ShowBorders))
                     {
+                        auto &style = ImGui::GetStyle();
                         std::vector<std::string> scenes;
                         FileSystem::Find(getContext()->getRootFileName("data", "scenes"), [&scenes](FileSystem::Path const &filePath) -> bool
                         {
@@ -736,18 +584,22 @@ namespace Gek
                         if (scenes.empty())
                         {
                             ImGui::Text("No scenes found");
+                            float buttonPositionX = (ImGui::GetWindowWidth() - 100.0f) * 0.5f;
+                            ImGui::SetCursorPos(ImVec2(buttonPositionX, ImGui::GetCursorPosY()));
                         }
                         else
                         {
                             ImGui::PushItemWidth(350.0f);
-                            GUI::ListBox("Scenes", &currentSelectedScene, [](void *data, int index, const char **output) -> bool
+                            ImGui::ListBox("Scenes", &currentSelectedScene, [](void *data, int index, const char **output) -> bool
                             {
                                 auto scenes = (std::vector<std::string> *)data;
                                 (*output) = scenes->at(index).c_str();
                                 return true;
                             }, (void *)&scenes, scenes.size(), 10);
 
-                            if (ImGui::Button("Load"))
+                            float buttonPositionX = (ImGui::GetWindowWidth() - (200.0f + style.ItemSpacing.x)) * 0.5f;
+                            ImGui::SetCursorPos(ImVec2(buttonPositionX, ImGui::GetCursorPosY()));
+                            if (ImGui::Button("Load", ImVec2(100.0f, 25.0f)))
                             {
                                 showLoadMenu = false;
                                 population->load(scenes[currentSelectedScene]);
@@ -756,7 +608,7 @@ namespace Gek
                             ImGui::SameLine();
                         }
 
-                        if (ImGui::Button("Cancel"))
+                        if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)))
                         {
                             showLoadMenu = false;
                         }

@@ -35,7 +35,7 @@ namespace Gek
                 ImGui::SetCurrentContext(guiContext);
                 auto &physicalComponent = *dynamic_cast<Components::Physical *>(data);
                 bool changed =
-                    GUI::InputFloat("Mass", &physicalComponent.mass, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
+                    ImGui::InputFloat("Mass", &physicalComponent.mass, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
                 ImGui::SetCurrentContext(nullptr);
                 return changed;
             }

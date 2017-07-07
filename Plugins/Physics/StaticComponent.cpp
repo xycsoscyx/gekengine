@@ -36,7 +36,7 @@ namespace Gek
                 ImGui::SetCurrentContext(guiContext);
                 auto &staticComponent = *dynamic_cast<Components::Static *>(data);
                 bool changed =
-                    GUI::InputString("Group", staticComponent.group, ImGuiInputTextFlags_EnterReturnsTrue);
+                    UI::InputString("Group", staticComponent.group, ImGuiInputTextFlags_EnterReturnsTrue);
                     ImGui::SetCurrentContext(nullptr);
                 return changed;
             }

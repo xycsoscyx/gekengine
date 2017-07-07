@@ -265,7 +265,7 @@ namespace Gek
             constantBufferDescription.stride = sizeof(Math::Float4x4);
             constantBufferDescription.count = 1;
             constantBufferDescription.type = Render::BufferDescription::Type::Constant;
-            gui->constantBuffer = renderDevice->createBuffer(constantBufferDescription, nullptr, "GUI::Constants");
+            gui->constantBuffer = renderDevice->createBuffer(constantBufferDescription, nullptr, "ImGui::Constants");
 
             uint8_t *pixels = nullptr;
             int32_t fontWidth = 0, fontHeight = 0;
@@ -276,7 +276,7 @@ namespace Gek
             fontDescription.width = fontWidth;
             fontDescription.height = fontHeight;
             fontDescription.flags = Render::TextureDescription::Flags::Resource;
-            gui->fontTexture = renderDevice->createTexture(fontDescription, pixels, "GUI::Font");
+            gui->fontTexture = renderDevice->createTexture(fontDescription, pixels, "ImGui::Font");
             imGuiIo.Fonts->TexID = &gui->fontTexture;
 
             Render::SamplerStateInformation samplerStateInformation;
@@ -284,7 +284,7 @@ namespace Gek
             samplerStateInformation.addressModeU = Render::SamplerStateInformation::AddressMode::Clamp;
             samplerStateInformation.addressModeV = Render::SamplerStateInformation::AddressMode::Clamp;
             samplerStateInformation.addressModeW = Render::SamplerStateInformation::AddressMode::Clamp;
-            gui->samplerState = renderDevice->createSamplerState(samplerStateInformation, "GUI::Sampler");
+            gui->samplerState = renderDevice->createSamplerState(samplerStateInformation, "ImGui::Sampler");
 
             imGuiIo.UserData = this;
             imGuiIo.RenderDrawListsFn = [](ImDrawData *drawData)

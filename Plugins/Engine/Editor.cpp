@@ -88,7 +88,7 @@ namespace Gek
                     if (ImGui::BeginPopup("Entity Name"))
                     {
                         std::string name;
-                        if (GUI::InputString("Name", name, ImGuiInputTextFlags_EnterReturnsTrue))
+                        if (UI::InputString("Name", name, ImGuiInputTextFlags_EnterReturnsTrue))
                         {
                             population->createEntity(name);
                             ImGui::CloseCurrentPopup();
@@ -101,7 +101,7 @@ namespace Gek
                     for (auto &entitySearch : entityMap)
                     {
                         ImGui::PushID(entitySearch.second.get());
-                        if (ImGui::Button("X", ImVec2(9, 9)))
+                        if (ImGui::Button(ICON_MD_DELETE_FOREVER))
                         {
                             population->killEntity(entitySearch.second.get());
                         }
@@ -171,12 +171,11 @@ namespace Gek
                         const auto &entityComponentMap = selectedEntity->getComponentMap();
                         for (auto &componentSearch : entityComponentMap)
                         {
-                            if (ImGui::BeginChildFrame(componentSearch.first.hash_code(), ImVec2(0.0f, 0.0f), ImGuiWindowFlags_AlwaysAutoResize))
+                            Edit::Component *component = population->getComponent(componentSearch.first);
+                            Plugin::Component::Data *componentData = componentSearch.second.get();
+                            if (component && componentData)
                             {
-                                ImGui::Text(componentSearch.first.name() + 7);
-                                Edit::Component *component = population->getComponent(componentSearch.first);
-                                Plugin::Component::Data *componentData = componentSearch.second.get();
-                                if (component && componentData)
+                                if (ImGui::BeginChildFrame(0, ImVec2(0.0f, 0.0f), ImGuiWindowFlags_ShowBorders))
                                 {
                                     ImGui::PushItemWidth(-1.0f);
                                     if (component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, selectedEntity, componentData))
@@ -186,9 +185,10 @@ namespace Gek
 
                                     ImGui::PopItemWidth();
                                 }
-                            }
 
-                            ImGui::EndChildFrame();
+                                ImGui::EndChildFrame();
+                                ImGui::Separator();
+                            }
                         }
                     }
                 }
@@ -234,11 +234,20 @@ namespace Gek
                     return;
                 }
 
-                ImGuiIO &imGuiIo = ImGui::GetIO();
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(3.0f, 3.0f));
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-                ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-                if (ImGui::Begin("Editor", nullptr, imGuiIo.DisplaySize, 0.75f, ImGuiWindowFlags_NoTitleBar | (imGuiIo.MouseDrawCursor ? ImGuiWindowFlags_MenuBar : 0) | ImGuiWindowFlags_NoSavedSettings))
+                auto &style = ImGui::GetStyle();
+                auto &imGuiIo = ImGui::GetIO();
+
+                auto editorSize = imGuiIo.DisplaySize;
+                auto editorPosition = ImVec2(0.0f, 0.0f);
+                if (imGuiIo.MouseDrawCursor)
+                {
+                    editorSize.y -= ImGui::GetItemsLineHeightWithSpacing() - style.ItemSpacing.y;
+                    editorPosition.y += ImGui::GetItemsLineHeightWithSpacing() - style.ItemSpacing.y;
+                }
+
+                ImGui::SetNextWindowSize(editorSize);
+                ImGui::SetNextWindowPos(editorPosition);
+                if (ImGui::Begin("Editor", nullptr, editorSize, 0.75f, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
                 {
                     ImGui::BeginDockspace();
 
@@ -246,18 +255,17 @@ namespace Gek
                     showScene();
                     ImGui::SetNextDock(ImGuiDockSlot_Left | ImGuiDockSlot_FromRoot);
                     showEntities();
-                    ImGui::SetNextDock(ImGuiDockSlot_Right | ImGuiDockSlot_FromRoot);
-                    showComponents();
                     ImGui::SetNextDock(ImGuiDockSlot_Top | ImGuiDockSlot_FromRoot);
                     showTools();
                     ImGui::SetNextDock(ImGuiDockSlot_Bottom | ImGuiDockSlot_FromRoot);
                     showResources();
+                    ImGui::SetNextDock(ImGuiDockSlot_Right | ImGuiDockSlot_FromRoot);
+                    showComponents();
 
                     ImGui::EndDockspace();
                 }
 
                 ImGui::End();
-                ImGui::PopStyleVar(2);
             }
 
             // Plugin::Population Slots

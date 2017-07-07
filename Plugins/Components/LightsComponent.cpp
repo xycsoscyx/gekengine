@@ -37,9 +37,9 @@ namespace Gek
             ImGui::SetCurrentContext(guiContext);
             auto &lightComponent = *dynamic_cast<Components::PointLight *>(data);
             bool changed =
-                GUI::InputFloat("Range", &lightComponent.range, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                GUI::InputFloat("Radius", &lightComponent.radius, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                GUI::InputFloat("Intensity", &lightComponent.intensity, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
+                ImGui::InputFloat("Range", &lightComponent.range, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                ImGui::InputFloat("Radius", &lightComponent.radius, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                ImGui::InputFloat("Intensity", &lightComponent.intensity, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
             ImGui::SetCurrentContext(nullptr);
             return changed;
         }
@@ -92,12 +92,12 @@ namespace Gek
             ImGui::SetCurrentContext(guiContext);
             auto &lightComponent = *dynamic_cast<Components::SpotLight *>(data);
             bool changed = 
-                GUI::InputFloat("Range", &lightComponent.range, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                GUI::InputFloat("Radius", &lightComponent.radius, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                GUI::InputFloat("Intensity", &lightComponent.intensity, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                GUI::InputFloat("Inner Angle", &lightComponent.innerAngle, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                GUI::InputFloat("Outer Angle", &lightComponent.outerAngle, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
-                GUI::InputFloat("Cone Falloff", &lightComponent.coneFalloff, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
+                ImGui::InputFloat("Range", &lightComponent.range, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                ImGui::InputFloat("Radius", &lightComponent.radius, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                ImGui::InputFloat("Intensity", &lightComponent.intensity, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                ImGui::InputFloat("Inner Angle", &lightComponent.innerAngle, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                ImGui::InputFloat("Outer Angle", &lightComponent.outerAngle, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                ImGui::InputFloat("Cone Falloff", &lightComponent.coneFalloff, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
             ImGui::SetCurrentContext(nullptr);
             return changed;
         }
@@ -140,7 +140,7 @@ namespace Gek
             ImGui::SetCurrentContext(guiContext);
             auto &lightComponent = *dynamic_cast<Components::DirectionalLight *>(data);
             bool changed = 
-                GUI::InputFloat("Intensity", &lightComponent.intensity, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
+                ImGui::InputFloat("Intensity", &lightComponent.intensity, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
             ImGui::SetCurrentContext(nullptr);
             return false;
         }

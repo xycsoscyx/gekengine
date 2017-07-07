@@ -618,16 +618,21 @@ namespace Gek
                 gui.depthState = videoDevice->createDepthState(depthStateInformation);
                 gui.depthState->setName("core:depthState");
 
-                ImGuiStyle& style = ImGui::GetStyle();
-                //ImGui::SetupImGuiStyle(false, 0.9f);
-                ImGui::ResetStyle(ImGuiStyle_OSX, style);
-                style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
-                style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
-                style.WindowRounding = 0.0f;
-                style.FrameRounding = 3.0f;
-
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                imGuiIo.Fonts->AddFontDefault();
+                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "Ruda-Bold.ttf").u8string().c_str(), 12);
+                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "Ruda-Bold.ttf").u8string().c_str(), 10);
+                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "Ruda-Bold.ttf").u8string().c_str(), 14);
+                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "Ruda-Bold.ttf").u8string().c_str(), 18);
+
+                ImFontConfig fontConfig;
+                fontConfig.MergeMode = true;
+
+                const ImWchar fontAwesomeRanges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "fontawesome-webfont.ttf").u8string().c_str(), 13.0f, &fontConfig, fontAwesomeRanges);
+
+                const ImWchar googleIconRanges[] = { ICON_MIN_MD, ICON_MAX_MD, 0 };
+                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "MaterialIcons-Regular.ttf").u8string().c_str(), 13.0f, &fontConfig, googleIconRanges);
+
                 imGuiIo.Fonts->Build();
 
                 uint8_t *pixels = nullptr;
@@ -650,6 +655,9 @@ namespace Gek
                     Renderer *renderer = static_cast<Renderer *>(imGuiIo.UserData);
                     renderer->renderUI(drawData);
                 };
+
+                auto &style = ImGui::GetStyle();
+                ImGui::ResetStyle(ImGuiStyle_OSX);
             }
 
             ~Renderer(void)

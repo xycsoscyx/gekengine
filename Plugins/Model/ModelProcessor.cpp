@@ -58,7 +58,7 @@ namespace Gek
         {
             ImGui::SetCurrentContext(guiContext);
             auto &modelComponent = *dynamic_cast<Components::Model *>(data);
-            bool changed = GUI::InputString("Model", modelComponent.name, flags);
+            bool changed = UI::InputString("Model", modelComponent.name, flags);
             ImGui::SetCurrentContext(nullptr);
             return changed;
         }

@@ -44,7 +44,7 @@ namespace Gek
         {
             ImGui::SetCurrentContext(guiContext);
             auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
-            GUI::InputFloat3("Position", transformComponent.position.data, 4, ImGuiInputTextFlags_ReadOnly);
+            ImGui::InputFloat3("Position", transformComponent.position.data, 4, ImGuiInputTextFlags_ReadOnly);
 
             ImGui::Text("Rotation: ");
             ImGui::SameLine();
@@ -78,7 +78,7 @@ namespace Gek
                 ImGui::InputFloat4("##RotationQuaternion", transformComponent.rotation.data, 4, ImGuiInputTextFlags_ReadOnly);
             }
 
-            GUI::InputFloat3("Scale", transformComponent.scale.data, 4, ImGuiInputTextFlags_ReadOnly);
+            ImGui::InputFloat3("Scale", transformComponent.scale.data, 4, ImGuiInputTextFlags_ReadOnly);
 
             ImGui::SetCurrentContext(nullptr);
         }
@@ -87,7 +87,7 @@ namespace Gek
         {
             ImGui::SetCurrentContext(guiContext);
             auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
-            GUI::InputFloat3("Position", transformComponent.position.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            ImGui::InputFloat3("Position", transformComponent.position.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
 
             ImGui::Text("Rotation: ");
             ImGui::SameLine();
@@ -143,7 +143,7 @@ namespace Gek
                 currentGizmoOperation = ImGuizmo::ROTATE;
             }
 
-            GUI::InputFloat3("Scale", transformComponent.scale.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            ImGui::InputFloat3("Scale", transformComponent.scale.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
 
             ImGui::Separator();
             ImGui::Checkbox("Enable Snap", &useSnap);
@@ -152,17 +152,17 @@ namespace Gek
             switch (currentGizmoOperation)
             {
             case ImGuizmo::TRANSLATE:
-                GUI::InputFloat3("Units", snapPosition.data, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                ImGui::InputFloat3("Units", snapPosition.data, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 snap = snapPosition.data;
                 break;
 
             case ImGuizmo::ROTATE:
-                GUI::InputFloat("Degrees", &snapRotation, 10.0f, 90.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                ImGui::InputFloat("Degrees", &snapRotation, 10.0f, 90.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 snap = &snapRotation;
                 break;
 
             case ImGuizmo::SCALE:
-                GUI::InputFloat("Size", &snapScale, (1.0f / 10.0f), 1.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                ImGui::InputFloat("Size", &snapScale, (1.0f / 10.0f), 1.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 snap = &snapScale;
                 break;
             };
