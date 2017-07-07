@@ -28,7 +28,7 @@ namespace Gek
                 componentMap[component->getIdentifier()] = std::move(data);
             }
 
-            void removeComponent(const std::type_index &type)
+            void removeComponent(std::type_index const &type)
             {
                 auto componentSearch = componentMap.find(type);
                 if (componentSearch != std::end(componentMap))
@@ -37,7 +37,7 @@ namespace Gek
                 }
             }
 
-            void listComponents(std::function<void(const std::type_index &, const Plugin::Component::Data *)> onComponent)
+            void listComponents(std::function<void(std::type_index const &, Plugin::Component::Data const *)> onComponent)
             {
                 for (const auto &component : componentMap)
                 {
@@ -401,7 +401,7 @@ namespace Gek
                 }
             }
 
-            void removeComponent(Plugin::Entity * const entity, const std::type_index &type)
+            void removeComponent(Plugin::Entity * const entity, std::type_index const &type)
             {
                 assert(entity);
 

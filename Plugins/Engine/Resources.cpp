@@ -1127,7 +1127,7 @@ namespace Gek
                 return filterCache.getResource(resource.second);
             }
 
-            Video::Texture::Description * const getTextureDescription(ResourceHandle resourceHandle)
+            Video::Texture::Description const * const getTextureDescription(ResourceHandle resourceHandle) const
             {
                 auto descriptionSearch = textureDescriptionMap.find(resourceHandle);
                 if (descriptionSearch != std::end(textureDescriptionMap))
@@ -1140,7 +1140,7 @@ namespace Gek
                 }
             }
 
-            Video::Buffer::Description * const getBufferDescription(ResourceHandle resourceHandle)
+            Video::Buffer::Description const * const getBufferDescription(ResourceHandle resourceHandle) const
             {
                 auto descriptionSearch = bufferDescriptionMap.find(resourceHandle);
                 if (descriptionSearch != std::end(bufferDescriptionMap))
@@ -1151,6 +1151,11 @@ namespace Gek
                 {
                     return nullptr;
                 }
+            }
+
+            Video::Object * const getResource(ResourceHandle resourceHandle) const
+            {
+                return dynamicCache.getResource(resourceHandle);
             }
 
             std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, std::string const &name, std::string const &entryFunction, std::string const &engineData)

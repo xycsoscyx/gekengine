@@ -378,7 +378,7 @@ namespace Gek
             bool showSettings = false;
             bool showModeChange = false;
             float modeChangeTimer = 0.0f;
-            void onShowUserInterface(ImGuiContext * const guiContext)
+            void onShowUserInterface(ImGuiContext * const guiContext, ResourceHandle screenHandle, Video::Object const * screenBuffer)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 if (imGuiIo.MouseDrawCursor)
@@ -590,7 +590,7 @@ namespace Gek
                         else
                         {
                             ImGui::PushItemWidth(350.0f);
-                            ImGui::ListBox("Scenes", &currentSelectedScene, [](void *data, int index, const char **output) -> bool
+                            ImGui::ListBox("##scenes", &currentSelectedScene, [](void *data, int index, const char **output) -> bool
                             {
                                 auto scenes = (std::vector<std::string> *)data;
                                 (*output) = scenes->at(index).c_str();

@@ -406,7 +406,7 @@ namespace Gek
             }
 
             // Plugin::Core Slots
-            void onShowUserInterface(ImGuiContext * const guiContext)
+            void onShowUserInterface(ImGuiContext * const guiContext, ResourceHandle screenHandle, Video::Object const * screenBuffer)
             {
             }
 

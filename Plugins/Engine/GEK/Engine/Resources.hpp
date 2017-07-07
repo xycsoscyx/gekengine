@@ -86,8 +86,9 @@ namespace Gek
             virtual Shader * const getShader(ShaderHandle handle) const = 0;
             virtual Filter * const getFilter(std::string const &filterName) = 0;
 
-            virtual Video::Texture::Description * const getTextureDescription(ResourceHandle resourceHandle) = 0;
-            virtual Video::Buffer::Description * const getBufferDescription(ResourceHandle resourceHandle) = 0;
+            virtual Video::Texture::Description const * const getTextureDescription(ResourceHandle resourceHandle) const = 0;
+            virtual Video::Buffer::Description const * const getBufferDescription(ResourceHandle resourceHandle) const = 0;
+            virtual Video::Object * const getResource(ResourceHandle resourceHandle) const = 0;
 
             virtual std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, std::string const &name, std::string const &entryFunction, std::string const &engineData = std::string()) = 0;
             virtual ProgramHandle loadProgram(Video::PipelineType pipelineType, std::string const &name, std::string const &entryFunction, std::string const &engineData = std::string()) = 0;

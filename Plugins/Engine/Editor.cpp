@@ -78,25 +78,8 @@ namespace Gek
             Edit::Entity *selectedEntity = nullptr;
             void showEntities(void)
             {
-                if (ImGui::BeginDock("Entities", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize, ImVec2(100.0f, -1.0f)))
+                if (ImGui::BeginDock("Entities", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize, ImVec2(100.0f, 0.0f)))
                 {
-                    if (ImGui::Button("Create Entity", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
-                    {
-                        ImGui::OpenPopup("Entity Name");
-                    }
-
-                    if (ImGui::BeginPopup("Entity Name"))
-                    {
-                        std::string name;
-                        if (UI::InputString("Name", name, ImGuiInputTextFlags_EnterReturnsTrue))
-                        {
-                            population->createEntity(name);
-                            ImGui::CloseCurrentPopup();
-                        }
-
-                        ImGui::EndPopup();
-                    }
-
                     auto &entityMap = population->getEntityMap();
                     for (auto &entitySearch : entityMap)
                     {
@@ -131,43 +114,11 @@ namespace Gek
                 viewMatrix.translation.xyz = position;
                 viewMatrix.invert();
 
-                if (ImGui::BeginDock("Components", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize, ImVec2(100.0f, -1.0f)))
+                if (ImGui::BeginDock("Components", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize, ImVec2(100.0f, 0.0f)))
                 {
                     if (selectedEntity)
                     {
-                        if (ImGui::Button("Add Component", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
-                        {
-                            ImGui::OpenPopup("Select Component");
-                        }
-
-                        if (ImGui::BeginPopup("Select Component"))
-                        {
-                            const auto &componentMap = population->getComponentMap();
-                            const auto componentCount = componentMap.size();
-                            if (ImGui::ListBoxHeader("##Components", componentCount, 7))
-                            {
-                                ImGuiListClipper clipper(componentCount, ImGui::GetTextLineHeightWithSpacing());
-                                while (clipper.Step())
-                                {
-                                    for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
-                                    {
-                                        auto componentSearch = std::begin(componentMap);
-                                        std::advance(componentSearch, componentIndex);
-                                        if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
-                                        {
-                                            auto componentData = std::make_pair(componentSearch->second->getName(), JSON::EmptyObject);
-                                            population->addComponent(selectedEntity, componentData);
-                                            ImGui::CloseCurrentPopup();
-                                        }
-                                    }
-                                };
-
-                                ImGui::ListBoxFooter();
-                            }
-
-                            ImGui::EndPopup();
-                        }
-
+                        std::vector<std::type_index> deleteComponents;
                         const auto &entityComponentMap = selectedEntity->getComponentMap();
                         for (auto &componentSearch : entityComponentMap)
                         {
@@ -175,20 +126,27 @@ namespace Gek
                             Plugin::Component::Data *componentData = componentSearch.second.get();
                             if (component && componentData)
                             {
-                                if (ImGui::BeginChildFrame(0, ImVec2(0.0f, 0.0f), ImGuiWindowFlags_ShowBorders))
+                                ImGui::PushItemWidth(-1.0f);
+                                if (ImGui::Button(ICON_MD_DELETE_FOREVER))
                                 {
-                                    ImGui::PushItemWidth(-1.0f);
-                                    if (component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, selectedEntity, componentData))
-                                    {
-                                        onModified.emit(selectedEntity, componentSearch.first);
-                                    }
-
-                                    ImGui::PopItemWidth();
+                                    deleteComponents.push_back(componentSearch.first);
                                 }
 
-                                ImGui::EndChildFrame();
-                                ImGui::Separator();
+                                ImGui::SameLine();
+                                ImGui::Button(component->getName().c_str(), ImVec2(-1.0f, 0));
+                                if (component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, selectedEntity, componentData))
+                                {
+                                    onModified.emit(selectedEntity, componentSearch.first);
+                                }
+
+                                ImGui::PopItemWidth();
+                                ImGui::Dummy(ImVec2(20.0f, 20.0f));
                             }
+                        }
+
+                        for (auto &component : deleteComponents)
+                        {
+                            population->removeComponent(selectedEntity, component);
                         }
                     }
                 }
@@ -198,9 +156,55 @@ namespace Gek
 
             void showTools(void)
             {
-                if (ImGui::BeginDock("Tools", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize, ImVec2(-1.0f, 50.0f)))
+                if (ImGui::BeginDock("Tools", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize, ImVec2(0.0f, 50.0f)))
                 {
-                    ImGui::Button("Tools");
+                    if (ImGui::Button(ICON_MD_ACCOUNT_BOX))
+                    {
+                        if (ImGui::BeginPopup("New Entity Name"))
+                        {
+                            ImGui::Text("New Entity Name:");
+
+                            std::string name;
+                            if (UI::InputString("##name", name, ImGuiInputTextFlags_EnterReturnsTrue))
+                            {
+                                population->createEntity(name);
+                                ImGui::CloseCurrentPopup();
+                            }
+
+                            ImGui::EndPopup();
+                        }
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::Button(ICON_MD_PLAYLIST_ADD))
+                    {
+                        ImGui::Text("Add New Component");
+
+                        const auto &componentMap = population->getComponentMap();
+                        const auto componentCount = componentMap.size();
+                        if (ImGui::ListBoxHeader("##Components", componentCount, 7))
+                        {
+                            ImGuiListClipper clipper(componentCount, ImGui::GetTextLineHeightWithSpacing());
+                            while (clipper.Step())
+                            {
+                                for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
+                                {
+                                    auto componentSearch = std::begin(componentMap);
+                                    std::advance(componentSearch, componentIndex);
+                                    if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
+                                    {
+                                        auto componentData = std::make_pair(componentSearch->second->getName(), JSON::EmptyObject);
+                                        population->addComponent(selectedEntity, componentData);
+                                        ImGui::CloseCurrentPopup();
+                                    }
+                                }
+                            };
+
+                            ImGui::ListBoxFooter();
+                        }
+
+                        ImGui::EndPopup();
+                    }
                 }
 
                 ImGui::EndDock();
@@ -208,25 +212,26 @@ namespace Gek
 
             void showResources(void)
             {
-                if (ImGui::BeginDock("Resources", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize, ImVec2(-1.0f, 100.0f)))
+                if (ImGui::BeginDock("Resources", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize, ImVec2(0.0f, 100.0f)))
                 {
-                    ImGui::Button("Resources");
                 }
 
                 ImGui::EndDock();
             }
 
-            void showScene(void)
+            void showScene(Video::Object const * screenBuffer)
             {
-                if (ImGui::BeginDock("Scene", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize, ImVec2(-1.0f, -1.0f)))
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+                if (ImGui::BeginDock("Scene", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar, ImVec2(0.0f, 0.0f)))
                 {
-                    ImGui::Button("Scene");
+                    ImGui::Image(const_cast<Video::Object *>(screenBuffer), ImGui::GetWindowSize());
                 }
 
                 ImGui::EndDock();
+                ImGui::PopStyleVar();
             }
 
-            void onShowUserInterface(ImGuiContext * const guiContext)
+            void onShowUserInterface(ImGuiContext * const guiContext, ResourceHandle screenHandle, Video::Object const * screenBuffer)
             {
                 bool editorActive = core->getOption("editor", "active").convert(false);
                 if (!editorActive)
@@ -252,7 +257,7 @@ namespace Gek
                     ImGui::BeginDockspace();
 
                     ImGui::SetNextDock(ImGuiDockSlot_None);
-                    showScene();
+                    showScene(screenBuffer);
                     ImGui::SetNextDock(ImGuiDockSlot_Left | ImGuiDockSlot_FromRoot);
                     showEntities();
                     ImGui::SetNextDock(ImGuiDockSlot_Top | ImGuiDockSlot_FromRoot);

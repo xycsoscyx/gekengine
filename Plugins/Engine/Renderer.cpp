@@ -619,19 +619,19 @@ namespace Gek
                 gui.depthState->setName("core:depthState");
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "Ruda-Bold.ttf").u8string().c_str(), 12);
-                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "Ruda-Bold.ttf").u8string().c_str(), 10);
+                //imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "Ruda-Bold.ttf").u8string().c_str(), 12);
+                //imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "Ruda-Bold.ttf").u8string().c_str(), 10);
                 imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "Ruda-Bold.ttf").u8string().c_str(), 14);
-                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "Ruda-Bold.ttf").u8string().c_str(), 18);
+                //imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "Ruda-Bold.ttf").u8string().c_str(), 18);
 
                 ImFontConfig fontConfig;
                 fontConfig.MergeMode = true;
 
                 const ImWchar fontAwesomeRanges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "fontawesome-webfont.ttf").u8string().c_str(), 13.0f, &fontConfig, fontAwesomeRanges);
+                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "fontawesome-webfont.ttf").u8string().c_str(), 14.0f, &fontConfig, fontAwesomeRanges);
 
                 const ImWchar googleIconRanges[] = { ICON_MIN_MD, ICON_MAX_MD, 0 };
-                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "MaterialIcons-Regular.ttf").u8string().c_str(), 13.0f, &fontConfig, googleIconRanges);
+                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "MaterialIcons-Regular.ttf").u8string().c_str(), 14.0f, &fontConfig, googleIconRanges);
 
                 imGuiIo.Fonts->Build();
 
@@ -646,7 +646,7 @@ namespace Gek
                 fontDescription.flags = Video::Texture::Description::Flags::Resource;
                 gui.fontTexture = videoDevice->createTexture(fontDescription, pixels);
 
-                imGuiIo.Fonts->TexID = (Video::Object *)gui.fontTexture.get();
+                imGuiIo.Fonts->TexID = static_cast<Video::Object *>(gui.fontTexture.get());
 
                 imGuiIo.UserData = this;
                 imGuiIo.RenderDrawListsFn = [](ImDrawData *drawData)
@@ -656,8 +656,10 @@ namespace Gek
                     renderer->renderUI(drawData);
                 };
 
-                auto &style = ImGui::GetStyle();
                 ImGui::ResetStyle(ImGuiStyle_OSX);
+
+                auto &style = ImGui::GetStyle();
+                style.WindowRounding = 2.0f;
             }
 
             ~Renderer(void)
@@ -1052,6 +1054,7 @@ namespace Gek
             }
 
             // Plugin::Core Slots
+            std::string screenOutput;
             void onUpdate(float frameTime)
             {
                 assert(videoDevice);
@@ -1343,7 +1346,16 @@ namespace Gek
                         videoContext->vertexPipeline()->clearConstantBufferList(2, 0);
                         videoContext->pixelPipeline()->clearConstantBufferList(2, 0);
                         videoContext->computePipeline()->clearConstantBufferList(2, 0);
-                        renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(finalOutput), currentCamera.cameraTarget);
+
+                        if (currentCamera.cameraTarget)
+                        {
+                            auto finalHandle = resources->getResourceHandle(finalOutput);
+                            renderOverlay(videoDevice->getDefaultContext(), finalHandle, currentCamera.cameraTarget);
+                        }
+                        else
+                        {
+                            screenOutput = finalOutput;
+                        }
                     }
                 };
 
@@ -1355,8 +1367,16 @@ namespace Gek
                 uint32_t height = backBuffer->getDescription().height;
                 imGuiIo.DisplaySize = ImVec2(float(width), float(height));
 
+                auto screenHandle = resources->getResourceHandle(screenOutput);
+                auto screenBuffer = resources->getResource(screenHandle);
+                bool editorActive = core->getOption("editor", "active").convert(false);
+                if (!editorActive)
+                {
+                    renderOverlay(videoDevice->getDefaultContext(), screenHandle, ResourceHandle());
+                }
+
                 ImGui::NewFrame();
-                onShowUserInterface.emit(ImGui::GetCurrentContext());
+                onShowUserInterface.emit(ImGui::GetCurrentContext(), screenHandle, screenBuffer);
                 ImGui::Render();
 
                 videoDevice->present(false);
