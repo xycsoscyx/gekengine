@@ -10,13 +10,7 @@ namespace Gek
         , public Plugin::ComponentMixin<Components::Transform, Edit::Component>
     {
     private:
-        ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
-        bool useSnap = true;
-        Math::Float3 snapPosition = Math::Float3(1.0f / 12.0f);
-        float snapRotation = 10.0f;
-        float snapScale = (1.0f / 10.0f);
         bool showEuler = true;
-        bool showRadians = false;
 
     public:
         Transform(Context *context, Plugin::Population *population)
@@ -40,99 +34,67 @@ namespace Gek
 		}
 
         // Edit::Component
-        bool onUserInterface(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
+        bool onUserInterface(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             bool changed = false;
             ImGui::SetCurrentContext(guiContext);
 
             auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
 
-            ImGui::InputFloat3("Position", transformComponent.position.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-
-            ImGui::Text("Rotation: ");
-            ImGui::SameLine();
-            ImGui::Checkbox("Euler", &showEuler);
-            if (showEuler)
+            editorElement("Position", [&](void) -> bool
             {
-                ImGui::SameLine();
-                if (ImGui::RadioButton("Degrees", !showRadians))
-                {
-                    showRadians = false;
-                }
+                return ImGui::InputFloat3("##position", transformComponent.position.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            });
 
-                ImGui::SameLine();
-                if (ImGui::RadioButton("Radians", showRadians))
+            editorElement("Rotation", [&](void) -> bool
+            {
+                bool changed = false;
+                if (showEuler)
                 {
-                    showRadians = true;
-                }
-
-                auto euler(transformComponent.rotation.getEuler());
-                if (!showRadians)
-                {
+                    auto euler(transformComponent.rotation.getEuler());
                     euler.x = Math::RadiansToDegrees(euler.x);
                     euler.y = Math::RadiansToDegrees(euler.y);
                     euler.z = Math::RadiansToDegrees(euler.z);
-                }
-
-                if (ImGui::InputFloat3("##RotationEuler", euler.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank))
-                {
-                    if (!showRadians)
+                    if (changed = ImGui::InputFloat3("##rotationEuler", euler.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank))
                     {
                         euler.x = Math::DegreesToRadians(euler.x);
                         euler.y = Math::DegreesToRadians(euler.y);
                         euler.z = Math::DegreesToRadians(euler.z);
+                        transformComponent.rotation = Math::Quaternion::FromEuler(euler);
                     }
-
-                    transformComponent.rotation = Math::Quaternion::FromEuler(euler);
                 }
-            }
-            else
-            {
-                ImGui::InputFloat4("##RotationQuaternion", transformComponent.rotation.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-            }
+                else
+                {
+                    changed = ImGui::InputFloat4("##rotationQuaternion", transformComponent.rotation.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                }
 
-            ImGui::Separator();
-            ImGui::Text("Gizmo Affects:");            
-            if (ImGui::RadioButton("Translation", currentGizmoOperation == ImGuizmo::TRANSLATE))
-            {
-                currentGizmoOperation = ImGuizmo::TRANSLATE;
-            }
+                return changed;
+            });
 
-            if (ImGui::RadioButton("Rotation", currentGizmoOperation == ImGuizmo::ROTATE))
+            ImGui::Indent();
+            ImGui::Text("As ");
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Euler", showEuler))
             {
-                currentGizmoOperation = ImGuizmo::ROTATE;
+                showEuler = true;
             }
 
-            ImGui::InputFloat3("Scale", transformComponent.scale.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-
-            ImGui::Separator();
-            ImGui::Checkbox("Enable Snap", &useSnap);
-
-            float *snap = nullptr;
-            switch (currentGizmoOperation)
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Quaternion", !showEuler))
             {
-            case ImGuizmo::TRANSLATE:
-                ImGui::InputFloat3("Units", snapPosition.data, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-                snap = snapPosition.data;
-                break;
+                showEuler = false;
+            }
 
-            case ImGuizmo::ROTATE:
-                ImGui::InputFloat("Degrees", &snapRotation, 10.0f, 90.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-                snap = &snapRotation;
-                break;
+            ImGui::Unindent();
 
-            case ImGuizmo::SCALE:
-                ImGui::InputFloat("Size", &snapScale, (1.0f / 10.0f), 1.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-                snap = &snapScale;
-                break;
-            };
+            editorElement("Scale", [&](void) -> bool
+            {
+                return ImGui::InputFloat3("##scale", transformComponent.scale.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            });
 
-            auto matrix(transformComponent.getMatrix());
-
-            ImGuizmo::BeginFrame();
-            ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, ImGuizmo::WORLD, matrix.data, nullptr, snap);
             ImGui::SetCurrentContext(nullptr);
 
+            auto matrix(transformComponent.getMatrix());
             auto rotation(matrix.getRotation());
             auto position(matrix.translation.xyz);
             if (position != transformComponent.position || rotation != transformComponent.rotation)

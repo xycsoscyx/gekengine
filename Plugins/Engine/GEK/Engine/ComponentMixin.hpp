@@ -76,6 +76,17 @@ namespace Gek
             {
                 load(static_cast<COMPONENT * const>(component), componentData);
             }
+
+            bool editorElement(char const *text, std::function<bool(void)> &&element)
+            {
+                ImGui::AlignFirstTextHeightToWidgets();
+                ImGui::Text(text);
+                ImGui::SameLine();
+                ImGui::PushItemWidth(-1.0f);
+                bool changed = element();
+                ImGui::PopItemWidth();
+                return changed;
+            }
         };
 
         template <class CLASS, typename... REQUIRED>

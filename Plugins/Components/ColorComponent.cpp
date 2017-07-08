@@ -28,20 +28,15 @@ namespace Gek
         }
 
         // Edit::Component
-        bool onUserInterface(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
+        bool onUserInterface(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             bool changed = false;
             ImGui::SetCurrentContext(guiContext);
-            ImGui::PushItemWidth(-1.0f);
 
             auto &colorComponent = *dynamic_cast<Components::Color *>(data);
 
-            ImGui::AlignFirstTextHeightToWidgets();
-            ImGui::Text("Color");
-            ImGui::SameLine();
-            changed |= ImGui::ColorCombo("##color", (ImVec4 *)&colorComponent.value, true, ImGui::GetWindowContentRegionWidth());
+            changed |= ImGui::ColorCombo("##color", (ImVec4 *)&colorComponent.value, true, ImGui::GetWindowContentRegionWidth() - ImGui::GetStyle().IndentSpacing * 2.0f);
 
-            ImGui::PopItemWidth();
             ImGui::SetCurrentContext(nullptr);
             return changed;
         }

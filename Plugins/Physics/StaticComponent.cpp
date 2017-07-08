@@ -31,12 +31,18 @@ namespace Gek
             }
 
             // Edit::Component
-            bool onUserInterface(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
+            bool onUserInterface(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
             {
+                bool changed = false;
                 ImGui::SetCurrentContext(guiContext);
+
                 auto &staticComponent = *dynamic_cast<Components::Static *>(data);
-                bool changed =
-                    UI::InputString("Group", staticComponent.group, ImGuiInputTextFlags_EnterReturnsTrue);
+
+                changed |= editorElement("Group", [&](void) -> bool
+                {
+                    return UI::InputString("##group", staticComponent.group, ImGuiInputTextFlags_EnterReturnsTrue);
+                });
+
                 ImGui::SetCurrentContext(nullptr);
                 return changed;
             }

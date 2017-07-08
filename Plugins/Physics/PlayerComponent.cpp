@@ -43,15 +43,33 @@ namespace Gek
             }
 
             // Edit::Component
-            bool onUserInterface(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
+            bool onUserInterface(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
             {
+                bool changed = false;
                 ImGui::SetCurrentContext(guiContext);
+
                 auto &playerComponent = *dynamic_cast<Components::Player *>(data);
-                bool changed =
-                    ImGui::InputFloat("Height", &playerComponent.height, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank) |
-                    ImGui::InputFloat("Outer Radius", &playerComponent.outerRadius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank) |
-                    ImGui::InputFloat("Inner Radius", &playerComponent.innerRadius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank) |
-                    ImGui::InputFloat("Stair Step", &playerComponent.stairStep, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+
+                changed |= editorElement("Height", [&](void) -> bool
+                {
+                    return ImGui::InputFloat("##height", &playerComponent.height, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                });
+
+                changed |= editorElement("Outer Radius", [&](void) -> bool
+                {
+                    return ImGui::InputFloat("##outerRadius", &playerComponent.outerRadius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                });
+
+                changed |= editorElement("Inner Radius", [&](void) -> bool
+                {
+                    return ImGui::InputFloat("##innerRadius", &playerComponent.innerRadius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                });
+
+                changed |= editorElement("Stair Step", [&](void) -> bool
+                {
+                    return ImGui::InputFloat("##stairStep", &playerComponent.stairStep, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                });
+
                 ImGui::SetCurrentContext(nullptr);
                 return changed;
             }

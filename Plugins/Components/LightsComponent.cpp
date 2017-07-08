@@ -32,29 +32,27 @@ namespace Gek
         }
 
         // Edit::Component
-        bool onUserInterface(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
+        bool onUserInterface(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
-            ImGui::SetCurrentContext(guiContext);
-            auto &lightComponent = *dynamic_cast<Components::PointLight *>(data);
             bool changed = false;
+            ImGui::SetCurrentContext(guiContext);
 
-            ImGui::PushItemWidth(-1.0f);
-            ImGui::AlignFirstTextHeightToWidgets();
-            ImGui::Text("Range");
-            ImGui::SameLine();
-            changed |= ImGui::InputFloat("##range", &lightComponent.range, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            auto &lightComponent = *dynamic_cast<Components::PointLight *>(data);
 
-            ImGui::PushItemWidth(-1.0f);
-            ImGui::AlignFirstTextHeightToWidgets();
-            ImGui::Text("Radius");
-            ImGui::SameLine();
-            changed |= ImGui::InputFloat("##radius", &lightComponent.radius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-
-            ImGui::PushItemWidth(-1.0f);
-            ImGui::AlignFirstTextHeightToWidgets();
-            ImGui::Text("Intensity");
-            ImGui::SameLine();
-            changed |= ImGui::InputFloat("##intensity", &lightComponent.intensity, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            changed |= editorElement("Range", [&](void) -> bool
+            {
+                return ImGui::InputFloat("##range", &lightComponent.range, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            });
+            
+            changed |= editorElement("Radius", [&](void) -> bool
+            {
+                return ImGui::InputFloat("##radius", &lightComponent.radius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            });
+            
+            changed |= editorElement("Intensity", [&](void) -> bool
+            {
+                return ImGui::InputFloat("##intensity", &lightComponent.intensity, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            });
 
             ImGui::SetCurrentContext(nullptr);
             return changed;
@@ -93,45 +91,43 @@ namespace Gek
         }
 
         // Edit::Component
-        bool onUserInterface(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
+        bool onUserInterface(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             bool changed = false;
             ImGui::SetCurrentContext(guiContext);
-            ImGui::PushItemWidth(-1.0f);
 
             auto &lightComponent = *dynamic_cast<Components::SpotLight *>(data);
 
-            ImGui::AlignFirstTextHeightToWidgets();
-            ImGui::Text("Range");
-            ImGui::SameLine();
-            changed |= ImGui::InputFloat("##range", &lightComponent.range, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            changed |= editorElement("Range", [&](void) -> bool
+            {
+                return ImGui::InputFloat("##range", &lightComponent.range, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            });
 
-            ImGui::AlignFirstTextHeightToWidgets();
-            ImGui::Text("Radius");
-            ImGui::SameLine();
-            changed |= ImGui::InputFloat("##radius", &lightComponent.radius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            changed |= editorElement("Radius", [&](void) -> bool
+            {
+                return ImGui::InputFloat("##radius", &lightComponent.radius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            });
 
-            ImGui::AlignFirstTextHeightToWidgets();
-            ImGui::Text("Intensity");
-            ImGui::SameLine();
-            changed |= ImGui::InputFloat("##intensity", &lightComponent.intensity, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            changed |= editorElement("Intensity", [&](void) -> bool
+            {
+                return ImGui::InputFloat("##intensity", &lightComponent.intensity, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            });
 
-            ImGui::AlignFirstTextHeightToWidgets();
-            ImGui::Text("Inner Angle");
-            ImGui::SameLine();
-            changed |= ImGui::InputFloat("##innerAngle", &lightComponent.innerAngle, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            changed |= editorElement("Inner Angle", [&](void) -> bool
+            {
+                return ImGui::SliderAngle("##innerAngle", &lightComponent.innerAngle);
+            });
 
-            ImGui::AlignFirstTextHeightToWidgets();
-            ImGui::Text("Outer Angle");
-            ImGui::SameLine();
-            changed |= ImGui::InputFloat("##outerAngle", &lightComponent.outerAngle, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            changed |= editorElement("Outer Angle", [&](void) -> bool
+            {
+                return ImGui::SliderAngle("##outerAngle", &lightComponent.outerAngle);
+            });
 
-            ImGui::AlignFirstTextHeightToWidgets();
-            ImGui::Text("Cone Falloff");
-            ImGui::SameLine();
-            changed |= ImGui::InputFloat("##coneFalloff", &lightComponent.coneFalloff, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            changed |= editorElement("Cone Falloff", [&](void) -> bool
+            {
+                return ImGui::InputFloat("##coneFalloff", &lightComponent.coneFalloff, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            });
 
-            ImGui::PopItemWidth();
             ImGui::SetCurrentContext(nullptr);
             return changed;
         }
@@ -159,20 +155,18 @@ namespace Gek
         }
 
         // Edit::Component
-        bool onUserInterface(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
+        bool onUserInterface(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             bool changed = false;
             ImGui::SetCurrentContext(guiContext);
-            ImGui::PushItemWidth(-1.0f);
 
             auto &lightComponent = *dynamic_cast<Components::DirectionalLight *>(data);
 
-            ImGui::AlignFirstTextHeightToWidgets();
-            ImGui::Text("Intensity");
-            ImGui::SameLine();
-            changed |= ImGui::InputFloat("##intensity", &lightComponent.intensity, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            changed |= editorElement("Intensity", [&](void) -> bool
+            {
+                return ImGui::InputFloat("##intensity", &lightComponent.intensity, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            });
 
-            ImGui::PopItemWidth();
             ImGui::SetCurrentContext(nullptr);
             return false;
         }
