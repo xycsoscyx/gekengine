@@ -71,6 +71,14 @@
         "finalBuffer": {
             "format": "R11G11B10_FLOAT",
             "flags": "target"
+        },
+        "ambientBuffer": {
+            "format": "R8_UNORM",
+            "flags": "target"
+        },
+        "gaussianBuffer": {
+            "format": "R8_UNORM",
+            "flags": "target"
         }
     },
     "output": "finalBuffer",
@@ -92,6 +100,58 @@
                 "finalBuffer",
                 "albedoBuffer",
                 "normalBuffer"
+            ]
+        },
+        {
+            "program": "AmbientCalculation",
+            "entry": "mainPixelProgram",
+            "resources": [
+                "normalBuffer",
+                "depthBuffer"
+            ],
+            "targets": [
+                "ambientBuffer"
+            ]
+        },
+        {
+            "program": "AmbientBlur",
+            "entry": "mainPixelProgram",
+            "engineData": "namespace Defines { static const float2 BlurAxis = float2(1,0); };",
+            "resources": [
+                "depthBuffer",
+                { "ambientBuffer": "inputBuffer" }
+            ],
+            "targets": [
+                "gaussianBuffer"
+            ]
+        },
+        {
+            "program": "AmbientBlur",
+            "entry": "mainPixelProgram",
+            "engineData": "namespace Defines { static const float2 BlurAxis = float2(0,1); };",
+            "resources": [
+                "depthBuffer",
+                { "gaussianBuffer": "inputBuffer" }
+            ],
+            "targets": [
+                "ambientBuffer"
+            ]
+        },
+        {
+            "program": "AmbientLighting",
+            "entry": "mainPixelProgram",
+            "resources": [
+                "ambientBuffer",
+                "albedoBuffer"
+            ],
+            "blendState": {
+                "enable": true,
+                "colorSource": "One",
+                "colorDestination": "One",
+                "colorOperation": "Add"
+            },
+            "targets": [
+                "finalBuffer"
             ]
         }
     ]

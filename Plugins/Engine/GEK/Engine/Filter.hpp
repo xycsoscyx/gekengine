@@ -48,8 +48,6 @@ namespace Gek
 
             virtual void reload(void) = 0;
 
-            virtual std::string const &getOutput(void) const = 0;
-
             virtual Pass::Iterator begin(Video::Device::Context *videoContext) = 0;
         };
     }; // namespace Engine

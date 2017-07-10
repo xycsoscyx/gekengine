@@ -60,7 +60,6 @@ class Float16Compressor
     static int32_t const minD = minC - subC - 1;
 
 public:
-
     static uint16_t compress(float value)
     {
         Bits v, s;
@@ -253,6 +252,13 @@ namespace Gek
                 ResourceCache::clear();
             }
 
+            void setHandle(std::size_t hash, HANDLE handle, TypePtr data)
+            {
+                requestedLoadSet.insert(hash);
+                resourceHandleMap[hash] = handle;
+                setResource(handle, data);
+            }
+
             std::pair<bool, HANDLE> getHandle(std::size_t hash, std::size_t parameters, std::function<TypePtr(HANDLE)> &&load, uint32_t flags)
             {
                 HANDLE handle;
@@ -434,7 +440,7 @@ namespace Gek
             std::vector<TYPE *> objectList;
 
             template <typename INPUT, typename HANDLE, typename SOURCE>
-            bool set(const std::vector<INPUT> &inputList, ResourceCache<HANDLE, SOURCE> &cache)
+            bool set(const std::vector<INPUT> &inputList, ResourceCache<HANDLE, SOURCE> &cache, TYPE *defaultObject = nullptr)
             {
                 const auto listCount = inputList.size();
                 objectList.reserve(std::max(listCount, objectList.size()));
@@ -442,16 +448,24 @@ namespace Gek
 
                 for (uint32_t object = 0; object < listCount; ++object)
                 {
-                    auto resource = cache.getResource(inputList[object]);
-                    if (!resource)
+                    auto &input = inputList[object];
+                    if (input)
                     {
-                        return false;
-                    }
+                        auto resource = cache.getResource(inputList[object]);
+                        if (!resource)
+                        {
+                            return false;
+                        }
 
-                    objectList[object] = dynamic_cast<TYPE *>(resource);
-                    if (!objectList[object])
+                        objectList[object] = dynamic_cast<TYPE *>(resource);
+                        if (!objectList[object])
+                        {
+                            return false;
+                        }
+                    }
+                    else
                     {
-                        return false;
+                        objectList[object] = defaultObject;
                     }
                 }
 
@@ -936,7 +950,7 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    auto resource = dynamicCache.getResource(resourceHandle);
+                    auto resource = getResource(resourceHandle);
                     if (drawPrimitiveValid = (resource != nullptr))
                     {
                         videoContext->setIndexBuffer(dynamic_cast<Video::Buffer *>(resource), offset);
@@ -973,7 +987,7 @@ namespace Gek
                 assert(videoPipeline);
 
                 auto &valid = getValid(videoPipeline);
-                if (valid && (valid = resourceCache.set(resourceHandleList, dynamicCache)))
+                if (valid && (valid = resourceCache.set(resourceHandleList, dynamicCache, videoDevice->getBackBuffer())))
                 {
                     videoPipeline->setResourceList(resourceCache.get(), firstStage);
                 }
@@ -1144,6 +1158,11 @@ namespace Gek
 
             Video::Texture::Description const * const getTextureDescription(ResourceHandle resourceHandle) const
             {
+                if (!resourceHandle)
+                {
+                    return &videoDevice->getBackBuffer()->getDescription();
+                }
+
                 auto descriptionSearch = textureDescriptionMap.find(resourceHandle);
                 if (descriptionSearch != std::end(textureDescriptionMap))
                 {
@@ -1170,6 +1189,11 @@ namespace Gek
 
             Video::Object * const getResource(ResourceHandle resourceHandle) const
             {
+                if (!resourceHandle)
+                {
+                    return videoDevice->getBackBuffer();
+                }
+
                 return dynamicCache.getResource(resourceHandle);
             }
 
@@ -1271,7 +1295,7 @@ namespace Gek
             {
                 assert(videoContext);
 
-                auto resource = dynamicCache.getResource(resourceHandle);
+                auto resource = getResource(resourceHandle);
                 if (resource)
                 {
                     videoContext->generateMipMaps(dynamic_cast<Video::Texture *>(resource));
@@ -1280,8 +1304,8 @@ namespace Gek
 
             void resolveSamples(Video::Device::Context *videoContext, ResourceHandle destinationHandle, ResourceHandle sourceHandle)
             {
-                auto source = dynamicCache.getResource(sourceHandle);
-                auto destination = dynamicCache.getResource(destinationHandle);
+                auto source = getResource(sourceHandle);
+                auto destination = getResource(destinationHandle);
                 if (source && destination)
                 {
                     videoContext->resolveSamples(dynamic_cast<Video::Texture *>(destination), dynamic_cast<Video::Texture *>(source));
@@ -1290,8 +1314,8 @@ namespace Gek
 
             void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle)
             {
-                auto source = dynamicCache.getResource(sourceHandle);
-                auto destination = dynamicCache.getResource(destinationHandle);
+                auto source = getResource(sourceHandle);
+                auto destination = getResource(destinationHandle);
                 if (source && destination)
                 {
                     videoDevice->copyResource(destination, source);
@@ -1302,7 +1326,7 @@ namespace Gek
             {
                 assert(videoContext);
 
-                auto resource = dynamicCache.getResource(resourceHandle);
+                auto resource = getResource(resourceHandle);
                 if (resource)
                 {
                     videoContext->clearUnorderedAccess(resource, value);
@@ -1313,7 +1337,7 @@ namespace Gek
             {
                 assert(videoContext);
 
-                auto resource = dynamicCache.getResource(resourceHandle);
+                auto resource = getResource(resourceHandle);
                 if (resource)
                 {
                     videoContext->clearUnorderedAccess(resource, value);
@@ -1324,7 +1348,7 @@ namespace Gek
             {
                 assert(videoContext);
 
-                auto resource = dynamicCache.getResource(resourceHandle);
+                auto resource = getResource(resourceHandle);
                 if (resource)
                 {
                     videoContext->clearRenderTarget(dynamic_cast<Video::Target *>(resource), color);
@@ -1335,7 +1359,7 @@ namespace Gek
             {
                 assert(videoContext);
 
-                auto depthBuffer = dynamicCache.getResource(depthBufferHandle);
+                auto depthBuffer = getResource(depthBufferHandle);
                 if (depthBuffer)
                 {
                     videoContext->clearDepthStencilTarget(depthBuffer, flags, clearDepth, clearStencil);
@@ -1439,7 +1463,7 @@ namespace Gek
             {
                 assert(videoContext);
 
-                if (drawPrimitiveValid && (drawPrimitiveValid = renderTargetCache.set(renderTargetHandleList, dynamicCache)))
+                if (drawPrimitiveValid && (drawPrimitiveValid = renderTargetCache.set(renderTargetHandleList, dynamicCache, videoDevice->getBackBuffer())))
                 {
                     auto &renderTargetList = renderTargetCache.get();
                     const uint32_t renderTargetCount = renderTargetList.size();
@@ -1449,23 +1473,9 @@ namespace Gek
                         viewPortCache[renderTarget] = renderTargetList[renderTarget]->getViewPort();
                     }
 
-                    videoContext->setRenderTargetList(renderTargetList, (depthBuffer ? dynamicCache.getResource(*depthBuffer) : nullptr));
+                    videoContext->setRenderTargetList(renderTargetList, (depthBuffer ? getResource(*depthBuffer) : nullptr));
                     videoContext->setViewportList(viewPortCache);
                 }
-            }
-
-            void setBackBuffer(Video::Device::Context *videoContext, ResourceHandle *depthBuffer)
-            {
-                assert(videoContext);
-                
-                auto &renderTargetList = renderTargetCache.get();
-                renderTargetList.resize(1);
-                renderTargetList[0] = videoDevice->getBackBuffer();
-                videoContext->setRenderTargetList(renderTargetList, (depthBuffer ? dynamicCache.getResource(*depthBuffer) : nullptr));
-
-                viewPortCache.resize(1);
-                viewPortCache[0] = renderTargetList[0]->getViewPort();
-                videoContext->setViewportList(viewPortCache);
             }
 
             void clearRenderTargetList(Video::Device::Context *videoContext, int32_t count, bool depthBuffer)

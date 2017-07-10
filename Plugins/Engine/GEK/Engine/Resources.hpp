@@ -22,6 +22,10 @@ namespace Gek
 
         GEK_INTERFACE(Resources)
         {
+            GEK_ADD_EXCEPTION(InvalidParameter);
+            GEK_ADD_EXCEPTION(InvalidIncludeType);
+            GEK_ADD_EXCEPTION(InvalidIncludeName);
+
             struct Flags
             {
                 enum
@@ -30,10 +34,6 @@ namespace Gek
                     ForceLoad = 1 << 1,
                 };
             }; // namespace Flags
-
-            GEK_ADD_EXCEPTION(InvalidParameter);
-            GEK_ADD_EXCEPTION(InvalidIncludeType);
-            GEK_ADD_EXCEPTION(InvalidIncludeName);
 
             virtual ~Resources(void) = default;
 
@@ -124,7 +124,6 @@ namespace Gek
             virtual void setProgram(Video::Device::Context::Pipeline *videoPipeline, ProgramHandle programHandle) = 0;
 
             virtual void setRenderTargetList(Video::Device::Context *videoContext, const std::vector<ResourceHandle> &renderTargetHandleList, ResourceHandle const *depthBuffer) = 0;
-            virtual void setBackBuffer(Video::Device::Context *videoContext, ResourceHandle *depthBuffer) = 0;
 
             virtual void clearRenderTargetList(Video::Device::Context *videoContext, int32_t count, bool depthBuffer) = 0;
 

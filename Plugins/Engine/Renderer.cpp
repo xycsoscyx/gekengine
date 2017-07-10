@@ -763,7 +763,8 @@ namespace Gek
                     videoDevice->updateResource(gui.constantBuffer.get(), &orthographic);
 
                     auto videoContext = videoDevice->getDefaultContext();
-                    resources->setBackBuffer(videoContext, nullptr);
+                    videoContext->setRenderTargetList({ videoDevice->getBackBuffer() }, nullptr);
+                    videoContext->setViewportList({ Video::ViewPort(Math::Float2::Zero, Math::Float2(width, height), 0.0f, 1.0f) });
 
                     videoContext->setInputLayout(gui.inputLayout.get());
                     videoContext->setVertexBufferList({ gui.vertexBuffer.get() }, 0);
@@ -1052,14 +1053,12 @@ namespace Gek
             }
 
             // Plugin::Core Slots
-            std::string screenOutput;
             void onUpdate(float frameTime)
             {
                 assert(videoDevice);
                 assert(population);
 
-                videoDevice->getDefaultContext()->clearRenderTarget(videoDevice->getBackBuffer(), Math::Float4::Zero);
-
+                bool hasScreenImage = false;
                 while (cameraQueue.try_pop(currentCamera))
                 {
                     drawCallList.clear();
@@ -1321,22 +1320,47 @@ namespace Gek
                         videoContext->pixelPipeline()->clearConstantBufferList(2, 0);
                         videoContext->computePipeline()->clearConstantBufferList(2, 0);
 
-                        if (currentCamera.cameraTarget)
+                        auto finalHandle = resources->getResourceHandle(finalOutput);
+                        renderOverlay(videoDevice->getDefaultContext(), finalHandle, currentCamera.cameraTarget);
+                        if (!currentCamera.cameraTarget)
                         {
-                            auto finalHandle = resources->getResourceHandle(finalOutput);
-                            renderOverlay(videoDevice->getDefaultContext(), finalHandle, currentCamera.cameraTarget);
-                        }
-                        else
-                        {
-                            screenOutput = finalOutput;
+                            hasScreenImage = true;
                         }
                     }
                 };
 
-                auto screenHandle = resources->getResourceHandle(screenOutput);
-                if (screenHandle)
+                if (hasScreenImage)
                 {
-                    renderOverlay(videoDevice->getDefaultContext(), screenHandle, ResourceHandle());
+                    Video::Device::Context *videoContext = videoDevice->getDefaultContext();
+                    videoContext->clearState();
+
+                    std::vector<Video::Object *> samplerList = { textureSamplerState.get(), mipMapSamplerState.get(), };
+                    videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
+
+                    videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+
+                    videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
+                    for (const auto &filterName : { "tonemap", "antialias" })
+                    {
+                        Engine::Filter * const filter = resources->getFilter(filterName);
+                        if (filter)
+                        {
+                            for (auto pass = filter->begin(videoContext); pass; pass = pass->next())
+                            {
+                                switch (pass->prepare())
+                                {
+                                case Engine::Filter::Pass::Mode::Deferred:
+                                    resources->drawPrimitive(videoContext, 3, 0);
+                                    break;
+
+                                case Engine::Filter::Pass::Mode::Compute:
+                                    break;
+                                };
+
+                                pass->clear();
+                            }
+                        }
+                    }
                 }
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
@@ -1367,14 +1391,7 @@ namespace Gek
 
                 videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
                 videoContext->pixelPipeline()->setProgram(deferredPixelProgram.get());
-                if (target)
-                {
-                    resources->setRenderTargetList(videoContext, { target }, nullptr);
-                }
-                else
-                {
-                    resources->setBackBuffer(videoContext, nullptr);
-                }
+                resources->setRenderTargetList(videoContext, { target }, nullptr);
 
                 resources->drawPrimitive(videoContext, 3, 0);
             }

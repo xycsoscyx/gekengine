@@ -881,10 +881,34 @@ namespace Gek
         class TargetViewTexture
             : virtual public TargetTexture
             , public ShaderResourceView
-            , public UnorderedAccessView
         {
         public:
             TargetViewTexture(CComPtr<ID3D11Resource> &d3dResource,
+                CComPtr<ID3D11RenderTargetView> &d3dRenderTargetView,
+                CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
+                const Video::Texture::Description &description)
+                : TargetTexture(d3dResource, d3dRenderTargetView, description)
+                , ShaderResourceView(d3dShaderResourceView)
+            {
+            }
+
+            virtual ~TargetViewTexture(void) = default;
+
+            void setName(std::string const &name)
+            {
+                setDebugName(Resource::d3dObject, name);
+                setDebugName(RenderTargetView::d3dObject, name);
+                setDebugName(ShaderResourceView::d3dObject, name);
+            }
+        };
+
+        class UnorderedTargetViewTexture
+            : virtual public TargetTexture
+            , public ShaderResourceView
+            , public UnorderedAccessView
+        {
+        public:
+            UnorderedTargetViewTexture(CComPtr<ID3D11Resource> &d3dResource,
                 CComPtr<ID3D11RenderTargetView> &d3dRenderTargetView,
                 CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
                 CComPtr<ID3D11UnorderedAccessView> &d3dUnorderedAccessView,
@@ -895,7 +919,7 @@ namespace Gek
             {
             }
 
-            virtual ~TargetViewTexture(void) = default;
+            virtual ~UnorderedTargetViewTexture(void) = default;
 
             void setName(std::string const &name)
             {
@@ -1688,7 +1712,7 @@ namespace Gek
                 swapChainDescription.Stereo = false;
                 swapChainDescription.SampleDesc.Count = deviceDescription.sampleCount;
                 swapChainDescription.SampleDesc.Quality = deviceDescription.sampleQuality;
-                swapChainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+                swapChainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
                 swapChainDescription.BufferCount = 2;
                 swapChainDescription.Scaling = DXGI_SCALING_STRETCH;
                 swapChainDescription.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
@@ -1746,44 +1770,40 @@ namespace Gek
 
                     std::vector<DXGI_MODE_DESC> dxgiDisplayModeList(modeCount);
                     dxgiOutput->GetDisplayModeList(DirectX::TextureFormatList[static_cast<uint8_t>(format)], 0, &modeCount, dxgiDisplayModeList.data());
-
                     for (const auto &dxgiDisplayMode : dxgiDisplayModeList)
                     {
-                        if (dxgiDisplayMode.ScanlineOrdering == DXGI_MODE_SCANLINE_ORDER_PROGRESSIVE && dxgiDisplayMode.Scaling == DXGI_MODE_SCALING_CENTERED)
+                        auto getAspectRatio = [](uint32_t width, uint32_t height) -> Video::DisplayMode::AspectRatio
                         {
-                            auto getAspectRatio = [](uint32_t width, uint32_t height) -> Video::DisplayMode::AspectRatio
+                            const float AspectRatio4x3 = (4.0f / 3.0f);
+                            const float AspectRatio16x9 = (16.0f / 9.0f);
+                            const float AspectRatio16x10 = (16.0f / 10.0f);
+                            float aspectRatio = (float(width) / float(height));
+                            if (std::abs(aspectRatio - AspectRatio4x3) < Math::Epsilon)
                             {
-                                const float AspectRatio4x3 = (4.0f / 3.0f);
-                                const float AspectRatio16x9 = (16.0f / 9.0f);
-                                const float AspectRatio16x10 = (16.0f / 10.0f);
-                                float aspectRatio = (float(width) / float(height));
-                                if (std::abs(aspectRatio - AspectRatio4x3) < Math::Epsilon)
-                                {
-                                    return Video::DisplayMode::AspectRatio::_4x3;
-                                }
-                                else if (std::abs(aspectRatio - AspectRatio16x9) < Math::Epsilon)
-                                {
-                                    return Video::DisplayMode::AspectRatio::_16x9;
-                                }
-                                else if (std::abs(aspectRatio - AspectRatio16x10) < Math::Epsilon)
-                                {
-                                    return Video::DisplayMode::AspectRatio::_16x10;
-                                }
-                                else
-                                {
-                                    return Video::DisplayMode::AspectRatio::Unknown;
-                                }
-                            };
+                                return Video::DisplayMode::AspectRatio::_4x3;
+                            }
+                            else if (std::abs(aspectRatio - AspectRatio16x9) < Math::Epsilon)
+                            {
+                                return Video::DisplayMode::AspectRatio::_16x9;
+                            }
+                            else if (std::abs(aspectRatio - AspectRatio16x10) < Math::Epsilon)
+                            {
+                                return Video::DisplayMode::AspectRatio::_16x10;
+                            }
+                            else
+                            {
+                                return Video::DisplayMode::AspectRatio::Unknown;
+                            }
+                        };
 
-                            Video::DisplayMode displayMode;
-                            displayMode.width = dxgiDisplayMode.Width;
-                            displayMode.height = dxgiDisplayMode.Height;
-                            displayMode.format = DirectX::getFormat(dxgiDisplayMode.Format);
-                            displayMode.aspectRatio = getAspectRatio(displayMode.width, displayMode.height);
-                            displayMode.refreshRate.numerator = dxgiDisplayMode.RefreshRate.Numerator;
-                            displayMode.refreshRate.denominator = dxgiDisplayMode.RefreshRate.Denominator;
-                            displayModeList.push_back(displayMode);
-                        }
+                        Video::DisplayMode displayMode;
+                        displayMode.width = dxgiDisplayMode.Width;
+                        displayMode.height = dxgiDisplayMode.Height;
+                        displayMode.format = DirectX::getFormat(dxgiDisplayMode.Format);
+                        displayMode.aspectRatio = getAspectRatio(displayMode.width, displayMode.height);
+                        displayMode.refreshRate.numerator = dxgiDisplayMode.RefreshRate.Numerator;
+                        displayMode.refreshRate.denominator = dxgiDisplayMode.RefreshRate.Denominator;
+                        displayModeList.push_back(displayMode);
                     }
 
                     concurrency::parallel_sort(std::begin(displayModeList), std::end(displayModeList), [](const Video::DisplayMode &left, const Video::DisplayMode &right) -> bool
@@ -1896,6 +1916,13 @@ namespace Gek
                         throw Video::OperationFailed("Unable to create render target view for back buffer");
                     }
 
+                    CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
+                    resultValue = d3dDevice->CreateShaderResourceView(d3dRenderTarget, nullptr, &d3dShaderResourceView);
+                    if (FAILED(resultValue) || !d3dShaderResourceView)
+                    {
+                        throw Video::OperationFailed("Unable to create shader resource view for back buffer");
+                    }
+
                     D3D11_TEXTURE2D_DESC textureDescription;
                     d3dRenderTarget->GetDesc(&textureDescription);
 
@@ -1903,7 +1930,7 @@ namespace Gek
                     description.width = textureDescription.Width;
                     description.height = textureDescription.Height;
                     description.format = DirectX::getFormat(textureDescription.Format);
-                    backBuffer = std::make_unique<TargetTexture>(CComQIPtr<ID3D11Resource>(d3dRenderTarget), d3dRenderTargetView, description);
+                    backBuffer = std::make_unique<TargetViewTexture>(CComQIPtr<ID3D11Resource>(d3dRenderTarget), d3dRenderTargetView, d3dShaderResourceView, description);
                 }
 
                 return backBuffer.get();
@@ -2653,7 +2680,7 @@ namespace Gek
                         throw Video::CreateObjectFailed("Unable to create render target view");
                     }
 
-                    return std::make_unique<TargetViewTexture>(d3dResource, d3dRenderTargetView, d3dShaderResourceView, d3dUnorderedAccessView, description);
+                    return std::make_unique<UnorderedTargetViewTexture>(d3dResource, d3dRenderTargetView, d3dShaderResourceView, d3dUnorderedAccessView, description);
                 }
                 else if (description.flags & Video::Texture::Description::Flags::DepthTarget)
                 {
