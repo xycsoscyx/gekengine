@@ -552,7 +552,7 @@ namespace Gek
     namespace Direct3D11
     {
         template <typename CLASS>
-        void setDebugName(CComPtr<CLASS> &object, std::string const &name)
+        void setDebugName(CLASS *object, std::string const &name)
         {
             if (object)
             {
@@ -563,7 +563,7 @@ namespace Gek
         template <typename CONVERT, typename SOURCE>
         auto getObject(SOURCE *source)
         {
-            return (source ? dynamic_cast<CONVERT *>(source)->CONVERT::d3dObject.p : nullptr);
+            return (source ? dynamic_cast<CONVERT *>(source)->CONVERT::d3dObject : nullptr);
         }
 
         template <typename TYPE>
@@ -605,16 +605,26 @@ namespace Gek
         class BaseObject
         {
         public:
-            CComPtr<TYPE> d3dObject;
+            TYPE *d3dObject = nullptr;
 
         public:
             template <typename TYPE>
-            BaseObject(TYPE *d3dSource)
-                : d3dObject(CComQIPtr<TYPE>(d3dSource))
+            BaseObject(CComPtr<TYPE> &d3dSource)
             {
+                if(d3dSource)
+                {
+                    InterlockedExchangePointer(reinterpret_cast<void **>(&d3dObject), d3dSource);
+                    d3dObject->AddRef();
+                }
             }
-
-            virtual ~BaseObject(void) = default;
+            
+            virtual ~BaseObject(void)
+            {
+                if (d3dObject)
+                {
+                    reinterpret_cast<TYPE *>(InterlockedExchangePointer((void **)&d3dObject, nullptr))->Release();
+                }
+            }
         };
 
         template <typename TYPE>
@@ -622,13 +632,22 @@ namespace Gek
             : public Video::Object
         {
         public:
-            CComPtr<TYPE> d3dObject;
+            TYPE *d3dObject = nullptr;
 
         public:
             template <typename SOURCE>
-            BaseVideoObject(const SOURCE &d3dSource)
-                : d3dObject(CComQIPtr<TYPE>(d3dSource))
+            BaseVideoObject(CComPtr<SOURCE> &d3dSource)
             {
+                InterlockedExchangePointer(reinterpret_cast<void **>(&d3dObject), dynamic_cast<TYPE *>(d3dSource.p));
+                d3dObject->AddRef();
+            }
+
+            virtual ~BaseVideoObject(void)
+            {
+                if (d3dObject)
+                {
+                    reinterpret_cast<TYPE *>(InterlockedExchangePointer((void **)&d3dObject, nullptr))->Release();
+                }
             }
 
             void setName(std::string const &name)
@@ -657,12 +676,21 @@ namespace Gek
             : public Video::Query
         {
         public:
-            CComPtr<ID3D11Query> d3dObject;
+            ID3D11Query *d3dObject = nullptr;
 
         public:
-            Query(const CComPtr<ID3D11Query> &d3dQuery)
-                : d3dObject(d3dQuery)
+            Query(CComPtr<ID3D11Query> &d3dSource)
             {
+                InterlockedExchangePointer(reinterpret_cast<void **>(&d3dObject), d3dSource.p);
+                d3dObject->AddRef();
+            }
+
+            virtual ~Query(void)
+            {
+                if (d3dObject)
+                {
+                    reinterpret_cast<ID3D11Query *>(InterlockedExchangePointer((void **)&d3dObject, nullptr))->Release();
+                }
             }
 
             void setName(std::string const &name)
@@ -678,20 +706,30 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            CComPtr<ID3D11Buffer> d3dObject;
+            ID3D11Buffer *d3dObject = nullptr;
             Video::Buffer::Description description;
 
         public:
-            Buffer(ID3D11Buffer *d3dBuffer, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, const Video::Buffer::Description &description)
+            Buffer(CComPtr<ID3D11Buffer> &d3dBuffer,
+                CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
+                CComPtr<ID3D11UnorderedAccessView> &d3dUnorderedAccessView,
+                const Video::Buffer::Description &description)
                 : Resource(d3dBuffer)
                 , ShaderResourceView(d3dShaderResourceView)
                 , UnorderedAccessView(d3dUnorderedAccessView)
                 , description(description)
-                , d3dObject(d3dBuffer)
             {
+                InterlockedExchangePointer(reinterpret_cast<void **>(&d3dObject), d3dBuffer);
+                d3dObject->AddRef();
             }
 
-            virtual ~Buffer(void) = default;
+            virtual ~Buffer(void)
+            {
+                if (d3dObject)
+                {
+                    reinterpret_cast<ID3D11Buffer *>(InterlockedExchangePointer((void **)&d3dObject, nullptr))->Release();
+                }
+            }
 
             void setName(std::string const &name)
             {
@@ -743,10 +781,35 @@ namespace Gek
             : public Texture
             , public Resource
             , public ShaderResourceView
+        {
+        public:
+            ViewTexture(CComPtr<ID3D11Resource> &d3dResource,
+                CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
+                const Video::Texture::Description &description)
+                : Texture(description)
+                , Resource(d3dResource)
+                , ShaderResourceView(d3dShaderResourceView)
+            {
+            }
+
+            void setName(std::string const &name)
+            {
+                setDebugName(Resource::d3dObject, name);
+                setDebugName(ShaderResourceView::d3dObject, name);
+            }
+        };
+
+        class UnorderedViewTexture
+            : public Texture
+            , public Resource
+            , public ShaderResourceView
             , public UnorderedAccessView
         {
         public:
-            ViewTexture(ID3D11Resource *d3dResource, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, const Video::Texture::Description &description)
+            UnorderedViewTexture(CComPtr<ID3D11Resource> &d3dResource,
+                CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
+                CComPtr<ID3D11UnorderedAccessView> &d3dUnorderedAccessView,
+                const Video::Texture::Description &description)
                 : Texture(description)
                 , Resource(d3dResource)
                 , ShaderResourceView(d3dShaderResourceView)
@@ -797,7 +860,9 @@ namespace Gek
             , public RenderTargetView
         {
         public:
-            TargetTexture(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, const Video::Texture::Description &description)
+            TargetTexture(CComPtr<ID3D11Resource> &d3dResource,
+                CComPtr<ID3D11RenderTargetView> &d3dRenderTargetView,
+                const Video::Texture::Description &description)
                 : Target(description)
                 , Resource(d3dResource)
                 , RenderTargetView(d3dRenderTargetView)
@@ -819,7 +884,11 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            TargetViewTexture(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, const Video::Texture::Description &description)
+            TargetViewTexture(CComPtr<ID3D11Resource> &d3dResource,
+                CComPtr<ID3D11RenderTargetView> &d3dRenderTargetView,
+                CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
+                CComPtr<ID3D11UnorderedAccessView> &d3dUnorderedAccessView,
+                const Video::Texture::Description &description)
                 : TargetTexture(d3dResource, d3dRenderTargetView, description)
                 , ShaderResourceView(d3dShaderResourceView)
                 , UnorderedAccessView(d3dUnorderedAccessView)
@@ -844,19 +913,30 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            CComPtr<ID3D11DepthStencilView> d3dObject;
+            ID3D11DepthStencilView *d3dObject = nullptr;
 
         public:
-            DepthTexture(ID3D11Resource *d3dResource, ID3D11DepthStencilView *d3dDepthStencilView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, const Video::Texture::Description &description)
+            DepthTexture(CComPtr<ID3D11Resource> &d3dResource,
+                CComPtr<ID3D11DepthStencilView> &d3dDepthStencilView,
+                CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
+                CComPtr<ID3D11UnorderedAccessView> &d3dUnorderedAccessView,
+                const Video::Texture::Description &description)
                 : Texture(description)
                 , Resource(d3dResource)
                 , ShaderResourceView(d3dShaderResourceView)
                 , UnorderedAccessView(d3dUnorderedAccessView)
-                , d3dObject(d3dDepthStencilView)
             {
+                InterlockedExchangePointer(reinterpret_cast<void **>(&d3dObject), d3dDepthStencilView.p);
+                d3dObject->AddRef();
             }
 
-            virtual ~DepthTexture(void) = default;
+            virtual ~DepthTexture(void)
+            {
+                if (d3dObject)
+                {
+                    reinterpret_cast<ID3D11DepthStencilView *>(InterlockedExchangePointer((void **)&d3dObject, nullptr))->Release();
+                }
+            }
 
             void setName(std::string const &name)
             {
@@ -1247,7 +1327,7 @@ namespace Gek
                 PipelinePtr pixelSystemHandler;
 
             public:
-                Context(ID3D11DeviceContext *d3dDeviceContext)
+                Context(CComPtr<ID3D11DeviceContext> &d3dDeviceContext)
                     : d3dDeviceContext(d3dDeviceContext)
                     , computeSystemHandler(new ComputePipeline(d3dDeviceContext))
                     , vertexSystemHandler(new VertexPipeline(d3dDeviceContext))
@@ -1549,7 +1629,7 @@ namespace Gek
                         throw Video::OperationFailed("Unable to finish command list compilation");
                     }
 
-                    return std::make_unique<CommandList>(d3dCommandList.p);
+                    return std::make_unique<CommandList>(d3dCommandList);
                 }
             };
 
@@ -1823,7 +1903,7 @@ namespace Gek
                     description.width = textureDescription.Width;
                     description.height = textureDescription.Height;
                     description.format = DirectX::getFormat(textureDescription.Format);
-                    backBuffer = std::make_unique<TargetTexture>(d3dRenderTarget.p, d3dRenderTargetView.p, description);
+                    backBuffer = std::make_unique<TargetTexture>(CComQIPtr<ID3D11Resource>(d3dRenderTarget), d3dRenderTargetView, description);
                 }
 
                 return backBuffer.get();
@@ -1847,7 +1927,7 @@ namespace Gek
                     throw Video::OperationFailed("Unable to create deferred context");
                 }
 
-                return std::make_unique<Context>(d3dDeferredDeviceContext.p);
+                return std::make_unique<Context>(d3dDeferredDeviceContext);
             }
 
             Video::QueryPtr createQuery(Video::Query::Type type)
@@ -2573,7 +2653,7 @@ namespace Gek
                         throw Video::CreateObjectFailed("Unable to create render target view");
                     }
 
-                    return std::make_unique<TargetViewTexture>(d3dResource.p, d3dRenderTargetView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, description);
+                    return std::make_unique<TargetViewTexture>(d3dResource, d3dRenderTargetView, d3dShaderResourceView, d3dUnorderedAccessView, description);
                 }
                 else if (description.flags & Video::Texture::Description::Flags::DepthTarget)
                 {
@@ -2590,11 +2670,11 @@ namespace Gek
                         throw Video::CreateObjectFailed("Unable to create depth stencil view");
                     }
 
-                    return std::make_unique<DepthTexture>(d3dResource.p, d3dDepthStencilView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, description);
+                    return std::make_unique<DepthTexture>(d3dResource, d3dDepthStencilView, d3dShaderResourceView, d3dUnorderedAccessView, description);
                 }
                 else
                 {
-                    return std::make_unique<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, description);
+                    return std::make_unique<UnorderedViewTexture>(d3dResource, d3dShaderResourceView, d3dUnorderedAccessView, description);
                 }
             }
 
@@ -2668,7 +2748,7 @@ namespace Gek
                 description.depth = image.GetMetadata().depth;
                 description.format = DirectX::getFormat(image.GetMetadata().format);
                 description.mipMapCount = image.GetMetadata().mipLevels;
-                return std::make_unique<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, description);
+                return std::make_unique<ViewTexture>(d3dResource, d3dShaderResourceView, description);
             }
 
             Video::TexturePtr loadTexture(void const *buffer, size_t size, uint32_t flags)
@@ -2715,7 +2795,7 @@ namespace Gek
                 description.depth = image.GetMetadata().depth;
                 description.format = DirectX::getFormat(image.GetMetadata().format);
                 description.mipMapCount = image.GetMetadata().mipLevels;
-                return std::make_unique<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, description);
+                return std::make_unique<ViewTexture>(d3dResource, d3dShaderResourceView, description);
             }
 
             Texture::Description loadTextureDescription(FileSystem::Path const &filePath)

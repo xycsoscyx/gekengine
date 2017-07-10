@@ -32,6 +32,9 @@ namespace Gek
             bool windowActive = false;
             bool engineRunning = false;
 
+            JSON::Object configuration;
+            ShuntingYard shuntingYard;
+
             Video::DisplayModeList displayModeList;
             std::vector<std::string> displayModeStringList;
             struct Display
@@ -40,8 +43,12 @@ namespace Gek
                 bool fullScreen = false;
             } current, previous, next;
            
-            JSON::Object configuration;
-            ShuntingYard shuntingYard;
+            bool showLoadMenu = false;
+            int currentSelectedScene = 0;
+            bool showSettings = false;
+            bool showModeChange = false;
+            float modeChangeTimer = 0.0f;
+            ImGui::TabWindow settingsTabs;
 
             Timer timer;
             float mouseSensitivity = 0.5f;
@@ -373,12 +380,7 @@ namespace Gek
             }
 
             // Renderer
-            bool showLoadMenu = false;
-            int currentSelectedScene = 0;
-            bool showSettings = false;
-            bool showModeChange = false;
-            float modeChangeTimer = 0.0f;
-            void onShowUserInterface(ImGuiContext * const guiContext, ResourceHandle screenHandle, Video::Object const * screenBuffer)
+            void onShowUserInterface(ImGuiContext * const guiContext)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 if (imGuiIo.MouseDrawCursor)
@@ -456,13 +458,13 @@ namespace Gek
                 }
             }
 
-            ImGui::TabWindow settingsTabs;
             void showSettingsWindow(void)
             {
                 if (showSettings)
                 {
-                    auto settingsSize = ImVec2(500, 500);
+                    auto settingsSize = ImVec2(500, 350);
                     ImGui::SetNextWindowSize(settingsSize);
+                    ImGui::SetNextWindowPosCenter();
                     if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_ShowBorders))
                     {
                         auto &style = ImGui::GetStyle();

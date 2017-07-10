@@ -42,7 +42,9 @@ float2 GetTapOffset(float tapIndex, float spinAngle)
 /** Read the camera-space position of the point at screen-space pixel ssP */
 float3 GetPositionFromDepthBuffer(float2 texCoord)
 {
-    const float depth = Resources::depthBuffer[texCoord * Shader::TargetSize];
+    uint width, height, mipMapCount;
+    Resources::depthBuffer.GetDimensions(0, width, height, mipMapCount);
+    const float depth = Resources::depthBuffer[texCoord * float2(width, height)];
     return GetPositionFromSampleDepth(texCoord, depth);
 }
 

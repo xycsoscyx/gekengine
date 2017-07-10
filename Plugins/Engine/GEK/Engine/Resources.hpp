@@ -22,6 +22,15 @@ namespace Gek
 
         GEK_INTERFACE(Resources)
         {
+            struct Flags
+            {
+                enum
+                {
+                    ForceCache = 1 << 0,
+                    ForceLoad = 1 << 1,
+                };
+            }; // namespace Flags
+
             GEK_ADD_EXCEPTION(InvalidParameter);
             GEK_ADD_EXCEPTION(InvalidIncludeType);
             GEK_ADD_EXCEPTION(InvalidIncludeName);
@@ -34,9 +43,9 @@ namespace Gek
             virtual ResourceHandle loadTexture(std::string const &textureName, uint32_t flags) = 0;
             virtual ResourceHandle createPattern(std::string const &pattern, JSON::Reference parameters) = 0;
 
-            virtual ResourceHandle createTexture(std::string const &textureName, const Video::Texture::Description &description, bool forceCache = false) = 0;
-            virtual ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, bool forceCache = false) = 0;
-            virtual ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData, bool forceCache = false) = 0;
+            virtual ResourceHandle createTexture(std::string const &textureName, const Video::Texture::Description &description, uint32_t flags = 0) = 0;
+            virtual ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, uint32_t flags = 0) = 0;
+            virtual ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData, uint32_t flags = 0) = 0;
 
             template <typename TYPE>
             ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, const TYPE *staticData)

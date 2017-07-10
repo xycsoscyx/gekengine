@@ -619,17 +619,17 @@ namespace Gek
                 gui.depthState->setName("core:depthState");
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "Ruda-Bold.ttf").u8string().c_str(), 16.0f);
+                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "Ruda-Bold.ttf").u8string().c_str(), 14.0f);
 
                 ImFontConfig fontConfig;
-                fontConfig.GlyphOffset.y = 3.5f;
+                fontConfig.GlyphOffset.y = 3.0f;
                 fontConfig.MergeMode = true;
 
                 const ImWchar fontAwesomeRanges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "fontawesome-webfont.ttf").u8string().c_str(), 18.0f, &fontConfig, fontAwesomeRanges);
+                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "fontawesome-webfont.ttf").u8string().c_str(), 16.0f, &fontConfig, fontAwesomeRanges);
 
                 const ImWchar googleIconRanges[] = { ICON_MIN_MD, ICON_MAX_MD, 0 };
-                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "MaterialIcons-Regular.ttf").u8string().c_str(), 18.0f, &fontConfig, googleIconRanges);
+                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "MaterialIcons-Regular.ttf").u8string().c_str(), 16.0f, &fontConfig, googleIconRanges);
 
                 imGuiIo.Fonts->Build();
 
@@ -770,8 +770,8 @@ namespace Gek
                     videoContext->setIndexBuffer(gui.indexBuffer.get(), 0);
                     videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
                     videoContext->vertexPipeline()->setProgram(gui.vertexProgram.get());
-                    videoContext->vertexPipeline()->setConstantBufferList({ gui.constantBuffer.get() }, 0);
                     videoContext->pixelPipeline()->setProgram(gui.pixelProgram.get());
+                    videoContext->vertexPipeline()->setConstantBufferList({ gui.constantBuffer.get() }, 0);
                     videoContext->pixelPipeline()->setSamplerStateList({ bufferSamplerState.get() }, 0);
 
                     videoContext->setBlendState(gui.blendState.get(), Math::Float4::Black, 0xFFFFFFFF);
@@ -1316,30 +1316,6 @@ namespace Gek
                             }
                         }
 
-                        videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                        for (const auto &filterName : { "ambientocclusion", "tonemap", "antialias" })
-                        {
-                            Engine::Filter * const filter = resources->getFilter(filterName);
-                            if (filter)
-                            {
-                                finalOutput = filter->getOutput();
-                                for (auto pass = filter->begin(videoContext); pass; pass = pass->next())
-                                {
-                                    switch (pass->prepare())
-                                    {
-                                    case Engine::Filter::Pass::Mode::Deferred:
-                                        resources->drawPrimitive(videoContext, 3, 0);
-                                        break;
-
-                                    case Engine::Filter::Pass::Mode::Compute:
-                                        break;
-                                    };
-
-                                    pass->clear();
-                                }
-                            }
-                        }
-
                         videoContext->geometryPipeline()->clearConstantBufferList(2, 0);
                         videoContext->vertexPipeline()->clearConstantBufferList(2, 0);
                         videoContext->pixelPipeline()->clearConstantBufferList(2, 0);
@@ -1357,6 +1333,12 @@ namespace Gek
                     }
                 };
 
+                auto screenHandle = resources->getResourceHandle(screenOutput);
+                if (screenHandle)
+                {
+                    renderOverlay(videoDevice->getDefaultContext(), screenHandle, ResourceHandle());
+                }
+
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 imGuiIo.DeltaTime = frameTime;
 
@@ -1365,16 +1347,8 @@ namespace Gek
                 uint32_t height = backBuffer->getDescription().height;
                 imGuiIo.DisplaySize = ImVec2(float(width), float(height));
 
-                auto screenHandle = resources->getResourceHandle(screenOutput);
-                auto screenBuffer = resources->getResource(screenHandle);
-                bool editorActive = core->getOption("editor", "active").convert(false);
-                if (!editorActive)
-                {
-                    renderOverlay(videoDevice->getDefaultContext(), screenHandle, ResourceHandle());
-                }
-
                 ImGui::NewFrame();
-                onShowUserInterface.emit(ImGui::GetCurrentContext(), screenHandle, screenBuffer);
+                onShowUserInterface.emit(ImGui::GetCurrentContext());
                 ImGui::Render();
 
                 videoDevice->present(false);

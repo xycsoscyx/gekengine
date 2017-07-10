@@ -39,6 +39,18 @@ namespace Gek
             bool strafeLeft = false;
             bool strafeRight = false;
 
+            int selectedComponent = 0;
+
+            ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
+            bool useSnap = true;
+            Math::Float3 snapPosition = Math::Float3(1.0f / 12.0f);
+            float snapRotation = 10.0f;
+            float snapScale = (1.0f / 10.0f);
+            float *snapData = nullptr;
+
+            ResourceHandle cameraTarget;
+            ImVec2 cameraSize;
+
         public:
             Editor(Context *context, Plugin::Core *core)
                 : ContextRegistration(context)
@@ -76,22 +88,56 @@ namespace Gek
             }
 
             // Renderer
-            int selectedComponent = 0;
             void showPopulation(void)
             {
-                Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));
-                viewMatrix.translation.xyz = position;
-                viewMatrix.invert();
-
-                const auto backBuffer = core->getVideoDevice()->getBackBuffer();
-                const float width = float(backBuffer->getDescription().width);
-                const float height = float(backBuffer->getDescription().height);
-                auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
-
-                ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.4f, 0.4f, 0.60f, 1.0f));
-                if (ImGui::BeginDock("Population", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize, ImVec2(100.0f, 0.0f)))
+                if (ImGui::BeginDock("Population", nullptr, ImGuiWindowFlags_ShowBorders, ImVec2(100.0f, -1.0f)))
                 {
-                    if (ImGui::Button(ICON_MD_ADD_CIRCLE u8"  New Entity"))
+                    if (ImGui::TreeNodeEx("Selection Gizmo", 0))
+                    {
+                        if (ImGui::RadioButton("Move", currentGizmoOperation == ImGuizmo::TRANSLATE))
+                        {
+                            currentGizmoOperation = ImGuizmo::TRANSLATE;
+                        }
+
+                        ImGui::SameLine();
+                        if (ImGui::RadioButton("Rotate", currentGizmoOperation == ImGuizmo::ROTATE))
+                        {
+                            currentGizmoOperation = ImGuizmo::ROTATE;
+                        }
+
+                        ImGui::SameLine();
+                        if (ImGui::RadioButton("Scale", currentGizmoOperation == ImGuizmo::SCALE))
+                        {
+                            currentGizmoOperation = ImGuizmo::SCALE;
+                        }
+
+                        ImGui::Checkbox("Snap", &useSnap);
+                        ImGui::SameLine();
+
+                        ImGui::PushItemWidth(-1.0f);
+                        switch (currentGizmoOperation)
+                        {
+                        case ImGuizmo::TRANSLATE:
+                            ImGui::InputFloat3("##snapTranslation", snapPosition.data, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                            snapData = snapPosition.data;
+                            break;
+
+                        case ImGuizmo::ROTATE:
+                            ImGui::SliderAngle("##snapDegrees", &snapRotation);
+                            snapData = &snapRotation;
+                            break;
+
+                        case ImGuizmo::SCALE:
+                            ImGui::InputFloat("##snapScale", &snapScale, (1.0f / 10.0f), 1.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                            snapData = &snapScale;
+                            break;
+                        };
+
+                        ImGui::PopItemWidth();
+                        ImGui::TreePop();
+                    }
+
+                    if (ImGui::Button(ICON_MD_ADD_CIRCLE u8"  New Entity", ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f)))
                     {
                         ImGui::OpenPopup("NewEntity");
                     }
@@ -146,7 +192,7 @@ namespace Gek
                         ImGui::SameLine();
                         if (ImGui::TreeNodeEx(name.c_str(), 0))
                         {
-                            if (ImGui::Button(ICON_MD_ADD_CIRCLE_OUTLINE u8"  Add Component"))
+                            if (ImGui::Button(ICON_MD_ADD_CIRCLE_OUTLINE u8"  Add Component", ImVec2(ImGui::GetWindowContentRegionWidth() - ImGui::GetStyle().IndentSpacing, 0.0f)))
                             {
                                 selectedComponent = 0;
                                 ImGui::OpenPopup("AddComponent");
@@ -164,14 +210,14 @@ namespace Gek
                                     {
                                         for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
                                         {
-                                            auto componentSearch = std::begin(componentMap);
-                                            std::advance(componentSearch, componentIndex);
-                                            if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
-                                            {
-                                                auto componentData = std::make_pair(componentSearch->second->getName(), JSON::EmptyObject);
-                                                population->addComponent(entity, componentData);
-                                                ImGui::CloseCurrentPopup();
-                                            }
+                                        auto componentSearch = std::begin(componentMap);
+                                        std::advance(componentSearch, componentIndex);
+                                        if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
+                                        {
+                                            auto componentData = std::make_pair(componentSearch->second->getName(), JSON::EmptyObject);
+                                            population->addComponent(entity, componentData);
+                                            ImGui::CloseCurrentPopup();
+                                        }
                                         }
                                     };
 
@@ -242,78 +288,58 @@ namespace Gek
                         population->killEntity(entity);
                     }
                 }
-/*
-                ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
-                bool useSnap = true;
-                Math::Float3 snapPosition = Math::Float3(1.0f / 12.0f);
-                float snapRotation = 10.0f;
-                float snapScale = (1.0f / 10.0f);
 
-                ImGui::Spacing();
-                ImGui::AlignFirstTextHeightToWidgets();
-                ImGui::Text("Adjust ");
-                ImGui::SameLine();
-                if (ImGui::RadioButton("Translation", currentGizmoOperation == ImGuizmo::TRANSLATE))
-                {
-                    currentGizmoOperation = ImGuizmo::TRANSLATE;
-                }
-
-                ImGui::SameLine();
-                if (ImGui::RadioButton("Rotation", currentGizmoOperation == ImGuizmo::ROTATE))
-                {
-                    currentGizmoOperation = ImGuizmo::ROTATE;
-                }
-
-                ImGui::SameLine();
-                if (ImGui::RadioButton("Scale", currentGizmoOperation == ImGuizmo::SCALE))
-                {
-                    currentGizmoOperation = ImGuizmo::SCALE;
-                }
-
-                ImGui::Checkbox("Snap", &useSnap);
-                ImGui::SameLine();
-
-                float *snap = nullptr;
-                ImGui::PushItemWidth(-1.0f);
-                switch (currentGizmoOperation)
-                {
-                case ImGuizmo::TRANSLATE:
-                    ImGui::InputFloat3("Units", snapPosition.data, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-                    snap = snapPosition.data;
-                    break;
-
-                case ImGuizmo::ROTATE:
-                    ImGui::InputFloat("Degrees", &snapRotation, 10.0f, 90.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-                    snap = &snapRotation;
-                    break;
-
-                case ImGuizmo::SCALE:
-                    ImGui::InputFloat("Size", &snapScale, (1.0f / 10.0f), 1.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-                    snap = &snapScale;
-                    break;
-                };
-
-                ImGui::PopItemWidth();
-                ImGuizmo::BeginFrame();
-                ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, ImGuizmo::WORLD, matrix.data, nullptr, snap);
-*/
                 ImGui::EndDock();
-                ImGui::PopStyleColor();
             }
 
-            void showScene(Video::Object const * screenBuffer)
+            void showScene(void)
             {
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-                if (ImGui::BeginDock("Scene", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar, ImVec2(0.0f, 0.0f)))
+                auto &imGuiIo = ImGui::GetIO();
+                if (ImGui::BeginDock("Scene", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_ShowBorders))
                 {
-                    ImGui::Image(const_cast<Video::Object *>(screenBuffer), ImGui::GetWindowSize());
+                    cameraSize = ImGui::GetWindowSize();
+
+                    Video::Texture::Description description;
+                    description.width = cameraSize.x;
+                    description.height = cameraSize.y;
+                    description.flags = Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource;
+                    description.format = Video::Format::R11G11B10_FLOAT;
+                    cameraTarget = core->getResources()->createTexture("editorTarget", description, Plugin::Resources::Flags::ForceLoad);
+
+                    auto cameraBuffer = dynamic_cast<Engine::Resources *>(core->getResources())->getResource(cameraTarget);
+                    if (cameraBuffer)
+                    {
+                        ImGui::Image(reinterpret_cast<ImTextureID>(cameraBuffer), cameraSize);
+                    }
+
+                    Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));
+                    viewMatrix.translation.xyz = position;
+                    viewMatrix.invert();
+
+                    const auto backBuffer = core->getVideoDevice()->getBackBuffer();
+                    auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 1.0f, 100.0f));
+
+                    ImGuizmo::BeginFrame();
+                    ImGuizmo::SetRect(ImGui::GetCursorPosX(), ImGui::GetCursorPosY(), ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);
+                    auto &entityMap = population->getEntityMap();
+                    for (auto &entitySearch : entityMap)
+                    {
+                        auto &name = entitySearch.first;
+                        auto entity = dynamic_cast<Edit::Entity *>(entitySearch.second.get());
+                        if (entity->hasComponent<Components::Transform>())
+                        {
+                            auto &transformComponent = entity->getComponent<Components::Transform>();
+                            auto matrix = transformComponent.getMatrix();
+                            ImGuizmo::DrawCube(viewMatrix.data, projectionMatrix.data, matrix.data);
+                            //ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, ImGuizmo::WORLD, matrix.data, nullptr, snapData);
+                        }
+                    }
                 }
 
                 ImGui::EndDock();
-                ImGui::PopStyleVar();
             }
 
-            void onShowUserInterface(ImGuiContext * const guiContext, ResourceHandle screenHandle, Video::Object const * screenBuffer)
+            void onShowUserInterface(ImGuiContext * const guiContext)
             {
                 bool editorActive = core->getOption("editor", "active").convert(false);
                 if (!editorActive)
@@ -334,12 +360,13 @@ namespace Gek
 
                 ImGui::SetNextWindowSize(editorSize);
                 ImGui::SetNextWindowPos(editorPosition);
-                if (ImGui::Begin("Editor", nullptr, editorSize, 0.75f, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+                if (ImGui::Begin("Editor", nullptr, editorSize, 1.0f, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
                 {
                     ImGui::BeginDockspace();
 
                     ImGui::SetNextDock(ImGuiDockSlot_None);
-                    showScene(screenBuffer);
+                    showScene();
 
                     ImGui::SetNextDock(ImGuiDockSlot_Right | ImGuiDockSlot_FromRoot);
                     showPopulation();
@@ -348,6 +375,7 @@ namespace Gek
                 }
 
                 ImGui::End();
+                ImGui::PopStyleVar();
             }
 
             // Plugin::Population Slots
@@ -397,12 +425,9 @@ namespace Gek
                     viewMatrix.translation.xyz = position;
                     viewMatrix.invert();
 
-                    const auto backBuffer = core->getVideoDevice()->getBackBuffer();
-                    const float width = float(backBuffer->getDescription().width);
-                    const float height = float(backBuffer->getDescription().height);
-                    auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
+                    auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 1.0f, 100.0f));
 
-                    renderer->queueCamera(viewMatrix, projectionMatrix, 0.5f, 200.0f, ResourceHandle());
+                    renderer->queueCamera(viewMatrix, projectionMatrix, 0.5f, 200.0f, cameraTarget);
                 }
             }
         };

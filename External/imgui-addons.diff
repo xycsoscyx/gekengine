@@ -1,0 +1,361 @@
+ addons/imguidock/imguidock.cpp                     | 62 +++++++++++++---------
+ addons/imguidock/imguidock.h                       | 18 +++----
+ addons/imguifilesystem/imguifilesystem.cpp         | 47 ++++++++--------
+ addons/imguinodegrapheditor/imguinodegrapheditor.h |  2 +-
+ addons/imguipanelmanager/imguipanelmanager.cpp     |  2 +-
+ addons/imguipanelmanager/imguipanelmanager.h       |  3 +-
+ imgui.cpp                                          |  2 -
+ imgui.h                                            |  2 +
+ imgui_draw.cpp                                     |  2 -
+ 9 files changed, 78 insertions(+), 62 deletions(-)
+
+diff --git a/addons/imguidock/imguidock.cpp b/addons/imguidock/imguidock.cpp
+index a25d558..65c1b43 100644
+--- a/addons/imguidock/imguidock.cpp
++++ b/addons/imguidock/imguidock.cpp
+@@ -40,6 +40,15 @@ bool gImGuiDockReuseTabWindowTextureIfAvailable = true;
+ 
+ namespace ImGui	{
+ 
++    static const ImGuiDockSlot SlotIndex[] =
++    {
++        ImGuiDockSlot_Left,
++        ImGuiDockSlot_Right,
++        ImGuiDockSlot_Top,
++        ImGuiDockSlot_Bottom,
++        ImGuiDockSlot_Tab,
++    };
++    
+ struct DockContext
+ {
+     enum EndAction_
+@@ -234,7 +243,7 @@ struct DockContext
+     EndAction_ m_end_action;
+     ImVec2 m_workspace_pos;
+     ImVec2 m_workspace_size;
+-    ImGuiDockSlot m_next_dock_slot;
++    uint32_t m_next_dock_slot;
+ 
+     DockContext()
+         : m_current(NULL)
+@@ -519,7 +528,7 @@ struct DockContext
+ 	}
+         for (int i = 0; i < (on_border ? 4 : 5); ++i)
+         {
+-	    const ImGuiDockSlot iSlot = (ImGuiDockSlot)i;
++            const ImGuiDockSlot iSlot = SlotIndex[i];
+             ImRect r =
+ 		    on_border ? getSlotRectOnBorder(rect, iSlot) : getSlotRect(rect, iSlot);
+             bool hovered = r.Contains(mouse_pos);
+@@ -822,7 +831,7 @@ struct DockContext
+     }
+ 
+ 
+-    static void setDockPosSize(Dock& dest, Dock& dock, ImGuiDockSlot dock_slot, Dock& container)
++    static void setDockPosSize(Dock& dest, Dock& dock, uint32_t dock_slot, Dock& container)
+     {
+         IM_ASSERT(!dock.prev_tab && !dock.next_tab && !dock.children[0] && !dock.children[1]);
+ 
+@@ -831,32 +840,32 @@ struct DockContext
+         dock.pos = container.pos;
+         dock.size = container.size;
+ 
+-        switch (dock_slot)
++        if (dock_slot & ImGuiDockSlot_Bottom)
+         {
+-        case ImGuiDockSlot_Bottom:
+             dest.size.y *= 0.5f;
+             dock.size.y *= 0.5f;
+             dock.pos.y += dest.size.y;
+-            break;
+-        case ImGuiDockSlot_Right:
++        }
++        else if (dock_slot & ImGuiDockSlot_Right)
++        {
+             dest.size.x *= 0.5f;
+             dock.size.x *= 0.5f;
+             dock.pos.x += dest.size.x;
+-            break;
+-        case ImGuiDockSlot_Left:
++        }
++        else if (dock_slot & ImGuiDockSlot_Left)
++        {
+             dest.size.x *= 0.5f;
+             dock.size.x *= 0.5f;
+             dest.pos.x += dock.size.x;
+-            break;
+-        case ImGuiDockSlot_Top:
++        }
++        else if (dock_slot & ImGuiDockSlot_Top)
++        {
+             dest.size.y *= 0.5f;
+             dock.size.y *= 0.5f;
+             dest.pos.y += dock.size.y;
+-            break;
+-        default: IM_ASSERT(false); break;
+         }
+-        dest.setPosSize(dest.pos, dest.size);
+ 
++        dest.setPosSize(dest.pos, dest.size);
+         if (container.children[1]->pos.x < container.children[0]->pos.x ||
+                 container.children[1]->pos.y < container.children[0]->pos.y)
+         {
+@@ -867,7 +876,7 @@ struct DockContext
+     }
+ 
+ 
+-    void doDock(Dock& dock, Dock* dest, ImGuiDockSlot dock_slot)
++    void doDock(Dock& dock, Dock* dest, uint32_t dock_slot)
+     {
+         IM_ASSERT(!dock.parent);
+         if (!dest)
+@@ -875,7 +884,7 @@ struct DockContext
+             dock.status = Status_Docked;
+             dock.setPosSize(m_workspace_pos, m_workspace_size);
+         }
+-        else if (dock_slot == ImGuiDockSlot_Tab)
++        else if (dock_slot & ImGuiDockSlot_Tab)
+         {
+             Dock* tmp = dest;
+             while (tmp->next_tab)
+@@ -890,7 +899,7 @@ struct DockContext
+             dock.parent = dest->parent;
+             dock.status = Status_Docked;
+         }
+-        else if (dock_slot == ImGuiDockSlot_None)
++        else if (dock_slot & ImGuiDockSlot_None)
+         {
+             dock.status = Status_Float;
+         }
+@@ -1003,7 +1012,7 @@ struct DockContext
+ 
+     bool begin(const char* label, bool* opened, ImGuiWindowFlags extra_flags, const ImVec2& default_size)
+     {
+-        ImGuiDockSlot next_slot = m_next_dock_slot;
++        uint32_t next_slot = m_next_dock_slot;
+         m_next_dock_slot = ImGuiDockSlot_Tab;
+ 	Dock& dock = getDock(label, !opened || *opened, default_size);
+         if (!dock.opened && (!opened || *opened)) tryDockToStoredLocation(dock);
+@@ -1036,7 +1045,7 @@ struct DockContext
+         checkNonexistent();
+         
+         if (first || (prev_opened != dock.opened)) {
+-            Dock* root = m_next_parent ? m_next_parent : getRootDock();
++            Dock* root = extra_flags & ImGuiDockSlot_FromRoot ? getRootDock() : (m_next_parent ? m_next_parent : getRootDock());
+             if (root && (&dock != root) && !dock.parent) {
+                 doDock(dock, root, next_slot);
+             }
+@@ -1081,12 +1090,17 @@ struct DockContext
+         splits();
+ 
+         PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
+-        float tabbar_height = GetTextLineHeightWithSpacing();
+-        if (tabbar(dock.getFirstTab(), opened != NULL))
++        float tabbar_height = 0.0f;
++        if (!(extra_flags & ImGuiWindowFlags_NoTitleBar))
+         {
+-            fillLocation(dock);
+-            *opened = false;
++            tabbar_height = GetTextLineHeightWithSpacing();
++            if (tabbar(dock.getFirstTab(), opened != NULL))
++            {
++                fillLocation(dock);
++                *opened = false;
++            }
+         }
++
+         ImVec2 pos = dock.pos;
+         ImVec2 size = dock.size;
+         pos.y += tabbar_height + GetStyle().WindowPadding.y;
+@@ -1176,7 +1190,7 @@ void ShutdownDock()
+     g_dock.m_docks.clear();
+ }
+ 
+-void SetNextDock(ImGuiDockSlot slot) {
++void SetNextDock(uint32_t slot) {
+     g_dock.m_next_dock_slot = slot;
+ }
+ 
+diff --git a/addons/imguidock/imguidock.h b/addons/imguidock/imguidock.h
+index 5404993..d02f823 100644
+--- a/addons/imguidock/imguidock.h
++++ b/addons/imguidock/imguidock.h
+@@ -76,14 +76,14 @@ SOFTWARE.
+ #endif //IMGUI_API
+  
+ typedef enum ImGuiDockSlot {
+-    ImGuiDockSlot_Left=0,
+-    ImGuiDockSlot_Right,
+-    ImGuiDockSlot_Top,
+-    ImGuiDockSlot_Bottom,
+-    ImGuiDockSlot_Tab,
+-
+-    ImGuiDockSlot_Float,
+-    ImGuiDockSlot_None
++    ImGuiDockSlot_None = 0,
++    ImGuiDockSlot_Left = 1 << 0,
++    ImGuiDockSlot_Right = 1 << 1,
++    ImGuiDockSlot_Top = 1 << 2,
++    ImGuiDockSlot_Bottom = 1 << 3,
++    ImGuiDockSlot_Tab = 1 << 4,
++    ImGuiDockSlot_Float = 1 << 5,
++    ImGuiDockSlot_FromRoot = 1 << 6,
+ } ImGuiDockSlot;
+ 
+ namespace ImGui{
+@@ -91,7 +91,7 @@ namespace ImGui{
+ IMGUI_API void BeginDockspace();
+ IMGUI_API void EndDockspace();
+ IMGUI_API void ShutdownDock();
+-IMGUI_API void SetNextDock(ImGuiDockSlot slot);
++IMGUI_API void SetNextDock(uint32_t slot);
+ IMGUI_API bool BeginDock(const char* label, bool* opened = NULL, ImGuiWindowFlags extra_flags = 0, const ImVec2& default_size = ImVec2(-1, -1));
+ IMGUI_API void EndDock();
+ IMGUI_API void SetDockActive();
+diff --git a/addons/imguifilesystem/imguifilesystem.cpp b/addons/imguifilesystem/imguifilesystem.cpp
+index 99fde8f..682fcf7 100644
+--- a/addons/imguifilesystem/imguifilesystem.cpp
++++ b/addons/imguifilesystem/imguifilesystem.cpp
+@@ -1431,27 +1431,30 @@ struct ImGuiFsDrawIconStruct {
+ 
+     return cnt;
+     }
+-    ImGuiFsDrawIconStruct() {
+-    v.reserve(1024);
+-    vStarters.reserve(400);vStartersLengths.reserve(400);
+-    vStartersCounts.reserve(400);
+-
+-    add("bin");                                     // ICON_FA_FILE_O
+-    add("h;hpp;hh;hxx;inl");                        // ICON_FA_H_SQUARE
+-    add("cpp;c;cxx;cc");                            // ICON_FA_PLUS_SQUARE
+-    add("jpg;jpeg;png;bmp;ico;gif;tif;tiff;tga");   // ICON_FA_FILE_IMAGE_O
+-    add("pdf");                                     // ICON_FA_FILE_PDF_O
+-    add("doc;docx;odt;ott;uot");                    // ICON_FA_FILE_WORD_O
+-    add("txt;setting;settings;layout;ini;md;sh;bat");// ICON_FA_FILE_TEXT_O
+-    add("db;sql;sqlite");                           // ICON_FA_DATABASE
+-    add("ods;ots;uos;xlsx;xls");                    // ICON_FA_FILE_EXCEL_O
+-    add("odp;otp;uop;pptx;ppt");                    // ICON_FA_FILE_POWERPOINT_O
+-    add("7z;zip;bz2;gz;lz;lzma;ar;rar");            // ICON_FA_FILE_ARCHIVE_O
+-    add("mp3;wav;ogg;spx;opus;mid;mod;flac");       // ICON_FA_FILE_AUDIO_O
+-    add("mp4;flv;avi;ogv;theora;mkv;webm;mpg");     // ICON_FA_FILE_VIDEO_O
+-    add("xml");                                     // ICON_FA_FILE_CODE_O
+-    add("htm;html");                                // ICON_FA_FILE_CODE_O
+-
++    ImGuiFsDrawIconStruct(bool allocate = true)
++    {
++        if (allocate)
++        {
++            v.reserve(1024);
++            vStarters.reserve(400); vStartersLengths.reserve(400);
++            vStartersCounts.reserve(400);
++
++            add("bin");                                     // ICON_FA_FILE_O
++            add("h;hpp;hh;hxx;inl");                        // ICON_FA_H_SQUARE
++            add("cpp;c;cxx;cc");                            // ICON_FA_PLUS_SQUARE
++            add("jpg;jpeg;png;bmp;ico;gif;tif;tiff;tga");   // ICON_FA_FILE_IMAGE_O
++            add("pdf");                                     // ICON_FA_FILE_PDF_O
++            add("doc;docx;odt;ott;uot");                    // ICON_FA_FILE_WORD_O
++            add("txt;setting;settings;layout;ini;md;sh;bat");// ICON_FA_FILE_TEXT_O
++            add("db;sql;sqlite");                           // ICON_FA_DATABASE
++            add("ods;ots;uos;xlsx;xls");                    // ICON_FA_FILE_EXCEL_O
++            add("odp;otp;uop;pptx;ppt");                    // ICON_FA_FILE_POWERPOINT_O
++            add("7z;zip;bz2;gz;lz;lzma;ar;rar");            // ICON_FA_FILE_ARCHIVE_O
++            add("mp3;wav;ogg;spx;opus;mid;mod;flac");       // ICON_FA_FILE_AUDIO_O
++            add("mp4;flv;avi;ogv;theora;mkv;webm;mpg");     // ICON_FA_FILE_VIDEO_O
++            add("xml");                                     // ICON_FA_FILE_CODE_O
++            add("htm;html");                                // ICON_FA_FILE_CODE_O
++        }
+     }
+     int getExtensionType(const char* ext,bool caseSensitiveMatch=false) const {
+         if (!ext) return -1;
+@@ -1482,7 +1485,7 @@ struct ImGuiFsDrawIconStruct {
+     return drawIcon(extType,pOptionalColorOverride);
+     }
+ };
+-static ImGuiFsDrawIconStruct MyImGuiFsDrawIconStruct;
++static ImGuiFsDrawIconStruct MyImGuiFsDrawIconStruct(false);
+ #ifndef IMGUIFS_NO_EXTRA_METHODS
+ int FileGetExtensionType(const char* path) {
+     return MyImGuiFsDrawIconStruct.getExtensionType(strrchr(path,'.'));
+diff --git a/addons/imguinodegrapheditor/imguinodegrapheditor.h b/addons/imguinodegrapheditor/imguinodegrapheditor.h
+index 4357df2..8d82d20 100644
+--- a/addons/imguinodegrapheditor/imguinodegrapheditor.h
++++ b/addons/imguinodegrapheditor/imguinodegrapheditor.h
+@@ -353,7 +353,7 @@ struct NodeLink
+         OutputNode = output_node; OutputSlot = output_slot;
+     }
+ 
+-    friend struct NodeGraphEditor;
++    friend class NodeGraphEditor;
+ };
+ 
+ class NodeGraphEditor
+diff --git a/addons/imguipanelmanager/imguipanelmanager.cpp b/addons/imguipanelmanager/imguipanelmanager.cpp
+index a66f5da..a73f95f 100644
+--- a/addons/imguipanelmanager/imguipanelmanager.cpp
++++ b/addons/imguipanelmanager/imguipanelmanager.cpp
+@@ -862,7 +862,7 @@ void ImGui::PanelManager::Pane::AssociatedWindow::draw(const ImGui::PanelManager
+     const bool togglable = button && button->isToggleButton;
+     const bool togglableAndVisible = togglable && button->isDown;
+     const bool selected = (this==pane.getSelectedWindow());
+-    const bool hovered = !selected && (pane.allowHoverOnTogglableWindows ? !togglableAndVisible : !togglable) && (this==pane.getHoverWindow() || persistHoverFocus);
++    const bool hovered = pane.previewOnHover ? (!selected && (pane.allowHoverOnTogglableWindows ? !togglableAndVisible : !togglable) && (this == pane.getHoverWindow() || persistHoverFocus)) : false;
+     if (!togglableAndVisible && !selected && !hovered) return;
+ 
+     if (dirty)  {
+diff --git a/addons/imguipanelmanager/imguipanelmanager.h b/addons/imguipanelmanager/imguipanelmanager.h
+index 5895092..e5d477e 100644
+--- a/addons/imguipanelmanager/imguipanelmanager.h
++++ b/addons/imguipanelmanager/imguipanelmanager.h
+@@ -71,10 +71,11 @@ struct PanelManager {
+         Position pos;
+         bool visible;
+         bool allowHoverOnTogglableWindows;
++        bool previewOnHover;
+         mutable float hoverReleaseTimer;
+         mutable int hoverReleaseIndex;
+         Pane(Position _pos,const char* name)
+-        : bar(name),pos(_pos),visible(true),allowHoverOnTogglableWindows(false),hoverReleaseTimer(-1),hoverReleaseIndex(-1)
++        : bar(name),pos(_pos),visible(true),allowHoverOnTogglableWindows(false),previewOnHover(true),hoverReleaseTimer(-1),hoverReleaseIndex(-1)
+         {}
+         ~Pane() {clear();}
+         void clear() {
+diff --git a/imgui.cpp b/imgui.cpp
+index 6d182e7..b53abf0 100644
+--- a/imgui.cpp
++++ b/imgui.cpp
+@@ -618,8 +618,6 @@
+ #endif
+ 
+ #include "imgui.h"
+-#define IMGUI_DEFINE_MATH_OPERATORS
+-#define IMGUI_DEFINE_PLACEMENT_NEW
+ #include "imgui_internal.h"
+ 
+ #include <ctype.h>      // toupper, isprint
+diff --git a/imgui.h b/imgui.h
+index 8bca83f..63973d7 100644
+--- a/imgui.h
++++ b/imgui.h
+@@ -8,6 +8,8 @@
+ 
+ #pragma once
+ 
++#include <Windows.h>
++
+ #if !defined(IMGUI_DISABLE_INCLUDE_IMCONFIG_H) || defined(IMGUI_INCLUDE_IMCONFIG_H)
+ #include "imconfig.h"       // User-editable configuration file
+ #endif
+diff --git a/imgui_draw.cpp b/imgui_draw.cpp
+index 9630450..c498c72 100644
+--- a/imgui_draw.cpp
++++ b/imgui_draw.cpp
+@@ -13,8 +13,6 @@
+ #endif
+ 
+ #include "imgui.h"
+-#define IMGUI_DEFINE_MATH_OPERATORS
+-#define IMGUI_DEFINE_PLACEMENT_NEW
+ #include "imgui_internal.h"
+ 
+ #include <stdio.h>      // vsnprintf, sscanf, printf
