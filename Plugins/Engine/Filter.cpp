@@ -45,12 +45,6 @@ namespace Gek
                 std::unordered_map<ResourceHandle, ResourceHandle> resolveSampleMap;
             };
 
-            struct FilterConstantData
-            {
-                Math::Float2 targetSize;
-                float padding[2];
-            };
-
         private:
             Plugin::Core *core = nullptr;
             Video::Device *videoDevice = nullptr;
@@ -58,8 +52,6 @@ namespace Gek
             Plugin::Population *population = nullptr;
 
             std::string filterName;
-
-            Video::BufferPtr filterConstantBuffer;
 
             DepthStateHandle depthState;
             RenderStateHandle renderState;
@@ -79,13 +71,6 @@ namespace Gek
                 assert(population);
 
                 reload();
-
-                Video::Buffer::Description constantBufferDescription;
-                constantBufferDescription.stride = sizeof(FilterConstantData);
-                constantBufferDescription.count = 1;
-                constantBufferDescription.type = Video::Buffer::Description::Type::Constant;
-                filterConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
-                filterConstantBuffer->setName(String::Format("%v:filterConstantBuffer", filterName));
             }
 
             void reload(void)
@@ -283,28 +268,37 @@ namespace Gek
                             "\r\n";
 
                         std::string outputData;
-                        uint32_t currentStage = 0;
+                        uint32_t nextTargetStage = 0;
                         std::unordered_map<std::string, std::string> renderTargetsMap = getAliasedMap(passNode, "targets");
                         if (!renderTargetsMap.empty())
                         {
                             for (auto &renderTarget : renderTargetsMap)
                             {
-                                auto resourceSearch = resourceMap.find(renderTarget.first);
-                                if (resourceSearch == std::end(resourceMap))
+                                uint32_t currentStage = nextTargetStage++;
+                                if (renderTarget.first == "outputBuffer")
                                 {
-                                    LockedWrite{ std::cerr } << String::Format("Unable to find render target for pass: %v", renderTarget.first);
+                                    pass.renderTargetList.push_back(ResourceHandle());
+                                    outputData += String::Format("    Texture2D<float3> %v : SV_TARGET%v;\r\n", renderTarget.second, currentStage);
                                 }
                                 else
                                 {
-                                    auto description = resources->getTextureDescription(resourceSearch->second);
-                                    if (description)
+                                    auto resourceSearch = resourceMap.find(renderTarget.first);
+                                    if (resourceSearch == std::end(resourceMap))
                                     {
-                                        pass.renderTargetList.push_back(resourceSearch->second);
-                                        outputData += String::Format("    %v %v : SV_TARGET%v;\r\n", getFormatSemantic(description->format), renderTarget.second, currentStage++);
+                                        LockedWrite{ std::cerr } << String::Format("Unable to find render target for pass: %v", renderTarget.first);
                                     }
                                     else
                                     {
-                                        LockedWrite{ std::cerr } << String::Format("Unable to get description for render target: %v", renderTarget.first);
+                                        auto description = resources->getTextureDescription(resourceSearch->second);
+                                        if (description)
+                                        {
+                                            pass.renderTargetList.push_back(resourceSearch->second);
+                                            outputData += String::Format("    %v %v : SV_TARGET%v;\r\n", getFormatSemantic(description->format), renderTarget.second, currentStage);
+                                        }
+                                        else
+                                        {
+                                            LockedWrite{ std::cerr } << String::Format("Unable to get description for render target: %v", renderTarget.first);
+                                        }
                                     }
                                 }
                             }
@@ -410,17 +404,25 @@ namespace Gek
                     std::unordered_map<std::string, std::string> resourceAliasMap = getAliasedMap(passNode, "resources");
                     for (auto &resourcePair : resourceAliasMap)
                     {
-                        auto resourceSearch = resourceMap.find(resourcePair.first);
-                        if (resourceSearch != std::end(resourceMap))
-                        {
-                            pass.resourceList.push_back(resourceSearch->second);
-                        }
-
                         uint32_t currentStage = nextResourceStage++;
-                        auto semanticsSearch = resourceSemanticsMap.find(resourcePair.first);
-                        if (semanticsSearch != std::end(resourceSemanticsMap))
+                        if (resourcePair.first == "inputBuffer")
                         {
-                            resourceData += String::Format("    %v %v : register(t%v);\r\n", semanticsSearch->second, resourcePair.second, currentStage);
+                            pass.resourceList.push_back(ResourceHandle());
+                            resourceData += String::Format("    Texture2D<float3> %v : register(t%v);\r\n", resourcePair.second, currentStage);
+                        }
+                        else
+                        {
+                            auto resourceSearch = resourceMap.find(resourcePair.first);
+                            if (resourceSearch != std::end(resourceMap))
+                            {
+                                pass.resourceList.push_back(resourceSearch->second);
+                            }
+
+                            auto semanticsSearch = resourceSemanticsMap.find(resourcePair.first);
+                            if (semanticsSearch != std::end(resourceSemanticsMap))
+                            {
+                                resourceData += String::Format("    %v %v : register(t%v);\r\n", semanticsSearch->second, resourcePair.second, currentStage);
+                            }
                         }
                     }
 
@@ -483,7 +485,7 @@ namespace Gek
             }
 
             // Filter
-            Pass::Mode preparePass(Video::Device::Context *videoContext, PassData const &pass)
+            Pass::Mode preparePass(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle output, PassData const &pass)
             {
                 for (const auto &clearTarget : pass.clearResourceMap)
                 {
@@ -516,7 +518,13 @@ namespace Gek
                 Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
                 if (!pass.resourceList.empty())
                 {
-                    resources->setResourceList(videoPipeline, pass.resourceList, 0);
+                    auto resourceList(pass.resourceList);
+                    for (auto &resource : resourceList)
+                    {
+                        resource = (resource ? resource : input);
+                    }
+
+                    resources->setResourceList(videoPipeline, resourceList, 0);
                 }
 
                 if (!pass.unorderedAccessList.empty())
@@ -532,23 +540,6 @@ namespace Gek
 
                 resources->setProgram(videoPipeline, pass.program);
 
-                FilterConstantData filterConstantData;
-                if (!pass.renderTargetList.empty())
-                {
-                    auto description = resources->getTextureDescription(pass.renderTargetList.front());
-                    if (description)
-                    {
-                        filterConstantData.targetSize.x = description->width;
-                        filterConstantData.targetSize.y = description->height;
-                    }
-                }
-
-                videoDevice->updateResource(filterConstantBuffer.get(), &filterConstantData);
-                videoContext->geometryPipeline()->setConstantBufferList({ filterConstantBuffer.get() }, 2);
-                videoContext->vertexPipeline()->setConstantBufferList({ filterConstantBuffer.get() }, 2);
-                videoContext->pixelPipeline()->setConstantBufferList({ filterConstantBuffer.get() }, 2);
-                videoContext->computePipeline()->setConstantBufferList({ filterConstantBuffer.get() }, 2);
-
                 switch (pass.mode)
                 {
                 case Pass::Mode::Compute:
@@ -561,7 +552,13 @@ namespace Gek
                     resources->setBlendState(videoContext, pass.blendState, pass.blendFactor, 0xFFFFFFFF);
                     if (!pass.renderTargetList.empty())
                     {
-                        resources->setRenderTargetList(videoContext, pass.renderTargetList, nullptr);
+                        auto renderTargetList(pass.renderTargetList);
+                        for (auto &resource : renderTargetList)
+                        {
+                            resource = (resource ? resource : output);
+                        }
+
+                        resources->setRenderTargetList(videoContext, renderTargetList, nullptr);
                     }
 
                     break;
@@ -594,10 +591,6 @@ namespace Gek
                     resources->clearRenderTargetList(videoContext, pass.renderTargetList.size(), true);
                 }
 
-                videoContext->geometryPipeline()->clearConstantBufferList(1, 2);
-                videoContext->vertexPipeline()->clearConstantBufferList(1, 2);
-                videoContext->pixelPipeline()->clearConstantBufferList(1, 2);
-                videoContext->computePipeline()->clearConstantBufferList(1, 2);
                 for (auto &resolveResource : pass.resolveSampleMap)
                 {
                     resources->resolveSamples(videoContext, resolveResource.first, resolveResource.second);
@@ -609,12 +602,15 @@ namespace Gek
             {
             public:
                 Video::Device::Context *videoContext;
+                ResourceHandle input, output;
                 Filter *filterNode;
                 std::vector<Filter::PassData>::iterator current, end;
 
             public:
-                PassImplementation(Video::Device::Context *videoContext, Filter *filterNode, std::vector<Filter::PassData>::iterator current, std::vector<Filter::PassData>::iterator end)
+                PassImplementation(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle output, Filter *filterNode, std::vector<Filter::PassData>::iterator current, std::vector<Filter::PassData>::iterator end)
                     : videoContext(videoContext)
+                    , input(input)
+                    , output(output)
                     , filterNode(filterNode)
                     , current(current)
                     , end(end)
@@ -624,12 +620,12 @@ namespace Gek
                 Iterator next(void)
                 {
                     auto next = current;
-                    return Iterator(++next == end ? nullptr : new PassImplementation(videoContext, filterNode, next, end));
+                    return Iterator(++next == end ? nullptr : new PassImplementation(videoContext, input, output, filterNode, next, end));
                 }
 
                 Mode prepare(void)
                 {
-                    return filterNode->preparePass(videoContext, (*current));
+                    return filterNode->preparePass(videoContext, input, output, (*current));
                 }
 
                 void clear(void)
@@ -638,10 +634,10 @@ namespace Gek
                 }
             };
 
-            Pass::Iterator begin(Video::Device::Context *videoContext)
+            Pass::Iterator begin(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle output)
             {
                 assert(videoContext);
-                return Pass::Iterator(passList.empty() ? nullptr : new PassImplementation(videoContext, this, std::begin(passList), std::end(passList)));
+                return Pass::Iterator(passList.empty() ? nullptr : new PassImplementation(videoContext, input, output, this, std::begin(passList), std::end(passList)));
             }
         };
 

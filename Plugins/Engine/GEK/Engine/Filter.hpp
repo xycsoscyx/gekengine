@@ -48,7 +48,7 @@ namespace Gek
 
             virtual void reload(void) = 0;
 
-            virtual Pass::Iterator begin(Video::Device::Context *videoContext) = 0;
+            virtual Pass::Iterator begin(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle output) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

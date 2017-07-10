@@ -136,7 +136,7 @@ namespace Gek
                 {
                     auto backBuffer = core->getVideoDevice()->getBackBuffer();
                     Video::Texture::Description description;
-                    description.format = Video::Format::R8G8B8A8_UNORM_SRGB;
+                    description.format = Video::Format::R11G11B10_FLOAT;
                     description.width = backBuffer->getDescription().width;
                     description.height = backBuffer->getDescription().height;
                     description.flags = Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource;

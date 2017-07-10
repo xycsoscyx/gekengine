@@ -366,6 +366,8 @@ namespace Gek
             concurrency::concurrent_queue<Camera> cameraQueue;
             Camera currentCamera;
 
+            std::string screenOutput;
+
             struct
             {
                 Video::ObjectPtr vertexProgram;
@@ -480,7 +482,9 @@ namespace Gek
                     "Texture2D<float3> inputBuffer : register(t0);" \
                     "float3 mainPixelProgram(in Input input) : SV_TARGET0" \
                     "{" \
-                    "    return inputBuffer[input.screen.xy];" \
+                    "    uint width, height, mipMapCount;" \
+                    "    inputBuffer.GetDimensions(0, width, height, mipMapCount);" \
+                    "    return inputBuffer[input.texCoord * float2(width, height)];" \
                     "}";
 
                 auto compiledVertexProgram = resources->compileProgram(Video::PipelineType::Vertex, "deferredVertexProgram", "mainVertexProgram", program);
@@ -1058,7 +1062,11 @@ namespace Gek
                 assert(videoDevice);
                 assert(population);
 
-                bool hasScreenImage = false;
+                EngineConstantData engineConstantData;
+                engineConstantData.frameTime = frameTime;
+                engineConstantData.worldTime = 0.0f;
+                videoDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
+
                 while (cameraQueue.try_pop(currentCamera))
                 {
                     drawCallList.clear();
@@ -1220,10 +1228,6 @@ namespace Gek
                             videoDevice->updateResource(lightConstantBuffer.get(), &lightConstants);
                         }
 
-                        EngineConstantData engineConstantData;
-                        engineConstantData.frameTime = frameTime;
-                        engineConstantData.worldTime = 0.0f;
-
                         CameraConstantData cameraConstantData;
                         cameraConstantData.fieldOfView.x = (1.0f / currentCamera.projectionMatrix._11);
                         cameraConstantData.fieldOfView.y = (1.0f / currentCamera.projectionMatrix._22);
@@ -1231,12 +1235,10 @@ namespace Gek
                         cameraConstantData.farClip = currentCamera.farClip;
                         cameraConstantData.viewMatrix = currentCamera.viewMatrix;
                         cameraConstantData.projectionMatrix = currentCamera.projectionMatrix;
+                        videoDevice->updateResource(cameraConstantBuffer.get(), &cameraConstantData);
 
                         Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                         videoContext->clearState();
-
-                        videoDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
-                        videoDevice->updateResource(cameraConstantBuffer.get(), &cameraConstantData);
 
                         std::vector<Video::Buffer *> bufferList = { engineConstantBuffer.get(), cameraConstantBuffer.get() };
                         videoContext->geometryPipeline()->setConstantBufferList(bufferList, 0);
@@ -1320,19 +1322,29 @@ namespace Gek
                         videoContext->pixelPipeline()->clearConstantBufferList(2, 0);
                         videoContext->computePipeline()->clearConstantBufferList(2, 0);
 
-                        auto finalHandle = resources->getResourceHandle(finalOutput);
-                        renderOverlay(videoDevice->getDefaultContext(), finalHandle, currentCamera.cameraTarget);
-                        if (!currentCamera.cameraTarget)
+                        if (currentCamera.cameraTarget)
                         {
-                            hasScreenImage = true;
+                            auto finalHandle = resources->getResourceHandle(finalOutput);
+                            renderOverlay(videoDevice->getDefaultContext(), finalHandle, currentCamera.cameraTarget);
+                        }
+                        else
+                        {
+                            screenOutput = finalOutput;
                         }
                     }
                 };
 
-                if (hasScreenImage)
+                auto screenHandle = resources->getResourceHandle(screenOutput);
+                if (screenHandle)
                 {
                     Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                     videoContext->clearState();
+
+                    std::vector<Video::Buffer *> bufferList = { engineConstantBuffer.get() };
+                    videoContext->geometryPipeline()->setConstantBufferList(bufferList, 0);
+                    videoContext->vertexPipeline()->setConstantBufferList(bufferList, 0);
+                    videoContext->pixelPipeline()->setConstantBufferList(bufferList, 0);
+                    videoContext->computePipeline()->setConstantBufferList(bufferList, 0);
 
                     std::vector<Video::Object *> samplerList = { textureSamplerState.get(), mipMapSamplerState.get(), };
                     videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
@@ -1340,12 +1352,12 @@ namespace Gek
                     videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
 
                     videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                    for (const auto &filterName : { "tonemap", "antialias" })
+                    for (const auto &filterName : { "tonemap" })
                     {
                         Engine::Filter * const filter = resources->getFilter(filterName);
                         if (filter)
                         {
-                            for (auto pass = filter->begin(videoContext); pass; pass = pass->next())
+                            for (auto pass = filter->begin(videoContext, screenHandle, ResourceHandle()); pass; pass = pass->next())
                             {
                                 switch (pass->prepare())
                                 {
@@ -1361,6 +1373,11 @@ namespace Gek
                             }
                         }
                     }
+
+                    videoContext->geometryPipeline()->clearConstantBufferList(1, 0);
+                    videoContext->vertexPipeline()->clearConstantBufferList(1, 0);
+                    videoContext->pixelPipeline()->clearConstantBufferList(1, 0);
+                    videoContext->computePipeline()->clearConstantBufferList(1, 0);
                 }
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
@@ -1375,7 +1392,7 @@ namespace Gek
                 onShowUserInterface.emit(ImGui::GetCurrentContext());
                 ImGui::Render();
 
-                videoDevice->present(false);
+                videoDevice->present(true);
             }
 
             void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle target)
@@ -1394,6 +1411,9 @@ namespace Gek
                 resources->setRenderTargetList(videoContext, { target }, nullptr);
 
                 resources->drawPrimitive(videoContext, 3, 0);
+
+                resources->clearRenderTargetList(videoContext, 1, false);
+                resources->clearResourceList(videoContext->pixelPipeline(), 1, 0);
             }
         };
 
