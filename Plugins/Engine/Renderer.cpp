@@ -339,8 +339,14 @@ namespace Gek
             Video::ObjectPtr bufferSamplerState;
             Video::ObjectPtr textureSamplerState;
             Video::ObjectPtr mipMapSamplerState;
+            std::vector<Video::Object *> samplerList;
+
             Video::BufferPtr engineConstantBuffer;
             Video::BufferPtr cameraConstantBuffer;
+            std::vector<Video::Buffer *> shaderBufferList;
+            std::vector<Video::Buffer *> filterBufferList;
+            std::vector<Video::Buffer *> lightBufferList;
+            std::vector<Video::Object *> lightResoruceList;
 
             Video::ObjectPtr deferredVertexProgram;
             Video::ObjectPtr deferredPixelProgram;
@@ -431,6 +437,8 @@ namespace Gek
                 mipMapSamplerState = videoDevice->createSamplerState(mipMapSamplerStateData);
                 mipMapSamplerState->setName("renderer:mipMapSamplerState");
 
+                samplerList = { textureSamplerState.get(), mipMapSamplerState.get(), };
+
                 Video::UnifiedBlendStateInformation blendStateInformation;
                 blendState = videoDevice->createBlendState(blendStateInformation);
                 blendState->setName("renderer:blendState");
@@ -454,9 +462,14 @@ namespace Gek
                 cameraConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
                 cameraConstantBuffer->setName("renderer:cameraConstantBuffer");
 
+                shaderBufferList = { engineConstantBuffer.get(), cameraConstantBuffer.get() };
+                filterBufferList = { engineConstantBuffer.get() };
+
                 constantBufferDescription.stride = sizeof(LightConstantData);
                 lightConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
                 lightConstantBuffer->setName("renderer:lightConstantBuffer");
+
+                lightBufferList = { lightConstantBuffer.get() };
 
                 static const char program[] =
                     "struct Output" \
@@ -1240,28 +1253,28 @@ namespace Gek
                         Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                         videoContext->clearState();
 
-                        std::vector<Video::Buffer *> bufferList = { engineConstantBuffer.get(), cameraConstantBuffer.get() };
-                        videoContext->geometryPipeline()->setConstantBufferList(bufferList, 0);
-                        videoContext->vertexPipeline()->setConstantBufferList(bufferList, 0);
-                        videoContext->pixelPipeline()->setConstantBufferList(bufferList, 0);
-                        videoContext->computePipeline()->setConstantBufferList(bufferList, 0);
+                        videoContext->geometryPipeline()->setConstantBufferList(shaderBufferList, 0);
+                        videoContext->vertexPipeline()->setConstantBufferList(shaderBufferList, 0);
+                        videoContext->pixelPipeline()->setConstantBufferList(shaderBufferList, 0);
+                        videoContext->computePipeline()->setConstantBufferList(shaderBufferList, 0);
 
-                        std::vector<Video::Object *> samplerList = { textureSamplerState.get(), mipMapSamplerState.get(), };
                         videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
 
                         videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
 
                         if (isLightingRequired)
                         {
-                            videoContext->pixelPipeline()->setConstantBufferList({ lightConstantBuffer.get() }, 3);
-                            videoContext->pixelPipeline()->setResourceList(
+                            lightResoruceList =
                             {
                                 directionalLightData.lightDataBuffer.get(),
                                 pointLightData.lightDataBuffer.get(),
                                 spotLightData.lightDataBuffer.get(),
                                 tileOffsetCountBuffer.get(),
                                 lightIndexBuffer.get()
-                            }, 0);
+                            };
+
+                            videoContext->pixelPipeline()->setConstantBufferList(lightBufferList, 3);
+                            videoContext->pixelPipeline()->setResourceList(lightResoruceList, 0);
                         }
 
                         std::string finalOutput;
@@ -1340,13 +1353,11 @@ namespace Gek
                     Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                     videoContext->clearState();
 
-                    std::vector<Video::Buffer *> bufferList = { engineConstantBuffer.get() };
-                    videoContext->geometryPipeline()->setConstantBufferList(bufferList, 0);
-                    videoContext->vertexPipeline()->setConstantBufferList(bufferList, 0);
-                    videoContext->pixelPipeline()->setConstantBufferList(bufferList, 0);
-                    videoContext->computePipeline()->setConstantBufferList(bufferList, 0);
+                    videoContext->geometryPipeline()->setConstantBufferList(filterBufferList, 0);
+                    videoContext->vertexPipeline()->setConstantBufferList(filterBufferList, 0);
+                    videoContext->pixelPipeline()->setConstantBufferList(filterBufferList, 0);
+                    videoContext->computePipeline()->setConstantBufferList(filterBufferList, 0);
 
-                    std::vector<Video::Object *> samplerList = { textureSamplerState.get(), mipMapSamplerState.get(), };
                     videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
 
                     videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
