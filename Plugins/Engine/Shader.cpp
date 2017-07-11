@@ -67,8 +67,7 @@ namespace Gek
             Plugin::Population *population = nullptr;
 
             std::string shaderName;
-            JSON::Instance globalOptions = JSON::Instance(JSON::EmptyObject);
-            std::string output;
+            std::string outputResource;
             uint32_t drawOrder = 0;
 
             std::vector<PassData> passList;
@@ -109,10 +108,15 @@ namespace Gek
                 auto &backBufferDescription = backBuffer->getDescription();
 
                 const JSON::Instance shaderNode = JSON::Load(getContext()->getRootFileName("data", "shaders", shaderName).withExtension(".json"));
+                outputResource = shaderNode.get("output").convert(String::Empty);
+                auto globalOptions = shaderNode.get("options").getObject();
+                auto engineOptions = core->getOption("shaders", shaderName);
+                for (auto &enginePair : engineOptions.getMembers())
+                {
+                    globalOptions[enginePair.name()] = enginePair.value();
+                }
 
-                globalOptions = shaderNode.get("options").getObject();
-
-                output = shaderNode.get("output").convert(String::Empty);
+                core->setOption("shaders", shaderName, globalOptions);
 
                 drawOrder = shaderNode.get("required").getArray().size();
                 for (auto &required : shaderNode.get("required").getArray())
@@ -329,11 +333,12 @@ namespace Gek
                     lightingRequired |= pass.lighting;
                     if (passNode.has("enable"))
                     {
-                        pass.enabled = globalOptions.get(passNode.get("enable").convert(String::Empty)).convert(true);
+                        auto enableOption = passNode.get("enable").convert(String::Empty);
+                        pass.enabled = JSON::Reference(globalOptions).get(enableOption).convert(true);
                     }
 
                     std::string defineData;
-                    JSON::Object passOptions(globalOptions.getObject());
+                    JSON::Object passOptions(globalOptions);
                     if (passNode.has("options"))
                     {
                         auto overrideOptions = passNode.get("options");
@@ -345,53 +350,53 @@ namespace Gek
 
                     for (auto &optionPair : JSON::Reference(passOptions).getMembers())
                     {
-                        auto name = optionPair.name();
-                        JSON::Reference value(optionPair.value());
-                        auto &valueArray = value.getArray();
-                        if (valueArray.size() > 0)
+                        auto optionName = optionPair.name();
+                        auto &optionValue = optionPair.value();
+                        JSON::Reference option(optionValue);
+                        if (optionValue.is_array())
                         {
-                            switch (valueArray.size())
+                            switch (optionValue.size())
                             {
                             case 1:
-                                defineData += String::Format("    static const float %v = %v;\r\n", name,
-                                    JSON::Reference(valueArray[0]).convert(0.0f));
+                                defineData += String::Format("    static const float %v = %v;\r\n", optionName,
+                                    JSON::Reference(optionValue[0]).convert(0.0f));
                                 break;
 
                             case 2:
-                                defineData += String::Format("    static const float2 %v = float2(%v, %v);\r\n", name,
-                                    JSON::Reference(valueArray[0]).convert(0.0f),
-                                    JSON::Reference(valueArray[1]).convert(0.0f));
+                                defineData += String::Format("    static const float2 %v = float2(%v, %v);\r\n", optionName,
+                                    JSON::Reference(optionValue[0]).convert(0.0f),
+                                    JSON::Reference(optionValue[1]).convert(0.0f));
                                 break;
 
                             case 3:
-                                defineData += String::Format("    static const float3 %v = float3(%v, %v, %v);\r\n", name,
-                                    JSON::Reference(valueArray[0]).convert(0.0f),
-                                    JSON::Reference(valueArray[1]).convert(0.0f),
-                                    JSON::Reference(valueArray[2]).convert(0.0f));
+                                defineData += String::Format("    static const float3 %v = float3(%v, %v, %v);\r\n", optionName,
+                                    JSON::Reference(optionValue[0]).convert(0.0f),
+                                    JSON::Reference(optionValue[1]).convert(0.0f),
+                                    JSON::Reference(optionValue[2]).convert(0.0f));
                                 break;
 
                             case 4:
-                                defineData += String::Format("    static const float4 %v = float4(%v, %v, %v, %v)\r\n", name,
-                                    JSON::Reference(valueArray[0]).convert(0.0f),
-                                    JSON::Reference(valueArray[1]).convert(0.0f),
-                                    JSON::Reference(valueArray[2]).convert(0.0f),
-                                    JSON::Reference(valueArray[3]).convert(0.0f));
+                                defineData += String::Format("    static const float4 %v = float4(%v, %v, %v, %v)\r\n", optionName,
+                                    JSON::Reference(optionValue[0]).convert(0.0f),
+                                    JSON::Reference(optionValue[1]).convert(0.0f),
+                                    JSON::Reference(optionValue[2]).convert(0.0f),
+                                    JSON::Reference(optionValue[3]).convert(0.0f));
                                 break;
                             };
                         }
                         else
                         {
-                            if (value.getObject().is_bool())
+                            if (optionValue.is_bool())
                             {
-                                defineData += String::Format("    static const bool %v = %v;\r\n", name, value.convert(false));
+                                defineData += String::Format("    static const bool %v = %v;\r\n", optionName, option.convert(false));
                             }
-                            else if (value.getObject().is_integer())
+                            else if (optionValue.is_integer())
                             {
-                                defineData += String::Format("    static const int %v = %v;\r\n", name, value.convert(0));
+                                defineData += String::Format("    static const int %v = %v;\r\n", optionName, option.convert(0));
                             }
                             else
                             {
-                                defineData += String::Format("    static const float %v = %v;\r\n", name, value.convert(0.0f));
+                                defineData += String::Format("    static const float %v = %v;\r\n", optionName, option.convert(0.0f));
                             }
                         }
                     }
@@ -947,7 +952,7 @@ namespace Gek
 
             std::string const &getOutput(void) const
             {
-                return output;
+                return outputResource;
             }
 
             Pass::Iterator begin(Video::Device::Context *videoContext, Math::Float4x4 const &viewMatrix, const Shapes::Frustum &viewFrustum)

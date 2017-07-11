@@ -33,6 +33,8 @@ namespace Gek
             bool engineRunning = false;
 
             JSON::Object configuration;
+            JSON::Object shadersSettings;
+            JSON::Object filtersSettings;
             ShuntingYard shuntingYard;
 
             Video::DisplayModeList displayModeList;
@@ -188,6 +190,7 @@ namespace Gek
                 window->onMousePosition.disconnect<Core, &Core::onMousePosition>(this);
                 window->onMouseMovement.disconnect<Core, &Core::onMouseMovement>(this);
 
+                ImGui::ShutdownDock();
                 processorList.clear();
                 renderer = nullptr;
                 resources = nullptr;
@@ -406,6 +409,8 @@ namespace Gek
                         {
                             showSettings = true;
                             next = previous = current;
+                            shadersSettings = configuration.get("shaders");
+                            filtersSettings = configuration.get("filters");
                         }
 
                         ImGui::Separator();
@@ -458,53 +463,190 @@ namespace Gek
                 }
             }
 
+            void showDisplay(void)
+            {
+                if (ImGui::BeginDock("Display", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+                {
+                    auto &style = ImGui::GetStyle();
+                    ImGui::PushItemWidth(-1.0f);
+                    ImGui::ListBox("##DisplayMode", &next.mode, [](void *data, int index, const char **text) -> bool
+                    {
+                        Core *core = static_cast<Core *>(data);
+                        auto &mode = core->displayModeStringList[index];
+                        (*text) = mode.c_str();
+                        return true;
+                    }, this, displayModeStringList.size(), 10);
+
+                    ImGui::PopItemWidth();
+                    ImGui::Spacing();
+                    ImGui::Checkbox("FullScreen", &next.fullScreen);
+                }
+
+                ImGui::EndDock();
+            }
+
+            void showVisual(void)
+            {
+                if (ImGui::BeginDock("Visual", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+                {
+                    auto showOptions = [&](char const *group, JSON::Object &settings) -> void
+                    {
+                        if (!settings.is_object())
+                        {
+                            return;
+                        }
+
+                        if (ImGui::TreeNodeEx(group, 0))
+                        {
+                            for (auto &groupPair : settings.members())
+                            {
+                                auto groupName = groupPair.name();
+                                auto &groupValues = groupPair.value();
+                                if (!groupValues.is_object() || groupValues.empty())
+                                {
+                                    continue;
+                                }
+
+                                if (ImGui::TreeNodeEx(groupName.c_str(), 0))
+                                {
+                                    for (auto &optionPair : groupValues.members())
+                                    {
+                                        auto optionName = optionPair.name();
+                                        auto &optionValue = optionPair.value();
+                                        JSON::Reference option(optionValue);
+
+                                        ImGui::Text(optionName.c_str());
+                                        ImGui::SameLine();
+                                        ImGui::PushItemWidth(-1.0f);
+                                        if (optionValue.is_array())
+                                        {
+                                            switch (optionValue.size())
+                                            {
+                                            case 1:
+                                                if (true)
+                                                {
+                                                    float data = JSON::Reference(optionValue[0]).convert(0.0f);
+                                                    if (ImGui::InputFloat("##", &data))
+                                                    {
+                                                        optionValue = data;
+                                                    }
+
+                                                    break;
+                                                }
+
+                                            case 2:
+                                                if (true)
+                                                {
+                                                    Math::Float2 data(
+                                                        JSON::Reference(optionValue[0]).convert(0.0f),
+                                                        JSON::Reference(optionValue[1]).convert(0.0f));
+                                                    if (ImGui::InputFloat2("##", data.data))
+                                                    {
+                                                        optionValue = JSON::Array({ data.x, data.y });
+                                                    }
+
+                                                    break;
+                                                }
+
+                                            case 3:
+                                                if (true)
+                                                {
+                                                    Math::Float3 data(
+                                                        JSON::Reference(optionValue[0]).convert(0.0f),
+                                                        JSON::Reference(optionValue[1]).convert(0.0f),
+                                                        JSON::Reference(optionValue[2]).convert(0.0f));
+                                                    if (ImGui::InputFloat3("##", data.data))
+                                                    {
+                                                        optionValue = JSON::Array({ data.x, data.y, data.z });
+                                                    }
+
+                                                    break;
+                                                }
+
+                                            case 4:
+                                                if (true)
+                                                {
+                                                    Math::Float4 data(
+                                                        JSON::Reference(optionValue[0]).convert(0.0f),
+                                                        JSON::Reference(optionValue[1]).convert(0.0f),
+                                                        JSON::Reference(optionValue[2]).convert(0.0f),
+                                                        JSON::Reference(optionValue[3]).convert(0.0f));
+                                                    if (ImGui::InputFloat4("##", data.data))
+                                                    {
+                                                        optionValue = JSON::Array({ data.x, data.y, data.z, data.w });
+                                                    }
+
+                                                    break;
+                                                }
+                                            };
+                                        }
+                                        else
+                                        {
+                                            if (optionValue.is_bool())
+                                            {
+                                                bool data = option.convert(false);
+                                                if (ImGui::Checkbox("##", &data))
+                                                {
+                                                    optionValue = data;
+                                                }
+                                            }
+                                            else if (optionValue.is_integer())
+                                            {
+                                                int data = option.convert(0);
+                                                if (ImGui::InputInt("##", &data))
+                                                {
+                                                    optionValue = data;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                float data = option.convert(0.0f);
+                                                if (ImGui::InputFloat("##", &data))
+                                                {
+                                                    optionValue = data;
+                                                }
+                                            }
+                                        }
+
+                                        ImGui::PopItemWidth();
+                                    }
+
+                                    ImGui::TreePop();
+                                }
+                            }
+
+                            ImGui::TreePop();
+                        }
+                    };
+
+                    showOptions("shaders", shadersSettings);
+                    showOptions("filters", filtersSettings);
+                }
+
+                ImGui::EndDock();
+            }
+
             void showSettingsWindow(void)
             {
                 if (showSettings)
                 {
-                    auto settingsSize = ImVec2(500, 350);
-                    ImGui::SetNextWindowSize(settingsSize);
-                    ImGui::SetNextWindowPosCenter();
-                    if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_ShowBorders))
+                    auto &style = ImGui::GetStyle();
+                    ImGui::SetNextWindowPosCenter(ImGuiSetCond_Appearing);
+                    if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
                     {
-                        auto &style = ImGui::GetStyle();
-                        auto frameColor = style.Colors[ImGuiCol_FrameBg];
-                        ImGui::PushStyleColor(ImGuiCol_FrameBg, style.Colors[ImGuiCol_Button]);
-                        if (ImGui::BeginChildFrame(0, ImVec2(0.0f, 0.0f), ImGuiWindowFlags_AlwaysAutoResize))
+                        if (ImGui::BeginChildFrame(1234, ImVec2(500.0, 300.0f)))
                         {
-                            ImGui::PushStyleColor(ImGuiCol_FrameBg, frameColor);
-                            ImGui::BeginTabBar("Settings#left_tabs_bar");
-                            if (ImGui::AddTab("Display"))
-                            {
-                                ImGui::PushItemWidth(ImGui::GetWindowWidth() - 2.0f * (style.WindowPadding.x + style.FramePadding.x));
-                                ImGui::ListBox("Display Mode", &next.mode, [](void *data, int index, const char **text) -> bool
-                                {
-                                    Core *core = static_cast<Core *>(data);
-                                    auto &mode = core->displayModeStringList[index];
-                                    (*text) = mode.c_str();
-                                    return true;
-                                }, this, displayModeStringList.size(), 10);
-
-                                ImGui::PopItemWidth();
-                                ImGui::Spacing();
-                                ImGui::Checkbox("FullScreen", &next.fullScreen);
-                            }
-
-                            if (ImGui::AddTab("Visual"))
-                            {
-                            }
-
-                            if (ImGui::AddTab("Audio"))
-                            {
-                            }
-
-                            ImGui::EndTabBar();
-                            ImGui::PopStyleColor();
+                            ImGui::BeginDockspace();
+                            showDisplay();
+                            showVisual();
+                            ImGui::EndDockspace();
                         }
 
-                        float buttonPositionX = (ImGui::GetWindowWidth() - (200.0f + style.ItemSpacing.x)) * 0.5f;
-                        float buttonPositionY = (ImGui::GetWindowHeight() - style.WindowPadding.y - style.FramePadding.y - 25.0f);
-                        ImGui::SetCursorPos(ImVec2(buttonPositionX, buttonPositionY));
+                        ImGui::EndChildFrame();
+                        float buttonPositionX = (ImGui::GetWindowContentRegionWidth() - 200.0f - style.ItemSpacing.x - (style.FramePadding.x * 2.0f)) * 0.5f;
+                        ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
+
+                        ImGui::SameLine();
                         if (ImGui::Button("Accept", ImVec2(100.0f, 25.0f)))
                         {
                             bool changedDisplayMode = setDisplayMode(next.mode);
@@ -515,6 +657,14 @@ namespace Gek
                                 modeChangeTimer = 10.0f;
                             }
 
+                            if (shadersSettings != configuration.get("shaders") ||
+                                filtersSettings != configuration.get("filters"))
+                            {
+                                configuration["shaders"] = shadersSettings;
+                                configuration["filters"] = filtersSettings;
+                                onSettingsChanged.emit();
+                            }
+
                             showSettings = false;
                         }
 
@@ -523,9 +673,6 @@ namespace Gek
                         {
                             showSettings = false;
                         }
-
-                        ImGui::EndChildFrame();
-                        ImGui::PopStyleColor();
                     }
 
                     ImGui::End();
@@ -537,13 +684,16 @@ namespace Gek
                 if (showModeChange)
                 {
                     ImGui::SetNextWindowPosCenter();
-                    if (ImGui::Begin("Keep Display Mode", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_ShowBorders))
+                    ImGui::SetNextWindowPosCenter(ImGuiSetCond_Appearing);
+                    if (ImGui::Begin("Keep Display Mode", &showModeChange, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
                     {
                         ImGui::Text("Keep Display Mode?");
 
                         auto &style = ImGui::GetStyle();
-                        float buttonPositionX = (ImGui::GetWindowWidth() - (200.0f + style.ItemSpacing.x)) * 0.5f;
-                        ImGui::SetCursorPos(ImVec2(buttonPositionX, ImGui::GetCursorPosY()));
+                        float buttonPositionX = (ImGui::GetWindowContentRegionWidth() - 200.0f - style.ItemSpacing.x - (style.FramePadding.x * 2.0f)) * 0.5f;
+                        ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
+
+                        ImGui::SameLine();
                         if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)))
                         {
                             showModeChange = false;
@@ -569,7 +719,9 @@ namespace Gek
             {
                 if (showLoadMenu)
                 {
-                    if (ImGui::Begin("Load", &showLoadMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_ShowBorders))
+                    ImGui::SetNextWindowPosCenter();
+                    ImGui::SetNextWindowPosCenter(ImGuiSetCond_Appearing);
+                    if (ImGui::Begin("Load", &showLoadMenu, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
                     {
                         auto &style = ImGui::GetStyle();
                         std::vector<std::string> scenes;
@@ -586,8 +738,6 @@ namespace Gek
                         if (scenes.empty())
                         {
                             ImGui::Text("No scenes found");
-                            float buttonPositionX = (ImGui::GetWindowWidth() - 100.0f) * 0.5f;
-                            ImGui::SetCursorPos(ImVec2(buttonPositionX, ImGui::GetCursorPosY()));
                         }
                         else
                         {
@@ -598,18 +748,26 @@ namespace Gek
                                 (*output) = scenes->at(index).c_str();
                                 return true;
                             }, (void *)&scenes, scenes.size(), 10);
+                        }
 
-                            float buttonPositionX = (ImGui::GetWindowWidth() - (200.0f + style.ItemSpacing.x)) * 0.5f;
-                            ImGui::SetCursorPos(ImVec2(buttonPositionX, ImGui::GetCursorPosY()));
+                        float buttonPositionX = (ImGui::GetWindowContentRegionWidth() - 200.0f - style.ItemSpacing.x - (style.FramePadding.x * 2.0f)) * 0.5f;
+                        ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
+
+                        ImGui::SameLine();
+                        if (scenes.empty())
+                        {
+                            ImGui::Dummy(ImVec2(100.0f, 25.0f));
+                        }
+                        else
+                        {
                             if (ImGui::Button("Load", ImVec2(100.0f, 25.0f)))
                             {
                                 showLoadMenu = false;
                                 population->load(scenes[currentSelectedScene]);
                             }
-
-                            ImGui::SameLine();
                         }
 
+                        ImGui::SameLine();
                         if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)))
                         {
                             showLoadMenu = false;

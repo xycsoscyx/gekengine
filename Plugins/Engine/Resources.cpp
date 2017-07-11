@@ -572,6 +572,7 @@ namespace Gek
                 assert(videoDevice);
 
                 core->onResize.connect<Resources, &Resources::onResize>(this);
+                core->onSettingsChanged.connect<Resources, &Resources::onSettingsChanged>(this);
             }
 
             ~Resources(void)
@@ -579,6 +580,7 @@ namespace Gek
                 assert(core);
 
                 loadPool.drain();
+                core->onSettingsChanged.disconnect<Resources, &Resources::onSettingsChanged>(this);
                 core->onResize.disconnect<Resources, &Resources::onResize>(this);
             }
 
@@ -668,6 +670,13 @@ namespace Gek
 
             // Plugin::Core Slots
             void onResize(void)
+            {
+                programCache.clear();
+                shaderCache.reload();
+                filterCache.reload();
+            }
+
+            void onSettingsChanged(void)
             {
                 programCache.clear();
                 shaderCache.reload();

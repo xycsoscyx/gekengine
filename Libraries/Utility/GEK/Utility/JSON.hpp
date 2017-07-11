@@ -21,6 +21,7 @@ namespace Gek
     namespace JSON
     {
         using Object = jsoncons::json;
+        using Array = jsoncons::json::array;
         extern const Object EmptyObject;
         extern const Object EmptyArray;
 
@@ -60,6 +61,11 @@ namespace Gek
             {
                 this->object = object;
                 return (*this);
+            }
+
+            Object &getReference(void)
+            {
+                return object;
             }
 
             Object const &getObject(void) const

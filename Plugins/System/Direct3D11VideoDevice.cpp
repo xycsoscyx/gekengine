@@ -1803,7 +1803,21 @@ namespace Gek
                         displayMode.aspectRatio = getAspectRatio(displayMode.width, displayMode.height);
                         displayMode.refreshRate.numerator = dxgiDisplayMode.RefreshRate.Numerator;
                         displayMode.refreshRate.denominator = dxgiDisplayMode.RefreshRate.Denominator;
-                        displayModeList.push_back(displayMode);
+                        if (! [&](void) -> bool
+                        {
+                            for (auto &checkMode : displayModeList)
+                            {
+                                if (memcmp(&checkMode, &displayMode, sizeof(Video::DisplayMode)) == 0)
+                                {
+                                    return true;
+                                }
+                            }
+
+                            return false;
+                        }())
+                        {
+                            displayModeList.push_back(displayMode);
+                        }
                     }
 
                     concurrency::parallel_sort(std::begin(displayModeList), std::end(displayModeList), [](const Video::DisplayMode &left, const Video::DisplayMode &right) -> bool

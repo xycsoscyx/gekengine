@@ -90,7 +90,7 @@ namespace Gek
             // Renderer
             void showPopulation(void)
             {
-                if (ImGui::BeginDock("Population", nullptr, ImGuiWindowFlags_ShowBorders, ImVec2(100.0f, -1.0f)))
+                if (ImGui::BeginDock("Population", nullptr, 0, ImVec2(100.0f, -1.0f)))
                 {
                     if (ImGui::TreeNodeEx("Selection Gizmo", 0))
                     {
@@ -295,7 +295,7 @@ namespace Gek
             void showScene(void)
             {
                 auto &imGuiIo = ImGui::GetIO();
-                if (ImGui::BeginDock("Scene", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_ShowBorders))
+                if (ImGui::BeginDock("Scene", nullptr, ImGuiWindowFlags_NoScrollbar))
                 {
                     cameraSize = ImGui::GetWindowSize();
 
