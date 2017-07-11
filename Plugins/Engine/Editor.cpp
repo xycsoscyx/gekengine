@@ -317,7 +317,7 @@ namespace Gek
                     viewMatrix.invert();
 
                     const auto backBuffer = core->getVideoDevice()->getBackBuffer();
-                    auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 1.0f, 100.0f));
+                    auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 0.1f, 200.0f));
 
                     ImGuizmo::BeginFrame();
                     ImGuizmo::SetRect(ImGui::GetCursorPosX(), ImGui::GetCursorPosY(), ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);
@@ -425,9 +425,9 @@ namespace Gek
                     viewMatrix.translation.xyz = position;
                     viewMatrix.invert();
 
-                    auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 1.0f, 100.0f));
+                    auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 0.1f, 200.0f));
 
-                    renderer->queueCamera(viewMatrix, projectionMatrix, 0.5f, 200.0f, cameraTarget);
+                    renderer->queueCamera(viewMatrix, projectionMatrix, 0.1f, 200.0f, cameraTarget);
                 }
             }
         };

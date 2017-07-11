@@ -15,7 +15,7 @@
 
 namespace Defines
 {
-    static const uint TechniqueMode = TechniqueFilmicU2;
+    static const uint TechniqueMode = TechniqueFilmicALU;
     static const uint AutoExposureMode = 2;
     static const float LuminanceSaturation = 1.0;
     static const float KeyValue = 0.18;

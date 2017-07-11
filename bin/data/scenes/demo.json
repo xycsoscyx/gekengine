@@ -1,10 +1,18 @@
 {
     "Seed": 7151980,
     "Templates": {
+        "BasicCube": {
+            "Transform": {
+                "position": [ "random(-40, 40)", "random(5, 30)", "random(-10, 10)" ],
+                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
+            },
+            "Model": "cube",
+            "Physical": { "mass": 100 }
+        },
         "BasicPointLight": {
             "Model": "lightbulb",
             "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 40)", "random(-15, 15)" ],
+                "position": [ "random(-40, 40)", "random(5, 40)", "random(-10, 10)" ],
                 "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
             },
             "PointLight": {
@@ -17,7 +25,7 @@
         "BasicSpotLight": {
             "Model": "flashlight",
             "Transform": {
-                "position": [ "random(-45, 45)", "random(5, 40)", "random(-15, 15)" ],
+                "position": [ "random(-40, 40)", "random(5, 40)", "random(-10, 10)" ],
                 "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
             },
             "SpotLight": {
@@ -76,166 +84,36 @@
             }
         },
 
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
-        {
-            "Transform": {
-                "position": [ "random(-45, 45)", "random(-5, 30)", "random(-20, 20)" ],
-                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
-            },
-            "Model": "cube",
-            "Physical": { "mass": 100 }
-        },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
+        { "Template": "BasicCube" },
 
         { "Template": "BasicPointLight" },
         { "Template": "BasicPointLight" },

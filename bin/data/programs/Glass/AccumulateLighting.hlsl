@@ -78,9 +78,13 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float3 surfaceIrradiance = getSurfaceIrradiance(inputPixel.screen.xy, surfacePosition, surfaceNormal, materialAlbedo, materialRoughness, materialMetallic);
 
     float materialThickness = Resources::thickness.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
-    float2 screenCoord = (inputPixel.screen.xy + (surfaceNormal.xy * materialThickness));
+    float2 screenCoordRed = (inputPixel.screen.xy + (surfaceNormal.xy * materialThickness * -60.0f));
+    float2 screenCoordGreen = (inputPixel.screen.xy + surfaceNormal.xy);
+    float2 screenCoordBlue = (inputPixel.screen.xy + (surfaceNormal.xy * materialThickness * 60.0f));
 
     float materialClarity = Resources::clarity.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
-    float3 glassColor = GetBiCubicSample(screenCoord, 1.0 - materialClarity);
-    return (surfaceIrradiance + (glassColor * materialAlbedo));
+    float glassColorRed = GetBiCubicSample(screenCoordRed, 1.0 - materialClarity).r;
+    float glassColorGreen = GetBiCubicSample(screenCoordGreen, 1.0 - materialClarity).g;
+    float glassColorBlue = GetBiCubicSample(screenCoordBlue, 1.0 - materialClarity).b;
+    return (surfaceIrradiance + (float3(glassColorRed, glassColorGreen, glassColorBlue) * materialAlbedo));
 }
