@@ -10,29 +10,21 @@
 #define FalloffMedium				3
 #define FalloffQuick				4
 
-namespace Defines
+namespace Options
 {
-    static const float Radius = 1;
-    static const float RadiusSquared = pow(Defines::Radius, 2.0);
-    static const float RadiusCubed = pow(Defines::Radius, 3.0);
-    static const int TapCount = 24;
-    static const float InverseTapCount = rcp(Defines::TapCount);
-    static const float SpiralTurns = 17;
+    static const float RadiusSquared = pow(Options::Radius, 2.0);
+    static const float RadiusCubed = pow(Options::Radius, 3.0);
+    static const float InverseTapCount = rcp(Options::TapCount);
     static const float SpiralDegrees = (SpiralTurns * Math::Pi * 2.0);
-    static const float Intensity = 2;
-    static const float IntensityModified = Defines::Intensity / pow(Defines::Radius, 6.0);
-    static const float Bias = 0.2;
-    static const float Epsilon = 0.01;
+    static const float IntensityModified = Options::Intensity / pow(Options::Radius, 6.0);
+}; // namespace Options
 
-    static const int FalloffFunction = HighQuality;
-}; // namespace Defines
-
-/** Returns a unit vector and a screen-space Defines::Radius for the tap on a unit disk (the caller should scale by the actual disk Defines::Radius) */
+/** Returns a unit vector and a screen-space Options::Radius for the tap on a unit disk (the caller should scale by the actual disk Options::Radius) */
 float2 GetTapOffset(float tapIndex, float spinAngle)
 {
     // Radius relative to tapRadius
-    const float alpha = ((tapIndex + 0.5) * Defines::InverseTapCount);
-    const float angle = ((alpha * Defines::SpiralDegrees) + spinAngle);
+    const float alpha = ((tapIndex + 0.5) * Options::InverseTapCount);
+    const float angle = ((alpha * Options::SpiralDegrees) + spinAngle);
 
     float2 tapOffset;
     sincos(angle, tapOffset.y, tapOffset.x);
@@ -53,10 +45,10 @@ Compute the occlusion due to sample with index
 \a i about the pixel at
 \a texCoord that corresponds to camera-space point
 \a surfacePosition with unit normal
-\a surfaceNormal, using maximum screen-space sampling Defines::Radius
+\a surfaceNormal, using maximum screen-space sampling Options::Radius
 \a diskRadius
 
-Note that units of H() the HPG12 paper are meters, not unitless.  The whole falloff/sampling function is therefore unitless.  this implementation, we factor out (9 / Defines::Radius).
+Note that units of H() the HPG12 paper are meters, not unitless.  The whole falloff/sampling function is therefore unitless.  this implementation, we factor out (9 / Options::Radius).
 
 Four versions of the falloff function are implemented below
 */
@@ -75,43 +67,43 @@ float getAmbientObscurance(float2 texCoord, float3 surfacePosition, float3 surfa
 
     // [Boulotaur2024] yes branching is bad but choice is good...
     [branch]
-    switch (Defines::FalloffFunction)
+    switch (Options::FalloffFunction)
     {
     case HighQuality:
         if (true)
         {
             // Addition from http://graphics.cs.williams.edu/papers/DeepGBuffer13/	
             // Epsilon inside the sqrt for rsqrt operation
-            const float falloff = max(1.0 - deltaAngle * (1.0 / Defines::RadiusSquared), 0.0);
-            return (falloff * max((normalAngle - Defines::Bias) * rsqrt(Defines::Epsilon + deltaAngle), 0.0));
+            const float falloff = max(1.0 - deltaAngle * (1.0 / Options::RadiusSquared), 0.0);
+            return (falloff * max((normalAngle - Options::Bias) * rsqrt(Options::Epsilon + deltaAngle), 0.0));
         }
 
     case FalloffHPG12:
         // A: From the HPG12 paper
-        // Note large Defines::Epsilon to avoid overdarkening withcracks
-        return (float(deltaAngle < Defines::RadiusSquared) * max((normalAngle - Defines::Bias) * rcp(Defines::Epsilon + deltaAngle), 0.0) * Defines::RadiusSquared * 0.6);
+        // Note large Options::Epsilon to avoid overdarkening withcracks
+        return (float(deltaAngle < Options::RadiusSquared) * max((normalAngle - Options::Bias) * rcp(Options::Epsilon + deltaAngle), 0.0) * Options::RadiusSquared * 0.6);
 
     case FalloffSmooth:
         if (true)
         {
             // B: Smoother transition to zero (lowers contrast, smoothing out corners). [Recommended]
-            const float falloff = max(Defines::RadiusSquared - deltaAngle, 0.0);
-            return (pow(falloff, 3.0) * max((normalAngle - Defines::Bias) * rcp(Defines::Epsilon + deltaAngle), 0.0));
-            // / (Defines::Epsilon + deltaAngle) (optimization by BartWronski)
+            const float falloff = max(Options::RadiusSquared - deltaAngle, 0.0);
+            return (pow(falloff, 3.0) * max((normalAngle - Options::Bias) * rcp(Options::Epsilon + deltaAngle), 0.0));
+            // / (Options::Epsilon + deltaAngle) (optimization by BartWronski)
         }
 
     case FalloffMedium:
         // surfacePosition: Medium contrast (which looks better at high radii), no division.  Note that the 
-        // contribution still falls off with Defines::Radius^2, but we've adjusted the rate a way that is
+        // contribution still falls off with Options::Radius^2, but we've adjusted the rate a way that is
         // more computationally efficient and happens to be aesthetically pleasing.
-        return (4.0 * max(1.0 - deltaAngle * 1.0 / Defines::RadiusSquared, 0.0) * max(normalAngle - Defines::Bias, 0.0));
+        return (4.0 * max(1.0 - deltaAngle * 1.0 / Options::RadiusSquared, 0.0) * max(normalAngle - Options::Bias, 0.0));
 
     case FalloffQuick:
         // D: Low contrast, no division operation
-        return (2.0 * float(deltaAngle < Defines::RadiusSquared) * max(normalAngle - Defines::Bias, 0.0));
+        return (2.0 * float(deltaAngle < Options::RadiusSquared) * max(normalAngle - Options::Bias, 0.0));
 
     default:
-        return (4.0 * max(1.0 - deltaAngle * 1.0 / Defines::RadiusSquared, 0.0) * max(normalAngle - Defines::Bias, 0.0));
+        return (4.0 * max(1.0 - deltaAngle * 1.0 / Options::RadiusSquared, 0.0) * max(normalAngle - Options::Bias, 0.0));
     };
 }
 
@@ -126,25 +118,25 @@ float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     // McGuire noise function
     // Hash function used the HPG12 AlchemyAO paper
     const float randomPatternRotationAngle = (GetNoise(inputPixel.screen.xy) * 10.0);
-    const float diskRadius = (1.0 * Defines::Radius / max(surfacePosition.z, 0.1f));
+    const float diskRadius = (1.0 * Options::Radius / max(surfacePosition.z, 0.1f));
     float totalOcclusion = 0.0;
 
     [unroll]
-    for (int tapIndex = 0; tapIndex < Defines::TapCount; ++tapIndex)
+    for (int tapIndex = 0; tapIndex < Options::TapCount; ++tapIndex)
     {
         totalOcclusion += getAmbientObscurance(inputPixel.texCoord, surfacePosition, surfaceNormal, diskRadius, tapIndex, randomPatternRotationAngle);
     }
 
-    totalOcclusion /= pow(Defines::RadiusCubed, 2.0);
+    totalOcclusion /= pow(Options::RadiusCubed, 2.0);
 
-    if (Defines::FalloffFunction == HighQuality)
+    if (Options::FalloffFunction == HighQuality)
     {
         // Addition from http://graphics.cs.williams.edu/papers/DeepGBuffer13/
-        totalOcclusion = pow(max(0.0, 1.0 - sqrt(totalOcclusion * (3.0 / Defines::TapCount))), Defines::Intensity);
+        totalOcclusion = pow(max(0.0, 1.0 - sqrt(totalOcclusion * (3.0 / Options::TapCount))), Options::Intensity);
     }
     else
     {
-        totalOcclusion = max(0.0f, 1.0f - totalOcclusion * Defines::IntensityModified * (5.0f / Defines::TapCount));
+        totalOcclusion = max(0.0f, 1.0f - totalOcclusion * Options::IntensityModified * (5.0f / Options::TapCount));
     }
 
     // Anti-tone map to reduce contrast and drag dark region farther

@@ -27,7 +27,7 @@ namespace Gek
         public:
             struct PassData
             {
-                bool valid = false;
+                bool enabled = true;
                 Pass::Mode mode = Pass::Mode::Deferred;
                 Math::Float4 blendFactor = Math::Float4::Zero;
                 BlendStateHandle blendState;
@@ -52,6 +52,7 @@ namespace Gek
             Plugin::Population *population = nullptr;
 
             std::string filterName;
+            JSON::Instance globalOptions = JSON::Instance(JSON::EmptyObject);
 
             DepthStateHandle depthState;
             RenderStateHandle renderState;
@@ -100,6 +101,8 @@ namespace Gek
                 renderState = resources->createRenderState(Video::RenderStateInformation());
 
                 const JSON::Instance filterNode = JSON::Load(getContext()->getRootFileName("data", "filters", filterName).withExtension(".json"));
+
+                globalOptions = filterNode.get("options").getObject();
 
                 for (auto &required : filterNode.get("required").getArray())
                 {
@@ -225,10 +228,87 @@ namespace Gek
                 for (auto &basePassNode : passesNode.getArray())
                 {
                     PassData &pass = *passData++;
-
                     JSON::Reference passNode(basePassNode);
+                    if (passNode.has("enable"))
+                    {
+                        pass.enabled = globalOptions.get(passNode.get("enable").convert(String::Empty)).convert(true);
+                    }
 
-                    std::string engineData = passNode.get("engineData").convert(String::Empty);
+                    std::string defineData;
+                    JSON::Object passOptions(globalOptions.getObject());
+                    if (passNode.has("options"))
+                    {
+                        auto overrideOptions = passNode.get("options");
+                        for (auto &overridePair : overrideOptions.getMembers())
+                        {
+                            passOptions[overridePair.name()] = overridePair.value();
+                        }
+                    }
+
+                    for (auto &optionPair : JSON::Reference(passOptions).getMembers())
+                    {
+                        auto name = optionPair.name();
+                        JSON::Reference value(optionPair.value());
+                        auto &valueArray = value.getArray();
+                        if (valueArray.size() > 0)
+                        {
+                            switch (valueArray.size())
+                            {
+                            case 1:
+                                defineData += String::Format("    static const float %v = %v;\r\n", name,
+                                    JSON::Reference(valueArray[0]).convert(0.0f));
+                                break;
+
+                            case 2:
+                                defineData += String::Format("    static const float2 %v = float2(%v, %v);\r\n", name,
+                                    JSON::Reference(valueArray[0]).convert(0.0f),
+                                    JSON::Reference(valueArray[1]).convert(0.0f));
+                                break;
+
+                            case 3:
+                                defineData += String::Format("    static const float3 %v = float3(%v, %v, %v);\r\n", name,
+                                    JSON::Reference(valueArray[0]).convert(0.0f),
+                                    JSON::Reference(valueArray[1]).convert(0.0f),
+                                    JSON::Reference(valueArray[2]).convert(0.0f));
+                                break;
+
+                            case 4:
+                                defineData += String::Format("    static const float4 %v = float4(%v, %v, %v, %v)\r\n", name,
+                                    JSON::Reference(valueArray[0]).convert(0.0f),
+                                    JSON::Reference(valueArray[1]).convert(0.0f),
+                                    JSON::Reference(valueArray[2]).convert(0.0f),
+                                    JSON::Reference(valueArray[3]).convert(0.0f));
+                                break;
+                            };
+                        }
+                        else
+                        {
+                            if (value.getObject().is_bool())
+                            {
+                                defineData += String::Format("    static const bool %v = %v;\r\n", name, value.convert(false));
+                            }
+                            else if (value.getObject().is_integer())
+                            {
+                                defineData += String::Format("    static const int %v = %v;\r\n", name, value.convert(0));
+                            }
+                            else
+                            {
+                                defineData += String::Format("    static const float %v = %v;\r\n", name, value.convert(0.0f));
+                            }
+                        }
+                    }
+
+                    std::string engineData;
+                    if (!defineData.empty())
+                    {
+                        engineData += String::Format(
+                            "namespace Options\r\n" \
+                            "{\r\n" \
+                            "%v" \
+                            "};\r\n" \
+                            "\r\n", defineData);
+                    }
+
                     std::string mode(String::GetLower(passNode.get("mode").convert(String::Empty)));
                     if (mode == "compute")
                     {
@@ -487,6 +567,11 @@ namespace Gek
             // Filter
             Pass::Mode preparePass(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle output, PassData const &pass)
             {
+                if (!pass.enabled)
+                {
+                    return Pass::Mode::None;
+                }
+
                 for (const auto &clearTarget : pass.clearResourceMap)
                 {
                     switch (clearTarget.second.type)
@@ -569,6 +654,11 @@ namespace Gek
 
             void clearPass(Video::Device::Context *videoContext, PassData const &pass)
             {
+                if (!pass.enabled)
+                {
+                    return;
+                }
+
                 Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
                 if (!pass.resourceList.empty())
                 {

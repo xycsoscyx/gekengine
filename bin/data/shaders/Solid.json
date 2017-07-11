@@ -82,6 +82,19 @@
         }
     },
     "output": "finalBuffer",
+    "options": {
+        "AmbientOcclusion": false,
+        "Radius": 1.0,
+        "TapCount": 24,
+        "SpiralTurns": 17.0,
+        "Intensity": 2.0,
+        "Bias": 0.2,
+        "Epsilon": 0.01,
+        "FalloffFunction": 0,
+        "GaussianRadius": 4,
+        "GaussianSigma": 1.75,
+        "EdgeSharpness": 0.01
+    },
     "passes": [
         {
             "program": "AccumulateLighting",
@@ -103,6 +116,7 @@
             ]
         },
         {
+            "enable": "AmbientOcclusion",
             "program": "AmbientCalculation",
             "entry": "mainPixelProgram",
             "resources": [
@@ -114,30 +128,37 @@
             ]
         },
         {
+            "enable": "AmbientOcclusion",
             "program": "AmbientBlur",
             "entry": "mainPixelProgram",
-            "engineData": "namespace Defines { static const float2 BlurAxis = float2(1,0); };",
             "resources": [
                 "depthBuffer",
                 { "ambientBuffer": "inputBuffer" }
             ],
             "targets": [
                 "gaussianBuffer"
-            ]
+            ],
+            "options": {
+                "BlurAxis": [ 1, 0 ]
+            }
         },
         {
+            "enable": "AmbientOcclusion",
             "program": "AmbientBlur",
             "entry": "mainPixelProgram",
-            "engineData": "namespace Defines { static const float2 BlurAxis = float2(0,1); };",
             "resources": [
                 "depthBuffer",
                 { "gaussianBuffer": "inputBuffer" }
             ],
             "targets": [
                 "ambientBuffer"
-            ]
+            ],
+            "options": {
+                "BlurAxis": [ 0, 1 ]
+            }
         },
         {
+            "enable": "AmbientOcclusion",
             "program": "AmbientLighting",
             "entry": "mainPixelProgram",
             "resources": [

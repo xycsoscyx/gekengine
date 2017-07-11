@@ -16,6 +16,23 @@
             "count": 1
         }
     },
+    "options": {
+        "AdaptionRate": "1.25",
+        "TechniqueMode": 6,
+        "AutoExposureMode": 2,
+        "LuminanceSaturation": 1.0,
+        "KeyValue": 0.18,
+        "Exposure": 0.0,
+        "WhiteLevel": 5.0,
+        "Bias": 0.5,
+        "ShoulderStrength": 0.2,
+        "LinearStrength": 0.5,
+        "LinearAngle": 0.42,
+        "ToeStrength": 0.64,
+        "ToeNumerator": 0.19,
+        "ToeDenominator": 0.9,
+        "LinearWhite": 11.2
+    },
     "passes": [
         {
             "program": "CalculateLuminance",

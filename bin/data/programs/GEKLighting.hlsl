@@ -94,12 +94,15 @@ float3 getSurfaceIrradiance(
 
     float3 reflectedRadiance = lerp(materialAlbedo, lightRadiance, materialMetallic);
 
+
     //float D = pow(abs(HdotN), 10.0f);
     float D = getDistributionGGX(materialAlpha, HdotN);
     //float D = getDistribution1886GGX(materialAlpha, HdotN);
     //float D = getDistributionDisneyGGX(materialDisneyAlpha, HdotN);
+
     float G = getVisibilitySchlick(VdotN, materialAlpha, LdotN);
     //float G = getVisibilitySmithGGX(VdotN, alpham LdotN);
+
     float3 F = getFresnelSchlick(VdotH, reflectedRadiance);
 
     float specularHorizon = pow((1.0 - LdotN), 4.0);
