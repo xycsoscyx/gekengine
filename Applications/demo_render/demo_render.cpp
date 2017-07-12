@@ -362,7 +362,7 @@ namespace Gek
                         if (showModeChange)
                         {
                             ImGui::SetNextWindowPosCenter();
-                            ImGui::Begin("Keep Display Mode", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
+                            ImGui::Begin("Keep Display Mode", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
                             ImGui::Text("Keep Display Mode?");
 
                             if (ImGui::Button("Yes"))
@@ -389,7 +389,7 @@ namespace Gek
                 if (!windowActive)
                 {
                     ImGui::SetNextWindowPosCenter();
-                    ImGui::Begin("GEK Engine##Paused", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoCollapse);
+                    ImGui::Begin("GEK Engine##Paused", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoCollapse);
                     ImGui::Dummy(ImVec2(200, 0));
                     ImGui::Text("Paused");
                     ImGui::End();
@@ -657,7 +657,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstan
         Gek::Core core;
         core.run();
     }
-    catch (std::exception const &exception)
+    catch (std::exception const &)
     {
     };
 

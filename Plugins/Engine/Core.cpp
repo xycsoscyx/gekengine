@@ -465,7 +465,7 @@ namespace Gek
 
             void showDisplay(void)
             {
-                if (ImGui::BeginDock("Display", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+                if (ImGui::BeginDock("Display", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
                 {
                     auto &style = ImGui::GetStyle();
                     ImGui::PushItemWidth(-1.0f);
@@ -487,7 +487,7 @@ namespace Gek
 
             void showVisual(void)
             {
-                if (ImGui::BeginDock("Visual", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+                if (ImGui::BeginDock("Visual", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
                 {
                     auto showOptions = [&](char const *group, JSON::Object &settings) -> void
                     {
@@ -515,6 +515,8 @@ namespace Gek
                                         auto &optionValue = optionPair.value();
                                         JSON::Reference option(optionValue);
 
+                                        auto label(String::Format("##%v%v", groupName, optionName));
+
                                         ImGui::Text(optionName.c_str());
                                         ImGui::SameLine();
                                         ImGui::PushItemWidth(-1.0f);
@@ -526,7 +528,7 @@ namespace Gek
                                                 if (true)
                                                 {
                                                     float data = JSON::Reference(optionValue[0]).convert(0.0f);
-                                                    if (ImGui::InputFloat("##", &data))
+                                                    if (ImGui::InputFloat(label.c_str(), &data))
                                                     {
                                                         optionValue = data;
                                                     }
@@ -540,7 +542,7 @@ namespace Gek
                                                     Math::Float2 data(
                                                         JSON::Reference(optionValue[0]).convert(0.0f),
                                                         JSON::Reference(optionValue[1]).convert(0.0f));
-                                                    if (ImGui::InputFloat2("##", data.data))
+                                                    if (ImGui::InputFloat2(label.c_str(), data.data))
                                                     {
                                                         optionValue = JSON::Array({ data.x, data.y });
                                                     }
@@ -555,7 +557,7 @@ namespace Gek
                                                         JSON::Reference(optionValue[0]).convert(0.0f),
                                                         JSON::Reference(optionValue[1]).convert(0.0f),
                                                         JSON::Reference(optionValue[2]).convert(0.0f));
-                                                    if (ImGui::InputFloat3("##", data.data))
+                                                    if (ImGui::InputFloat3(label.c_str(), data.data))
                                                     {
                                                         optionValue = JSON::Array({ data.x, data.y, data.z });
                                                     }
@@ -571,7 +573,7 @@ namespace Gek
                                                         JSON::Reference(optionValue[1]).convert(0.0f),
                                                         JSON::Reference(optionValue[2]).convert(0.0f),
                                                         JSON::Reference(optionValue[3]).convert(0.0f));
-                                                    if (ImGui::InputFloat4("##", data.data))
+                                                    if (ImGui::InputFloat4(label.c_str(), data.data))
                                                     {
                                                         optionValue = JSON::Array({ data.x, data.y, data.z, data.w });
                                                     }
@@ -585,7 +587,7 @@ namespace Gek
                                             if (optionValue.is_bool())
                                             {
                                                 bool data = option.convert(false);
-                                                if (ImGui::Checkbox("##", &data))
+                                                if (ImGui::Checkbox(label.c_str(), &data))
                                                 {
                                                     optionValue = data;
                                                 }
@@ -593,7 +595,7 @@ namespace Gek
                                             else if (optionValue.is_integer())
                                             {
                                                 int data = option.convert(0);
-                                                if (ImGui::InputInt("##", &data))
+                                                if (ImGui::InputInt(label.c_str(), &data))
                                                 {
                                                     optionValue = data;
                                                 }
@@ -601,7 +603,7 @@ namespace Gek
                                             else
                                             {
                                                 float data = option.convert(0.0f);
-                                                if (ImGui::InputFloat("##", &data))
+                                                if (ImGui::InputFloat(label.c_str(), &data))
                                                 {
                                                     optionValue = data;
                                                 }
@@ -632,17 +634,13 @@ namespace Gek
                 {
                     auto &style = ImGui::GetStyle();
                     ImGui::SetNextWindowPosCenter(ImGuiSetCond_Appearing);
-                    if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+                    if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
                     {
-                        if (ImGui::BeginChildFrame(1234, ImVec2(500.0, 300.0f)))
-                        {
-                            ImGui::BeginDockspace();
-                            showDisplay();
-                            showVisual();
-                            ImGui::EndDockspace();
-                        }
+                        ImGui::BeginDockspace("##Settings", ImVec2(500.0, 300.0f));
+                        showDisplay();
+                        showVisual();
+                        ImGui::EndDockspace();
 
-                        ImGui::EndChildFrame();
                         float buttonPositionX = (ImGui::GetWindowContentRegionWidth() - 200.0f - style.ItemSpacing.x - (style.FramePadding.x * 2.0f)) * 0.5f;
                         ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
 
@@ -683,9 +681,8 @@ namespace Gek
             {
                 if (showModeChange)
                 {
-                    ImGui::SetNextWindowPosCenter();
                     ImGui::SetNextWindowPosCenter(ImGuiSetCond_Appearing);
-                    if (ImGui::Begin("Keep Display Mode", &showModeChange, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+                    if (ImGui::Begin("Keep Display Mode", &showModeChange, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
                     {
                         ImGui::Text("Keep Display Mode?");
 
@@ -719,9 +716,8 @@ namespace Gek
             {
                 if (showLoadMenu)
                 {
-                    ImGui::SetNextWindowPosCenter();
                     ImGui::SetNextWindowPosCenter(ImGuiSetCond_Appearing);
-                    if (ImGui::Begin("Load", &showLoadMenu, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
+                    if (ImGui::Begin("Load", &showLoadMenu, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
                     {
                         auto &style = ImGui::GetStyle();
                         std::vector<std::string> scenes;

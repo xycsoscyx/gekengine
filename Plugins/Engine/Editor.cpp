@@ -363,7 +363,7 @@ namespace Gek
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
                 if (ImGui::Begin("Editor", nullptr, editorSize, 1.0f, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
                 {
-                    ImGui::BeginDockspace();
+                    ImGui::BeginDockspace("##Editor");
 
                     ImGui::SetNextDock(ImGuiDockSlot_None);
                     showScene();
