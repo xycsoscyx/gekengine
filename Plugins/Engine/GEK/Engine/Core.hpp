@@ -25,13 +25,13 @@ namespace Gek
 
         GEK_INTERFACE(Core)
         {
+            using ListenerHandle = uint64_t;
+
             Nano::Signal<void(void)> onResize;
             Nano::Signal<void(void)> onSettingsChanged;
             Nano::Signal<void(void)> onExit;
 
             virtual ~Core(void) = default;
-
-            virtual bool update(void) = 0;
 
             virtual JSON::Reference getOption(std::string const &system, std::string const &name) = 0;
             virtual void setOption(std::string const &system, std::string const &name, JSON::Object const &value) = 0;
@@ -45,6 +45,8 @@ namespace Gek
             virtual Plugin::Renderer * getRenderer(void) const = 0;
 
             virtual void listProcessors(std::function<void(Plugin::Processor *)> onProcessor) = 0;
+
+            virtual bool update(void) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

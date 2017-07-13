@@ -775,40 +775,6 @@ namespace Gek
             }
 
             // Plugin::Core
-            bool update(void)
-            {
-                window->readEvents();
-
-                timer.update();
-
-                // Read keyboard modifiers inputs
-                ImGuiIO &imGuiIo = ImGui::GetIO();
-                imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-                imGuiIo.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-                imGuiIo.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
-                imGuiIo.KeySuper = false;
-                // imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
-                // imGuiIo.MousePos : filled by WM_MOUSEMOVE events
-                // imGuiIo.MouseDown : filled by WM_*BUTTON* events
-                // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
-
-                if (windowActive)
-                {
-                    float frameTime = timer.getUpdateTime();
-                    modeChangeTimer -= frameTime;
-                    if (imGuiIo.MouseDrawCursor)
-                    {
-                        population->update(0.0f);
-                    }
-                    else
-                    {
-                        population->update(frameTime);
-                    }
-                }
-
-                return engineRunning;
-            }
-
             JSON::Reference getOption(std::string const &system, std::string const &name)
             {
                 return JSON::Reference(configuration).get(system).get(name);
@@ -858,6 +824,40 @@ namespace Gek
                 {
                     onProcessor(processor.get());
                 }
+            }
+
+            bool update(void)
+            {
+                window->readEvents();
+
+                timer.update();
+
+                // Read keyboard modifiers inputs
+                ImGuiIO &imGuiIo = ImGui::GetIO();
+                imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+                imGuiIo.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+                imGuiIo.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+                imGuiIo.KeySuper = false;
+                // imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
+                // imGuiIo.MousePos : filled by WM_MOUSEMOVE events
+                // imGuiIo.MouseDown : filled by WM_*BUTTON* events
+                // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
+
+                if (windowActive)
+                {
+                    float frameTime = timer.getUpdateTime();
+                    modeChangeTimer -= frameTime;
+                    if (imGuiIo.MouseDrawCursor)
+                    {
+                        population->update(0.0f);
+                    }
+                    else
+                    {
+                        population->update(frameTime);
+                    }
+                }
+
+                return engineRunning;
             }
         };
 

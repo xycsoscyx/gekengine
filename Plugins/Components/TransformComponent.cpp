@@ -10,7 +10,13 @@ namespace Gek
         , public Plugin::ComponentMixin<Components::Transform, Edit::Component>
     {
     private:
-        bool showEuler = true;
+        enum Rotation
+        {
+            Euler = 0,
+            Quaternion,
+        };
+
+        int showRotationAs = Rotation::Euler;
 
     public:
         Transform(Context *context, Plugin::Population *population)
@@ -49,17 +55,11 @@ namespace Gek
             editorElement("Rotation", [&](void) -> bool
             {
                 bool changed = false;
-                if (showEuler)
+                if (showRotationAs == Rotation::Euler)
                 {
                     auto euler(transformComponent.rotation.getEuler());
-                    euler.x = Math::RadiansToDegrees(euler.x);
-                    euler.y = Math::RadiansToDegrees(euler.y);
-                    euler.z = Math::RadiansToDegrees(euler.z);
-                    if (changed = ImGui::InputFloat3("##rotationEuler", euler.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank))
+                    if (changed = ImGui::SliderAngle3("##rotationEuler", euler.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank))
                     {
-                        euler.x = Math::DegreesToRadians(euler.x);
-                        euler.y = Math::DegreesToRadians(euler.y);
-                        euler.z = Math::DegreesToRadians(euler.z);
                         transformComponent.rotation = Math::Quaternion::FromEuler(euler);
                     }
                 }
@@ -72,19 +72,8 @@ namespace Gek
             });
 
             ImGui::Indent();
-            ImGui::Text("As ");
-            ImGui::SameLine();
-            if (ImGui::RadioButton("Euler", showEuler))
-            {
-                showEuler = true;
-            }
-
-            ImGui::SameLine();
-            if (ImGui::RadioButton("Quaternion", !showEuler))
-            {
-                showEuler = false;
-            }
-
+            ImGui::RadioButton("Euler", &showRotationAs, Rotation::Euler);
+            ImGui::RadioButton("Quaternion", &showRotationAs, Rotation::Quaternion);
             ImGui::Unindent();
 
             editorElement("Scale", [&](void) -> bool

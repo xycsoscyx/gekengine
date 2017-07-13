@@ -37,9 +37,9 @@ namespace Gek
 
         void load(Components::Spin * const data, JSON::Reference componentData)
         {
-            data->torque.x = population->getShuntingYard().evaluate("random(-pi,pi)", 0.0f);
-            data->torque.y = population->getShuntingYard().evaluate("random(-pi,pi)", 0.0f);
-            data->torque.z = population->getShuntingYard().evaluate("random(-pi,pi)", 0.0f);
+            data->torque.x = population->getShuntingYard().evaluate("random(-pi,pi)").value_or(0.0f);
+            data->torque.y = population->getShuntingYard().evaluate("random(-pi,pi)").value_or(0.0f);
+            data->torque.z = population->getShuntingYard().evaluate("random(-pi,pi)").value_or(0.0f);
         }
     };
 

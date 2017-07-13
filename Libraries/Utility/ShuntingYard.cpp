@@ -6,8 +6,6 @@
 // https://blog.kallisti.net.rz.xyz/2008/02/extension-to-the-shunting-yard-algorithm-to-allow-variable-numbers-of-arguments-to-functions/
 namespace Gek
 {
-    static const ShuntingYard::OperandList EmptyOperandList;
-
 	template <typename TYPE>
 	TYPE PopTop(std::stack<TYPE> &stack)
 	{
@@ -232,7 +230,7 @@ namespace Gek
         return seed;
     }
 
-    ShuntingYard::OperandList ShuntingYard::getTokenList(std::string const &expression)
+    std::optional<ShuntingYard::OperandList> ShuntingYard::getTokenList(std::string const &expression)
     {
         const auto hash = GetHash(expression);
         auto cacheSearch = cache.find(hash);
@@ -242,19 +240,32 @@ namespace Gek
         }
 
 		auto infixTokenList(convertExpressionToInfix(expression));
-        auto tokenList(convertInfixToReversePolishNotation(infixTokenList));
-        return cache.insert(std::make_pair(hash, tokenList)).first->second;
+        if (infixTokenList)
+        {
+            auto tokenList(convertInfixToReversePolishNotation(infixTokenList.value()));
+            if (tokenList)
+            {
+                return cache.insert(std::make_pair(hash, tokenList.value())).first->second;
+            }
+        }
+
+        return std::nullopt;
     }
 
-    float ShuntingYard::evaluate(OperandList &rpOperandList, float defaultValue)
+    std::optional<float> ShuntingYard::evaluate(OperandList &rpOperandList)
     {
-		return evaluateReversePolishNotation(rpOperandList, defaultValue);
+		return evaluateReversePolishNotation(rpOperandList);
     }
 
-    float ShuntingYard::evaluate(std::string const &expression, float defaultValue)
+    std::optional<float> ShuntingYard::evaluate(std::string const &expression)
     {
-        OperandList rpnOperandList(getTokenList(expression));
-        return evaluateReversePolishNotation(rpnOperandList, defaultValue);
+        auto rpnOperandList = getTokenList(expression);
+        if (rpnOperandList)
+        {
+            return evaluateReversePolishNotation(rpnOperandList.value());
+        }
+
+        return std::nullopt;
     }
 
     bool ShuntingYard::isAssociative(std::string const &token, const Associations &type)
@@ -376,7 +387,7 @@ namespace Gek
     }
 
     static const auto locale = std::locale::classic();
-    ShuntingYard::TokenList ShuntingYard::convertExpressionToInfix(std::string const &expression)
+    std::optional<ShuntingYard::TokenList> ShuntingYard::convertExpressionToInfix(std::string const &expression)
     {
         std::string runningToken;
         TokenList infixTokenList;
@@ -527,7 +538,7 @@ namespace Gek
         return infixTokenList;
     }
 
-    ShuntingYard::OperandList ShuntingYard::convertInfixToReversePolishNotation(const TokenList &infixTokenList)
+    std::optional<ShuntingYard::OperandList> ShuntingYard::convertInfixToReversePolishNotation(const TokenList &infixTokenList)
     {
         OperandList rpnOperandList;
 		std::stack<Token> tokenStack;
@@ -584,7 +595,7 @@ namespace Gek
             case TokenType::RightParenthesis:
                 if (tokenStack.empty())
                 {
-					return EmptyOperandList;
+                    return std::nullopt;
                 }
 
                 while (tokenStack.top().type != TokenType::LeftParenthesis)
@@ -592,8 +603,8 @@ namespace Gek
                     rpnOperandList.push_back(getOperand(PopTop(tokenStack)));
                     if (tokenStack.empty())
                     {
-						return EmptyOperandList;
-					}
+                        return std::nullopt;
+                    }
                 };
 
                 tokenStack.pop();
@@ -614,12 +625,12 @@ namespace Gek
             case TokenType::Separator:
                 if (tokenStack.empty())
                 {
-					return EmptyOperandList;
-				}
+                    return std::nullopt;
+                }
 
                 if (parameterExistsStack.empty())
                 {
-					return EmptyOperandList;
+					return std::nullopt;
 				}
 
                 while (tokenStack.top().type != TokenType::LeftParenthesis)
@@ -627,7 +638,7 @@ namespace Gek
                     rpnOperandList.push_back(getOperand(PopTop(tokenStack)));
                     if (tokenStack.empty())
                     {
-						return EmptyOperandList;
+						return std::nullopt;
 					}
                 };
 
@@ -645,7 +656,7 @@ namespace Gek
                 break;
 
             default:
-				return EmptyOperandList;
+				return std::nullopt;
 			};
         }
 
@@ -654,7 +665,7 @@ namespace Gek
 			auto &top = tokenStack.top();
             if (top.type == TokenType::LeftParenthesis || top.type == TokenType::RightParenthesis)
             {
-				return EmptyOperandList;
+				return std::nullopt;
 			}
 
             rpnOperandList.push_back(getOperand(PopTop(tokenStack)));
@@ -662,17 +673,17 @@ namespace Gek
 
         if (rpnOperandList.empty())
         {
-			return EmptyOperandList;
+			return std::nullopt;
 		}
 
         return rpnOperandList;
     }
 
-	float ShuntingYard::evaluateReversePolishNotation(const OperandList &rpnOperandList, float defaultValue)
+    std::optional<float> ShuntingYard::evaluateReversePolishNotation(const OperandList &rpnOperandList)
     {
         if (rpnOperandList.empty())
         {
-            return defaultValue;
+            return std::nullopt;
         }
 
         std::stack<float> stack;
@@ -693,7 +704,7 @@ namespace Gek
                 {
                     if (stack.empty())
                     {
-						return defaultValue;
+						return std::nullopt;
 					}
 
                     float functionValue = PopTop(stack);
@@ -706,13 +717,13 @@ namespace Gek
                 {
                     if (stack.empty())
                     {
-						return defaultValue;
+						return std::nullopt;
 					}
 
                     float functionValueRight = PopTop(stack);
                     if (stack.empty())
                     {
-						return defaultValue;
+						return std::nullopt;
 					}
 
                     float functionValueLeft = PopTop(stack);
@@ -725,7 +736,7 @@ namespace Gek
                 {
                     if (stack.size() < operand.function->parameterCount)
                     {
-						return defaultValue;
+						return std::nullopt;
 					}
 
                     stack.push(operand.function->function(stack));
@@ -733,17 +744,17 @@ namespace Gek
                 }
 
             default:
-				return defaultValue;
+				return std::nullopt;
 			};
         }
 
         if (stack.empty())
         {
-            return defaultValue;
+            return std::nullopt;
         }
         else if (stack.size() != 1)
         {
-			return defaultValue;
+			return std::nullopt;
 		}
 
 		return stack.top();

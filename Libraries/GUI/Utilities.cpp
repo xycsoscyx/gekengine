@@ -4,11 +4,11 @@ namespace Gek
 {
     namespace UI
     {
-        bool InputString(const char* label, std::string &string, ImGuiInputTextFlags flags, ImGuiTextEditCallback callback, void* user_data)
+        bool InputString(char const *label, std::string &string, ImGuiInputTextFlags flags, ImGuiTextEditCallback callback, void *userData)
         {
             char text[256];
             strcpy(text, string.c_str());
-            bool changed = ImGui::InputText(label, text, 255, flags, callback, user_data);
+            bool changed = ImGui::InputText(label, text, 255, flags, callback, userData);
             if (changed)
             {
                 string = text;

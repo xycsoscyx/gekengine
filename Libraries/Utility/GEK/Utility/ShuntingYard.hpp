@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <functional>
 #include <iostream>
+#include <optional>
 #include <random>
 #include <stack>
 
@@ -116,9 +117,9 @@ namespace Gek
         void setRandomSeed(uint32_t seed);
         uint32_t getRandomSeed(void);
 
-        OperandList getTokenList(std::string const &expression);
-        float evaluate(OperandList &rpnOperandList, float defaultValue);
-        float evaluate(std::string const &expression, float defaultValue);
+        std::optional<OperandList> getTokenList(std::string const &expression);
+        std::optional<float> evaluate(OperandList &rpnOperandList);
+        std::optional<float> evaluate(std::string const &expression);
 
     private:
         bool isAssociative(std::string const &token, const Associations &type);
@@ -127,8 +128,8 @@ namespace Gek
     private:
         Operand getOperand(Token const &token);
 		bool insertToken(TokenList &infixTokenList, Token &token);
-        TokenList convertExpressionToInfix(std::string const &expression);
-        OperandList convertInfixToReversePolishNotation(const TokenList &infixTokenList);
-        float evaluateReversePolishNotation(const OperandList &rpnOperandList, float defaultValue);
+        std::optional<TokenList> convertExpressionToInfix(std::string const &expression);
+        std::optional<OperandList> convertInfixToReversePolishNotation(const TokenList &infixTokenList);
+        std::optional<float> evaluateReversePolishNotation(const OperandList &rpnOperandList);
     };
 }; // namespace Gek
