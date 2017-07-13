@@ -310,28 +310,29 @@ namespace Gek
                     if (cameraBuffer)
                     {
                         ImGui::Image(reinterpret_cast<ImTextureID>(cameraBuffer), cameraSize);
-                    }
+                        auto origin = ImGui::GetItemRectMin();
+                        auto size = ImGui::GetItemRectSize();
 
-                    Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));
-                    viewMatrix.translation.xyz = position;
-                    viewMatrix.invert();
+                        Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));
+                        viewMatrix.translation.xyz = position;
+                        viewMatrix.invert();
 
-                    const auto backBuffer = core->getVideoDevice()->getBackBuffer();
-                    auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 0.1f, 200.0f));
+                        auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 0.1f, 200.0f));
 
-                    ImGuizmo::BeginFrame();
-                    ImGuizmo::SetRect(ImGui::GetCursorPosX(), ImGui::GetCursorPosY(), ImGui::GetWindowSize().x, ImGui::GetWindowSize().y);
-                    auto &entityMap = population->getEntityMap();
-                    for (auto &entitySearch : entityMap)
-                    {
-                        auto &name = entitySearch.first;
-                        auto entity = dynamic_cast<Edit::Entity *>(entitySearch.second.get());
-                        if (entity->hasComponent<Components::Transform>())
+                        ImGuizmo::BeginFrame();
+                        ImGuizmo::SetRect(origin.x, origin.y, size.x, size.y);
+                        ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, ImGuizmo::WORLD, const_cast<float *>(Math::Float4x4::Identity.data), nullptr, snapData);
+                        auto &entityMap = population->getEntityMap();
+                        for (auto &entitySearch : entityMap)
                         {
-                            auto &transformComponent = entity->getComponent<Components::Transform>();
-                            auto matrix = transformComponent.getMatrix();
-                            ImGuizmo::DrawCube(viewMatrix.data, projectionMatrix.data, matrix.data);
-                            //ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, ImGuizmo::WORLD, matrix.data, nullptr, snapData);
+                            auto &name = entitySearch.first;
+                            auto entity = dynamic_cast<Edit::Entity *>(entitySearch.second.get());
+                            if (entity->hasComponent<Components::Transform>())
+                            {
+                                auto &transformComponent = entity->getComponent<Components::Transform>();
+                                auto matrix = transformComponent.getMatrix();
+                                ImGuizmo::DrawCube(viewMatrix.data, projectionMatrix.data, matrix.data);
+                            }
                         }
                     }
                 }
@@ -361,7 +362,7 @@ namespace Gek
                 ImGui::SetNextWindowSize(editorSize);
                 ImGui::SetNextWindowPos(editorPosition);
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-                if (ImGui::Begin("Editor", nullptr, editorSize, 1.0f, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
+                if (ImGui::Begin("Editor", nullptr, editorSize, 1.0f, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
                 {
                     ImGui::BeginDockspace("##Editor");
 
