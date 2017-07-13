@@ -2513,7 +2513,7 @@ index 5895092..e5d477e 100644
          ~Pane() {clear();}
          void clear() {
 diff --git a/imgui.cpp b/imgui.cpp
-index 6d182e7..b53abf0 100644
+index 4887a91..0fcff85 100644
 --- a/imgui.cpp
 +++ b/imgui.cpp
 @@ -618,8 +618,6 @@
@@ -2526,7 +2526,7 @@ index 6d182e7..b53abf0 100644
  
  #include <ctype.h>      // toupper, isprint
 diff --git a/imgui.h b/imgui.h
-index 8bca83f..63973d7 100644
+index 008fdf1..e53ef58 100644
 --- a/imgui.h
 +++ b/imgui.h
 @@ -8,6 +8,8 @@
@@ -2539,7 +2539,7 @@ index 8bca83f..63973d7 100644
  #include "imconfig.h"       // User-editable configuration file
  #endif
 diff --git a/imgui_draw.cpp b/imgui_draw.cpp
-index 9630450..c498c72 100644
+index f11e198..6ee60a1 100644
 --- a/imgui_draw.cpp
 +++ b/imgui_draw.cpp
 @@ -13,8 +13,6 @@
