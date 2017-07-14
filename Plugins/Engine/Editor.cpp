@@ -319,9 +319,10 @@ namespace Gek
 
                         auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 0.1f, 200.0f));
 
+                        Plugin::Entity *hoveredEntity = nullptr;
+
                         ImGuizmo::BeginFrame();
                         ImGuizmo::SetRect(origin.x, origin.y, size.x, size.y);
-                        ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, ImGuizmo::WORLD, const_cast<float *>(Math::Float4x4::Identity.data), nullptr, snapData);
                         auto &entityMap = population->getEntityMap();
                         for (auto &entitySearch : entityMap)
                         {
@@ -331,8 +332,18 @@ namespace Gek
                             {
                                 auto &transformComponent = entity->getComponent<Components::Transform>();
                                 auto matrix = transformComponent.getMatrix();
-                                ImGuizmo::DrawCube(viewMatrix.data, projectionMatrix.data, matrix.data);
+                                if (ImGuizmo::DrawCube(viewMatrix.data, projectionMatrix.data, matrix.data))
+                                {
+                                    hoveredEntity = entity;
+                                }
                             }
+                        }
+
+                        if (hoveredEntity)
+                        {
+                            auto &transformComponent = hoveredEntity->getComponent<Components::Transform>();
+                            auto matrix = transformComponent.getMatrix();
+                            ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, ImGuizmo::WORLD, matrix.data, nullptr, snapData);
                         }
                     }
                 }

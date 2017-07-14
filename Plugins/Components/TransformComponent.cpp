@@ -58,7 +58,7 @@ namespace Gek
                 if (showRotationAs == Rotation::Euler)
                 {
                     auto euler(transformComponent.rotation.getEuler());
-                    if (changed = ImGui::SliderAngle3("##rotationEuler", euler.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank))
+                    if (changed = ImGui::SliderAngle3("##rotationEuler", euler.data))
                     {
                         transformComponent.rotation = Math::Quaternion::FromEuler(euler);
                     }
