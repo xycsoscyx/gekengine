@@ -671,10 +671,7 @@ namespace Gek
                     renderer->renderUI(drawData);
                 };
 
-                ImGui::ResetStyle(ImGuiStyle_Maya);
-
-                auto &style = ImGui::GetStyle();
-                style.WindowRounding = 2.0f;
+                //ImGui::ResetStyle(ImGuiStyle_Maya);
             }
 
             ~Renderer(void)

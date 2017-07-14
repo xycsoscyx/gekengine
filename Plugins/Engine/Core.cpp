@@ -496,7 +496,7 @@ namespace Gek
                             return;
                         }
 
-                        if (ImGui::TreeNodeEx(group, 0))
+                        if (ImGui::TreeNodeEx(group, ImGuiTreeNodeFlags_Framed))
                         {
                             for (auto &groupPair : settings.members())
                             {
@@ -507,7 +507,7 @@ namespace Gek
                                     continue;
                                 }
 
-                                if (ImGui::TreeNodeEx(groupName.c_str(), 0))
+                                if (ImGui::TreeNodeEx(groupName.c_str(), ImGuiTreeNodeFlags_Framed))
                                 {
                                     for (auto &optionPair : groupValues.members())
                                     {
