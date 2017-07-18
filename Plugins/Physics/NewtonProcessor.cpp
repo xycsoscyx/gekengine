@@ -121,11 +121,6 @@ namespace Gek
 
             ~Processor(void)
             {
-                if (editor)
-                {
-                    editor->onModified.disconnect<Processor, &Processor::onModified>(this);
-                }
-
                 population->onUpdate[50].disconnect<Processor, &Processor::onUpdate>(this);
                 population->onComponentRemoved.disconnect<Processor, &Processor::onComponentRemoved>(this);
                 population->onComponentAdded.disconnect<Processor, &Processor::onComponentAdded>(this);
@@ -383,12 +378,21 @@ namespace Gek
             {
                 core->listProcessors([&](Plugin::Processor *processor) -> void
                 {
-                    editor = dynamic_cast<Plugin::Editor *>(processor);
-                    if (editor)
+                    auto check = dynamic_cast<Plugin::Editor *>(processor);
+                    if (check)
                     {
+                        editor = check;
                         editor->onModified.connect<Processor, &Processor::onModified>(this);
                     }                    
                 });
+            }
+
+            void onDestroyed(void)
+            {
+                if (editor)
+                {
+                    editor->onModified.disconnect<Processor, &Processor::onModified>(this);
+                }
             }
 
             // Plugin::Editor Slots

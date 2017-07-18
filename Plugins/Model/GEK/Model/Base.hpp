@@ -9,6 +9,7 @@
 
 #include "GEK/Math/Vector3.hpp"
 #include "GEK/Engine/Component.hpp"
+#include "GEK/Shapes/AlignedBox.hpp"
 
 namespace Gek
 {
@@ -19,4 +20,12 @@ namespace Gek
             std::string name;
         };
     }; // namespace Components
+
+    namespace Processor
+    {
+        GEK_INTERFACE(Model)
+        {
+            virtual Shapes::AlignedBox getBoundingBox(std::string const &modelName) = 0;
+        };
+    }; // namespace Processor
 }; // namespace Gek

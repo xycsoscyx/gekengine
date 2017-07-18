@@ -12,6 +12,7 @@
 #include "GEK/Engine/ComponentMixin.hpp"
 #include "GEK/Engine/Editor.hpp"
 #include "GEK/Components/Transform.hpp"
+#include "GEK/Model/Base.hpp"
 #include <concurrent_vector.h>
 #include <ppl.h>
 #include <set>
@@ -28,6 +29,7 @@ namespace Gek
             Plugin::Core *core = nullptr;
             Edit::Population *population = nullptr;
             Plugin::Renderer *renderer = nullptr;
+            Gek::Processor::Model *modelProcessor = nullptr;
 
             Video::TexturePtr dockPanelIcon;
 
@@ -41,12 +43,12 @@ namespace Gek
 
             int selectedComponent = 0;
 
-            ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
-            bool useSnap = true;
-            Math::Float3 snapPosition = Math::Float3(1.0f / 12.0f);
-            float snapRotation = 10.0f;
-            float snapScale = (1.0f / 10.0f);
-            float *snapData = nullptr;
+            int currentGizmoScope = ImGuizmo::WORLD;
+            int currentGizmoOperation = ImGuizmo::TRANSLATE;
+            bool useGizmoSnap = true;
+            Math::Float3 gizmoSnapPosition = Math::Float3(1.0f);
+            float gizmoSnapRotation = 10.0f;
+            float gizmoSnapScale = 1.0f;
 
             ResourceHandle cameraTarget;
             ImVec2 cameraSize;
@@ -87,6 +89,19 @@ namespace Gek
                 ImGui::ShutdownDock();
             }
 
+            // Plugin::Processor
+            void onInitialized(void)
+            {
+                core->listProcessors([&](Plugin::Processor *processor) -> void
+                {
+                    auto check = dynamic_cast<Gek::Processor::Model *>(processor);
+                    if (check)
+                    {
+                        modelProcessor = check;
+                    }
+                });
+            }
+
             // Renderer
             Plugin::Entity *selectedEntity = nullptr;
             void showPopulation(void)
@@ -95,42 +110,35 @@ namespace Gek
                 {
                     if (ImGui::TreeNodeEx("Selection Gizmo", ImGuiTreeNodeFlags_Framed))
                     {
-                        if (ImGui::RadioButton("Move", currentGizmoOperation == ImGuizmo::TRANSLATE))
-                        {
-                            currentGizmoOperation = ImGuizmo::TRANSLATE;
-                        }
+                        ImGui::RadioButton("World", &currentGizmoScope, ImGuizmo::WORLD);
 
                         ImGui::SameLine();
-                        if (ImGui::RadioButton("Rotate", currentGizmoOperation == ImGuizmo::ROTATE))
-                        {
-                            currentGizmoOperation = ImGuizmo::ROTATE;
-                        }
+                        ImGui::RadioButton("Local", &currentGizmoScope, ImGuizmo::LOCAL);
+
+                        ImGui::RadioButton("Move", &currentGizmoOperation, ImGuizmo::TRANSLATE);
 
                         ImGui::SameLine();
-                        if (ImGui::RadioButton("Scale", currentGizmoOperation == ImGuizmo::SCALE))
-                        {
-                            currentGizmoOperation = ImGuizmo::SCALE;
-                        }
+                        ImGui::RadioButton("Rotate", &currentGizmoOperation, ImGuizmo::ROTATE);
 
-                        ImGui::Checkbox("Snap", &useSnap);
+                        ImGui::SameLine();
+                        ImGui::RadioButton("Scale", &currentGizmoOperation, ImGuizmo::SCALE);
+
+                        ImGui::Checkbox("Snap", &useGizmoSnap);
                         ImGui::SameLine();
 
                         ImGui::PushItemWidth(-1.0f);
                         switch (currentGizmoOperation)
                         {
                         case ImGuizmo::TRANSLATE:
-                            ImGui::InputFloat3("##snapTranslation", snapPosition.data, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-                            snapData = snapPosition.data;
+                            ImGui::InputFloat3("##snapTranslation", gizmoSnapPosition.data, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                             break;
 
                         case ImGuizmo::ROTATE:
-                            ImGui::SliderAngle("##snapDegrees", &snapRotation);
-                            snapData = &snapRotation;
+                            ImGui::SliderAngle("##snapDegrees", &gizmoSnapRotation);
                             break;
 
                         case ImGuizmo::SCALE:
-                            ImGui::InputFloat("##snapScale", &snapScale, (1.0f / 10.0f), 1.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-                            snapData = &snapScale;
+                            ImGui::InputFloat("##gizmoSnapScale", &gizmoSnapScale, (1.0f / 10.0f), 1.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                             break;
                         };
 
@@ -307,6 +315,24 @@ namespace Gek
                 ImGui::EndDock();
             }
 
+            bool isObjectInFrustum(Shapes::Frustum &frustum, Shapes::OrientedBox &orientedBox)
+            {
+                for (auto &plane : frustum.planeList)
+                {
+                    float distance = plane.getDistance(orientedBox.matrix.translation.xyz);
+                    float radiusX = std::abs(orientedBox.matrix.rx.xyz.dot(plane.normal) * orientedBox.halfsize.x);
+                    float radiusY = std::abs(orientedBox.matrix.ry.xyz.dot(plane.normal) * orientedBox.halfsize.y);
+                    float radiusZ = std::abs(orientedBox.matrix.rz.xyz.dot(plane.normal) * orientedBox.halfsize.z);
+                    float radius = (radiusX + radiusY + radiusZ);
+                    if (distance < -radius)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
             void showScene(void)
             {
                 auto &imGuiIo = ImGui::GetIO();
@@ -336,6 +362,7 @@ namespace Gek
 
                         ImGuizmo::BeginFrame();
                         ImGuizmo::SetRect(origin.x, origin.y, size.x, size.y);
+                        ImGui::PushClipRect(ImVec2(origin.x, origin.y), ImVec2(origin.x + size.x, origin.y + size.y), false);
                         auto &entityMap = population->getEntityMap();
                         for (auto &entitySearch : entityMap)
                         {
@@ -347,20 +374,52 @@ namespace Gek
                                 auto matrix = transformComponent.getMatrix();
                                 if (selectedEntity == entity)
                                 {
-                                    Math::Float4x4 deltaMatrix;
-                                    ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, ImGuizmo::WORLD, matrix.data, deltaMatrix.data, snapData);
-                                    if (memcmp(deltaMatrix.data, Math::Float4x4::Identity.data, sizeof(Math::Float4x4)) != 0)
+                                    float *snapData = nullptr;
+                                    if (useGizmoSnap)
                                     {
-                                        transformComponent.setMatrix(matrix);
-                                        onModified.emit(selectedEntity, typeid(Components::Transform));
+                                        switch (currentGizmoOperation)
+                                        {
+                                        case ImGuizmo::TRANSLATE:
+                                            snapData = gizmoSnapPosition.data;
+                                            break;
+
+                                        case ImGuizmo::ROTATE:
+                                            snapData = &gizmoSnapRotation;
+                                            break;
+
+                                        case ImGuizmo::SCALE:
+                                            snapData = &gizmoSnapScale;
+                                            break;
+                                        };
+                                    }
+                                    
+                                    Shapes::AlignedBox boundingBox(0.5f);
+                                    float *localbounds = boundingBox.minimum.data;
+                                    if (entity->hasComponent<Components::Model>())
+                                    {
+                                        auto &modelComponent = entity->getComponent<Components::Model>();
+                                        boundingBox = modelProcessor->getBoundingBox(modelComponent.name);
+                                    }
+
+                                    if (isObjectInFrustum(Shapes::Frustum(viewMatrix * projectionMatrix), Shapes::OrientedBox(boundingBox, matrix)))
+                                    {
+                                        Math::Float4x4 deltaMatrix;
+                                        ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, static_cast<ImGuizmo::OPERATION>(currentGizmoOperation), static_cast<ImGuizmo::MODE>(currentGizmoScope), matrix.data, deltaMatrix.data, snapData, localbounds);
+                                        if (memcmp(deltaMatrix.data, Math::Float4x4::Identity.data, sizeof(Math::Float4x4)) != 0)
+                                        {
+                                            transformComponent.setMatrix(matrix);
+                                            onModified.emit(selectedEntity, typeid(Components::Transform));
+                                        }
                                     }
                                 }
                                 else
                                 {
-                                    ImGuizmo::DrawCube(viewMatrix.data, projectionMatrix.data, matrix.data);
+                                    //ImGuizmo::DrawCube(viewMatrix.data, projectionMatrix.data, matrix.data);
                                 }
                             }
                         }
+
+                        ImGui::PopClipRect();
                     }
                 }
 

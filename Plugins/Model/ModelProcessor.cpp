@@ -74,6 +74,7 @@ namespace Gek
     GEK_CONTEXT_USER(ModelProcessor, Plugin::Core *)
         , public Plugin::ProcessorMixin<ModelProcessor, Components::Model, Components::Transform>
         , public Plugin::Processor
+        , public Gek::Processor::Model
     {
     public:
         struct Header
@@ -315,6 +316,18 @@ namespace Gek
 
                 data.model = &pair.first->second;
             });
+        }
+
+        // Model::Processor
+        Shapes::AlignedBox getBoundingBox(std::string const &modelName)
+        {
+            auto modelSearch = modelMap.find(GetHash(modelName));
+            if (modelSearch != modelMap.end())
+            {
+                return modelSearch->second.boundingBox;
+            }
+
+            return Shapes::AlignedBox();
         }
 
         // Plugin::Population Slots

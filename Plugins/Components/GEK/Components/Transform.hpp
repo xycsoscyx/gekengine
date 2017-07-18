@@ -31,6 +31,7 @@ namespace Gek
             {
                 rotation = matrix.getRotation();
                 position = matrix.translation.xyz;
+                scale = matrix.getScaling();
             }
         };
     }; // namespace Components

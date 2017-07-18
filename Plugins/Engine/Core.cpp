@@ -191,6 +191,11 @@ namespace Gek
                 window->onMouseMovement.disconnect<Core, &Core::onMouseMovement>(this);
 
                 ImGui::ShutdownDock();
+                for (auto &processor : processorList)
+                {
+                    processor->onDestroyed();
+                }
+
                 processorList.clear();
                 renderer = nullptr;
                 resources = nullptr;
@@ -756,6 +761,7 @@ namespace Gek
                         }
                         else
                         {
+                            ImGui::SetKeyboardFocusHere();
                             if (ImGui::Button("Load", ImVec2(100.0f, 25.0f)))
                             {
                                 showLoadMenu = false;

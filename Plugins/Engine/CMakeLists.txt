@@ -7,7 +7,7 @@ file(GLOB HEADERS "GEK/${ProjectID}/*.hpp")
 file(GLOB SOURCES "*.[ch]pp")
 add_library(${ProjectID} SHARED ${SOURCES} ${HEADERS})
 
-target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/../system" "${CMAKE_CURRENT_SOURCE_DIR}/../components")
+target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/../system" "${CMAKE_CURRENT_SOURCE_DIR}/../components" "${CMAKE_CURRENT_SOURCE_DIR}/../model")
 
 target_link_libraries(${ProjectID} Math Shapes Utility GUI System nano-signal-slot)
 

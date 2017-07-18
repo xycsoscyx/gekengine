@@ -18,6 +18,7 @@ namespace Gek
             virtual ~Processor(void) = default;
 
             virtual void onInitialized(void) { };
+            virtual void onDestroyed(void) { };
         };
     }; // namespace Plugin
 }; // namespace Gek
