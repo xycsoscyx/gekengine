@@ -9,15 +9,6 @@ namespace Gek
     GEK_CONTEXT_USER(Transform, Plugin::Population *)
         , public Plugin::ComponentMixin<Components::Transform, Edit::Component>
     {
-    private:
-        enum Rotation
-        {
-            Euler = 0,
-            Quaternion,
-        };
-
-        int showRotationAs = Rotation::Euler;
-
     public:
         Transform(Context *context, Plugin::Population *population)
             : ContextRegistration(context)
@@ -47,52 +38,22 @@ namespace Gek
 
             auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
 
-            editorElement("Position", [&](void) -> bool
+            changed |= editorElement("Position", [&](void) -> bool
             {
                 return ImGui::InputFloat3("##position", transformComponent.position.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             });
 
-            editorElement("Rotation", [&](void) -> bool
+            changed |= editorElement("Rotation", [&](void) -> bool
             {
-                bool changed = false;
-                if (showRotationAs == Rotation::Euler)
-                {
-                    auto euler(transformComponent.rotation.getEuler());
-                    if (changed = ImGui::SliderAngle3("##rotationEuler", euler.data))
-                    {
-                        transformComponent.rotation = Math::Quaternion::FromEuler(euler);
-                    }
-                }
-                else
-                {
-                    changed = ImGui::InputFloat4("##rotationQuaternion", transformComponent.rotation.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-                }
-
-                return changed;
+                return ImGui::InputFloat4("##rotation", transformComponent.rotation.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             });
 
-            ImGui::Indent();
-            ImGui::RadioButton("Euler", &showRotationAs, Rotation::Euler);
-            ImGui::RadioButton("Quaternion", &showRotationAs, Rotation::Quaternion);
-            ImGui::Unindent();
-
-            editorElement("Scale", [&](void) -> bool
+            changed |= editorElement("Scale", [&](void) -> bool
             {
                 return ImGui::InputFloat3("##scale", transformComponent.scale.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             });
 
             ImGui::SetCurrentContext(nullptr);
-
-            auto matrix(transformComponent.getMatrix());
-            auto rotation(matrix.getRotation());
-            auto position(matrix.translation.xyz);
-            if (position != transformComponent.position || rotation != transformComponent.rotation)
-            {
-                transformComponent.rotation = rotation;
-                transformComponent.position = position;
-                changed = true;
-            }
-
             return changed;
         }
     };

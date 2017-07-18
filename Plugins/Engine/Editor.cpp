@@ -109,43 +109,42 @@ namespace Gek
             {
                 if (ImGui::BeginDock("Population", nullptr, 0, ImVec2(100.0f, -1.0f)))
                 {
-                    if (ImGui::TreeNodeEx("Selection Gizmo", ImGuiTreeNodeFlags_Framed))
+                    ImGui::Dummy(ImVec2(50.0f, 0.0f));
+                    ImGui::SameLine();
+                    ImGui::RadioButton("World", &currentGizmoScope, ImGuizmo::WORLD);
+                    ImGui::SameLine();
+                    ImGui::RadioButton("Local", &currentGizmoScope, ImGuizmo::LOCAL);
+
+                    ImGui::Dummy(ImVec2(30.0f, 0.0f));
+                    ImGui::SameLine();
+                    ImGui::RadioButton("Move", &currentGizmoOperation, ImGuizmo::TRANSLATE);
+                    ImGui::SameLine();
+                    ImGui::RadioButton("Rotate", &currentGizmoOperation, ImGuizmo::ROTATE);
+                    ImGui::SameLine();
+                    ImGui::RadioButton("Scale", &currentGizmoOperation, ImGuizmo::SCALE);
+
+                    ImGui::Checkbox("Snap", &useGizmoSnap);
+                    ImGui::SameLine();
+
+                    ImGui::PushItemWidth(-1.0f);
+                    switch (currentGizmoOperation)
                     {
-                        ImGui::RadioButton("World", &currentGizmoScope, ImGuizmo::WORLD);
+                    case ImGuizmo::TRANSLATE:
+                        ImGui::InputFloat3("##snapTranslation", gizmoSnapPosition.data, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                        break;
 
-                        ImGui::SameLine();
-                        ImGui::RadioButton("Local", &currentGizmoScope, ImGuizmo::LOCAL);
+                    case ImGuizmo::ROTATE:
+                        ImGui::SliderAngle("##snapDegrees", &gizmoSnapRotation);
+                        break;
 
-                        ImGui::RadioButton("Move", &currentGizmoOperation, ImGuizmo::TRANSLATE);
+                    case ImGuizmo::SCALE:
+                        ImGui::InputFloat("##gizmoSnapScale", &gizmoSnapScale, (1.0f / 10.0f), 1.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                        break;
+                    };
 
-                        ImGui::SameLine();
-                        ImGui::RadioButton("Rotate", &currentGizmoOperation, ImGuizmo::ROTATE);
+                    ImGui::PopItemWidth();
 
-                        ImGui::SameLine();
-                        ImGui::RadioButton("Scale", &currentGizmoOperation, ImGuizmo::SCALE);
-
-                        ImGui::Checkbox("Snap", &useGizmoSnap);
-                        ImGui::SameLine();
-
-                        ImGui::PushItemWidth(-1.0f);
-                        switch (currentGizmoOperation)
-                        {
-                        case ImGuizmo::TRANSLATE:
-                            ImGui::InputFloat3("##snapTranslation", gizmoSnapPosition.data, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-                            break;
-
-                        case ImGuizmo::ROTATE:
-                            ImGui::SliderAngle("##snapDegrees", &gizmoSnapRotation);
-                            break;
-
-                        case ImGuizmo::SCALE:
-                            ImGui::InputFloat("##gizmoSnapScale", &gizmoSnapScale, (1.0f / 10.0f), 1.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-                            break;
-                        };
-
-                        ImGui::PopItemWidth();
-                        ImGui::TreePop();
-                    }
+                    ImGui::Separator();
 
                     if (ImGui::Button(ICON_MD_ADD_CIRCLE u8"  New Entity", ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f)))
                     {
