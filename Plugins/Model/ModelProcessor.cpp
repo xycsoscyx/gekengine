@@ -16,6 +16,7 @@
 #include "GEK/Engine/Entity.hpp"
 #include "GEK/Engine/Renderer.hpp"
 #include "GEK/Engine/Resources.hpp"
+#include "GEK/Engine/Editor.hpp"
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Components/Color.hpp"
 #include "GEK/Model/Base.hpp"
@@ -145,10 +146,12 @@ namespace Gek
         };
 
     private:
+        Plugin::Core *core = nullptr;
         Video::Device *videoDevice = nullptr;
         Plugin::Population *population = nullptr;
         Plugin::Resources *resources = nullptr;
         Plugin::Renderer *renderer = nullptr;
+        Plugin::Editor *editor = nullptr;
 
         VisualHandle visual;
         Video::BufferPtr instanceBuffer;
@@ -170,13 +173,15 @@ namespace Gek
     public:
         ModelProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
+            , core(core)
             , videoDevice(core->getVideoDevice())
             , population(core->getPopulation())
             , resources(core->getResources())
             , renderer(core->getRenderer())
             , loadPool(1)
         {
-			assert(videoDevice);
+            assert(core);
+            assert(videoDevice);
 			assert(population);
             assert(resources);
             assert(renderer);
@@ -212,7 +217,7 @@ namespace Gek
 
         void addEntity(Plugin::Entity * const entity)
         {
-            ProcessorMixin::addEntity(entity, [&](auto &data, auto &modelComponent, auto &transformComponent) -> void
+            ProcessorMixin::addEntity(entity, [&](bool isNewInsert, auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
                 auto pair = modelMap.insert(std::make_pair(GetHash(modelComponent.name), Model()));
                 if (pair.second)
@@ -318,6 +323,28 @@ namespace Gek
             });
         }
 
+        // Plugin::Processor
+        void onInitialized(void)
+        {
+            core->listProcessors([&](Plugin::Processor *processor) -> void
+            {
+                auto check = dynamic_cast<Plugin::Editor *>(processor);
+                if (check)
+                {
+                    editor = check;
+                    editor->onModified.connect<ModelProcessor, &ModelProcessor::onModified>(this);
+                }
+            });
+        }
+
+        void onDestroyed(void)
+        {
+            if (editor)
+            {
+                editor->onModified.disconnect<ModelProcessor, &ModelProcessor::onModified>(this);
+            }
+        }
+
         // Model::Processor
         Shapes::AlignedBox getBoundingBox(std::string const &modelName)
         {
@@ -330,8 +357,14 @@ namespace Gek
             return Shapes::AlignedBox();
         }
 
+        // Plugin::Editor Slots
+        void onModified(Plugin::Entity * const entity, const std::type_index &type)
+        {
+            addEntity(entity);
+        }
+
         // Plugin::Population Slots
-        void onEntityCreated(Plugin::Entity * const entity, std::string const &entityName)
+        void onEntityCreated(Plugin::Entity * const entity)
         {
             addEntity(entity);
         }

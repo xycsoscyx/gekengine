@@ -24,14 +24,7 @@ namespace Gek
 
             inline Math::Float4x4 getMatrix(void) const
             {
-                return Math::Float4x4(rotation, position);
-            }
-
-            inline void setMatrix(Math::Float4x4 const &matrix)
-            {
-                rotation = matrix.getRotation();
-                position = matrix.translation.xyz;
-                scale = matrix.getScaling();
+                return Math::Float4x4(rotation, position) * Math::Float4x4::FromScale(scale);
             }
         };
     }; // namespace Components

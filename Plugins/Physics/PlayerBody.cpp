@@ -664,9 +664,8 @@ namespace Gek
                 NewtonBodySetMatrix(newtonBody, matrix.data);
 
                 auto &transformComponent = entity->getComponent<Components::Transform>();
-                transformComponent.setMatrix(matrix);
-                transformComponent.position += (matrix.ry.xyz * playerComponent.height);
-                transformComponent.rotation = (Math::Quaternion::FromPitch(lookingAngle) * transformComponent.rotation);
+                transformComponent.position = (matrix.translation.xyz + (matrix.ry.xyz * playerComponent.height));
+                transformComponent.rotation = (Math::Quaternion::FromPitch(lookingAngle) * matrix.getRotation());
                 forwardSpeed = 0.0f;
                 lateralSpeed = 0.0f;
                 verticalSpeed = 0.0f;

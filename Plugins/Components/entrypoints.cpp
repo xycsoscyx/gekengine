@@ -12,6 +12,8 @@ namespace Gek
     GEK_DECLARE_CONTEXT_USER(Transform);
     GEK_DECLARE_CONTEXT_USER(Spin);
     GEK_DECLARE_CONTEXT_USER(SpinProcessor);
+    GEK_DECLARE_CONTEXT_USER(Name);
+    GEK_DECLARE_CONTEXT_USER(NameProcessor);
 
     GEK_CONTEXT_BEGIN(System);
         GEK_CONTEXT_ADD_CLASS(Components::FirstPersonCamera, FirstPersonCamera);
@@ -28,10 +30,14 @@ namespace Gek
             GEK_CONTEXT_ADD_TYPE(ComponentType);
         GEK_CONTEXT_ADD_CLASS(Components::Spin, Spin);
             GEK_CONTEXT_ADD_TYPE(ComponentType);
+        GEK_CONTEXT_ADD_CLASS(Components::Name, Name);
+            GEK_CONTEXT_ADD_TYPE(ComponentType);
 
         GEK_CONTEXT_ADD_CLASS(Processors::CameraProcessor, CameraProcessor);
             GEK_CONTEXT_ADD_TYPE(ProcessorType);
         GEK_CONTEXT_ADD_CLASS(Processors::SpinProcessor, SpinProcessor);
+            GEK_CONTEXT_ADD_TYPE(ProcessorType);
+        GEK_CONTEXT_ADD_CLASS(Processors::NameProcessor, NameProcessor);
             GEK_CONTEXT_ADD_TYPE(ProcessorType);
     GEK_CONTEXT_END();
 }; // namespace Gek

@@ -77,14 +77,23 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float materialMetallic = Resources::metallic.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
     float3 surfaceIrradiance = getSurfaceIrradiance(inputPixel.screen.xy, surfacePosition, surfaceNormal, materialAlbedo, materialRoughness, materialMetallic);
 
-    float materialThickness = Resources::thickness.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
-    float2 screenCoordRed = (inputPixel.screen.xy + (surfaceNormal.xy * materialThickness * -60.0f));
-    float2 screenCoordGreen = (inputPixel.screen.xy + surfaceNormal.xy);
-    float2 screenCoordBlue = (inputPixel.screen.xy + (surfaceNormal.xy * materialThickness * 60.0f));
-
     float materialClarity = Resources::clarity.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
-    float glassColorRed = GetBiCubicSample(screenCoordRed, 1.0 - materialClarity).r;
-    float glassColorGreen = GetBiCubicSample(screenCoordGreen, 1.0 - materialClarity).g;
-    float glassColorBlue = GetBiCubicSample(screenCoordBlue, 1.0 - materialClarity).b;
-    return (surfaceIrradiance + (float3(glassColorRed, glassColorGreen, glassColorBlue) * materialAlbedo));
+    float glassLevel = (1.0f - materialClarity);
+    if (Options::ChromaticAbberation)
+    {
+        float materialThickness = Resources::thickness.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
+        float2 screenCoordRed = (inputPixel.screen.xy + (surfaceNormal.xy * materialThickness * -60.0f));
+        float2 screenCoordGreen = (inputPixel.screen.xy + surfaceNormal.xy);
+        float2 screenCoordBlue = (inputPixel.screen.xy + (surfaceNormal.xy * materialThickness * 60.0f));
+
+        float glassColorRed = GetBiCubicSample(screenCoordRed, glassLevel).r;
+        float glassColorGreen = GetBiCubicSample(screenCoordGreen, glassLevel).g;
+        float glassColorBlue = GetBiCubicSample(screenCoordBlue, glassLevel).b;
+        return (surfaceIrradiance + (float3(glassColorRed, glassColorGreen, glassColorBlue) * materialAlbedo));
+    }
+    else
+    {
+        float3 glassColor = GetBiCubicSample(inputPixel.screen.xy, glassLevel);
+        return (surfaceIrradiance + (glassColor * materialAlbedo));
+    }
 }

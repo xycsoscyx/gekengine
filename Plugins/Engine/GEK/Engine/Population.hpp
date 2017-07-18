@@ -58,7 +58,7 @@ namespace Gek
             std::map<int32_t, Nano::Signal<void(float frameTime)>> onUpdate;
             Nano::Signal<void(Action const &action)> onAction;
 
-            Nano::Signal<void(Plugin::Entity * const entity, std::string const &entityName)> onEntityCreated;
+            Nano::Signal<void(Plugin::Entity * const entity)> onEntityCreated;
             Nano::Signal<void(Plugin::Entity * const entity)> onEntityDestroyed;
 
             Nano::Signal<void(Plugin::Entity * const entity)> onComponentAdded;
@@ -70,21 +70,21 @@ namespace Gek
             virtual void save(std::string const &populationName) = 0;
 
             using Component = std::pair<std::string, JSON::Object>;
-            virtual Plugin::Entity *createEntity(std::string const &entityName, const std::vector<Component> &componentList = std::vector<Component>()) = 0;
+            virtual Plugin::Entity *createEntity(const std::vector<Component> &componentList = std::vector<Component>()) = 0;
             virtual void killEntity(Plugin::Entity * const entity) = 0;
             virtual void addComponent(Plugin::Entity * const entity, Component const &componentData) = 0;
             virtual void removeComponent(Plugin::Entity * const entity, std::type_index const &type) = 0;
 
-            virtual void listEntities(std::function<void(Plugin::Entity * const entity, std::string const &entityName)> onEntity) const = 0;
+            virtual void listEntities(std::function<void(Plugin::Entity * const entity)> onEntity) const = 0;
 
             template<typename... COMPONENTS>
-            void listEntities(std::function<void(Plugin::Entity * const entity, std::string const &entityName, COMPONENTS&... components)> onEntity) const
+            void listEntities(std::function<void(Plugin::Entity * const entity, COMPONENTS&... components)> onEntity) const
             {
-                listEntities([onEntity = move(onEntity)](Plugin::Entity * const entity, std::string const &entityName) -> void
+                listEntities([onEntity = move(onEntity)](Plugin::Entity * const entity) -> void
                 {
                     if (entity->hasComponents<COMPONENTS...>())
                     {
-                        onEntity(entity, entityName, entity->getComponent<COMPONENTS>()...);
+                        onEntity(entity, entity->getComponent<COMPONENTS>()...);
                     }
                 });
             }
@@ -101,13 +101,13 @@ namespace Gek
         GEK_INTERFACE(Population)
             : public Plugin::Population
         {
+            virtual ~Population(void) = default;
+
             using ComponentMap = std::unordered_map<std::type_index, Plugin::ComponentPtr>;
             virtual ComponentMap &getComponentMap(void) = 0;
 
-            using EntityMap = std::unordered_map<std::string, Plugin::EntityPtr>;
-            virtual EntityMap &getEntityMap(void) = 0;
-
-            virtual ~Population(void) = default;
+            using EntityList = std::list<Plugin::EntityPtr>;
+            virtual EntityList &getEntityList(void) = 0;
 
             virtual Edit::Component *getComponent(const std::type_index &type) = 0;
         };

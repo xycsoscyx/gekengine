@@ -92,6 +92,9 @@
         }
     },
     "output": "finalBuffer",
+    "options": {
+        "ChromaticAbberation": false
+    },
     "passes": [
         {
             "program": "AccumulateLighting",

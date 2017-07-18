@@ -95,7 +95,7 @@ namespace Gek
 
             ThreadPool loadPool;
             concurrency::concurrent_queue<std::function<void(void)>> entityQueue;
-            EntityMap entityMap;
+            EntityList entityList;
 
             uint32_t uniqueEntityIdentifier = 0;
 
@@ -138,25 +138,17 @@ namespace Gek
 
                 core->onExit.disconnect<Population, &Population::onExit>(this);
 
-                entityMap.clear();
+                entityList.clear();
                 componentTypeNameMap.clear();
                 componentMap.clear();
             }
 
-            void queueEntity(Plugin::Entity *entity, std::string const & requestedName)
+            void queueEntity(Plugin::Entity *entity)
             {
-                entityQueue.push([this, entity = entity, requestedName = requestedName](void) -> void
+                entityQueue.push([this, entity](void) -> void
                 {
-                    auto entityName(requestedName.empty() ? String::Format("unnamed_%v", ++uniqueEntityIdentifier) : requestedName);
-                    if (entityMap.count(requestedName) > 0)
-                    {
-                        LockedWrite{ std::cerr } << String::Format("Unable to add entity to scene: %v", entityName);
-                    }
-                    else
-                    {
-                        entityMap[entityName].reset(entity);
-                        onEntityCreated.emit(entity, entityName);
-                    }
+                    entityList.push_back(Plugin::EntityPtr(entity));
+                    onEntityCreated.emit(entity);
                 });
             }
 
@@ -172,9 +164,9 @@ namespace Gek
                 return componentMap;
             }
 
-            EntityMap &getEntityMap(void)
+            EntityList &getEntityList(void)
             {
-                return entityMap;
+                return entityList;
             }
 
             Edit::Component *getComponent(const std::type_index &type)
@@ -244,7 +236,8 @@ namespace Gek
                         std::vector<Component> entityComponentList;
                         if (entityNode.has_member("Template"))
                         {
-                            auto &templateNode = templatesNode.get(entityNode["Template"].as_string());
+                            auto &entityTemplateNode = entityNode["Template"];
+                            auto &templateNode = templatesNode.get(entityTemplateNode.as_string());
                             for (const auto &componentNode : templateNode.getMembers())
                             {
                                 entityComponentList.push_back(std::make_pair(componentNode.name(), componentNode.value()));
@@ -272,23 +265,17 @@ namespace Gek
                             }
                         }
 
-                        auto entity(std::make_unique<Entity>());
+                        auto populationEntity = new Entity();
                         for (const auto &componentData : entityComponentList)
                         {
-                            if (componentData.first != "Name" &&
-                                componentData.first != "Template")
+                            if (componentData.first != "Template")
                             {
-                                addComponent(entity.get(), componentData);
+                                addComponent(populationEntity, componentData);
                             }
                         }
 
-                        std::string entityName;
-                        if (entityNode.has_member("Name"))
-                        {
-                            entityName = entityNode.get("Name").as_string();
-                        }
-
-                        queueEntity(entity.release(), entityName);
+                        auto entity = dynamic_cast<Plugin::Entity *>(populationEntity);
+                        queueEntity(entity);
                     }
                 });
             }
@@ -296,13 +283,11 @@ namespace Gek
             void save(std::string const &populationName)
             {
                 JSON::Object population = JSON::EmptyArray;
-                for (const auto &entityPair : entityMap)
+                for (const auto &entity : entityList)
                 {
                     JSON::Object entityData = JSON::EmptyObject;
-                    entityData["Name"] = entityPair.first;
-
-                    Entity *entity = static_cast<Entity *>(entityPair.second.get());
-                    entity->listComponents([&](const std::type_index &type, const Plugin::Component::Data *data) -> void
+                    Entity *editorEntity = static_cast<Entity *>(entity.get());
+                    editorEntity->listComponents([&](const std::type_index &type, const Plugin::Component::Data *data) -> void
                     {
                         auto componentName = componentNameTypeMap.find(type);
                         if (componentName == std::end(componentNameTypeMap))
@@ -334,31 +319,32 @@ namespace Gek
                 JSON::Reference(scene).save(getContext()->getRootFileName("data", "scenes", populationName).withExtension(".json"));
             }
 
-            Plugin::Entity *createEntity(std::string const &entityName, const std::vector<Component> &componentList)
+            Plugin::Entity *createEntity(const std::vector<Component> &componentList)
             {
-                auto entity(std::make_unique<Entity>());
+                auto populationEntity = new Entity();
                 for (const auto &componentData : componentList)
                 {
-                    addComponent(entity.get(), componentData);
+                    addComponent(populationEntity, componentData);
                 }
 
-                queueEntity(entity.release(), entityName);
-                return entity.get();
+                auto entity = dynamic_cast<Plugin::Entity *>(populationEntity);
+                queueEntity(entity);
+                return entity;
             }
 
             void killEntity(Plugin::Entity * const entity)
             {
                 entityQueue.push([this, entity](void) -> void
                 {
-                    auto entitySearch = std::find_if(std::begin(entityMap), std::end(entityMap), [entity](const EntityMap::value_type &entitySearch) -> bool
+                    auto entitySearch = std::find_if(std::begin(entityList), std::end(entityList), [entity](const auto &entitySearch) -> bool
                     {
-                        return (entitySearch.second.get() == entity);
+                        return (entitySearch.get() == entity);
                     });
 
-                    if (entitySearch != std::end(entityMap))
+                    if (entitySearch != std::end(entityList))
                     {
                         onEntityDestroyed.emit(entity);
-                        entityMap.erase(entitySearch);
+                        entityList.erase(entitySearch);
                     }
                 });
             }
@@ -412,11 +398,11 @@ namespace Gek
                 }
             }
 
-            void listEntities(std::function<void(Plugin::Entity *, std::string const &)> onEntity) const
+            void listEntities(std::function<void(Plugin::Entity *)> onEntity) const
             {
-                concurrency::parallel_for_each(std::begin(entityMap), std::end(entityMap), [&](auto &entity) -> void
+                concurrency::parallel_for_each(std::begin(entityList), std::end(entityList), [&](auto &entity) -> void
                 {
-                    onEntity(entity.second.get(), entity.first);
+                    onEntity(entity.get());
                 });
             }
         };

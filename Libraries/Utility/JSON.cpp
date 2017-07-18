@@ -9,54 +9,6 @@ namespace Gek
         const Object EmptyObject = Object::make_object({});
         const Object EmptyArray = Object::make_array();
 
-        std::optional<std::any> Parse(ShuntingYard &shuntingYard, Object const &object)
-        {
-            switch (object.type_id())
-            {
-            case jsoncons::value_type::small_string_t:
-            case jsoncons::value_type::string_t:
-                return shuntingYard.evaluate(object.as_string());
-
-            case jsoncons::value_type::bool_t:
-                return object.var_.bool_data_cast()->value();
-
-            case jsoncons::value_type::double_t:
-                return static_cast<float>(object.var_.double_data_cast()->value());
-
-            case jsoncons::value_type::integer_t:
-                return object.var_.integer_data_cast()->value();
-
-            case jsoncons::value_type::uinteger_t:
-                return object.var_.uinteger_data_cast()->value();
-            };
-
-            return std::nullopt;
-        }
-
-        std::optional<std::any> Convert(ShuntingYard &shuntingYard, Object const &object)
-        {
-            switch (object.type_id())
-            {
-            case jsoncons::value_type::small_string_t:
-            case jsoncons::value_type::string_t:
-                return object.as_string();
-
-            case jsoncons::value_type::bool_t:
-                return object.var_.bool_data_cast()->value();
-
-            case jsoncons::value_type::double_t:
-                return static_cast<float>(object.var_.double_data_cast()->value());
-
-            case jsoncons::value_type::integer_t:
-                return object.var_.integer_data_cast()->value();
-
-            case jsoncons::value_type::uinteger_t:
-                return object.var_.uinteger_data_cast()->value();
-            };
-
-            return std::nullopt;
-        }
-
         std::string Parse(ShuntingYard &shuntingYard, Object const &object, std::string const &defaultValue)
         {
             switch (object.type_id())

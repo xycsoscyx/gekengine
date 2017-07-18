@@ -12,6 +12,7 @@
 #include "GEK/Engine/ComponentMixin.hpp"
 #include "GEK/Engine/Editor.hpp"
 #include "GEK/Components/Transform.hpp"
+#include "GEK/Components/Name.hpp"
 #include "GEK/Model/Base.hpp"
 #include <concurrent_vector.h>
 #include <ppl.h>
@@ -158,7 +159,14 @@ namespace Gek
                         std::string name;
                         if (UI::InputString("##name", name, ImGuiInputTextFlags_EnterReturnsTrue))
                         {
-                            population->createEntity(name);
+                            if (name.empty())
+                            {
+                                population->createEntity();
+                            }
+                            else
+                            {
+                            }
+
                             ImGui::CloseCurrentPopup();
                         }
 
@@ -166,21 +174,24 @@ namespace Gek
                     }
 
                     std::set<Edit::Entity *> deleteEntitySet;
-                    auto &entityMap = population->getEntityMap();
-                    for (auto &entitySearch : entityMap)
+                    for (const auto &entity : population->getEntityList())
                     {
-                        auto &name = entitySearch.first;
-                        auto entity = dynamic_cast<Edit::Entity *>(entitySearch.second.get());
-
-                        ImGui::PushID(reinterpret_cast<int>(entity));
-                        if (ImGui::RadioButton("##select", selectedEntity == entity))
+                        auto editorEntity = dynamic_cast<Edit::Entity *>(entity.get());
+                        auto name = String::Format("entity_%v", entity.get());
+                        if (entity->hasComponent<Components::Name>())
                         {
-                            selectedEntity = entity;
+                            name = entity->getComponent<Components::Name>().name;
+                        }
+
+                        ImGui::PushID(reinterpret_cast<int>(editorEntity));
+                        if (ImGui::RadioButton("##select", selectedEntity == entity.get()))
+                        {
+                            selectedEntity = entity.get();
                         }
 
                         ImGui::PopID();
                         ImGui::SameLine();
-                        ImGui::PushID(reinterpret_cast<int>(entity));
+                        ImGui::PushID(reinterpret_cast<int>(editorEntity));
                         if (ImGui::Button(ICON_MD_DELETE_FOREVER))
                         {
                             ImGui::OpenPopup("ConfirmEntityDelete");
@@ -192,7 +203,7 @@ namespace Gek
 
                             if (ImGui::Button("Yes", ImVec2(50.0f, 25.0f)))
                             {
-                                deleteEntitySet.insert(entity);
+                                deleteEntitySet.insert(editorEntity);
                                 ImGui::CloseCurrentPopup();
                             }
 
@@ -207,9 +218,10 @@ namespace Gek
 
                         ImGui::PopID();
                         ImGui::SameLine();
+                        ImGui::SetNextTreeNodeOpen(selectedEntity == entity.get());
                         if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_Framed))
                         {
-                            selectedEntity = entity;
+                            selectedEntity = entity.get();
                             if (ImGui::Button(ICON_MD_ADD_CIRCLE_OUTLINE u8"  Add Component", ImVec2(ImGui::GetWindowContentRegionWidth() - ImGui::GetStyle().IndentSpacing, 0.0f)))
                             {
                                 selectedComponent = 0;
@@ -233,7 +245,7 @@ namespace Gek
                                             if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
                                             {
                                                 auto componentData = std::make_pair(componentSearch->second->getName(), JSON::EmptyObject);
-                                                population->addComponent(entity, componentData);
+                                                population->addComponent(entity.get(), componentData);
                                                 ImGui::CloseCurrentPopup();
                                             }
                                         }
@@ -246,7 +258,7 @@ namespace Gek
                             }
 
                             std::set<std::type_index> deleteComponentSet;
-                            const auto &entityComponentMap = entity->getComponentMap();
+                            const auto &entityComponentMap = editorEntity->getComponentMap();
                             for (auto &componentSearch : entityComponentMap)
                             {
                                 Edit::Component *component = population->getComponent(componentSearch.first);
@@ -282,9 +294,9 @@ namespace Gek
                                     ImGui::SameLine();
                                     if (ImGui::TreeNodeEx(component->getName().c_str(), ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
                                     {
-                                        if (component->onUserInterface(ImGui::GetCurrentContext(), entity, componentData))
+                                        if (component->onUserInterface(ImGui::GetCurrentContext(), entity.get(), componentData))
                                         {
-                                            onModified.emit(entity, componentSearch.first);
+                                            onModified.emit(entity.get(), componentSearch.first);
                                         }
 
                                         ImGui::TreePop();
@@ -294,10 +306,15 @@ namespace Gek
 
                             for (auto &component : deleteComponentSet)
                             {
-                                population->removeComponent(entity, component);
+                                population->removeComponent(entity.get(), component);
                             }
 
                             ImGui::TreePop();
+                        }
+
+                        if (!ImGui::IsItemVisible())
+                        {
+                            break;
                         }
                     }
 
@@ -363,16 +380,14 @@ namespace Gek
                         ImGuizmo::BeginFrame();
                         ImGuizmo::SetRect(origin.x, origin.y, size.x, size.y);
                         ImGui::PushClipRect(ImVec2(origin.x, origin.y), ImVec2(origin.x + size.x, origin.y + size.y), false);
-                        auto &entityMap = population->getEntityMap();
-                        for (auto &entitySearch : entityMap)
+                        for (const auto &entity : population->getEntityList())
                         {
-                            auto &name = entitySearch.first;
-                            auto entity = dynamic_cast<Edit::Entity *>(entitySearch.second.get());
-                            if (entity->hasComponent<Components::Transform>())
+                            auto editorEntity = dynamic_cast<Edit::Entity *>(entity.get());
+                            if (editorEntity->hasComponent<Components::Transform>())
                             {
                                 auto &transformComponent = entity->getComponent<Components::Transform>();
                                 auto matrix = transformComponent.getMatrix();
-                                if (selectedEntity == entity)
+                                if (selectedEntity == entity.get())
                                 {
                                     float *snapData = nullptr;
                                     if (useGizmoSnap)
@@ -407,7 +422,21 @@ namespace Gek
                                         ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, static_cast<ImGuizmo::OPERATION>(currentGizmoOperation), static_cast<ImGuizmo::MODE>(currentGizmoScope), matrix.data, deltaMatrix.data, snapData, localbounds);
                                         if (memcmp(deltaMatrix.data, Math::Float4x4::Identity.data, sizeof(Math::Float4x4)) != 0)
                                         {
-                                            transformComponent.setMatrix(matrix);
+                                            switch (currentGizmoOperation)
+                                            {
+                                            case ImGuizmo::TRANSLATE:
+                                                transformComponent.position = matrix.translation.xyz;
+                                                break;
+
+                                            case ImGuizmo::ROTATE:
+                                                transformComponent.rotation = matrix.getRotation();
+                                                break;
+
+                                            case ImGuizmo::SCALE:
+                                                transformComponent.scale = matrix.getScaling();
+                                                break;
+                                            };
+
                                             onModified.emit(selectedEntity, typeid(Components::Transform));
                                         }
                                     }

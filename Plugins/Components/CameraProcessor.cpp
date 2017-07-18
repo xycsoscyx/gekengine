@@ -76,7 +76,7 @@ namespace Gek
 
             changed |= editorElement("Target", [&](void) -> bool
             {
-                return UI::InputString("##target", firstPersonCameraComponent.target, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                return UI::InputString("##target", firstPersonCameraComponent.target, ImGuiInputTextFlags_EnterReturnsTrue);
             });
 
             ImGui::SetCurrentContext(nullptr);
@@ -130,7 +130,7 @@ namespace Gek
 
         void addEntity(Plugin::Entity * const entity)
         {
-            ProcessorMixin::addEntity(entity, [&](auto &data, auto &cameraComponent, auto &transformComponent) -> void
+            ProcessorMixin::addEntity(entity, [&](bool isNewInsert, auto &data, auto &cameraComponent, auto &transformComponent) -> void
             {
                 if (!cameraComponent.target.empty())
                 {
@@ -146,7 +146,7 @@ namespace Gek
         }
 
         // Plugin::Population Slots
-        void onEntityCreated(Plugin::Entity * const entity, std::string const &entityName)
+        void onEntityCreated(Plugin::Entity * const entity)
         {
             addEntity(entity);
         }

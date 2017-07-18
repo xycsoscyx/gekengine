@@ -78,6 +78,7 @@ namespace Gek
 
             NewtonWorld *newtonWorld = nullptr;
             std::unordered_map<uint32_t, uint32_t> staticSurfaceMap;
+            void *newtonListener = nullptr;
 
             concurrency::concurrent_vector<Surface> surfaceList;
             concurrency::concurrent_unordered_map<std::size_t, uint32_t> surfaceIndexMap;
@@ -101,8 +102,11 @@ namespace Gek
 #endif
                 NewtonWorldSetUserData(newtonWorld, static_cast<Newton::World *>(this));
 
-                NewtonWorldAddPreListener(newtonWorld, "__gek_pre_listener__", this, newtonWorldPreUpdate, nullptr);
-                NewtonWorldAddPostListener(newtonWorld, "__gek_post_listener__", this, newtonWorldPostUpdate, nullptr);
+                newtonListener = NewtonWorldAddListener(newtonWorld, "__gek_pre_listener__", this);
+                assert(newtonListener);
+
+                NewtonWorldListenerSetPreUpdateCallback(newtonWorld, newtonListener, newtonWorldPreUpdate);
+                NewtonWorldListenerSetPostUpdateCallback(newtonWorld, newtonListener, newtonWorldPostUpdate);
 
                 int defaultMaterialID = NewtonMaterialGetDefaultGroupID(newtonWorld);
 #if NEWTON_MINOR_VERSION >= 14
@@ -415,7 +419,7 @@ namespace Gek
             }
 
             // Plugin::Population Slots
-            void onEntityCreated(Plugin::Entity * const entity, std::string const &entityName)
+            void onEntityCreated(Plugin::Entity * const entity)
             {
                 addEntity(entity);
             }

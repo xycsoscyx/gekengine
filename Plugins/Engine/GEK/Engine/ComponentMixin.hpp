@@ -110,16 +110,16 @@ namespace Gek
                 entityDataMap.clear();
             }
 
-            void addEntity(Plugin::Entity * const entity, std::function<void(Data &data, REQUIRED&... components)> onAdded)
+            void addEntity(Plugin::Entity * const entity, std::function<void(bool isNewInsert, Data &data, REQUIRED&... components)> onAdded = nullptr)
             {
                 assert(entity);
 
                 if (entity->hasComponents<REQUIRED...>())
                 {
                     auto insertSearch = entityDataMap.insert(std::make_pair(entity, Data()));
-                    if (insertSearch.second && onAdded)
+                    if (onAdded)
                     {
-                        onAdded(insertSearch.first->second, entity->getComponent<REQUIRED>()...);
+                        onAdded(insertSearch.second, insertSearch.first->second, entity->getComponent<REQUIRED>()...);
                     }
                 }
             }

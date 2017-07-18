@@ -74,7 +74,7 @@ namespace Gek
             bool editorActive = core->getOption("editor", "active").convert(false);
             if (frameTime > 0.0f && !editorActive)
             {
-                population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity * const entity, std::string const &, auto &transformComponent, auto &spinComponent) -> void
+                population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity * const entity, auto &transformComponent, auto &spinComponent) -> void
                 {
                     auto omega(spinComponent.torque * frameTime);
                     transformComponent.rotation *= Math::Quaternion::FromEuler(omega.x, omega.y, omega.z);

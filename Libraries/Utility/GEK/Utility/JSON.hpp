@@ -15,8 +15,6 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/ShuntingYard.hpp"
 #include <jsoncons/json.hpp>
-#include <optional>
-#include <any>
 
 namespace Gek
 {
@@ -136,30 +134,6 @@ namespace Gek
                 }
 
                 return EmptyObject;
-            }
-
-            std::optional<std::any> getValue(void)
-            {
-                switch (object.type_id())
-                {
-                case jsoncons::value_type::small_string_t:
-                case jsoncons::value_type::string_t:
-                    return object.as_string();
-
-                case jsoncons::value_type::bool_t:
-                    return object.var_.bool_data_cast()->value();
-
-                case jsoncons::value_type::double_t:
-                    return static_cast<float>(object.var_.double_data_cast()->value());
-
-                case jsoncons::value_type::integer_t:
-                    return object.var_.integer_data_cast()->value();
-
-                case jsoncons::value_type::uinteger_t:
-                    return object.var_.uinteger_data_cast()->value();
-                };
-
-                return std::nullopt;
             }
 
             std::string convert(std::string const &defaultValue)

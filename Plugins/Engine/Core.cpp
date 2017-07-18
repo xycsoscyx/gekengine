@@ -286,13 +286,33 @@ namespace Gek
             void onKeyPressed(uint16_t key, bool state)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                imGuiIo.KeysDown[key] = state;
-                if (state)
+                if (imGuiIo.MouseDrawCursor)
+                {
+                    imGuiIo.KeysDown[key] = state;
+                }
+
+                if (!state)
                 {
                     switch (key)
                     {
                     case VK_ESCAPE:
                         imGuiIo.MouseDrawCursor = !imGuiIo.MouseDrawCursor;
+                        if (imGuiIo.MouseDrawCursor)
+                        {
+                            auto client = window->getClientRectangle();
+                            imGuiIo.MousePos.x = ((float(client.maximum.x - client.minimum.x) * 0.5f) + client.minimum.x);
+                            imGuiIo.MousePos.y = ((float(client.maximum.y - client.minimum.y) * 0.5f) + client.minimum.y);
+                        }
+                        else
+                        {
+                            imGuiIo.MousePos.x = -1.0f;
+                            imGuiIo.MousePos.y = -1.0f;
+                        }
+
+                        break;
+
+                    case VK_F1:
+                        configuration["editor"]["active"] = !JSON::Reference(configuration).get("editor").get("active").convert(false);
                         break;
                     };
 
@@ -349,33 +369,42 @@ namespace Gek
             void onMouseClicked(Window::Button button, bool state)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                switch(button)
+                if (imGuiIo.MouseDrawCursor)
                 {
-                case Window::Button::Left:
-                    imGuiIo.MouseDown[0] = state;
-                    break;
+                    switch (button)
+                    {
+                    case Window::Button::Left:
+                        imGuiIo.MouseDown[0] = state;
+                        break;
 
-                case Window::Button::Middle:
-                    imGuiIo.MouseDown[2] = state;
-                    break;
+                    case Window::Button::Middle:
+                        imGuiIo.MouseDown[2] = state;
+                        break;
 
-                case Window::Button::Right:
-                    imGuiIo.MouseDown[1] = state;
-                    break;
-                };
+                    case Window::Button::Right:
+                        imGuiIo.MouseDown[1] = state;
+                        break;
+                    };
+                }
             }
 
             void onMouseWheel(float numberOfRotations)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                imGuiIo.MouseWheel += numberOfRotations;
+                if (imGuiIo.MouseDrawCursor)
+                {
+                    imGuiIo.MouseWheel += numberOfRotations;
+                }
             }
 
             void onMousePosition(int32_t xPosition, int32_t yPosition)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                imGuiIo.MousePos.x = xPosition;
-                imGuiIo.MousePos.y = yPosition;
+                if (imGuiIo.MouseDrawCursor)
+                {
+                    imGuiIo.MousePos.x = xPosition;
+                    imGuiIo.MousePos.y = yPosition;
+                }
             }
 
             void onMouseMovement(int32_t xMovement, int32_t yMovement)
@@ -650,7 +679,7 @@ namespace Gek
                         ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
 
                         ImGui::SameLine();
-                        if (ImGui::Button("Accept", ImVec2(100.0f, 25.0f)))
+                        if (ImGui::Button("Accept", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
                         {
                             bool changedDisplayMode = setDisplayMode(next.mode);
                             bool changedFullScreen = setFullScreen(next.fullScreen);
@@ -672,7 +701,7 @@ namespace Gek
                         }
 
                         ImGui::SameLine();
-                        if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)))
+                        if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
                         {
                             showSettings = false;
                         }
@@ -696,14 +725,14 @@ namespace Gek
                         ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
 
                         ImGui::SameLine();
-                        if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)))
+                        if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
                         {
                             showModeChange = false;
                             previous = current;
                         }
 
                         ImGui::SameLine();
-                        if (modeChangeTimer <= 0.0f || ImGui::Button("No", ImVec2(100.0f, 25.0f)))
+                        if (modeChangeTimer <= 0.0f || ImGui::Button("No", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
                         {
                             showModeChange = false;
                             setDisplayMode(previous.mode);
@@ -762,15 +791,16 @@ namespace Gek
                         else
                         {
                             ImGui::SetKeyboardFocusHere();
-                            if (ImGui::Button("Load", ImVec2(100.0f, 25.0f)))
+                            if (ImGui::Button("Load", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
                             {
                                 showLoadMenu = false;
                                 population->load(scenes[currentSelectedScene]);
+                                ImGui::GetIO().MouseDrawCursor = false;
                             }
                         }
 
                         ImGui::SameLine();
-                        if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)))
+                        if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
                         {
                             showLoadMenu = false;
                         }
