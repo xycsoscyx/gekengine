@@ -12,11 +12,9 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <ImGuizmo.h>
-#include <imgui_tabs.h>
 
 #include "GEK/GUI/IconsFontAwesome.h"
 #include "GEK/GUI/IconsMaterialDesign.h"
-
 namespace Gek
 {
     namespace UI

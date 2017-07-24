@@ -20,13 +20,6 @@ namespace Gek
         GEK_CONTEXT_USER(Core, Window *)
             , public Plugin::Core
         {
-        public:
-            struct Command
-            {
-                std::string function;
-                std::vector<std::string> parameterList;
-            };
-
         private:
             WindowPtr window;
             bool windowActive = false;
@@ -35,7 +28,6 @@ namespace Gek
             JSON::Object configuration;
             JSON::Object shadersSettings;
             JSON::Object filtersSettings;
-            ShuntingYard shuntingYard;
 
             Video::DisplayModeList displayModeList;
             std::vector<std::string> displayModeStringList;
@@ -50,7 +42,6 @@ namespace Gek
             bool showSettings = false;
             bool showModeChange = false;
             float modeChangeTimer = 0.0f;
-            ImGui::TabWindow settingsTabs;
 
             Timer timer;
             float mouseSensitivity = 0.5f;
@@ -92,7 +83,7 @@ namespace Gek
                 HRESULT resultValue = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
                 if (FAILED(resultValue))
                 {
-                    //throw InitializationFailed("Failed call to CoInitialize");
+                    throw std::exception("Failed call to CoInitialize");
                 }
 
                 Video::Device::Description deviceDescription;
@@ -464,28 +455,6 @@ namespace Gek
                             configuration["editor"]["active"] = editorEnabled;
                         }
 
-                        ImGui::Separator();
-                        if (ImGui::MenuItem("Undo", "CTRL+Z"))
-                        {
-                        }
-
-                        if (ImGui::MenuItem("Redo", "CTRL+Y", false, false))
-                        {
-                        }
-
-                        ImGui::Separator();
-                        if (ImGui::MenuItem("Cut", "CTRL+X"))
-                        {
-                        }
-
-                        if (ImGui::MenuItem("Copy", "CTRL+C"))
-                        {
-                        }
-
-                        if (ImGui::MenuItem("Paste", "CTRL+V"))
-                        {
-                        }
-
                         ImGui::EndMenu();
                     }
 
@@ -668,9 +637,9 @@ namespace Gek
                 {
                     auto &style = ImGui::GetStyle();
                     ImGui::SetNextWindowPosCenter(ImGuiSetCond_Appearing);
-                    if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+                    if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoSavedSettings))
                     {
-                        ImGui::BeginDockspace("##Settings", ImVec2(500.0, 300.0f));
+                        ImGui::BeginDockspace("##Settings", ImVec2(-1.0f, 300.0f), true);
                         showDisplay();
                         showVisual();
                         ImGui::EndDockspace();

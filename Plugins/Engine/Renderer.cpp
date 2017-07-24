@@ -671,7 +671,7 @@ namespace Gek
                     renderer->renderUI(drawData);
                 };
 
-                //ImGui::ResetStyle(ImGuiStyle_Maya);
+                ImGui::ResetStyle(ImGuiStyle_OSXInverse);
             }
 
             ~Renderer(void)
@@ -1077,6 +1077,8 @@ namespace Gek
                 engineConstantData.worldTime = 0.0f;
                 videoDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
 
+                Video::Device::Context *videoContext = videoDevice->getDefaultContext();
+
                 while (cameraQueue.try_pop(currentCamera))
                 {
                     drawCallList.clear();
@@ -1247,9 +1249,7 @@ namespace Gek
                         cameraConstantData.projectionMatrix = currentCamera.projectionMatrix;
                         videoDevice->updateResource(cameraConstantBuffer.get(), &cameraConstantData);
 
-                        Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                         videoContext->clearState();
-
                         videoContext->geometryPipeline()->setConstantBufferList(shaderBufferList, 0);
                         videoContext->vertexPipeline()->setConstantBufferList(shaderBufferList, 0);
                         videoContext->pixelPipeline()->setConstantBufferList(shaderBufferList, 0);
@@ -1347,9 +1347,7 @@ namespace Gek
                 auto screenHandle = resources->getResourceHandle(screenOutput);
                 if (screenHandle)
                 {
-                    Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                     videoContext->clearState();
-
                     videoContext->geometryPipeline()->setConstantBufferList(filterBufferList, 0);
                     videoContext->vertexPipeline()->setConstantBufferList(filterBufferList, 0);
                     videoContext->pixelPipeline()->setConstantBufferList(filterBufferList, 0);
@@ -1386,6 +1384,12 @@ namespace Gek
                     videoContext->vertexPipeline()->clearConstantBufferList(1, 0);
                     videoContext->pixelPipeline()->clearConstantBufferList(1, 0);
                     videoContext->computePipeline()->clearConstantBufferList(1, 0);
+                }
+                else
+                {
+                    static const JSON::Object Black = JSON::Array({ 0.0f, 0.0f, 0.0f, 1.0f });
+                    auto blackPattern = resources->createPattern("color", Black);
+                    renderOverlay(videoContext, blackPattern, ResourceHandle());
                 }
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();

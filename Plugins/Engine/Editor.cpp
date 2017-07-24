@@ -107,7 +107,8 @@ namespace Gek
             Plugin::Entity *selectedEntity = nullptr;
             void showPopulation(void)
             {
-                if (ImGui::BeginDock("Population", nullptr, 0, ImVec2(100.0f, -1.0f)))
+                auto &imGuiIo = ImGui::GetIO();
+                if (ImGui::BeginDock("Population", nullptr, 0, ImVec2(imGuiIo.DisplaySize.x * 0.2f, -1.0f)))
                 {
                     ImGui::Dummy(ImVec2(50.0f, 0.0f));
                     ImGui::SameLine();
@@ -158,14 +159,13 @@ namespace Gek
                         std::string name;
                         if (UI::InputString("##name", name, ImGuiInputTextFlags_EnterReturnsTrue))
                         {
-                            if (name.empty())
+                            std::vector<Plugin::Population::Component> componentList;
+                            if (!name.empty())
                             {
-                                population->createEntity();
-                            }
-                            else
-                            {
+                                componentList.push_back(std::make_pair("Name", name));
                             }
 
+                            population->createEntity(componentList);
                             ImGui::CloseCurrentPopup();
                         }
 
@@ -352,9 +352,11 @@ namespace Gek
             void showScene(void)
             {
                 auto &imGuiIo = ImGui::GetIO();
-                if (ImGui::BeginDock("Scene", nullptr, ImGuiWindowFlags_NoScrollbar))
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+                if (ImGui::BeginDock("Scene", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse, ImVec2(imGuiIo.DisplaySize.x * 0.8f, -1.0f)))
                 {
-                    cameraSize = ImGui::GetWindowSize();
+                    cameraSize = ImGui::GetWindowContentRegionMax() - ImGui::GetWindowContentRegionMin();
 
                     Video::Texture::Description description;
                     description.width = cameraSize.x;
@@ -452,6 +454,7 @@ namespace Gek
                 }
 
                 ImGui::EndDock();
+                ImGui::PopStyleVar(2);
             }
 
             void onShowUserInterface(ImGuiContext * const guiContext)
@@ -475,22 +478,26 @@ namespace Gek
 
                 ImGui::SetNextWindowSize(editorSize);
                 ImGui::SetNextWindowPos(editorPosition);
+                ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+                auto oldWindowPadding = ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
                 if (ImGui::Begin("Editor", nullptr, editorSize, 1.0f, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
                 {
-                    ImGui::BeginDockspace("##Editor");
+                    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, oldWindowPadding);
+                    ImGui::BeginDockspace("##Editor", (ImGui::GetWindowContentRegionMax() - ImGui::GetWindowContentRegionMin()), true);
 
-                    ImGui::SetNextDock(ImGuiDockSlot_None);
+                    ImGui::SetNextDock(ImGuiDockSlot_Left | ImGuiDockSlot_FromRoot);
                     showScene();
 
                     ImGui::SetNextDock(ImGuiDockSlot_Right | ImGuiDockSlot_FromRoot);
                     showPopulation();
 
                     ImGui::EndDockspace();
+                    ImGui::PopStyleVar(1);
                 }
 
                 ImGui::End();
-                ImGui::PopStyleVar();
+                ImGui::PopStyleVar(3);
             }
 
             // Plugin::Population Slots
