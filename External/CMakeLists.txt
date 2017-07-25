@@ -33,12 +33,12 @@ if(WIN32)
     #add_custom_command(TARGET DirectXTex PRE_BUILD WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/DirectXTex/DirectXTex/Shaders" COMMAND "CompileShaders.cmd" )
 endif()
 
-project(imgui)
+project(imgui_gek)
 file(GLOB SOURCES "imgui-addons/*.cpp" "imgui-addons/*.h"
                   "imguizmo/*.cpp" "imguizmo/*.h")
-add_library(imgui STATIC ${SOURCES})
-target_include_directories(imgui PUBLIC "${CMAKE_CURRENT_LIST_DIR}/imgui-addons"
-                                        "${CMAKE_CURRENT_LIST_DIR}/imguizmo")
+add_library(imgui_gek STATIC ${SOURCES})
+target_include_directories(imgui_gek PUBLIC "${CMAKE_CURRENT_LIST_DIR}/imgui-addons"
+                                            "${CMAKE_CURRENT_LIST_DIR}/imguizmo")
 
 project(nano-signal-slot)
 add_library(nano-signal-slot INTERFACE)
@@ -138,7 +138,7 @@ if(NEWTON_3_14)
 	set_property(TARGET dScene PROPERTY FOLDER "External/dNewton")
 endif(NEWTON_3_14)
 
-set_property(TARGET imgui PROPERTY FOLDER "External/ImGui")
+set_property(TARGET imgui_gek PROPERTY FOLDER "External/ImGui")
 
 if(WIN32)
     set_property(TARGET DirectXTex PROPERTY FOLDER "External/DirectXTex")
