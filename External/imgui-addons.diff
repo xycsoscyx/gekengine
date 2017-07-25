@@ -1,4 +1,4 @@
- addons/imguidock/imguidock.cpp                     | 2062 ++++++++++----------
+ addons/imguidock/imguidock.cpp                     | 2060 ++++++++++----------
  addons/imguidock/imguidock.h                       |   40 +-
  addons/imguifilesystem/imguifilesystem.cpp         |   47 +-
  addons/imguinodegrapheditor/imguinodegrapheditor.h |    2 +-
@@ -6,16 +6,16 @@
  addons/imguipanelmanager/imguipanelmanager.h       |    3 +-
  .../imguivariouscontrols/imguivariouscontrols.cpp  |    2 +
  addons/imguivariouscontrols/imguivariouscontrols.h |    2 +
- imgui.cpp                                          |   71 +-
- imgui.h                                            |   10 +-
+ imgui.cpp                                          |   85 +-
+ imgui.h                                            |   12 +-
  imgui_draw.cpp                                     |    2 -
- 11 files changed, 1168 insertions(+), 1075 deletions(-)
+ 11 files changed, 1180 insertions(+), 1077 deletions(-)
 
 diff --git a/addons/imguidock/imguidock.cpp b/addons/imguidock/imguidock.cpp
-index a25d558..5fefc5b 100644
+index a25d558..d2d429b 100644
 --- a/addons/imguidock/imguidock.cpp
 +++ b/addons/imguidock/imguidock.cpp
-@@ -36,1283 +36,1317 @@ SOFTWARE.
+@@ -36,1283 +36,1315 @@ SOFTWARE.
  
  #include "imguidock.h"
  
@@ -1219,20 +1219,20 @@ index a25d558..5fefc5b 100644
 -        dock.parent = NULL;
 -        dock.prev_tab = dock.next_tab = NULL;
 -    }
- 
+-
  
 -    void drawTabbarListButton(Dock& dock)
 -    {
 -        if (!dock.next_tab) return;
--
+ 
 -        ImDrawList* draw_list = GetWindowDrawList();
 -        if (InvisibleButton("list", ImVec2(16, 16)))
--        {
++        void drawTabbarListButton(Dock& dock)
+         {
 -            OpenPopup("tab_list_popup");
 -        }
 -        if (BeginPopup("tab_list_popup"))
-+        void drawTabbarListButton(Dock& dock)
-         {
+-        {
 -            Dock* tmp = &dock;
 -            while (tmp)
 +            if (!dock.next_tab) return;
@@ -1447,7 +1447,7 @@ index a25d558..5fefc5b 100644
 -    static void setDockPosSize(Dock& dest, Dock& dock, ImGuiDockSlot dock_slot, Dock& container)
 -    {
 -        IM_ASSERT(!dock.prev_tab && !dock.next_tab && !dock.children[0] && !dock.children[1]);
-+        static void setDockPosSize(Dock& dest, Dock& dock, uint32_t dock_slot, Dock& container)
++        static void setDockPosSize(Dock& dest, Dock& dock, uint32_t dock_slot, Dock& container, ImVec2 const &default_size)
 +        {
 +            IM_ASSERT(!dock.prev_tab && !dock.next_tab && !dock.children[0] && !dock.children[1]);
  
@@ -1456,9 +1456,7 @@ index a25d558..5fefc5b 100644
 -        dock.pos = container.pos;
 -        dock.size = container.size;
 +            dest.pos = container.pos;
-+            dest.size = container.size;
 +            dock.pos = container.pos;
-+            dock.size = container.size;
  
 -        switch (dock_slot)
 -        {
@@ -1485,32 +1483,32 @@ index a25d558..5fefc5b 100644
 -        default: IM_ASSERT(false); break;
 -        }
 -        dest.setPosSize(dest.pos, dest.size);
++            dest.size = container.size;
++            dock.size.x = default_size.x <= 0.0f ? container.size.x * 0.5f : default_size.x;
++            dock.size.y = default_size.y <= 0.0f ? container.size.y * 0.5f : default_size.y;
+ 
+-        if (container.children[1]->pos.x < container.children[0]->pos.x ||
 +            if (dock_slot & ImGuiDockSlot_Bottom)
 +            {
-+                dest.size.y *= 0.5f;
-+                dock.size.y *= 0.5f;
++                dest.size.y -= dock.size.y;
 +                dock.pos.y += dest.size.y;
 +            }
 +            else if (dock_slot & ImGuiDockSlot_Right)
 +            {
-+                dest.size.x *= 0.5f;
-+                dock.size.x *= 0.5f;
++                dest.size.x -= dock.size.x;
 +                dock.pos.x += dest.size.x;
 +            }
 +            else if (dock_slot & ImGuiDockSlot_Left)
 +            {
-+                dest.size.x *= 0.5f;
-+                dock.size.x *= 0.5f;
++                dest.size.x -= dock.size.x;
 +                dest.pos.x += dock.size.x;
 +            }
 +            else if (dock_slot & ImGuiDockSlot_Top)
 +            {
-+                dest.size.y *= 0.5f;
-+                dock.size.y *= 0.5f;
++                dest.size.y -= dock.size.y;
 +                dest.pos.y += dock.size.y;
 +            }
- 
--        if (container.children[1]->pos.x < container.children[0]->pos.x ||
++
 +            dest.setPosSize(dest.pos, dest.size);
 +            if (container.children[1]->pos.x < container.children[0]->pos.x ||
                  container.children[1]->pos.y < container.children[0]->pos.y)
@@ -1536,7 +1534,7 @@ index a25d558..5fefc5b 100644
 -            dock.setPosSize(m_workspace_pos, m_workspace_size);
 -        }
 -        else if (dock_slot == ImGuiDockSlot_Tab)
-+        void doDock(Dock& dock, Dock* dest, uint32_t dock_slot)
++        void doDock(Dock& dock, Dock* dest, uint32_t dock_slot, ImVec2 const &default_size = ImVec2(0.0f, 0.0f))
          {
 -            Dock* tmp = dest;
 -            while (tmp->next_tab)
@@ -1633,7 +1631,7 @@ index a25d558..5fefc5b 100644
 +                dock.status = Status_Docked;
  
 -            setDockPosSize(*dest, dock, dock_slot, *container);
-+                setDockPosSize(*dest, dock, dock_slot, *container);
++                setDockPosSize(*dest, dock, dock_slot, *container, default_size);
 +            }
 +            dock.setActive();
          }
@@ -1852,7 +1850,7 @@ index a25d558..5fefc5b 100644
 +            if (first || (prev_opened != dock.opened)) {
 +                Dock* root = extra_flags & ImGuiDockSlot_FromRoot ? getRootDock() : (m_next_parent ? m_next_parent : getRootDock());
 +                if (root && (&dock != root) && !dock.parent) {
-+                    doDock(dock, root, next_slot);
++                    doDock(dock, root, next_slot, default_size);
 +                }
 +                m_next_parent = &dock;
 +            }
@@ -2546,7 +2544,7 @@ index 6eddd37..e46379a 100644
  // Please note that you can tweak the "format" argument if you want to add a prefix (or a suffix) piece of text to the text that appears at the right of the bar.
  // returns the value "fraction" in 0.f-1.f.
 diff --git a/imgui.cpp b/imgui.cpp
-index 7ca66c7..fa8b4ac 100644
+index 7ca66c7..6621e40 100644
 --- a/imgui.cpp
 +++ b/imgui.cpp
 @@ -621,8 +621,6 @@
@@ -2614,7 +2612,30 @@ index 7ca66c7..fa8b4ac 100644
  }
  
  void ImGui::PopStyleVar(int count)
-@@ -6723,9 +6722,57 @@ bool ImGui::VSliderFloat(const char* label, const ImVec2& size, float* v, float
+@@ -5138,10 +5137,20 @@ ImVec2 ImGui::GetWindowContentRegionMax()
+     return window->ContentsRegionRect.Max;
+ }
+ 
+-float ImGui::GetWindowContentRegionWidth()
++ImVec2 ImGui::GetWindowContentRegionSize()
+ {
+     ImGuiWindow* window = GetCurrentWindowRead();
+-    return window->ContentsRegionRect.Max.x - window->ContentsRegionRect.Min.x;
++    return window->ContentsRegionRect.Max - window->ContentsRegionRect.Min;
++}
++
++float ImGui::GetWindowContentRegionWidth()
++{
++    return GetWindowContentRegionSize().x;
++}
++
++float ImGui::GetWindowContentRegionHeight()
++{
++    return GetWindowContentRegionSize().y;
+ }
+ 
+ float ImGui::GetTextLineHeight()
+@@ -6723,9 +6732,57 @@ bool ImGui::VSliderFloat(const char* label, const ImVec2& size, float* v, float
  
  bool ImGui::SliderAngle(const char* label, float* v_rad, float v_degrees_min, float v_degrees_max)
  {
@@ -2675,7 +2696,7 @@ index 7ca66c7..fa8b4ac 100644
  }
  
 diff --git a/imgui.h b/imgui.h
-index 2b37c5b..f9fd023 100644
+index 2b37c5b..d3a1dfd 100644
 --- a/imgui.h
 +++ b/imgui.h
 @@ -8,6 +8,8 @@
@@ -2687,7 +2708,17 @@ index 2b37c5b..f9fd023 100644
  #if !defined(IMGUI_DISABLE_INCLUDE_IMCONFIG_H) || defined(IMGUI_INCLUDE_IMCONFIG_H)
  #include "imconfig.h"       // User-editable configuration file
  #endif
-@@ -182,8 +184,8 @@ namespace ImGui
+@@ -139,7 +141,9 @@ namespace ImGui
+     IMGUI_API float         GetContentRegionAvailWidth();                                       //
+     IMGUI_API ImVec2        GetWindowContentRegionMin();                                        // content boundaries min (roughly (0,0)-Scroll), in window coordinates
+     IMGUI_API ImVec2        GetWindowContentRegionMax();                                        // content boundaries max (roughly (0,0)+Size-Scroll) where Size can be override with SetNextWindowContentSize(), in window coordinates
++    IMGUI_API ImVec2        GetWindowContentRegionSize();                                       //
+     IMGUI_API float         GetWindowContentRegionWidth();                                      //
++    IMGUI_API float         GetWindowContentRegionHeight();                                     //
+     IMGUI_API ImDrawList*   GetWindowDrawList();                                                // get rendering command-list if you want to append your own draw primitives
+     IMGUI_API ImVec2        GetWindowPos();                                                     // get current window position in screen space (useful if you want to do your own drawing via the DrawList api)
+     IMGUI_API ImVec2        GetWindowSize();                                                    // get current window size
+@@ -182,8 +186,8 @@ namespace ImGui
      IMGUI_API void          PopFont();
      IMGUI_API void          PushStyleColor(ImGuiCol idx, const ImVec4& col);
      IMGUI_API void          PopStyleColor(int count = 1);
@@ -2698,7 +2729,7 @@ index 2b37c5b..f9fd023 100644
      IMGUI_API void          PopStyleVar(int count = 1);
      IMGUI_API ImFont*       GetFont();                                                          // get current font
      IMGUI_API float         GetFontSize();                                                      // get current font size (= height in pixels) of current font with current scale applied
-@@ -192,6 +194,7 @@ namespace ImGui
+@@ -192,6 +196,7 @@ namespace ImGui
      IMGUI_API ImU32         GetColorU32(const ImVec4& col);                                     // retrieve given color with style alpha applied
  
      // Parameters stacks (current window)
@@ -2706,7 +2737,7 @@ index 2b37c5b..f9fd023 100644
      IMGUI_API void          PushItemWidth(float item_width);                                    // width of items for the common item+label case, pixels. 0.0f = default to ~2/3 of windows width, >0.0f: width in pixels, <0.0f align xx pixels to the right of window (so -1.0f always align width to the right side)
      IMGUI_API void          PopItemWidth();
      IMGUI_API float         CalcItemWidth();                                                    // width of item given pushed settings and current cursor position
-@@ -316,6 +319,9 @@ namespace ImGui
+@@ -316,6 +321,9 @@ namespace ImGui
      IMGUI_API bool          SliderFloat3(const char* label, float v[3], float v_min, float v_max, const char* display_format = "%.3f", float power = 1.0f);
      IMGUI_API bool          SliderFloat4(const char* label, float v[4], float v_min, float v_max, const char* display_format = "%.3f", float power = 1.0f);
      IMGUI_API bool          SliderAngle(const char* label, float* v_rad, float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);

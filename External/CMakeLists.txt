@@ -35,12 +35,10 @@ endif()
 
 project(imgui)
 file(GLOB SOURCES "imgui-addons/*.cpp" "imgui-addons/*.h"
-                  "imguizmo/*.cpp" "imguizmo/*.h"
-                  "imgui_tabs/*.cpp" "imgui_tabs/*.h")
+                  "imguizmo/*.cpp" "imguizmo/*.h")
 add_library(imgui STATIC ${SOURCES})
 target_include_directories(imgui PUBLIC "${CMAKE_CURRENT_LIST_DIR}/imgui-addons"
-                                        "${CMAKE_CURRENT_LIST_DIR}/imguizmo"
-                                        "${CMAKE_CURRENT_LIST_DIR}/imgui_tabs")
+                                        "${CMAKE_CURRENT_LIST_DIR}/imguizmo")
 
 project(nano-signal-slot)
 add_library(nano-signal-slot INTERFACE)
