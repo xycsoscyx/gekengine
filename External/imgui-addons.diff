@@ -1,19 +1,21 @@
- addons/imguidock/imguidock.cpp                     | 2059 ++++++++++----------
+ addons/imguidock/imguidock.cpp                     | 2062 ++++++++++----------
  addons/imguidock/imguidock.h                       |   40 +-
  addons/imguifilesystem/imguifilesystem.cpp         |   47 +-
  addons/imguinodegrapheditor/imguinodegrapheditor.h |    2 +-
  addons/imguipanelmanager/imguipanelmanager.cpp     |    2 +-
  addons/imguipanelmanager/imguipanelmanager.h       |    3 +-
- imgui.cpp                                          |   54 +-
- imgui.h                                            |    5 +
+ .../imguivariouscontrols/imguivariouscontrols.cpp  |    2 +
+ addons/imguivariouscontrols/imguivariouscontrols.h |    2 +
+ imgui.cpp                                          |   71 +-
+ imgui.h                                            |   10 +-
  imgui_draw.cpp                                     |    2 -
- 9 files changed, 1149 insertions(+), 1065 deletions(-)
+ 11 files changed, 1168 insertions(+), 1075 deletions(-)
 
 diff --git a/addons/imguidock/imguidock.cpp b/addons/imguidock/imguidock.cpp
-index a25d558..c4adaf3 100644
+index a25d558..5fefc5b 100644
 --- a/addons/imguidock/imguidock.cpp
 +++ b/addons/imguidock/imguidock.cpp
-@@ -36,1283 +36,1314 @@ SOFTWARE.
+@@ -36,1283 +36,1317 @@ SOFTWARE.
  
  #include "imguidock.h"
  
@@ -335,12 +337,14 @@ index a25d558..c4adaf3 100644
 +        ImVec2 m_workspace_pos;
 +        ImVec2 m_workspace_size;
 +        uint32_t m_next_dock_slot;
++        ImVec2 m_splitSize;
 +
 +        DockContext()
 +            : m_current(NULL)
 +            , m_next_parent(NULL)
 +            , m_last_frame(0)
 +            , m_next_dock_slot(ImGuiDockSlot_Tab)
++            , m_splitSize(3.0f, 3.0f)
 +        {
          }
  
@@ -524,8 +528,8 @@ index a25d558..c4adaf3 100644
                  {
 -                    g.Windows[j + 1] = g.Windows[j];
 +                    cursor = ImGuiMouseCursor_ResizeEW;
-+                    SetCursorScreenPos(ImVec2(dock.pos.x + size0.x, dock.pos.y));
-+                    InvisibleButton("split", ImVec2(3, dock.size.y));
++                    SetCursorScreenPos(ImVec2(dock.pos.x + size0.x - m_splitSize.x * 0.5f + 1.0f, dock.pos.y));
++                    InvisibleButton("split", ImVec2(m_splitSize.x, dock.size.y));
 +                    if (dock.status == Status_Dragged) dsize.x = io.MouseDelta.x;
 +                    dsize.x = -ImMin(-dsize.x, dock.children[0]->size.x - min_size0.x);
 +                    dsize.x = ImMin(dsize.x, dock.children[1]->size.x - min_size1.x);
@@ -546,8 +550,8 @@ index a25d558..c4adaf3 100644
 +                else
 +                {
 +                    cursor = ImGuiMouseCursor_ResizeNS;
-+                    SetCursorScreenPos(ImVec2(dock.pos.x, dock.pos.y + size0.y));
-+                    InvisibleButton("split", ImVec2(dock.size.x, 3));
++                    SetCursorScreenPos(ImVec2(dock.pos.x, dock.pos.y + size0.y - m_splitSize.y * 0.5f + 1.0f));
++                    InvisibleButton("split", ImVec2(dock.size.x, m_splitSize.y));
 +                    if (dock.status == Status_Dragged) dsize.y = io.MouseDelta.y;
 +                    dsize.y = -ImMin(-dsize.y, dock.children[0]->size.y - min_size0.y);
 +                    dsize.y = ImMin(dsize.y, dock.children[1]->size.y - min_size1.y);
@@ -2094,12 +2098,13 @@ index a25d558..c4adaf3 100644
 -    g_dock.m_workspace_pos = GetWindowPos();
 -    g_dock.m_workspace_size = GetWindowSize();
 -}
-+    void BeginDockspace(const char* label, const ImVec2 &workspace) {
++    void BeginDockspace(const char* label, const ImVec2 &workspace, bool showBorder, const ImVec2 &splitSize) {
 +        g_dock = &g_dockSpaces[label];
 +        ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar;
-+        BeginChild(label ? label : "##workspace", workspace, false, flags);
++        BeginChild(label ? label : "##workspace", workspace, showBorder, flags);
 +        g_dock->m_workspace_pos = GetWindowPos();
 +        g_dock->m_workspace_size = GetWindowSize();
++        g_dock->m_splitSize = splitSize;
 +    }
  
 -void EndDockspace() {
@@ -2343,7 +2348,7 @@ index a25d558..c4adaf3 100644
  #endif //(defined(IMGUIHELPER_H_) && !defined(NO_IMGUIHELPER_SERIALIZATION))
  
 diff --git a/addons/imguidock/imguidock.h b/addons/imguidock/imguidock.h
-index 5404993..b62c5a3 100644
+index 5404993..12495cc 100644
 --- a/addons/imguidock/imguidock.h
 +++ b/addons/imguidock/imguidock.h
 @@ -74,37 +74,37 @@ SOFTWARE.
@@ -2382,7 +2387,7 @@ index 5404993..b62c5a3 100644
 -IMGUI_API void EndDock();
 -IMGUI_API void SetDockActive();
 -IMGUI_API void DockDebugWindow();
-+    IMGUI_API void BeginDockspace(const char* label = nullptr, const ImVec2 &workspace = ImVec2(0, 0));
++    IMGUI_API void BeginDockspace(const char* label = nullptr, const ImVec2 &workspace = ImVec2(0, 0), bool showBorder = false, const ImVec2 &splitSize = ImVec2(3.0f, 3.0f));
 +    IMGUI_API void EndDockspace();
 +    IMGUI_API void ShutdownDock();
 +    IMGUI_API void SetNextDock(uint32_t slot);
@@ -2512,11 +2517,39 @@ index 5895092..e5d477e 100644
          {}
          ~Pane() {clear();}
          void clear() {
+diff --git a/addons/imguivariouscontrols/imguivariouscontrols.cpp b/addons/imguivariouscontrols/imguivariouscontrols.cpp
+index a3643c6..428dc65 100644
+--- a/addons/imguivariouscontrols/imguivariouscontrols.cpp
++++ b/addons/imguivariouscontrols/imguivariouscontrols.cpp
+@@ -80,7 +80,9 @@ static bool CheckButton(const char* label,bool* pvalue,bool useSmallButton,float
+     return rv;
+ }
+ bool CheckButton(const char* label,bool* pvalue) {return CheckButton(label,pvalue,false);}
++bool CheckButton(const char* label,bool value) {return CheckButton(label,&value,false);}
+ bool SmallCheckButton(const char* label,bool* pvalue) {return CheckButton(label,pvalue,true);}
++bool SmallCheckButton(const char* label,bool value) {return CheckButton(label,&value,true);}
+ 
+ float ProgressBar(const char *optionalPrefixText, float value, const float minValue, const float maxValue, const char *format, const ImVec2 &sizeOfBarWithoutTextInPixels, const ImVec4 &colorLeft, const ImVec4 &colorRight, const ImVec4 &colorBorder)    {
+     if (value<minValue) value=minValue;
+diff --git a/addons/imguivariouscontrols/imguivariouscontrols.h b/addons/imguivariouscontrols/imguivariouscontrols.h
+index 6eddd37..e46379a 100644
+--- a/addons/imguivariouscontrols/imguivariouscontrols.h
++++ b/addons/imguivariouscontrols/imguivariouscontrols.h
+@@ -40,7 +40,9 @@ IMGUI_API bool IsItemJustReleased();
+ #endif //IMGUIHELPER_H_
+ 
+ IMGUI_API bool CheckButton(const char* label,bool* pvalue);
++IMGUI_API bool CheckButton(const char* label,bool value);
+ IMGUI_API bool SmallCheckButton(const char* label,bool* pvalue);
++IMGUI_API bool SmallCheckButton(const char* label,bool value);
+ 
+ // Please note that you can tweak the "format" argument if you want to add a prefix (or a suffix) piece of text to the text that appears at the right of the bar.
+ // returns the value "fraction" in 0.f-1.f.
 diff --git a/imgui.cpp b/imgui.cpp
-index 4887a91..48294fe 100644
+index 7ca66c7..fa8b4ac 100644
 --- a/imgui.cpp
 +++ b/imgui.cpp
-@@ -618,8 +618,6 @@
+@@ -621,8 +621,6 @@
  #endif
  
  #include "imgui.h"
@@ -2525,7 +2558,63 @@ index 4887a91..48294fe 100644
  #include "imgui_internal.h"
  
  #include <ctype.h>      // toupper, isprint
-@@ -6716,9 +6714,57 @@ bool ImGui::VSliderFloat(const char* label, const ImVec2& size, float* v, float
+@@ -667,7 +665,6 @@
+ 
+ static void             LogRenderedText(const ImVec2& ref_pos, const char* text, const char* text_end = NULL);
+ 
+-static void             PushMultiItemsWidths(int components, float w_full = 0.0f);
+ static float            GetDraggedColumnOffset(int column_index);
+ 
+ static bool             IsKeyPressedMap(ImGuiKey key, bool repeat = true);
+@@ -4612,7 +4609,7 @@ void ImGui::PushItemWidth(float item_width)
+     window->DC.ItemWidthStack.push_back(window->DC.ItemWidth);
+ }
+ 
+-static void PushMultiItemsWidths(int components, float w_full)
++void ImGui::PushMultiItemsWidths(int components, float w_full)
+ {
+     ImGuiWindow* window = ImGui::GetCurrentWindow();
+     const ImGuiStyle& style = GImGui->Style;
+@@ -4775,30 +4772,32 @@ static const ImGuiStyleVarInfo* GetStyleVarInfo(ImGuiStyleVar idx)
+     return &GStyleVarInfo[idx];
+ }
+ 
+-void ImGui::PushStyleVar(ImGuiStyleVar idx, float val)
++float ImGui::PushStyleVar(ImGuiStyleVar idx, float val)
+ {
+     const ImGuiStyleVarInfo* var_info = GetStyleVarInfo(idx);
+     if (var_info->Type == ImGuiDataType_Float)
+     {
+-        float* pvar = (float*)var_info->GetVarPtr();
++        float* pvar = (float*)var_info->GetVarPtr(), ovar = *pvar;
+         GImGui->StyleModifiers.push_back(ImGuiStyleMod(idx, *pvar));
+         *pvar = val;
+-        return;
++        return ovar;
+     }
+     IM_ASSERT(0); // Called function with wrong-type? Variable is not a float.
++    return 0.0f;
+ }
+ 
+-void ImGui::PushStyleVar(ImGuiStyleVar idx, const ImVec2& val)
++ImVec2 ImGui::PushStyleVar(ImGuiStyleVar idx, const ImVec2& val)
+ {
+     const ImGuiStyleVarInfo* var_info = GetStyleVarInfo(idx);
+     if (var_info->Type == ImGuiDataType_Float2)
+     {
+-        ImVec2* pvar = (ImVec2*)var_info->GetVarPtr();
++        ImVec2* pvar = (ImVec2*)var_info->GetVarPtr(), ovar = *pvar;
+         GImGui->StyleModifiers.push_back(ImGuiStyleMod(idx, *pvar));
+         *pvar = val;
+-        return;
++        return ovar;
+     }
+     IM_ASSERT(0); // Called function with wrong-type? Variable is not a ImVec2.
++    return ImVec2(0.0f, 0.0f);
+ }
+ 
+ void ImGui::PopStyleVar(int count)
+@@ -6723,9 +6722,57 @@ bool ImGui::VSliderFloat(const char* label, const ImVec2& size, float* v, float
  
  bool ImGui::SliderAngle(const char* label, float* v_rad, float v_degrees_min, float v_degrees_max)
  {
@@ -2586,7 +2675,7 @@ index 4887a91..48294fe 100644
  }
  
 diff --git a/imgui.h b/imgui.h
-index 008fdf1..3c7b5f7 100644
+index 2b37c5b..f9fd023 100644
 --- a/imgui.h
 +++ b/imgui.h
 @@ -8,6 +8,8 @@
@@ -2598,7 +2687,26 @@ index 008fdf1..3c7b5f7 100644
  #if !defined(IMGUI_DISABLE_INCLUDE_IMCONFIG_H) || defined(IMGUI_INCLUDE_IMCONFIG_H)
  #include "imconfig.h"       // User-editable configuration file
  #endif
-@@ -314,6 +316,9 @@ namespace ImGui
+@@ -182,8 +184,8 @@ namespace ImGui
+     IMGUI_API void          PopFont();
+     IMGUI_API void          PushStyleColor(ImGuiCol idx, const ImVec4& col);
+     IMGUI_API void          PopStyleColor(int count = 1);
+-    IMGUI_API void          PushStyleVar(ImGuiStyleVar idx, float val);
+-    IMGUI_API void          PushStyleVar(ImGuiStyleVar idx, const ImVec2& val);
++    IMGUI_API float         PushStyleVar(ImGuiStyleVar idx, float val);
++    IMGUI_API ImVec2        PushStyleVar(ImGuiStyleVar idx, const ImVec2& val);
+     IMGUI_API void          PopStyleVar(int count = 1);
+     IMGUI_API ImFont*       GetFont();                                                          // get current font
+     IMGUI_API float         GetFontSize();                                                      // get current font size (= height in pixels) of current font with current scale applied
+@@ -192,6 +194,7 @@ namespace ImGui
+     IMGUI_API ImU32         GetColorU32(const ImVec4& col);                                     // retrieve given color with style alpha applied
+ 
+     // Parameters stacks (current window)
++    IMGUI_API void          PushMultiItemsWidths(int components, float w_full = 0.0f);
+     IMGUI_API void          PushItemWidth(float item_width);                                    // width of items for the common item+label case, pixels. 0.0f = default to ~2/3 of windows width, >0.0f: width in pixels, <0.0f align xx pixels to the right of window (so -1.0f always align width to the right side)
+     IMGUI_API void          PopItemWidth();
+     IMGUI_API float         CalcItemWidth();                                                    // width of item given pushed settings and current cursor position
+@@ -316,6 +319,9 @@ namespace ImGui
      IMGUI_API bool          SliderFloat3(const char* label, float v[3], float v_min, float v_max, const char* display_format = "%.3f", float power = 1.0f);
      IMGUI_API bool          SliderFloat4(const char* label, float v[4], float v_min, float v_max, const char* display_format = "%.3f", float power = 1.0f);
      IMGUI_API bool          SliderAngle(const char* label, float* v_rad, float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
@@ -2609,7 +2717,7 @@ index 008fdf1..3c7b5f7 100644
      IMGUI_API bool          SliderInt2(const char* label, int v[2], int v_min, int v_max, const char* display_format = "%.0f");
      IMGUI_API bool          SliderInt3(const char* label, int v[3], int v_min, int v_max, const char* display_format = "%.0f");
 diff --git a/imgui_draw.cpp b/imgui_draw.cpp
-index f11e198..6ee60a1 100644
+index fa6838a..04cf6d3 100644
 --- a/imgui_draw.cpp
 +++ b/imgui_draw.cpp
 @@ -13,8 +13,6 @@

@@ -1,8 +1,8 @@
- imgui_tabs.cpp | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+ imgui_tabs.cpp | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
 diff --git a/imgui_tabs.cpp b/imgui_tabs.cpp
-index bdef1be..ccb6d40 100644
+index bdef1be..62914f5 100644
 --- a/imgui_tabs.cpp
 +++ b/imgui_tabs.cpp
 @@ -30,6 +30,8 @@
@@ -29,7 +29,15 @@ index bdef1be..ccb6d40 100644
              }
          }
      }
-@@ -258,7 +260,7 @@ void ImGui::TabBar::_drawTabBarBottom() {
+@@ -155,7 +157,6 @@ void ImGui::TabBar::_drawTabBarTop(const char *label) {
+     const float tab_height = CalcTextSize(tabTitles[0]).y + (frame_padding.y * 2);
+ 
+     float selected_offset = 0;
+-    _TabType selected_tab_type;
+     ImVec2 selected_expands;
+     _EdgeType selected_shadow_edges = EDGE_NONE;
+     int selected_idx = 0;
+@@ -258,7 +259,7 @@ void ImGui::TabBar::_drawTabBarBottom() {
      ImGuiDrawContext& dc = wind->DC;
  
      const ImVec2 padding = style.WindowPadding;
