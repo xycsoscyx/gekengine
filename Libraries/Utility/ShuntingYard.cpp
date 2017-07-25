@@ -234,7 +234,7 @@ namespace Gek
     {
         const auto hash = GetHash(expression);
         auto cacheSearch = cache.find(hash);
-        if (cacheSearch != cache.end())
+        if (cacheSearch != std::end(cache))
         {
             return cacheSearch->second;
         }

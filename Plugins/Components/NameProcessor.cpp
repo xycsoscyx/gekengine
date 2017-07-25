@@ -62,6 +62,8 @@ namespace Gek
         Plugin::Core *core = nullptr;
         Plugin::Population *population = nullptr;
         Plugin::Editor *editor = nullptr;
+        using NameMap = std::unordered_map<std::string, Plugin::Entity *>;
+        NameMap nameMap;
 
     public:
         NameProcessor(Context *context, Plugin::Core *core)
@@ -85,16 +87,49 @@ namespace Gek
             population->onEntityCreated.disconnect<NameProcessor, &NameProcessor::onEntityCreated>(this);
         }
 
+        uint32_t uniqueIdentifier = 0;
         void addEntity(Plugin::Entity * const entity)
         {
             ProcessorMixin::addEntity(entity, [&](bool isNewInsert, auto &data, auto &nameComponent) -> void
             {
+                auto nameSearch = nameMap.find(nameComponent.name);
+                if (nameSearch != std::end(nameMap))
+                {
+                    nameComponent.name += String::Format("%v", ++uniqueIdentifier);
+                }
+
+                nameMap.insert(std::make_pair(nameComponent.name, entity));
             });
         }
 
         void removeEntity(Plugin::Entity * const entity)
         {
-            ProcessorMixin::removeEntity(entity);
+            if (entity->hasComponent<Components::Name>())
+            {
+                auto &nameComponent = entity->getComponent<Components::Name>();
+                if (nameComponent.name.empty())
+                {
+                    auto nameSearch = std::find_if(std::begin(nameMap), std::end(nameMap), [entity](NameMap::value_type &valuePair) -> bool
+                    {
+                        return (valuePair.second == entity);
+                    });
+
+                    if (nameSearch != std::end(nameMap))
+                    {
+                        nameMap.erase(nameSearch);
+                    }
+                }
+                else
+                {
+                    auto nameSearch = nameMap.find(nameComponent.name);
+                    if (nameSearch != std::end(nameMap))
+                    {
+                        nameMap.erase(nameSearch);
+                    }
+                }
+
+                ProcessorMixin::removeEntity(entity);
+            }
         }
 
         // Plugin::Processor

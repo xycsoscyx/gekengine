@@ -105,11 +105,13 @@ namespace Gek
 
             // Renderer
             Plugin::Entity *selectedEntity = nullptr;
+            bool showPopulationDock = true;
             void showPopulation(void)
             {
                 auto &imGuiIo = ImGui::GetIO();
                 auto &style = ImGui::GetStyle();
-                if (ImGui::BeginDock("Population", nullptr, 0, ImVec2(imGuiIo.DisplaySize.x * 0.2f, -1.0f)))
+                ImGui::SetNextDock(ImGuiDockSlot_Right);
+                if (ImGui::BeginDock("Population", &showPopulationDock, 0, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
                 {
                     ImGui::BulletText("Mode ");
                     ImGui::SameLine();
@@ -151,13 +153,15 @@ namespace Gek
                     auto &entityList = population->getEntityList();
                     auto entityCount = entityList.size();
 
-                    UI::TextFrame(String::Format("Population: %v", entityCount).c_str(), ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f));
-
-                    if (ImGui::Button(ICON_MD_ADD_CIRCLE u8"  New Entity", ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f)))
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.5f, 0.0f, 1.0f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.75f, 0.0f, 1.0f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
+                    if (ImGui::Button(ICON_MD_ADD_CIRCLE))
                     {
                         ImGui::OpenPopup("NewEntity");
                     }
 
+                    ImGui::PopStyleColor(3);
                     if (ImGui::BeginPopup("NewEntity"))
                     {
                         ImGui::Text("New Entity Name:");
@@ -178,6 +182,8 @@ namespace Gek
                         ImGui::EndPopup();
                     }
 
+                    ImGui::SameLine();
+                    UI::TextFrame(String::Format("Population: %v", entityCount).c_str(), ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f));
                     if (ImGui::BeginChildFrame(665, ImVec2(-1.0f, -1.0f)))
                     {
                         ImGuiListClipper clipper(entityCount);
@@ -200,11 +206,15 @@ namespace Gek
                                 }
 
                                 ImGui::PushID(entityIndex);
+                                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.0f, 0.0f, 1.0f));
+                                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.0f, 0.0f, 1.0f));
+                                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
                                 if (ImGui::Button(ICON_MD_DELETE_FOREVER))
                                 {
                                     ImGui::OpenPopup("ConfirmEntityDelete");
                                 }
 
+                                ImGui::PopStyleColor(3);
                                 if (ImGui::BeginPopup("ConfirmEntityDelete"))
                                 {
                                     ImGui::Text("Are you sure you want to remove this entitiy?");
@@ -224,47 +234,52 @@ namespace Gek
                                     ImGui::EndPopup();
                                 }
 
+                                ImGui::SameLine();
+                                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.5f, 0.0f, 1.0f));
+                                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.75f, 0.0f, 1.0f));
+                                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
+                                if (ImGui::Button(ICON_MD_ADD_CIRCLE_OUTLINE))
+                                {
+                                    selectedComponent = 0;
+                                    ImGui::OpenPopup("AddComponent");
+                                }
+
+                                ImGui::PopStyleColor(3);
+                                if (ImGui::BeginPopup("AddComponent"))
+                                {
+                                    ImGui::Text("Component Type");
+                                    const auto &componentMap = population->getComponentMap();
+                                    const auto componentCount = componentMap.size();
+                                    if (ImGui::ListBoxHeader("##Components", componentCount, 7))
+                                    {
+                                        ImGuiListClipper clipper(componentCount, ImGui::GetTextLineHeightWithSpacing());
+                                        while (clipper.Step())
+                                        {
+                                            for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
+                                            {
+                                                auto componentSearch = std::begin(componentMap);
+                                                std::advance(componentSearch, componentIndex);
+                                                if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
+                                                {
+                                                    auto componentData = std::make_pair(componentSearch->second->getName(), JSON::EmptyObject);
+                                                    population->addComponent(entity, componentData);
+                                                    ImGui::CloseCurrentPopup();
+                                                }
+                                            }
+                                        };
+
+                                        ImGui::ListBoxFooter();
+                                    }
+
+                                    ImGui::EndPopup();
+                                }
+
                                 ImGui::PopID();
                                 ImGui::SameLine();
                                 ImGui::SetNextTreeNodeOpen(selectedEntity == entity);
                                 if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_Framed))
                                 {
                                     selectedEntity = entity;
-                                    if (ImGui::Button(ICON_MD_ADD_CIRCLE_OUTLINE u8"  Add Component", ImVec2(ImGui::GetWindowContentRegionWidth() - ImGui::GetStyle().IndentSpacing, 0.0f)))
-                                    {
-                                        selectedComponent = 0;
-                                        ImGui::OpenPopup("AddComponent");
-                                    }
-
-                                    if (ImGui::BeginPopup("AddComponent"))
-                                    {
-                                        ImGui::Text("Component Type");
-                                        const auto &componentMap = population->getComponentMap();
-                                        const auto componentCount = componentMap.size();
-                                        if (ImGui::ListBoxHeader("##Components", componentCount, 7))
-                                        {
-                                            ImGuiListClipper clipper(componentCount, ImGui::GetTextLineHeightWithSpacing());
-                                            while (clipper.Step())
-                                            {
-                                                for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
-                                                {
-                                                    auto componentSearch = std::begin(componentMap);
-                                                    std::advance(componentSearch, componentIndex);
-                                                    if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
-                                                    {
-                                                        auto componentData = std::make_pair(componentSearch->second->getName(), JSON::EmptyObject);
-                                                        population->addComponent(entity, componentData);
-                                                        ImGui::CloseCurrentPopup();
-                                                    }
-                                                }
-                                            };
-
-                                            ImGui::ListBoxFooter();
-                                        }
-
-                                        ImGui::EndPopup();
-                                    }
-
                                     auto editorEntity = dynamic_cast<Edit::Entity *>(entity);
                                     if (editorEntity)
                                     {
@@ -277,11 +292,15 @@ namespace Gek
                                             if (component && componentData)
                                             {
                                                 ImGui::PushID(component->getIdentifier().hash_code());
+                                                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.0f, 0.0f, 1.0f));
+                                                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.0f, 0.0f, 1.0f));
+                                                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
                                                 if (ImGui::Button(ICON_MD_DELETE))
                                                 {
                                                     ImGui::OpenPopup("ConfirmComponentDelete");
                                                 }
 
+                                                ImGui::PopStyleColor(3);
                                                 if (ImGui::BeginPopup("ConfirmComponentDelete"))
                                                 {
                                                     ImGui::Text("Are you sure you want to remove this component?");
@@ -365,10 +384,11 @@ namespace Gek
                 return true;
             }
 
+            bool showSceneDock = true;
             void showScene(void)
             {
                 auto &imGuiIo = ImGui::GetIO();
-                if (ImGui::BeginDock("Scene", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_ShowBorders, ImVec2(imGuiIo.DisplaySize.x * 0.8f, -1.0f)))
+                if (ImGui::BeginDock("Scene", &showSceneDock, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_ShowBorders))
                 {
                     cameraSize = ImGui::GetWindowContentRegionMax() - ImGui::GetWindowContentRegionMin();
 
@@ -499,10 +519,7 @@ namespace Gek
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, oldWindowPadding);
                     ImGui::BeginDockspace("##Editor", (ImGui::GetWindowContentRegionMax() - ImGui::GetWindowContentRegionMin()), true, ImVec2(10.0f, 10.0f));
 
-                    ImGui::SetNextDock(ImGuiDockSlot_Left | ImGuiDockSlot_FromRoot);
                     showScene();
-
-                    ImGui::SetNextDock(ImGuiDockSlot_Right | ImGuiDockSlot_FromRoot);
                     showPopulation();
 
                     ImGui::EndDockspace();

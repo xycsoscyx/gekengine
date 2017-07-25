@@ -470,7 +470,6 @@ namespace Gek
             {
                 if (ImGui::BeginDock("Display", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
                 {
-                    ImGui::SetDockActive();
                     auto &style = ImGui::GetStyle();
                     ImGui::PushItemWidth(-1.0f);
                     ImGui::ListBox("##DisplayMode", &next.mode, [](void *data, int index, const char **text) -> bool
@@ -637,15 +636,18 @@ namespace Gek
                 if (showSettings)
                 {
                     auto &style = ImGui::GetStyle();
-                    ImGui::SetNextWindowPosCenter(ImGuiSetCond_Appearing);
-                    if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoSavedSettings))
+                    ImGui::SetNextWindowPosCenter();
+                    if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoSavedSettings))
                     {
-                        ImGui::BeginDockspace("##Settings", ImVec2(-1.0f, 300.0f), true);
+                        ImGui::BeginDockspace("##Settings", ImVec2(500.0f, 350.0f), true);
                         showDisplay();
                         showVisual();
                         ImGui::EndDockspace();
 
-                        float buttonPositionX = (ImGui::GetWindowContentRegionWidth() - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
+                        ImGui::Dummy(ImVec2(0.0f, 3.0f));
+
+                        auto size = ImGui::GetWindowContentRegionSize();
+                        float buttonPositionX = (size.x - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
                         ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
 
                         ImGui::SameLine();
@@ -685,8 +687,8 @@ namespace Gek
             {
                 if (showModeChange)
                 {
-                    ImGui::SetNextWindowPosCenter(ImGuiSetCond_Appearing);
-                    if (ImGui::Begin("Keep Display Mode", &showModeChange, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+                    ImGui::SetNextWindowPosCenter();
+                    if (ImGui::Begin("Keep Display Mode", &showModeChange, ImVec2(225.0f, 0.0f), -1.0f, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
                     {
                         ImGui::Text("Keep Display Mode?");
 
@@ -720,7 +722,7 @@ namespace Gek
             {
                 if (showLoadMenu)
                 {
-                    ImGui::SetNextWindowPosCenter(ImGuiSetCond_Appearing);
+                    ImGui::SetNextWindowPosCenter();
                     if (ImGui::Begin("Load", &showLoadMenu, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
                     {
                         auto &style = ImGui::GetStyle();

@@ -673,6 +673,9 @@ namespace Gek
                 };
 
                 ImGui::ResetStyle(ImGuiStyle_OSXInverse);
+                auto &style = ImGui::GetStyle();
+                style.WindowPadding.x = style.WindowPadding.y;
+                style.FramePadding.x = style.FramePadding.y;
             }
 
             ~Renderer(void)

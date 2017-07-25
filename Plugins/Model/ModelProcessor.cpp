@@ -349,7 +349,7 @@ namespace Gek
         Shapes::AlignedBox getBoundingBox(std::string const &modelName)
         {
             auto modelSearch = modelMap.find(GetHash(modelName));
-            if (modelSearch != modelMap.end())
+            if (modelSearch != std::end(modelMap))
             {
                 return modelSearch->second.boundingBox;
             }
