@@ -470,6 +470,7 @@ namespace Gek
             {
                 if (ImGui::BeginDock("Display", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
                 {
+                    ImGui::SetDockActive();
                     auto &style = ImGui::GetStyle();
                     ImGui::PushItemWidth(-1.0f);
                     ImGui::ListBox("##DisplayMode", &next.mode, [](void *data, int index, const char **text) -> bool

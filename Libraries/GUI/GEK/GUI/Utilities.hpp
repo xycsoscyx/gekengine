@@ -20,5 +20,12 @@ namespace Gek
     namespace UI
     {
         bool InputString(const char* label, std::string &string, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = nullptr, void* user_data = nullptr);
+
+        bool CheckButton(char const *label, bool *storedState = nullptr, ImVec2 const &size = ImVec2(0.0f, 0.0f));
+        bool CheckButton(char const *label, bool state, ImVec2 const &size = ImVec2(0.0f, 0.0f));
+
+        bool RadioButton(char const *label, int *storedState, int buttonState, ImVec2 const &size = ImVec2(0.0f, 0.0f));
+
+        void TextFrame(char const *label, ImVec2 const &requestedSize = ImVec2(0.0f, 0.0f), ImGuiButtonFlags flags = 0);
     }; // namespace UI
 }; // namespace Gek

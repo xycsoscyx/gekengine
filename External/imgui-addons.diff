@@ -4,10 +4,10 @@
  addons/imguinodegrapheditor/imguinodegrapheditor.h |    2 +-
  addons/imguipanelmanager/imguipanelmanager.cpp     |    2 +-
  addons/imguipanelmanager/imguipanelmanager.h       |    3 +-
- imgui.cpp                                          |    2 -
- imgui.h                                            |    2 +
+ imgui.cpp                                          |   54 +-
+ imgui.h                                            |    5 +
  imgui_draw.cpp                                     |    2 -
- 9 files changed, 1096 insertions(+), 1063 deletions(-)
+ 9 files changed, 1149 insertions(+), 1065 deletions(-)
 
 diff --git a/addons/imguidock/imguidock.cpp b/addons/imguidock/imguidock.cpp
 index a25d558..c4adaf3 100644
@@ -2513,7 +2513,7 @@ index 5895092..e5d477e 100644
          ~Pane() {clear();}
          void clear() {
 diff --git a/imgui.cpp b/imgui.cpp
-index 4887a91..0fcff85 100644
+index 4887a91..48294fe 100644
 --- a/imgui.cpp
 +++ b/imgui.cpp
 @@ -618,8 +618,6 @@
@@ -2525,8 +2525,68 @@ index 4887a91..0fcff85 100644
  #include "imgui_internal.h"
  
  #include <ctype.h>      // toupper, isprint
+@@ -6716,9 +6714,57 @@ bool ImGui::VSliderFloat(const char* label, const ImVec2& size, float* v, float
+ 
+ bool ImGui::SliderAngle(const char* label, float* v_rad, float v_degrees_min, float v_degrees_max)
+ {
+-    float v_deg = (*v_rad) * 360.0f / (2*IM_PI);
++    float v_deg = (*v_rad) * 360.0f / (2 * IM_PI);
+     bool value_changed = SliderFloat(label, &v_deg, v_degrees_min, v_degrees_max, "%.0f deg", 1.0f);
+-    *v_rad = v_deg * (2*IM_PI) / 360.0f;
++    *v_rad = v_deg * (2 * IM_PI) / 360.0f;
++    return value_changed;
++}
++
++bool ImGui::SliderAngle2(const char* label, float v_rad[2], float v_degrees_min, float v_degrees_max)
++{
++    float v_deg[]
++    {
++        v_rad[0] * 360.0f / (2 * IM_PI),
++        v_rad[1] * 360.0f / (2 * IM_PI),
++    };
++
++    bool value_changed = SliderFloat2(label, v_deg, v_degrees_min, v_degrees_max, "%.0f deg", 1.0f);
++    v_rad[0] = v_deg[0] * (2 * IM_PI) / 360.0f;
++    v_rad[1] = v_deg[1] * (2 * IM_PI) / 360.0f;
++    return value_changed;
++}
++
++bool ImGui::SliderAngle3(const char* label, float v_rad[3], float v_degrees_min, float v_degrees_max)
++{
++    float v_deg[]
++    {
++        v_rad[0] * 360.0f / (2 * IM_PI),
++        v_rad[1] * 360.0f / (2 * IM_PI),
++        v_rad[2] * 360.0f / (2 * IM_PI),
++    };
++
++    bool value_changed = SliderFloat3(label, v_deg, v_degrees_min, v_degrees_max, "%.0f deg", 1.0f);
++    v_rad[0] = v_deg[0] * (2 * IM_PI) / 360.0f;
++    v_rad[1] = v_deg[1] * (2 * IM_PI) / 360.0f;
++    v_rad[2] = v_deg[2] * (2 * IM_PI) / 360.0f;
++    return value_changed;
++}
++
++bool ImGui::SliderAngle4(const char* label, float v_rad[4], float v_degrees_min, float v_degrees_max)
++{
++    float v_deg[]
++    {
++        v_rad[0] * 360.0f / (2 * IM_PI),
++        v_rad[1] * 360.0f / (2 * IM_PI),
++        v_rad[2] * 360.0f / (2 * IM_PI),
++        v_rad[3] * 360.0f / (2 * IM_PI),
++    };
++
++    bool value_changed = SliderFloat4(label, v_deg, v_degrees_min, v_degrees_max, "%.0f deg", 1.0f);
++    v_rad[0] = v_deg[0] * (2 * IM_PI) / 360.0f;
++    v_rad[1] = v_deg[1] * (2 * IM_PI) / 360.0f;
++    v_rad[2] = v_deg[2] * (2 * IM_PI) / 360.0f;
++    v_rad[3] = v_deg[3] * (2 * IM_PI) / 360.0f;
+     return value_changed;
+ }
+ 
 diff --git a/imgui.h b/imgui.h
-index 008fdf1..e53ef58 100644
+index 008fdf1..3c7b5f7 100644
 --- a/imgui.h
 +++ b/imgui.h
 @@ -8,6 +8,8 @@
@@ -2538,6 +2598,16 @@ index 008fdf1..e53ef58 100644
  #if !defined(IMGUI_DISABLE_INCLUDE_IMCONFIG_H) || defined(IMGUI_INCLUDE_IMCONFIG_H)
  #include "imconfig.h"       // User-editable configuration file
  #endif
+@@ -314,6 +316,9 @@ namespace ImGui
+     IMGUI_API bool          SliderFloat3(const char* label, float v[3], float v_min, float v_max, const char* display_format = "%.3f", float power = 1.0f);
+     IMGUI_API bool          SliderFloat4(const char* label, float v[4], float v_min, float v_max, const char* display_format = "%.3f", float power = 1.0f);
+     IMGUI_API bool          SliderAngle(const char* label, float* v_rad, float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
++    IMGUI_API bool          SliderAngle2(const char* label, float v_rad[2], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
++    IMGUI_API bool          SliderAngle3(const char* label, float v_rad[3], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
++    IMGUI_API bool          SliderAngle4(const char* label, float v_rad[4], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
+     IMGUI_API bool          SliderInt(const char* label, int* v, int v_min, int v_max, const char* display_format = "%.0f");
+     IMGUI_API bool          SliderInt2(const char* label, int v[2], int v_min, int v_max, const char* display_format = "%.0f");
+     IMGUI_API bool          SliderInt3(const char* label, int v[3], int v_min, int v_max, const char* display_format = "%.0f");
 diff --git a/imgui_draw.cpp b/imgui_draw.cpp
 index f11e198..6ee60a1 100644
 --- a/imgui_draw.cpp
