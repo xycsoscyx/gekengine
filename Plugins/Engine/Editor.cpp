@@ -87,7 +87,7 @@ namespace Gek
                 population->onUpdate[90].disconnect<Editor, &Editor::onUpdate>(this);
                 population->onAction.disconnect<Editor, &Editor::onAction>(this);
 
-                ImGui::ShutdownDock();
+                UI::ShutdownDock();
             }
 
             // Plugin::Processor
@@ -104,14 +104,138 @@ namespace Gek
             }
 
             // Renderer
+            bool isObjectInFrustum(Shapes::Frustum &frustum, Shapes::OrientedBox &orientedBox)
+            {
+                for (auto &plane : frustum.planeList)
+                {
+                    float distance = plane.getDistance(orientedBox.matrix.translation.xyz);
+                    float radiusX = std::abs(orientedBox.matrix.rx.xyz.dot(plane.normal) * orientedBox.halfsize.x);
+                    float radiusY = std::abs(orientedBox.matrix.ry.xyz.dot(plane.normal) * orientedBox.halfsize.y);
+                    float radiusZ = std::abs(orientedBox.matrix.rz.xyz.dot(plane.normal) * orientedBox.halfsize.z);
+                    float radius = (radiusX + radiusY + radiusZ);
+                    if (distance < -radius)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            bool showSceneDock = true;
+            void showScene(void)
+            {
+                auto &imGuiIo = ImGui::GetIO();
+                if (UI::BeginDock("Scene", &showSceneDock, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_ShowBorders))
+                {
+                    cameraSize = UI::GetWindowContentRegionSize();
+
+                    Video::Texture::Description description;
+                    description.width = cameraSize.x;
+                    description.height = cameraSize.y;
+                    description.flags = Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource;
+                    description.format = Video::Format::R11G11B10_FLOAT;
+                    cameraTarget = core->getResources()->createTexture("editorTarget", description, Plugin::Resources::Flags::ForceLoad);
+
+                    auto cameraBuffer = dynamic_cast<Engine::Resources *>(core->getResources())->getResource(cameraTarget);
+                    if (cameraBuffer)
+                    {
+                        ImGui::Image(reinterpret_cast<ImTextureID>(cameraBuffer), cameraSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+                        auto origin = ImGui::GetItemRectMin();
+                        auto size = ImGui::GetItemRectSize();
+
+                        Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));
+                        viewMatrix.translation.xyz = position;
+                        viewMatrix.invert();
+
+                        auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 0.1f, 200.0f));
+
+                        ImGuizmo::BeginFrame();
+                        ImGuizmo::SetRect(origin.x, origin.y, size.x, size.y);
+                        ImGui::PushClipRect(ImVec2(origin.x, origin.y), ImVec2(origin.x + size.x, origin.y + size.y), false);
+                        for (const auto &entity : population->getEntityList())
+                        {
+                            auto editorEntity = dynamic_cast<Edit::Entity *>(entity.get());
+                            if (editorEntity->hasComponent<Components::Transform>())
+                            {
+                                auto &transformComponent = entity->getComponent<Components::Transform>();
+                                auto matrix = transformComponent.getMatrix();
+                                if (selectedEntity == entity.get())
+                                {
+                                    float *snapData = nullptr;
+                                    if (useGizmoSnap)
+                                    {
+                                        switch (currentGizmoOperation)
+                                        {
+                                        case ImGuizmo::TRANSLATE:
+                                            snapData = gizmoSnapPosition.data;
+                                            break;
+
+                                        case ImGuizmo::ROTATE:
+                                            snapData = &gizmoSnapRotation;
+                                            break;
+
+                                        case ImGuizmo::SCALE:
+                                            snapData = &gizmoSnapScale;
+                                            break;
+                                        };
+                                    }
+                                    
+                                    Shapes::AlignedBox boundingBox(0.5f);
+                                    float *localbounds = boundingBox.minimum.data;
+                                    if (entity->hasComponent<Components::Model>())
+                                    {
+                                        auto &modelComponent = entity->getComponent<Components::Model>();
+                                        boundingBox = modelProcessor->getBoundingBox(modelComponent.name);
+                                    }
+
+                                    if (isObjectInFrustum(Shapes::Frustum(viewMatrix * projectionMatrix), Shapes::OrientedBox(boundingBox, matrix)))
+                                    {
+                                        Math::Float4x4 deltaMatrix;
+                                        ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, static_cast<ImGuizmo::OPERATION>(currentGizmoOperation), static_cast<ImGuizmo::MODE>(currentGizmoScope), matrix.data, deltaMatrix.data, snapData, localbounds);
+                                        if (memcmp(deltaMatrix.data, Math::Float4x4::Identity.data, sizeof(Math::Float4x4)) != 0)
+                                        {
+                                            switch (currentGizmoOperation)
+                                            {
+                                            case ImGuizmo::TRANSLATE:
+                                                transformComponent.position = matrix.translation.xyz;
+                                                break;
+
+                                            case ImGuizmo::ROTATE:
+                                                transformComponent.rotation = matrix.getRotation();
+                                                break;
+
+                                            case ImGuizmo::SCALE:
+                                                transformComponent.scale = matrix.getScaling();
+                                                break;
+                                            };
+
+                                            onModified.emit(selectedEntity, typeid(Components::Transform));
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    //ImGuizmo::DrawCube(viewMatrix.data, projectionMatrix.data, matrix.data);
+                                }
+                            }
+                        }
+
+                        ImGui::PopClipRect();
+                    }
+                }
+
+                UI::EndDock();
+            }
+
             Plugin::Entity *selectedEntity = nullptr;
             bool showPopulationDock = true;
             void showPopulation(void)
             {
                 auto &imGuiIo = ImGui::GetIO();
                 auto &style = ImGui::GetStyle();
-                ImGui::SetNextDock(ImGuiDockSlot_Right);
-                if (ImGui::BeginDock("Population", &showPopulationDock, 0, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
+                UI::SetNextDock(UI::DockSlot::Right);
+                if (UI::BeginDock("Population", &showPopulationDock, 0, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
                 {
                     ImGui::BulletText("Mode ");
                     ImGui::SameLine();
@@ -363,131 +487,7 @@ namespace Gek
                     }
                 }
 
-                ImGui::EndDock();
-            }
-
-            bool isObjectInFrustum(Shapes::Frustum &frustum, Shapes::OrientedBox &orientedBox)
-            {
-                for (auto &plane : frustum.planeList)
-                {
-                    float distance = plane.getDistance(orientedBox.matrix.translation.xyz);
-                    float radiusX = std::abs(orientedBox.matrix.rx.xyz.dot(plane.normal) * orientedBox.halfsize.x);
-                    float radiusY = std::abs(orientedBox.matrix.ry.xyz.dot(plane.normal) * orientedBox.halfsize.y);
-                    float radiusZ = std::abs(orientedBox.matrix.rz.xyz.dot(plane.normal) * orientedBox.halfsize.z);
-                    float radius = (radiusX + radiusY + radiusZ);
-                    if (distance < -radius)
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
-            bool showSceneDock = true;
-            void showScene(void)
-            {
-                auto &imGuiIo = ImGui::GetIO();
-                if (ImGui::BeginDock("Scene", &showSceneDock, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_ShowBorders))
-                {
-                    cameraSize = ImGui::GetWindowContentRegionMax() - ImGui::GetWindowContentRegionMin();
-
-                    Video::Texture::Description description;
-                    description.width = cameraSize.x;
-                    description.height = cameraSize.y;
-                    description.flags = Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource;
-                    description.format = Video::Format::R11G11B10_FLOAT;
-                    cameraTarget = core->getResources()->createTexture("editorTarget", description, Plugin::Resources::Flags::ForceLoad);
-
-                    auto cameraBuffer = dynamic_cast<Engine::Resources *>(core->getResources())->getResource(cameraTarget);
-                    if (cameraBuffer)
-                    {
-                        ImGui::Image(reinterpret_cast<ImTextureID>(cameraBuffer), cameraSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-                        auto origin = ImGui::GetItemRectMin();
-                        auto size = ImGui::GetItemRectSize();
-
-                        Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));
-                        viewMatrix.translation.xyz = position;
-                        viewMatrix.invert();
-
-                        auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 0.1f, 200.0f));
-
-                        ImGuizmo::BeginFrame();
-                        ImGuizmo::SetRect(origin.x, origin.y, size.x, size.y);
-                        ImGui::PushClipRect(ImVec2(origin.x, origin.y), ImVec2(origin.x + size.x, origin.y + size.y), false);
-                        for (const auto &entity : population->getEntityList())
-                        {
-                            auto editorEntity = dynamic_cast<Edit::Entity *>(entity.get());
-                            if (editorEntity->hasComponent<Components::Transform>())
-                            {
-                                auto &transformComponent = entity->getComponent<Components::Transform>();
-                                auto matrix = transformComponent.getMatrix();
-                                if (selectedEntity == entity.get())
-                                {
-                                    float *snapData = nullptr;
-                                    if (useGizmoSnap)
-                                    {
-                                        switch (currentGizmoOperation)
-                                        {
-                                        case ImGuizmo::TRANSLATE:
-                                            snapData = gizmoSnapPosition.data;
-                                            break;
-
-                                        case ImGuizmo::ROTATE:
-                                            snapData = &gizmoSnapRotation;
-                                            break;
-
-                                        case ImGuizmo::SCALE:
-                                            snapData = &gizmoSnapScale;
-                                            break;
-                                        };
-                                    }
-                                    
-                                    Shapes::AlignedBox boundingBox(0.5f);
-                                    float *localbounds = boundingBox.minimum.data;
-                                    if (entity->hasComponent<Components::Model>())
-                                    {
-                                        auto &modelComponent = entity->getComponent<Components::Model>();
-                                        boundingBox = modelProcessor->getBoundingBox(modelComponent.name);
-                                    }
-
-                                    if (isObjectInFrustum(Shapes::Frustum(viewMatrix * projectionMatrix), Shapes::OrientedBox(boundingBox, matrix)))
-                                    {
-                                        Math::Float4x4 deltaMatrix;
-                                        ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, static_cast<ImGuizmo::OPERATION>(currentGizmoOperation), static_cast<ImGuizmo::MODE>(currentGizmoScope), matrix.data, deltaMatrix.data, snapData, localbounds);
-                                        if (memcmp(deltaMatrix.data, Math::Float4x4::Identity.data, sizeof(Math::Float4x4)) != 0)
-                                        {
-                                            switch (currentGizmoOperation)
-                                            {
-                                            case ImGuizmo::TRANSLATE:
-                                                transformComponent.position = matrix.translation.xyz;
-                                                break;
-
-                                            case ImGuizmo::ROTATE:
-                                                transformComponent.rotation = matrix.getRotation();
-                                                break;
-
-                                            case ImGuizmo::SCALE:
-                                                transformComponent.scale = matrix.getScaling();
-                                                break;
-                                            };
-
-                                            onModified.emit(selectedEntity, typeid(Components::Transform));
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    //ImGuizmo::DrawCube(viewMatrix.data, projectionMatrix.data, matrix.data);
-                                }
-                            }
-                        }
-
-                        ImGui::PopClipRect();
-                    }
-                }
-
-                ImGui::EndDock();
+                UI::EndDock();
             }
 
             void onShowUserInterface(ImGuiContext * const guiContext)
@@ -513,16 +513,16 @@ namespace Gek
                 ImGui::SetNextWindowPos(editorPosition);
                 ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-                auto oldWindowPadding = ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+                auto oldWindowPadding = UI::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
                 if (ImGui::Begin("Editor", nullptr, editorSize, 1.0f, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
                 {
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, oldWindowPadding);
-                    ImGui::BeginDockspace("##Editor", (ImGui::GetWindowContentRegionMax() - ImGui::GetWindowContentRegionMin()), true, ImVec2(10.0f, 10.0f));
+                    UI::BeginDockspace("##Editor", (UI::GetWindowContentRegionSize()), true, ImVec2(10.0f, 10.0f));
 
                     showScene();
                     showPopulation();
 
-                    ImGui::EndDockspace();
+                    UI::EndDockspace();
                     ImGui::PopStyleVar(1);
                 }
 

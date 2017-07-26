@@ -181,7 +181,6 @@ namespace Gek
                 window->onMousePosition.disconnect<Core, &Core::onMousePosition>(this);
                 window->onMouseMovement.disconnect<Core, &Core::onMouseMovement>(this);
 
-                ImGui::ShutdownDock();
                 for (auto &processor : processorList)
                 {
                     processor->onDestroyed();
@@ -468,7 +467,7 @@ namespace Gek
 
             void showDisplay(void)
             {
-                if (ImGui::BeginDock("Display", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
+                if (UI::BeginDock("Display", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
                 {
                     auto &style = ImGui::GetStyle();
                     ImGui::PushItemWidth(-1.0f);
@@ -485,12 +484,12 @@ namespace Gek
                     ImGui::Checkbox("FullScreen", &next.fullScreen);
                 }
 
-                ImGui::EndDock();
+                UI::EndDock();
             }
 
             void showVisual(void)
             {
-                if (ImGui::BeginDock("Visual", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
+                if (UI::BeginDock("Visual", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
                 {
                     auto showOptions = [&](char const *group, JSON::Object &settings) -> void
                     {
@@ -628,7 +627,7 @@ namespace Gek
                     showOptions("filters", filtersSettings);
                 }
 
-                ImGui::EndDock();
+                UI::EndDock();
             }
 
             void showSettingsWindow(void)
@@ -639,14 +638,14 @@ namespace Gek
                     ImGui::SetNextWindowPosCenter();
                     if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoSavedSettings))
                     {
-                        ImGui::BeginDockspace("##Settings", ImVec2(500.0f, 350.0f), true);
+                        UI::BeginDockspace("##Settings", ImVec2(500.0f, 350.0f), true);
                         showDisplay();
                         showVisual();
-                        ImGui::EndDockspace();
+                        UI::EndDockspace();
 
                         ImGui::Dummy(ImVec2(0.0f, 3.0f));
 
-                        auto size = ImGui::GetWindowContentRegionSize();
+                        auto size = UI::GetWindowContentRegionSize();
                         float buttonPositionX = (size.x - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
                         ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
 

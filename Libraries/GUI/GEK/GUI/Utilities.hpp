@@ -15,11 +15,18 @@
 
 #include "GEK/GUI/IconsFontAwesome.h"
 #include "GEK/GUI/IconsMaterialDesign.h"
+
 namespace Gek
 {
     namespace UI
     {
-        bool InputString(const char* label, std::string &string, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = nullptr, void* user_data = nullptr);
+        ImVec2 GetWindowContentRegionSize();
+
+        ImVec4 PushStyleColor(ImGuiCol idx, const ImVec4& col);
+        float PushStyleVar(ImGuiStyleVar idx, float val);
+        ImVec2 PushStyleVar(ImGuiStyleVar idx, const ImVec2& val);
+
+        bool InputString(char const *label, std::string &string, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = nullptr, void* user_data = nullptr);
 
         bool CheckButton(char const *label, bool *storedState = nullptr, ImVec2 const &size = ImVec2(0.0f, 0.0f));
         bool CheckButton(char const *label, bool state, ImVec2 const &size = ImVec2(0.0f, 0.0f));
@@ -27,5 +34,28 @@ namespace Gek
         bool RadioButton(char const *label, int *storedState, int buttonState, ImVec2 const &size = ImVec2(0.0f, 0.0f));
 
         void TextFrame(char const *label, ImVec2 const &requestedSize = ImVec2(0.0f, 0.0f), ImGuiButtonFlags flags = 0);
+
+        bool SliderAngle2(char const *label, float v_rad[2], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
+        bool SliderAngle3(char const *label, float v_rad[3], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
+        bool SliderAngle4(char const *label, float v_rad[4], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
+
+        enum class DockSlot : uint8_t
+        {
+            Left = 0,
+            Right,
+            Top,
+            Bottom,
+            Tab,
+            Float,
+            None,
+        };
+
+        void BeginDockspace(char const *label = nullptr, ImVec2 const &workspace = ImVec2(0, 0), bool showBorder = false, ImVec2 const &splitSize = ImVec2(3.0f, 3.0f));
+        void EndDockspace(void);
+        void ShutdownDock(void);
+        void SetNextDock(DockSlot slot);
+        bool BeginDock(char const *label, bool *opened = NULL, ImGuiWindowFlags extra_flags = 0, ImVec2 const &default_size = ImVec2(-1, -1));
+        void EndDock(void);
+        void SetDockActive(void);
     }; // namespace UI
 }; // namespace Gek

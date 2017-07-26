@@ -33,8 +33,6 @@ namespace Gek
 
         struct GUI
         {
-            ImGui::PanelManager panelManager;
-
             Render::PipelineStateHandle pipelineState;
             Render::SamplerStateHandle samplerState;
 
@@ -128,18 +126,6 @@ namespace Gek
             gui->performanceButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, "performance.png"), 0);
             gui->settingsButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, "settings.png"), 0);
             gui->renderQueue = renderDevice->createQueue(0);
-
-            auto consolePane = gui->panelManager.addPane(ImGui::PanelManager::BOTTOM, "ConsolePanel##ConsolePanel");
-            if (consolePane)
-            {
-                consolePane->previewOnHover = false;
-                consolePane->addButtonAndWindow(
-                    ImGui::Toolbutton("Settings", &gui->settingsButton, ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
-                    ImGui::PanelManagerPaneAssociatedWindow("Settings", -1, [](ImGui::PanelManagerWindowData &windowData) -> void
-                {
-                    ((Core *)windowData.userData)->drawSettings(windowData);
-                }, this, ImGuiWindowFlags_NoScrollbar));
-            }
 
             ImGuiIO &imGuiIo = ImGui::GetIO();
             imGuiIo.Fonts->AddFontDefault();
@@ -340,8 +326,6 @@ namespace Gek
                 imGuiIo.DisplaySize = ImVec2(float(width), float(height));
                 float barWidth = float(width);
 
-                gui->panelManager.setDisplayPortion(ImVec4(0, 0, width, height));
-
                 // Read keyboard modifiers inputs
                 imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
                 imGuiIo.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
@@ -402,8 +386,6 @@ namespace Gek
                         int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
                         int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
                 }
-
-                gui->panelManager.render();
 
                 ImGui::End();
 
