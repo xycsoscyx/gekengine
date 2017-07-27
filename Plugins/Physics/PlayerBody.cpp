@@ -648,7 +648,7 @@ namespace Gek
                 supportMatrix.translation.xyz += (playerYAxis * sphereCastOrigin);
                 if (!touchingSurface)
                 {
-                    Math::Float3 targetPoint(matrix.translation);
+                    Math::Float3 targetPoint(matrix.translation.xyz);
                     updateGroundPlane(matrix, supportMatrix, targetPoint, threadHandle);
                 }
                 else

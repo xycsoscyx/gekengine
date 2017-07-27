@@ -44,7 +44,16 @@ namespace Gek
 
             int selectedComponent = 0;
 
-            int currentGizmoScope = ImGuizmo::WORLD;
+            enum GizmoOperation
+            {
+                Translate = ImGuizmo::TRANSLATE,
+                Rotate = ImGuizmo::ROTATE,
+                Scale = ImGuizmo::SCALE,
+                Bounds,
+            };
+
+            bool useBoundingBox = false;
+            int currentGizmoAlignment = ImGuizmo::WORLD;
             int currentGizmoOperation = ImGuizmo::TRANSLATE;
             bool useGizmoSnap = true;
             Math::Float3 gizmoSnapPosition = Math::Float3(1.0f);
@@ -159,7 +168,7 @@ namespace Gek
                             if (editorEntity->hasComponent<Components::Transform>())
                             {
                                 auto &transformComponent = entity->getComponent<Components::Transform>();
-                                auto matrix = transformComponent.getMatrix();
+                                auto matrix = transformComponent.getScaledMatrix();
                                 if (selectedEntity == entity.get())
                                 {
                                     float *snapData = nullptr;
@@ -182,7 +191,6 @@ namespace Gek
                                     }
                                     
                                     Shapes::AlignedBox boundingBox(0.5f);
-                                    float *localbounds = boundingBox.minimum.data;
                                     if (entity->hasComponent<Components::Model>())
                                     {
                                         auto &modelComponent = entity->getComponent<Components::Model>();
@@ -192,8 +200,9 @@ namespace Gek
                                     if (isObjectInFrustum(Shapes::Frustum(viewMatrix * projectionMatrix), Shapes::OrientedBox(boundingBox, matrix)))
                                     {
                                         Math::Float4x4 deltaMatrix;
-                                        ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, static_cast<ImGuizmo::OPERATION>(currentGizmoOperation), static_cast<ImGuizmo::MODE>(currentGizmoScope), matrix.data, deltaMatrix.data, snapData, localbounds);
-                                        if (memcmp(deltaMatrix.data, Math::Float4x4::Identity.data, sizeof(Math::Float4x4)) != 0)
+                                        auto localBounds = boundingBox;
+                                        ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, static_cast<ImGuizmo::OPERATION>(currentGizmoOperation), static_cast<ImGuizmo::MODE>(currentGizmoAlignment), matrix.data, deltaMatrix.data, snapData, localBounds.minimum.data);
+                                        if (deltaMatrix != Math::Float4x4::Identity)
                                         {
                                             switch (currentGizmoOperation)
                                             {
@@ -210,6 +219,7 @@ namespace Gek
                                                 break;
                                             };
 
+                                            transformComponent.scale = localBounds.getSize() / boundingBox.getSize();
                                             onModified.emit(selectedEntity, typeid(Components::Transform));
                                         }
                                     }
@@ -237,12 +247,12 @@ namespace Gek
                 UI::SetNextDock(UI::DockSlot::Right);
                 if (UI::BeginDock("Population", &showPopulationDock, 0, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
                 {
-                    ImGui::BulletText("Mode ");
+                    ImGui::BulletText("Alignment ");
                     ImGui::SameLine();
                     auto width = (ImGui::GetContentRegionAvailWidth() - style.ItemSpacing.x) * 0.5f;
-                    UI::RadioButton(ICON_FA_GLOBE " World", &currentGizmoScope, ImGuizmo::WORLD, ImVec2(width, 0.0f));
+                    UI::RadioButton(ICON_FA_GLOBE " World", &currentGizmoAlignment, ImGuizmo::WORLD, ImVec2(width, 0.0f));
                     ImGui::SameLine();
-                    UI::RadioButton(ICON_FA_USER_O " Local", &currentGizmoScope, ImGuizmo::LOCAL, ImVec2(width, 0.0f));
+                    UI::RadioButton(ICON_FA_USER_O " Entity", &currentGizmoAlignment, ImGuizmo::LOCAL, ImVec2(width, 0.0f));
 
                     ImGui::BulletText("Operation ");
                     ImGui::SameLine();

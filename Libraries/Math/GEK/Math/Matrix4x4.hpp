@@ -12,6 +12,7 @@
 #include "GEK/Math/Vector4.hpp"
 #include "GEK/Math/Quaternion.hpp"
 #include <xmmintrin.h>
+#include <tuple>
 
 namespace Gek
 {
@@ -50,7 +51,7 @@ namespace Gek
             };
 
         public:
-            inline static Float4x4 FromScale(const Float3 &scale, const Float3 &translation = Math::Float3::Zero)
+            inline static Float4x4 FromScale(Float3 const &scale, Float3 const &translation = Math::Float3::Zero)
             {
                 return Float4x4(
                     scale.x, 0.0f, 0.0f, 0.0f,
@@ -59,7 +60,7 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
-            inline static Float4x4 FromAngular(const Float3 &axis, float radians, const Float3 &translation = Math::Float3::Zero)
+            inline static Float4x4 FromAngular(Float3 const &axis, float radians, Float3 const &translation = Math::Float3::Zero)
             {
                 // do the trig
                 float cosAngle = cos(radians);
@@ -74,7 +75,7 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
-            inline static Float4x4 FromEuler(float pitch, float yaw, float roll, const Float3 &translation = Math::Float3::Zero)
+            inline static Float4x4 FromEuler(float pitch, float yaw, float roll, Float3 const &translation = Math::Float3::Zero)
             {
                 float cosPitch(std::cos(pitch));
                 float sinPitch(std::sin(pitch));
@@ -90,7 +91,7 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
-            inline static Float4x4 FromPitch(float radians, const Float3 &translation = Math::Float3::Zero)
+            inline static Float4x4 FromPitch(float radians, Float3 const &translation = Math::Float3::Zero)
             {
                 float cosAngle(std::cos(radians));
                 float sinAngle(std::sin(radians));
@@ -102,7 +103,7 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
-            inline static Float4x4 FromYaw(float radians, const Float3 &translation = Math::Float3::Zero)
+            inline static Float4x4 FromYaw(float radians, Float3 const &translation = Math::Float3::Zero)
             {
                 float cosAngle(std::cos(radians));
                 float sinAngle(std::sin(radians));
@@ -114,7 +115,7 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
-            inline static Float4x4 FromRoll(float radians, const Float3 &translation = Math::Float3::Zero)
+            inline static Float4x4 FromRoll(float radians, Float3 const &translation = Math::Float3::Zero)
             {
                 float cosAngle(std::cos(radians));
                 float sinAngle(std::sin(radians));
@@ -150,7 +151,7 @@ namespace Gek
                     0.0f, 0.0f, ((-nearClip * farClip) / denominator), 0.0f);
             }
 
-            inline static Float4x4 MakeTargeted(const Float3 &source, const Float3 &target, const Float3 &worldUpVector, const Float3 &translation = Math::Float3::Zero)
+            inline static Float4x4 MakeTargeted(Float3 const &source, Float3 const &target, Float3 const &worldUpVector, Float3 const &translation = Math::Float3::Zero)
             {
                 Float3 forward((target - source).getNormal());
                 Float3 left(worldUpVector.cross(forward).getNormal());
@@ -167,7 +168,7 @@ namespace Gek
             {
             }
 
-            inline Float4x4(const Float4x4 &matrix)
+            inline Float4x4(Float4x4 const &matrix)
                 : rx(matrix.data + 0)
                 , ry(matrix.data + 4)
                 , rz(matrix.data + 8)
@@ -187,7 +188,7 @@ namespace Gek
             {
             }
 
-            explicit inline Float4x4(const float *data)
+            explicit inline Float4x4(float const *data)
                 : rx(data + 0)
                 , ry(data + 4)
                 , rz(data + 8)
@@ -195,13 +196,13 @@ namespace Gek
             {
             }
 
-            explicit inline Float4x4(const Quaternion &rotation, const Float3 &translation)
+            explicit inline Float4x4(Quaternion const &rotation, Float3 const &translation)
                 : rw(translation, 1.0f)
             {
                 setRotation(rotation);
             }
 
-            inline void setRotation(const Quaternion &rotation)
+            inline void setRotation(Quaternion const &rotation)
             {
                 float xx(rotation.x * rotation.x);
                 float yy(rotation.y * rotation.y);
@@ -336,11 +337,11 @@ namespace Gek
                     trace = 1.0f + table[localXAxis][localXAxis] - table[localYAxis][localYAxis] - table[localZAxis][localZAxis];
                     trace = std::sqrt(trace);
 
-                    result.axis[localXAxis] = 0.5f * trace;
+                    result.axis.data[localXAxis] = 0.5f * trace;
                     trace = 0.5f / trace;
                     result.w = (table[localYAxis][localZAxis] - table[localZAxis][localYAxis]) * trace;
-                    result.axis[localYAxis] = (table[localXAxis][localYAxis] + table[localYAxis][localXAxis]) * trace;
-                    result.axis[localZAxis] = (table[localXAxis][localZAxis] + table[localZAxis][localXAxis]) * trace;
+                    result.axis.data[localYAxis] = (table[localXAxis][localYAxis] + table[localYAxis][localXAxis]) * trace;
+                    result.axis.data[localZAxis] = (table[localXAxis][localZAxis] + table[localZAxis][localXAxis]) * trace;
                 }
 
                 return result;
@@ -358,16 +359,7 @@ namespace Gek
                 return (*this);
             }
 
-            inline Float4x4 &operator = (const Float4x4 &matrix)
-            {
-                rows[0] = matrix.rows[0];
-                rows[1] = matrix.rows[1];
-                rows[2] = matrix.rows[2];
-                rows[3] = matrix.rows[3];
-                return (*this);
-            }
-
-            inline void operator *= (const Float4x4 &matrix)
+            inline void operator *= (Float4x4 const &matrix)
             {
                 __m128 simd[2][4] =
                 {
@@ -391,7 +383,7 @@ namespace Gek
                 _mm_storeu_ps(rw.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
             }
 
-            inline Float4x4 operator * (const Float4x4 &matrix) const
+            inline Float4x4 operator * (Float4x4 const &matrix) const
             {
                 __m128 simd[2][4] =
                 {
@@ -417,7 +409,7 @@ namespace Gek
                 return result;
             }
 
-            inline Float3 rotate(const Float3 &vector) const
+            inline Float3 rotate(Float3 const &vector) const
             {
                 return Float3(
                     ((vector.x * _11) + (vector.y * _21) + (vector.z * _31)),
@@ -425,7 +417,7 @@ namespace Gek
                     ((vector.x * _13) + (vector.y * _23) + (vector.z * _33)));
             }
 
-            inline Float3 transform(const Float3 &vector) const
+            inline Float3 transform(Float3 const &vector) const
             {
                 return Float3(
                     ((vector.x * _11) + (vector.y * _21) + (vector.z * _31) + _41),
@@ -433,13 +425,34 @@ namespace Gek
                     ((vector.x * _13) + (vector.y * _23) + (vector.z * _33) + _43));
             }
 
-            inline Float4 transform(const Float4 &vector) const
+            inline Float4 transform(Float4 const &vector) const
             {
                 return Float4(
                     ((vector.x * _11) + (vector.y * _21) + (vector.z * _31) + (vector.w * _41)),
                     ((vector.x * _12) + (vector.y * _22) + (vector.z * _32) + (vector.w * _42)),
                     ((vector.x * _13) + (vector.y * _23) + (vector.z * _33) + (vector.w * _43)),
                     ((vector.x * _14) + (vector.y * _24) + (vector.z * _34) + (vector.w * _44)));
+            }
+
+            std::tuple<Float4, Float4, Float4, Float4> getTuple(void) const
+            {
+                return std::make_tuple(rx, ry, rz, rw);
+            }
+
+            bool operator == (Float4x4 const &matrix) const
+            {
+                return (getTuple() == matrix.getTuple());
+            }
+
+            bool operator != (Float4x4 const &matrix) const
+            {
+                return (getTuple() != matrix.getTuple());
+            }
+
+            inline Float4x4 &operator = (Float4x4 const &matrix)
+            {
+                std::tie(rx, ry, rz, rw) = matrix.getTuple();
+                return (*this);
             }
         };
     }; // namespace Math

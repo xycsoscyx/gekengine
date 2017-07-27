@@ -13,38 +13,41 @@ namespace Gek
 {
     namespace Math
     {
-        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-        struct Matrix3x2
+        struct Float3x2
         {
         public:
-            static const Matrix3x2 Identity;
+            static const Float3x2 Identity;
 
         public:
             union
             {
-                struct { TYPE data[6]; };
-                struct { TYPE table[3][2]; };
-                struct { Vector2<TYPE> rows[3]; };
+                struct { float data[6]; };
+                struct { float table[3][2]; };
+                struct { Float2 rows[3]; };
 
                 struct
                 {
-                    TYPE _11, _12;
-                    TYPE _21, _22;
-                    TYPE _31, _32;
+                    float _11, _12;
+                    float _21, _22;
+                    float _31, _32;
                 };
 
                 struct
                 {
-                    Vector2<TYPE> rx;
-                    Vector2<TYPE> ry;
-                    Vector2<TYPE> translation;
+                    Float2 rx;
+                    Float2 ry;
+                    union
+                    {
+                        struct { Float2 rz; };
+                        struct { Float2 translation; };
+                    };
                 };
             };
 
         public:
-            static Matrix3x2 FromScale(TYPE scale)
+            static Float3x2 FromScale(float scale)
             {
-                return Matrix3x2(
+                return Float3x2(
                 {
                     scale, 0.0f,
                     0.0f, scale,
@@ -52,9 +55,9 @@ namespace Gek
                 });
             }
 
-            static Matrix3x2 FromScale(const Vector2<TYPE> &scale)
+            static Float3x2 FromScale(const Float2 &scale)
             {
-                return Matrix3x2(
+                return Float3x2(
                 {
                     scale.x, 0.0f,
                     0.0f, scale.y,
@@ -62,21 +65,22 @@ namespace Gek
                 });
             }
 
-            static Matrix3x2 FromAngle(TYPE radians)
+            static Float3x2 FromAngle(float radians)
             {
-                return Matrix3x2(
+                return Float3x2(
                 {
                     std::cos(radians), -std::sin(radians),
                     std::sin(radians),  std::cos(radians),
+                    0.0f, 0.0f,
                 });
             }
 
         public:
-            Matrix3x2(void)
+            inline Float3x2(void)
             {
             }
 
-            explicit Matrix3x2(const Matrix3x2 &matrix)
+            inline Float3x2(const Float3x2 &matrix)
                 : rows{
                 matrix.rows[0],
                 matrix.rows[1],
@@ -84,7 +88,7 @@ namespace Gek
             {
             }
 
-            explicit Matrix3x2(TYPE _11, TYPE _12, TYPE _21, TYPE _22, TYPE _31, TYPE _32)
+            inline Float3x2(float _11, float _12, float _21, float _22, float _31, float _32)
                 : data{
                     _11, _12,
                     _21, _22,
@@ -92,7 +96,7 @@ namespace Gek
             {
             }
 
-            explicit Matrix3x2(const TYPE *data)
+            inline Float3x2(const float *data)
                 : data {
                 data[0], data[1],
                 data[2], data[3],
@@ -100,19 +104,19 @@ namespace Gek
             {
             }
 
-            Vector2<TYPE> getScaling(void) const
+            inline Float2 getScaling(void) const
             {
-                return Vector2<TYPE>(_11, _22);
+                return Float2(_11, _22);
             }
 
-            void operator *= (const Matrix3x2 &matrix)
+            inline void operator *= (const Float3x2 &matrix)
             {
                 (*this) = ((*this) * matrix);
             }
 
-            Matrix3x2 operator * (const Matrix3x2 &matrix) const
+            inline Float3x2 operator * (const Float3x2 &matrix) const
             {
-                return Matrix3x2({ _11 * matrix._11 + _12 * matrix._21,
+                return Float3x2({ _11 * matrix._11 + _12 * matrix._21,
                     _11 * matrix._12 + _12 * matrix._22,
                     _21 * matrix._11 + _22 * matrix._21,
                     _21 * matrix._12 + _22 * matrix._22,
@@ -120,15 +124,26 @@ namespace Gek
                     _31 * matrix._12 + _32 * matrix._22 + matrix._32 });
             }
 
-            Matrix3x2 &operator = (const Matrix3x2 &matrix)
+            inline std::tuple<Float2, Float2, Float2> getTuple(void) const
             {
-                rows[0] = matrix.rows[0];
-                rows[1] = matrix.rows[1];
-                rows[2] = matrix.rows[2];
+                return std::make_tuple(rx, ry, rz);
+            }
+
+            inline bool operator == (Float3x2 const &matrix) const
+            {
+                return (getTuple() == matrix.getTuple());
+            }
+
+            inline bool operator != (Float3x2 const &matrix) const
+            {
+                return (getTuple() != matrix.getTuple());
+            }
+
+            inline inline Float3x2 &operator = (Float3x2 const &matrix)
+            {
+                std::tie(rx, ry, rz) = matrix.getTuple();
                 return (*this);
             }
         };
-
-        using Float3x2 = Matrix3x2<float>;
     }; // namespace Math
 }; // namespace Gek

@@ -199,82 +199,45 @@ namespace Gek
                 (*this) *= inverseMagnitude;
 			}
 
-			bool operator < (const Vector4 &vector) const
+            std::tuple<TYPE, TYPE, TYPE, TYPE> getTuple(void) const
             {
-                if (x >= vector.x) return false;
-                if (y >= vector.y) return false;
-                if (z >= vector.z) return false;
-                if (w >= vector.w) return false;
-                return true;
+                return std::make_tuple(x, y, z, w);
+            }
+
+            bool operator < (const Vector4 &vector) const
+            {
+                return (getTuple() < vector.getTuple());
             }
 
             bool operator > (const Vector4 &vector) const
             {
-                if (x <= vector.x) return false;
-                if (y <= vector.y) return false;
-                if (z <= vector.z) return false;
-                if (w <= vector.w) return false;
-                return true;
+                return (getTuple() > vector.getTuple());
             }
 
             bool operator <= (const Vector4 &vector) const
             {
-                if (x > vector.x) return false;
-                if (y > vector.y) return false;
-                if (z > vector.z) return false;
-                if (w > vector.w) return false;
-                return true;
+                return (getTuple() <= vector.getTuple());
             }
 
             bool operator >= (const Vector4 &vector) const
             {
-                if (x < vector.x) return false;
-                if (y < vector.y) return false;
-                if (z < vector.z) return false;
-                if (w < vector.w) return false;
-                return true;
+                return (getTuple() >= vector.getTuple());
             }
 
             bool operator == (const Vector4 &vector) const
             {
-                if (x != vector.x) return false;
-                if (y != vector.y) return false;
-                if (z != vector.z) return false;
-                if (w != vector.w) return false;
-                return true;
+                return (getTuple() == vector.getTuple());
             }
 
             bool operator != (const Vector4 &vector) const
             {
-                if (x != vector.x) return true;
-                if (y != vector.y) return true;
-                if (z != vector.z) return true;
-                if (w != vector.w) return true;
-                return false;
-            }
-
-            TYPE operator [] (int axis) const
-            {
-                return data[axis];
-            }
-
-            TYPE &operator [] (int axis)
-            {
-                return data[axis];
-            }
-
-            operator TYPE const *() const
-            {
-                return data;
+                return (getTuple() != vector.getTuple());
             }
 
             // vector operations
-            Vector4 &operator = (const Vector4<TYPE> &vector)
+            Vector4<TYPE> &operator = (const Vector4<TYPE> &vector)
             {
-                x = vector.x;
-                y = vector.y;
-                z = vector.z;
-                w = vector.w;
+                std::tie(x, y, z, w) = vector.getTuple();
                 return (*this);
             }
 

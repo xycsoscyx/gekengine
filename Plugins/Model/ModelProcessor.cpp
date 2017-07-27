@@ -402,24 +402,22 @@ namespace Gek
             }
 
             size_t entityIndex = 0;
-            listEntities([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
+            parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
-                Model &model = *data.model;
-                auto modelSize(model.boundingBox.maximum - model.boundingBox.minimum);
-                auto modelCenter(model.boundingBox.minimum + (modelSize * 0.5f));
+                Model const &model = *data.model;
+                auto currentEntityIndex = InterlockedIncrement(&entityIndex);
 
-                Math::Float4x4 matrix(transformComponent.getMatrix());
-                matrix.translation.xyz += modelCenter;
+                auto halfSize(model.boundingBox.getSize() * 0.5f);
+                halfSizeXList[currentEntityIndex] = halfSize.x * transformComponent.scale.x;
+                halfSizeYList[currentEntityIndex] = halfSize.y * transformComponent.scale.y;
+                halfSizeZList[currentEntityIndex] = halfSize.z * transformComponent.scale.z;
 
-                halfSizeXList[entityIndex] = modelSize.x;
-                halfSizeYList[entityIndex] = modelSize.y;
-                halfSizeZList[entityIndex] = modelSize.z;
+                auto matrix(transformComponent.getMatrix());
+                matrix.translation.xyz += model.boundingBox.getCenter();
                 for (size_t element = 0; element < 16; ++element)
                 {
-                    transformList[element][entityIndex] = matrix.data[element];
+                    transformList[element][currentEntityIndex] = matrix.data[element];
                 }
-
-                entityIndex++;
             });
 
             visibilityList.resize(bufferedEntityCount);
@@ -435,7 +433,7 @@ namespace Gek
                     auto &model = *entitySearch->second.model;
                     ++entitySearch;
 
-                    auto modelViewMatrix(transformComponent.getMatrix() * viewMatrix);
+                    auto modelViewMatrix(transformComponent.getScaledMatrix() * viewMatrix);
                     concurrency::parallel_for_each(std::begin(model.partList), std::end(model.partList), [&](const Model::Part &part) -> void
                     {
                         auto &partMap = materialMap[part.material];

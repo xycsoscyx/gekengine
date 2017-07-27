@@ -14,7 +14,7 @@ namespace Gek
             break;
             
         case ClearType::UInt:
-			integers[0] = integers[1] = integers[2] = integers[3] = String::Convert(data, 0U);
+            integers.set(String::Convert(data, 0U));
             break;
         };
     }

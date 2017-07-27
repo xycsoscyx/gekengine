@@ -8,6 +8,7 @@
 #pragma once
 
 #include "GEK/Math/Common.hpp"
+#include <tuple>
 
 namespace Gek
 {
@@ -134,61 +135,39 @@ namespace Gek
                 (*this) *= inverseMagnitude;
             }
 
+            std::tuple<TYPE, TYPE> getTuple(void) const
+            {
+                return std::make_tuple(x, y);
+            }
+
 			bool operator < (const Vector2 &vector) const
             {
-                if (x >= vector.x) return false;
-                if (y >= vector.y) return false;
-                return true;
+                return (getTuple() < vector.getTuple());
             }
 
             bool operator > (const Vector2 &vector) const
             {
-                if (x <= vector.x) return false;
-                if (y <= vector.y) return false;
-                return true;
+                return (getTuple() > vector.getTuple());
             }
 
             bool operator <= (const Vector2 &vector) const
             {
-                if (x > vector.x) return false;
-                if (y > vector.y) return false;
-                return true;
+                return (getTuple() <= vector.getTuple());
             }
 
             bool operator >= (const Vector2 &vector) const
             {
-                if (x < vector.x) return false;
-                if (y < vector.y) return false;
-                return true;
+                return (getTuple() >= vector.getTuple());
             }
 
             bool operator == (const Vector2 &vector) const
             {
-                if (x != vector.x) return false;
-                if (y != vector.y) return false;
-                return true;
+                return (getTuple() == vector.getTuple());
             }
 
             bool operator != (const Vector2 &vector) const
             {
-                if (x != vector.x) return true;
-                if (y != vector.y) return true;
-                return false;
-            }
-
-            TYPE operator [] (int axis) const
-            {
-                return data[axis];
-            }
-
-            TYPE &operator [] (int axis)
-            {
-                return data[axis];
-            }
-
-            operator TYPE const *() const
-            {
-                return data;
+                return (getTuple() != vector.getTuple());
             }
 
             // vector operations
