@@ -53,6 +53,12 @@ namespace Gek
 
                 struct
                 {
+                    Vector2<TYPE> xy;
+                    Vector2<TYPE> zw;
+                };
+
+                struct
+                {
                     Vector2<TYPE> position;
                     Vector2<TYPE> size;
                 };
