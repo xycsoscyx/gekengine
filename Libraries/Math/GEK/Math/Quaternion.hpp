@@ -184,19 +184,19 @@ namespace Gek
                 return Float3(pitch, yaw, roll);
             }
 
-            inline float getMagnitudeSquared(void) const
+            inline float getMagnitude(void) const
             {
                 return dot(*this);
             }
 
-            inline float getMagnitude(void) const
+            inline float getLength(void) const
             {
-                return std::sqrt(getMagnitudeSquared());
+                return std::sqrt(getMagnitude());
             }
 
             inline Quaternion getNormal(void) const
             {
-                float inverseMagnitude = (1.0f / getMagnitude());
+                float inverseMagnitude = (1.0f / getLength());
                 return ((*this) * inverseMagnitude);
             }
 
@@ -212,7 +212,7 @@ namespace Gek
 
             inline void normalize(void)
             {
-                float inverseMagnitude = (1.0f / getMagnitude());
+                float inverseMagnitude = (1.0f / getLength());
                 (*this) *= inverseMagnitude;
             }
 

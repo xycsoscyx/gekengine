@@ -467,7 +467,7 @@ namespace Gek
 
             void showDisplay(void)
             {
-                if (UI::BeginDock("Display", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
+                if (UI::Dock::BeginTab("Display", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
                 {
                     auto &style = ImGui::GetStyle();
                     ImGui::PushItemWidth(-1.0f);
@@ -484,12 +484,12 @@ namespace Gek
                     ImGui::Checkbox("FullScreen", &next.fullScreen);
                 }
 
-                UI::EndDock();
+                UI::Dock::EndTab();
             }
 
             void showVisual(void)
             {
-                if (UI::BeginDock("Visual", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
+                if (UI::Dock::BeginTab("Visual", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
                 {
                     auto showOptions = [&](char const *group, JSON::Object &settings) -> void
                     {
@@ -627,7 +627,7 @@ namespace Gek
                     showOptions("filters", filtersSettings);
                 }
 
-                UI::EndDock();
+                UI::Dock::EndTab();
             }
 
             void showSettingsWindow(void)
@@ -638,10 +638,10 @@ namespace Gek
                     ImGui::SetNextWindowPosCenter();
                     if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoSavedSettings))
                     {
-                        UI::BeginDockspace("##Settings", ImVec2(500.0f, 350.0f), true);
+                        UI::Dock::Begin("##Settings", ImVec2(500.0f, 350.0f), true);
                         showDisplay();
                         showVisual();
-                        UI::EndDockspace();
+                        UI::Dock::End();
 
                         ImGui::Dummy(ImVec2(0.0f, 3.0f));
 

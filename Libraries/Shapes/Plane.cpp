@@ -46,7 +46,7 @@ namespace Gek
 
         void Plane::normalize(void)
         {
-            vector *= (1.0f / normal.getMagnitude());
+            vector *= (1.0f / normal.getLength());
         }
 
         float Plane::getDistance(Math::Float3 const &point) const

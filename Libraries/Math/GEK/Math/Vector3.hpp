@@ -91,24 +91,24 @@ namespace Gek
                 this->z = data[2];
             }
 
-            TYPE getMagnitudeSquared(void) const
+            TYPE getMagnitude(void) const
             {
                 return dot(*this);
             }
 
-            TYPE getMagnitude(void) const
+            TYPE getLength(void) const
             {
-                return std::sqrt(getMagnitudeSquared());
+                return std::sqrt(getMagnitude());
             }
 
             TYPE getDistance(const Vector3<TYPE> &vector) const
             {
-                return (vector - (*this)).getMagnitude();
+                return (vector - (*this)).getLength();
             }
 
             Vector3<TYPE> getNormal(void) const
             {
-                float inverseMagnitude = (1.0f / getMagnitude());
+                float inverseMagnitude = (1.0f / getLength());
                 return ((*this) * inverseMagnitude);
             }
 
@@ -159,7 +159,7 @@ namespace Gek
 
             void normalize(void)
             {
-                float inverseMagnitude = (1.0f / getMagnitude());
+                float inverseMagnitude = (1.0f / getLength());
                 (*this) *= inverseMagnitude;
             }
 

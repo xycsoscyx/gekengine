@@ -230,11 +230,6 @@ namespace Gek
                 }
             }
 
-            inline Float3 getScaling(void) const
-            {
-                return Float3(_11, _22, _33);
-            }
-
             inline float getDeterminant(void) const
             {
                 return (
@@ -294,57 +289,72 @@ namespace Gek
 
             inline Quaternion getRotation(void) const
             {
-                enum QuaternionAxis
+                Math::Float3 normalized[3] =
                 {
-                    X_INDEX = 0,
-                    Y_INDEX = 1,
-                    Z_INDEX = 2
-                };
-
-                static QuaternionAxis NextAxisList[] =
-                {
-                    Y_INDEX,
-                    Z_INDEX,
-                    X_INDEX
+                    rx.xyz.getNormal(),
+                    ry.xyz.getNormal(),
+                    rz.xyz.getNormal(),
                 };
 
                 Quaternion result;
-                float trace = table[0][0] + table[1][1] + table[2][2];
+                float trace = normalized[0].data[0] + normalized[1].data[1] + normalized[2].data[2];
                 if (trace > 0.0f)
                 {
                     trace = std::sqrt(trace + 1.0f);
                     result.w = 0.5f * trace;
                     trace = 0.5f / trace;
-                    result.x = (table[1][2] - table[2][1]) * trace;
-                    result.y = (table[2][0] - table[0][2]) * trace;
-                    result.z = (table[0][1] - table[1][0]) * trace;
+                    result.x = (normalized[1].data[2] - normalized[2].data[1]) * trace;
+                    result.y = (normalized[2].data[0] - normalized[0].data[2]) * trace;
+                    result.z = (normalized[0].data[1] - normalized[1].data[0]) * trace;
                 }
                 else
                 {
+                    enum QuaternionAxis
+                    {
+                        X_INDEX = 0,
+                        Y_INDEX = 1,
+                        Z_INDEX = 2
+                    };
+
+                    static QuaternionAxis NextAxisList[] =
+                    {
+                        Y_INDEX,
+                        Z_INDEX,
+                        X_INDEX
+                    };
+
                     QuaternionAxis localXAxis = X_INDEX;
-                    if (table[Y_INDEX][Y_INDEX] > table[X_INDEX][X_INDEX])
+                    if (normalized[Y_INDEX].data[Y_INDEX] > normalized[X_INDEX].data[X_INDEX])
                     {
                         localXAxis = Y_INDEX;
                     }
                     
-                    if (table[Z_INDEX][Z_INDEX] > table[localXAxis][localXAxis])
+                    if (normalized[Z_INDEX].data[Z_INDEX] > normalized[localXAxis].data[localXAxis])
                     {
                         localXAxis = Z_INDEX;
                     }
 
                     QuaternionAxis localYAxis = NextAxisList[localXAxis];
                     QuaternionAxis localZAxis = NextAxisList[localYAxis];
-                    trace = 1.0f + table[localXAxis][localXAxis] - table[localYAxis][localYAxis] - table[localZAxis][localZAxis];
+                    trace = 1.0f + normalized[localXAxis].data[localXAxis] - normalized[localYAxis].data[localYAxis] - normalized[localZAxis].data[localZAxis];
                     trace = std::sqrt(trace);
 
                     result.axis.data[localXAxis] = 0.5f * trace;
                     trace = 0.5f / trace;
-                    result.w = (table[localYAxis][localZAxis] - table[localZAxis][localYAxis]) * trace;
-                    result.axis.data[localYAxis] = (table[localXAxis][localYAxis] + table[localYAxis][localXAxis]) * trace;
-                    result.axis.data[localZAxis] = (table[localXAxis][localZAxis] + table[localZAxis][localXAxis]) * trace;
+                    result.w = (normalized[localYAxis].data[localZAxis] - normalized[localZAxis].data[localYAxis]) * trace;
+                    result.axis.data[localYAxis] = (normalized[localXAxis].data[localYAxis] + normalized[localYAxis].data[localXAxis]) * trace;
+                    result.axis.data[localZAxis] = (normalized[localXAxis].data[localZAxis] + normalized[localZAxis].data[localXAxis]) * trace;
                 }
 
                 return result;
+            }
+
+            inline Float3 getScaling(void) const
+            {
+                return Math::Float3(
+                    rx.xyz.getLength(),
+                    ry.xyz.getLength(),
+                    rz.xyz.getLength());
             }
 
             inline Float4x4 &transpose(void)

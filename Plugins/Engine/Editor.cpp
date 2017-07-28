@@ -52,13 +52,13 @@ namespace Gek
                 Bounds,
             };
 
-            bool useBoundingBox = false;
             int currentGizmoAlignment = ImGuizmo::WORLD;
-            int currentGizmoOperation = ImGuizmo::TRANSLATE;
+            int currentGizmoOperation = Translate;
             bool useGizmoSnap = true;
-            Math::Float3 gizmoSnapPosition = Math::Float3(1.0f);
+            Math::Float3 gizmoSnapPosition = Math::Float3::One;
             float gizmoSnapRotation = 10.0f;
             float gizmoSnapScale = 1.0f;
+            Math::Float3 gizmoSnapBounds = Math::Float3::One;
 
             ResourceHandle cameraTarget;
             ImVec2 cameraSize;
@@ -96,7 +96,7 @@ namespace Gek
                 population->onUpdate[90].disconnect<Editor, &Editor::onUpdate>(this);
                 population->onAction.disconnect<Editor, &Editor::onAction>(this);
 
-                UI::ShutdownDock();
+                UI::Dock::Shutdown();
             }
 
             // Plugin::Processor
@@ -135,7 +135,7 @@ namespace Gek
             void showScene(void)
             {
                 auto &imGuiIo = ImGui::GetIO();
-                if (UI::BeginDock("Scene", &showSceneDock, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_ShowBorders))
+                if (UI::Dock::BeginTab("Scene", &showSceneDock, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_ShowBorders))
                 {
                     cameraSize = UI::GetWindowContentRegionSize();
 
@@ -150,92 +150,88 @@ namespace Gek
                     if (cameraBuffer)
                     {
                         ImGui::Image(reinterpret_cast<ImTextureID>(cameraBuffer), cameraSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-                        auto origin = ImGui::GetItemRectMin();
-                        auto size = ImGui::GetItemRectSize();
-
-                        Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));
-                        viewMatrix.translation.xyz = position;
-                        viewMatrix.invert();
-
-                        auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 0.1f, 200.0f));
-
-                        ImGuizmo::BeginFrame();
-                        ImGuizmo::SetRect(origin.x, origin.y, size.x, size.y);
-                        ImGui::PushClipRect(ImVec2(origin.x, origin.y), ImVec2(origin.x + size.x, origin.y + size.y), false);
-                        for (const auto &entity : population->getEntityList())
+                        if (selectedEntity)
                         {
-                            auto editorEntity = dynamic_cast<Edit::Entity *>(entity.get());
-                            if (editorEntity->hasComponent<Components::Transform>())
+                            auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 0.1f, 200.0f));
+                            Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));
+                            viewMatrix.translation.xyz = position;
+                            viewMatrix.invert();
+
+                            ImGuizmo::BeginFrame();
+                            auto size = ImGui::GetItemRectSize();
+                            auto origin = ImGui::GetItemRectMin();
+                            ImGuizmo::SetRect(origin.x, origin.y, size.x, size.y);
+                            ImGui::PushClipRect(ImVec2(origin.x, origin.y), ImVec2(origin.x + size.x, origin.y + size.y), false);
+                            if (selectedEntity->hasComponent<Components::Transform>())
                             {
-                                auto &transformComponent = entity->getComponent<Components::Transform>();
+                                auto &transformComponent = selectedEntity->getComponent<Components::Transform>();
                                 auto matrix = transformComponent.getScaledMatrix();
-                                if (selectedEntity == entity.get())
+                                float *snapData = nullptr;
+                                if (useGizmoSnap)
                                 {
-                                    float *snapData = nullptr;
-                                    if (useGizmoSnap)
+                                    switch (currentGizmoOperation)
+                                    {
+                                    case Translate:
+                                        snapData = gizmoSnapPosition.data;
+                                        break;
+
+                                    case Rotate:
+                                        snapData = &gizmoSnapRotation;
+                                        break;
+
+                                    case Scale:
+                                        snapData = &gizmoSnapScale;
+                                        break;
+
+                                    case Bounds:
+                                        snapData = gizmoSnapBounds.data;
+                                        break;
+                                    };
+                                }
+
+                                Shapes::AlignedBox boundingBox(0.5f);
+                                if (selectedEntity->hasComponent<Components::Model>())
+                                {
+                                    auto &modelComponent = selectedEntity->getComponent<Components::Model>();
+                                    boundingBox = modelProcessor->getBoundingBox(modelComponent.name);
+                                }
+
+                                if (isObjectInFrustum(Shapes::Frustum(viewMatrix * projectionMatrix), Shapes::OrientedBox(boundingBox, matrix)))
+                                {
+                                    Math::Float4x4 deltaMatrix;
+                                    float *localBounds = (currentGizmoOperation == Bounds ? boundingBox.minimum.data : nullptr);
+                                    ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, static_cast<ImGuizmo::OPERATION>(currentGizmoOperation), static_cast<ImGuizmo::MODE>(currentGizmoAlignment), matrix.data, deltaMatrix.data, snapData, localBounds, snapData);
+                                    if (deltaMatrix != Math::Float4x4::Identity)
                                     {
                                         switch (currentGizmoOperation)
                                         {
-                                        case ImGuizmo::TRANSLATE:
-                                            snapData = gizmoSnapPosition.data;
+                                        case Translate:
+                                            transformComponent.position = matrix.translation.xyz;
                                             break;
 
-                                        case ImGuizmo::ROTATE:
-                                            snapData = &gizmoSnapRotation;
+                                        case Rotate:
+                                            transformComponent.rotation = matrix.getRotation();
                                             break;
 
-                                        case ImGuizmo::SCALE:
-                                            snapData = &gizmoSnapScale;
+                                        case Scale:
+                                            transformComponent.scale = matrix.getScaling();
+                                            break;
+
+                                        case Bounds:
                                             break;
                                         };
+
+                                        onModified.emit(selectedEntity, typeid(Components::Transform));
                                     }
-                                    
-                                    Shapes::AlignedBox boundingBox(0.5f);
-                                    if (entity->hasComponent<Components::Model>())
-                                    {
-                                        auto &modelComponent = entity->getComponent<Components::Model>();
-                                        boundingBox = modelProcessor->getBoundingBox(modelComponent.name);
-                                    }
-
-                                    if (isObjectInFrustum(Shapes::Frustum(viewMatrix * projectionMatrix), Shapes::OrientedBox(boundingBox, matrix)))
-                                    {
-                                        Math::Float4x4 deltaMatrix;
-                                        auto localBounds = boundingBox;
-                                        ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, static_cast<ImGuizmo::OPERATION>(currentGizmoOperation), static_cast<ImGuizmo::MODE>(currentGizmoAlignment), matrix.data, deltaMatrix.data, snapData, localBounds.minimum.data);
-                                        if (deltaMatrix != Math::Float4x4::Identity)
-                                        {
-                                            switch (currentGizmoOperation)
-                                            {
-                                            case ImGuizmo::TRANSLATE:
-                                                transformComponent.position = matrix.translation.xyz;
-                                                break;
-
-                                            case ImGuizmo::ROTATE:
-                                                transformComponent.rotation = matrix.getRotation();
-                                                break;
-
-                                            case ImGuizmo::SCALE:
-                                                transformComponent.scale = matrix.getScaling();
-                                                break;
-                                            };
-
-                                            transformComponent.scale = localBounds.getSize() / boundingBox.getSize();
-                                            onModified.emit(selectedEntity, typeid(Components::Transform));
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    //ImGuizmo::DrawCube(viewMatrix.data, projectionMatrix.data, matrix.data);
                                 }
                             }
-                        }
 
-                        ImGui::PopClipRect();
+                            ImGui::PopClipRect();
+                        }
                     }
                 }
 
-                UI::EndDock();
+                UI::Dock::EndTab();
             }
 
             Plugin::Entity *selectedEntity = nullptr;
@@ -244,8 +240,8 @@ namespace Gek
             {
                 auto &imGuiIo = ImGui::GetIO();
                 auto &style = ImGui::GetStyle();
-                UI::SetNextDock(UI::DockSlot::Right);
-                if (UI::BeginDock("Population", &showPopulationDock, 0, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
+                UI::Dock::SetNextPosition(UI::Dock::Position::Right);
+                if (UI::Dock::BeginTab("Population", &showPopulationDock, 0, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
                 {
                     ImGui::BulletText("Alignment ");
                     ImGui::SameLine();
@@ -256,28 +252,34 @@ namespace Gek
 
                     ImGui::BulletText("Operation ");
                     ImGui::SameLine();
-                    width = (ImGui::GetContentRegionAvailWidth() - style.ItemSpacing.x * 2.0f) / 3.0f;
-                    UI::RadioButton(ICON_FA_ARROWS " Move", &currentGizmoOperation, ImGuizmo::TRANSLATE, ImVec2(width, 0.0f));
+                    width = (ImGui::GetContentRegionAvailWidth() - style.ItemSpacing.x * 3.0f) / 4.0f;
+                    UI::RadioButton(ICON_FA_ARROWS " Move", &currentGizmoOperation, Translate, ImVec2(width, 0.0f));
                     ImGui::SameLine();
-                    UI::RadioButton(ICON_FA_REPEAT " Rotate", &currentGizmoOperation, ImGuizmo::ROTATE, ImVec2(width, 0.0f));
+                    UI::RadioButton(ICON_FA_REPEAT " Rotate", &currentGizmoOperation, Rotate, ImVec2(width, 0.0f));
                     ImGui::SameLine();
-                    UI::RadioButton(ICON_FA_SEARCH " Scale", &currentGizmoOperation, ImGuizmo::SCALE, ImVec2(width, 0.0f));
+                    UI::RadioButton(ICON_FA_SEARCH " Scale", &currentGizmoOperation, Scale, ImVec2(width, 0.0f));
+                    ImGui::SameLine();
+                    UI::RadioButton(ICON_FA_SEARCH " Bounds", &currentGizmoOperation, Bounds, ImVec2(width, 0.0f));
 
                     UI::CheckButton(ICON_FA_MAGNET " Snap", &useGizmoSnap);
                     ImGui::SameLine();
                     ImGui::PushItemWidth(-1.0f);
                     switch (currentGizmoOperation)
                     {
-                    case ImGuizmo::TRANSLATE:
+                    case Translate:
                         ImGui::InputFloat3("##snapTranslation", gizmoSnapPosition.data, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                         break;
 
-                    case ImGuizmo::ROTATE:
-                        ImGui::SliderAngle("##snapDegrees", &gizmoSnapRotation);
+                    case Rotate:
+                        ImGui::SliderFloat("##snapDegrees", &gizmoSnapRotation, 0.0f, 360.0f);
                         break;
 
-                    case ImGuizmo::SCALE:
+                    case Scale:
                         ImGui::InputFloat("##gizmoSnapScale", &gizmoSnapScale, (1.0f / 10.0f), 1.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                        break;
+
+                    case Bounds:
+                        ImGui::InputFloat3("##snapBounds", gizmoSnapBounds.data, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                         break;
                     };
 
@@ -497,7 +499,7 @@ namespace Gek
                     }
                 }
 
-                UI::EndDock();
+                UI::Dock::EndTab();
             }
 
             void onShowUserInterface(ImGuiContext * const guiContext)
@@ -527,12 +529,12 @@ namespace Gek
                 if (ImGui::Begin("Editor", nullptr, editorSize, 1.0f, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
                 {
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, oldWindowPadding);
-                    UI::BeginDockspace("##Editor", (UI::GetWindowContentRegionSize()), true, ImVec2(10.0f, 10.0f));
+                    UI::Dock::Begin("##Editor", (UI::GetWindowContentRegionSize()), true, ImVec2(10.0f, 10.0f));
 
                     showScene();
                     showPopulation();
 
-                    UI::EndDockspace();
+                    UI::Dock::End();
                     ImGui::PopStyleVar(1);
                 }
 

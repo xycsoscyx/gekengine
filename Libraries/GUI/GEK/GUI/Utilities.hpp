@@ -39,23 +39,49 @@ namespace Gek
         bool SliderAngle3(char const *label, float v_rad[3], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
         bool SliderAngle4(char const *label, float v_rad[4], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
 
-        enum class DockSlot : uint8_t
+        namespace Dock
         {
-            Left = 0,
-            Right,
-            Top,
-            Bottom,
-            Tab,
-            Float,
-            None,
-        };
+            enum class Position : uint8_t
+            {
+                Left = 0,
+                Right,
+                Top,
+                Bottom,
+                Tab,
+                Float,
+                None,
+            };
 
-        void BeginDockspace(char const *label = nullptr, ImVec2 const &workspace = ImVec2(0, 0), bool showBorder = false, ImVec2 const &splitSize = ImVec2(3.0f, 3.0f));
-        void EndDockspace(void);
-        void ShutdownDock(void);
-        void SetNextDock(DockSlot slot);
-        bool BeginDock(char const *label, bool *opened = NULL, ImGuiWindowFlags extra_flags = 0, ImVec2 const &default_size = ImVec2(-1, -1));
-        void EndDock(void);
-        void SetDockActive(void);
+            void Begin(char const *label = nullptr, ImVec2 const &workspace = ImVec2(0, 0), bool showBorder = false, ImVec2 const &splitSize = ImVec2(3.0f, 3.0f));
+            void End(void);
+            void Shutdown(void);
+            void SetNextPosition(Position slot);
+            bool BeginTab(char const *label, bool *opened = NULL, ImGuiWindowFlags extra_flags = 0, ImVec2 const &default_size = ImVec2(-1, -1));
+            void EndTab(void);
+            void SetActive(void);
+        }; // Dock
+
+        namespace Gizmo
+        {
+            IMGUI_API void SetRect(float x, float y, float width, float height);
+            // call it when you want a gizmo
+            // Needs view and projection matrices. 
+            // matrix parameter is the source matrix (where will be gizmo be drawn) and might be transformed by the function. Return deltaMatrix is optional
+            // translation is applied in world space
+            enum OPERATION
+            {
+                TRANSLATE,
+                ROTATE,
+                SCALE
+            };
+
+            enum MODE
+            {
+                LOCAL,
+                WORLD
+            };
+
+            IMGUI_API void Manipulate(const float *view, const float *projection, OPERATION operation, MODE mode, float *matrix, float *deltaMatrix = 0, float *snap = 0, float *localBounds = NULL, float *boundsSnap = NULL);
+        }; // namespace Gizmo
     }; // namespace UI
 }; // namespace Gek

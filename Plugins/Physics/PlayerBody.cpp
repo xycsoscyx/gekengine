@@ -239,17 +239,17 @@ namespace Gek
                 Math::Quaternion deltaRotation((currentRotation * scale).getInverse() * targetRotation);
                 Math::Float3 omegaDirection(deltaRotation.axis);
 
-                float directionMagnitudeSquared = omegaDirection.getMagnitudeSquared();
-                if (directionMagnitudeSquared < (NewtonEpsilon * NewtonEpsilon))
+                float directionMagnitude = omegaDirection.getMagnitude();
+                if (directionMagnitude < (NewtonEpsilon * NewtonEpsilon))
                 {
                     return Math::Float3::Zero;
                 }
 
-                float inverseDirectionMagnitude = 1.0f / std::sqrt(directionMagnitudeSquared);
-                float directionMagnitude = directionMagnitudeSquared * inverseDirectionMagnitude;
+                float inversedirectionLength = 1.0f / std::sqrt(directionMagnitude);
+                float directionLength = directionMagnitude * inversedirectionLength;
 
-                float omegaMagnitude = 2.0f * std::atan2(directionMagnitude, deltaRotation.angle) * inverseFrameTime;
-                auto averageOmega(omegaDirection * (inverseDirectionMagnitude * omegaMagnitude));
+                float omegaMagnitude = 2.0f * std::atan2(directionLength, deltaRotation.angle) * inverseFrameTime;
+                auto averageOmega(omegaDirection * (inversedirectionLength * omegaMagnitude));
 
                 return averageOmega;
             }
@@ -258,7 +258,7 @@ namespace Gek
             void integrateOmegaBAD(Math::Float4x4 &matrix, Math::Float3 const &omega, float frameTIme) const
             {
                 // this is correct
-                float omegaMagnitudeSquared = omega.getMagnitudeSquared();
+                float omegaMagnitudeSquared = omega.getMagnitude();
                 const float ErrorAngle = Math::DegreesToRadians(0.0125f);
                 const float ErrorAngleSquared = ErrorAngle * ErrorAngle;
                 if (omegaMagnitudeSquared > ErrorAngleSquared)
@@ -275,7 +275,7 @@ namespace Gek
             void integrateOmega(Math::Float4x4 &matrix, Math::Float3 const &omega, float frameTime) const
             {
                 Math::Float3 theta(omega * frameTime * 0.5f);
-                float thetaMagnitideSquared = theta.getMagnitudeSquared();
+                float thetaMagnitideSquared = theta.getMagnitude();
 
                 float thetaMagnitude;
                 Math::Quaternion deltaRotation;
@@ -320,8 +320,8 @@ namespace Gek
                         desiredVelocity = (playerYAxis * currentVelocity.dot(playerYAxis)) + (gravity * frameTime) + (playerZAxis * forwardSpeed) + (playerXAxis * lateralSpeed) + (playerYAxis * verticalSpeed);
                         desiredVelocity += (groundVelocity - (playerYAxis * playerYAxis.dot(groundVelocity)));
 
-                        float speedLimitMagnitude = forwardSpeed * forwardSpeed + lateralSpeed * lateralSpeed + verticalSpeed * verticalSpeed + groundVelocity.getMagnitudeSquared() + 0.1f;
-                        float speedMagnitude = desiredVelocity.getMagnitudeSquared();
+                        float speedLimitMagnitude = forwardSpeed * forwardSpeed + lateralSpeed * lateralSpeed + verticalSpeed * verticalSpeed + groundVelocity.getMagnitude() + 0.1f;
+                        float speedMagnitude = desiredVelocity.getMagnitude();
                         if (speedMagnitude > speedLimitMagnitude)
                         {
                             desiredVelocity = desiredVelocity * std::sqrt(speedLimitMagnitude / speedMagnitude);
@@ -521,7 +521,7 @@ namespace Gek
 
                 for (uint32_t step = 0; (step < MaximumIntegrationStepCount) && (normalizedTimeLeft > NewtonEpsilon); step++)
                 {
-                    if (velocity.getMagnitudeSquared() < NewtonEpsilon)
+                    if (velocity.getMagnitude() < NewtonEpsilon)
                     {
                         break;
                     }
@@ -535,7 +535,7 @@ namespace Gek
                         matrix.translation.xyz += velocity * (impactTime * frameTime);
                         if (impactTime > 0.0f)
                         {
-                            matrix.translation.xyz -= velocity * (ContactSkinThickness / velocity.getMagnitude());
+                            matrix.translation.xyz -= velocity * (ContactSkinThickness / velocity.getLength());
                         }
 
                         normalizedTimeLeft -= impactTime;
@@ -622,7 +622,7 @@ namespace Gek
                         }
 
                         velocity += stepVelocity;
-                        float velocityMagnitude = stepVelocity.getMagnitudeSquared();
+                        float velocityMagnitude = stepVelocity.getMagnitude();
                         if (velocityMagnitude < NewtonEpsilon)
                         {
                             float advanceTime = std::min(descreteTimeStep, normalizedTimeLeft * frameTime);

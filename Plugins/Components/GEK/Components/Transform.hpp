@@ -29,7 +29,7 @@ namespace Gek
 
             inline Math::Float4x4 getScaledMatrix(void) const
             {
-                return Math::Float4x4(rotation, position) * Math::Float4x4::FromScale(scale);
+                return (Math::Float4x4::FromScale(scale) * getMatrix());
             }
         };
     }; // namespace Components
