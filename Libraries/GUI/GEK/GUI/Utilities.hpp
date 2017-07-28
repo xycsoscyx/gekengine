@@ -63,25 +63,22 @@ namespace Gek
 
         namespace Gizmo
         {
-            IMGUI_API void SetRect(float x, float y, float width, float height);
-            // call it when you want a gizmo
-            // Needs view and projection matrices. 
-            // matrix parameter is the source matrix (where will be gizmo be drawn) and might be transformed by the function. Return deltaMatrix is optional
-            // translation is applied in world space
-            enum OPERATION
+            enum class Operation
             {
-                TRANSLATE,
-                ROTATE,
-                SCALE
+                Translate = 0,
+                Rotate,
+                Scale,
+                Bounds,
             };
 
-            enum MODE
+            enum class Alignment
             {
-                LOCAL,
-                WORLD
+                Local = 0,
+                World,
             };
 
-            IMGUI_API void Manipulate(const float *view, const float *projection, OPERATION operation, MODE mode, float *matrix, float *deltaMatrix = 0, float *snap = 0, float *localBounds = NULL, float *boundsSnap = NULL);
+            void SetRect(float x, float y, float width, float height);
+            void Manipulate(const float *view, const float *projection, Operation operation, Alignment alignment, float *matrix, float *deltaMatrix = 0, float *snap = 0, float *localBounds = NULL, float *boundsSnap = NULL);
         }; // namespace Gizmo
     }; // namespace UI
 }; // namespace Gek
