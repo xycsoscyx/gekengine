@@ -4,6 +4,9 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/ContextUser.hpp"
+#include "GEK/GUI/Utilities.hpp"
+#include "GEK/GUI/Dock.hpp"
+#include "GEK/GUI/Gizmo.hpp"
 #include "GEK/Engine/Core.hpp"
 #include "GEK/Engine/Renderer.hpp"
 #include "GEK/Engine/Population.hpp"
@@ -32,6 +35,8 @@ namespace Gek
             Plugin::Renderer *renderer = nullptr;
             Gek::Processor::Model *modelProcessor = nullptr;
 
+            std::unique_ptr<UI::Dock::WorkSpace> dock;
+            std::unique_ptr<UI::Gizmo::WorkSpace> gizmo;
             Video::TexturePtr dockPanelIcon;
 
             float headingAngle = 0.0f;
@@ -44,16 +49,8 @@ namespace Gek
 
             int selectedComponent = 0;
 
-            enum GizmoOperation
-            {
-                Translate = ImGuizmo::TRANSLATE,
-                Rotate = ImGuizmo::ROTATE,
-                Scale = ImGuizmo::SCALE,
-                Bounds,
-            };
-
-            int currentGizmoAlignment = ImGuizmo::WORLD;
-            int currentGizmoOperation = Translate;
+            int currentGizmoAlignment = UI::Gizmo::Alignment::World;
+            int currentGizmoOperation = UI::Gizmo::Operation::Translate;
             bool useGizmoSnap = true;
             Math::Float3 gizmoSnapPosition = Math::Float3::One;
             float gizmoSnapRotation = 10.0f;
@@ -78,8 +75,6 @@ namespace Gek
                 population->onAction.connect<Editor, &Editor::onAction>(this);
                 population->onUpdate[90].connect<Editor, &Editor::onUpdate>(this);
 
-                renderer->onShowUserInterface.connect<Editor, &Editor::onShowUserInterface>(this);
-
                 if (!ImGui::TabWindow::DockPanelIconTextureID)
                 {
                     int iconSize = 0;
@@ -87,6 +82,10 @@ namespace Gek
                     dockPanelIcon = core->getVideoDevice()->loadTexture(iconBuffer, iconSize, 0);
                     ImGui::TabWindow::DockPanelIconTextureID = dynamic_cast<Video::Object *>(dockPanelIcon.get());
                 }
+
+                dock = std::make_unique<UI::Dock::WorkSpace>();
+                gizmo = std::make_unique<UI::Gizmo::WorkSpace>();
+                renderer->onShowUserInterface.connect<Editor, &Editor::onShowUserInterface>(this);
             }
 
             ~Editor(void)
@@ -96,7 +95,8 @@ namespace Gek
                 population->onUpdate[90].disconnect<Editor, &Editor::onUpdate>(this);
                 population->onAction.disconnect<Editor, &Editor::onAction>(this);
 
-                UI::Dock::Shutdown();
+                gizmo = nullptr;
+                dock = nullptr;
             }
 
             // Plugin::Processor
@@ -135,7 +135,7 @@ namespace Gek
             void showScene(void)
             {
                 auto &imGuiIo = ImGui::GetIO();
-                if (UI::Dock::BeginTab("Scene", &showSceneDock, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_ShowBorders))
+                if (dock->BeginTab("Scene", &showSceneDock, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_ShowBorders))
                 {
                     cameraSize = UI::GetWindowContentRegionSize();
 
@@ -157,10 +157,10 @@ namespace Gek
                             viewMatrix.translation.xyz = position;
                             viewMatrix.invert();
 
-                            ImGuizmo::BeginFrame();
+                            gizmo->beginFrame();
                             auto size = ImGui::GetItemRectSize();
                             auto origin = ImGui::GetItemRectMin();
-                            ImGuizmo::SetRect(origin.x, origin.y, size.x, size.y);
+                            gizmo->setViewPort(origin.x, origin.y, size.x, size.y);
                             ImGui::PushClipRect(ImVec2(origin.x, origin.y), ImVec2(origin.x + size.x, origin.y + size.y), false);
                             if (selectedEntity->hasComponent<Components::Transform>())
                             {
@@ -171,19 +171,19 @@ namespace Gek
                                 {
                                     switch (currentGizmoOperation)
                                     {
-                                    case Translate:
+                                    case UI::Gizmo::Operation::Translate:
                                         snapData = gizmoSnapPosition.data;
                                         break;
 
-                                    case Rotate:
+                                    case UI::Gizmo::Operation::Rotate:
                                         snapData = &gizmoSnapRotation;
                                         break;
 
-                                    case Scale:
+                                    case UI::Gizmo::Operation::Scale:
                                         snapData = &gizmoSnapScale;
                                         break;
 
-                                    case Bounds:
+                                    case UI::Gizmo::Operation::Bounds:
                                         snapData = gizmoSnapBounds.data;
                                         break;
                                     };
@@ -199,25 +199,25 @@ namespace Gek
                                 if (isObjectInFrustum(Shapes::Frustum(viewMatrix * projectionMatrix), Shapes::OrientedBox(boundingBox, matrix)))
                                 {
                                     Math::Float4x4 deltaMatrix;
-                                    float *localBounds = (currentGizmoOperation == Bounds ? boundingBox.minimum.data : nullptr);
-                                    ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, static_cast<ImGuizmo::OPERATION>(currentGizmoOperation), static_cast<ImGuizmo::MODE>(currentGizmoAlignment), matrix.data, deltaMatrix.data, snapData, localBounds, snapData);
+                                    float *localBounds = (currentGizmoOperation == UI::Gizmo::Operation::Bounds ? boundingBox.minimum.data : nullptr);
+                                    gizmo->manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, currentGizmoAlignment, matrix.data, deltaMatrix.data, snapData, localBounds, snapData);
                                     if (deltaMatrix != Math::Float4x4::Identity)
                                     {
                                         switch (currentGizmoOperation)
                                         {
-                                        case Translate:
+                                        case UI::Gizmo::Operation::Translate:
                                             transformComponent.position = matrix.translation.xyz;
                                             break;
 
-                                        case Rotate:
+                                        case UI::Gizmo::Operation::Rotate:
                                             transformComponent.rotation = matrix.getRotation();
                                             break;
 
-                                        case Scale:
+                                        case UI::Gizmo::Operation::Scale:
                                             transformComponent.scale = matrix.getScaling();
                                             break;
 
-                                        case Bounds:
+                                        case UI::Gizmo::Operation::Bounds:
                                             break;
                                         };
 
@@ -231,7 +231,7 @@ namespace Gek
                     }
                 }
 
-                UI::Dock::EndTab();
+                dock->EndTab();
             }
 
             Plugin::Entity *selectedEntity = nullptr;
@@ -240,45 +240,45 @@ namespace Gek
             {
                 auto &imGuiIo = ImGui::GetIO();
                 auto &style = ImGui::GetStyle();
-                UI::Dock::SetNextPosition(UI::Dock::Position::Right);
-                if (UI::Dock::BeginTab("Population", &showPopulationDock, 0, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
+                dock->SetNextLocation(UI::Dock::Location::Right);
+                if (dock->BeginTab("Population", &showPopulationDock, 0, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
                 {
                     ImGui::BulletText("Alignment ");
                     ImGui::SameLine();
                     auto width = (ImGui::GetContentRegionAvailWidth() - style.ItemSpacing.x) * 0.5f;
-                    UI::RadioButton(ICON_FA_GLOBE " World", &currentGizmoAlignment, ImGuizmo::WORLD, ImVec2(width, 0.0f));
+                    UI::RadioButton(ICON_FA_GLOBE " World", &currentGizmoAlignment, UI::Gizmo::Alignment::World, ImVec2(width, 0.0f));
                     ImGui::SameLine();
-                    UI::RadioButton(ICON_FA_USER_O " Entity", &currentGizmoAlignment, ImGuizmo::LOCAL, ImVec2(width, 0.0f));
+                    UI::RadioButton(ICON_FA_USER_O " Entity", &currentGizmoAlignment, UI::Gizmo::Alignment::Local, ImVec2(width, 0.0f));
 
                     ImGui::BulletText("Operation ");
                     ImGui::SameLine();
                     width = (ImGui::GetContentRegionAvailWidth() - style.ItemSpacing.x * 3.0f) / 4.0f;
-                    UI::RadioButton(ICON_FA_ARROWS " Move", &currentGizmoOperation, Translate, ImVec2(width, 0.0f));
+                    UI::RadioButton(ICON_FA_ARROWS " Move", &currentGizmoOperation, UI::Gizmo::Operation::Translate, ImVec2(width, 0.0f));
                     ImGui::SameLine();
-                    UI::RadioButton(ICON_FA_REPEAT " Rotate", &currentGizmoOperation, Rotate, ImVec2(width, 0.0f));
+                    UI::RadioButton(ICON_FA_REPEAT " Rotate", &currentGizmoOperation, UI::Gizmo::Operation::Rotate, ImVec2(width, 0.0f));
                     ImGui::SameLine();
-                    UI::RadioButton(ICON_FA_SEARCH " Scale", &currentGizmoOperation, Scale, ImVec2(width, 0.0f));
+                    UI::RadioButton(ICON_FA_SEARCH " Scale", &currentGizmoOperation, UI::Gizmo::Operation::Scale, ImVec2(width, 0.0f));
                     ImGui::SameLine();
-                    UI::RadioButton(ICON_FA_SEARCH " Bounds", &currentGizmoOperation, Bounds, ImVec2(width, 0.0f));
+                    UI::RadioButton(ICON_FA_SEARCH " Bounds", &currentGizmoOperation, UI::Gizmo::Operation::Bounds, ImVec2(width, 0.0f));
 
                     UI::CheckButton(ICON_FA_MAGNET " Snap", &useGizmoSnap);
                     ImGui::SameLine();
                     ImGui::PushItemWidth(-1.0f);
                     switch (currentGizmoOperation)
                     {
-                    case Translate:
+                    case UI::Gizmo::Operation::Translate:
                         ImGui::InputFloat3("##snapTranslation", gizmoSnapPosition.data, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                         break;
 
-                    case Rotate:
+                    case UI::Gizmo::Operation::Rotate:
                         ImGui::SliderFloat("##snapDegrees", &gizmoSnapRotation, 0.0f, 360.0f);
                         break;
 
-                    case Scale:
+                    case UI::Gizmo::Operation::Scale:
                         ImGui::InputFloat("##gizmoSnapScale", &gizmoSnapScale, (1.0f / 10.0f), 1.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                         break;
 
-                    case Bounds:
+                    case UI::Gizmo::Operation::Bounds:
                         ImGui::InputFloat3("##snapBounds", gizmoSnapBounds.data, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                         break;
                     };
@@ -499,7 +499,7 @@ namespace Gek
                     }
                 }
 
-                UI::Dock::EndTab();
+                dock->EndTab();
             }
 
             void onShowUserInterface(ImGuiContext * const guiContext)
@@ -529,12 +529,12 @@ namespace Gek
                 if (ImGui::Begin("Editor", nullptr, editorSize, 1.0f, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
                 {
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, oldWindowPadding);
-                    UI::Dock::Begin("##Editor", (UI::GetWindowContentRegionSize()), true, ImVec2(10.0f, 10.0f));
+                    dock->Begin("##Editor", (UI::GetWindowContentRegionSize()), true, ImVec2(10.0f, 10.0f));
 
                     showScene();
                     showPopulation();
 
-                    UI::Dock::End();
+                    dock->End();
                     ImGui::PopStyleVar(1);
                 }
 

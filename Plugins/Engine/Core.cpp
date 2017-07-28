@@ -4,6 +4,7 @@
 #include "GEK/Utility/Timer.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/GUI/Utilities.hpp"
+#include "GEK/GUI/Dock.hpp"
 #include "GEK/Engine/Core.hpp"
 #include "GEK/Engine/Population.hpp"
 #include "GEK/Engine/Resources.hpp"
@@ -51,6 +52,8 @@ namespace Gek
             Engine::ResourcesPtr resources;
             std::vector<Plugin::ProcessorPtr> processorList;
             Plugin::PopulationPtr population;
+
+            std::unique_ptr<UI::Dock::WorkSpace> dock;
 
         public:
             Core(Context *context, Window *_window)
@@ -137,6 +140,8 @@ namespace Gek
                     processor->onInitialized();
                 }
 
+                dock = std::make_unique<UI::Dock::WorkSpace>();
+
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 imGuiIo.KeyMap[ImGuiKey_Tab] = VK_TAB;
                 imGuiIo.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
@@ -186,6 +191,7 @@ namespace Gek
                     processor->onDestroyed();
                 }
 
+                dock = nullptr;
                 processorList.clear();
                 renderer = nullptr;
                 resources = nullptr;
@@ -467,7 +473,7 @@ namespace Gek
 
             void showDisplay(void)
             {
-                if (UI::Dock::BeginTab("Display", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
+                if (dock->BeginTab("Display", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
                 {
                     auto &style = ImGui::GetStyle();
                     ImGui::PushItemWidth(-1.0f);
@@ -484,12 +490,12 @@ namespace Gek
                     ImGui::Checkbox("FullScreen", &next.fullScreen);
                 }
 
-                UI::Dock::EndTab();
+                dock->EndTab();
             }
 
             void showVisual(void)
             {
-                if (UI::Dock::BeginTab("Visual", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
+                if (dock->BeginTab("Visual", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
                 {
                     auto showOptions = [&](char const *group, JSON::Object &settings) -> void
                     {
@@ -627,7 +633,7 @@ namespace Gek
                     showOptions("filters", filtersSettings);
                 }
 
-                UI::Dock::EndTab();
+                dock->EndTab();
             }
 
             void showSettingsWindow(void)
@@ -638,10 +644,10 @@ namespace Gek
                     ImGui::SetNextWindowPosCenter();
                     if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoSavedSettings))
                     {
-                        UI::Dock::Begin("##Settings", ImVec2(500.0f, 350.0f), true);
+                        dock->Begin("##Settings", ImVec2(500.0f, 350.0f), true);
                         showDisplay();
                         showVisual();
-                        UI::Dock::End();
+                        dock->End();
 
                         ImGui::Dummy(ImVec2(0.0f, 3.0f));
 

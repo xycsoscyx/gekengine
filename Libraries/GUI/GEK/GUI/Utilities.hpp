@@ -11,7 +11,6 @@
 
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <ImGuizmo.h>
 
 #include "GEK/GUI/IconsFontAwesome.h"
 #include "GEK/GUI/IconsMaterialDesign.h"
@@ -38,47 +37,5 @@ namespace Gek
         bool SliderAngle2(char const *label, float v_rad[2], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
         bool SliderAngle3(char const *label, float v_rad[3], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
         bool SliderAngle4(char const *label, float v_rad[4], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
-
-        namespace Dock
-        {
-            enum class Position : uint8_t
-            {
-                Left = 0,
-                Right,
-                Top,
-                Bottom,
-                Tab,
-                Float,
-                None,
-            };
-
-            void Begin(char const *label = nullptr, ImVec2 const &workspace = ImVec2(0, 0), bool showBorder = false, ImVec2 const &splitSize = ImVec2(3.0f, 3.0f));
-            void End(void);
-            void Shutdown(void);
-            void SetNextPosition(Position slot);
-            bool BeginTab(char const *label, bool *opened = NULL, ImGuiWindowFlags extra_flags = 0, ImVec2 const &default_size = ImVec2(-1, -1));
-            void EndTab(void);
-            void SetActive(void);
-        }; // Dock
-
-        namespace Gizmo
-        {
-            enum class Operation
-            {
-                Translate = 0,
-                Rotate,
-                Scale,
-                Bounds,
-            };
-
-            enum class Alignment
-            {
-                Local = 0,
-                World,
-            };
-
-            void SetRect(float x, float y, float width, float height);
-            void Manipulate(const float *view, const float *projection, Operation operation, Alignment alignment, float *matrix, float *deltaMatrix = 0, float *snap = 0, float *localBounds = NULL, float *boundsSnap = NULL);
-        }; // namespace Gizmo
     }; // namespace UI
 }; // namespace Gek

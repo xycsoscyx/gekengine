@@ -55,11 +55,9 @@ add_definitions(-DNO_IMGUIFILESYSTEM)
 add_definitions(-DNO_IMGUICODEEDITOR)
 add_definitions(-DIMGUI_INCLUDE_IMGUI_USER_H -DIMGUI_INCLUDE_IMGUI_USER_INL)
 add_definitions(-DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_DEFINE_PLACEMENT_NEW)
-file(GLOB SOURCES "imgui-addons/*.cpp" "imgui-addons/*.h"
-                  "imguizmo/*.cpp" "imguizmo/*.h")
+file(GLOB SOURCES "imgui-addons/*.cpp" "imgui-addons/*.h")
 add_library(imgui_gek STATIC ${SOURCES})
-target_include_directories(imgui_gek PUBLIC "${CMAKE_CURRENT_LIST_DIR}/imgui-addons"
-                                            "${CMAKE_CURRENT_LIST_DIR}/imguizmo")
+target_include_directories(imgui_gek PUBLIC "${CMAKE_CURRENT_LIST_DIR}/imgui-addons")
 
 project(nano-signal-slot)
 add_library(nano-signal-slot INTERFACE)

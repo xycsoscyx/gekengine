@@ -50,6 +50,12 @@ namespace Gek
                     Vector2<TYPE> minimum;
                     Vector2<TYPE> maximum;
                 };
+
+                struct
+                {
+                    Vector2<TYPE> position;
+                    Vector2<TYPE> size;
+                };
             };
 
         public:

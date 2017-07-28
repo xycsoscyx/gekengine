@@ -139,7 +139,7 @@ namespace Gek
                 return (getTuple() != matrix.getTuple());
             }
 
-            inline inline Float3x2 &operator = (Float3x2 const &matrix)
+            inline Float3x2 &operator = (Float3x2 const &matrix)
             {
                 std::tie(rx, ry, rz) = matrix.getTuple();
                 return (*this);

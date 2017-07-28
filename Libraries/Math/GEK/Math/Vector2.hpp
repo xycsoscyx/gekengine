@@ -26,6 +26,7 @@ namespace Gek
             {
                 struct { TYPE x, y; };
                 struct { TYPE u, v; };
+                struct { TYPE width, height; };
                 struct { TYPE minimum, maximum; };
                 struct { TYPE data[2]; };
             };
