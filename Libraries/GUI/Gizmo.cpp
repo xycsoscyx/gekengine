@@ -39,7 +39,31 @@ namespace Gek
             struct vec_t
             {
             public:
-                float x, y, z, w;
+                union
+                {
+                    struct { float x, y, z, w; };
+                    struct { float data[4]; };
+                };
+
+                vec_t()
+                {
+                }
+
+                vec_t(float value)
+                    : x(value)
+                    , y(value)
+                    , z(value)
+                    , w(value)
+                {
+                }
+
+                vec_t(float x, float y, float z = 0.0f, float w = 0.0f)
+                    : x(x)
+                    , y(y)
+                    , z(z)
+                    , w(w)
+                {
+                }
 
                 void Lerp(const vec_t& v, float t)
                 {
@@ -49,12 +73,12 @@ namespace Gek
                     w += (v.w - w) * t;
                 }
 
-                void Set(float v)
+                void set(float v)
                 {
                     x = y = z = w = v;
                 }
 
-                void Set(float _x, float _y, float _z = 0.0f, float _w = 0.0f)
+                void set(float _x, float _y, float _z = 0.0f, float _w = 0.0f)
                 {
                     x = _x;
                     y = _y;
@@ -109,128 +133,89 @@ namespace Gek
                     return (*this);
                 }
 
-                float Length() const
+                float getLength() const
                 {
                     return std::sqrt(x*x + y*y + z*z);
                 }
 
-                float LengthSq() const
+                float getMagnitude() const
                 {
                     return (x*x + y*y + z*z);
                 }
 
-                vec_t Normalize()
+                vec_t getNormal() const
                 {
-                    (*this) *= (1.0f / Length());
+                    float inverseLength = (1.0f / getLength());
+                    return vec_t(inverseLength * x, inverseLength * y, inverseLength * z, inverseLength * w);
+                }
+
+                vec_t normalize()
+                {
+                    (*this) = getNormal();
                     return (*this);
                 }
 
-                vec_t Normalize(const vec_t& v)
-                {
-                    this->Set(v.x, v.y, v.z, v.w);
-                    this->Normalize();
-                    return (*this);
-                }
+                vec_t getAbsolute() const;
 
-                vec_t Abs() const;
-
-                void Cross(const vec_t& v)
+                vec_t cross(const vec_t& v)
                 {
                     vec_t res;
                     res.x = y * v.z - z * v.y;
                     res.y = z * v.x - x * v.z;
                     res.z = x * v.y - y * v.x;
-
-                    x = res.x;
-                    y = res.y;
-                    z = res.z;
-                    w = 0.0f;
+                    res.w = 0.0f;
+                    return res;
                 }
 
-                void Cross(const vec_t& v1, const vec_t& v2)
-                {
-                    x = v1.y * v2.z - v1.z * v2.y;
-                    y = v1.z * v2.x - v1.x * v2.z;
-                    z = v1.x * v2.y - v1.y * v2.x;
-                    w = 0.0f;
-                }
-
-                float Dot(const vec_t &v) const
+                float dot4(const vec_t &v) const
                 {
                     return (x * v.x) + (y * v.y) + (z * v.z) + (w * v.w);
                 }
 
-                float Dot3(const vec_t &v) const
+                float dot(const vec_t &v) const
                 {
                     return (x * v.x) + (y * v.y) + (z * v.z);
                 }
 
-                void Transform(const matrix_t& matrix);
-                void Transform(const vec_t & s, const matrix_t& matrix);
-
-                void TransformVector(const matrix_t& matrix);
-                void TransformPoint(const matrix_t& matrix);
-                void TransformVector(const vec_t& v, const matrix_t& matrix)
-                {
-                    (*this) = v;
-                    this->TransformVector(matrix);
-                }
-
-                void TransformPoint(const vec_t& v, const matrix_t& matrix)
-                {
-                    (*this) = v;
-                    this->TransformPoint(matrix);
-                }
-
                 float& operator [] (size_t index)
                 {
-                    return ((float*)&x)[index];
+                    return data[index];
                 }
 
                 const float& operator [] (size_t index) const
                 {
-                    return ((float*)&x)[index];
+                    return data[index];
                 }
             };
 
-            vec_t makeVect(float _x, float _y, float _z = 0.0f, float _w = 0.0f)
-            {
-                vec_t res;
-                res.x = _x;
-                res.y = _y;
-                res.z = _z;
-                res.w = _w;
-                return res;
-            }
-
             vec_t vec_t::operator * (float f) const
             {
-                return makeVect(x * f, y * f, z * f, w *f);
+                return vec_t(x * f, y * f, z * f, w *f);
             }
 
             vec_t vec_t::operator - () const
             {
-                return makeVect(-x, -y, -z, -w);
+                return vec_t(-x, -y, -z, -w);
             }
 
             vec_t vec_t::operator - (const vec_t& v) const
             {
-                return makeVect(x - v.x, y - v.y, z - v.z, w - v.w);
+                return vec_t(x - v.x, y - v.y, z - v.z, w - v.w);
             }
 
             vec_t vec_t::operator + (const vec_t& v) const
             {
-                return makeVect(x + v.x, y + v.y, z + v.z, w + v.w);
+                return vec_t(x + v.x, y + v.y, z + v.z, w + v.w);
             }
 
             vec_t vec_t::operator * (const vec_t& v) const
             {
-                return makeVect(x * v.x, y * v.y, z * v.z, w * v.w);
+                return vec_t(x * v.x, y * v.y, z * v.z, w * v.w);
             }
 
-            vec_t vec_t::Abs() const
+            vec_t vec_t::getAbsolute() const
             {
-                return makeVect(std::abs(x), std::abs(y), std::abs(z));
+                return vec_t(std::abs(x), std::abs(y), std::abs(z));
             }
 
             ImVec2 operator+ (const ImVec2& a, const ImVec2& b)
@@ -238,34 +223,10 @@ namespace Gek
                 return ImVec2(a.x + b.x, a.y + b.y);
             }
 
-            vec_t Normalized(const vec_t& v)
-            {
-                vec_t res;
-                res = v;
-                res.Normalize();
-                return res;
-            }
-
-            vec_t Cross(const vec_t& v1, const vec_t& v2)
-            {
-                vec_t res;
-                res.x = v1.y * v2.z - v1.z * v2.y;
-                res.y = v1.z * v2.x - v1.x * v2.z;
-                res.z = v1.x * v2.y - v1.y * v2.x;
-                res.w = 0.0f;
-                return res;
-            }
-
-            float Dot(const vec_t &v1, const vec_t &v2)
-            {
-                return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z);
-            }
-
             vec_t BuildPlane(const vec_t & p_point1, const vec_t & p_normal)
             {
-                vec_t normal, res;
-                normal.Normalize(p_normal);
-                res.w = normal.Dot(p_point1);
+                vec_t normal = p_normal.getNormal(), res;
+                res.w = normal.dot4(p_point1);
                 res.x = normal.x;
                 res.y = normal.y;
                 res.z = normal.z;
@@ -277,19 +238,19 @@ namespace Gek
             public:
                 union
                 {
-                    float m[4][4];
-                    float m16[16];
+                    float table[4][4];
+                    float data[16];
                     struct
                     {
-                        vec_t right, up, dir, position;
-                    } v;
+                        vec_t rx, ry, rz, rw;
+                    };
 
-                    vec_t component[4];
+                    vec_t rows[4];
                 };
 
                 matrix_t(const matrix_t& other)
                 {
-                    memcpy(&m16[0], &other.m16[0], sizeof(float) * 16);
+                    memcpy(&data[0], &other.data[0], sizeof(float) * 16);
                 }
 
                 matrix_t()
@@ -298,33 +259,33 @@ namespace Gek
 
                 operator float * ()
                 {
-                    return m16;
+                    return data;
                 }
 
                 operator const float* () const
                 {
-                    return m16;
+                    return data;
                 }
 
                 void Translation(float _x, float _y, float _z)
                 {
-                    this->Translation(makeVect(_x, _y, _z));
+                    this->Translation(vec_t(_x, _y, _z));
                 }
 
                 void Translation(const vec_t& vt)
                 {
-                    v.right.Set(1.0f, 0.0f, 0.0f, 0.0f);
-                    v.up.Set(0.0f, 1.0f, 0.0f, 0.0f);
-                    v.dir.Set(0.0f, 0.0f, 1.0f, 0.0f);
-                    v.position.Set(vt.x, vt.y, vt.z, 1.0f);
+                    rx.set(1.0f, 0.0f, 0.0f, 0.0f);
+                    ry.set(0.0f, 1.0f, 0.0f, 0.0f);
+                    rz.set(0.0f, 0.0f, 1.0f, 0.0f);
+                    rw.set(vt.x, vt.y, vt.z, 1.0f);
                 }
 
                 void Scale(float _x, float _y, float _z)
                 {
-                    v.right.Set(_x, 0.0f, 0.0f, 0.0f);
-                    v.up.Set(0.0f, _y, 0.0f, 0.0f);
-                    v.dir.Set(0.0f, 0.0f, _z, 0.0f);
-                    v.position.Set(0.0f, 0.0f, 0.0f, 1.0f);
+                    rx.set(_x, 0.0f, 0.0f, 0.0f);
+                    ry.set(0.0f, _y, 0.0f, 0.0f);
+                    rz.set(0.0f, 0.0f, _z, 0.0f);
+                    rw.set(0.0f, 0.0f, 0.0f, 1.0f);
                 }
 
                 void Scale(const vec_t& s)
@@ -361,25 +322,25 @@ namespace Gek
                     FPU_MatrixF_x_MatrixF((float*)&m1, (float*)&m2, (float*)this);
                 }
 
-                float GetDeterminant() const
+                float getDeterminant() const
                 {
                     return
-                        m[0][0] * m[1][1] * m[2][2] + 
-                        m[0][1] * m[1][2] * m[2][0] + 
-                        m[0][2] * m[1][0] * m[2][1] -
-                        m[0][2] * m[1][1] * m[2][0] -
-                        m[0][1] * m[1][0] * m[2][2] -
-                        m[0][0] * m[1][2] * m[2][1];
+                        table[0][0] * table[1][1] * table[2][2] + 
+                        table[0][1] * table[1][2] * table[2][0] + 
+                        table[0][2] * table[1][0] * table[2][1] -
+                        table[0][2] * table[1][1] * table[2][0] -
+                        table[0][1] * table[1][0] * table[2][2] -
+                        table[0][0] * table[1][2] * table[2][1];
                 }
 
-                float Inverse(const matrix_t &srcMatrix, bool affine = false);
+                void getInverse(const matrix_t &srcMatrix);
 
                 void SetToIdentity()
                 {
-                    v.right.Set(1.0f, 0.0f, 0.0f, 0.0f);
-                    v.up.Set(0.0f, 1.0f, 0.0f, 0.0f);
-                    v.dir.Set(0.0f, 0.0f, 1.0f, 0.0f);
-                    v.position.Set(0.0f, 0.0f, 0.0f, 1.0f);
+                    rx.set(1.0f, 0.0f, 0.0f, 0.0f);
+                    ry.set(0.0f, 1.0f, 0.0f, 0.0f);
+                    rz.set(0.0f, 0.0f, 1.0f, 0.0f);
+                    rw.set(0.0f, 0.0f, 0.0f, 1.0f);
                 }
 
                 void Transpose()
@@ -389,7 +350,7 @@ namespace Gek
                     {
                         for (int c = 0; c < 4; c++)
                         {
-                            tmpm.m[l][c] = m[c][l];
+                            tmpm.table[l][c] = table[c][l];
                         }
                     }
 
@@ -398,158 +359,123 @@ namespace Gek
 
                 void RotationAxis(const vec_t & axis, float angle);
 
-                void OrthoNormalize()
+                void orthonormalize()
                 {
-                    v.right.Normalize();
-                    v.up.Normalize();
-                    v.dir.Normalize();
+                    rx.normalize();
+                    ry.normalize();
+                    rz.normalize();
                 }
+
+                vec_t Transform(const vec_t& vector) const;
+                vec_t transform(const vec_t& vector) const;
+                vec_t rotate(const vec_t& vector) const;
             };
 
-            void vec_t::Transform(const matrix_t& matrix)
+            vec_t matrix_t::Transform(const vec_t& vector) const
             {
                 vec_t out;
-                out.x = x * matrix.m[0][0] + y * matrix.m[1][0] + z * matrix.m[2][0] + w * matrix.m[3][0];
-                out.y = x * matrix.m[0][1] + y * matrix.m[1][1] + z * matrix.m[2][1] + w * matrix.m[3][1];
-                out.z = x * matrix.m[0][2] + y * matrix.m[1][2] + z * matrix.m[2][2] + w * matrix.m[3][2];
-                out.w = x * matrix.m[0][3] + y * matrix.m[1][3] + z * matrix.m[2][3] + w * matrix.m[3][3];
-                x = out.x;
-                y = out.y;
-                z = out.z;
-                w = out.w;
+                out.x = vector.x * table[0][0] + vector.y * table[1][0] + vector.z * table[2][0] + vector.w * table[3][0];
+                out.y = vector.x * table[0][1] + vector.y * table[1][1] + vector.z * table[2][1] + vector.w * table[3][1];
+                out.z = vector.x * table[0][2] + vector.y * table[1][2] + vector.z * table[2][2] + vector.w * table[3][2];
+                out.w = vector.x * table[0][3] + vector.y * table[1][3] + vector.z * table[2][3] + vector.w * table[3][3];
+                return out;
             }
 
-            void vec_t::Transform(const vec_t & s, const matrix_t& matrix)
-            {
-                *this = s;
-                Transform(matrix);
-            }
-
-            void vec_t::TransformPoint(const matrix_t& matrix)
+            vec_t matrix_t::transform(const vec_t& vector) const
             {
                 vec_t out;
-                out.x = x * matrix.m[0][0] + y * matrix.m[1][0] + z * matrix.m[2][0] + matrix.m[3][0];
-                out.y = x * matrix.m[0][1] + y * matrix.m[1][1] + z * matrix.m[2][1] + matrix.m[3][1];
-                out.z = x * matrix.m[0][2] + y * matrix.m[1][2] + z * matrix.m[2][2] + matrix.m[3][2];
-                out.w = x * matrix.m[0][3] + y * matrix.m[1][3] + z * matrix.m[2][3] + matrix.m[3][3];
-                x = out.x;
-                y = out.y;
-                z = out.z;
-                w = out.w;
+                out.x = vector.x * table[0][0] + vector.y * table[1][0] + vector.z * table[2][0] + table[3][0];
+                out.y = vector.x * table[0][1] + vector.y * table[1][1] + vector.z * table[2][1] + table[3][1];
+                out.z = vector.x * table[0][2] + vector.y * table[1][2] + vector.z * table[2][2] + table[3][2];
+                out.w = vector.x * table[0][3] + vector.y * table[1][3] + vector.z * table[2][3] + table[3][3];
+                return out;
             }
 
-
-            void vec_t::TransformVector(const matrix_t& matrix)
+            vec_t matrix_t::rotate(const vec_t& vector) const
             {
                 vec_t out;
-                out.x = x * matrix.m[0][0] + y * matrix.m[1][0] + z * matrix.m[2][0];
-                out.y = x * matrix.m[0][1] + y * matrix.m[1][1] + z * matrix.m[2][1];
-                out.z = x * matrix.m[0][2] + y * matrix.m[1][2] + z * matrix.m[2][2];
-                out.w = x * matrix.m[0][3] + y * matrix.m[1][3] + z * matrix.m[2][3];
-                x = out.x;
-                y = out.y;
-                z = out.z;
-                w = out.w;
+                out.x = vector.x * table[0][0] + vector.y * table[1][0] + vector.z * table[2][0];
+                out.y = vector.x * table[0][1] + vector.y * table[1][1] + vector.z * table[2][1];
+                out.z = vector.x * table[0][2] + vector.y * table[1][2] + vector.z * table[2][2];
+                out.w = vector.x * table[0][3] + vector.y * table[1][3] + vector.z * table[2][3];
+                return out;
             }
 
-            float matrix_t::Inverse(const matrix_t &srcMatrix, bool affine)
+            void matrix_t::getInverse(const matrix_t &srcMatrix)
             {
-                float det = 0;
-                if (affine)
+                // transpose matrix
+                float src[16];
+                for (int i = 0; i < 4; ++i)
                 {
-                    det = GetDeterminant();
-                    float s = 1 / det;
-                    m[0][0] = (srcMatrix.m[1][1] * srcMatrix.m[2][2] - srcMatrix.m[1][2] * srcMatrix.m[2][1]) * s;
-                    m[0][1] = (srcMatrix.m[2][1] * srcMatrix.m[0][2] - srcMatrix.m[2][2] * srcMatrix.m[0][1]) * s;
-                    m[0][2] = (srcMatrix.m[0][1] * srcMatrix.m[1][2] - srcMatrix.m[0][2] * srcMatrix.m[1][1]) * s;
-                    m[1][0] = (srcMatrix.m[1][2] * srcMatrix.m[2][0] - srcMatrix.m[1][0] * srcMatrix.m[2][2]) * s;
-                    m[1][1] = (srcMatrix.m[2][2] * srcMatrix.m[0][0] - srcMatrix.m[2][0] * srcMatrix.m[0][2]) * s;
-                    m[1][2] = (srcMatrix.m[0][2] * srcMatrix.m[1][0] - srcMatrix.m[0][0] * srcMatrix.m[1][2]) * s;
-                    m[2][0] = (srcMatrix.m[1][0] * srcMatrix.m[2][1] - srcMatrix.m[1][1] * srcMatrix.m[2][0]) * s;
-                    m[2][1] = (srcMatrix.m[2][0] * srcMatrix.m[0][1] - srcMatrix.m[2][1] * srcMatrix.m[0][0]) * s;
-                    m[2][2] = (srcMatrix.m[0][0] * srcMatrix.m[1][1] - srcMatrix.m[0][1] * srcMatrix.m[1][0]) * s;
-                    m[3][0] = -(m[0][0] * srcMatrix.m[3][0] + m[1][0] * srcMatrix.m[3][1] + m[2][0] * srcMatrix.m[3][2]);
-                    m[3][1] = -(m[0][1] * srcMatrix.m[3][0] + m[1][1] * srcMatrix.m[3][1] + m[2][1] * srcMatrix.m[3][2]);
-                    m[3][2] = -(m[0][2] * srcMatrix.m[3][0] + m[1][2] * srcMatrix.m[3][1] + m[2][2] * srcMatrix.m[3][2]);
-                }
-                else
-                {
-                    // transpose matrix
-                    float src[16];
-                    for (int i = 0; i < 4; ++i)
-                    {
-                        src[i] = srcMatrix.m16[i * 4];
-                        src[i + 4] = srcMatrix.m16[i * 4 + 1];
-                        src[i + 8] = srcMatrix.m16[i * 4 + 2];
-                        src[i + 12] = srcMatrix.m16[i * 4 + 3];
-                    }
-
-                    // calculate pairs for first 8 elements (cofactors)
-                    float tmp[12]; // temp array for pairs
-                    tmp[0] = src[10] * src[15];
-                    tmp[1] = src[11] * src[14];
-                    tmp[2] = src[9] * src[15];
-                    tmp[3] = src[11] * src[13];
-                    tmp[4] = src[9] * src[14];
-                    tmp[5] = src[10] * src[13];
-                    tmp[6] = src[8] * src[15];
-                    tmp[7] = src[11] * src[12];
-                    tmp[8] = src[8] * src[14];
-                    tmp[9] = src[10] * src[12];
-                    tmp[10] = src[8] * src[13];
-                    tmp[11] = src[9] * src[12];
-
-                    // calculate first 8 elements (cofactors)
-                    m16[0] = (tmp[0] * src[5] + tmp[3] * src[6] + tmp[4] * src[7]) - (tmp[1] * src[5] + tmp[2] * src[6] + tmp[5] * src[7]);
-                    m16[1] = (tmp[1] * src[4] + tmp[6] * src[6] + tmp[9] * src[7]) - (tmp[0] * src[4] + tmp[7] * src[6] + tmp[8] * src[7]);
-                    m16[2] = (tmp[2] * src[4] + tmp[7] * src[5] + tmp[10] * src[7]) - (tmp[3] * src[4] + tmp[6] * src[5] + tmp[11] * src[7]);
-                    m16[3] = (tmp[5] * src[4] + tmp[8] * src[5] + tmp[11] * src[6]) - (tmp[4] * src[4] + tmp[9] * src[5] + tmp[10] * src[6]);
-                    m16[4] = (tmp[1] * src[1] + tmp[2] * src[2] + tmp[5] * src[3]) - (tmp[0] * src[1] + tmp[3] * src[2] + tmp[4] * src[3]);
-                    m16[5] = (tmp[0] * src[0] + tmp[7] * src[2] + tmp[8] * src[3]) - (tmp[1] * src[0] + tmp[6] * src[2] + tmp[9] * src[3]);
-                    m16[6] = (tmp[3] * src[0] + tmp[6] * src[1] + tmp[11] * src[3]) - (tmp[2] * src[0] + tmp[7] * src[1] + tmp[10] * src[3]);
-                    m16[7] = (tmp[4] * src[0] + tmp[9] * src[1] + tmp[10] * src[2]) - (tmp[5] * src[0] + tmp[8] * src[1] + tmp[11] * src[2]);
-
-                    // calculate pairs for second 8 elements (cofactors)
-                    tmp[0] = src[2] * src[7];
-                    tmp[1] = src[3] * src[6];
-                    tmp[2] = src[1] * src[7];
-                    tmp[3] = src[3] * src[5];
-                    tmp[4] = src[1] * src[6];
-                    tmp[5] = src[2] * src[5];
-                    tmp[6] = src[0] * src[7];
-                    tmp[7] = src[3] * src[4];
-                    tmp[8] = src[0] * src[6];
-                    tmp[9] = src[2] * src[4];
-                    tmp[10] = src[0] * src[5];
-                    tmp[11] = src[1] * src[4];
-
-                    // calculate second 8 elements (cofactors)
-                    m16[8] = (tmp[0] * src[13] + tmp[3] * src[14] + tmp[4] * src[15]) - (tmp[1] * src[13] + tmp[2] * src[14] + tmp[5] * src[15]);
-                    m16[9] = (tmp[1] * src[12] + tmp[6] * src[14] + tmp[9] * src[15]) - (tmp[0] * src[12] + tmp[7] * src[14] + tmp[8] * src[15]);
-                    m16[10] = (tmp[2] * src[12] + tmp[7] * src[13] + tmp[10] * src[15]) - (tmp[3] * src[12] + tmp[6] * src[13] + tmp[11] * src[15]);
-                    m16[11] = (tmp[5] * src[12] + tmp[8] * src[13] + tmp[11] * src[14]) - (tmp[4] * src[12] + tmp[9] * src[13] + tmp[10] * src[14]);
-                    m16[12] = (tmp[2] * src[10] + tmp[5] * src[11] + tmp[1] * src[9]) - (tmp[4] * src[11] + tmp[0] * src[9] + tmp[3] * src[10]);
-                    m16[13] = (tmp[8] * src[11] + tmp[0] * src[8] + tmp[7] * src[10]) - (tmp[6] * src[10] + tmp[9] * src[11] + tmp[1] * src[8]);
-                    m16[14] = (tmp[6] * src[9] + tmp[11] * src[11] + tmp[3] * src[8]) - (tmp[10] * src[11] + tmp[2] * src[8] + tmp[7] * src[9]);
-                    m16[15] = (tmp[10] * src[10] + tmp[4] * src[8] + tmp[9] * src[9]) - (tmp[8] * src[9] + tmp[11] * src[10] + tmp[5] * src[8]);
-
-                    // calculate determinant
-                    det = src[0] * m16[0] + src[1] * m16[1] + src[2] * m16[2] + src[3] * m16[3];
-
-                    // calculate matrix inverse
-                    float invdet = 1 / det;
-                    for (int j = 0; j < 16; ++j)
-                    {
-                        m16[j] *= invdet;
-                    }
+                    src[i] = srcMatrix.data[i * 4];
+                    src[i + 4] = srcMatrix.data[i * 4 + 1];
+                    src[i + 8] = srcMatrix.data[i * 4 + 2];
+                    src[i + 12] = srcMatrix.data[i * 4 + 3];
                 }
 
-                return det;
+                // calculate pairs for first 8 elements (cofactors)
+                float tmp[12]; // temp array for pairs
+                tmp[0] = src[10] * src[15];
+                tmp[1] = src[11] * src[14];
+                tmp[2] = src[9] * src[15];
+                tmp[3] = src[11] * src[13];
+                tmp[4] = src[9] * src[14];
+                tmp[5] = src[10] * src[13];
+                tmp[6] = src[8] * src[15];
+                tmp[7] = src[11] * src[12];
+                tmp[8] = src[8] * src[14];
+                tmp[9] = src[10] * src[12];
+                tmp[10] = src[8] * src[13];
+                tmp[11] = src[9] * src[12];
+
+                // calculate first 8 elements (cofactors)
+                data[0] = (tmp[0] * src[5] + tmp[3] * src[6] + tmp[4] * src[7]) - (tmp[1] * src[5] + tmp[2] * src[6] + tmp[5] * src[7]);
+                data[1] = (tmp[1] * src[4] + tmp[6] * src[6] + tmp[9] * src[7]) - (tmp[0] * src[4] + tmp[7] * src[6] + tmp[8] * src[7]);
+                data[2] = (tmp[2] * src[4] + tmp[7] * src[5] + tmp[10] * src[7]) - (tmp[3] * src[4] + tmp[6] * src[5] + tmp[11] * src[7]);
+                data[3] = (tmp[5] * src[4] + tmp[8] * src[5] + tmp[11] * src[6]) - (tmp[4] * src[4] + tmp[9] * src[5] + tmp[10] * src[6]);
+                data[4] = (tmp[1] * src[1] + tmp[2] * src[2] + tmp[5] * src[3]) - (tmp[0] * src[1] + tmp[3] * src[2] + tmp[4] * src[3]);
+                data[5] = (tmp[0] * src[0] + tmp[7] * src[2] + tmp[8] * src[3]) - (tmp[1] * src[0] + tmp[6] * src[2] + tmp[9] * src[3]);
+                data[6] = (tmp[3] * src[0] + tmp[6] * src[1] + tmp[11] * src[3]) - (tmp[2] * src[0] + tmp[7] * src[1] + tmp[10] * src[3]);
+                data[7] = (tmp[4] * src[0] + tmp[9] * src[1] + tmp[10] * src[2]) - (tmp[5] * src[0] + tmp[8] * src[1] + tmp[11] * src[2]);
+
+                // calculate pairs for second 8 elements (cofactors)
+                tmp[0] = src[2] * src[7];
+                tmp[1] = src[3] * src[6];
+                tmp[2] = src[1] * src[7];
+                tmp[3] = src[3] * src[5];
+                tmp[4] = src[1] * src[6];
+                tmp[5] = src[2] * src[5];
+                tmp[6] = src[0] * src[7];
+                tmp[7] = src[3] * src[4];
+                tmp[8] = src[0] * src[6];
+                tmp[9] = src[2] * src[4];
+                tmp[10] = src[0] * src[5];
+                tmp[11] = src[1] * src[4];
+
+                // calculate second 8 elements (cofactors)
+                data[8] = (tmp[0] * src[13] + tmp[3] * src[14] + tmp[4] * src[15]) - (tmp[1] * src[13] + tmp[2] * src[14] + tmp[5] * src[15]);
+                data[9] = (tmp[1] * src[12] + tmp[6] * src[14] + tmp[9] * src[15]) - (tmp[0] * src[12] + tmp[7] * src[14] + tmp[8] * src[15]);
+                data[10] = (tmp[2] * src[12] + tmp[7] * src[13] + tmp[10] * src[15]) - (tmp[3] * src[12] + tmp[6] * src[13] + tmp[11] * src[15]);
+                data[11] = (tmp[5] * src[12] + tmp[8] * src[13] + tmp[11] * src[14]) - (tmp[4] * src[12] + tmp[9] * src[13] + tmp[10] * src[14]);
+                data[12] = (tmp[2] * src[10] + tmp[5] * src[11] + tmp[1] * src[9]) - (tmp[4] * src[11] + tmp[0] * src[9] + tmp[3] * src[10]);
+                data[13] = (tmp[8] * src[11] + tmp[0] * src[8] + tmp[7] * src[10]) - (tmp[6] * src[10] + tmp[9] * src[11] + tmp[1] * src[8]);
+                data[14] = (tmp[6] * src[9] + tmp[11] * src[11] + tmp[3] * src[8]) - (tmp[10] * src[11] + tmp[2] * src[8] + tmp[7] * src[9]);
+                data[15] = (tmp[10] * src[10] + tmp[4] * src[8] + tmp[9] * src[9]) - (tmp[8] * src[9] + tmp[11] * src[10] + tmp[5] * src[8]);
+
+                // calculate determinant
+                float det = src[0] * data[0] + src[1] * data[1] + src[2] * data[2] + src[3] * data[3];
+
+                // calculate matrix inverse
+                float invdet = 1 / det;
+                for (int j = 0; j < 16; ++j)
+                {
+                    data[j] *= invdet;
+                }
             }
 
             void matrix_t::RotationAxis(const vec_t & axis, float angle)
             {
-                float length2 = axis.LengthSq();
+                float length2 = axis.getMagnitude();
                 if (length2 < FLT_EPSILON)
                 {
                     SetToIdentity();
@@ -571,29 +497,29 @@ namespace Gek
                 float ys = n.y * s;
                 float zs = n.z * s;
 
-                m[0][0] = xx;
-                m[0][1] = xy + zs;
-                m[0][2] = zx - ys;
-                m[0][3] = 0.0f;
-                m[1][0] = xy - zs;
-                m[1][1] = yy;
-                m[1][2] = yz + xs;
-                m[1][3] = 0.0f;
-                m[2][0] = zx + ys;
-                m[2][1] = yz - xs;
-                m[2][2] = zz;
-                m[2][3] = 0.0f;
-                m[3][0] = 0.0f;
-                m[3][1] = 0.0f;
-                m[3][2] = 0.0f;
-                m[3][3] = 1.0f;
+                table[0][0] = xx;
+                table[0][1] = xy + zs;
+                table[0][2] = zx - ys;
+                table[0][3] = 0.0f;
+                table[1][0] = xy - zs;
+                table[1][1] = yy;
+                table[1][2] = yz + xs;
+                table[1][3] = 0.0f;
+                table[2][0] = zx + ys;
+                table[2][1] = yz - xs;
+                table[2][2] = zz;
+                table[2][3] = 0.0f;
+                table[3][0] = 0.0f;
+                table[3][1] = 0.0f;
+                table[3][2] = 0.0f;
+                table[3][3] = 1.0f;
             }
 
             static const vec_t directionUnary[3] =
             {
-                makeVect(1.0f, 0.0f, 0.0f),
-                makeVect(0.0f, 1.0f, 0.0f),
-                makeVect(0.0f, 0.0f, 1.0f)
+                vec_t(1.0f, 0.0f, 0.0f),
+                vec_t(0.0f, 1.0f, 0.0f),
+                vec_t(0.0f, 0.0f, 1.0f)
             };
 
             static const ImU32 directionColor[3] =
@@ -759,10 +685,9 @@ namespace Gek
                 {
                     ImGuiIO& io = ImGui::GetIO();
 
-                    vec_t trans;
-                    trans.TransformPoint(worldPos, mat);
+                    vec_t trans = mat.transform(worldPos);
                     trans *= 0.5f / trans.w;
-                    trans += makeVect(0.5f, 0.5f);
+                    trans += vec_t(0.5f, 0.5f);
                     trans.y = 1.0f - trans.y;
                     trans.x *= mWidth;
                     trans.y *= mHeight;
@@ -776,23 +701,23 @@ namespace Gek
                     ImGuiIO& io = ImGui::GetIO();
 
                     matrix_t mViewProjInverse;
-                    mViewProjInverse.Inverse(mViewMat * mProjectionMat);
+                    mViewProjInverse.getInverse(mViewMat * mProjectionMat);
 
                     float mox = ((io.MousePos.x - mX) / mWidth) * 2.0f - 1.0f;
                     float moy = (1.0f - ((io.MousePos.y - mY) / mHeight)) * 2.0f - 1.0f;
 
-                    rayOrigin.Transform(makeVect(mox, moy, 0.0f, 1.0f), mViewProjInverse);
+                    rayOrigin = mViewProjInverse.Transform(vec_t(mox, moy, 0.0f, 1.0f));
                     rayOrigin *= 1.0f / rayOrigin.w;
                     vec_t rayEnd;
-                    rayEnd.Transform(makeVect(mox, moy, 1.0f, 1.0f), mViewProjInverse);
+                    rayEnd = mViewProjInverse.Transform(vec_t(mox, moy, 1.0f, 1.0f));
                     rayEnd *= 1.0f / rayEnd.w;
-                    rayDir = Normalized(rayEnd - rayOrigin);
+                    rayDir = (rayEnd - rayOrigin).getNormal();
                 }
 
                 float IntersectRayPlane(const vec_t & rOrigin, const vec_t& rVector, const vec_t& plane)
                 {
-                    float numer = plane.Dot3(rOrigin) - plane.w;
-                    float denom = plane.Dot3(rVector);
+                    float numer = plane.dot(rOrigin) - plane.w;
+                    float denom = plane.dot(rVector);
 
                     if (std::abs(denom) < FLT_EPSILON)  // normal is orthogonal to vector, cant intersect
                     {
@@ -844,9 +769,7 @@ namespace Gek
 
                 float GetUniform(const vec_t& position, const matrix_t& mat)
                 {
-                    vec_t trf = makeVect(position.x, position.y, position.z, 1.0f);
-                    trf.Transform(mat);
-                    return trf.w;
+                    return mat.Transform(vec_t(position.x, position.y, position.z, 1.0f)).w;
                 }
 
                 void ComputeContext(const float *view, const float *projection, float *matrix, Alignment mode)
@@ -858,30 +781,30 @@ namespace Gek
                     if (mode == Alignment::Local)
                     {
                         mModel = *(matrix_t*)matrix;
-                        mModel.OrthoNormalize();
+                        mModel.orthonormalize();
                     }
                     else
                     {
-                        mModel.Translation(((matrix_t*)matrix)->v.position);
+                        mModel.Translation(((matrix_t*)matrix)->rw);
                     }
 
                     mModelSource = *(matrix_t*)matrix;
-                    mModelScaleOrigin.Set(mModelSource.v.right.Length(), mModelSource.v.up.Length(), mModelSource.v.dir.Length());
+                    mModelScaleOrigin.set(mModelSource.rx.getLength(), mModelSource.ry.getLength(), mModelSource.rz.getLength());
 
-                    mModelInverse.Inverse(mModel);
-                    mModelSourceInverse.Inverse(mModelSource);
+                    mModelInverse.getInverse(mModel);
+                    mModelSourceInverse.getInverse(mModelSource);
                     mViewProjection = mViewMat * mProjectionMat;
                     mMVP = mModel * mViewProjection;
 
                     matrix_t viewInverse;
-                    viewInverse.Inverse(mViewMat);
-                    mCameraDir = viewInverse.v.dir;
-                    mCameraEye = viewInverse.v.position;
-                    mCameraRight = viewInverse.v.right;
-                    mCameraUp = viewInverse.v.up;
-                    mScreenFactor = 0.15f * GetUniform(mModel.v.position, mViewProjection);
+                    viewInverse.getInverse(mViewMat);
+                    mCameraDir = viewInverse.rz;
+                    mCameraEye = viewInverse.rw;
+                    mCameraRight = viewInverse.rx;
+                    mCameraUp = viewInverse.ry;
+                    mScreenFactor = 0.15f * GetUniform(mModel.rw, mViewProjection);
 
-                    ImVec2 centerSSpace = worldToPos(makeVect(0.0f, 0.0f), mMVP);
+                    ImVec2 centerSSpace = worldToPos(vec_t(0.0f, 0.0f), mMVP);
                     mScreenSquareCenter = centerSSpace;
                     mScreenSquareMin = ImVec2(centerSSpace.x - 10.0f, centerSSpace.y - 10.0f);
                     mScreenSquareMax = ImVec2(centerSSpace.x + 10.0f, centerSSpace.y + 10.0f);
@@ -954,20 +877,18 @@ namespace Gek
                     else
                     {
                         vec_t dirPlaneNormalWorld;
-                        dirPlaneNormalWorld.TransformVector(directionUnary[planeNormal], mModel);
-                        dirPlaneNormalWorld.Normalize();
+                        dirPlaneNormalWorld = mModel.rotate(directionUnary[planeNormal]);
+                        dirPlaneNormalWorld.normalize();
 
-                        vec_t dirPlaneXWorld(dirPlaneX);
-                        dirPlaneXWorld.TransformVector(mModel);
-                        dirPlaneXWorld.Normalize();
+                        vec_t dirPlaneXWorld = mModel.rotate(dirPlaneX);
+                        dirPlaneXWorld.normalize();
 
-                        vec_t dirPlaneYWorld(dirPlaneY);
-                        dirPlaneYWorld.TransformVector(mModel);
-                        dirPlaneYWorld.Normalize();
+                        vec_t dirPlaneYWorld = mModel.rotate(dirPlaneY);
+                        dirPlaneYWorld.normalize();
 
-                        vec_t cameraEyeToGizmo = Normalized(mModel.v.position - mCameraEye);
-                        float dotCameraDirX = cameraEyeToGizmo.Dot3(dirPlaneXWorld);
-                        float dotCameraDirY = cameraEyeToGizmo.Dot3(dirPlaneYWorld);
+                        vec_t cameraEyeToGizmo = (mModel.rw - mCameraEye).getNormal();
+                        float dotCameraDirX = cameraEyeToGizmo.dot(dirPlaneXWorld);
+                        float dotCameraDirY = cameraEyeToGizmo.dot(dirPlaneYWorld);
 
                         // compute factor values
                         float mulAxisX = (dotCameraDirX > 0.0f) ? -1.0f : 1.0f;
@@ -976,7 +897,7 @@ namespace Gek
                         dirPlaneY *= mulAxisY;
 
                         belowAxisLimit = std::abs(dotCameraDirX) < angleLimit;
-                        belowPlaneLimit = (std::abs(cameraEyeToGizmo.Dot3(dirPlaneNormalWorld)) > planeLimit);
+                        belowPlaneLimit = (std::abs(cameraEyeToGizmo.dot(dirPlaneNormalWorld)) > planeLimit);
 
                         // and store values
                         mAxisFactor[axisIndex] = mulAxisX;
@@ -1015,14 +936,14 @@ namespace Gek
                 float ComputeAngleOnPlane()
                 {
                     const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
-                    vec_t localPos = Normalized(mRayOrigin + mRayVector * len - mModel.v.position);
+                    vec_t localPos = (mRayOrigin + mRayVector * len - mModel.rw).getNormal();
 
                     vec_t perpendicularVector;
-                    perpendicularVector.Cross(mRotationVectorSource, mTranslationPlane);
-                    perpendicularVector.Normalize();
-                    float acosAngle = std::clamp(Dot(localPos, mRotationVectorSource), -0.9999f, 0.9999f);
+                    perpendicularVector = mRotationVectorSource.cross(mTranslationPlane);
+                    perpendicularVector.normalize();
+                    float acosAngle = std::clamp(localPos.dot4(mRotationVectorSource), -0.9999f, 0.9999f);
                     float angle = std::acos(acosAngle);
-                    angle *= (Dot(localPos, perpendicularVector) < 0.0f) ? 1.0f : -1.0f;
+                    angle *= (localPos.dot4(perpendicularVector) < 0.0f) ? 1.0f : -1.0f;
                     return angle;
                 }
 
@@ -1034,10 +955,7 @@ namespace Gek
                     // colors
                     ImU32 colors[7];
                     ComputeColors(colors, type, Operation::Rotate);
-
-                    vec_t cameraToModelNormalized = Normalized(mModel.v.position - mCameraEye);
-                    cameraToModelNormalized.TransformVector(mModelInverse);
-
+                    vec_t cameraToModelNormalized = mModelInverse.rotate((mModel.rw - mCameraEye).getNormal());
                     for (int axis = 0; axis < 3; axis++)
                     {
                         ImVec2 circlePos[halfCircleSegmentCount];
@@ -1045,20 +963,20 @@ namespace Gek
                         for (unsigned int i = 0; i < halfCircleSegmentCount; i++)
                         {
                             float ng = angleStart + Math::Pi * ((float)i / (float)halfCircleSegmentCount);
-                            vec_t axisPos = makeVect(std::cos(ng), std::sin(ng), 0.0f);
-                            vec_t pos = makeVect(axisPos[axis], axisPos[(axis + 1) % 3], axisPos[(axis + 2) % 3]) * mScreenFactor;
+                            vec_t axisPos = vec_t(std::cos(ng), std::sin(ng), 0.0f);
+                            vec_t pos = vec_t(axisPos[axis], axisPos[(axis + 1) % 3], axisPos[(axis + 2) % 3]) * mScreenFactor;
                             circlePos[i] = worldToPos(pos, mMVP);
                         }
 
                         drawList->AddPolyline(circlePos, halfCircleSegmentCount, colors[3 - axis], false, 5, true);
                     }
 
-                    drawList->AddCircle(worldToPos(mModel.v.position, mViewProjection), screenRotateSize * mHeight, colors[0], 64, 5);
+                    drawList->AddCircle(worldToPos(mModel.rw, mViewProjection), screenRotateSize * mHeight, colors[0], 64, 5);
                     if (mbUsing)
                     {
                         ImVec2 circlePos[halfCircleSegmentCount + 1];
 
-                        circlePos[0] = worldToPos(mModel.v.position, mViewProjection);
+                        circlePos[0] = worldToPos(mModel.rw, mViewProjection);
                         for (unsigned int i = 1; i < halfCircleSegmentCount; i++)
                         {
                             float ng = mRotationAngle * ((float)(i - 1) / (float)(halfCircleSegmentCount - 1));
@@ -1066,10 +984,8 @@ namespace Gek
                             matrix_t rotateVectorMatrix;
                             rotateVectorMatrix.RotationAxis(mTranslationPlane, ng);
 
-                            vec_t pos;
-                            pos.TransformPoint(mRotationVectorSource, rotateVectorMatrix);
-                            pos *= mScreenFactor;
-                            circlePos[i] = worldToPos(pos + mModel.v.position, mViewProjection);
+                            vec_t pos = rotateVectorMatrix.transform(mRotationVectorSource) * mScreenFactor;
+                            circlePos[i] = worldToPos(pos + mModel.rw, mViewProjection);
                         }
 
                         drawList->AddConvexPolyFilled(circlePos, halfCircleSegmentCount, 0x801080FF, true);
@@ -1142,7 +1058,7 @@ namespace Gek
 
                     if (mbUsing)
                     {
-                        ImVec2 destinationPosOnScreen = worldToPos(mModel.v.position, mViewProjection);
+                        ImVec2 destinationPosOnScreen = worldToPos(mModel.rw, mViewProjection);
 
                         char tmps[512];
                         int componentInfoIndex = (type - SCALE_X) * 3;
@@ -1203,16 +1119,17 @@ namespace Gek
                     if (mbUsing)
                     {
                         ImVec2 sourcePosOnScreen = worldToPos(mMatrixOrigin, mViewProjection);
-                        ImVec2 destinationPosOnScreen = worldToPos(mModel.v.position, mViewProjection);
+                        ImVec2 destinationPosOnScreen = worldToPos(mModel.rw, mViewProjection);
                         vec_t dif = { destinationPosOnScreen.x - sourcePosOnScreen.x, destinationPosOnScreen.y - sourcePosOnScreen.y, 0.0f, 0.0f };
-                        dif.Normalize();
+                        dif.normalize();
                         dif *= 5.0f;
+
                         drawList->AddCircle(sourcePosOnScreen, 6.0f, translationLineColor);
                         drawList->AddCircle(destinationPosOnScreen, 6.0f, translationLineColor);
                         drawList->AddLine(ImVec2(sourcePosOnScreen.x + dif.x, sourcePosOnScreen.y + dif.y), ImVec2(destinationPosOnScreen.x - dif.x, destinationPosOnScreen.y - dif.y), translationLineColor, 2.0f);
 
                         char tmps[512];
-                        vec_t deltaInfo = mModel.v.position - mMatrixOrigin;
+                        vec_t deltaInfo = mModel.rw - mMatrixOrigin;
                         int componentInfoIndex = (type - MOVE_X) * 3;
                         ImFormatString(tmps, sizeof(tmps), translationInfoMask[type - MOVE_X], deltaInfo[translationInfoIndex[componentInfoIndex]], deltaInfo[translationInfoIndex[componentInfoIndex + 1]], deltaInfo[translationInfoIndex[componentInfoIndex + 2]]);
                         drawList->AddText(ImVec2(destinationPosOnScreen.x + 15, destinationPosOnScreen.y + 15), 0xFF000000, tmps);
@@ -1291,11 +1208,10 @@ namespace Gek
                         float bestDot = 0.0f;
                         for (unsigned int i = 0; i < 3; i++)
                         {
-                            vec_t dirPlaneNormalWorld;
-                            dirPlaneNormalWorld.TransformVector(directionUnary[i], mModelSource);
-                            dirPlaneNormalWorld.Normalize();
+                            vec_t dirPlaneNormalWorld = mModelSource.rotate(directionUnary[i]);
+                            dirPlaneNormalWorld.normalize();
 
-                            float dt = Dot(Normalized(mCameraEye - mModelSource.v.position), dirPlaneNormalWorld);
+                            float dt = (mCameraEye - mModelSource.rw).getNormal().dot4(dirPlaneNormalWorld);
                             if (std::abs(dt) >= bestDot)
                             {
                                 bestDot = std::abs(dt);
@@ -1357,14 +1273,14 @@ namespace Gek
                         // big anchor on corners
                         if (!mbUsingBounds && mbEnable && overBigAnchor && io.MouseDown[0])
                         {
-                            mBoundsPivot.TransformPoint(aabb[(i + 2) % 4], mModelSource);
-                            mBoundsAnchor.TransformPoint(aabb[i], mModelSource);
+                            mBoundsPivot = mModelSource.transform(aabb[(i + 2) % 4]);
+                            mBoundsAnchor = mModelSource.transform(aabb[i]);
                             mBoundsPlane = BuildPlane(mBoundsAnchor, bestAxisWorldDirection);
                             mBoundsBestAxis = bestAxis;
                             mBoundsAxis[0] = secondAxis;
                             mBoundsAxis[1] = thirdAxis;
 
-                            mBoundsLocalPivot.Set(0.0f);
+                            mBoundsLocalPivot.set(0.0f);
                             mBoundsLocalPivot[secondAxis] = aabb[oppositeIndex][secondAxis];
                             mBoundsLocalPivot[thirdAxis] = aabb[oppositeIndex][thirdAxis];
 
@@ -1376,15 +1292,21 @@ namespace Gek
                         if (!mbUsingBounds && mbEnable && overSmallAnchor && io.MouseDown[0])
                         {
                             vec_t midPointOpposite = (aabb[(i + 2) % 4] + aabb[(i + 3) % 4]) * 0.5f;
-                            mBoundsPivot.TransformPoint(midPointOpposite, mModelSource);
-                            mBoundsAnchor.TransformPoint(midPoint, mModelSource);
+                            mBoundsPivot = mModelSource.transform(midPointOpposite);
+                            mBoundsAnchor = mModelSource.transform(midPoint);
                             mBoundsPlane = BuildPlane(mBoundsAnchor, bestAxisWorldDirection);
                             mBoundsBestAxis = bestAxis;
-                            int indices[] = { secondAxis , thirdAxis };
+
+                            int indices[] =
+                            {
+                                secondAxis,
+                                thirdAxis
+                            };
+
                             mBoundsAxis[0] = indices[i % 2];
                             mBoundsAxis[1] = -1;
 
-                            mBoundsLocalPivot.Set(0.0f);
+                            mBoundsLocalPivot.set(0.0f);
                             mBoundsLocalPivot[mBoundsAxis[0]] = aabb[oppositeIndex][indices[i % 2]];// bounds[mBoundsAxis[0]] * (((i + 1) & 2) ? 1.0f : -1.0f);
 
                             mbUsingBounds = true;
@@ -1402,8 +1324,8 @@ namespace Gek
                         vec_t newPos = mRayOrigin + mRayVector * len;
 
                         // compute a reference and delta vectors base on mouse move
-                        vec_t deltaVector = (newPos - mBoundsPivot).Abs();
-                        vec_t referenceVector = (mBoundsAnchor - mBoundsPivot).Abs();
+                        vec_t deltaVector = (newPos - mBoundsPivot).getAbsolute();
+                        vec_t referenceVector = (mBoundsAnchor - mBoundsPivot).getAbsolute();
 
                         // for 1 or 2 axes, compute a ratio that's used for scale and snap it based on resulting length
                         for (int i = 0; i < 2; i++)
@@ -1415,13 +1337,13 @@ namespace Gek
                             }
 
                             float ratioAxis = 1.0f;
-                            vec_t axisDir = mBoundsMatrix.component[axisIndex].Abs();
+                            vec_t axisDir = mBoundsMatrix.rows[axisIndex].getAbsolute();
 
-                            float dtAxis = axisDir.Dot(referenceVector);
+                            float dtAxis = axisDir.dot4(referenceVector);
                             float boundSize = bounds[axisIndex + 3] - bounds[axisIndex];
                             if (dtAxis > FLT_EPSILON)
                             {
-                                ratioAxis = axisDir.Dot(deltaVector) / dtAxis;
+                                ratioAxis = axisDir.dot4(deltaVector) / dtAxis;
                             }
 
                             if (snapValues)
@@ -1434,7 +1356,7 @@ namespace Gek
                                 }
                             }
 
-                            scale.component[axisIndex] *= ratioAxis;
+                            scale.rows[axisIndex] *= ratioAxis;
                         }
 
                         // transform matrix
@@ -1446,11 +1368,11 @@ namespace Gek
 
                         // info text
                         char tmps[512];
-                        ImVec2 destinationPosOnScreen = worldToPos(mModel.v.position, mViewProjection);
+                        ImVec2 destinationPosOnScreen = worldToPos(mModel.rw, mViewProjection);
                         ImFormatString(tmps, sizeof(tmps), "X: %.2f Y: %.2f Z:%.2f"
-                            , (bounds[3] - bounds[0]) * mBoundsMatrix.component[0].Length() * scale.component[0].Length()
-                            , (bounds[4] - bounds[1]) * mBoundsMatrix.component[1].Length() * scale.component[1].Length()
-                            , (bounds[5] - bounds[2]) * mBoundsMatrix.component[2].Length() * scale.component[2].Length()
+                            , (bounds[3] - bounds[0]) * mBoundsMatrix.rows[0].getLength() * scale.rows[0].getLength()
+                            , (bounds[4] - bounds[1]) * mBoundsMatrix.rows[1].getLength() * scale.rows[1].getLength()
+                            , (bounds[5] - bounds[2]) * mBoundsMatrix.rows[2].getLength() * scale.rows[2].getLength()
                         );
 
                         drawList->AddText(ImVec2(destinationPosOnScreen.x + 15, destinationPosOnScreen.y + 15), 0xFF000000, tmps);
@@ -1475,23 +1397,28 @@ namespace Gek
                         type = SCALE_XYZ;
                     }
 
-                    const vec_t direction[3] = { mModel.v.right, mModel.v.up, mModel.v.dir };
+                    const vec_t direction[3] =
+                    {
+                        mModel.rx,
+                        mModel.ry,
+                        mModel.rz
+                    };
+
                     // compute
                     for (unsigned int i = 0; i < 3 && type == NONE; i++)
                     {
                         vec_t dirPlaneX, dirPlaneY;
                         bool belowAxisLimit, belowPlaneLimit;
                         ComputeTripodAxisAndVisibility(i, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
-                        dirPlaneX.TransformVector(mModel);
-                        dirPlaneY.TransformVector(mModel);
+                        dirPlaneX = mModel.rotate(dirPlaneX);
+                        dirPlaneY = mModel.rotate(dirPlaneY);
 
                         const int planeNormal = (i + 2) % 3;
-
-                        const float len = IntersectRayPlane(mRayOrigin, mRayVector, BuildPlane(mModel.v.position, direction[planeNormal]));
+                        const float len = IntersectRayPlane(mRayOrigin, mRayVector, BuildPlane(mModel.rw, direction[planeNormal]));
                         vec_t posOnPlane = mRayOrigin + mRayVector * len;
 
-                        const float dx = dirPlaneX.Dot3((posOnPlane - mModel.v.position) * (1.0f / mScreenFactor));
-                        const float dy = dirPlaneY.Dot3((posOnPlane - mModel.v.position) * (1.0f / mScreenFactor));
+                        const float dx = dirPlaneX.dot((posOnPlane - mModel.rw) * (1.0f / mScreenFactor));
+                        const float dy = dirPlaneY.dot((posOnPlane - mModel.rw) * (1.0f / mScreenFactor));
                         if (belowAxisLimit && dy > -0.1f && dy < 0.1f && dx > 0.1f  && dx < 1.0f)
                         {
                             type = SCALE_X + i;
@@ -1507,27 +1434,31 @@ namespace Gek
                     int type = NONE;
 
                     vec_t deltaScreen = { io.MousePos.x - mScreenSquareCenter.x, io.MousePos.y - mScreenSquareCenter.y, 0.0f, 0.0f };
-                    float dist = deltaScreen.Length();
+                    float dist = deltaScreen.getLength();
                     if (dist >= (screenRotateSize - 0.002f) * mHeight && dist < (screenRotateSize + 0.002f) * mHeight)
                     {
                         type = ROTATE_SCREEN;
                     }
 
-                    const vec_t planeNormals[] = { mModel.v.right, mModel.v.up, mModel.v.dir };
+                    const vec_t planeNormals[] =
+                    {
+                        mModel.rx,
+                        mModel.ry,
+                        mModel.rz
+                    };
+
                     for (unsigned int i = 0; i < 3 && type == NONE; i++)
                     {
                         // pickup plane
-                        vec_t pickupPlane = BuildPlane(mModel.v.position, planeNormals[i]);
-
+                        vec_t pickupPlane = BuildPlane(mModel.rw, planeNormals[i]);
                         const float len = IntersectRayPlane(mRayOrigin, mRayVector, pickupPlane);
-                        vec_t localPos = mRayOrigin + mRayVector * len - mModel.v.position;
-
-                        if (Dot(Normalized(localPos), mRayVector) > FLT_EPSILON)
+                        vec_t localPos = mRayOrigin + mRayVector * len - mModel.rw;
+                        if (localPos.getNormal().dot4(mRayVector) > FLT_EPSILON)
                         {
                             continue;
                         }
 
-                        float distance = localPos.Length() / mScreenFactor;
+                        float distance = localPos.getLength() / mScreenFactor;
                         if (distance > 0.9f && distance < 1.1f)
                         {
                             type = ROTATE_X + i;
@@ -1549,7 +1480,12 @@ namespace Gek
                         type = MOVE_SCREEN;
                     }
 
-                    const vec_t direction[3] = { mModel.v.right, mModel.v.up, mModel.v.dir };
+                    const vec_t direction[3] =
+                    {
+                        mModel.rx,
+                        mModel.ry,
+                        mModel.rz
+                    };
 
                     // compute
                     for (unsigned int i = 0; i < 3 && type == NONE; i++)
@@ -1557,16 +1493,15 @@ namespace Gek
                         vec_t dirPlaneX, dirPlaneY;
                         bool belowAxisLimit, belowPlaneLimit;
                         ComputeTripodAxisAndVisibility(i, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
-                        dirPlaneX.TransformVector(mModel);
-                        dirPlaneY.TransformVector(mModel);
+                        dirPlaneX = mModel.rotate(dirPlaneX);
+                        dirPlaneY = mModel.rotate(dirPlaneY);
 
                         const int planeNormal = (i + 2) % 3;
-
-                        const float len = IntersectRayPlane(mRayOrigin, mRayVector, BuildPlane(mModel.v.position, direction[planeNormal]));
+                        const float len = IntersectRayPlane(mRayOrigin, mRayVector, BuildPlane(mModel.rw, direction[planeNormal]));
                         vec_t posOnPlane = mRayOrigin + mRayVector * len;
 
-                        const float dx = dirPlaneX.Dot3((posOnPlane - mModel.v.position) * (1.0f / mScreenFactor));
-                        const float dy = dirPlaneY.Dot3((posOnPlane - mModel.v.position) * (1.0f / mScreenFactor));
+                        const float dx = dirPlaneX.dot((posOnPlane - mModel.rw) * (1.0f / mScreenFactor));
+                        const float dy = dirPlaneY.dot((posOnPlane - mModel.rw) * (1.0f / mScreenFactor));
                         if (belowAxisLimit && dy > -0.1f && dy < 0.1f && dx > 0.1f  && dx < 1.0f)
                         {
                             type = MOVE_X + i;
@@ -1579,7 +1514,7 @@ namespace Gek
 
                         if (gizmoHitProportion)
                         {
-                            *gizmoHitProportion = makeVect(dx, dy, 0.0f);
+                            *gizmoHitProportion = vec_t(dx, dy, 0.0f);
                         }
                     }
 
@@ -1600,37 +1535,37 @@ namespace Gek
 
                         // compute delta
                         vec_t newOrigin = newPos - mRelativeOrigin * mScreenFactor;
-                        vec_t delta = newOrigin - mModel.v.position;
+                        vec_t delta = newOrigin - mModel.rw;
 
                         // 1 axis constraint
                         if (mCurrentOperation >= MOVE_X && mCurrentOperation <= MOVE_Z)
                         {
                             int axisIndex = mCurrentOperation - MOVE_X;
-                            const vec_t& axisValue = *(vec_t*)&mModel.m[axisIndex];
-                            float lengthOnAxis = Dot(axisValue, delta);
+                            const vec_t& axisValue = *(vec_t*)&mModel.table[axisIndex];
+                            float lengthOnAxis = axisValue.dot4(delta);
                             delta = axisValue * lengthOnAxis;
                         }
 
                         // snap
                         if (snap)
                         {
-                            vec_t cumulativeDelta = mModel.v.position + delta - mMatrixOrigin;
+                            vec_t cumulativeDelta = mModel.rw + delta - mMatrixOrigin;
                             if (applyRotationLocaly)
                             {
                                 matrix_t modelSourceNormalized = mModelSource;
-                                modelSourceNormalized.OrthoNormalize();
+                                modelSourceNormalized.orthonormalize();
                                 matrix_t modelSourceNormalizedInverse;
-                                modelSourceNormalizedInverse.Inverse(modelSourceNormalized);
-                                cumulativeDelta.TransformVector(modelSourceNormalizedInverse);
+                                modelSourceNormalizedInverse.getInverse(modelSourceNormalized);
+                                cumulativeDelta = modelSourceNormalizedInverse.rotate(cumulativeDelta);
                                 ComputeSnap(cumulativeDelta, snap);
-                                cumulativeDelta.TransformVector(modelSourceNormalized);
+                                cumulativeDelta = modelSourceNormalized.rotate(cumulativeDelta);
                             }
                             else
                             {
                                 ComputeSnap(cumulativeDelta, snap);
                             }
 
-                            delta = mMatrixOrigin + cumulativeDelta - mModel.v.position;
+                            delta = mMatrixOrigin + cumulativeDelta - mModel.rw;
                         }
 
                         // compute matrix & delta
@@ -1638,7 +1573,7 @@ namespace Gek
                         deltaMatrixTranslation.Translation(delta);
                         if (deltaMatrix)
                         {
-                            memcpy(deltaMatrix, deltaMatrixTranslation.m16, sizeof(float) * 16);
+                            memcpy(deltaMatrix, deltaMatrixTranslation.data, sizeof(float) * 16);
                         }
 
 
@@ -1661,14 +1596,24 @@ namespace Gek
                         {
                             mbUsing = true;
                             mCurrentOperation = type;
-                            const vec_t movePlaneNormal[] = { mModel.v.up, mModel.v.dir, mModel.v.right, mModel.v.dir, mModel.v.right, mModel.v.up, -mCameraDir };
+                            const vec_t movePlaneNormal[] =
+                            {
+                                mModel.ry,
+                                mModel.rz,
+                                mModel.rx,
+                                mModel.rz,
+                                mModel.rx,
+                                mModel.ry,
+                                -mCameraDir
+                            };
+
                             // pickup plane
-                            mTranslationPlane = BuildPlane(mModel.v.position, movePlaneNormal[type - MOVE_X]);
+                            mTranslationPlane = BuildPlane(mModel.rw, movePlaneNormal[type - MOVE_X]);
                             const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
                             mTranslationPlaneOrigin = mRayOrigin + mRayVector * len;
-                            mMatrixOrigin = mModel.v.position;
+                            mMatrixOrigin = mModel.rw;
 
-                            mRelativeOrigin = (mTranslationPlaneOrigin - mModel.v.position) * (1.0f / mScreenFactor);
+                            mRelativeOrigin = (mTranslationPlaneOrigin - mModel.rw) * (1.0f / mScreenFactor);
                         }
                     }
 
@@ -1688,16 +1633,25 @@ namespace Gek
                         {
                             mbUsing = true;
                             mCurrentOperation = type;
-                            const vec_t movePlaneNormal[] = { mModel.v.up, mModel.v.dir, mModel.v.right, mModel.v.dir, mModel.v.up, mModel.v.right, -mCameraDir };
+                            const vec_t movePlaneNormal[] =
+                            {
+                                mModel.ry,
+                                mModel.rz,
+                                mModel.rx,
+                                mModel.rz,
+                                mModel.ry,
+                                mModel.rx,
+                                -mCameraDir
+                            };
 
                             // pickup plane
-                            mTranslationPlane = BuildPlane(mModel.v.position, movePlaneNormal[type - SCALE_X]);
+                            mTranslationPlane = BuildPlane(mModel.rw, movePlaneNormal[type - SCALE_X]);
                             const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
                             mTranslationPlaneOrigin = mRayOrigin + mRayVector * len;
-                            mMatrixOrigin = mModel.v.position;
-                            mScale.Set(1.0f, 1.0f, 1.0f);
-                            mRelativeOrigin = (mTranslationPlaneOrigin - mModel.v.position) * (1.0f / mScreenFactor);
-                            mScaleValueOrigin = makeVect(mModelSource.v.right.Length(), mModelSource.v.up.Length(), mModelSource.v.dir.Length());
+                            mMatrixOrigin = mModel.rw;
+                            mScale.set(1.0f, 1.0f, 1.0f);
+                            mRelativeOrigin = (mTranslationPlaneOrigin - mModel.rw) * (1.0f / mScreenFactor);
+                            mScaleValueOrigin = vec_t(mModelSource.rx.getLength(), mModelSource.ry.getLength(), mModelSource.rz.getLength());
                             mSaveMousePosx = io.MousePos.x;
                         }
                     }
@@ -1708,25 +1662,25 @@ namespace Gek
                         const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
                         vec_t newPos = mRayOrigin + mRayVector * len;
                         vec_t newOrigin = newPos - mRelativeOrigin * mScreenFactor;
-                        vec_t delta = newOrigin - mModel.v.position;
+                        vec_t delta = newOrigin - mModel.rw;
 
                         // 1 axis constraint
                         if (mCurrentOperation >= SCALE_X && mCurrentOperation <= SCALE_Z)
                         {
                             int axisIndex = mCurrentOperation - SCALE_X;
-                            const vec_t& axisValue = *(vec_t*)&mModel.m[axisIndex];
-                            float lengthOnAxis = Dot(axisValue, delta);
+                            const vec_t& axisValue = *(vec_t*)&mModel.table[axisIndex];
+                            float lengthOnAxis = axisValue.dot4(delta);
                             delta = axisValue * lengthOnAxis;
 
-                            vec_t baseVector = mTranslationPlaneOrigin - mModel.v.position;
-                            float ratio = Dot(axisValue, baseVector + delta) / Dot(axisValue, baseVector);
+                            vec_t baseVector = mTranslationPlaneOrigin - mModel.rw;
+                            float ratio = axisValue.dot4(baseVector + delta) / axisValue.dot4(baseVector);
 
                             mScale[axisIndex] = std::max(ratio, 0.001f);
                         }
                         else
                         {
                             float scaleDelta = (io.MousePos.x - mSaveMousePosx)  * 0.01f;
-                            mScale.Set(std::max(1.0f + scaleDelta, 0.001f));
+                            mScale.set(std::max(1.0f + scaleDelta, 0.001f));
                         }
 
                         // snap
@@ -1752,7 +1706,7 @@ namespace Gek
                         if (deltaMatrix)
                         {
                             deltaMatrixScale.Scale(mScale);
-                            memcpy(deltaMatrix, deltaMatrixScale.m16, sizeof(float) * 16);
+                            memcpy(deltaMatrix, deltaMatrixScale.data, sizeof(float) * 16);
                         }
 
                         if (!io.MouseDown[0])
@@ -1784,20 +1738,27 @@ namespace Gek
                         {
                             mbUsing = true;
                             mCurrentOperation = type;
-                            const vec_t rotatePlaneNormal[] = { mModel.v.right, mModel.v.up, mModel.v.dir, -mCameraDir };
+                            const vec_t rotatePlaneNormal[] =
+                            {
+                                mModel.rx,
+                                mModel.ry,
+                                mModel.rz,
+                                -mCameraDir
+                            };
+
                             // pickup plane
                             if (applyRotationLocaly)
                             {
-                                mTranslationPlane = BuildPlane(mModel.v.position, rotatePlaneNormal[type - ROTATE_X]);
+                                mTranslationPlane = BuildPlane(mModel.rw, rotatePlaneNormal[type - ROTATE_X]);
                             }
                             else
                             {
-                                mTranslationPlane = BuildPlane(mModelSource.v.position, directionUnary[type - ROTATE_X]);
+                                mTranslationPlane = BuildPlane(mModelSource.rw, directionUnary[type - ROTATE_X]);
                             }
 
                             const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
-                            vec_t localPos = mRayOrigin + mRayVector * len - mModel.v.position;
-                            mRotationVectorSource = Normalized(localPos);
+                            vec_t localPos = mRayOrigin + mRayVector * len - mModel.rw;
+                            mRotationVectorSource = localPos.getNormal();
                             mRotationAngleOrigin = ComputeAngleOnPlane();
                         }
                     }
@@ -1812,9 +1773,8 @@ namespace Gek
                             ComputeSnap(&mRotationAngle, snapInRadian);
                         }
 
-                        vec_t rotationAxisLocalSpace;
-                        rotationAxisLocalSpace.TransformVector(makeVect(mTranslationPlane.x, mTranslationPlane.y, mTranslationPlane.z, 0.0f), mModelInverse);
-                        rotationAxisLocalSpace.Normalize();
+                        vec_t rotationAxisLocalSpace = mModelInverse.rotate(vec_t(mTranslationPlane.x, mTranslationPlane.y, mTranslationPlane.z, 0.0f));
+                        rotationAxisLocalSpace.normalize();
 
                         matrix_t deltaRotation;
                         deltaRotation.RotationAxis(rotationAxisLocalSpace, mRotationAngle - mRotationAngleOrigin);
@@ -1830,10 +1790,10 @@ namespace Gek
                         else
                         {
                             matrix_t res = mModelSource;
-                            res.v.position.Set(0.0f);
+                            res.rw.set(0.0f);
 
                             *(matrix_t*)matrix = res * deltaRotation;
-                            ((matrix_t*)matrix)->v.position = mModelSource.v.position;
+                            ((matrix_t*)matrix)->rw = mModelSource.rw;
                         }
 
                         if (deltaMatrix)
@@ -1852,56 +1812,6 @@ namespace Gek
                     DrawRotationGizmo(type);
                 }
 
-                void DecomposeMatrixToComponents(const float *matrix, float *translation, float *rotation, float *scale)
-                {
-                    matrix_t mat = *(matrix_t*)matrix;
-
-                    scale[0] = mat.v.right.Length();
-                    scale[1] = mat.v.up.Length();
-                    scale[2] = mat.v.dir.Length();
-
-                    mat.OrthoNormalize();
-
-                    rotation[0] = Math::RadiansToDegrees(std::atan2(mat.m[1][2], mat.m[2][2]));
-                    rotation[1] = Math::RadiansToDegrees(std::atan2(-mat.m[0][2], std::sqrt(mat.m[1][2] * mat.m[1][2] + mat.m[2][2] * mat.m[2][2])));
-                    rotation[2] = Math::RadiansToDegrees(std::atan2(mat.m[0][1], mat.m[0][0]));
-
-                    translation[0] = mat.v.position.x;
-                    translation[1] = mat.v.position.y;
-                    translation[2] = mat.v.position.z;
-                }
-
-                void RecomposeMatrixFromComponents(const float *translation, const float *rotation, const float *scale, float *matrix)
-                {
-                    matrix_t& mat = *(matrix_t*)matrix;
-
-                    matrix_t rot[3];
-                    for (int i = 0; i < 3; i++)
-                    {
-                        rot[i].RotationAxis(directionUnary[i], Math::DegreesToRadians(rotation[i]));
-                    }
-
-                    mat = rot[0] * rot[1] * rot[2];
-
-                    float validScale[3];
-                    for (int i = 0; i < 3; i++)
-                    {
-                        if (std::abs(scale[i]) < FLT_EPSILON)
-                        {
-                            validScale[i] = 0.001f;
-                        }
-                        else
-                        {
-                            validScale[i] = scale[i];
-                        }
-                    }
-
-                    mat.v.right *= validScale[0];
-                    mat.v.up *= validScale[1];
-                    mat.v.dir *= validScale[2];
-                    mat.v.position.Set(translation[0], translation[1], translation[2], 1.0f);
-                }
-
                 void Manipulate(const float *view, const float *projection, Operation operation, Alignment mode, float *matrix, float *deltaMatrix, float *snap, float *localBounds, float *boundsSnap)
                 {
                     ComputeContext(view, projection, matrix, mode);
@@ -1913,8 +1823,7 @@ namespace Gek
                     }
 
                     // behind camera
-                    vec_t camSpacePosition;
-                    camSpacePosition.TransformPoint(makeVect(0.0f, 0.0f, 0.0f), mMVP);
+                    vec_t camSpacePosition = mMVP.transform(vec_t(0.0f, 0.0f, 0.0f));
                     if (camSpacePosition.z < 0.001f)
                     {
                         return;
@@ -1950,7 +1859,7 @@ namespace Gek
                 void DrawCube(const float *view, const float *projection, float *matrix)
                 {
                     matrix_t viewInverse;
-                    viewInverse.Inverse(*(matrix_t*)view);
+                    viewInverse.getInverse(*(matrix_t*)view);
                     const matrix_t& model = *(matrix_t*)matrix;
                     matrix_t res = *(matrix_t*)matrix * *(matrix_t*)view * *(matrix_t*)projection;
                     for (int iFace = 0; iFace < 6; iFace++)
@@ -1972,8 +1881,7 @@ namespace Gek
                         bool skipFace = false;
                         for (unsigned int iCoord = 0; iCoord < 4; iCoord++)
                         {
-                            vec_t camSpacePosition;
-                            camSpacePosition.TransformPoint(faceCoords[iCoord] * 0.5f * invert, res);
+                            vec_t camSpacePosition = res.transform(faceCoords[iCoord] * 0.5f * invert);
                             if (camSpacePosition.z < 0.001f)
                             {
                                 skipFace = true;
@@ -1995,9 +1903,9 @@ namespace Gek
 
                         // back face culling 
                         vec_t cullPos, cullNormal;
-                        cullPos.TransformPoint(faceCoords[0] * 0.5f * invert, model);
-                        cullNormal.TransformVector(directionUnary[normalIndex] * invert, model);
-                        float dt = Dot(Normalized(cullPos - viewInverse.v.position), Normalized(cullNormal));
+                        cullPos = model.transform(faceCoords[0] * 0.5f * invert);
+                        cullNormal = model.rotate(directionUnary[normalIndex] * invert);
+                        float dt = (cullPos - viewInverse.rw).getNormal().dot4(cullNormal.getNormal());
                         if (dt > 0.0f)
                         {
                             continue;

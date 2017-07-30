@@ -852,7 +852,7 @@ namespace Gek
                         while (dockedTab)
                         {
                             ImGui::SameLine(0, 15);
-                            char const *endOfLabel = &dockedTab->label.back();
+                            char const *endOfLabel = &dockedTab->label.back() + 1;
                             ImVec2 size(ImGui::CalcTextSize(dockedTab->label.c_str(), endOfLabel).x, lineHeight);
                             if (ImGui::InvisibleButton(dockedTab->label.c_str(), size))
                             {
@@ -878,26 +878,18 @@ namespace Gek
                                 ImGui::SameLine();
                                 isTabClosed = ImGui::InvisibleButton("close", ImVec2(16, 16));
                                 ImVec2 center = (ImGui::GetItemRectMin() + ImGui::GetItemRectMax()) * 0.5f;
-                                drawList->AddLine(
-                                    center + ImVec2(-3.5f, -3.5f), center + ImVec2(3.5f, 3.5f), colorText);
-                                drawList->AddLine(
-                                    center + ImVec2(3.5f, -3.5f), center + ImVec2(-3.5f, 3.5f), colorText);
+                                drawList->AddLine(center + ImVec2(-3.5f, -3.5f), center + ImVec2(3.5f, 3.5f), colorText);
+                                drawList->AddLine(center + ImVec2(3.5f, -3.5f), center + ImVec2(-3.5f, 3.5f), colorText);
                             }
 
                             tabBase = position.y;
                             drawList->PathClear();
                             drawList->PathLineTo(position + ImVec2(-15, size.y));
-                            drawList->PathBezierCurveTo(
-                                position + ImVec2(-10, size.y), position + ImVec2(-5, 0), position + ImVec2(0, 0), 10);
+                            drawList->PathBezierCurveTo(position + ImVec2(-10, size.y), position + ImVec2(-5, 0), position + ImVec2(0, 0), 10);
                             drawList->PathLineTo(position + ImVec2(size.x, 0));
-                            drawList->PathBezierCurveTo(position + ImVec2(size.x + 5, 0),
-                                position + ImVec2(size.x + 10, size.y),
-                                position + ImVec2(size.x + 15, size.y),
-                                10);
-                            drawList->PathFillConvex(
-                                isHovered ? colorHovered : (dockedTab->active ? colorActive : color));
+                            drawList->PathBezierCurveTo(position + ImVec2(size.x + 5, 0), position + ImVec2(size.x + 10, size.y), position + ImVec2(size.x + 15, size.y), 10);
+                            drawList->PathFillConvex( isHovered ? colorHovered : (dockedTab->active ? colorActive : color));
                             drawList->AddText(position + ImVec2(0, 1), colorText, dockedTab->label.c_str(), endOfLabel);
-
                             dockedTab = dockedTab->nextTab;
                         }
 

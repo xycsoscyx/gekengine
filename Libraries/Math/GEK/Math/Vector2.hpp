@@ -92,8 +92,8 @@ namespace Gek
 
             Vector2<TYPE> getNormal(void) const
             {
-                float inverseMagnitude = (1.0f / getLength());
-                return ((*this) * inverseMagnitude);
+                float inverseLength = (1.0f / getLength());
+                return ((*this) * inverseLength);
             }
 
             Vector2<TYPE> getAbsolute(void) const
@@ -139,8 +139,8 @@ namespace Gek
 
 			void normalize(void)
 			{
-                float inverseMagnitude = (1.0f / getLength());
-                (*this) *= inverseMagnitude;
+                float inverseLength = (1.0f / getLength());
+                (*this) *= inverseLength;
             }
 
             std::tuple<TYPE, TYPE> getTuple(void) const

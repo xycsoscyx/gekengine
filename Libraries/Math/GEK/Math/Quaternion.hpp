@@ -196,8 +196,8 @@ namespace Gek
 
             inline Quaternion getNormal(void) const
             {
-                float inverseMagnitude = (1.0f / getLength());
-                return ((*this) * inverseMagnitude);
+                float inverseLength = (1.0f / getLength());
+                return ((*this) * inverseLength);
             }
 
             inline Quaternion getInverse(void) const
@@ -212,8 +212,8 @@ namespace Gek
 
             inline void normalize(void)
             {
-                float inverseMagnitude = (1.0f / getLength());
-                (*this) *= inverseMagnitude;
+                float inverseLength = (1.0f / getLength());
+                (*this) *= inverseLength;
             }
 
             inline float dot(const Quaternion &rotation) const

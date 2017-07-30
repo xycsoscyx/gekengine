@@ -200,28 +200,25 @@ namespace Gek
                                     Math::Float4x4 deltaMatrix;
                                     float *localBounds = (currentGizmoOperation == UI::Gizmo::Operation::Bounds ? boundingBox.minimum.data : nullptr);
                                     gizmo->manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, currentGizmoAlignment, matrix.data, deltaMatrix.data, snapData, localBounds, snapData);
-                                    if (deltaMatrix != Math::Float4x4::Identity)
+                                    switch (currentGizmoOperation)
                                     {
-                                        switch (currentGizmoOperation)
-                                        {
-                                        case UI::Gizmo::Operation::Translate:
-                                            transformComponent.position = matrix.translation.xyz;
-                                            break;
+                                    case UI::Gizmo::Operation::Translate:
+                                        transformComponent.position = matrix.translation.xyz;
+                                        break;
 
-                                        case UI::Gizmo::Operation::Rotate:
-                                            transformComponent.rotation = matrix.getRotation();
-                                            break;
+                                    case UI::Gizmo::Operation::Rotate:
+                                        transformComponent.rotation = matrix.getRotation();
+                                        break;
 
-                                        case UI::Gizmo::Operation::Scale:
-                                            transformComponent.scale = matrix.getScaling();
-                                            break;
+                                    case UI::Gizmo::Operation::Scale:
+                                        transformComponent.scale = matrix.getScaling();
+                                        break;
 
-                                        case UI::Gizmo::Operation::Bounds:
-                                            break;
-                                        };
+                                    case UI::Gizmo::Operation::Bounds:
+                                        break;
+                                    };
 
-                                        onModified.emit(selectedEntity, typeid(Components::Transform));
-                                    }
+                                    onModified.emit(selectedEntity, typeid(Components::Transform));
                                 }
                             }
 
