@@ -49,8 +49,8 @@ namespace Gek
 
             int selectedComponent = 0;
 
-            int currentGizmoAlignment = UI::Gizmo::Alignment::World;
-            int currentGizmoOperation = UI::Gizmo::Operation::Translate;
+            UI::Gizmo::Alignment currentGizmoAlignment = UI::Gizmo::Alignment::World;
+            UI::Gizmo::Operation currentGizmoOperation = UI::Gizmo::Operation::Translate;
             bool useGizmoSnap = true;
             Math::Float3 gizmoSnapPosition = Math::Float3::One;
             float gizmoSnapRotation = 10.0f;
@@ -157,10 +157,9 @@ namespace Gek
                             viewMatrix.translation.xyz = position;
                             viewMatrix.invert();
 
-                            gizmo->beginFrame();
                             auto size = ImGui::GetItemRectSize();
                             auto origin = ImGui::GetItemRectMin();
-                            gizmo->setViewPort(origin.x, origin.y, size.x, size.y);
+                            gizmo->beginFrame(origin.x, origin.y, size.x, size.y);
                             ImGui::PushClipRect(ImVec2(origin.x, origin.y), ImVec2(origin.x + size.x, origin.y + size.y), false);
                             if (selectedEntity->hasComponent<Components::Transform>())
                             {

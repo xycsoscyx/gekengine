@@ -159,13 +159,22 @@ namespace Gek
                 return (vector - (*this)).getLength();
             }
 
-            Vector4 getNormal(void) const
+            Vector4<TYPE> getNormal(void) const
             {
                 float inverseMagnitude = (1.0f / getLength());
                 return ((*this) * inverseMagnitude);
             }
 
-			Vector4 getMinimum(const Vector4 &vector) const
+            Vector4<TYPE> getAbsolute(void) const
+            {
+                return Vector4(
+                    std::abs(x),
+                    std::abs(y),
+                    std::abs(z),
+                    std::abs(w));
+            }
+
+            Vector4<TYPE> getMinimum(const Vector4 &vector) const
 			{
 				return Vector4(
 					std::min(x, vector.x),
@@ -175,7 +184,7 @@ namespace Gek
 				);
 			}
 
-			Vector4 getMaximum(const Vector4 &vector) const
+			Vector4<TYPE> getMaximum(const Vector4 &vector) const
 			{
 				return Vector4(
 					std::max(x, vector.x),
@@ -185,7 +194,7 @@ namespace Gek
 				);
 			}
 
-			Vector4 getClamped(const Vector4 &min, const Vector4 &max) const
+			Vector4<TYPE> getClamped(const Vector4 &min, const Vector4 &max) const
 			{
 				return Vector4(
 					std::min(std::max(x, min.x), max.x),
@@ -195,7 +204,7 @@ namespace Gek
 				);
 			}
 
-			Vector4 getSaturated(void) const
+			Vector4<TYPE> getSaturated(void) const
 			{
 				return getClamped(Zero, One);
 			}

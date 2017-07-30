@@ -90,21 +90,28 @@ namespace Gek
                 return (vector - (*this)).getLength();
             }
 
-            Vector2 getNormal(void) const
+            Vector2<TYPE> getNormal(void) const
             {
                 float inverseMagnitude = (1.0f / getLength());
                 return ((*this) * inverseMagnitude);
             }
 
-			Vector2 getMinimum(const Vector2 &vector) const
+            Vector2<TYPE> getAbsolute(void) const
+            {
+                return Vector2(
+                    std::abs(x),
+                    std::abs(y));
+            }
+
+            Vector2<TYPE> getMinimum(const Vector2 &vector) const
 			{
-				return Vector2(
+				return Vector2<TYPE>(
 					std::min(x, vector.x),
 					std::min(y, vector.y)
 				);
 			}
 
-			Vector2 getMaximum(const Vector2 &vector) const
+			Vector2 getMaximum(const Vector2<TYPE> &vector) const
 			{
 				return Vector2(
 					std::max(x, vector.x),
@@ -112,7 +119,7 @@ namespace Gek
 				);
 			}
 
-			Vector2 getClamped(const Vector2 &min, const Vector2 &max) const
+			Vector2<TYPE> getClamped(const Vector2 &min, const Vector2 &max) const
 			{
 				return Vector2(
 					std::min(std::max(x, min.x), max.x),
@@ -120,7 +127,7 @@ namespace Gek
 				);
 			}
 
-			Vector2 getSaturated(void) const
+			Vector2<TYPE> getSaturated(void) const
 			{
 				return getClamped(Zero, One);
 			}

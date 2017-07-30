@@ -112,7 +112,15 @@ namespace Gek
                 return ((*this) * inverseMagnitude);
             }
 
-			Vector3<TYPE> getMinimum(const Vector3<TYPE> &vector) const
+            Vector3<TYPE> getAbsolute(void) const
+            {
+                return Vector3(
+                    std::abs(x),
+                    std::abs(y),
+                    std::abs(z));
+            }
+
+            Vector3<TYPE> getMinimum(const Vector3<TYPE> &vector) const
 			{
 				return Vector3(
 					std::min(x, vector.x),

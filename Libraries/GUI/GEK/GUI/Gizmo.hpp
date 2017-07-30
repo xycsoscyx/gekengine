@@ -17,25 +17,19 @@ namespace Gek
     {
         namespace Gizmo
         {
-            struct Operation
+            enum class Operation : int
             {
-                enum 
-                {
-                    None,
-                    Translate,
-                    Rotate,
-                    Scale,
-                    Bounds,
-                };
+                None,
+                Translate,
+                Rotate,
+                Scale,
+                Bounds,
             };
 
-            struct Alignment
+            enum class Alignment : int
             {
-                enum
-                {
-                    Local = 0,
-                    World,
-                };
+                Local = 0,
+                World,
             };
 
             struct Context;
@@ -45,9 +39,8 @@ namespace Gek
                 WorkSpace(void);
                 ~WorkSpace(void);
 
-                void beginFrame(void);
-                void setViewPort(float x, float y, float width, float height);
-                void manipulate(const float *view, const float *projection, int operation, int alignment, float *matrix, float *deltaMatrix = 0, float *snap = 0, float *localBounds = NULL, float *boundsSnap = NULL);
+                void beginFrame(float x, float y, float width, float height);
+                void manipulate(const float *view, const float *projection, Operation operation, Alignment alignment, float *matrix, float *deltaMatrix = 0, float *snap = 0, float *localBounds = NULL, float *boundsSnap = NULL);
 
             private:
                 Context *context = nullptr;

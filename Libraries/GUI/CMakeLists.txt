@@ -9,4 +9,4 @@ add_library(${ProjectID} STATIC ${SOURCES} ${HEADERS})
 
 target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(${ProjectID} Math Utility imgui_gek)
+target_link_libraries(${ProjectID} Math Utility Shapes imgui_gek)

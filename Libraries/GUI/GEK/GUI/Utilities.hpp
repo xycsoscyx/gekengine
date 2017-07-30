@@ -30,7 +30,17 @@ namespace Gek
         bool CheckButton(char const *label, bool *storedState = nullptr, ImVec2 const &size = ImVec2(0.0f, 0.0f));
         bool CheckButton(char const *label, bool state, ImVec2 const &size = ImVec2(0.0f, 0.0f));
 
-        bool RadioButton(char const *label, int *storedState, int buttonState, ImVec2 const &size = ImVec2(0.0f, 0.0f));
+        template <typename TYPE>
+        bool RadioButton(char const *label, TYPE *storedState, TYPE buttonState, ImVec2 const &size)
+        {
+            bool isClicked = CheckButton(label, *storedState == buttonState, size);
+            if (isClicked)
+            {
+                *storedState = buttonState;
+            }
+
+            return isClicked;
+        }
 
         void TextFrame(char const *label, ImVec2 const &requestedSize = ImVec2(0.0f, 0.0f), ImGuiButtonFlags flags = 0);
 

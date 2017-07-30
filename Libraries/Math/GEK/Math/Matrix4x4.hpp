@@ -127,6 +127,15 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
+            inline static Float4x4 FromTranslation(Float3 const &translation)
+            {
+                return Float4x4(
+                    1.0f, 0.0f, 0.0f, 0.0f,
+                    0.0f, 1.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 1.0f, 0.0f,
+                    translation.x, translation.y, translation.z, 1.0f);
+            }
+
             // https://msdn.microsoft.com/en-us/library/windows/desktop/bb205347(v=vs.85).aspx
             inline static Float4x4 MakeOrthographic(float left, float top, float right, float bottom, float nearClip, float farClip)
             {
@@ -366,6 +375,14 @@ namespace Gek
             inline Float4x4 &invert(void)
             {
                 (*this) = getInverse();
+                return (*this);
+            }
+
+            inline Float4x4 &orthonormalize(void)
+            {
+                rx = Float4(rx.xyz.getNormal(), 0.0f);
+                ry = Float4(ry.xyz.getNormal(), 0.0f);
+                rz = Float4(rz.xyz.getNormal(), 0.0f);
                 return (*this);
             }
 
