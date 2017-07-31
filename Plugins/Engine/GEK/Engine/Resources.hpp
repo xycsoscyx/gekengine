@@ -91,7 +91,7 @@ namespace Gek
             virtual ShaderHandle getMaterialShader(MaterialHandle material) const = 0;
             virtual ResourceHandle getResourceHandle(std::string const &resourceName) const = 0;
 
-            virtual Shader * const getShader(std::string const &shaderName, MaterialHandle materialHandle) = 0;
+            virtual ShaderHandle const getShader(std::string const &shaderName, MaterialHandle materialHandle = MaterialHandle()) = 0;
             virtual Shader * const getShader(ShaderHandle handle) const = 0;
             virtual Filter * const getFilter(std::string const &filterName) = 0;
 

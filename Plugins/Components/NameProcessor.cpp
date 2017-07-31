@@ -73,6 +73,7 @@ namespace Gek
         {
             assert(population);
 
+            population->onReset.connect<NameProcessor, &NameProcessor::onReset>(this);
             population->onEntityCreated.connect<NameProcessor, &NameProcessor::onEntityCreated>(this);
             population->onEntityDestroyed.connect<NameProcessor, &NameProcessor::onEntityDestroyed>(this);
             population->onComponentAdded.connect<NameProcessor, &NameProcessor::onComponentAdded>(this);
@@ -85,6 +86,7 @@ namespace Gek
             population->onComponentAdded.disconnect<NameProcessor, &NameProcessor::onComponentAdded>(this);
             population->onEntityDestroyed.disconnect<NameProcessor, &NameProcessor::onEntityDestroyed>(this);
             population->onEntityCreated.disconnect<NameProcessor, &NameProcessor::onEntityCreated>(this);
+            population->onReset.disconnect<NameProcessor, &NameProcessor::onReset>(this);
         }
 
         uint32_t uniqueIdentifier = 0;
@@ -167,6 +169,11 @@ namespace Gek
         }
 
         // Plugin::Population Slots
+        void onReset(void)
+        {
+            clear();
+        }
+
         void onEntityCreated(Plugin::Entity * const entity)
         {
             addEntity(entity);

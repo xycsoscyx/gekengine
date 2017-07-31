@@ -31,29 +31,31 @@
             "system": "isFrontFacing"
         }
     ],
-    "material": {
-        "solid": [
-            {
-                "name": "albedo",
-                "pattern": "system",
-                "parameters": "debug"
-            },
-            {
-                "name": "normal",
-                "pattern": "system",
-                "parameters": "flat"
-            },
-            {
-                "name": "roughness",
-                "pattern": "color",
-                "parameters": 0.5
-            },
-            {
-                "name": "metallic",
-                "pattern": "color",
-                "parameters": 0
-            }
-        ]
+    "materials": {
+        "solid": {
+            "data": [
+                {
+                    "name": "albedo",
+                    "pattern": "system",
+                    "parameters": "debug"
+                },
+                {
+                    "name": "normal",
+                    "pattern": "system",
+                    "parameters": "flat"
+                },
+                {
+                    "name": "roughness",
+                    "pattern": "color",
+                    "parameters": 0.5
+                },
+                {
+                    "name": "metallic",
+                    "pattern": "color",
+                    "parameters": 0
+                }
+            ]
+        }
     },
     "textures": {
         "depthBuffer": {

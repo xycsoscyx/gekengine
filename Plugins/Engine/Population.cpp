@@ -93,7 +93,7 @@ namespace Gek
             std::unordered_map<std::type_index, std::string> componentNameTypeMap;
             ComponentMap componentMap;
 
-            ThreadPool loadPool;
+            ThreadPool workerPool;
             concurrency::concurrent_queue<std::function<void(void)>> entityQueue;
             EntityList entityList;
 
@@ -103,7 +103,7 @@ namespace Gek
             Population(Context *context, Plugin::Core *core)
                 : ContextRegistration(context)
                 , core(core)
-                , loadPool(1)
+                , workerPool(1)
             {
                 assert(core);
 
@@ -134,7 +134,7 @@ namespace Gek
 
             ~Population(void)
             {
-				loadPool.drain();
+				workerPool.drain();
 
                 core->onExit.disconnect<Population, &Population::onExit>(this);
 
@@ -155,7 +155,7 @@ namespace Gek
             // Core
             void onExit(void)
             {
-                loadPool.reset();
+                workerPool.reset();
             }
 
             // Edit::Population
@@ -219,9 +219,20 @@ namespace Gek
                 actionQueue.push(action);
             }
 
+            void reset(void)
+            {
+                workerPool.enqueue([this](void) -> void
+                {
+                    actionQueue.clear();
+                    onReset.emit();
+                    entityList.clear();
+                });
+            }
+
             void load(std::string const &populationName)
             {
-                loadPool.enqueue([this, populationName](void) -> void
+                reset();
+                workerPool.enqueue([this, populationName](void) -> void
                 {
                     LockedWrite{ std::cout } << String::Format("Loading population: %v", populationName);
 

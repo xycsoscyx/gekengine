@@ -27,9 +27,17 @@ namespace Gek
             , public Engine::Shader
         {
         public:
-            struct PassData : public Material
+            struct MaterialData
+            {
+                std::vector<Material::Initializer> initializerList;
+                RenderStateHandle renderState;
+            };
+
+            struct PassData
             {
                 bool enabled = true;
+                size_t materialHash = 0;
+                uint32_t firstResourceStage = 0;
                 Pass::Mode mode = Pass::Mode::Forward;
                 bool lighting = false;
                 ResourceHandle depthBuffer;
@@ -39,6 +47,7 @@ namespace Gek
                 DepthStateHandle depthState;
                 Math::Float4 blendFactor = Math::Float4::Zero;
                 BlendStateHandle blendState;
+                RenderStateHandle renderState;
                 std::vector<ResourceHandle> resourceList;
                 std::vector<ResourceHandle> unorderedAccessList;
                 std::vector<ResourceHandle> renderTargetList;
@@ -70,8 +79,11 @@ namespace Gek
             std::string outputResource;
             uint32_t drawOrder = 0;
 
-            std::vector<PassData> passList;
-            std::unordered_map<std::string, PassData *> forwardPassMap;
+            using PassList = std::vector<PassData>;
+            using MaterialMap = std::unordered_map<std::string, MaterialData>;
+
+            PassList passList;
+            MaterialMap materialMap;
             bool lightingRequired = false;
 
         public:
@@ -101,7 +113,6 @@ namespace Gek
 				};
 				
 				uint32_t passIndex = 0;
-                forwardPassMap.clear();
                 passList.clear();
 
                 auto backBuffer = videoDevice->getBackBuffer();
@@ -121,7 +132,8 @@ namespace Gek
                 drawOrder = shaderNode.get("required").getArray().size();
                 for (auto &required : shaderNode.get("required").getArray())
                 {
-                    auto shader = resources->getShader(JSON::Reference(required).convert(String::Empty), MaterialHandle());
+                    auto shaderHandle = resources->getShader(JSON::Reference(required).convert(String::Empty));
+                    auto shader = resources->getShader(shaderHandle);
                     if (shader)
                     {
                         drawOrder += shader->getDrawOrder();
@@ -320,7 +332,25 @@ namespace Gek
                     }
                 }
 
-                auto materialNode = shaderNode.get("material");
+                auto materialsNode = shaderNode.get("materials");
+                for (auto &materialPair : materialsNode.getMembers())
+                {
+                    auto materialName = materialPair.name();
+                    auto &materialData = materialMap[materialName];
+                    JSON::Reference materialNode(materialPair.value());
+                    for (JSON::Reference data : materialNode.get("data").getArray())
+                    {
+                        Material::Initializer initializer;
+                        initializer.name = data.get("name").convert(String::Empty);
+                        initializer.fallback = resources->createPattern(data.get("pattern").convert(String::Empty), data.get("parameters"));
+                        materialData.initializerList.push_back(initializer);
+                    }
+
+                    Video::RenderStateInformation renderStateInformation;
+                    renderStateInformation.load(materialNode.get("renderState"));
+                    materialData.renderState = resources->createRenderState(renderStateInformation);
+                }
+
                 auto passesNode = shaderNode.get("passes");
                 passList.resize(passesNode.getArray().size());
                 auto passData = std::begin(passList);
@@ -328,8 +358,9 @@ namespace Gek
                 {
                     PassData &pass = *passData++;
                     JSON::Reference passNode(basePassNode);
-                    pass.identifier = std::distance(std::begin(passList), passData);
+                    auto passMaterial = passNode.get("material").convert(String::Empty);
                     pass.lighting = passNode.get("lighting").convert(false);
+                    pass.materialHash = GetHash(passMaterial);
                     lightingRequired |= pass.lighting;
                     if (passNode.has("enable"))
                     {
@@ -625,46 +656,32 @@ namespace Gek
                     uint32_t nextResourceStage(pass.lighting ? 5 : 0);
                     if (pass.mode == Pass::Mode::Forward)
                     {
-                        std::string passMaterial(passNode.get("material").convert(String::Empty));
-                        forwardPassMap[passMaterial] = &pass;
-
-                        auto &namedMaterialNode = materialNode.get(passMaterial);
-                        std::unordered_map<std::string, ResourceHandle> materialMap;
-                        for (auto &baseResourceNode : namedMaterialNode.getArray())
+                        auto &materialSearch = materialMap.find(passMaterial);
+                        if (materialSearch != std::end(materialMap))
                         {
-                            JSON::Reference resourceNode(baseResourceNode);
-                            std::string resourceName(resourceNode.get("name").convert(String::Empty));
-                            auto resource = resources->createPattern(resourceNode.get("pattern").convert(String::Empty), resourceNode.get("parameters"));
-                            materialMap.insert(std::make_pair(resourceName, resource));
-                        }
-
-                        pass.initializerList.reserve(materialMap.size());
-                        for (auto &resourcePair : materialMap)
-                        {
-                            Material::Initializer initializer;
-                            initializer.name = resourcePair.first;
-                            initializer.fallback = resourcePair.second;
-                            pass.initializerList.push_back(initializer);
-
-                            uint32_t currentStage = nextResourceStage++;
-                            auto description = resources->getTextureDescription(initializer.fallback);
-                            if (description)
+                            pass.firstResourceStage = materialSearch->second.initializerList.size();
+                            for (auto &initializer : materialSearch->second.initializerList)
                             {
-                                std::string textureType;
-                                if (description->depth > 1)
+                                uint32_t currentStage = nextResourceStage++;
+                                auto description = resources->getTextureDescription(initializer.fallback);
+                                if (description)
                                 {
-                                    textureType = "Texture3D";
-                                }
-                                else if (description->height > 1 || description->width == 1)
-                                {
-                                    textureType = "Texture2D";
-                                }
-                                else
-                                {
-                                    textureType = "Texture1D";
-                                }
+                                    std::string textureType;
+                                    if (description->depth > 1)
+                                    {
+                                        textureType = "Texture3D";
+                                    }
+                                    else if (description->height > 1 || description->width == 1)
+                                    {
+                                        textureType = "Texture2D";
+                                    }
+                                    else
+                                    {
+                                        textureType = "Texture1D";
+                                    }
 
-                                resourceData += String::Format("    %v<%v> %v : register(t%v);\r\n", textureType, getFormatSemantic(description->format), initializer.name, currentStage);
+                                    resourceData += String::Format("    %v<%v> %v : register(t%v);\r\n", textureType, getFormatSemantic(description->format), initializer.name, currentStage);
+                                }
                             }
                         }
                     }
@@ -746,17 +763,6 @@ namespace Gek
                 return drawOrder;
             }
 
-			const Material *getMaterial(std::string const &passName) const
-            {
-                auto passSearch = forwardPassMap.find(passName);
-                if (passSearch != std::end(forwardPassMap))
-                {
-                    return passSearch->second;
-                }
-
-                return nullptr;
-            }
-
             bool isLightingRequired(void) const
             {
                 return lightingRequired;
@@ -800,17 +806,8 @@ namespace Gek
                 Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
                 if (!pass.resourceList.empty())
                 {
-                    uint32_t firstResourceStage = 0;
-                    if (pass.lighting)
-                    {
-                        firstResourceStage = 5;
-                    }
-
-                    if (pass.mode == Pass::Mode::Forward)
-                    {
-                        firstResourceStage += pass.initializerList.size();
-                    }
-
+                    uint32_t firstResourceStage = (pass.lighting ? 5 : 0);
+                    firstResourceStage += pass.firstResourceStage;
                     resources->setResourceList(videoPipeline, pass.resourceList, firstResourceStage);
                 }
 
@@ -835,6 +832,7 @@ namespace Gek
                 default:
                     resources->setDepthState(videoContext, pass.depthState, 0x0);
                     resources->setBlendState(videoContext, pass.blendState, pass.blendFactor, 0xFFFFFFFF);
+                    resources->setRenderState(videoContext, pass.renderState);
                     if (pass.depthBuffer && pass.clearDepthFlags > 0)
                     {
                         resources->clearDepthStencilTarget(videoContext, pass.depthBuffer, pass.clearDepthFlags, pass.clearDepthValue, pass.clearStencilValue);
@@ -861,17 +859,8 @@ namespace Gek
                 Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
                 if (!pass.resourceList.empty())
                 {
-                    uint32_t firstResourceStage = 0;
-                    if (pass.lighting)
-                    {
-                        firstResourceStage = 5;
-                    }
-
-                    if (pass.mode == Pass::Mode::Forward)
-                    {
-                        firstResourceStage += pass.initializerList.size();
-                    }
-
+                    uint32_t firstResourceStage = (pass.lighting ? 5 : 0);
+                    firstResourceStage += pass.firstResourceStage;
                     resources->clearResourceList(videoPipeline, pass.resourceList.size(), firstResourceStage);
                 }
 
@@ -901,16 +890,53 @@ namespace Gek
                 }
             }
 
+            struct MaterialImplementation
+                : public Material
+            {
+            public:
+                Shader *shaderNode;
+                Shader::MaterialMap::iterator current, end;
+
+            public:
+                MaterialImplementation(Shader *shaderNode, Shader::MaterialMap::iterator current, Shader::MaterialMap::iterator end)
+                    : shaderNode(shaderNode)
+                    , current(current)
+                    , end(end)
+                {
+                }
+
+                Iterator next(void)
+                {
+                    auto next = current;
+                    return Iterator(++next == end ? nullptr : new MaterialImplementation(shaderNode, next, end));
+                }
+
+                std::string const &getName(void) const
+                {
+                    return current->first;
+                }
+
+                std::vector<Initializer> const &getInitializerList(void) const
+                {
+                    return current->second.initializerList;
+                }
+
+                RenderStateHandle getRenderState(void) const
+                {
+                    return current->second.renderState;
+                }
+            };
+
             class PassImplementation
                 : public Pass
             {
             public:
                 Video::Device::Context *videoContext;
                 Shader *shaderNode;
-                std::vector<Shader::PassData>::iterator current, end;
+                Shader::PassList::iterator current, end;
 
             public:
-                PassImplementation(Video::Device::Context *videoContext, Shader *shaderNode, std::vector<Shader::PassData>::iterator current, std::vector<Shader::PassData>::iterator end)
+                PassImplementation(Video::Device::Context *videoContext, Shader *shaderNode, Shader::PassList::iterator current, Shader::PassList::iterator end)
                     : videoContext(videoContext)
                     , shaderNode(shaderNode)
                     , current(current)
@@ -934,9 +960,9 @@ namespace Gek
                     shaderNode->clearPass(videoContext, (*current));
                 }
 
-                uint32_t getIdentifier(void) const
+                size_t getMaterialHash(void) const
                 {
-                    return (*current).identifier;
+                    return (*current).materialHash;
                 }
 
                 uint32_t getFirstResourceStage(void) const
@@ -953,6 +979,11 @@ namespace Gek
             std::string const &getOutput(void) const
             {
                 return outputResource;
+            }
+
+            Material::Iterator begin(void)
+            {
+                return Material::Iterator(materialMap.empty() ? nullptr : new MaterialImplementation(this, std::begin(materialMap), std::end(materialMap)));
             }
 
             Pass::Iterator begin(Video::Device::Context *videoContext, Math::Float4x4 const &viewMatrix, const Shapes::Frustum &viewFrustum)

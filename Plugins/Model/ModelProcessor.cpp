@@ -188,6 +188,7 @@ namespace Gek
 
             LockedWrite{ std::cout } << String::Format("Initializing model system");
 
+            population->onReset.connect<ModelProcessor, &ModelProcessor::onReset>(this);
             population->onEntityCreated.connect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
             population->onEntityDestroyed.connect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
             population->onComponentAdded.connect<ModelProcessor, &ModelProcessor::onComponentAdded>(this);
@@ -213,6 +214,7 @@ namespace Gek
             population->onComponentAdded.disconnect<ModelProcessor, &ModelProcessor::onComponentAdded>(this);
             population->onEntityDestroyed.disconnect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
             population->onEntityCreated.disconnect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
+            population->onReset.disconnect<ModelProcessor, &ModelProcessor::onReset>(this);
         }
 
         void addEntity(Plugin::Entity * const entity)
@@ -364,6 +366,11 @@ namespace Gek
         }
 
         // Plugin::Population Slots
+        void onReset(void)
+        {
+            clear();
+        }
+
         void onEntityCreated(Plugin::Entity * const entity)
         {
             addEntity(entity);

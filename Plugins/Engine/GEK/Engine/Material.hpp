@@ -17,9 +17,8 @@ namespace Gek
     {
         GEK_INTERFACE(Material)
         {
-            struct PassData
+            struct Data
             {
-                RenderStateHandle renderState;
                 std::vector<ResourceHandle> resourceList;
             };
 
@@ -28,7 +27,8 @@ namespace Gek
 
             virtual ~Material(void) = default;
 
-            virtual const PassData *getPassData(uint32_t passIdentifier) = 0;
+            virtual Data const *getData(size_t materialHash) = 0;
+            virtual RenderStateHandle getRenderState(void) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

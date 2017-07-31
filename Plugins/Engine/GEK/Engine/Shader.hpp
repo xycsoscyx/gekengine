@@ -46,12 +46,12 @@ namespace Gek
                 virtual Mode prepare(void) = 0;
                 virtual void clear(void) = 0;
 
-                virtual uint32_t getIdentifier(void) const = 0;
+                virtual size_t getMaterialHash(void) const = 0;
                 virtual uint32_t getFirstResourceStage(void) const = 0;
                 virtual bool isLightingRequired(void) const = 0;
             };
 
-            struct Material
+            GEK_INTERFACE(Material)
             {
                 struct Initializer
                 {
@@ -59,9 +59,15 @@ namespace Gek
                     ResourceHandle fallback;
                 };
 
-                uint32_t identifier = 0;
-                RenderStateHandle renderState;
-                std::vector<Initializer> initializerList;
+                using Iterator = std::unique_ptr<Material>;
+
+                virtual ~Material(void) = default;
+
+                virtual Iterator next(void) = 0;
+
+                virtual std::string const &getName(void) const = 0;
+                virtual std::vector<Initializer> const &getInitializerList(void) const = 0;
+                virtual RenderStateHandle getRenderState(void) const = 0;
             };
 
             virtual ~Shader(void) = default;
@@ -69,10 +75,10 @@ namespace Gek
             virtual void reload(void) = 0;
 
             virtual uint32_t getDrawOrder(void) const = 0;
-            virtual const Material *getMaterial(std::string const &passName) const = 0;
             virtual bool isLightingRequired(void) const = 0;
             virtual std::string const &getOutput(void) const = 0;
 
+            virtual Material::Iterator begin(void) = 0;
             virtual Pass::Iterator begin(Video::Device::Context *videoContext, Math::Float4x4 const &viewMatrix, const Shapes::Frustum &viewFrustum) = 0;
         };
     }; // namespace Engine

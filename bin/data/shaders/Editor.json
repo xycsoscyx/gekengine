@@ -36,31 +36,23 @@
             "data": [
                 {
                     "name": "albedo",
-                    "bind": "float4",
                     "pattern": "system",
-                    "parameters": "debug",
-                    "type": "Texture2D"
+                    "parameters": "debug"
                 },
                 {
                     "name": "normal",
-                    "bind": "float2",
                     "pattern": "system",
-                    "parameters": "flat",
-                    "type": "Texture2D"
+                    "parameters": "flat"
                 },
                 {
                     "name": "roughness",
-                    "bind": "float",
                     "pattern": "color",
-                    "parameters": 0.5,
-                    "type": "Texture2D"
+                    "parameters": 0.5
                 },
                 {
                     "name": "metallic",
-                    "bind": "float",
                     "pattern": "color",
-                    "parameters": 0,
-                    "type": "Texture2D"
+                    "parameters": 0
                 }
             ]
         }
@@ -70,30 +62,21 @@
             "format": "D32_FLOAT",
             "flags": "depth"
         },
-        "albedoBuffer": {
-            "format": "R11G11B10_FLOAT",
-            "flags": "target"
-        },
-        "materialBuffer": {
-            "format": "R8G8_UNORM",
-            "flags": "target"
-        },
-        "normalBuffer": {
-            "format": "R8G8_NORM",
-            "flags": "target"
-        },
         "finalBuffer": {
             "format": "R11G11B10_FLOAT",
             "flags": "target"
         }
     },
     "output": "finalBuffer",
+    "options": {
+    },
     "passes": [
         {
-            "program": "StoreDeferred",
+            "program": "AccumulateLighting",
             "entry": "mainPixelProgram",
             "mode": "forward",
             "material": "solid",
+            "lighting": true,
             "depthBuffer": "depthBuffer",
             "depthState": {
                 "enable": true,
@@ -101,22 +84,6 @@
                 "writeMask": "All",
                 "clear": 1
             },
-            "targets": [
-                "albedoBuffer",
-                "materialBuffer",
-                "normalBuffer"
-            ]
-        },
-        {
-            "program": "AccumulateLighting",
-            "entry": "mainPixelProgram",
-            "lighting": true,
-            "resources": [
-                "albedoBuffer",
-                "materialBuffer",
-                "normalBuffer",
-                "depthBuffer"
-            ],
             "targets": [
                 "finalBuffer"
             ]

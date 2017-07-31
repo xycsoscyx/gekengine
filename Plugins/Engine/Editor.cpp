@@ -587,7 +587,7 @@ namespace Gek
 
                     auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 0.1f, 200.0f));
 
-                    renderer->queueCamera(viewMatrix, projectionMatrix, 0.1f, 200.0f, cameraTarget);
+                    renderer->queueCamera(viewMatrix, projectionMatrix, 0.1f, 200.0f, cameraTarget, "editor");
                 }
             }
         };

@@ -31,51 +31,53 @@
             "system": "isFrontFacing"
         }
     ],
-    "material": {
-        "solid": [
-            {
-                "name": "albedo",
-                "bind": "float4",
-                "pattern": "system",
-                "parameters": "debug",
-                "type": "Texture2D"
-            },
-            {
-                "name": "normal",
-                "bind": "float2",
-                "pattern": "system",
-                "parameters": "flat",
-                "type": "Texture2D"
-            },
-            {
-                "name": "roughness",
-                "bind": "float",
-                "pattern": "color",
-                "parameters": 0.25,
-                "type": "Texture2D"
-            },
-            {
-                "name": "metallic",
-                "bind": "float",
-                "pattern": "color",
-                "parameters": 0.75,
-                "type": "Texture2D"
-            },
-            {
-                "name": "clarity",
-                "bind": "float",
-                "pattern": "color",
-                "parameters": 0.5,
-                "type": "Texture2D"
-            },
-            {
-                "name": "thickness",
-                "bind": "float",
-                "pattern": "color",
-                "parameters": 3,
-                "type": "Texture2D"
-            }
-        ]
+    "materials": {
+        "solid": {
+            "data": [
+                {
+                    "name": "albedo",
+                    "bind": "float4",
+                    "pattern": "system",
+                    "parameters": "debug",
+                    "type": "Texture2D"
+                },
+                {
+                    "name": "normal",
+                    "bind": "float2",
+                    "pattern": "system",
+                    "parameters": "flat",
+                    "type": "Texture2D"
+                },
+                {
+                    "name": "roughness",
+                    "bind": "float",
+                    "pattern": "color",
+                    "parameters": 0.25,
+                    "type": "Texture2D"
+                },
+                {
+                    "name": "metallic",
+                    "bind": "float",
+                    "pattern": "color",
+                    "parameters": 0.75,
+                    "type": "Texture2D"
+                },
+                {
+                    "name": "clarity",
+                    "bind": "float",
+                    "pattern": "color",
+                    "parameters": 0.5,
+                    "type": "Texture2D"
+                },
+                {
+                    "name": "thickness",
+                    "bind": "float",
+                    "pattern": "color",
+                    "parameters": 3,
+                    "type": "Texture2D"
+                }
+            ]
+        }
     },
     "requires": [
         "solid"

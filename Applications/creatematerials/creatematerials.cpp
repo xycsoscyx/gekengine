@@ -15,8 +15,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
         auto dataPath(FileSystem::GetFileName(rootPath, "Data"));
 
-		auto texturesPath(FileSystem::GetFileName(dataPath, "Textures").u8string());
-		auto materialsPath(FileSystem::GetFileName(dataPath, "Materials"));
+		auto texturesPath(FileSystem::GetFileName(dataPath, "textures").u8string());
+		auto materialsPath(FileSystem::GetFileName(dataPath, "materials"));
 
 		std::function<bool(FileSystem::Path const &)> findMaterials;
 		findMaterials = [&](FileSystem::Path const &materialCollectionPath) -> bool
@@ -181,25 +181,20 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                             auto materialPath(FileSystem::GetFileName(materialsPath, materialName).withExtension(".json"));
                             FileSystem::MakeDirectoryChain(materialPath.getParentPath());
 
-                            JSON::Object solidNode;
-                            solidNode["data"] = dataNode;
+                            JSON::Object shaderNode;
+                            shaderNode["data"] = dataNode;
                             if (!renderState.is_null())
                             {
-                                solidNode["renderState"] = renderState;
+                                shaderNode["renderState"] = renderState;
                             }
 
-                            JSON::Object passesNode;
-                            passesNode["solid"] = solidNode;
-
-                            JSON::Object shaderNode;
-                            shaderNode.set("passes", passesNode);
                             if (fileMap.count("clarity") > 0)
                             {
-                                shaderNode["name"] = "glass";
+                                shaderNode["default"] = "glass";
                             }
                             else
                             {
-                                shaderNode["name"] = "solid";
+                                shaderNode["default"] = "solid";
                             }
 
                             JSON::Object materialNode;

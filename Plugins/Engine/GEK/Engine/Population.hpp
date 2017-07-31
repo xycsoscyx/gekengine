@@ -58,6 +58,8 @@ namespace Gek
             std::map<int32_t, Nano::Signal<void(float frameTime)>> onUpdate;
             Nano::Signal<void(Action const &action)> onAction;
 
+            Nano::Signal<void(void)> onReset;
+
             Nano::Signal<void(Plugin::Entity * const entity)> onEntityCreated;
             Nano::Signal<void(Plugin::Entity * const entity)> onEntityDestroyed;
 
@@ -66,6 +68,7 @@ namespace Gek
 
             virtual ShuntingYard &getShuntingYard(void) = 0;
 
+            virtual void reset(void) = 0;
             virtual void load(std::string const &populationName) = 0;
             virtual void save(std::string const &populationName) = 0;
 

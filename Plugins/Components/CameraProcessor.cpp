@@ -112,6 +112,7 @@ namespace Gek
             assert(resources);
             assert(renderer);
 
+            population->onReset.connect<CameraProcessor, &CameraProcessor::onReset>(this);
             population->onEntityCreated.connect<CameraProcessor, &CameraProcessor::onEntityCreated>(this);
             population->onEntityDestroyed.connect<CameraProcessor, &CameraProcessor::onEntityDestroyed>(this);
             population->onComponentAdded.connect<CameraProcessor, &CameraProcessor::onComponentAdded>(this);
@@ -126,6 +127,7 @@ namespace Gek
             population->onComponentAdded.disconnect<CameraProcessor, &CameraProcessor::onComponentAdded>(this);
             population->onEntityDestroyed.disconnect<CameraProcessor, &CameraProcessor::onEntityDestroyed>(this);
             population->onEntityCreated.disconnect<CameraProcessor, &CameraProcessor::onEntityCreated>(this);
+            population->onReset.disconnect<CameraProcessor, &CameraProcessor::onReset>(this);
         }
 
         void addEntity(Plugin::Entity * const entity)
@@ -146,6 +148,11 @@ namespace Gek
         }
 
         // Plugin::Population Slots
+        void onReset(void)
+        {
+            clear();
+        }
+
         void onEntityCreated(Plugin::Entity * const entity)
         {
             addEntity(entity);

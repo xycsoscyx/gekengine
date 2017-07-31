@@ -38,6 +38,7 @@ namespace Gek
                 bool fullScreen = false;
             } current, previous, next;
            
+            bool showResetDialog = false;
             bool showLoadMenu = false;
             int currentSelectedScene = 0;
             bool showSettings = false;
@@ -423,6 +424,12 @@ namespace Gek
                     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5.0f, 10.0f));
                     if (ImGui::BeginMenu("File"))
                     {
+                        if (ImGui::MenuItem("Reset", "CTRL+R"))
+                        {
+                            showResetDialog = true;
+                        }
+
+                        ImGui::Separator();
                         if (ImGui::MenuItem("Load", "CTRL+L"))
                         {
                             showLoadMenu = true;
@@ -468,6 +475,7 @@ namespace Gek
                     showSettingsWindow();
                     showDisplayBackup();
                     showLoadWindow();
+                    showReset();
                 }
             }
 
@@ -658,6 +666,7 @@ namespace Gek
                         ImGui::SameLine();
                         if (ImGui::Button("Accept", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
                         {
+                            ImGui::GetIO().KeysDown[VK_RETURN] = false;
                             bool changedDisplayMode = setDisplayMode(next.mode);
                             bool changedFullScreen = setFullScreen(next.fullScreen);
                             if (changedDisplayMode || changedFullScreen)
@@ -704,6 +713,7 @@ namespace Gek
                         ImGui::SameLine();
                         if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
                         {
+                            ImGui::GetIO().KeysDown[VK_RETURN] = false;
                             showModeChange = false;
                             previous = current;
                         }
@@ -770,6 +780,7 @@ namespace Gek
                             ImGui::SetKeyboardFocusHere();
                             if (ImGui::Button("Load", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
                             {
+                                ImGui::GetIO().KeysDown[VK_RETURN] = false;
                                 showLoadMenu = false;
                                 population->load(scenes[currentSelectedScene]);
                                 ImGui::GetIO().MouseDrawCursor = false;
@@ -780,6 +791,38 @@ namespace Gek
                         if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
                         {
                             showLoadMenu = false;
+                        }
+                    }
+
+                    ImGui::End();
+                }
+            }
+
+            void showReset(void)
+            {
+                if (showResetDialog)
+                {
+                    ImGui::SetNextWindowPosCenter();
+                    if (ImGui::Begin("Reset?", &showResetDialog, ImVec2(225.0f, 0.0f), -1.0f, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+                    {
+                        ImGui::Text("Reset Scene?");
+
+                        auto &style = ImGui::GetStyle();
+                        float buttonPositionX = (ImGui::GetWindowContentRegionWidth() - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
+                        ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
+
+                        ImGui::SameLine();
+                        if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
+                        {
+                            ImGui::GetIO().KeysDown[VK_RETURN] = false;
+                            showResetDialog = false;
+                            population->reset();
+                        }
+
+                        ImGui::SameLine();
+                        if (ImGui::Button("No", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
+                        {
+                            showResetDialog = false;
                         }
                     }
 

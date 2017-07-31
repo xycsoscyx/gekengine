@@ -19,7 +19,9 @@ namespace Gek
         {
         private:
             Engine::Resources *resources = nullptr;
-            std::unordered_map<uint32_t, PassData> passDataMap;
+            std::unordered_map<size_t, Data> dataMap;
+            RenderStateHandle renderState;
+
 
         public:
             Material(Context *context, Engine::Resources *resources, std::string materialName, MaterialHandle materialHandle)
@@ -30,86 +32,62 @@ namespace Gek
 
                 JSON::Instance materialNode = JSON::Load(getContext()->getRootFileName("data", "materials", materialName).withExtension(".json"));
                 auto &shaderNode = materialNode.get("shader");
-                Engine::Shader *shader = resources->getShader(shaderNode.get("name").convert(String::Empty), materialHandle);
+                ShaderHandle shaderHandle = resources->getShader(shaderNode.get("default").convert(String::Empty), materialHandle);
+                Engine::Shader *shader = resources->getShader(shaderHandle);
                 if (!shader)
                 {
                     throw MissingParameter("Missing shader encountered");
                 }
 
-                auto &passesNode = shaderNode.get("passes");
-                for (auto &passNode : passesNode.getMembers())
+                Video::RenderStateInformation renderStateInformation;
+                renderStateInformation.load(shaderNode.get("renderState"));
+                renderState = resources->createRenderState(renderStateInformation);
+
+                auto &dataNode = shaderNode.get("data");
+                for (auto material = shader->begin(); material; material = material->next())
                 {
-                    std::string passName(passNode.name());
-                    auto &passValue = passNode.value();
-                    auto shaderMaterial = shader->getMaterial(passName);
-                    if (shaderMaterial)
+                    auto materialName = material->getName();
+                    auto &data = dataMap[GetHash(materialName)];
+                    for (auto &initializer : material->getInitializerList())
                     {
-                        auto &passData = passDataMap[shaderMaterial->identifier];
-                        if (passValue.has_member("renderState"))
+                        ResourceHandle resourceHandle;
+                        auto &resourceNode = dataNode.get(initializer.name);
+                        if (resourceNode.has("file"))
                         {
-                            Video::RenderStateInformation renderStateInformation;
-                            renderStateInformation.load(passValue.get("renderState"));
-                            passData.renderState = resources->createRenderState(renderStateInformation);
+                            auto fileName = resourceNode.get("file").convert(String::Empty);
+                            uint32_t flags = getTextureLoadFlags(resourceNode.get("flags").convert(String::Empty));
+                            resourceHandle = resources->loadTexture(fileName, flags);
                         }
-                        else
+                        else if (resourceNode.has("source"))
                         {
-                            passData.renderState = shaderMaterial->renderState;
-                        }
-
-                        if (!passValue.has_member("data"))
-                        {
-                            throw MissingParameter("Missing pass data encountered");
+                            resourceHandle = resources->getResourceHandle(resourceNode.get("source").convert(String::Empty));
                         }
 
-                        auto &passDataNode = passValue.get("data");
-                        for (const auto &initializer : shaderMaterial->initializerList)
+                        if (!resourceHandle)
                         {
-                            ResourceHandle resourceHandle;
-                            if (passDataNode.has_member(initializer.name))
-                            {
-                                auto &resourceNode = passDataNode.get(initializer.name);
-                                if (!resourceNode.is_object())
-                                {
-                                    throw InvalidParameter("Resource list must be an object");
-                                }
-
-                                if (resourceNode.has_member("file"))
-                                {
-                                    auto fileName = resourceNode.get("file").as_string();
-                                    uint32_t flags = getTextureLoadFlags(resourceNode.get("flags", 0).as_string());
-                                    resourceHandle = resources->loadTexture(fileName, flags);
-                                }
-                                else if (resourceNode.has_member("source"))
-                                {
-                                    resourceHandle = resources->getResourceHandle(resourceNode.get("source").as_string());
-                                }
-                                else
-                                {
-                                    throw InvalidParameter("Resource list must have a filename or source value");
-                                }
-                            }
-
-                            if (!resourceHandle)
-                            {
-                                resourceHandle = initializer.fallback;
-                            }
-
-                            passData.resourceList.push_back(resourceHandle);
+                            resourceHandle = initializer.fallback;
                         }
+
+                        data.resourceList.push_back(resourceHandle);
                     }
                 }
             }
 
             // Material
-            const PassData *getPassData(uint32_t passIdentifier)
+            Data const *getData(size_t dataHash)
             {
-                auto passDataSearch = passDataMap.find(passIdentifier);
-                if (passDataSearch != std::end(passDataMap))
+                auto dataSearch = dataMap.find(dataHash);
+                if (dataSearch != std::end(dataMap))
                 {
-                    return &passDataSearch->second;
+                    return &dataSearch->second;
                 }
 
                 return nullptr;
+            }
+
+            RenderStateHandle getRenderState(void)
+            {
+                return renderState;
             }
         };
 

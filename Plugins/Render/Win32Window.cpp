@@ -89,7 +89,11 @@ namespace Gek
                             break;
 
                         case WM_CHAR:
-                            window->onCharacter.emit(wParam);
+                            if ((HIWORD(lParam) & KF_REPEAT) == 0)
+                            {
+                                window->onCharacter.emit(wParam);
+                            }
+
                             break;
 
                         case WM_INPUT:

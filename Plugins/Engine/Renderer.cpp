@@ -158,6 +158,7 @@ namespace Gek
                 float nearClip = 0.0f;
                 float farClip = 0.0f;
                 ResourceHandle cameraTarget;
+                ShaderHandle forceShader;
 
                 Camera(void)
                 {
@@ -170,6 +171,7 @@ namespace Gek
                     , nearClip(renderCall.nearClip)
                     , farClip(renderCall.farClip)
                     , cameraTarget(renderCall.cameraTarget)
+                    , forceShader(renderCall.forceShader)
                 {
                 }
             };
@@ -400,6 +402,7 @@ namespace Gek
                 , pointLightData(200, core->getVideoDevice())
                 , spotLightData(200, core->getVideoDevice())
             {
+                population->onReset.connect<Renderer, &Renderer::onReset>(this);
                 population->onEntityCreated.connect<Renderer, &Renderer::onEntityCreated>(this);
                 population->onEntityDestroyed.connect<Renderer, &Renderer::onEntityDestroyed>(this);
                 population->onComponentAdded.connect<Renderer, &Renderer::onComponentAdded>(this);
@@ -687,6 +690,7 @@ namespace Gek
                 population->onComponentAdded.disconnect<Renderer, &Renderer::onComponentAdded>(this);
                 population->onEntityDestroyed.disconnect<Renderer, &Renderer::onEntityDestroyed>(this);
                 population->onEntityCreated.disconnect<Renderer, &Renderer::onEntityCreated>(this);
+                population->onReset.disconnect<Renderer, &Renderer::onReset>(this);
 
                 ImGui::GetIO().Fonts->TexID = 0;
                 ImGui::Shutdown();
@@ -1025,6 +1029,13 @@ namespace Gek
             }
 
             // Plugin::Population Slots
+            void onReset(void)
+            {
+                directionalLightData.clearEntities();
+                pointLightData.clearEntities();
+                spotLightData.clearEntities();
+            }
+
             void onEntityCreated(Plugin::Entity * const entity)
             {
                 addEntity(entity);
@@ -1046,7 +1057,7 @@ namespace Gek
             }
 
             // Renderer
-            void queueCamera(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget)
+            void queueCamera(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget, std::string const &forceShader)
             {
                 Camera renderCall;
                 renderCall.viewMatrix = viewMatrix;
@@ -1055,6 +1066,11 @@ namespace Gek
                 renderCall.nearClip = nearClip;
                 renderCall.farClip = farClip;
                 renderCall.cameraTarget = cameraTarget;
+                if (!forceShader.empty())
+                {
+                    renderCall.forceShader = resources->getShader(forceShader);
+                }
+
                 cameraQueue.push(renderCall);
             }
 
@@ -1062,7 +1078,7 @@ namespace Gek
             {
                 if (plugin && material && draw)
                 {
-                    ShaderHandle shader = resources->getMaterialShader(material);
+                    ShaderHandle shader = (currentCamera.forceShader ? currentCamera.forceShader : resources->getMaterialShader(material));
                     if (shader)
                     {
                         drawCallList.push_back(DrawCallValue(material, plugin, shader, std::move(draw)));

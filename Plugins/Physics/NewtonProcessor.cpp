@@ -116,6 +116,7 @@ namespace Gek
 #endif
 
                 renderer->onShowUserInterface.connect<Processor, &Processor::onShowUserInterface>(this);
+                population->onReset.connect<Processor, &Processor::onReset>(this);
                 population->onEntityCreated.connect<Processor, &Processor::onEntityCreated>(this);
                 population->onEntityDestroyed.connect<Processor, &Processor::onEntityDestroyed>(this);
                 population->onComponentAdded.connect<Processor, &Processor::onComponentAdded>(this);
@@ -130,24 +131,11 @@ namespace Gek
                 population->onComponentAdded.disconnect<Processor, &Processor::onComponentAdded>(this);
                 population->onEntityDestroyed.disconnect<Processor, &Processor::onEntityDestroyed>(this);
                 population->onEntityCreated.disconnect<Processor, &Processor::onEntityCreated>(this);
+                population->onReset.disconnect<Processor, &Processor::onReset>(this);
                 renderer->onShowUserInterface.disconnect<Processor, &Processor::onShowUserInterface>(this);
 
-                NewtonWaitForUpdateToFinish(newtonWorld);
-                for (const auto &collisionPair : collisionMap)
-                {
-                    if (collisionPair.second)
-                    {
-                        NewtonDestroyCollision(collisionPair.second);
-                    }
-                }
+                onReset();
 
-
-                collisionMap.clear();
-                entityMap.clear();
-                surfaceList.clear();
-                surfaceIndexMap.clear();
-                NewtonDestroyAllBodies(newtonWorld);
-                NewtonInvalidateCache(newtonWorld);
                 NewtonDestroy(newtonWorld);
                 assert(NewtonGetMemoryUsed() == 0);
             }
@@ -419,6 +407,25 @@ namespace Gek
             }
 
             // Plugin::Population Slots
+            void onReset(void)
+            {
+                NewtonWaitForUpdateToFinish(newtonWorld);
+                for (const auto &collisionPair : collisionMap)
+                {
+                    if (collisionPair.second)
+                    {
+                        NewtonDestroyCollision(collisionPair.second);
+                    }
+                }
+
+                collisionMap.clear();
+                entityMap.clear();
+                surfaceList.clear();
+                surfaceIndexMap.clear();
+                NewtonDestroyAllBodies(newtonWorld);
+                NewtonInvalidateCache(newtonWorld);
+            }
+
             void onEntityCreated(Plugin::Entity * const entity)
             {
                 addEntity(entity);

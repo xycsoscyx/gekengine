@@ -1135,7 +1135,7 @@ namespace Gek
                 return shaderCache.getResource(handle);
             }
 
-            Engine::Shader * const getShader(std::string const &shaderName, MaterialHandle material)
+            ShaderHandle const getShader(std::string const &shaderName, MaterialHandle material)
             {
                 std::unique_lock<std::recursive_mutex> lock(shaderMutex);
                 auto load = [this, shaderName](ShaderHandle) -> Engine::ShaderPtr
@@ -1150,7 +1150,7 @@ namespace Gek
                     materialShaderMap[material] = resource.second;
                 }
 
-                return shaderCache.getResource(resource.second);
+                return resource.second;
             }
 
             Engine::Filter * const getFilter(std::string const &filterName)
@@ -1385,11 +1385,11 @@ namespace Gek
                     auto material = materialCache.getResource(handle);
                     if (drawPrimitiveValid =( material != nullptr))
                     {
-                        auto passData = material->getPassData(pass->getIdentifier());
-                        if (drawPrimitiveValid = (passData != nullptr))
+                        auto data = material->getData(pass->getMaterialHash());
+                        if (drawPrimitiveValid = (data != nullptr))
                         {
-                            setRenderState(videoContext, passData->renderState);
-                            setResourceList(videoContext->pixelPipeline(), passData->resourceList, pass->getFirstResourceStage());
+                            setRenderState(videoContext, material->getRenderState());
+                            setResourceList(videoContext->pixelPipeline(), data->resourceList, pass->getFirstResourceStage());
                         }
                     }
                 }
