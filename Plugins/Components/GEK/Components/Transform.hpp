@@ -24,12 +24,12 @@ namespace Gek
 
             inline Math::Float4x4 getMatrix(void) const
             {
-                return Math::Float4x4(rotation, position);
+                return Math::Float4x4::MakeQuaternionRotation(rotation, position);
             }
 
             inline Math::Float4x4 getScaledMatrix(void) const
             {
-                return (Math::Float4x4::FromScale(scale) * getMatrix());
+                return (Math::Float4x4::MakeScaling(scale) * getMatrix());
             }
         };
     }; // namespace Components

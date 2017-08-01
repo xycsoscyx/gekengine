@@ -226,7 +226,7 @@ namespace Gek
                     float roll = Parse(shuntingYard, object.at(2), Math::Infinity);
                     if (pitch != Math::Infinity && yaw != Math::Infinity && roll != Math::Infinity)
                     {
-                        return Math::Quaternion::FromEuler(pitch, yaw, roll);
+                        return Math::Quaternion::MakeEulerRotation(pitch, yaw, roll);
                     }
                 }
                 else if (object.size() == 4)
@@ -417,7 +417,7 @@ namespace Gek
                     float roll = Convert(object.at(2), Math::Infinity);
                     if (pitch != Math::Infinity && yaw != Math::Infinity && roll != Math::Infinity)
                     {
-                        return Math::Quaternion::FromEuler(pitch, yaw, roll);
+                        return Math::Quaternion::MakeEulerRotation(pitch, yaw, roll);
                     }
                 }
                 else if (object.size() == 4)

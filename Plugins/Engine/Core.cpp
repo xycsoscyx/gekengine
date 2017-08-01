@@ -144,25 +144,25 @@ namespace Gek
                 dock = std::make_unique<UI::Dock::WorkSpace>();
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                imGuiIo.KeyMap[ImGuiKey_Tab] = VK_TAB;
-                imGuiIo.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
-                imGuiIo.KeyMap[ImGuiKey_RightArrow] = VK_RIGHT;
-                imGuiIo.KeyMap[ImGuiKey_UpArrow] = VK_UP;
-                imGuiIo.KeyMap[ImGuiKey_DownArrow] = VK_DOWN;
-                imGuiIo.KeyMap[ImGuiKey_PageUp] = VK_PRIOR;
-                imGuiIo.KeyMap[ImGuiKey_PageDown] = VK_NEXT;
-                imGuiIo.KeyMap[ImGuiKey_Home] = VK_HOME;
-                imGuiIo.KeyMap[ImGuiKey_End] = VK_END;
-                imGuiIo.KeyMap[ImGuiKey_Delete] = VK_DELETE;
-                imGuiIo.KeyMap[ImGuiKey_Backspace] = VK_BACK;
-                imGuiIo.KeyMap[ImGuiKey_Enter] = VK_RETURN;
-                imGuiIo.KeyMap[ImGuiKey_Escape] = VK_ESCAPE;
-                imGuiIo.KeyMap[ImGuiKey_A] = 'A';
-                imGuiIo.KeyMap[ImGuiKey_C] = 'C';
-                imGuiIo.KeyMap[ImGuiKey_V] = 'V';
-                imGuiIo.KeyMap[ImGuiKey_X] = 'X';
-                imGuiIo.KeyMap[ImGuiKey_Y] = 'Y';
-                imGuiIo.KeyMap[ImGuiKey_Z] = 'Z';
+                imGuiIo.KeyMap[ImGuiKey_Tab] = KEY_Tab;
+                imGuiIo.KeyMap[ImGuiKey_LeftArrow] = KEY_Left;
+                imGuiIo.KeyMap[ImGuiKey_RightArrow] = KEY_Right;
+                imGuiIo.KeyMap[ImGuiKey_UpArrow] = KEY_Up;
+                imGuiIo.KeyMap[ImGuiKey_DownArrow] = KEY_Down;
+                imGuiIo.KeyMap[ImGuiKey_PageUp] = KEY_PageUp;
+                imGuiIo.KeyMap[ImGuiKey_PageDown] = KEY_PageDown;
+                imGuiIo.KeyMap[ImGuiKey_Home] = KEY_Home;
+                imGuiIo.KeyMap[ImGuiKey_End] = KEY_End;
+                imGuiIo.KeyMap[ImGuiKey_Delete] = KEY_DeleteForward;
+                imGuiIo.KeyMap[ImGuiKey_Backspace] = KEY_Delete;
+                imGuiIo.KeyMap[ImGuiKey_Enter] = KEY_Enter;
+                imGuiIo.KeyMap[ImGuiKEY_Escape] = KEY_Escape;
+                imGuiIo.KeyMap[ImGuiKey_A] = KEY_A;
+                imGuiIo.KeyMap[ImGuiKey_C] = KEY_C;
+                imGuiIo.KeyMap[ImGuiKey_V] = KEY_V;
+                imGuiIo.KeyMap[ImGuiKey_X] = KEY_X;
+                imGuiIo.KeyMap[ImGuiKey_Y] = KEY_Y;
+                imGuiIo.KeyMap[ImGuiKey_Z] = KEY_Z;
                 imGuiIo.MouseDrawCursor = false;
 
                 windowActive = true;
@@ -292,7 +292,7 @@ namespace Gek
                 {
                     switch (key)
                     {
-                    case VK_ESCAPE:
+                    case KEY_Escape:
                         imGuiIo.MouseDrawCursor = !imGuiIo.MouseDrawCursor;
                         if (imGuiIo.MouseDrawCursor)
                         {
@@ -308,7 +308,7 @@ namespace Gek
 
                         break;
 
-                    case VK_F1:
+                    case KEY_F1:
                         configuration["editor"]["active"] = !JSON::Reference(configuration).get("editor").get("active").convert(false);
                         break;
                     };
@@ -317,11 +317,11 @@ namespace Gek
                     {
                         switch (key)
                         {
-                        case VK_F5:
+                        case KEY_F5:
                             population->save("autosave");
                             break;
 
-                        case VK_F6:
+                        case KEY_F6:
                             population->load("autosave");
                             break;
                         };
@@ -332,31 +332,31 @@ namespace Gek
                 {
                     switch (key)
                     {
-                    case 'W':
-                    case VK_UP:
+                    case KEY_W:
+                    case KEY_Up:
                         population->action(Plugin::Population::Action("move_forward", state));
                         break;
 
-                    case 'S':
-                    case VK_DOWN:
+                    case KEY_S:
+                    case KEY_Down:
                         population->action(Plugin::Population::Action("move_backward", state));
                         break;
 
-                    case 'A':
-                    case VK_LEFT:
+                    case KEY_A:
+                    case KEY_Left:
                         population->action(Plugin::Population::Action("strafe_left", state));
                         break;
 
-                    case 'D':
-                    case VK_RIGHT:
+                    case KEY_D:
+                    case KEY_Right:
                         population->action(Plugin::Population::Action("strafe_right", state));
                         break;
 
-                    case VK_SPACE:
+                    case KEY_Space:
                         population->action(Plugin::Population::Action("jump", state));
                         break;
 
-                    case VK_LCONTROL:
+                    case KEY_LeftControl:
                         population->action(Plugin::Population::Action("crouch", state));
                         break;
                     };
@@ -664,9 +664,9 @@ namespace Gek
                         ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
 
                         ImGui::SameLine();
-                        if (ImGui::Button("Accept", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
+                        if (ImGui::Button("Accept", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[KEY_Enter])
                         {
-                            ImGui::GetIO().KeysDown[VK_RETURN] = false;
+                            ImGui::GetIO().KeysDown[KEY_Enter] = false;
                             bool changedDisplayMode = setDisplayMode(next.mode);
                             bool changedFullScreen = setFullScreen(next.fullScreen);
                             if (changedDisplayMode || changedFullScreen)
@@ -687,7 +687,7 @@ namespace Gek
                         }
 
                         ImGui::SameLine();
-                        if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
+                        if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[KEY_Escape])
                         {
                             showSettings = false;
                         }
@@ -711,15 +711,15 @@ namespace Gek
                         ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
 
                         ImGui::SameLine();
-                        if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
+                        if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[KEY_Enter])
                         {
-                            ImGui::GetIO().KeysDown[VK_RETURN] = false;
+                            ImGui::GetIO().KeysDown[KEY_Enter] = false;
                             showModeChange = false;
                             previous = current;
                         }
 
                         ImGui::SameLine();
-                        if (modeChangeTimer <= 0.0f || ImGui::Button("No", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
+                        if (modeChangeTimer <= 0.0f || ImGui::Button("No", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[KEY_Escape])
                         {
                             showModeChange = false;
                             setDisplayMode(previous.mode);
@@ -778,9 +778,9 @@ namespace Gek
                         else
                         {
                             ImGui::SetKeyboardFocusHere();
-                            if (ImGui::Button("Load", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
+                            if (ImGui::Button("Load", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[KEY_Enter])
                             {
-                                ImGui::GetIO().KeysDown[VK_RETURN] = false;
+                                ImGui::GetIO().KeysDown[KEY_Enter] = false;
                                 showLoadMenu = false;
                                 population->load(scenes[currentSelectedScene]);
                                 ImGui::GetIO().MouseDrawCursor = false;
@@ -788,7 +788,7 @@ namespace Gek
                         }
 
                         ImGui::SameLine();
-                        if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
+                        if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[KEY_Escape])
                         {
                             showLoadMenu = false;
                         }
@@ -812,15 +812,15 @@ namespace Gek
                         ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
 
                         ImGui::SameLine();
-                        if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
+                        if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[KEY_Enter])
                         {
-                            ImGui::GetIO().KeysDown[VK_RETURN] = false;
+                            ImGui::GetIO().KeysDown[KEY_Enter] = false;
                             showResetDialog = false;
                             population->reset();
                         }
 
                         ImGui::SameLine();
-                        if (ImGui::Button("No", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
+                        if (ImGui::Button("No", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[KEY_Escape])
                         {
                             showResetDialog = false;
                         }

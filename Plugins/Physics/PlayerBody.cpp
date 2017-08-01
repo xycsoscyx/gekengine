@@ -149,7 +149,7 @@ namespace Gek
                 Math::Float3 point1(playerComponent.innerRadius, playerComponent.height, 0.0f);
                 for (int point = 0; point < convexShapeDensity; ++point)
                 {
-                    Math::Float4x4 rotation(Math::Float4x4::FromYaw(point * 2.0f * Math::Pi / convexShapeDensity));
+                    Math::Float4x4 rotation(Math::Float4x4::MakeYawRotation(point * 2.0f * Math::Pi / convexShapeDensity));
                     convexPoints[0][point] = rotation.rotate(point0);
                     convexPoints[1][point] = rotation.rotate(point1);
                 }
@@ -196,7 +196,7 @@ namespace Gek
                 point1.set(castRadius, castHeight, 0.0f);
                 for (int point = 0; point < convexShapeDensity; ++point)
                 {
-                    Math::Float4x4 rotation(Math::Float4x4::FromYaw(point * 2.0f * Math::Pi / convexShapeDensity));
+                    Math::Float4x4 rotation(Math::Float4x4::MakeYawRotation(point * 2.0f * Math::Pi / convexShapeDensity));
                     convexPoints[0][point] = rotation.rotate(point0);
                     convexPoints[1][point] = rotation.rotate(point1);
                 }
@@ -298,7 +298,7 @@ namespace Gek
             Math::Float3 calculateDesiredOmega(Math::Float4x4 const &matrix, float frameTime) const
             {
                 Math::Quaternion playerRotation(matrix.getRotation());
-                Math::Quaternion targetRotation(Math::Quaternion::FromYaw(headingAngle));
+                Math::Quaternion targetRotation(Math::Quaternion::MakeYawRotation(headingAngle));
                 return calculateAverageOmega(playerRotation, targetRotation, 0.5f / frameTime);
             }
 
@@ -665,7 +665,7 @@ namespace Gek
 
                 auto &transformComponent = entity->getComponent<Components::Transform>();
                 transformComponent.position = (matrix.translation.xyz + (matrix.ry.xyz * playerComponent.height));
-                transformComponent.rotation = (Math::Quaternion::FromPitch(lookingAngle) * matrix.getRotation());
+                transformComponent.rotation = (Math::Quaternion::MakePitchRotation(lookingAngle) * matrix.getRotation());
                 forwardSpeed = 0.0f;
                 lateralSpeed = 0.0f;
                 verticalSpeed = 0.0f;

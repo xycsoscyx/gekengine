@@ -207,6 +207,16 @@ namespace Gek
             }
 
             // vector operations
+            float &operator [] (size_t index)
+            {
+                return data[index];
+            }
+
+            float const &operator [] (size_t index) const
+            {
+                return data[index];
+            }
+
             Vector3<TYPE> &operator = (const Vector3<TYPE> &vector)
             {
                 std::tie(x, y, z) = vector.getTuple();

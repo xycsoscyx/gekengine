@@ -35,204 +35,6 @@ namespace Gek
                 r[15] = a[12] * b[3] + a[13] * b[7] + a[14] * b[11] + a[15] * b[15];
             }
 
-            struct matrix_t;
-            struct vec_t
-            {
-            public:
-                union
-                {
-                    struct { float x, y, z, w; };
-                    struct { float data[4]; };
-                };
-
-                vec_t()
-                {
-                }
-
-                vec_t(float value)
-                    : x(value)
-                    , y(value)
-                    , z(value)
-                    , w(value)
-                {
-                }
-
-                vec_t(float x, float y, float z = 0.0f, float w = 0.0f)
-                    : x(x)
-                    , y(y)
-                    , z(z)
-                    , w(w)
-                {
-                }
-
-                void Lerp(const vec_t& v, float t)
-                {
-                    x += (v.x - x) * t;
-                    y += (v.y - y) * t;
-                    z += (v.z - z) * t;
-                    w += (v.w - w) * t;
-                }
-
-                void set(float v)
-                {
-                    x = y = z = w = v;
-                }
-
-                void set(float _x, float _y, float _z = 0.0f, float _w = 0.0f)
-                {
-                    x = _x;
-                    y = _y;
-                    z = _z;
-                    w = _w;
-                }
-
-                vec_t& operator -= (const vec_t& v)
-                {
-                    x -= v.x;
-                    y -= v.y;
-                    z -= v.z;
-                    w -= v.w;
-                    return *this;
-                }
-
-                vec_t& operator += (const vec_t& v)
-                {
-                    x += v.x;
-                    y += v.y;
-                    z += v.z;
-                    w += v.w;
-                    return *this;
-                }
-
-                vec_t& operator *= (const vec_t& v)
-                {
-                    x *= v.x;
-                    y *= v.y;
-                    z *= v.z;
-                    w *= v.w;
-                    return *this;
-                }
-
-                vec_t& operator *= (float v)
-                {
-                    x *= v;
-                    y *= v;
-                    z *= v;
-                    w *= v;
-                    return *this;
-                }
-
-                vec_t operator * (float f) const;
-                vec_t operator - () const;
-                vec_t operator - (const vec_t& v) const;
-                vec_t operator + (const vec_t& v) const;
-                vec_t operator * (const vec_t& v) const;
-
-                const vec_t& operator + () const
-                {
-                    return (*this);
-                }
-
-                float getLength() const
-                {
-                    return std::sqrt(x*x + y*y + z*z);
-                }
-
-                float getMagnitude() const
-                {
-                    return (x*x + y*y + z*z);
-                }
-
-                vec_t getNormal() const
-                {
-                    float inverseLength = (1.0f / getLength());
-                    return vec_t(inverseLength * x, inverseLength * y, inverseLength * z, inverseLength * w);
-                }
-
-                vec_t normalize()
-                {
-                    (*this) = getNormal();
-                    return (*this);
-                }
-
-                vec_t getAbsolute() const;
-
-                vec_t cross(const vec_t& v)
-                {
-                    vec_t res;
-                    res.x = y * v.z - z * v.y;
-                    res.y = z * v.x - x * v.z;
-                    res.z = x * v.y - y * v.x;
-                    res.w = 0.0f;
-                    return res;
-                }
-
-                float dot4(const vec_t &v) const
-                {
-                    return (x * v.x) + (y * v.y) + (z * v.z) + (w * v.w);
-                }
-
-                float dot(const vec_t &v) const
-                {
-                    return (x * v.x) + (y * v.y) + (z * v.z);
-                }
-
-                float& operator [] (size_t index)
-                {
-                    return data[index];
-                }
-
-                const float& operator [] (size_t index) const
-                {
-                    return data[index];
-                }
-            };
-
-            vec_t vec_t::operator * (float f) const
-            {
-                return vec_t(x * f, y * f, z * f, w *f);
-            }
-
-            vec_t vec_t::operator - () const
-            {
-                return vec_t(-x, -y, -z, -w);
-            }
-
-            vec_t vec_t::operator - (const vec_t& v) const
-            {
-                return vec_t(x - v.x, y - v.y, z - v.z, w - v.w);
-            }
-
-            vec_t vec_t::operator + (const vec_t& v) const
-            {
-                return vec_t(x + v.x, y + v.y, z + v.z, w + v.w);
-            }
-
-            vec_t vec_t::operator * (const vec_t& v) const
-            {
-                return vec_t(x * v.x, y * v.y, z * v.z, w * v.w);
-            }
-
-            vec_t vec_t::getAbsolute() const
-            {
-                return vec_t(std::abs(x), std::abs(y), std::abs(z));
-            }
-
-            ImVec2 operator+ (const ImVec2& a, const ImVec2& b)
-            {
-                return ImVec2(a.x + b.x, a.y + b.y);
-            }
-
-            vec_t BuildPlane(const vec_t & p_point1, const vec_t & p_normal)
-            {
-                vec_t normal = p_normal.getNormal(), res;
-                res.w = normal.dot4(p_point1);
-                res.x = normal.x;
-                res.y = normal.y;
-                res.z = normal.z;
-                return res;
-            }
-
             struct matrix_t
             {
             public:
@@ -242,15 +44,15 @@ namespace Gek
                     float data[16];
                     struct
                     {
-                        vec_t rx, ry, rz, rw;
+                        Math::Float4 rx, ry, rz, rw;
                     };
 
-                    vec_t rows[4];
+                    Math::Float4 rows[4];
                 };
 
                 matrix_t(const matrix_t& other)
                 {
-                    memcpy(&data[0], &other.data[0], sizeof(float) * 16);
+                    memcpy(data, other.data, sizeof(matrix_t));
                 }
 
                 matrix_t()
@@ -267,12 +69,23 @@ namespace Gek
                     return data;
                 }
 
-                void Translation(float _x, float _y, float _z)
+                Math::Float4 &operator [] (size_t index)
                 {
-                    this->Translation(vec_t(_x, _y, _z));
+                    return rows[index];
                 }
 
-                void Translation(const vec_t& vt)
+                Math::Float4 const &operator [] (size_t index) const
+                {
+                    return rows[index];
+                }
+
+                matrix_t &operator = (matrix_t const &matrix)
+                {
+                    memcpy(data, matrix.data, sizeof(matrix_t));
+                    return (*this);
+                }
+
+                void MakeTranslation(const Math::Float3& vt)
                 {
                     rx.set(1.0f, 0.0f, 0.0f, 0.0f);
                     ry.set(0.0f, 1.0f, 0.0f, 0.0f);
@@ -280,46 +93,28 @@ namespace Gek
                     rw.set(vt.x, vt.y, vt.z, 1.0f);
                 }
 
-                void Scale(float _x, float _y, float _z)
+                void MakeScaling(const Math::Float3& s)
                 {
-                    rx.set(_x, 0.0f, 0.0f, 0.0f);
-                    ry.set(0.0f, _y, 0.0f, 0.0f);
-                    rz.set(0.0f, 0.0f, _z, 0.0f);
+                    rx.set(s.x, 0.0f, 0.0f, 0.0f);
+                    ry.set(0.0f, s.y, 0.0f, 0.0f);
+                    rz.set(0.0f, 0.0f, s.z, 0.0f);
                     rw.set(0.0f, 0.0f, 0.0f, 1.0f);
                 }
 
-                void Scale(const vec_t& s)
-                {
-                    Scale(s.x, s.y, s.z);
-                }
+                void MakeRotation(const Math::Float3 & axis, float angle);
 
-                matrix_t& operator *= (const matrix_t& mat)
-                {
-                    matrix_t tmpMat;
-                    tmpMat = *this;
-                    tmpMat.Multiply(mat);
-                    *this = tmpMat;
-                    return *this;
-                }
-
-                matrix_t operator * (const matrix_t& mat) const
-                {
-                    matrix_t matT;
-                    matT.Multiply(*this, mat);
-                    return matT;
-                }
-
-                void Multiply(const matrix_t &matrix)
+                matrix_t operator * (const matrix_t &matrix) const
                 {
                     matrix_t tmp;
-                    tmp = *this;
-
-                    FPU_MatrixF_x_MatrixF((float*)&tmp, (float*)&matrix, (float*)this);
+                    FPU_MatrixF_x_MatrixF((float*)this, (float*)&matrix, (float*)&tmp);
+                    return tmp;
                 }
 
-                void Multiply(const matrix_t &m1, const matrix_t &m2)
+                matrix_t &operator *= (const matrix_t &matrix)
                 {
-                    FPU_MatrixF_x_MatrixF((float*)&m1, (float*)&m2, (float*)this);
+                    matrix_t tmp = *this;
+                    FPU_MatrixF_x_MatrixF((float*)&tmp, (float*)&matrix, (float*)this);
+                    return (*this);
                 }
 
                 float getDeterminant() const
@@ -343,7 +138,7 @@ namespace Gek
                     rw.set(0.0f, 0.0f, 0.0f, 1.0f);
                 }
 
-                void Transpose()
+                void transpose()
                 {
                     matrix_t tmpm;
                     for (int l = 0; l < 4; l++)
@@ -357,8 +152,6 @@ namespace Gek
                     (*this) = tmpm;
                 }
 
-                void RotationAxis(const vec_t & axis, float angle);
-
                 void orthonormalize()
                 {
                     rx.normalize();
@@ -366,14 +159,14 @@ namespace Gek
                     rz.normalize();
                 }
 
-                vec_t Transform(const vec_t& vector) const;
-                vec_t transform(const vec_t& vector) const;
-                vec_t rotate(const vec_t& vector) const;
+                Math::Float4 transform(const Math::Float4& vector) const;
+                Math::Float3 transform(const Math::Float3& vector) const;
+                Math::Float3 rotate(const Math::Float3& vector) const;
             };
 
-            vec_t matrix_t::Transform(const vec_t& vector) const
+            Math::Float4 matrix_t::transform(const Math::Float4& vector) const
             {
-                vec_t out;
+                Math::Float4 out;
                 out.x = vector.x * table[0][0] + vector.y * table[1][0] + vector.z * table[2][0] + vector.w * table[3][0];
                 out.y = vector.x * table[0][1] + vector.y * table[1][1] + vector.z * table[2][1] + vector.w * table[3][1];
                 out.z = vector.x * table[0][2] + vector.y * table[1][2] + vector.z * table[2][2] + vector.w * table[3][2];
@@ -381,23 +174,21 @@ namespace Gek
                 return out;
             }
 
-            vec_t matrix_t::transform(const vec_t& vector) const
+            Math::Float3 matrix_t::transform(const Math::Float3& vector) const
             {
-                vec_t out;
+                Math::Float3 out;
                 out.x = vector.x * table[0][0] + vector.y * table[1][0] + vector.z * table[2][0] + table[3][0];
                 out.y = vector.x * table[0][1] + vector.y * table[1][1] + vector.z * table[2][1] + table[3][1];
                 out.z = vector.x * table[0][2] + vector.y * table[1][2] + vector.z * table[2][2] + table[3][2];
-                out.w = vector.x * table[0][3] + vector.y * table[1][3] + vector.z * table[2][3] + table[3][3];
                 return out;
             }
 
-            vec_t matrix_t::rotate(const vec_t& vector) const
+            Math::Float3 matrix_t::rotate(const Math::Float3& vector) const
             {
-                vec_t out;
+                Math::Float3 out;
                 out.x = vector.x * table[0][0] + vector.y * table[1][0] + vector.z * table[2][0];
                 out.y = vector.x * table[0][1] + vector.y * table[1][1] + vector.z * table[2][1];
                 out.z = vector.x * table[0][2] + vector.y * table[1][2] + vector.z * table[2][2];
-                out.w = vector.x * table[0][3] + vector.y * table[1][3] + vector.z * table[2][3];
                 return out;
             }
 
@@ -473,7 +264,7 @@ namespace Gek
                 }
             }
 
-            void matrix_t::RotationAxis(const vec_t & axis, float angle)
+            void matrix_t::MakeRotation(const Math::Float3 & axis, float angle)
             {
                 float length2 = axis.getMagnitude();
                 if (length2 < FLT_EPSILON)
@@ -482,7 +273,7 @@ namespace Gek
                     return;
                 }
 
-                vec_t n = axis * (1.0f / std::sqrt(length2));
+                Math::Float3 n = axis * (1.0f / std::sqrt(length2));
                 float s = std::sin(angle);
                 float c = std::cos(angle);
                 float k = 1.0f - c;
@@ -515,11 +306,11 @@ namespace Gek
                 table[3][3] = 1.0f;
             }
 
-            static const vec_t directionUnary[3] =
+            static const Math::Float3 directionUnary[3] =
             {
-                vec_t(1.0f, 0.0f, 0.0f),
-                vec_t(0.0f, 1.0f, 0.0f),
-                vec_t(0.0f, 0.0f, 1.0f)
+                Math::Float3(1.0f, 0.0f, 0.0f),
+                Math::Float3(0.0f, 1.0f, 0.0f),
+                Math::Float3(0.0f, 0.0f, 1.0f)
             };
 
             static const ImU32 directionColor[3] =
@@ -624,38 +415,38 @@ namespace Gek
                 matrix_t mMVP;
                 matrix_t mViewProjection;
 
-                vec_t mModelScaleOrigin;
-                vec_t mCameraEye;
-                vec_t mCameraRight;
-                vec_t mCameraDir;
-                vec_t mCameraUp;
-                vec_t mRayOrigin;
-                vec_t mRayVector;
+                Math::Float3 mModelScaleOrigin;
+                Math::Float3 mCameraEye;
+                Math::Float3 mCameraRight;
+                Math::Float3 mCameraDir;
+                Math::Float3 mCameraUp;
+                Math::Float3 mRayOrigin;
+                Math::Float3 mRayVector;
 
                 ImVec2 mScreenSquareCenter;
                 ImVec2 mScreenSquareMin;
                 ImVec2 mScreenSquareMax;
 
                 float mScreenFactor;
-                vec_t mRelativeOrigin;
+                Math::Float3 mRelativeOrigin;
 
                 bool mbUsing;
                 bool mbEnable;
 
                 // translation
-                vec_t mTranslationPlane;
-                vec_t mTranslationPlaneOrigin;
-                vec_t mMatrixOrigin;
+                Shapes::Plane mTranslationPlane;
+                Math::Float3 mTranslationPlaneOrigin;
+                Math::Float3 mMatrixOrigin;
 
                 // rotation
-                vec_t mRotationVectorSource;
+                Math::Float3 mRotationVectorSource;
                 float mRotationAngle;
                 float mRotationAngleOrigin;
-                //vec_t mWorldToLocalAxis;
+                //Math::Float3 mWorldToLocalAxis;
 
                 // scale
-                vec_t mScale;
-                vec_t mScaleValueOrigin;
+                Math::Float3 mScale;
+                Math::Float3 mScaleValueOrigin;
                 float mSaveMousePosx;
 
                 // save axis factor when using gizmo
@@ -664,10 +455,10 @@ namespace Gek
                 float mAxisFactor[3];
 
                 // bounds stretching
-                vec_t mBoundsPivot;
-                vec_t mBoundsAnchor;
-                vec_t mBoundsPlane;
-                vec_t mBoundsLocalPivot;
+                Math::Float3 mBoundsPivot;
+                Math::Float3 mBoundsAnchor;
+                Shapes::Plane mBoundsPlane;
+                Math::Float3 mBoundsLocalPivot;
                 int mBoundsBestAxis;
                 int mBoundsAxis[2];
                 bool mbUsingBounds;
@@ -681,13 +472,13 @@ namespace Gek
                 float mWidth = 0.0f;
                 float mHeight = 0.0f;
 
-                ImVec2 worldToPos(const vec_t& worldPos, const matrix_t& mat)
+                ImVec2 worldToPos(const Math::Float3& worldPos, const matrix_t& mat)
                 {
                     ImGuiIO& io = ImGui::GetIO();
 
-                    vec_t trans = mat.transform(worldPos);
+                    Math::Float4 trans = mat.transform(Math::Float4(worldPos, 1.0f));
                     trans *= 0.5f / trans.w;
-                    trans += vec_t(0.5f, 0.5f);
+                    trans.xy += Math::Float2(0.5f, 0.5f);
                     trans.y = 1.0f - trans.y;
                     trans.x *= mWidth;
                     trans.y *= mHeight;
@@ -696,7 +487,7 @@ namespace Gek
                     return ImVec2(trans.x, trans.y);
                 }
 
-                void ComputeCameraRay(vec_t &rayOrigin, vec_t &rayDir)
+                void ComputeCameraRay(Math::Float3 &rayOrigin, Math::Float3 &rayDir)
                 {
                     ImGuiIO& io = ImGui::GetIO();
 
@@ -706,18 +497,20 @@ namespace Gek
                     float mox = ((io.MousePos.x - mX) / mWidth) * 2.0f - 1.0f;
                     float moy = (1.0f - ((io.MousePos.y - mY) / mHeight)) * 2.0f - 1.0f;
 
-                    rayOrigin = mViewProjInverse.Transform(vec_t(mox, moy, 0.0f, 1.0f));
-                    rayOrigin *= 1.0f / rayOrigin.w;
-                    vec_t rayEnd;
-                    rayEnd = mViewProjInverse.Transform(vec_t(mox, moy, 1.0f, 1.0f));
+                    Math::Float4 rayStart;
+                    rayStart = mViewProjInverse.transform(Math::Float4(mox, moy, 0.0f, 1.0f));
+                    rayOrigin = rayStart.xyz;
+                    rayOrigin *= 1.0f / rayStart.w;
+                    Math::Float4 rayEnd;
+                    rayEnd = mViewProjInverse.transform(Math::Float4(mox, moy, 1.0f, 1.0f));
                     rayEnd *= 1.0f / rayEnd.w;
-                    rayDir = (rayEnd - rayOrigin).getNormal();
+                    rayDir = (rayEnd.xyz - rayOrigin).getNormal();
                 }
 
-                float IntersectRayPlane(const vec_t & rOrigin, const vec_t& rVector, const vec_t& plane)
+                float IntersectRayPlane(const Math::Float3 & rOrigin, const Math::Float3& rVector, const Shapes::Plane& plane)
                 {
-                    float numer = plane.dot(rOrigin) - plane.w;
-                    float denom = plane.dot(rVector);
+                    float numer = plane.getDistance(rOrigin);
+                    float denom = plane.normal.dot(rVector);
 
                     if (std::abs(denom) < FLT_EPSILON)  // normal is orthogonal to vector, cant intersect
                     {
@@ -767,9 +560,9 @@ namespace Gek
                     }
                 }
 
-                float GetUniform(const vec_t& position, const matrix_t& mat)
+                float GetUniform(const Math::Float3& position, const matrix_t& mat)
                 {
-                    return mat.Transform(vec_t(position.x, position.y, position.z, 1.0f)).w;
+                    return mat.transform(Math::Float4(position, 1.0f)).w;
                 }
 
                 void ComputeContext(const float *view, const float *projection, float *matrix, Alignment mode)
@@ -785,7 +578,7 @@ namespace Gek
                     }
                     else
                     {
-                        mModel.Translation(((matrix_t*)matrix)->rw);
+                        mModel.MakeTranslation(((matrix_t*)matrix)->rw.xyz);
                     }
 
                     mModelSource = *(matrix_t*)matrix;
@@ -798,13 +591,13 @@ namespace Gek
 
                     matrix_t viewInverse;
                     viewInverse.getInverse(mViewMat);
-                    mCameraDir = viewInverse.rz;
-                    mCameraEye = viewInverse.rw;
-                    mCameraRight = viewInverse.rx;
-                    mCameraUp = viewInverse.ry;
-                    mScreenFactor = 0.15f * GetUniform(mModel.rw, mViewProjection);
+                    mCameraDir = viewInverse.rz.xyz;
+                    mCameraEye = viewInverse.rw.xyz;
+                    mCameraRight = viewInverse.rx.xyz;
+                    mCameraUp = viewInverse.ry.xyz;
+                    mScreenFactor = 0.15f * GetUniform(mModel.rw.xyz, mViewProjection);
 
-                    ImVec2 centerSSpace = worldToPos(vec_t(0.0f, 0.0f), mMVP);
+                    ImVec2 centerSSpace = worldToPos(Math::Float3(0.0f, 0.0f, 0.0f), mMVP);
                     mScreenSquareCenter = centerSSpace;
                     mScreenSquareMin = ImVec2(centerSSpace.x - 10.0f, centerSSpace.y - 10.0f);
                     mScreenSquareMax = ImVec2(centerSSpace.x + 10.0f, centerSSpace.y + 10.0f);
@@ -860,7 +653,7 @@ namespace Gek
                     }
                 }
 
-                void ComputeTripodAxisAndVisibility(int axisIndex, vec_t& dirPlaneX, vec_t& dirPlaneY, bool& belowAxisLimit, bool& belowPlaneLimit)
+                void ComputeTripodAxisAndVisibility(int axisIndex, Math::Float3& dirPlaneX, Math::Float3& dirPlaneY, bool& belowAxisLimit, bool& belowPlaneLimit)
                 {
                     const int planeNormal = (axisIndex + 2) % 3;
                     dirPlaneX = directionUnary[axisIndex];
@@ -876,17 +669,17 @@ namespace Gek
                     }
                     else
                     {
-                        vec_t dirPlaneNormalWorld;
+                        Math::Float3 dirPlaneNormalWorld;
                         dirPlaneNormalWorld = mModel.rotate(directionUnary[planeNormal]);
                         dirPlaneNormalWorld.normalize();
 
-                        vec_t dirPlaneXWorld = mModel.rotate(dirPlaneX);
+                        Math::Float3 dirPlaneXWorld = mModel.rotate(dirPlaneX);
                         dirPlaneXWorld.normalize();
 
-                        vec_t dirPlaneYWorld = mModel.rotate(dirPlaneY);
+                        Math::Float3 dirPlaneYWorld = mModel.rotate(dirPlaneY);
                         dirPlaneYWorld.normalize();
 
-                        vec_t cameraEyeToGizmo = (mModel.rw - mCameraEye).getNormal();
+                        Math::Float3 cameraEyeToGizmo = (mModel.rw.xyz - mCameraEye).getNormal();
                         float dotCameraDirX = cameraEyeToGizmo.dot(dirPlaneXWorld);
                         float dotCameraDirY = cameraEyeToGizmo.dot(dirPlaneYWorld);
 
@@ -925,7 +718,7 @@ namespace Gek
                         *value = *value - modulo + snap * ((*value < 0.0f) ? -1.0f : 1.0f);
                     }
                 }
-                void ComputeSnap(vec_t& value, float *snap)
+                void ComputeSnap(Math::Float3& value, float *snap)
                 {
                     for (int i = 0; i < 3; i++)
                     {
@@ -936,14 +729,14 @@ namespace Gek
                 float ComputeAngleOnPlane()
                 {
                     const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
-                    vec_t localPos = (mRayOrigin + mRayVector * len - mModel.rw).getNormal();
+                    Math::Float3 localPos = (mRayOrigin + mRayVector * len - mModel.rw.xyz).getNormal();
 
-                    vec_t perpendicularVector;
-                    perpendicularVector = mRotationVectorSource.cross(mTranslationPlane);
+                    Math::Float3 perpendicularVector;
+                    perpendicularVector = mRotationVectorSource.cross(mTranslationPlane.normal);
                     perpendicularVector.normalize();
-                    float acosAngle = std::clamp(localPos.dot4(mRotationVectorSource), -0.9999f, 0.9999f);
+                    float acosAngle = std::clamp(localPos.dot(mRotationVectorSource), -0.9999f, 0.9999f);
                     float angle = std::acos(acosAngle);
-                    angle *= (localPos.dot4(perpendicularVector) < 0.0f) ? 1.0f : -1.0f;
+                    angle *= (localPos.dot(perpendicularVector) < 0.0f) ? 1.0f : -1.0f;
                     return angle;
                 }
 
@@ -955,7 +748,7 @@ namespace Gek
                     // colors
                     ImU32 colors[7];
                     ComputeColors(colors, type, Operation::Rotate);
-                    vec_t cameraToModelNormalized = mModelInverse.rotate((mModel.rw - mCameraEye).getNormal());
+                    Math::Float3 cameraToModelNormalized = mModelInverse.rotate((mModel.rw.xyz - mCameraEye).getNormal());
                     for (int axis = 0; axis < 3; axis++)
                     {
                         ImVec2 circlePos[halfCircleSegmentCount];
@@ -963,29 +756,29 @@ namespace Gek
                         for (unsigned int i = 0; i < halfCircleSegmentCount; i++)
                         {
                             float ng = angleStart + Math::Pi * ((float)i / (float)halfCircleSegmentCount);
-                            vec_t axisPos = vec_t(std::cos(ng), std::sin(ng), 0.0f);
-                            vec_t pos = vec_t(axisPos[axis], axisPos[(axis + 1) % 3], axisPos[(axis + 2) % 3]) * mScreenFactor;
+                            Math::Float3 axisPos = Math::Float3(std::cos(ng), std::sin(ng), 0.0f);
+                            Math::Float3 pos = Math::Float3(axisPos[axis], axisPos[(axis + 1) % 3], axisPos[(axis + 2) % 3]) * mScreenFactor;
                             circlePos[i] = worldToPos(pos, mMVP);
                         }
 
                         drawList->AddPolyline(circlePos, halfCircleSegmentCount, colors[3 - axis], false, 5, true);
                     }
 
-                    drawList->AddCircle(worldToPos(mModel.rw, mViewProjection), screenRotateSize * mHeight, colors[0], 64, 5);
+                    drawList->AddCircle(worldToPos(mModel.rw.xyz, mViewProjection), screenRotateSize * mHeight, colors[0], 64, 5);
                     if (mbUsing)
                     {
                         ImVec2 circlePos[halfCircleSegmentCount + 1];
 
-                        circlePos[0] = worldToPos(mModel.rw, mViewProjection);
+                        circlePos[0] = worldToPos(mModel.rw.xyz, mViewProjection);
                         for (unsigned int i = 1; i < halfCircleSegmentCount; i++)
                         {
                             float ng = mRotationAngle * ((float)(i - 1) / (float)(halfCircleSegmentCount - 1));
 
                             matrix_t rotateVectorMatrix;
-                            rotateVectorMatrix.RotationAxis(mTranslationPlane, ng);
+                            rotateVectorMatrix.MakeRotation(mTranslationPlane.normal, ng);
 
-                            vec_t pos = rotateVectorMatrix.transform(mRotationVectorSource) * mScreenFactor;
-                            circlePos[i] = worldToPos(pos + mModel.rw, mViewProjection);
+                            Math::Float3 pos = rotateVectorMatrix.transform(mRotationVectorSource) * mScreenFactor;
+                            circlePos[i] = worldToPos(pos + mModel.rw.xyz, mViewProjection);
                         }
 
                         drawList->AddConvexPolyFilled(circlePos, halfCircleSegmentCount, 0x801080FF, true);
@@ -999,7 +792,7 @@ namespace Gek
                     }
                 }
 
-                void DrawHatchedAxis(const vec_t& axis)
+                void DrawHatchedAxis(const Math::Float3& axis)
                 {
                     for (int j = 1; j < 10; j++)
                     {
@@ -1021,7 +814,7 @@ namespace Gek
                     drawList->AddCircleFilled(mScreenSquareCenter, 12.0f, colors[0], 32);
 
                     // draw
-                    vec_t scaleDisplay = { 1.0f, 1.0f, 1.0f, 1.0f };
+                    Math::Float3 scaleDisplay(1.0f, 1.0f, 1.0f);
                     if (mbUsing)
                     {
                         scaleDisplay = mScale;
@@ -1029,7 +822,7 @@ namespace Gek
 
                     for (unsigned int i = 0; i < 3; i++)
                     {
-                        vec_t dirPlaneX, dirPlaneY;
+                        Math::Float3 dirPlaneX, dirPlaneY;
                         bool belowAxisLimit, belowPlaneLimit;
                         ComputeTripodAxisAndVisibility(i, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
 
@@ -1058,7 +851,7 @@ namespace Gek
 
                     if (mbUsing)
                     {
-                        ImVec2 destinationPosOnScreen = worldToPos(mModel.rw, mViewProjection);
+                        ImVec2 destinationPosOnScreen = worldToPos(mModel.rw.xyz, mViewProjection);
 
                         char tmps[512];
                         int componentInfoIndex = (type - SCALE_X) * 3;
@@ -1086,7 +879,7 @@ namespace Gek
                     // draw
                     for (unsigned int i = 0; i < 3; i++)
                     {
-                        vec_t dirPlaneX, dirPlaneY;
+                        Math::Float3 dirPlaneX, dirPlaneY;
                         bool belowAxisLimit, belowPlaneLimit;
                         ComputeTripodAxisAndVisibility(i, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
 
@@ -1108,7 +901,7 @@ namespace Gek
                             ImVec2 screenQuadPts[4];
                             for (int j = 0; j < 4; j++)
                             {
-                                vec_t cornerWorldPos = (dirPlaneX * quadUV[j * 2] + dirPlaneY  * quadUV[j * 2 + 1]) * mScreenFactor;
+                                Math::Float3 cornerWorldPos = (dirPlaneX * quadUV[j * 2] + dirPlaneY  * quadUV[j * 2 + 1]) * mScreenFactor;
                                 screenQuadPts[j] = worldToPos(cornerWorldPos, mMVP);
                             }
 
@@ -1119,8 +912,8 @@ namespace Gek
                     if (mbUsing)
                     {
                         ImVec2 sourcePosOnScreen = worldToPos(mMatrixOrigin, mViewProjection);
-                        ImVec2 destinationPosOnScreen = worldToPos(mModel.rw, mViewProjection);
-                        vec_t dif = { destinationPosOnScreen.x - sourcePosOnScreen.x, destinationPosOnScreen.y - sourcePosOnScreen.y, 0.0f, 0.0f };
+                        ImVec2 destinationPosOnScreen = worldToPos(mModel.rw.xyz, mViewProjection);
+                        Math::Float3 dif(destinationPosOnScreen.x - sourcePosOnScreen.x, destinationPosOnScreen.y - sourcePosOnScreen.y, 0.0f);
                         dif.normalize();
                         dif *= 5.0f;
 
@@ -1129,7 +922,7 @@ namespace Gek
                         drawList->AddLine(ImVec2(sourcePosOnScreen.x + dif.x, sourcePosOnScreen.y + dif.y), ImVec2(destinationPosOnScreen.x - dif.x, destinationPosOnScreen.y - dif.y), translationLineColor, 2.0f);
 
                         char tmps[512];
-                        vec_t deltaInfo = mModel.rw - mMatrixOrigin;
+                        Math::Float3 deltaInfo = mModel.rw.xyz - mMatrixOrigin;
                         int componentInfoIndex = (type - MOVE_X) * 3;
                         ImFormatString(tmps, sizeof(tmps), translationInfoMask[type - MOVE_X], deltaInfo[translationInfoIndex[componentInfoIndex]], deltaInfo[translationInfoIndex[componentInfoIndex + 1]], deltaInfo[translationInfoIndex[componentInfoIndex + 2]]);
                         drawList->AddText(ImVec2(destinationPosOnScreen.x + 15, destinationPosOnScreen.y + 15), 0xFF000000, tmps);
@@ -1200,7 +993,7 @@ namespace Gek
                     ImDrawList* drawList = mDrawList;
 
                     // compute best projection axis
-                    vec_t bestAxisWorldDirection;
+                    Math::Float3 bestAxisWorldDirection;
                     int bestAxis = mBoundsBestAxis;
                     if (!mbUsingBounds)
                     {
@@ -1208,10 +1001,10 @@ namespace Gek
                         float bestDot = 0.0f;
                         for (unsigned int i = 0; i < 3; i++)
                         {
-                            vec_t dirPlaneNormalWorld = mModelSource.rotate(directionUnary[i]);
+                            Math::Float3 dirPlaneNormalWorld = mModelSource.rotate(directionUnary[i]);
                             dirPlaneNormalWorld.normalize();
 
-                            float dt = (mCameraEye - mModelSource.rw).getNormal().dot4(dirPlaneNormalWorld);
+                            float dt = (mCameraEye - mModelSource.rw.xyz).getNormal().dot(dirPlaneNormalWorld);
                             if (std::abs(dt) >= bestDot)
                             {
                                 bestDot = std::abs(dt);
@@ -1222,7 +1015,7 @@ namespace Gek
                     }
 
                     // corners
-                    vec_t aabb[4];
+                    Math::Float3 aabb[4];
 
                     int secondAxis = (bestAxis + 1) % 3;
                     int thirdAxis = (bestAxis + 2) % 3;
@@ -1257,7 +1050,7 @@ namespace Gek
                             }
                         }
 
-                        vec_t midPoint = (aabb[i] + aabb[(i + 1) % 4]) * 0.5f;
+                        Math::Float3 midPoint = (aabb[i] + aabb[(i + 1) % 4]) * 0.5f;
                         ImVec2 midBound = worldToPos(midPoint, boundsMVP);
                         static const float AnchorBigRadius = 8.0f;
                         static const float AnchorSmallRadius = 6.0f;
@@ -1275,7 +1068,7 @@ namespace Gek
                         {
                             mBoundsPivot = mModelSource.transform(aabb[(i + 2) % 4]);
                             mBoundsAnchor = mModelSource.transform(aabb[i]);
-                            mBoundsPlane = BuildPlane(mBoundsAnchor, bestAxisWorldDirection);
+                            mBoundsPlane = Shapes::Plane(bestAxisWorldDirection, mBoundsAnchor);
                             mBoundsBestAxis = bestAxis;
                             mBoundsAxis[0] = secondAxis;
                             mBoundsAxis[1] = thirdAxis;
@@ -1291,10 +1084,10 @@ namespace Gek
                         // small anchor on middle of segment
                         if (!mbUsingBounds && mbEnable && overSmallAnchor && io.MouseDown[0])
                         {
-                            vec_t midPointOpposite = (aabb[(i + 2) % 4] + aabb[(i + 3) % 4]) * 0.5f;
+                            Math::Float3 midPointOpposite = (aabb[(i + 2) % 4] + aabb[(i + 3) % 4]) * 0.5f;
                             mBoundsPivot = mModelSource.transform(midPointOpposite);
                             mBoundsAnchor = mModelSource.transform(midPoint);
-                            mBoundsPlane = BuildPlane(mBoundsAnchor, bestAxisWorldDirection);
+                            mBoundsPlane = Shapes::Plane(bestAxisWorldDirection, mBoundsAnchor);
                             mBoundsBestAxis = bestAxis;
 
                             int indices[] =
@@ -1321,11 +1114,11 @@ namespace Gek
 
                         // compute projected mouse position on plane
                         const float len = IntersectRayPlane(mRayOrigin, mRayVector, mBoundsPlane);
-                        vec_t newPos = mRayOrigin + mRayVector * len;
+                        Math::Float3 newPos = mRayOrigin + mRayVector * len;
 
                         // compute a reference and delta vectors base on mouse move
-                        vec_t deltaVector = (newPos - mBoundsPivot).getAbsolute();
-                        vec_t referenceVector = (mBoundsAnchor - mBoundsPivot).getAbsolute();
+                        Math::Float3 deltaVector = (newPos - mBoundsPivot).getAbsolute();
+                        Math::Float3 referenceVector = (mBoundsAnchor - mBoundsPivot).getAbsolute();
 
                         // for 1 or 2 axes, compute a ratio that's used for scale and snap it based on resulting length
                         for (int i = 0; i < 2; i++)
@@ -1337,13 +1130,13 @@ namespace Gek
                             }
 
                             float ratioAxis = 1.0f;
-                            vec_t axisDir = mBoundsMatrix.rows[axisIndex].getAbsolute();
+                            Math::Float3 axisDir = mBoundsMatrix[axisIndex].xyz.getAbsolute();
 
-                            float dtAxis = axisDir.dot4(referenceVector);
+                            float dtAxis = axisDir.dot(referenceVector);
                             float boundSize = bounds[axisIndex + 3] - bounds[axisIndex];
                             if (dtAxis > FLT_EPSILON)
                             {
-                                ratioAxis = axisDir.dot4(deltaVector) / dtAxis;
+                                ratioAxis = axisDir.dot(deltaVector) / dtAxis;
                             }
 
                             if (snapValues)
@@ -1361,14 +1154,14 @@ namespace Gek
 
                         // transform matrix
                         matrix_t preScale, postScale;
-                        preScale.Translation(-mBoundsLocalPivot);
-                        postScale.Translation(mBoundsLocalPivot);
+                        preScale.MakeTranslation(-mBoundsLocalPivot);
+                        postScale.MakeTranslation(mBoundsLocalPivot);
                         matrix_t res = preScale * scale * postScale * mBoundsMatrix;
                         *matrix = res;
 
                         // info text
                         char tmps[512];
-                        ImVec2 destinationPosOnScreen = worldToPos(mModel.rw, mViewProjection);
+                        ImVec2 destinationPosOnScreen = worldToPos(mModel.rw.xyz, mViewProjection);
                         ImFormatString(tmps, sizeof(tmps), "X: %.2f Y: %.2f Z:%.2f"
                             , (bounds[3] - bounds[0]) * mBoundsMatrix.rows[0].getLength() * scale.rows[0].getLength()
                             , (bounds[4] - bounds[1]) * mBoundsMatrix.rows[1].getLength() * scale.rows[1].getLength()
@@ -1397,28 +1190,28 @@ namespace Gek
                         type = SCALE_XYZ;
                     }
 
-                    const vec_t direction[3] =
+                    const Math::Float3 direction[3] =
                     {
-                        mModel.rx,
-                        mModel.ry,
-                        mModel.rz
+                        mModel.rx.xyz,
+                        mModel.ry.xyz,
+                        mModel.rz.xyz,
                     };
 
                     // compute
                     for (unsigned int i = 0; i < 3 && type == NONE; i++)
                     {
-                        vec_t dirPlaneX, dirPlaneY;
+                        Math::Float3 dirPlaneX, dirPlaneY;
                         bool belowAxisLimit, belowPlaneLimit;
                         ComputeTripodAxisAndVisibility(i, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
                         dirPlaneX = mModel.rotate(dirPlaneX);
                         dirPlaneY = mModel.rotate(dirPlaneY);
 
                         const int planeNormal = (i + 2) % 3;
-                        const float len = IntersectRayPlane(mRayOrigin, mRayVector, BuildPlane(mModel.rw, direction[planeNormal]));
-                        vec_t posOnPlane = mRayOrigin + mRayVector * len;
+                        const float len = IntersectRayPlane(mRayOrigin, mRayVector, Shapes::Plane(direction[planeNormal], mModel.rw.xyz));
+                        Math::Float3 posOnPlane = mRayOrigin + mRayVector * len;
 
-                        const float dx = dirPlaneX.dot((posOnPlane - mModel.rw) * (1.0f / mScreenFactor));
-                        const float dy = dirPlaneY.dot((posOnPlane - mModel.rw) * (1.0f / mScreenFactor));
+                        const float dx = dirPlaneX.dot((posOnPlane - mModel.rw.xyz) * (1.0f / mScreenFactor));
+                        const float dy = dirPlaneY.dot((posOnPlane - mModel.rw.xyz) * (1.0f / mScreenFactor));
                         if (belowAxisLimit && dy > -0.1f && dy < 0.1f && dx > 0.1f  && dx < 1.0f)
                         {
                             type = SCALE_X + i;
@@ -1433,27 +1226,27 @@ namespace Gek
                     ImGuiIO& io = ImGui::GetIO();
                     int type = NONE;
 
-                    vec_t deltaScreen = { io.MousePos.x - mScreenSquareCenter.x, io.MousePos.y - mScreenSquareCenter.y, 0.0f, 0.0f };
+                    Math::Float3 deltaScreen(io.MousePos.x - mScreenSquareCenter.x, io.MousePos.y - mScreenSquareCenter.y, 0.0f);
                     float dist = deltaScreen.getLength();
                     if (dist >= (screenRotateSize - 0.002f) * mHeight && dist < (screenRotateSize + 0.002f) * mHeight)
                     {
                         type = ROTATE_SCREEN;
                     }
 
-                    const vec_t planeNormals[] =
+                    const Math::Float3 planeNormals[] =
                     {
-                        mModel.rx,
-                        mModel.ry,
-                        mModel.rz
+                        mModel.rx.xyz,
+                        mModel.ry.xyz,
+                        mModel.rz.xyz,
                     };
 
                     for (unsigned int i = 0; i < 3 && type == NONE; i++)
                     {
                         // pickup plane
-                        vec_t pickupPlane = BuildPlane(mModel.rw, planeNormals[i]);
+                        Shapes::Plane pickupPlane(planeNormals[i], mModel.rw.xyz);
                         const float len = IntersectRayPlane(mRayOrigin, mRayVector, pickupPlane);
-                        vec_t localPos = mRayOrigin + mRayVector * len - mModel.rw;
-                        if (localPos.getNormal().dot4(mRayVector) > FLT_EPSILON)
+                        Math::Float3 localPos = mRayOrigin + mRayVector * len - mModel.rw.xyz;
+                        if (localPos.getNormal().dot(mRayVector) > FLT_EPSILON)
                         {
                             continue;
                         }
@@ -1468,7 +1261,7 @@ namespace Gek
                     return type;
                 }
 
-                int GetMoveType(vec_t *gizmoHitProportion)
+                int GetMoveType(Math::Float3 *gizmoHitProportion)
                 {
                     ImGuiIO& io = ImGui::GetIO();
                     int type = NONE;
@@ -1480,28 +1273,28 @@ namespace Gek
                         type = MOVE_SCREEN;
                     }
 
-                    const vec_t direction[3] =
+                    const Math::Float3 direction[3] =
                     {
-                        mModel.rx,
-                        mModel.ry,
-                        mModel.rz
+                        mModel.rx.xyz,
+                        mModel.ry.xyz,
+                        mModel.rz.xyz,
                     };
 
                     // compute
                     for (unsigned int i = 0; i < 3 && type == NONE; i++)
                     {
-                        vec_t dirPlaneX, dirPlaneY;
+                        Math::Float3 dirPlaneX, dirPlaneY;
                         bool belowAxisLimit, belowPlaneLimit;
                         ComputeTripodAxisAndVisibility(i, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
                         dirPlaneX = mModel.rotate(dirPlaneX);
                         dirPlaneY = mModel.rotate(dirPlaneY);
 
                         const int planeNormal = (i + 2) % 3;
-                        const float len = IntersectRayPlane(mRayOrigin, mRayVector, BuildPlane(mModel.rw, direction[planeNormal]));
-                        vec_t posOnPlane = mRayOrigin + mRayVector * len;
+                        const float len = IntersectRayPlane(mRayOrigin, mRayVector, Shapes::Plane(direction[planeNormal], mModel.rw.xyz));
+                        Math::Float3 posOnPlane = mRayOrigin + mRayVector * len;
 
-                        const float dx = dirPlaneX.dot((posOnPlane - mModel.rw) * (1.0f / mScreenFactor));
-                        const float dy = dirPlaneY.dot((posOnPlane - mModel.rw) * (1.0f / mScreenFactor));
+                        const float dx = dirPlaneX.dot((posOnPlane - mModel.rw.xyz) * (1.0f / mScreenFactor));
+                        const float dy = dirPlaneY.dot((posOnPlane - mModel.rw.xyz) * (1.0f / mScreenFactor));
                         if (belowAxisLimit && dy > -0.1f && dy < 0.1f && dx > 0.1f  && dx < 1.0f)
                         {
                             type = MOVE_X + i;
@@ -1514,7 +1307,7 @@ namespace Gek
 
                         if (gizmoHitProportion)
                         {
-                            *gizmoHitProportion = vec_t(dx, dy, 0.0f);
+                            *gizmoHitProportion = Math::Float3(dx, dy, 0.0f);
                         }
                     }
 
@@ -1531,25 +1324,25 @@ namespace Gek
                     if (mbUsing)
                     {
                         const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
-                        vec_t newPos = mRayOrigin + mRayVector * len;
+                        Math::Float3 newPos = mRayOrigin + mRayVector * len;
 
                         // compute delta
-                        vec_t newOrigin = newPos - mRelativeOrigin * mScreenFactor;
-                        vec_t delta = newOrigin - mModel.rw;
+                        Math::Float3 newOrigin = newPos - mRelativeOrigin * mScreenFactor;
+                        Math::Float3 delta = newOrigin - mModel.rw.xyz;
 
                         // 1 axis constraint
                         if (mCurrentOperation >= MOVE_X && mCurrentOperation <= MOVE_Z)
                         {
                             int axisIndex = mCurrentOperation - MOVE_X;
-                            const vec_t& axisValue = *(vec_t*)&mModel.table[axisIndex];
-                            float lengthOnAxis = axisValue.dot4(delta);
+                            const Math::Float3& axisValue = mModel.rows[axisIndex].xyz;
+                            float lengthOnAxis = axisValue.dot(delta);
                             delta = axisValue * lengthOnAxis;
                         }
 
                         // snap
                         if (snap)
                         {
-                            vec_t cumulativeDelta = mModel.rw + delta - mMatrixOrigin;
+                            Math::Float3 cumulativeDelta = mModel.rw.xyz + delta - mMatrixOrigin;
                             if (applyRotationLocaly)
                             {
                                 matrix_t modelSourceNormalized = mModelSource;
@@ -1565,15 +1358,15 @@ namespace Gek
                                 ComputeSnap(cumulativeDelta, snap);
                             }
 
-                            delta = mMatrixOrigin + cumulativeDelta - mModel.rw;
+                            delta = mMatrixOrigin + cumulativeDelta - mModel.rw.xyz;
                         }
 
                         // compute matrix & delta
                         matrix_t deltaMatrixTranslation;
-                        deltaMatrixTranslation.Translation(delta);
+                        deltaMatrixTranslation.MakeTranslation(delta);
                         if (deltaMatrix)
                         {
-                            memcpy(deltaMatrix, deltaMatrixTranslation.data, sizeof(float) * 16);
+                            memcpy(deltaMatrix, deltaMatrixTranslation.data, sizeof(matrix_t));
                         }
 
 
@@ -1590,30 +1383,30 @@ namespace Gek
                     else
                     {
                         // find new possible way to move
-                        vec_t gizmoHitProportion;
+                        Math::Float3 gizmoHitProportion;
                         type = GetMoveType(&gizmoHitProportion);
                         if (io.MouseDown[0] && type != NONE)
                         {
                             mbUsing = true;
                             mCurrentOperation = type;
-                            const vec_t movePlaneNormal[] =
+                            const Math::Float3 movePlaneNormal[] =
                             {
-                                mModel.ry,
-                                mModel.rz,
-                                mModel.rx,
-                                mModel.rz,
-                                mModel.rx,
-                                mModel.ry,
-                                -mCameraDir
+                                mModel.ry.xyz,
+                                mModel.rz.xyz,
+                                mModel.rx.xyz,
+                                mModel.rz.xyz,
+                                mModel.rx.xyz,
+                                mModel.ry.xyz,
+                                -mCameraDir,
                             };
 
                             // pickup plane
-                            mTranslationPlane = BuildPlane(mModel.rw, movePlaneNormal[type - MOVE_X]);
+                            mTranslationPlane = Shapes::Plane(movePlaneNormal[type - MOVE_X], mModel.rw.xyz);
                             const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
                             mTranslationPlaneOrigin = mRayOrigin + mRayVector * len;
-                            mMatrixOrigin = mModel.rw;
+                            mMatrixOrigin = mModel.rw.xyz;
 
-                            mRelativeOrigin = (mTranslationPlaneOrigin - mModel.rw) * (1.0f / mScreenFactor);
+                            mRelativeOrigin = (mTranslationPlaneOrigin - mModel.rw.xyz) * (1.0f / mScreenFactor);
                         }
                     }
 
@@ -1633,25 +1426,25 @@ namespace Gek
                         {
                             mbUsing = true;
                             mCurrentOperation = type;
-                            const vec_t movePlaneNormal[] =
+                            const Math::Float3 movePlaneNormal[] =
                             {
-                                mModel.ry,
-                                mModel.rz,
-                                mModel.rx,
-                                mModel.rz,
-                                mModel.ry,
-                                mModel.rx,
-                                -mCameraDir
+                                mModel.ry.xyz,
+                                mModel.rz.xyz,
+                                mModel.rx.xyz,
+                                mModel.rz.xyz,
+                                mModel.ry.xyz,
+                                mModel.rx.xyz,
+                                -mCameraDir,
                             };
 
                             // pickup plane
-                            mTranslationPlane = BuildPlane(mModel.rw, movePlaneNormal[type - SCALE_X]);
+                            mTranslationPlane = Shapes::Plane(movePlaneNormal[type - SCALE_X], mModel.rw.xyz);
                             const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
                             mTranslationPlaneOrigin = mRayOrigin + mRayVector * len;
-                            mMatrixOrigin = mModel.rw;
+                            mMatrixOrigin = mModel.rw.xyz;
                             mScale.set(1.0f, 1.0f, 1.0f);
-                            mRelativeOrigin = (mTranslationPlaneOrigin - mModel.rw) * (1.0f / mScreenFactor);
-                            mScaleValueOrigin = vec_t(mModelSource.rx.getLength(), mModelSource.ry.getLength(), mModelSource.rz.getLength());
+                            mRelativeOrigin = (mTranslationPlaneOrigin - mModel.rw.xyz) * (1.0f / mScreenFactor);
+                            mScaleValueOrigin = Math::Float3(mModelSource.rx.getLength(), mModelSource.ry.getLength(), mModelSource.rz.getLength());
                             mSaveMousePosx = io.MousePos.x;
                         }
                     }
@@ -1660,20 +1453,20 @@ namespace Gek
                     if (mbUsing)
                     {
                         const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
-                        vec_t newPos = mRayOrigin + mRayVector * len;
-                        vec_t newOrigin = newPos - mRelativeOrigin * mScreenFactor;
-                        vec_t delta = newOrigin - mModel.rw;
+                        Math::Float3 newPos = mRayOrigin + mRayVector * len;
+                        Math::Float3 newOrigin = newPos - mRelativeOrigin * mScreenFactor;
+                        Math::Float3 delta = newOrigin - mModel.rw.xyz;
 
                         // 1 axis constraint
                         if (mCurrentOperation >= SCALE_X && mCurrentOperation <= SCALE_Z)
                         {
                             int axisIndex = mCurrentOperation - SCALE_X;
-                            const vec_t& axisValue = *(vec_t*)&mModel.table[axisIndex];
-                            float lengthOnAxis = axisValue.dot4(delta);
+                            const Math::Float3& axisValue = *(Math::Float3*)&mModel.table[axisIndex];
+                            float lengthOnAxis = axisValue.dot(delta);
                             delta = axisValue * lengthOnAxis;
 
-                            vec_t baseVector = mTranslationPlaneOrigin - mModel.rw;
-                            float ratio = axisValue.dot4(baseVector + delta) / axisValue.dot4(baseVector);
+                            Math::Float3 baseVector = mTranslationPlaneOrigin - mModel.rw.xyz;
+                            float ratio = axisValue.dot(baseVector + delta) / axisValue.dot(baseVector);
 
                             mScale[axisIndex] = std::max(ratio, 0.001f);
                         }
@@ -1698,15 +1491,15 @@ namespace Gek
 
                         // compute matrix & delta
                         matrix_t deltaMatrixScale;
-                        deltaMatrixScale.Scale(mScale * mScaleValueOrigin);
+                        deltaMatrixScale.MakeScaling(mScale * mScaleValueOrigin);
 
                         matrix_t res = deltaMatrixScale * mModel;
                         *(matrix_t*)matrix = res;
 
                         if (deltaMatrix)
                         {
-                            deltaMatrixScale.Scale(mScale);
-                            memcpy(deltaMatrix, deltaMatrixScale.data, sizeof(float) * 16);
+                            deltaMatrixScale.MakeScaling(mScale);
+                            memcpy(deltaMatrix, deltaMatrixScale.data, sizeof(matrix_t));
                         }
 
                         if (!io.MouseDown[0])
@@ -1738,26 +1531,26 @@ namespace Gek
                         {
                             mbUsing = true;
                             mCurrentOperation = type;
-                            const vec_t rotatePlaneNormal[] =
+                            const Math::Float3 rotatePlaneNormal[] =
                             {
-                                mModel.rx,
-                                mModel.ry,
-                                mModel.rz,
-                                -mCameraDir
+                                mModel.rx.xyz,
+                                mModel.ry.xyz,
+                                mModel.rz.xyz,
+                                -mCameraDir,
                             };
 
                             // pickup plane
                             if (applyRotationLocaly)
                             {
-                                mTranslationPlane = BuildPlane(mModel.rw, rotatePlaneNormal[type - ROTATE_X]);
+                                mTranslationPlane = Shapes::Plane(rotatePlaneNormal[type - ROTATE_X], mModel.rw.xyz);
                             }
                             else
                             {
-                                mTranslationPlane = BuildPlane(mModelSource.rw, directionUnary[type - ROTATE_X]);
+                                mTranslationPlane = Shapes::Plane(directionUnary[type - ROTATE_X], mModelSource.rw.xyz);
                             }
 
                             const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
-                            vec_t localPos = mRayOrigin + mRayVector * len - mModel.rw;
+                            Math::Float3 localPos = mRayOrigin + mRayVector * len - mModel.rw.xyz;
                             mRotationVectorSource = localPos.getNormal();
                             mRotationAngleOrigin = ComputeAngleOnPlane();
                         }
@@ -1773,15 +1566,15 @@ namespace Gek
                             ComputeSnap(&mRotationAngle, snapInRadian);
                         }
 
-                        vec_t rotationAxisLocalSpace = mModelInverse.rotate(vec_t(mTranslationPlane.x, mTranslationPlane.y, mTranslationPlane.z, 0.0f));
+                        Math::Float3 rotationAxisLocalSpace = mModelInverse.rotate(mTranslationPlane.normal);
                         rotationAxisLocalSpace.normalize();
 
                         matrix_t deltaRotation;
-                        deltaRotation.RotationAxis(rotationAxisLocalSpace, mRotationAngle - mRotationAngleOrigin);
+                        deltaRotation.MakeRotation(rotationAxisLocalSpace, mRotationAngle - mRotationAngleOrigin);
                         mRotationAngleOrigin = mRotationAngle;
 
                         matrix_t scaleOrigin;
-                        scaleOrigin.Scale(mModelScaleOrigin);
+                        scaleOrigin.MakeScaling(mModelScaleOrigin);
 
                         if (applyRotationLocaly)
                         {
@@ -1823,7 +1616,7 @@ namespace Gek
                     }
 
                     // behind camera
-                    vec_t camSpacePosition = mMVP.transform(vec_t(0.0f, 0.0f, 0.0f));
+                    Math::Float3 camSpacePosition = mMVP.transform(Math::Float3(0.0f, 0.0f, 0.0f));
                     if (camSpacePosition.z < 0.001f)
                     {
                         return;
@@ -1869,7 +1662,7 @@ namespace Gek
                         const int perpYIndex = (normalIndex + 2) % 3;
                         const float invert = (iFace > 2) ? -1.0f : 1.0f;
 
-                        const vec_t faceCoords[4] =
+                        const Math::Float3 faceCoords[4] =
                         {
                             directionUnary[normalIndex] + directionUnary[perpXIndex] + directionUnary[perpYIndex],
                             directionUnary[normalIndex] + directionUnary[perpXIndex] - directionUnary[perpYIndex],
@@ -1881,7 +1674,7 @@ namespace Gek
                         bool skipFace = false;
                         for (unsigned int iCoord = 0; iCoord < 4; iCoord++)
                         {
-                            vec_t camSpacePosition = res.transform(faceCoords[iCoord] * 0.5f * invert);
+                            Math::Float3 camSpacePosition = res.transform(faceCoords[iCoord] * 0.5f * invert);
                             if (camSpacePosition.z < 0.001f)
                             {
                                 skipFace = true;
@@ -1902,10 +1695,10 @@ namespace Gek
                         }
 
                         // back face culling 
-                        vec_t cullPos, cullNormal;
+                        Math::Float3 cullPos, cullNormal;
                         cullPos = model.transform(faceCoords[0] * 0.5f * invert);
                         cullNormal = model.rotate(directionUnary[normalIndex] * invert);
-                        float dt = (cullPos - viewInverse.rw).getNormal().dot4(cullNormal.getNormal());
+                        float dt = (cullPos - viewInverse.rw.xyz).getNormal().dot(cullNormal.getNormal());
                         if (dt > 0.0f)
                         {
                             continue;

@@ -51,7 +51,7 @@ namespace Gek
             };
 
         public:
-            inline static Float4x4 FromScale(Float3 const &scale, Float3 const &translation = Math::Float3::Zero)
+            inline static Float4x4 MakeScaling(Float3 const &scale, Float3 const &translation = Math::Float3::Zero)
             {
                 return Float4x4(
                     scale.x, 0.0f, 0.0f, 0.0f,
@@ -60,7 +60,15 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
-            inline static Float4x4 FromAngular(Float3 const &axis, float radians, Float3 const &translation = Math::Float3::Zero)
+            inline static Float4x4 MakeQuaternionRotation(Quaternion const &rotation, Float3 const &translation = Math::Float3::Zero)
+            {
+                Float4x4 matrix;
+                matrix.setRotation(rotation);
+                matrix.rw = Float4(translation, 1.0f);
+                return matrix;
+            }
+
+            inline static Float4x4 MakeAngularRotation(Float3 const &axis, float radians, Float3 const &translation = Math::Float3::Zero)
             {
                 // do the trig
                 float cosAngle = cos(radians);
@@ -75,7 +83,7 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
-            inline static Float4x4 FromEuler(float pitch, float yaw, float roll, Float3 const &translation = Math::Float3::Zero)
+            inline static Float4x4 MakeEulerRotation(float pitch, float yaw, float roll, Float3 const &translation = Math::Float3::Zero)
             {
                 float cosPitch(std::cos(pitch));
                 float sinPitch(std::sin(pitch));
@@ -91,7 +99,7 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
-            inline static Float4x4 FromPitch(float radians, Float3 const &translation = Math::Float3::Zero)
+            inline static Float4x4 MakePitchRotation(float radians, Float3 const &translation = Math::Float3::Zero)
             {
                 float cosAngle(std::cos(radians));
                 float sinAngle(std::sin(radians));
@@ -103,7 +111,7 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
-            inline static Float4x4 FromYaw(float radians, Float3 const &translation = Math::Float3::Zero)
+            inline static Float4x4 MakeYawRotation(float radians, Float3 const &translation = Math::Float3::Zero)
             {
                 float cosAngle(std::cos(radians));
                 float sinAngle(std::sin(radians));
@@ -115,7 +123,7 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
-            inline static Float4x4 FromRoll(float radians, Float3 const &translation = Math::Float3::Zero)
+            inline static Float4x4 MakeRollRotation(float radians, Float3 const &translation = Math::Float3::Zero)
             {
                 float cosAngle(std::cos(radians));
                 float sinAngle(std::sin(radians));
@@ -127,7 +135,7 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
-            inline static Float4x4 FromTranslation(Float3 const &translation)
+            inline static Float4x4 MakeTranslation(Float3 const &translation)
             {
                 return Float4x4(
                     1.0f, 0.0f, 0.0f, 0.0f,
@@ -160,28 +168,16 @@ namespace Gek
                     0.0f, 0.0f, ((-nearClip * farClip) / denominator), 0.0f);
             }
 
-            inline static Float4x4 MakeTargeted(Float3 const &source, Float3 const &target, Float3 const &worldUpVector, Float3 const &translation = Math::Float3::Zero)
-            {
-                Float3 forward((target - source).getNormal());
-                Float3 left(worldUpVector.cross(forward).getNormal());
-                Float3 up(forward.cross(left));
-                return Float4x4(
-                    left.x, left.y, left.z, 0.0f,
-                    up.x, up.y, up.z, 0.0f,
-                    forward.x, forward.y, forward.z, 0.0f,
-                    translation.x, translation.y, translation.z, 1.0f);
-            }
-
         public:
             inline Float4x4(void)
             {
             }
 
             inline Float4x4(Float4x4 const &matrix)
-                : rx(matrix.data + 0)
-                , ry(matrix.data + 4)
-                , rz(matrix.data + 8)
-                , rw(matrix.data + 12)
+                : rx(matrix.rx)
+                , ry(matrix.ry)
+                , rz(matrix.rz)
+                , rw(matrix.rw)
             {
             }
 
@@ -203,12 +199,6 @@ namespace Gek
                 , rz(data + 8)
                 , rw(data + 12)
             {
-            }
-
-            explicit inline Float4x4(Quaternion const &rotation, Float3 const &translation)
-                : rw(translation, 1.0f)
-            {
-                setRotation(rotation);
             }
 
             inline void setRotation(Quaternion const &rotation)
@@ -474,6 +464,16 @@ namespace Gek
             bool operator != (Float4x4 const &matrix) const
             {
                 return (getTuple() != matrix.getTuple());
+            }
+
+            Float4 &operator [] (size_t index)
+            {
+                return rows[index];
+            }
+
+            Float4 const &operator [] (size_t index) const
+            {
+                return rows[index];
             }
 
             inline Float4x4 &operator = (Float4x4 const &matrix)

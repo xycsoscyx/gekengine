@@ -77,7 +77,7 @@ namespace Gek
                 population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity * const entity, auto &transformComponent, auto &spinComponent) -> void
                 {
                     auto omega(spinComponent.torque * frameTime);
-                    transformComponent.rotation *= Math::Quaternion::FromEuler(omega.x, omega.y, omega.z);
+                    transformComponent.rotation *= Math::Quaternion::MakeEulerRotation(omega.x, omega.y, omega.z);
                 });
             }
         }

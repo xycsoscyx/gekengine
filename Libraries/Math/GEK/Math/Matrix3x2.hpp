@@ -45,33 +45,23 @@ namespace Gek
             };
 
         public:
-            static Float3x2 FromScale(float scale)
-            {
-                return Float3x2(
-                {
-                    scale, 0.0f,
-                    0.0f, scale,
-                    0.0f, 0.0f,
-                });
-            }
-
-            static Float3x2 FromScale(const Float2 &scale)
+            static Float3x2 MakeScaling(Float2 const &scale, Float2 const &translation = Float2::Zero)
             {
                 return Float3x2(
                 {
                     scale.x, 0.0f,
                     0.0f, scale.y,
-                    0.0f, 0.0f,
+                    translation.x, translation.y,
                 });
             }
 
-            static Float3x2 FromAngle(float radians)
+            static Float3x2 MakeAngularRotation(float radians, Float2 const &translation = Float2::Zero)
             {
                 return Float3x2(
                 {
                     std::cos(radians), -std::sin(radians),
                     std::sin(radians),  std::cos(radians),
-                    0.0f, 0.0f,
+                    translation.x, translation.y,
                 });
             }
 
@@ -80,7 +70,7 @@ namespace Gek
             {
             }
 
-            inline Float3x2(const Float3x2 &matrix)
+            inline Float3x2(Float3x2 const &matrix)
                 : rows{
                 matrix.rows[0],
                 matrix.rows[1],
@@ -106,15 +96,15 @@ namespace Gek
 
             inline Float2 getScaling(void) const
             {
-                return Float2(_11, _22);
+                return Float2(rx.getLength(), ry.getLength());
             }
 
-            inline void operator *= (const Float3x2 &matrix)
+            inline void operator *= (Float3x2 const &matrix)
             {
                 (*this) = ((*this) * matrix);
             }
 
-            inline Float3x2 operator * (const Float3x2 &matrix) const
+            inline Float3x2 operator * (Float3x2 const &matrix) const
             {
                 return Float3x2({ _11 * matrix._11 + _12 * matrix._21,
                     _11 * matrix._12 + _12 * matrix._22,

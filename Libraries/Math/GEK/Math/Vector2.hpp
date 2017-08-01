@@ -179,6 +179,16 @@ namespace Gek
             }
 
             // vector operations
+            float &operator [] (size_t index)
+            {
+                return data[index];
+            }
+
+            float const &operator [] (size_t index) const
+            {
+                return data[index];
+            }
+
             template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
             Vector2 &operator = (const Vector2<OTHER> &vector)
             {

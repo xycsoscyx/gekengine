@@ -42,12 +42,7 @@ namespace Gek
             };
 
         public:
-            inline static Quaternion FromEuler(Math::Float3 const &euler)
-            {
-                return FromEuler(euler.x, euler.y, euler.z);
-            }
-
-            inline static Quaternion FromEuler(float pitch, float yaw, float roll)
+            inline static Quaternion MakeEulerRotation(float pitch, float yaw, float roll)
             {
                 float sinPitch(std::sin(pitch * 0.5f));
                 float sinYaw(std::sin(yaw * 0.5f));
@@ -62,7 +57,7 @@ namespace Gek
                     ((cosPitch * cosYaw * cosRoll) + (sinPitch * sinYaw * sinRoll)));
             }
 
-            inline static Quaternion FromAngular(const Float3 &axis, float radians)
+            inline static Quaternion MakeAngularRotation(const Float3 &axis, float radians)
             {
                 float halfRadians = (radians * 0.5f);
                 Float3 normal(axis.getNormal());
@@ -74,7 +69,7 @@ namespace Gek
                     std::cos(halfRadians));
             }
 
-            inline static Quaternion FromPitch(float radians)
+            inline static Quaternion MakePitchRotation(float radians)
             {
                 float halfRadians = (radians * 0.5f);
                 float sinAngle(std::sin(halfRadians));
@@ -85,7 +80,7 @@ namespace Gek
                     std::cos(halfRadians));
             }
 
-            inline static Quaternion FromYaw(float radians)
+            inline static Quaternion MakeYawRotation(float radians)
             {
                 float halfRadians = (radians * 0.5f);
                 float sinAngle(std::sin(halfRadians));
@@ -96,7 +91,7 @@ namespace Gek
                     std::cos(halfRadians));
             }
 
-            inline static Quaternion FromRoll(float radians)
+            inline static Quaternion MakeRollRotation(float radians)
             {
                 float halfRadians = (radians * 0.5f);
                 float sinAngle(std::sin(halfRadians));

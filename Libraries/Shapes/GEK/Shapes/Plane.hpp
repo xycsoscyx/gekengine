@@ -32,7 +32,7 @@ namespace Gek
             Plane(Math::Float3 const &pointA, Math::Float3 const &pointB, Math::Float3 const &pointC);
             Plane(Math::Float3 const &normal, Math::Float3 const &pointOnPlane);
 
-            Plane &operator = (const Plane &plane);
+            Plane &operator = (Plane const &plane);
 
             void normalize(void);
 

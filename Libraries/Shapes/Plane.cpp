@@ -38,7 +38,7 @@ namespace Gek
         {
         }
 
-        Plane &Plane::operator = (const Plane &plane)
+        Plane &Plane::operator = (Plane const &plane)
         {
             vector = plane.vector;
             return (*this);
