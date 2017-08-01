@@ -578,15 +578,15 @@ namespace Gek
             imGuiIo.AddInputCharacter(character);
         }
 
-        void onKeyPressed(uint16_t key, bool state)
+        void onKeyPressed(Window::Key key, bool state)
         {
             ImGuiIO &imGuiIo = ImGui::GetIO();
-            imGuiIo.KeysDown[key] = state;
+            imGuiIo.KeysDown[static_cast<int>(key)] = state;
             if (state)
             {
                 switch (key)
                 {
-                case VK_ESCAPE:
+                case Window::Key::Escape:
                     showCursor = !showCursor;
                     imGuiIo.MouseDrawCursor = showCursor;
                     break;
