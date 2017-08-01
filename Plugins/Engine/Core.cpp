@@ -94,7 +94,15 @@ namespace Gek
                 videoDevice = getContext()->createClass<Video::Device>("Default::Device::Video", window.get(), deviceDescription);
 
                 uint32_t preferredDisplayMode = 0;
-                displayModeList = videoDevice->getDisplayModeList(deviceDescription.displayFormat);
+                auto fullDisplayModeList = videoDevice->getDisplayModeList(deviceDescription.displayFormat);
+                for (const auto &displayMode : fullDisplayModeList)
+                {
+                    if (displayMode.height >= 800)
+                    {
+                        displayModeList.push_back(displayMode);
+                    }
+                }
+
                 for (const auto &displayMode : displayModeList)
                 {
                     auto currentDisplayMode = displayModeStringList.size();
@@ -106,16 +114,17 @@ namespace Gek
                         break;
 
                     case Video::DisplayMode::AspectRatio::_16x9:
+                        preferredDisplayMode = (preferredDisplayMode == 0 && displayMode.height > 800 ? currentDisplayMode : preferredDisplayMode);
                         displayModeString.append(" (16x9)");
                         break;
 
                     case Video::DisplayMode::AspectRatio::_16x10:
+                        preferredDisplayMode = (preferredDisplayMode == 0 && displayMode.height > 800 ? currentDisplayMode : preferredDisplayMode);
                         displayModeString.append(" (16x10)");
                         break;
                     };
 
                     displayModeStringList.push_back(displayModeString);
-                    preferredDisplayMode = (preferredDisplayMode == 0 && displayMode.height > 800 ? currentDisplayMode : preferredDisplayMode);
                 }
 
                 setDisplayMode(JSON::Reference(configuration).get("display").get("mode").convert(preferredDisplayMode));
