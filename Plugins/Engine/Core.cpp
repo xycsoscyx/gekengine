@@ -424,12 +424,6 @@ namespace Gek
                     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5.0f, 10.0f));
                     if (ImGui::BeginMenu("File"))
                     {
-                        if (ImGui::MenuItem("Reset", "CTRL+R"))
-                        {
-                            showResetDialog = true;
-                        }
-
-                        ImGui::Separator();
                         if (ImGui::MenuItem("Load", "CTRL+L"))
                         {
                             showLoadMenu = true;
@@ -439,6 +433,12 @@ namespace Gek
                         if (ImGui::MenuItem("Save", "CTRL+S"))
                         {
                             population->save("demo_save");
+                        }
+
+                        ImGui::Separator();
+                        if (ImGui::MenuItem("Reset", "CTRL+R"))
+                        {
+                            showResetDialog = true;
                         }
 
                         ImGui::Separator();

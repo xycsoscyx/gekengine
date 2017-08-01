@@ -2,7 +2,6 @@
 
 #include <GEKGlobal.hlsl>
 #include <GEKUtility.hlsl>
-#include <GEKLighting.hlsl>
 
 // assume normals are stored as 3Dc format, so generate the Z value
 float3 ConvertNormal(float2 encoded)
