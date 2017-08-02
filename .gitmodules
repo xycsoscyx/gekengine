@@ -22,9 +22,6 @@
 [submodule "External/imgui-addons"]
 	path = External/imgui-addons
 	url = https://github.com/Flix01/imgui.git
-[submodule "External/lsignal"]
-	path = External/lsignal
-	url = https://github.com/cpp11nullptr/lsignal.git
 [submodule "External/Wink-Signals"]
 	path = External/Wink-Signals
 	url = https://github.com/miguelmartin75/Wink-Signals.git
