@@ -115,13 +115,13 @@ namespace Gek
                 NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, nullptr, newtonOnAABBOverlap, newtonOnContactFriction);
 #endif
 
-                renderer->onShowUserInterface.connect(this, &Processor::onShowUserInterface, this);
-                population->onReset.connect(this, &Processor::onReset, this);
-                population->onEntityCreated.connect(this, &Processor::onEntityCreated, this);
-                population->onEntityDestroyed.connect(this, &Processor::onEntityDestroyed, this);
-                population->onComponentAdded.connect(this, &Processor::onComponentAdded, this);
-                population->onComponentRemoved.connect(this, &Processor::onComponentRemoved, this);
-                population->onUpdate[50].connect(this, &Processor::onUpdate, this);
+                renderer->onShowUserInterface.connect(this, &Processor::onShowUserInterface);
+                population->onReset.connect(this, &Processor::onReset);
+                population->onEntityCreated.connect(this, &Processor::onEntityCreated);
+                population->onEntityDestroyed.connect(this, &Processor::onEntityDestroyed);
+                population->onComponentAdded.connect(this, &Processor::onComponentAdded);
+                population->onComponentRemoved.connect(this, &Processor::onComponentRemoved);
+                population->onUpdate[50].connect(this, &Processor::onUpdate);
             }
 
             ~Processor(void)
@@ -362,7 +362,7 @@ namespace Gek
                     auto castCheck = dynamic_cast<Plugin::Editor *>(processor);
                     if (castCheck)
                     {
-                        (editor = castCheck)->onModified.connect(this, &Processor::onModified, this);
+                        (editor = castCheck)->onModified.connect(this, &Processor::onModified);
                     }                    
                 });
             }
@@ -371,16 +371,16 @@ namespace Gek
             {
                 if (editor)
                 {
-                    editor->onModified.disconnect(this);
+                    editor->onModified.disconnect(this, &Processor::onModified);
                 }
 
-                renderer->onShowUserInterface.disconnect(this);
-                population->onReset.disconnect(this);
-                population->onEntityCreated.disconnect(this);
-                population->onEntityDestroyed.disconnect(this);
-                population->onComponentAdded.disconnect(this);
-                population->onComponentRemoved.disconnect(this);
-                population->onUpdate[50].disconnect(this);
+                renderer->onShowUserInterface.disconnect(this, &Processor::onShowUserInterface);
+                population->onReset.disconnect(this, &Processor::onReset);
+                population->onEntityCreated.disconnect(this, &Processor::onEntityCreated);
+                population->onEntityDestroyed.disconnect(this, &Processor::onEntityDestroyed);
+                population->onComponentAdded.disconnect(this, &Processor::onComponentAdded);
+                population->onComponentRemoved.disconnect(this, &Processor::onComponentRemoved);
+                population->onUpdate[50].disconnect(this, &Processor::onUpdate);
 
                 onReset();
 

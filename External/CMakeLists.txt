@@ -61,7 +61,7 @@ target_include_directories(imgui_gek PUBLIC "${CMAKE_CURRENT_LIST_DIR}/imgui-add
 
 project(signals)
 add_library(signals INTERFACE)
-target_include_directories(signals INTERFACE "${CMAKE_CURRENT_LIST_DIR}/nod/include")
+target_include_directories(signals INTERFACE "${CMAKE_CURRENT_LIST_DIR}/Wink-Signals")
 
 project(jsoncons)
 add_library(jsoncons INTERFACE)

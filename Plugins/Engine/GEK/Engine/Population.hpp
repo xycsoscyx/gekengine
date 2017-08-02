@@ -11,7 +11,7 @@
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/ShuntingYard.hpp"
 #include "GEK/Engine/Processor.hpp"
-#include <nod/nod.hpp>
+#include <wink/signal.hpp>
 #include <unordered_map>
 #include <functional>
 #include <typeindex>
@@ -55,16 +55,16 @@ namespace Gek
 
             virtual ~Population(void) = default;
 
-            std::map<int32_t, nod::signal<void(float frameTime)>> onUpdate;
-            nod::signal<void(Action const &action)> onAction;
+            std::map<int32_t, wink::signal<wink::slot<void(float frameTime)>>> onUpdate;
+            wink::signal<wink::slot<void(Action const &action)>> onAction;
 
-            nod::signal<void(void)> onReset;
+            wink::signal<wink::slot<void(void)>> onReset;
 
-            nod::signal<void(Plugin::Entity * const entity)> onEntityCreated;
-            nod::signal<void(Plugin::Entity * const entity)> onEntityDestroyed;
+            wink::signal<wink::slot<void(Plugin::Entity * const entity)>> onEntityCreated;
+            wink::signal<wink::slot<void(Plugin::Entity * const entity)>> onEntityDestroyed;
 
-            nod::signal<void(Plugin::Entity * const entity)> onComponentAdded;
-            nod::signal<void(Plugin::Entity * const entity)> onComponentRemoved;
+            wink::signal<wink::slot<void(Plugin::Entity * const entity)>> onComponentAdded;
+            wink::signal<wink::slot<void(Plugin::Entity * const entity)>> onComponentRemoved;
 
             virtual ShuntingYard &getShuntingYard(void) = 0;
 

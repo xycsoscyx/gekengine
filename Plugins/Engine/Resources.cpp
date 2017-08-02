@@ -573,8 +573,8 @@ namespace Gek
                 assert(core);
                 assert(videoDevice);
 
-                core->onResize.connect(this, &Resources::onResize, this);
-                core->onSettingsChanged.connect(this, &Resources::onSettingsChanged, this);
+                core->onResize.connect(this, &Resources::onResize);
+                core->onSettingsChanged.connect(this, &Resources::onSettingsChanged);
             }
 
             ~Resources(void)

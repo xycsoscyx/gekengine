@@ -209,7 +209,7 @@ namespace Gek
                 NewtonDestroyCollision(supportShape);
                 NewtonDestroyCollision(playerShape);
 
-                population->onAction.connect(this, &PlayerBody::onAction, this);
+                population->onAction.connect(this, &PlayerBody::onAction);
             }
 
 			~PlayerBody(void)

@@ -10,7 +10,7 @@
 #include "GEK/Math/Vector3.hpp"
 #include "GEK/Engine/Component.hpp"
 #include "GEK/Engine/Entity.hpp"
-#include <nod/nod.hpp>
+#include <wink/signal.hpp>
 #include <Newton.h>
 
 namespace Gek
@@ -72,7 +72,7 @@ namespace Gek
                 float softness = 1.0f;
             };
             
-            nod::signal<void(Plugin::Entity *entity0, Plugin::Entity *entity1, Math::Float3 const &position, Math::Float3 const &normal)> onCollision;
+            wink::signal<wink::slot<void(Plugin::Entity *entity0, Plugin::Entity *entity1, Math::Float3 const &position, Math::Float3 const &normal)>> onCollision;
 
             virtual ~World(void) = default;
 

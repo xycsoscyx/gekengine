@@ -28,3 +28,6 @@
 [submodule "External/nod"]
 	path = External/nod
 	url = https://github.com/fr00b0/nod.git
+[submodule "External/Wink-Signals"]
+	path = External/Wink-Signals
+	url = https://github.com/miguelmartin75/Wink-Signals.git

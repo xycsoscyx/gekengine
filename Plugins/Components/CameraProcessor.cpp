@@ -112,12 +112,12 @@ namespace Gek
             assert(resources);
             assert(renderer);
 
-            population->onReset.connect<CameraProcessor, &CameraProcessor::onReset>(this);
-            population->onEntityCreated.connect(this, &CameraProcessor::onEntityCreated, this);
-            population->onEntityDestroyed.connect(this, &CameraProcessor::onEntityDestroyed, this);
-            population->onComponentAdded.connect(this, &CameraProcessor::onComponentAdded, this);
-            population->onComponentRemoved.connect(this, &CameraProcessor::onComponentRemoved, this);
-            population->onUpdate[90].connect(this, &CameraProcessor::onUpdate, this);
+            population->onReset.connect(this, &CameraProcessor::onReset);
+            population->onEntityCreated.connect(this, &CameraProcessor::onEntityCreated);
+            population->onEntityDestroyed.connect(this, &CameraProcessor::onEntityDestroyed);
+            population->onComponentAdded.connect(this, &CameraProcessor::onComponentAdded);
+            population->onComponentRemoved.connect(this, &CameraProcessor::onComponentRemoved);
+            population->onUpdate[90].connect(this, &CameraProcessor::onUpdate);
         }
 
         ~CameraProcessor(void)
@@ -148,12 +148,12 @@ namespace Gek
 
         void onDestroyed(void)
         {
-            population->onReset.disconnect(this);
-            population->onEntityCreated.disconnect(this);
-            population->onEntityDestroyed.disconnect(this);
-            population->onComponentAdded.disconnect(this);
-            population->onComponentRemoved.disconnect(this);
-            population->onUpdate[90].disconnect(this);
+            population->onReset.disconnect(this, &CameraProcessor::onReset);
+            population->onEntityCreated.disconnect(this, &CameraProcessor::onEntityCreated);
+            population->onEntityDestroyed.disconnect(this, &CameraProcessor::onEntityDestroyed);
+            population->onComponentAdded.disconnect(this, &CameraProcessor::onComponentAdded);
+            population->onComponentRemoved.disconnect(this, &CameraProcessor::onComponentRemoved);
+            population->onUpdate[90].disconnect(this, &CameraProcessor::onUpdate);
             clear();
         }
 

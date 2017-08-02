@@ -11,7 +11,7 @@
 #include "GEK/Engine/Resources.hpp"
 #include "GEK/System/VideoDevice.hpp"
 #include "GEK/Shapes/Frustum.hpp"
-#include <nod/nod.hpp>
+#include <wink/signal.hpp>
 #include <imgui.h>
 
 namespace Gek
@@ -24,8 +24,8 @@ namespace Gek
         {
             GEK_ADD_EXCEPTION(InvalidIndexBufferFormat);
 
-            nod::signal<void(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)> onQueueDrawCalls;
-            nod::signal<void(ImGuiContext * const guiContext)> onShowUserInterface;
+            wink::signal<wink::slot<void(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)>> onQueueDrawCalls;
+            wink::signal<wink::slot<void(ImGuiContext * const guiContext)>> onShowUserInterface;
 
             virtual ~Renderer(void) = default;
 

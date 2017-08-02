@@ -80,16 +80,16 @@ namespace Gek
             windowDescription.windowName = "GEK Engine Demo";
             window = getContext()->createClass<Window>("Default::Render::Window", windowDescription);
 
-            window->onClose.connect(this, &Core::onClose, this);
-            window->onActivate.connect(this, &Core::onActivate, this);
-            window->onSizeChanged.connect(this, &Core::onSizeChanged, this);
-            window->onKeyPressed.connect(this, &Core::onKeyPressed, this);
-            window->onCharacter.connect(this, &Core::onCharacter, this);
-            window->onSetCursor.connect(this, &Core::onSetCursor, this);
-            window->onMouseClicked.connect(this, &Core::onMouseClicked, this);
-            window->onMouseWheel.connect(this, &Core::onMouseWheel, this);
-            window->onMousePosition.connect(this, &Core::onMousePosition, this);
-            window->onMouseMovement.connect(this, &Core::onMouseMovement, this);
+            window->onClose.connect(this, &Core::onClose);
+            window->onActivate.connect(this, &Core::onActivate);
+            window->onSizeChanged.connect(this, &Core::onSizeChanged);
+            window->onKeyPressed.connect(this, &Core::onKeyPressed);
+            window->onCharacter.connect(this, &Core::onCharacter);
+            window->onSetCursor.connect(this, &Core::onSetCursor);
+            window->onMouseClicked.connect(this, &Core::onMouseClicked);
+            window->onMouseWheel.connect(this, &Core::onMouseWheel);
+            window->onMousePosition.connect(this, &Core::onMousePosition);
+            window->onMouseMovement.connect(this, &Core::onMouseMovement);
 
             HRESULT resultValue = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
             if (FAILED(resultValue))
@@ -292,17 +292,6 @@ namespace Gek
             gui = nullptr;
             ImGui::GetIO().Fonts->TexID = 0;
             ImGui::Shutdown();
-
-            window->onClose.disconnect(this);
-            window->onActivate.disconnect(this);
-            window->onSizeChanged.disconnect(this);
-            window->onKeyPressed.disconnect(this);
-            window->onCharacter.disconnect(this);
-            window->onSetCursor.disconnect(this);
-            window->onMouseClicked.disconnect(this);
-            window->onMouseWheel.disconnect(this);
-            window->onMousePosition.disconnect(this);
-            window->onMouseMovement.disconnect(this);
 
             renderDevice = nullptr;
             window = nullptr;

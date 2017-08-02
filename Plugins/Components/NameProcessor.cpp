@@ -74,11 +74,11 @@ namespace Gek
         {
             assert(population);
 
-            population->onReset.connect(this, &NameProcessor::onReset, this);
-            population->onEntityCreated.connect(this, &NameProcessor::onEntityCreated, this);
-            population->onEntityDestroyed.connect(this, &NameProcessor::onEntityDestroyed, this);
-            population->onComponentAdded.connect(this, &NameProcessor::onComponentAdded, this);
-            population->onComponentRemoved.connect(this, &NameProcessor::onComponentRemoved, this);
+            population->onReset.connect(this, &NameProcessor::onReset);
+            population->onEntityCreated.connect(this, &NameProcessor::onEntityCreated);
+            population->onEntityDestroyed.connect(this, &NameProcessor::onEntityDestroyed);
+            population->onComponentAdded.connect(this, &NameProcessor::onComponentAdded);
+            population->onComponentRemoved.connect(this, &NameProcessor::onComponentRemoved);
         }
 
         ~NameProcessor(void)
@@ -147,14 +147,14 @@ namespace Gek
         {
             if (editor)
             {
-                editor->onModified.disconnect(this);
+                editor->onModified.disconnect(this, &NameProcessor::onModified);
             }
 
-            population->onReset.disconnect(this);
-            population->onEntityCreated.disconnect(this);
-            population->onEntityDestroyed.disconnect(this);
-            population->onComponentAdded.disconnect(this);
-            population->onComponentRemoved.disconnect(this);
+            population->onReset.disconnect(this, &NameProcessor::onReset);
+            population->onEntityCreated.disconnect(this, &NameProcessor::onEntityCreated);
+            population->onEntityDestroyed.disconnect(this, &NameProcessor::onEntityDestroyed);
+            population->onComponentAdded.disconnect(this, &NameProcessor::onComponentAdded);
+            population->onComponentRemoved.disconnect(this, &NameProcessor::onComponentRemoved);
         }
 
         // Model::Processor

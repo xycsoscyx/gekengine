@@ -188,12 +188,12 @@ namespace Gek
 
             LockedWrite{ std::cout } << String::Format("Initializing model system");
 
-            population->onReset.connect(this, &ModelProcessor::onReset, this);
-            population->onEntityCreated.connect(this, &ModelProcessor::onEntityCreated, this);
-            population->onEntityDestroyed.connect(this, &ModelProcessor::onEntityDestroyed, this);
-            population->onComponentAdded.connect(this, &ModelProcessor::onComponentAdded, this);
-            population->onComponentRemoved.connect(this, &ModelProcessor::onComponentRemoved, this);
-            renderer->onQueueDrawCalls.connect(this, &ModelProcessor::onQueueDrawCalls, this);
+            population->onReset.connect(this, &ModelProcessor::onReset);
+            population->onEntityCreated.connect(this, &ModelProcessor::onEntityCreated);
+            population->onEntityDestroyed.connect(this, &ModelProcessor::onEntityDestroyed);
+            population->onComponentAdded.connect(this, &ModelProcessor::onComponentAdded);
+            population->onComponentRemoved.connect(this, &ModelProcessor::onComponentRemoved);
+            renderer->onQueueDrawCalls.connect(this, &ModelProcessor::onQueueDrawCalls);
 
             visual = resources->loadVisual("model");
 
@@ -326,7 +326,7 @@ namespace Gek
                 auto castCheck = dynamic_cast<Plugin::Editor *>(processor);
                 if (castCheck)
                 {
-                    (editor = castCheck)->onModified.connect(this, &ModelProcessor::onModified, this);
+                    (editor = castCheck)->onModified.connect(this, &ModelProcessor::onModified);
                 }
             });
         }
@@ -336,8 +336,15 @@ namespace Gek
             loadPool.drain();
             if (editor)
             {
-                editor->onModified.disconnect(this);
+                editor->onModified.disconnect(this, &ModelProcessor::onModified);
             }
+
+            population->onReset.disconnect(this, &ModelProcessor::onReset);
+            population->onEntityCreated.disconnect(this, &ModelProcessor::onEntityCreated);
+            population->onEntityDestroyed.disconnect(this, &ModelProcessor::onEntityDestroyed);
+            population->onComponentAdded.disconnect(this, &ModelProcessor::onComponentAdded);
+            population->onComponentRemoved.disconnect(this, &ModelProcessor::onComponentRemoved);
+            renderer->onQueueDrawCalls.disconnect(this, &ModelProcessor::onQueueDrawCalls);
         }
 
         // Model::Processor

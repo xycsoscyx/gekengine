@@ -9,7 +9,7 @@
 
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include <nod/nod.hpp>
+#include <wink/signal.hpp>
 
 namespace Gek
 {
@@ -21,7 +21,7 @@ namespace Gek
         {
             virtual ~Editor(void) = default;
 
-            nod::signal<void(Entity *entity, const std::type_index &type)> onModified;
+            wink::signal<wink::slot<void(Entity *entity, const std::type_index &type)>> onModified;
         };
     }; // namespace Engine
 }; // namespace Gek

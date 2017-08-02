@@ -11,7 +11,7 @@
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/System/Window.hpp"
 #include "GEK/System/VideoDevice.hpp"
-#include <nod/nod.hpp>
+#include <wink/signal.hpp>
 #include <imgui.h>
 
 namespace Gek
@@ -27,9 +27,9 @@ namespace Gek
         {
             using ListenerHandle = uint64_t;
 
-            nod::signal<void(void)> onResize;
-            nod::signal<void(void)> onSettingsChanged;
-            nod::signal<void(void)> onExit;
+            wink::signal<wink::slot<void(void)>> onResize;
+            wink::signal<wink::slot<void(void)>> onSettingsChanged;
+            wink::signal<wink::slot<void(void)>> onExit;
 
             virtual ~Core(void) = default;
 

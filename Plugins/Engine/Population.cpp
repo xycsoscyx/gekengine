@@ -129,13 +129,13 @@ namespace Gek
                     componentMap[component->getIdentifier()] = std::move(component);
                 });
 
-                core->onExit.connect(this, &Population::onExit, this);
+                core->onExit.connect(this, &Population::onExit);
             }
 
             ~Population(void)
             {
 				workerPool.drain();
-                core->onExit.disconnect(this);
+                core->onExit.disconnect(this, &Population::onExit);
                 entityList.clear();
                 componentTypeNameMap.clear();
                 componentMap.clear();

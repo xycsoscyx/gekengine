@@ -73,9 +73,6 @@ namespace Gek
 
                 core->setOption("editor", "active", false);
 
-                population->onAction.connect(this, &Editor::onAction, this);
-                population->onUpdate[90].connect(this, &Editor::onUpdate, this);
-
                 if (!ImGui::TabWindow::DockPanelIconTextureID)
                 {
                     int iconSize = 0;
@@ -86,14 +83,13 @@ namespace Gek
 
                 dock = std::make_unique<UI::Dock::WorkSpace>();
                 gizmo = std::make_unique<UI::Gizmo::WorkSpace>();
-                renderer->onShowUserInterface.connect(this, &Editor::onShowUserInterface, this);
+                population->onAction.connect(this, &Editor::onAction);
+                population->onUpdate[90].connect(this, &Editor::onUpdate);
+                renderer->onShowUserInterface.connect(this, &Editor::onShowUserInterface);
             }
 
             ~Editor(void)
             {
-                population->onAction.disconnect(this);
-                population->onUpdate[90].disconnect(this);
-                renderer->onShowUserInterface.disconnect(this);
                 gizmo = nullptr;
                 dock = nullptr;
             }
@@ -109,6 +105,13 @@ namespace Gek
                         modelProcessor = check;
                     }
                 });
+            }
+
+            void onDestroyed(void)
+            {
+                population->onAction.disconnect(this, &Editor::onAction);
+                population->onUpdate[90].disconnect(this, &Editor::onUpdate);
+                renderer->onShowUserInterface.disconnect(this, &Editor::onShowUserInterface);
             }
 
             // Renderer

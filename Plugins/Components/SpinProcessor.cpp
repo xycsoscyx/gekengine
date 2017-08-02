@@ -72,7 +72,7 @@ namespace Gek
 
         void onDestroyed(void)
         {
-            population->onUpdate[50].disconnect(this);
+            population->onUpdate[50].disconnect(this, &SpinProcessor::onUpdate);
         }
 
         // Plugin::Population Slots

@@ -10,7 +10,7 @@
 #include "GEK/Math/Vector2.hpp"
 #include "GEK/Math/Vector4.hpp"
 #include "GEK/Utility/Context.hpp"
-#include <nod/nod.hpp>
+#include <wink/signal.hpp>
 
 namespace Gek
 {
@@ -159,18 +159,18 @@ namespace Gek
 
         virtual ~Window(void) = default;
         
-        nod::signal<void(void)> onClose;
-        nod::signal<void(bool isActive)> onActivate;
-        nod::signal<void(bool isMinimized)> onSizeChanged;
+        wink::signal<wink::slot<void(void)>> onClose;
+        wink::signal<wink::slot<void(bool isActive)>> onActivate;
+        wink::signal<wink::slot<void(bool isMinimized)>> onSizeChanged;
 
-        nod::signal<void(Key key, bool state)> onKeyPressed;
-        nod::signal<void(wchar_t character)> onCharacter;
+        wink::signal<wink::slot<void(Key key, bool state)>> onKeyPressed;
+        wink::signal<wink::slot<void(wchar_t character)>> onCharacter;
 
-        nod::signal<void(bool &showCursor)> onSetCursor;
-        nod::signal<void(Button button, bool state)> onMouseClicked;
-        nod::signal<void(float numberOfRotations)> onMouseWheel;
-        nod::signal<void(int32_t xPosition, int32_t yPosition)> onMousePosition;
-        nod::signal<void(int32_t xMovement, int32_t yMovement)> onMouseMovement;
+        wink::signal<wink::slot<void(bool &showCursor)>> onSetCursor;
+        wink::signal<wink::slot<void(Button button, bool state)>> onMouseClicked;
+        wink::signal<wink::slot<void(float numberOfRotations)>> onMouseWheel;
+        wink::signal<wink::slot<void(int32_t xPosition, int32_t yPosition)>> onMousePosition;
+        wink::signal<wink::slot<void(int32_t xMovement, int32_t yMovement)>> onMouseMovement;
 
         virtual void readEvents(void) = 0;
 

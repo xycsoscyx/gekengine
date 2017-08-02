@@ -72,16 +72,16 @@ namespace Gek
                     window = getContext()->createClass<Window>("Default::System::Window", description);
                 }
 
-                window->onClose.connect(this, &Core::onClose, this);
-                window->onActivate.connect(this, &Core::onActivate, this);
-                window->onSizeChanged.connect(this, &Core::onSizeChanged, this);
-                window->onKeyPressed.connect(this, &Core::onKeyPressed, this);
-                window->onCharacter.connect(this, &Core::onCharacter, this);
-                window->onSetCursor.connect(this, &Core::onSetCursor, this);
-                window->onMouseClicked.connect(this, &Core::onMouseClicked, this);
-                window->onMouseWheel.connect(this, &Core::onMouseWheel, this);
-                window->onMousePosition.connect(this, &Core::onMousePosition, this);
-                window->onMouseMovement.connect(this, &Core::onMouseMovement, this);
+                window->onClose.connect(this, &Core::onClose);
+                window->onActivate.connect(this, &Core::onActivate);
+                window->onSizeChanged.connect(this, &Core::onSizeChanged);
+                window->onKeyPressed.connect(this, &Core::onKeyPressed);
+                window->onCharacter.connect(this, &Core::onCharacter);
+                window->onSetCursor.connect(this, &Core::onSetCursor);
+                window->onMouseClicked.connect(this, &Core::onMouseClicked);
+                window->onMouseWheel.connect(this, &Core::onMouseWheel);
+                window->onMousePosition.connect(this, &Core::onMousePosition);
+                window->onMouseMovement.connect(this, &Core::onMouseMovement);
 
                 configuration = JSON::Load(getContext()->getRootFileName("config.json"));
 
@@ -133,7 +133,7 @@ namespace Gek
                 population = getContext()->createClass<Plugin::Population>("Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Plugin::Core *)this);
                 renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Plugin::Core *)this);
-                renderer->onShowUserInterface.connect(this, &Core::onShowUserInterface, this);
+                renderer->onShowUserInterface.connect(this, &Core::onShowUserInterface);
 
                 LockedWrite{ std::cout } << String::Format("Loading processor plugins");
 
@@ -189,18 +189,6 @@ namespace Gek
 
             ~Core(void)
             {
-                renderer->onShowUserInterface.disconnect(this);
-                window->onClose.disconnect(this);
-                window->onActivate.disconnect(this);
-                window->onSizeChanged.disconnect(this);
-                window->onKeyPressed.disconnect(this);
-                window->onCharacter.disconnect(this);
-                window->onSetCursor.disconnect(this);
-                window->onMouseClicked.disconnect(this);
-                window->onMouseWheel.disconnect(this);
-                window->onMousePosition.disconnect(this);
-                window->onMouseMovement.disconnect(this);
-
                 for (auto &processor : processorList)
                 {
                     processor->onDestroyed();

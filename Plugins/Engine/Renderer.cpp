@@ -402,12 +402,12 @@ namespace Gek
                 , pointLightData(200, core->getVideoDevice())
                 , spotLightData(200, core->getVideoDevice())
             {
-                population->onReset.connect(this, &Renderer::onReset, this);
-                population->onEntityCreated.connect(this, &Renderer::onEntityCreated, this);
-                population->onEntityDestroyed.connect(this, &Renderer::onEntityDestroyed, this);
-                population->onComponentAdded.connect(this, &Renderer::onComponentAdded, this);
-                population->onComponentRemoved.connect(this, &Renderer::onComponentRemoved, this);
-                population->onUpdate[1000].connect(this, &Renderer::onUpdate, this);
+                population->onReset.connect(this, &Renderer::onReset);
+                population->onEntityCreated.connect(this, &Renderer::onEntityCreated);
+                population->onEntityDestroyed.connect(this, &Renderer::onEntityDestroyed);
+                population->onComponentAdded.connect(this, &Renderer::onComponentAdded);
+                population->onComponentRemoved.connect(this, &Renderer::onComponentRemoved);
+                population->onUpdate[1000].connect(this, &Renderer::onUpdate);
 
                 initializeSystem();
                 initializeUI();
@@ -685,12 +685,12 @@ namespace Gek
             {
                 workerPool.drain();
 
-                population->onReset.disconnect(this);
-                population->onEntityCreated.disconnect(this);
-                population->onEntityDestroyed.disconnect(this);
-                population->onComponentAdded.disconnect(this);
-                population->onComponentRemoved.disconnect(this);
-                population->onUpdate[1000].disconnect(this);
+                population->onReset.disconnect(this, &Renderer::onReset);
+                population->onEntityCreated.disconnect(this, &Renderer::onEntityCreated);
+                population->onEntityDestroyed.disconnect(this, &Renderer::onEntityDestroyed);
+                population->onComponentAdded.disconnect(this, &Renderer::onComponentAdded);
+                population->onComponentRemoved.disconnect(this, &Renderer::onComponentRemoved);
+                population->onUpdate[1000].disconnect(this, &Renderer::onUpdate);
 
                 ImGui::GetIO().Fonts->TexID = 0;
                 ImGui::Shutdown();
