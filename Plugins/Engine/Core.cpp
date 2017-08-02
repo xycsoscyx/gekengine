@@ -66,6 +66,7 @@ namespace Gek
                 if (!window)
                 {
                     Window::Description description;
+                    description.allowResize = true;
                     description.className = "GEK_Engine_Demo";
                     description.windowName = "GEK Engine Demo";
                     window = getContext()->createClass<Window>("Default::System::Window", description);

@@ -112,8 +112,8 @@ namespace Gek
                     return data.parse(shuntingYard, defaultValue);
 				};
 				
-				uint32_t passIndex = 0;
                 passList.clear();
+                materialMap.clear();
 
                 auto backBuffer = videoDevice->getBackBuffer();
                 auto &backBufferDescription = backBuffer->getDescription();

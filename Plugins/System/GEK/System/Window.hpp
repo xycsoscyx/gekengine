@@ -150,11 +150,12 @@ namespace Gek
         {
             std::string className;
             bool hasOwnContext = true;
+            bool readMouseMovement = true;
+            bool allowResize = false;
 
             std::string windowName;
             uint32_t initialWidth = 1;
             uint32_t initialHeight = 1;
-            bool readMouseMovement = true;
         };
 
         virtual ~Window(void) = default;

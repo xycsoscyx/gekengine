@@ -268,13 +268,13 @@ namespace Gek
                     if (resourceSearch != std::end(resourceHandleMap))
                     {
                         HANDLE handle = resourceSearch->second;
-                        if (!(flags & Resources::Flags::ForceCache))
+                        if (!(flags & Resources::Flags::LoadFromCache))
                         {
                             auto loadParametersSearch = loadParameters.find(handle);
                             if (loadParametersSearch == std::end(loadParameters) || loadParametersSearch->second != parameters)
                             {
                                 loadParameters[handle] = parameters;
-                                if (flags & Resources::Flags::ForceLoad)
+                                if (flags & Resources::Flags::LoadImmediately)
                                 {
                                     setResource(handle, load(handle));
                                 }
@@ -285,6 +285,8 @@ namespace Gek
                                         setResource(handle, load(handle));
                                     });
                                 }
+
+                                return std::make_pair(true, handle);
                             }
                         }
 
@@ -297,7 +299,7 @@ namespace Gek
                     HANDLE handle = getNextHandle();
                     resourceHandleMap[hash] = handle;
                     loadParameters[handle] = parameters;
-                    if (flags & Resources::Flags::ForceLoad)
+                    if (flags & Resources::Flags::LoadImmediately)
                     {
                         setResource(handle, load(handle));
                     }
@@ -899,6 +901,11 @@ namespace Gek
 
                 auto hash = GetHash(textureName);
                 auto parameters = description.getHash();
+                if (description.format == Video::Format::Unknown)
+                {
+                    flags |= Resources::Flags::LoadFromCache;
+                }
+
                 auto resource = dynamicCache.getHandle(hash, parameters, std::move(load), flags);
                 if (resource.first)
                 {
@@ -921,6 +928,11 @@ namespace Gek
 
                 auto hash = GetHash(bufferName);
                 auto parameters = description.getHash();
+                if (description.format == Video::Format::Unknown)
+                {
+                    flags |= Resources::Flags::LoadFromCache;
+                }
+
                 auto resource = dynamicCache.getHandle(hash, parameters, std::move(load), flags);
                 if (resource.first)
                 {
@@ -944,6 +956,11 @@ namespace Gek
 
                 auto hash = GetHash(bufferName);
                 auto parameters = reinterpret_cast<std::size_t>(staticData.data());
+                if (description.format == Video::Format::Unknown)
+                {
+                    flags |= Resources::Flags::LoadFromCache;
+                }
+
                 auto resource = dynamicCache.getHandle(hash, parameters, std::move(load), flags);
                 if (resource.first)
                 {

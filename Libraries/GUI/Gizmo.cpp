@@ -7,7 +7,7 @@ namespace Gek
     {
         namespace Gizmo
         {
-            const float screenRotateSize = 0.06f;
+            const float screenRotateSize = 0.1f;
 
             static const float angleLimit = 0.96f;
             static const float planeLimit = 0.2f;
@@ -196,12 +196,12 @@ namespace Gek
             {
                 // transpose matrix
                 float src[16];
-                for (int i = 0; i < 4; ++i)
+                for (int index = 0; index < 4; ++index)
                 {
-                    src[i] = srcMatrix.data[i * 4];
-                    src[i + 4] = srcMatrix.data[i * 4 + 1];
-                    src[i + 8] = srcMatrix.data[i * 4 + 2];
-                    src[i + 12] = srcMatrix.data[i * 4 + 3];
+                    src[index] = srcMatrix.data[index * 4];
+                    src[index + 4] = srcMatrix.data[index * 4 + 1];
+                    src[index + 8] = srcMatrix.data[index * 4 + 2];
+                    src[index + 12] = srcMatrix.data[index * 4 + 3];
                 }
 
                 // calculate pairs for first 8 elements (cofactors)
@@ -258,9 +258,9 @@ namespace Gek
 
                 // calculate matrix inverse
                 float invdet = 1 / det;
-                for (int j = 0; j < 16; ++j)
+                for (int step = 0; step < 16; ++step)
                 {
-                    data[j] *= invdet;
+                    data[step] *= invdet;
                 }
             }
 
@@ -399,7 +399,6 @@ namespace Gek
                 Context()
                     : mbUsing(false)
                     , mbEnable(true)
-                    , mbUsingBounds(false)
                 {
                 }
 
@@ -461,7 +460,6 @@ namespace Gek
                 Math::Float3 mBoundsLocalPivot;
                 int mBoundsBestAxis;
                 int mBoundsAxis[2];
-                bool mbUsingBounds;
                 matrix_t mBoundsMatrix;
 
                 //
@@ -542,7 +540,7 @@ namespace Gek
 
                 bool IsUsing()
                 {
-                    return mbUsing || mbUsingBounds;
+                    return mbUsing;
                 }
 
                 bool IsOver()
@@ -556,7 +554,6 @@ namespace Gek
                     if (!enable)
                     {
                         mbUsing = false;
-                        mbUsingBounds = false;
                     }
                 }
 
@@ -613,29 +610,29 @@ namespace Gek
                         {
                         case Operation::Translate:
                             colors[0] = (type == MOVE_SCREEN) ? selectionColor : 0xFFFFFFFF;
-                            for (int i = 0; i < 3; i++)
+                            for (int index = 0; index < 3; index++)
                             {
-                                int colorPlaneIndex = (i + 2) % 3;
-                                colors[i + 1] = (type == (int)(MOVE_X + i)) ? selectionColor : directionColor[i];
-                                colors[i + 4] = (type == (int)(MOVE_XY + i)) ? selectionColor : directionColor[colorPlaneIndex];
+                                int colorPlaneIndex = (index + 2) % 3;
+                                colors[index + 1] = (type == (int)(MOVE_X + index)) ? selectionColor : directionColor[index];
+                                colors[index + 4] = (type == (int)(MOVE_XY + index)) ? selectionColor : directionColor[colorPlaneIndex];
                             }
 
                             break;
 
                         case Operation::Rotate:
                             colors[0] = (type == ROTATE_SCREEN) ? selectionColor : 0xFFFFFFFF;
-                            for (int i = 0; i < 3; i++)
+                            for (int index = 0; index < 3; index++)
                             {
-                                colors[i + 1] = (type == (int)(ROTATE_X + i)) ? selectionColor : directionColor[i];
+                                colors[index + 1] = (type == (int)(ROTATE_X + index)) ? selectionColor : directionColor[index];
                             }
 
                             break;
 
                         case Operation::Scale:
                             colors[0] = (type == SCALE_XYZ) ? selectionColor : 0xFFFFFFFF;
-                            for (int i = 0; i < 3; i++)
+                            for (int index = 0; index < 3; index++)
                             {
-                                colors[i + 1] = (type == (int)(SCALE_X + i)) ? selectionColor : directionColor[i];
+                                colors[index + 1] = (type == (int)(SCALE_X + index)) ? selectionColor : directionColor[index];
                             }
 
                             break;
@@ -646,9 +643,9 @@ namespace Gek
                     }
                     else
                     {
-                        for (int i = 0; i < 7; i++)
+                        for (int index = 0; index < 7; index++)
                         {
-                            colors[i] = inactiveColor;
+                            colors[index] = inactiveColor;
                         }
                     }
                 }
@@ -720,9 +717,9 @@ namespace Gek
                 }
                 void ComputeSnap(Math::Float3& value, float *snap)
                 {
-                    for (int i = 0; i < 3; i++)
+                    for (int index = 0; index < 3; index++)
                     {
-                        ComputeSnap(&value[i], snap[i]);
+                        ComputeSnap(&value[index], snap[index]);
                     }
                 }
 
@@ -753,12 +750,12 @@ namespace Gek
                     {
                         ImVec2 circlePos[halfCircleSegmentCount];
                         float angleStart = std::atan2(cameraToModelNormalized[(4 - axis) % 3], cameraToModelNormalized[(3 - axis) % 3]) + Math::Pi * 0.5f;
-                        for (unsigned int i = 0; i < halfCircleSegmentCount; i++)
+                        for (uint32_t index = 0; index < halfCircleSegmentCount; index++)
                         {
-                            float ng = angleStart + Math::Pi * ((float)i / (float)halfCircleSegmentCount);
+                            float ng = angleStart + Math::Pi * ((float)index / (float)halfCircleSegmentCount);
                             Math::Float3 axisPos = Math::Float3(std::cos(ng), std::sin(ng), 0.0f);
                             Math::Float3 pos = Math::Float3(axisPos[axis], axisPos[(axis + 1) % 3], axisPos[(axis + 2) % 3]) * mScreenFactor;
-                            circlePos[i] = worldToPos(pos, mMVP);
+                            circlePos[index] = worldToPos(pos, mMVP);
                         }
 
                         drawList->AddPolyline(circlePos, halfCircleSegmentCount, colors[3 - axis], false, 5, true);
@@ -770,15 +767,15 @@ namespace Gek
                         ImVec2 circlePos[halfCircleSegmentCount + 1];
 
                         circlePos[0] = worldToPos(mModel.rw.xyz, mViewProjection);
-                        for (unsigned int i = 1; i < halfCircleSegmentCount; i++)
+                        for (uint32_t index = 1; index < halfCircleSegmentCount; index++)
                         {
-                            float ng = mRotationAngle * ((float)(i - 1) / (float)(halfCircleSegmentCount - 1));
+                            float ng = mRotationAngle * ((float)(index - 1) / (float)(halfCircleSegmentCount - 1));
 
                             matrix_t rotateVectorMatrix;
                             rotateVectorMatrix.MakeRotation(mTranslationPlane.normal, ng);
 
                             Math::Float3 pos = rotateVectorMatrix.transform(mRotationVectorSource) * mScreenFactor;
-                            circlePos[i] = worldToPos(pos + mModel.rw.xyz, mViewProjection);
+                            circlePos[index] = worldToPos(pos + mModel.rw.xyz, mViewProjection);
                         }
 
                         drawList->AddConvexPolyFilled(circlePos, halfCircleSegmentCount, 0x801080FF, true);
@@ -794,10 +791,10 @@ namespace Gek
 
                 void DrawHatchedAxis(const Math::Float3& axis)
                 {
-                    for (int j = 1; j < 10; j++)
+                    for (int step = 1; step < 10; step++)
                     {
-                        ImVec2 baseSSpace2 = worldToPos(axis * 0.05f * (float)(j * 2) * mScreenFactor, mMVP);
-                        ImVec2 worldDirSSpace2 = worldToPos(axis * 0.05f * (float)(j * 2 + 1) * mScreenFactor, mMVP);
+                        ImVec2 baseSSpace2 = worldToPos(axis * 0.05f * (float)(step * 2) * mScreenFactor, mMVP);
+                        ImVec2 worldDirSSpace2 = worldToPos(axis * 0.05f * (float)(step * 2 + 1) * mScreenFactor, mMVP);
                         mDrawList->AddLine(baseSSpace2, worldDirSSpace2, 0x80000000, 6.0f);
                     }
                 }
@@ -820,18 +817,18 @@ namespace Gek
                         scaleDisplay = mScale;
                     }
 
-                    for (unsigned int i = 0; i < 3; i++)
+                    for (uint32_t index = 0; index < 3; index++)
                     {
                         Math::Float3 dirPlaneX, dirPlaneY;
                         bool belowAxisLimit, belowPlaneLimit;
-                        ComputeTripodAxisAndVisibility(i, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
+                        ComputeTripodAxisAndVisibility(index, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
 
                         // draw axis
                         if (belowAxisLimit)
                         {
                             ImVec2 baseSSpace = worldToPos(dirPlaneX * 0.1f * mScreenFactor, mMVP);
                             ImVec2 worldDirSSpaceNoScale = worldToPos(dirPlaneX * mScreenFactor, mMVP);
-                            ImVec2 worldDirSSpace = worldToPos((dirPlaneX * scaleDisplay[i]) * mScreenFactor, mMVP);
+                            ImVec2 worldDirSSpace = worldToPos((dirPlaneX * scaleDisplay[index]) * mScreenFactor, mMVP);
 
                             if (mbUsing)
                             {
@@ -839,12 +836,12 @@ namespace Gek
                                 drawList->AddCircleFilled(worldDirSSpaceNoScale, 10.0f, 0xFF404040);
                             }
 
-                            drawList->AddLine(baseSSpace, worldDirSSpace, colors[i + 1], 6.0f);
-                            drawList->AddCircleFilled(worldDirSSpace, 10.0f, colors[i + 1]);
+                            drawList->AddLine(baseSSpace, worldDirSSpace, colors[index + 1], 6.0f);
+                            drawList->AddCircleFilled(worldDirSSpace, 10.0f, colors[index + 1]);
 
-                            if (mAxisFactor[i] < 0.0f)
+                            if (mAxisFactor[index] < 0.0f)
                             {
-                                DrawHatchedAxis(dirPlaneX * scaleDisplay[i]);
+                                DrawHatchedAxis(dirPlaneX * scaleDisplay[index]);
                             }
                         }
                     }
@@ -877,19 +874,19 @@ namespace Gek
                     drawList->AddRectFilled(mScreenSquareMin, mScreenSquareMax, colors[0], 2.0f);
 
                     // draw
-                    for (unsigned int i = 0; i < 3; i++)
+                    for (uint32_t index = 0; index < 3; index++)
                     {
                         Math::Float3 dirPlaneX, dirPlaneY;
                         bool belowAxisLimit, belowPlaneLimit;
-                        ComputeTripodAxisAndVisibility(i, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
+                        ComputeTripodAxisAndVisibility(index, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
 
                         // draw axis
                         if (belowAxisLimit)
                         {
                             ImVec2 baseSSpace = worldToPos(dirPlaneX * 0.1f * mScreenFactor, mMVP);
                             ImVec2 worldDirSSpace = worldToPos(dirPlaneX * mScreenFactor, mMVP);
-                            drawList->AddLine(baseSSpace, worldDirSSpace, colors[i + 1], 6.0f);
-                            if (mAxisFactor[i] < 0.0f)
+                            drawList->AddLine(baseSSpace, worldDirSSpace, colors[index + 1], 6.0f);
+                            if (mAxisFactor[index] < 0.0f)
                             {
                                 DrawHatchedAxis(dirPlaneX);
                             }
@@ -899,13 +896,13 @@ namespace Gek
                         if (belowPlaneLimit)
                         {
                             ImVec2 screenQuadPts[4];
-                            for (int j = 0; j < 4; j++)
+                            for (int step = 0; step < 4; step++)
                             {
-                                Math::Float3 cornerWorldPos = (dirPlaneX * quadUV[j * 2] + dirPlaneY  * quadUV[j * 2 + 1]) * mScreenFactor;
-                                screenQuadPts[j] = worldToPos(cornerWorldPos, mMVP);
+                                Math::Float3 cornerWorldPos = (dirPlaneX * quadUV[step * 2] + dirPlaneY  * quadUV[step * 2 + 1]) * mScreenFactor;
+                                screenQuadPts[step] = worldToPos(cornerWorldPos, mMVP);
                             }
 
-                            drawList->AddConvexPolyFilled(screenQuadPts, 4, colors[i + 4], true);
+                            drawList->AddConvexPolyFilled(screenQuadPts, 4, colors[index + 4], true);
                         }
                     }
 
@@ -995,20 +992,19 @@ namespace Gek
                     // compute best projection axis
                     Math::Float3 bestAxisWorldDirection;
                     int bestAxis = mBoundsBestAxis;
-                    if (!mbUsingBounds)
+                    if (!mbUsing)
                     {
-
                         float bestDot = 0.0f;
-                        for (unsigned int i = 0; i < 3; i++)
+                        for (uint32_t index = 0; index < 3; index++)
                         {
-                            Math::Float3 dirPlaneNormalWorld = mModelSource.rotate(directionUnary[i]);
+                            Math::Float3 dirPlaneNormalWorld = mModelSource.rotate(directionUnary[index]);
                             dirPlaneNormalWorld.normalize();
 
                             float dt = (mCameraEye - mModelSource.rw.xyz).getNormal().dot(dirPlaneNormalWorld);
                             if (std::abs(dt) >= bestDot)
                             {
                                 bestDot = std::abs(dt);
-                                bestAxis = i;
+                                bestAxis = index;
                                 bestAxisWorldDirection = dirPlaneNormalWorld;
                             }
                         }
@@ -1017,57 +1013,92 @@ namespace Gek
                     // corners
                     Math::Float3 aabb[4];
 
+                    static const uint32_t anchorColors[3] = 
+                    {
+                        0xFF0000,
+                        0x00FF00,
+                        0x0000FF,
+                    };
+
                     int secondAxis = (bestAxis + 1) % 3;
                     int thirdAxis = (bestAxis + 2) % 3;
 
-                    for (int i = 0; i < 4; i++)
+                    const uint32_t axisColors[4] =
                     {
-                        aabb[i][3] = aabb[i][bestAxis] = 0.0f;
-                        aabb[i][secondAxis] = bounds[secondAxis + 3 * (i >> 1)];
-                        aabb[i][thirdAxis] = bounds[thirdAxis + 3 * ((i >> 1) ^ (i & 1))];
+                        anchorColors[secondAxis],
+                        anchorColors[thirdAxis],
+                        anchorColors[secondAxis],
+                        anchorColors[thirdAxis],
+                    };
+
+                    for (int index = 0; index < 4; index++)
+                    {
+                        aabb[index][bestAxis] = 0.0f;
+                        aabb[index][secondAxis] = bounds[secondAxis + 3 * (index >> 1)];
+                        aabb[index][thirdAxis] = bounds[thirdAxis + 3 * ((index >> 1) ^ (index & 1))];
                     }
 
                     // draw bounds
-                    unsigned int anchorAlpha = mbEnable ? 0xFF000000 : 0x80000000;
-
+                    uint32_t anchorAlpha = mbEnable ? 0xFF000000 : 0x80000000;
                     matrix_t boundsMVP = mModelSource * mViewProjection;
-                    for (int i = 0; i < 4; i++)
+                    for (int index = 0; index < 4; index++)
                     {
-                        ImVec2 worldBound1 = worldToPos(aabb[i], boundsMVP);
-                        ImVec2 worldBound2 = worldToPos(aabb[(i + 1) % 4], boundsMVP);
+                        uint32_t axisColor = axisColors[index] + anchorAlpha;
+
+                        ImVec2 worldBound1 = worldToPos(aabb[index], boundsMVP);
+                        ImVec2 worldBound2 = worldToPos(aabb[(index + 1) % 4], boundsMVP);
                         float boundDistance = std::sqrt(ImLengthSqr(worldBound1 - worldBound2));
                         int stepCount = (int)(boundDistance / 10.0f);
                         float stepLength = 1.0f / (float)stepCount;
-                        for (int j = 0; j < stepCount; j++)
+                        for (int step = 0; step < stepCount; step++)
                         {
-                            float t1 = (float)j * stepLength;
-                            float t2 = (float)j * stepLength + stepLength * 0.5f;
+                            float t1 = (float)step * stepLength;
+                            float t2 = (float)step * stepLength + stepLength * 0.5f;
                             ImVec2 worldBoundSS1 = ImLerp(worldBound1, worldBound2, ImVec2(t1, t1));
                             ImVec2 worldBoundSS2 = ImLerp(worldBound1, worldBound2, ImVec2(t2, t2));
                             if (isInside(worldBoundSS1.x, worldBoundSS1.y, worldBoundSS2.x, worldBoundSS2.y))
                             {
-                                drawList->AddLine(worldBoundSS1, worldBoundSS2, 0xAAAAAA + anchorAlpha, 3.0f);
+                                drawList->AddLine(worldBoundSS1, worldBoundSS2, axisColor, 3.0f);
                             }
                         }
+                    }
 
-                        Math::Float3 midPoint = (aabb[i] + aabb[(i + 1) % 4]) * 0.5f;
+                    for (int index = 0; index < 4; index++)
+                    {
+                        uint32_t axisColor = axisColors[index] + anchorAlpha;
+                        uint32_t otherColor = axisColors[(index + 1) % 4] + anchorAlpha;
+
+                        ImVec2 worldBound1 = worldToPos(aabb[index], boundsMVP);
+                        ImVec2 worldBound2 = worldToPos(aabb[(index + 1) % 4], boundsMVP);
+                        Math::Float3 midPoint = (aabb[index] + aabb[(index + 1) % 4]) * 0.5f;
                         ImVec2 midBound = worldToPos(midPoint, boundsMVP);
-                        static const float AnchorBigRadius = 8.0f;
-                        static const float AnchorSmallRadius = 6.0f;
+
+                        static const float AnchorBigRadius = 10.0f;
+                        static const float AnchorSmallRadius = 8.0f;
                         bool overBigAnchor = ImLengthSqr(worldBound1 - io.MousePos) <= (AnchorBigRadius*AnchorBigRadius);
                         bool overSmallAnchor = ImLengthSqr(midBound - io.MousePos) <= (AnchorBigRadius*AnchorBigRadius);
-
-                        unsigned int bigAnchorColor = overBigAnchor ? selectionColor : (0xAAAAAA + anchorAlpha);
-                        unsigned int smallAnchorColor = overSmallAnchor ? selectionColor : (0xAAAAAA + anchorAlpha);
-
-                        drawList->AddCircleFilled(worldBound1, AnchorBigRadius, bigAnchorColor);
-                        drawList->AddCircleFilled(midBound, AnchorSmallRadius, smallAnchorColor);
-                        int oppositeIndex = (i + 2) % 4;
-                        // big anchor on corners
-                        if (!mbUsingBounds && mbEnable && overBigAnchor && io.MouseDown[0])
+                        uint32_t bigAnchorColor = overBigAnchor ? selectionColor : axisColor;
+                        uint32_t otherAnchorColor = overBigAnchor ? selectionColor : otherColor;
+                        uint32_t smallAnchorColor = overSmallAnchor ? selectionColor : axisColor;
+                        if (index % 2)
                         {
-                            mBoundsPivot = mModelSource.transform(aabb[(i + 2) % 4]);
-                            mBoundsAnchor = mModelSource.transform(aabb[i]);
+                            drawList->AddCircleFilled(worldBound1, AnchorBigRadius, bigAnchorColor);
+                            drawList->AddCircleFilled(worldBound1, AnchorSmallRadius - 2, otherAnchorColor);
+                        }
+                        else
+                        {
+                            drawList->AddCircleFilled(worldBound1, AnchorBigRadius, otherAnchorColor);
+                            drawList->AddCircleFilled(worldBound1, AnchorSmallRadius - 2, bigAnchorColor);
+                        }
+
+                        drawList->AddCircleFilled(midBound, AnchorSmallRadius, smallAnchorColor);
+
+                        // big anchor on corners
+                        int oppositeIndex = (index + 2) % 4;
+                        if (!mbUsing && mbEnable && overBigAnchor && io.MouseDown[0])
+                        {
+                            mBoundsPivot = mModelSource.transform(aabb[(index + 2) % 4]);
+                            mBoundsAnchor = mModelSource.transform(aabb[index]);
                             mBoundsPlane = Shapes::Plane(bestAxisWorldDirection, mBoundsAnchor);
                             mBoundsBestAxis = bestAxis;
                             mBoundsAxis[0] = secondAxis;
@@ -1077,14 +1108,14 @@ namespace Gek
                             mBoundsLocalPivot[secondAxis] = aabb[oppositeIndex][secondAxis];
                             mBoundsLocalPivot[thirdAxis] = aabb[oppositeIndex][thirdAxis];
 
-                            mbUsingBounds = true;
+                            mbUsing = true;
                             mBoundsMatrix = mModelSource;
                         }
 
                         // small anchor on middle of segment
-                        if (!mbUsingBounds && mbEnable && overSmallAnchor && io.MouseDown[0])
+                        if (!mbUsing && mbEnable && overSmallAnchor && io.MouseDown[0])
                         {
-                            Math::Float3 midPointOpposite = (aabb[(i + 2) % 4] + aabb[(i + 3) % 4]) * 0.5f;
+                            Math::Float3 midPointOpposite = (aabb[(index + 2) % 4] + aabb[(index + 3) % 4]) * 0.5f;
                             mBoundsPivot = mModelSource.transform(midPointOpposite);
                             mBoundsAnchor = mModelSource.transform(midPoint);
                             mBoundsPlane = Shapes::Plane(bestAxisWorldDirection, mBoundsAnchor);
@@ -1096,18 +1127,18 @@ namespace Gek
                                 thirdAxis
                             };
 
-                            mBoundsAxis[0] = indices[i % 2];
+                            mBoundsAxis[0] = indices[index % 2];
                             mBoundsAxis[1] = -1;
 
                             mBoundsLocalPivot.set(0.0f);
-                            mBoundsLocalPivot[mBoundsAxis[0]] = aabb[oppositeIndex][indices[i % 2]];// bounds[mBoundsAxis[0]] * (((i + 1) & 2) ? 1.0f : -1.0f);
+                            mBoundsLocalPivot[mBoundsAxis[0]] = aabb[oppositeIndex][indices[index % 2]];// bounds[mBoundsAxis[0]] * (((index + 1) & 2) ? 1.0f : -1.0f);
 
-                            mbUsingBounds = true;
+                            mbUsing = true;
                             mBoundsMatrix = mModelSource;
                         }
                     }
 
-                    if (mbUsingBounds)
+                    if (mbUsing)
                     {
                         matrix_t scale;
                         scale.SetToIdentity();
@@ -1121,9 +1152,9 @@ namespace Gek
                         Math::Float3 referenceVector = (mBoundsAnchor - mBoundsPivot).getAbsolute();
 
                         // for 1 or 2 axes, compute a ratio that's used for scale and snap it based on resulting length
-                        for (int i = 0; i < 2; i++)
+                        for (int index = 0; index < 2; index++)
                         {
-                            int axisIndex = mBoundsAxis[i];
+                            int axisIndex = mBoundsAxis[index];
                             if (axisIndex == -1)
                             {
                                 continue;
@@ -1174,7 +1205,7 @@ namespace Gek
 
                     if (!io.MouseDown[0])
                     {
-                        mbUsingBounds = false;
+                        mbUsing = false;
                     }
                 }
 
@@ -1198,15 +1229,15 @@ namespace Gek
                     };
 
                     // compute
-                    for (unsigned int i = 0; i < 3 && type == NONE; i++)
+                    for (uint32_t index = 0; index < 3 && type == NONE; index++)
                     {
                         Math::Float3 dirPlaneX, dirPlaneY;
                         bool belowAxisLimit, belowPlaneLimit;
-                        ComputeTripodAxisAndVisibility(i, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
+                        ComputeTripodAxisAndVisibility(index, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
                         dirPlaneX = mModel.rotate(dirPlaneX);
                         dirPlaneY = mModel.rotate(dirPlaneY);
 
-                        const int planeNormal = (i + 2) % 3;
+                        const int planeNormal = (index + 2) % 3;
                         const float len = IntersectRayPlane(mRayOrigin, mRayVector, Shapes::Plane(direction[planeNormal], mModel.rw.xyz));
                         Math::Float3 posOnPlane = mRayOrigin + mRayVector * len;
 
@@ -1214,7 +1245,7 @@ namespace Gek
                         const float dy = dirPlaneY.dot((posOnPlane - mModel.rw.xyz) * (1.0f / mScreenFactor));
                         if (belowAxisLimit && dy > -0.1f && dy < 0.1f && dx > 0.1f  && dx < 1.0f)
                         {
-                            type = SCALE_X + i;
+                            type = SCALE_X + index;
                         }
                     }
 
@@ -1228,7 +1259,7 @@ namespace Gek
 
                     Math::Float3 deltaScreen(io.MousePos.x - mScreenSquareCenter.x, io.MousePos.y - mScreenSquareCenter.y, 0.0f);
                     float dist = deltaScreen.getLength();
-                    if (dist >= (screenRotateSize - 0.002f) * mHeight && dist < (screenRotateSize + 0.002f) * mHeight)
+                    if (dist >= (screenRotateSize - 0.005f) * mHeight && dist < (screenRotateSize + 0.005f) * mHeight)
                     {
                         type = ROTATE_SCREEN;
                     }
@@ -1240,21 +1271,21 @@ namespace Gek
                         mModel.rz.xyz,
                     };
 
-                    for (unsigned int i = 0; i < 3 && type == NONE; i++)
+                    for (uint32_t index = 0; index < 3 && type == NONE; index++)
                     {
                         // pickup plane
-                        Shapes::Plane pickupPlane(planeNormals[i], mModel.rw.xyz);
+                        Shapes::Plane pickupPlane(planeNormals[index], mModel.rw.xyz);
                         const float len = IntersectRayPlane(mRayOrigin, mRayVector, pickupPlane);
                         Math::Float3 localPos = mRayOrigin + mRayVector * len - mModel.rw.xyz;
                         if (localPos.getNormal().dot(mRayVector) > FLT_EPSILON)
                         {
-                            continue;
+                            //continue;
                         }
 
                         float distance = localPos.getLength() / mScreenFactor;
-                        if (distance > 0.9f && distance < 1.1f)
+                        if (distance > 0.85f && distance < 1.15f)
                         {
-                            type = ROTATE_X + i;
+                            type = ROTATE_X + index;
                         }
                     }
 
@@ -1281,15 +1312,15 @@ namespace Gek
                     };
 
                     // compute
-                    for (unsigned int i = 0; i < 3 && type == NONE; i++)
+                    for (uint32_t index = 0; index < 3 && type == NONE; index++)
                     {
                         Math::Float3 dirPlaneX, dirPlaneY;
                         bool belowAxisLimit, belowPlaneLimit;
-                        ComputeTripodAxisAndVisibility(i, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
+                        ComputeTripodAxisAndVisibility(index, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
                         dirPlaneX = mModel.rotate(dirPlaneX);
                         dirPlaneY = mModel.rotate(dirPlaneY);
 
-                        const int planeNormal = (i + 2) % 3;
+                        const int planeNormal = (index + 2) % 3;
                         const float len = IntersectRayPlane(mRayOrigin, mRayVector, Shapes::Plane(direction[planeNormal], mModel.rw.xyz));
                         Math::Float3 posOnPlane = mRayOrigin + mRayVector * len;
 
@@ -1297,12 +1328,12 @@ namespace Gek
                         const float dy = dirPlaneY.dot((posOnPlane - mModel.rw.xyz) * (1.0f / mScreenFactor));
                         if (belowAxisLimit && dy > -0.1f && dy < 0.1f && dx > 0.1f  && dx < 1.0f)
                         {
-                            type = MOVE_X + i;
+                            type = MOVE_X + index;
                         }
 
                         if (belowPlaneLimit && dx >= quadUV[0] && dx <= quadUV[4] && dy >= quadUV[1] && dy <= quadUV[3])
                         {
-                            type = MOVE_XY + i;
+                            type = MOVE_XY + index;
                         }
 
                         if (gizmoHitProportion)
@@ -1484,9 +1515,9 @@ namespace Gek
                         }
 
                         // no 0 allowed
-                        for (int i = 0; i < 3; i++)
+                        for (int index = 0; index < 3; index++)
                         {
-                            mScale[i] = std::max(mScale[i], 0.001f);
+                            mScale[index] = std::max(mScale[index], 0.001f);
                         }
 
                         // compute matrix & delta
@@ -1625,27 +1656,24 @@ namespace Gek
                     // -- 
                     if (mbEnable)
                     {
-                        if (!mbUsingBounds)
+                        switch (operation)
                         {
-                            switch (operation)
-                            {
-                            case Operation::Rotate:
-                                HandleRotation(matrix, deltaMatrix, snap);
-                                break;
+                        case Operation::Rotate:
+                            HandleRotation(matrix, deltaMatrix, snap);
+                            break;
 
-                            case Operation::Translate:
-                                HandleTranslation(matrix, deltaMatrix, snap);
-                                break;
+                        case Operation::Translate:
+                            HandleTranslation(matrix, deltaMatrix, snap);
+                            break;
 
-                            case Operation::Scale:
-                                HandleScale(matrix, deltaMatrix, snap);
-                                break;
+                        case Operation::Scale:
+                            HandleScale(matrix, deltaMatrix, snap);
+                            break;
 
-                            case Operation::Bounds:
-                                HandleBounds(localBounds, (matrix_t*)matrix, boundsSnap);
-                                break;
-                            };
-                        }
+                        case Operation::Bounds:
+                            HandleBounds(localBounds, (matrix_t*)matrix, boundsSnap);
+                            break;
+                        };
                     }
                 }
 
@@ -1672,7 +1700,7 @@ namespace Gek
 
                         // clipping
                         bool skipFace = false;
-                        for (unsigned int iCoord = 0; iCoord < 4; iCoord++)
+                        for (uint32_t iCoord = 0; iCoord < 4; iCoord++)
                         {
                             Math::Float3 camSpacePosition = res.transform(faceCoords[iCoord] * 0.5f * invert);
                             if (camSpacePosition.z < 0.001f)
@@ -1689,7 +1717,7 @@ namespace Gek
 
                         // 3D->2D
                         ImVec2 faceCoordsScreen[4];
-                        for (unsigned int iCoord = 0; iCoord < 4; iCoord++)
+                        for (uint32_t iCoord = 0; iCoord < 4; iCoord++)
                         {
                             faceCoordsScreen[iCoord] = worldToPos(faceCoords[iCoord] * 0.5f * invert, res);
                         }

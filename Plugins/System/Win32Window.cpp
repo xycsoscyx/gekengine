@@ -78,7 +78,7 @@ namespace Gek
                             {
                                 bool showCursor = true;
                                 window->onSetCursor.emit(showCursor);
-                                ShowCursor(showCursor);
+                                ShowCursor(TRUE);// showCursor);
                                 return TRUE;
                             }
                             else
@@ -211,6 +211,7 @@ namespace Gek
                 }
 
                 auto windowFlags = (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX);
+                windowFlags |= (description.allowResize ? WS_THICKFRAME | WS_MAXIMIZEBOX : 0);
 
                 RECT clientRectangle;
                 clientRectangle.left = 0;

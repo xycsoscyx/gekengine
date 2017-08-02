@@ -30,8 +30,8 @@ namespace Gek
             {
                 enum
                 {
-                    ForceCache = 1 << 0,
-                    ForceLoad = 1 << 1,
+                    LoadImmediately = 1 << 0,
+                    LoadFromCache = 1 << 1,
                 };
             }; // namespace Flags
 

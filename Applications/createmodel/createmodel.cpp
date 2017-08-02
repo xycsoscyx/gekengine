@@ -380,9 +380,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         {
             JSON::Instance materialNode = JSON::Load(filePath);
             auto shaderNode = materialNode.get("shader");
-            auto passesNode = shaderNode.get("passes");
-            auto solidNode = passesNode.get("solid");
-            auto dataNode = solidNode.get("data");
+            auto dataNode = shaderNode.get("data");
             auto albedoNode = dataNode.get("albedo");
             std::string albedoPath(albedoNode.get("file").convert(String::Empty));
             std::string materialName(String::GetLower(filePath.withoutExtension().u8string().substr(materialsPath.size() + 1)));
