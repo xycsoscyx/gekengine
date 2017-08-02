@@ -11,7 +11,7 @@
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/System/Window.hpp"
 #include "GEK/System/VideoDevice.hpp"
-#include <nano_signal_slot.hpp>
+#include <lsignal.h>
 #include <imgui.h>
 
 namespace Gek
@@ -27,9 +27,9 @@ namespace Gek
         {
             using ListenerHandle = uint64_t;
 
-            Nano::Signal<void(void)> onResize;
-            Nano::Signal<void(void)> onSettingsChanged;
-            Nano::Signal<void(void)> onExit;
+            lsignal::signal<void(void)> onResize;
+            lsignal::signal<void(void)> onSettingsChanged;
+            lsignal::signal<void(void)> onExit;
 
             virtual ~Core(void) = default;
 

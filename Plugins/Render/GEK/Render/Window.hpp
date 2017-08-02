@@ -10,7 +10,7 @@
 #include "GEK/Math/Vector2.hpp"
 #include "GEK/Math/Vector4.hpp"
 #include "GEK/Utility/Context.hpp"
-#include <nano_signal_slot.hpp>
+#include <lsignal.h>
 
 namespace Gek
 {
@@ -159,18 +159,18 @@ namespace Gek
 
         virtual ~Window(void) = default;
         
-        Nano::Signal<void(void)> onClose;
-        Nano::Signal<void(bool isActive)> onActivate;
-        Nano::Signal<void(bool isMinimized)> onSizeChanged;
+        lsignal::signal<void(void)> onClose;
+        lsignal::signal<void(bool isActive)> onActivate;
+        lsignal::signal<void(bool isMinimized)> onSizeChanged;
 
-        Nano::Signal<void(Key key, bool state)> onKeyPressed;
-        Nano::Signal<void(wchar_t character)> onCharacter;
+        lsignal::signal<void(Key key, bool state)> onKeyPressed;
+        lsignal::signal<void(wchar_t character)> onCharacter;
 
-        Nano::Signal<void(bool &showCursor)> onSetCursor;
-        Nano::Signal<void(Button button, bool state)> onMouseClicked;
-        Nano::Signal<void(float numberOfRotations)> onMouseWheel;
-        Nano::Signal<void(int32_t xPosition, int32_t yPosition)> onMousePosition;
-        Nano::Signal<void(int32_t xMovement, int32_t yMovement)> onMouseMovement;
+        lsignal::signal<void(bool &showCursor)> onSetCursor;
+        lsignal::signal<void(Button button, bool state)> onMouseClicked;
+        lsignal::signal<void(float numberOfRotations)> onMouseWheel;
+        lsignal::signal<void(int32_t xPosition, int32_t yPosition)> onMousePosition;
+        lsignal::signal<void(int32_t xMovement, int32_t yMovement)> onMouseMovement;
 
         virtual void readEvents(void) = 0;
 

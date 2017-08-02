@@ -473,17 +473,6 @@ namespace Gek
                         ImGui::EndMenu();
                     }
 
-                    if (ImGui::BeginMenu("Edit"))
-                    {
-                        bool editorEnabled = JSON::Reference(configuration).get("editor").get("active").convert(false);
-                        if (ImGui::MenuItem("Enable", "CTRL+E", &editorEnabled))
-                        {
-                            configuration["editor"]["active"] = editorEnabled;
-                        }
-
-                        ImGui::EndMenu();
-                    }
-
                     ImGui::PopStyleVar(2);
                     ImGui::EndMainMenuBar();
                     showSettingsWindow();

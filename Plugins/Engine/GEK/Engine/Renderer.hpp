@@ -11,7 +11,7 @@
 #include "GEK/Engine/Resources.hpp"
 #include "GEK/System/VideoDevice.hpp"
 #include "GEK/Shapes/Frustum.hpp"
-#include <nano_signal_slot.hpp>
+#include <lsignal.h>
 #include <imgui.h>
 
 namespace Gek
@@ -24,8 +24,8 @@ namespace Gek
         {
             GEK_ADD_EXCEPTION(InvalidIndexBufferFormat);
 
-            Nano::Signal<void(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)> onQueueDrawCalls;
-            Nano::Signal<void(ImGuiContext * const guiContext)> onShowUserInterface;
+            lsignal::signal<void(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)> onQueueDrawCalls;
+            lsignal::signal<void(ImGuiContext * const guiContext)> onShowUserInterface;
 
             virtual ~Renderer(void) = default;
 

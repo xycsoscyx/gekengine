@@ -513,19 +513,38 @@ namespace Gek
 
             void onShowUserInterface(ImGuiContext * const guiContext)
             {
+                ImGuiIO &imGuiIo = ImGui::GetIO();
+                if (imGuiIo.MouseDrawCursor)
+                {
+                    ImGui::BeginMainMenuBar();
+                    ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5.0f, 10.0f));
+                    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5.0f, 10.0f));
+                    if (ImGui::BeginMenu("Edit"))
+                    {
+                        bool editorEnabled = core->getOption("editor", "active").convert(false);
+                        if (ImGui::MenuItem("Enable", "CTRL+E", &editorEnabled))
+                        {
+                            core->setOption("editor", "active", editorEnabled);
+                        }
+
+                        ImGui::EndMenu();
+                    }
+
+                    ImGui::PopStyleVar(2);
+                    ImGui::EndMainMenuBar();
+                }
+
                 bool editorActive = core->getOption("editor", "active").convert(false);
                 if (!editorActive)
                 {
                     return;
                 }
 
-                auto &style = ImGui::GetStyle();
-                auto &imGuiIo = ImGui::GetIO();
-
                 auto editorSize = imGuiIo.DisplaySize;
                 auto editorPosition = ImVec2(0.0f, 0.0f);
                 if (imGuiIo.MouseDrawCursor)
                 {
+                    auto &style = ImGui::GetStyle();
                     editorSize.y -= ImGui::GetItemsLineHeightWithSpacing() - style.ItemSpacing.y;
                     editorPosition.y += ImGui::GetItemsLineHeightWithSpacing() - style.ItemSpacing.y;
                 }

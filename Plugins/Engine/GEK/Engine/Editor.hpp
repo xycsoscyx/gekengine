@@ -9,7 +9,7 @@
 
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include <nano_signal_slot.hpp>
+#include <lsignal.h>
 
 namespace Gek
 {
@@ -21,7 +21,7 @@ namespace Gek
         {
             virtual ~Editor(void) = default;
 
-            Nano::Signal<void(Entity *entity, const std::type_index &type)> onModified;
+            lsignal::signal<void(Entity *entity, const std::type_index &type)> onModified;
         };
     }; // namespace Engine
 }; // namespace Gek

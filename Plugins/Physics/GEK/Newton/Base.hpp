@@ -10,7 +10,7 @@
 #include "GEK/Math/Vector3.hpp"
 #include "GEK/Engine/Component.hpp"
 #include "GEK/Engine/Entity.hpp"
-#include <nano_signal_slot.hpp>
+#include <lsignal.h>
 #include <Newton.h>
 
 namespace Gek
@@ -72,7 +72,7 @@ namespace Gek
                 float softness = 1.0f;
             };
             
-            Nano::Signal<void(Plugin::Entity *entity0, Plugin::Entity *entity1, Math::Float3 const &position, Math::Float3 const &normal)> onCollision;
+            lsignal::signal<void(Plugin::Entity *entity0, Plugin::Entity *entity1, Math::Float3 const &position, Math::Float3 const &normal)> onCollision;
 
             virtual ~World(void) = default;
 

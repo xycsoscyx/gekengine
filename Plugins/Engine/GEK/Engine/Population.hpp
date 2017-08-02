@@ -11,7 +11,7 @@
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/ShuntingYard.hpp"
 #include "GEK/Engine/Processor.hpp"
-#include <nano_signal_slot.hpp>
+#include <lsignal.h>
 #include <unordered_map>
 #include <functional>
 #include <typeindex>
@@ -55,16 +55,16 @@ namespace Gek
 
             virtual ~Population(void) = default;
 
-            std::map<int32_t, Nano::Signal<void(float frameTime)>> onUpdate;
-            Nano::Signal<void(Action const &action)> onAction;
+            std::map<int32_t, lsignal::signal<void(float frameTime)>> onUpdate;
+            lsignal::signal<void(Action const &action)> onAction;
 
-            Nano::Signal<void(void)> onReset;
+            lsignal::signal<void(void)> onReset;
 
-            Nano::Signal<void(Plugin::Entity * const entity)> onEntityCreated;
-            Nano::Signal<void(Plugin::Entity * const entity)> onEntityDestroyed;
+            lsignal::signal<void(Plugin::Entity * const entity)> onEntityCreated;
+            lsignal::signal<void(Plugin::Entity * const entity)> onEntityDestroyed;
 
-            Nano::Signal<void(Plugin::Entity * const entity)> onComponentAdded;
-            Nano::Signal<void(Plugin::Entity * const entity)> onComponentRemoved;
+            lsignal::signal<void(Plugin::Entity * const entity)> onComponentAdded;
+            lsignal::signal<void(Plugin::Entity * const entity)> onComponentRemoved;
 
             virtual ShuntingYard &getShuntingYard(void) = 0;
 
