@@ -52,7 +52,6 @@ namespace Gek
         , public Plugin::ProcessorMixin<NameProcessor, Components::Name>
         , public Plugin::Processor
         , public Gek::Processor::Name
-        , public lsignal::slot
     {
     public:
         struct Data

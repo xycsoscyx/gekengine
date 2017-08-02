@@ -30,7 +30,6 @@ namespace Gek
         GEK_CONTEXT_USER(Processor, Plugin::Core *)
             , public Plugin::Processor
             , public Newton::World
-            , public lsignal::slot
         {
         public:
             struct Header

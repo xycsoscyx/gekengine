@@ -509,7 +509,6 @@ namespace Gek
         GEK_CONTEXT_USER(Resources, Plugin::Core *)
             , public Engine::Resources
             , public ResourceRequester
-            , public lsignal::slot
         {
         private:
             Plugin::Core *core = nullptr;

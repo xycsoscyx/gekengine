@@ -87,7 +87,6 @@ namespace Gek
 
 		class PlayerBody
 			: public Newton::Entity
-            , public lsignal::slot
 		{
 		public:
             Plugin::Core *core = nullptr;

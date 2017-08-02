@@ -20,7 +20,6 @@ namespace Gek
     {
         GEK_CONTEXT_USER(Core, Window *)
             , public Plugin::Core
-            , public lsignal::slot
         {
         private:
             WindowPtr window;

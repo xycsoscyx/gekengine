@@ -14,7 +14,6 @@ using namespace Gek;
 namespace Gek
 {
     class Core
-        : lsignal::slot
     {
     private:
         JSON::Object configuration;

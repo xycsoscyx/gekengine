@@ -40,7 +40,6 @@ namespace Gek
 
         GEK_CONTEXT_USER(Renderer, Plugin::Core *)
             , public Plugin::Renderer
-            , public lsignal::slot
         {
         public:
             struct DirectionalLightData

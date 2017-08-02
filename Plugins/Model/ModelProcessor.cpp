@@ -76,7 +76,6 @@ namespace Gek
         , public Plugin::ProcessorMixin<ModelProcessor, Components::Model, Components::Transform>
         , public Plugin::Processor
         , public Gek::Processor::Model
-        , public lsignal::slot
     {
     public:
         struct Header

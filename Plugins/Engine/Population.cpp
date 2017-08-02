@@ -82,7 +82,6 @@ namespace Gek
 
         GEK_CONTEXT_USER(Population, Plugin::Core *)
             , public Edit::Population
-            , public lsignal::slot
         {
         private:
             Plugin::Core *core = nullptr;

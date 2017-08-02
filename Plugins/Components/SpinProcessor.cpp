@@ -45,7 +45,6 @@ namespace Gek
 
     GEK_CONTEXT_USER(SpinProcessor, Plugin::Core *)
         , public Plugin::Processor
-        , public lsignal::slot
     {
     private:
         Plugin::Core *core = nullptr;

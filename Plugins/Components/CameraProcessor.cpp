@@ -87,7 +87,6 @@ namespace Gek
     GEK_CONTEXT_USER(CameraProcessor, Plugin::Core *)
         , public Plugin::ProcessorMixin<CameraProcessor, Components::FirstPersonCamera, Components::Transform>
         , public Plugin::Processor
-        , public lsignal::slot
     {
     public:
         struct Data
@@ -113,7 +112,7 @@ namespace Gek
             assert(resources);
             assert(renderer);
 
-            population->onReset.connect(this, &CameraProcessor::onReset, this);
+            population->onReset.connect<CameraProcessor, &CameraProcessor::onReset>(this);
             population->onEntityCreated.connect(this, &CameraProcessor::onEntityCreated, this);
             population->onEntityDestroyed.connect(this, &CameraProcessor::onEntityDestroyed, this);
             population->onComponentAdded.connect(this, &CameraProcessor::onComponentAdded, this);

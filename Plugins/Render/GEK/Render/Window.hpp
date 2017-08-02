@@ -10,7 +10,7 @@
 #include "GEK/Math/Vector2.hpp"
 #include "GEK/Math/Vector4.hpp"
 #include "GEK/Utility/Context.hpp"
-#include <lsignal.h>
+#include <nod/nod.hpp>
 
 namespace Gek
 {
@@ -159,18 +159,18 @@ namespace Gek
 
         virtual ~Window(void) = default;
         
-        lsignal::signal<void(void)> onClose;
-        lsignal::signal<void(bool isActive)> onActivate;
-        lsignal::signal<void(bool isMinimized)> onSizeChanged;
+        nod::signal<void(void)> onClose;
+        nod::signal<void(bool isActive)> onActivate;
+        nod::signal<void(bool isMinimized)> onSizeChanged;
 
-        lsignal::signal<void(Key key, bool state)> onKeyPressed;
-        lsignal::signal<void(wchar_t character)> onCharacter;
+        nod::signal<void(Key key, bool state)> onKeyPressed;
+        nod::signal<void(wchar_t character)> onCharacter;
 
-        lsignal::signal<void(bool &showCursor)> onSetCursor;
-        lsignal::signal<void(Button button, bool state)> onMouseClicked;
-        lsignal::signal<void(float numberOfRotations)> onMouseWheel;
-        lsignal::signal<void(int32_t xPosition, int32_t yPosition)> onMousePosition;
-        lsignal::signal<void(int32_t xMovement, int32_t yMovement)> onMouseMovement;
+        nod::signal<void(bool &showCursor)> onSetCursor;
+        nod::signal<void(Button button, bool state)> onMouseClicked;
+        nod::signal<void(float numberOfRotations)> onMouseWheel;
+        nod::signal<void(int32_t xPosition, int32_t yPosition)> onMousePosition;
+        nod::signal<void(int32_t xMovement, int32_t yMovement)> onMouseMovement;
 
         virtual void readEvents(void) = 0;
 

@@ -28,7 +28,6 @@ namespace Gek
         GEK_CONTEXT_USER(Editor, Plugin::Core *)
             , public Plugin::Processor
             , public Plugin::Editor
-            , public lsignal::slot
         {
         private:
             Plugin::Core *core = nullptr;
