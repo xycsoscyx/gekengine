@@ -13,9 +13,6 @@
 [submodule "external/newton-dynamics"]
 	path = External/newton-dynamics
 	url = https://github.com/MADEAPPS/newton-dynamics.git
-[submodule "external/nano-signal-slot"]
-	path = External/nano-signal-slot
-	url = https://github.com/NoAvailableAlias/nano-signal-slot.git
 [submodule "external/jsoncons"]
 	path = External/jsoncons
 	url = https://github.com/danielaparker/jsoncons.git
