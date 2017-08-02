@@ -301,7 +301,7 @@ namespace Gek
                     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.5f, 0.0f, 1.0f));
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.75f, 0.0f, 1.0f));
                     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
-                    if (ImGui::Button(ICON_MD_ADD_CIRCLE))
+                    if (ImGui::Button(ICON_FA_USER_PLUS))
                     {
                         ImGui::OpenPopup("NewEntity");
                     }
@@ -354,7 +354,7 @@ namespace Gek
                                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.0f, 0.0f, 1.0f));
                                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.0f, 0.0f, 1.0f));
                                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-                                if (ImGui::Button(ICON_MD_DELETE_FOREVER))
+                                if (ImGui::Button(ICON_FA_USER_TIMES))
                                 {
                                     ImGui::OpenPopup("ConfirmEntityDelete");
                                 }
@@ -383,7 +383,7 @@ namespace Gek
                                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.5f, 0.0f, 1.0f));
                                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.75f, 0.0f, 1.0f));
                                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
-                                if (ImGui::Button(ICON_MD_ADD_CIRCLE_OUTLINE))
+                                if (ImGui::Button(ICON_FA_PLUS_CIRCLE))
                                 {
                                     selectedComponent = 0;
                                     ImGui::OpenPopup("AddComponent");
@@ -440,7 +440,7 @@ namespace Gek
                                                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.0f, 0.0f, 1.0f));
                                                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.0f, 0.0f, 1.0f));
                                                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-                                                if (ImGui::Button(ICON_MD_DELETE))
+                                                if (ImGui::Button(ICON_FA_MINUS_CIRCLE))
                                                 {
                                                     ImGui::OpenPopup("ConfirmComponentDelete");
                                                 }
