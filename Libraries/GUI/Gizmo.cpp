@@ -1279,7 +1279,7 @@ namespace Gek
                         Math::Float3 localPos = mRayOrigin + mRayVector * len - mModel.rw.xyz;
                         if (localPos.getNormal().dot(mRayVector) > FLT_EPSILON)
                         {
-                            //continue;
+                            continue;
                         }
 
                         float distance = localPos.getLength() / mScreenFactor;
