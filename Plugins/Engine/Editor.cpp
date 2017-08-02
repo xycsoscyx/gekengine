@@ -49,7 +49,8 @@ namespace Gek
 
             int selectedComponent = 0;
 
-            UI::Gizmo::Alignment currentGizmoAlignment = UI::Gizmo::Alignment::World;
+            UI::Gizmo::LockAxis currentGizmoAxis = UI::Gizmo::LockAxis::Automatic;
+            UI::Gizmo::Alignment currentGizmoAlignment = UI::Gizmo::Alignment::Local;
             UI::Gizmo::Operation currentGizmoOperation = UI::Gizmo::Operation::Translate;
             bool useGizmoSnap = true;
             Math::Float3 gizmoSnapPosition = Math::Float3::One;
@@ -198,8 +199,7 @@ namespace Gek
                                 if (isObjectInFrustum(Shapes::Frustum(viewMatrix * projectionMatrix), Shapes::OrientedBox(boundingBox, matrix)))
                                 {
                                     Math::Float4x4 deltaMatrix;
-                                    float *localBounds = (currentGizmoOperation == UI::Gizmo::Operation::Bounds ? boundingBox.minimum.data : nullptr);
-                                    gizmo->manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, currentGizmoAlignment, matrix.data, deltaMatrix.data, snapData, localBounds, snapData);
+                                    gizmo->manipulate(viewMatrix, projectionMatrix, currentGizmoOperation, currentGizmoAlignment, matrix, snapData, &boundingBox, currentGizmoAxis);
                                     switch (currentGizmoOperation)
                                     {
                                     case UI::Gizmo::Operation::Translate:
@@ -215,6 +215,8 @@ namespace Gek
                                         break;
 
                                     case UI::Gizmo::Operation::Bounds:
+                                        transformComponent.position = matrix.translation.xyz;
+                                        transformComponent.scale = matrix.getScaling();
                                         break;
                                     };
 
@@ -242,9 +244,9 @@ namespace Gek
                     ImGui::BulletText("Alignment ");
                     ImGui::SameLine();
                     auto width = (ImGui::GetContentRegionAvailWidth() - style.ItemSpacing.x) * 0.5f;
-                    UI::RadioButton(ICON_FA_GLOBE " World", &currentGizmoAlignment, UI::Gizmo::Alignment::World, ImVec2(width, 0.0f));
-                    ImGui::SameLine();
                     UI::RadioButton(ICON_FA_USER_O " Entity", &currentGizmoAlignment, UI::Gizmo::Alignment::Local, ImVec2(width, 0.0f));
+                    ImGui::SameLine();
+                    UI::RadioButton(ICON_FA_GLOBE " World", &currentGizmoAlignment, UI::Gizmo::Alignment::World, ImVec2(width, 0.0f));
 
                     ImGui::BulletText("Operation ");
                     ImGui::SameLine();
@@ -256,6 +258,17 @@ namespace Gek
                     UI::RadioButton(ICON_FA_SEARCH " Scale", &currentGizmoOperation, UI::Gizmo::Operation::Scale, ImVec2(width, 0.0f));
                     ImGui::SameLine();
                     UI::RadioButton(ICON_FA_SEARCH " Bounds", &currentGizmoOperation, UI::Gizmo::Operation::Bounds, ImVec2(width, 0.0f));
+
+                    ImGui::BulletText("Bounding Axis ");
+                    ImGui::SameLine();
+                    width = (ImGui::GetContentRegionAvailWidth() - style.ItemSpacing.x * 3.0f) / 4.0f;
+                    UI::RadioButton(ICON_FA_SEARCH " Auto", &currentGizmoAxis, UI::Gizmo::LockAxis::Automatic, ImVec2(width, 0.0f));
+                    ImGui::SameLine();
+                    UI::RadioButton(" X ", &currentGizmoAxis, UI::Gizmo::LockAxis::X, ImVec2(width, 0.0f));
+                    ImGui::SameLine();
+                    UI::RadioButton(" Y ", &currentGizmoAxis, UI::Gizmo::LockAxis::Y, ImVec2(width, 0.0f));
+                    ImGui::SameLine();
+                    UI::RadioButton(" Z ", &currentGizmoAxis, UI::Gizmo::LockAxis::Z, ImVec2(width, 0.0f));
 
                     UI::CheckButton(ICON_FA_MAGNET " Snap", &useGizmoSnap);
                     ImGui::SameLine();

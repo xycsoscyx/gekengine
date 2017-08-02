@@ -10,6 +10,7 @@
 #include "GEK/GUI/Utilities.hpp"
 #include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Math/Vector3.hpp"
+#include "GEK/Shapes/AlignedBox.hpp"
 
 namespace Gek
 {
@@ -17,7 +18,7 @@ namespace Gek
     {
         namespace Gizmo
         {
-            enum class Operation : int
+            enum class Operation
             {
                 None,
                 Translate,
@@ -26,10 +27,18 @@ namespace Gek
                 Bounds,
             };
 
-            enum class Alignment : int
+            enum class Alignment
             {
                 Local = 0,
                 World,
+            };
+
+            enum class LockAxis
+            {
+                Automatic = 0,
+                X,
+                Y,
+                Z,
             };
 
             struct Context;
@@ -40,7 +49,7 @@ namespace Gek
                 ~WorkSpace(void);
 
                 void beginFrame(float x, float y, float width, float height);
-                void manipulate(const float *view, const float *projection, Operation operation, Alignment alignment, float *matrix, float *deltaMatrix = 0, float *snap = 0, float *localBounds = NULL, float *boundsSnap = NULL);
+                void manipulate(Math::Float4x4 const &view, Math::Float4x4 const &projection, Operation operation, Alignment alignment, Math::Float4x4 &matrix, float *snap = nullptr, Shapes::AlignedBox *localBounds = nullptr, LockAxis lockAxis = LockAxis::Automatic);
 
             private:
                 Context *context = nullptr;

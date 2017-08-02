@@ -12,300 +12,6 @@ namespace Gek
             static const float angleLimit = 0.96f;
             static const float planeLimit = 0.2f;
 
-            void FPU_MatrixF_x_MatrixF(const float *a, const float *b, float *r)
-            {
-                r[0] = a[0] * b[0] + a[1] * b[4] + a[2] * b[8] + a[3] * b[12];
-                r[1] = a[0] * b[1] + a[1] * b[5] + a[2] * b[9] + a[3] * b[13];
-                r[2] = a[0] * b[2] + a[1] * b[6] + a[2] * b[10] + a[3] * b[14];
-                r[3] = a[0] * b[3] + a[1] * b[7] + a[2] * b[11] + a[3] * b[15];
-
-                r[4] = a[4] * b[0] + a[5] * b[4] + a[6] * b[8] + a[7] * b[12];
-                r[5] = a[4] * b[1] + a[5] * b[5] + a[6] * b[9] + a[7] * b[13];
-                r[6] = a[4] * b[2] + a[5] * b[6] + a[6] * b[10] + a[7] * b[14];
-                r[7] = a[4] * b[3] + a[5] * b[7] + a[6] * b[11] + a[7] * b[15];
-
-                r[8] = a[8] * b[0] + a[9] * b[4] + a[10] * b[8] + a[11] * b[12];
-                r[9] = a[8] * b[1] + a[9] * b[5] + a[10] * b[9] + a[11] * b[13];
-                r[10] = a[8] * b[2] + a[9] * b[6] + a[10] * b[10] + a[11] * b[14];
-                r[11] = a[8] * b[3] + a[9] * b[7] + a[10] * b[11] + a[11] * b[15];
-
-                r[12] = a[12] * b[0] + a[13] * b[4] + a[14] * b[8] + a[15] * b[12];
-                r[13] = a[12] * b[1] + a[13] * b[5] + a[14] * b[9] + a[15] * b[13];
-                r[14] = a[12] * b[2] + a[13] * b[6] + a[14] * b[10] + a[15] * b[14];
-                r[15] = a[12] * b[3] + a[13] * b[7] + a[14] * b[11] + a[15] * b[15];
-            }
-
-            struct matrix_t
-            {
-            public:
-                union
-                {
-                    float table[4][4];
-                    float data[16];
-                    struct
-                    {
-                        Math::Float4 rx, ry, rz, rw;
-                    };
-
-                    Math::Float4 rows[4];
-                };
-
-                matrix_t(const matrix_t& other)
-                {
-                    memcpy(data, other.data, sizeof(matrix_t));
-                }
-
-                matrix_t()
-                {
-                }
-
-                operator float * ()
-                {
-                    return data;
-                }
-
-                operator const float* () const
-                {
-                    return data;
-                }
-
-                Math::Float4 &operator [] (size_t index)
-                {
-                    return rows[index];
-                }
-
-                Math::Float4 const &operator [] (size_t index) const
-                {
-                    return rows[index];
-                }
-
-                matrix_t &operator = (matrix_t const &matrix)
-                {
-                    memcpy(data, matrix.data, sizeof(matrix_t));
-                    return (*this);
-                }
-
-                void MakeTranslation(const Math::Float3& vt)
-                {
-                    rx.set(1.0f, 0.0f, 0.0f, 0.0f);
-                    ry.set(0.0f, 1.0f, 0.0f, 0.0f);
-                    rz.set(0.0f, 0.0f, 1.0f, 0.0f);
-                    rw.set(vt.x, vt.y, vt.z, 1.0f);
-                }
-
-                void MakeScaling(const Math::Float3& s)
-                {
-                    rx.set(s.x, 0.0f, 0.0f, 0.0f);
-                    ry.set(0.0f, s.y, 0.0f, 0.0f);
-                    rz.set(0.0f, 0.0f, s.z, 0.0f);
-                    rw.set(0.0f, 0.0f, 0.0f, 1.0f);
-                }
-
-                void MakeRotation(const Math::Float3 & axis, float angle);
-
-                matrix_t operator * (const matrix_t &matrix) const
-                {
-                    matrix_t tmp;
-                    FPU_MatrixF_x_MatrixF((float*)this, (float*)&matrix, (float*)&tmp);
-                    return tmp;
-                }
-
-                matrix_t &operator *= (const matrix_t &matrix)
-                {
-                    matrix_t tmp = *this;
-                    FPU_MatrixF_x_MatrixF((float*)&tmp, (float*)&matrix, (float*)this);
-                    return (*this);
-                }
-
-                float getDeterminant() const
-                {
-                    return
-                        table[0][0] * table[1][1] * table[2][2] + 
-                        table[0][1] * table[1][2] * table[2][0] + 
-                        table[0][2] * table[1][0] * table[2][1] -
-                        table[0][2] * table[1][1] * table[2][0] -
-                        table[0][1] * table[1][0] * table[2][2] -
-                        table[0][0] * table[1][2] * table[2][1];
-                }
-
-                void getInverse(const matrix_t &srcMatrix);
-
-                void SetToIdentity()
-                {
-                    rx.set(1.0f, 0.0f, 0.0f, 0.0f);
-                    ry.set(0.0f, 1.0f, 0.0f, 0.0f);
-                    rz.set(0.0f, 0.0f, 1.0f, 0.0f);
-                    rw.set(0.0f, 0.0f, 0.0f, 1.0f);
-                }
-
-                void transpose()
-                {
-                    matrix_t tmpm;
-                    for (int l = 0; l < 4; l++)
-                    {
-                        for (int c = 0; c < 4; c++)
-                        {
-                            tmpm.table[l][c] = table[c][l];
-                        }
-                    }
-
-                    (*this) = tmpm;
-                }
-
-                void orthonormalize()
-                {
-                    rx.normalize();
-                    ry.normalize();
-                    rz.normalize();
-                }
-
-                Math::Float4 transform(const Math::Float4& vector) const;
-                Math::Float3 transform(const Math::Float3& vector) const;
-                Math::Float3 rotate(const Math::Float3& vector) const;
-            };
-
-            Math::Float4 matrix_t::transform(const Math::Float4& vector) const
-            {
-                Math::Float4 out;
-                out.x = vector.x * table[0][0] + vector.y * table[1][0] + vector.z * table[2][0] + vector.w * table[3][0];
-                out.y = vector.x * table[0][1] + vector.y * table[1][1] + vector.z * table[2][1] + vector.w * table[3][1];
-                out.z = vector.x * table[0][2] + vector.y * table[1][2] + vector.z * table[2][2] + vector.w * table[3][2];
-                out.w = vector.x * table[0][3] + vector.y * table[1][3] + vector.z * table[2][3] + vector.w * table[3][3];
-                return out;
-            }
-
-            Math::Float3 matrix_t::transform(const Math::Float3& vector) const
-            {
-                Math::Float3 out;
-                out.x = vector.x * table[0][0] + vector.y * table[1][0] + vector.z * table[2][0] + table[3][0];
-                out.y = vector.x * table[0][1] + vector.y * table[1][1] + vector.z * table[2][1] + table[3][1];
-                out.z = vector.x * table[0][2] + vector.y * table[1][2] + vector.z * table[2][2] + table[3][2];
-                return out;
-            }
-
-            Math::Float3 matrix_t::rotate(const Math::Float3& vector) const
-            {
-                Math::Float3 out;
-                out.x = vector.x * table[0][0] + vector.y * table[1][0] + vector.z * table[2][0];
-                out.y = vector.x * table[0][1] + vector.y * table[1][1] + vector.z * table[2][1];
-                out.z = vector.x * table[0][2] + vector.y * table[1][2] + vector.z * table[2][2];
-                return out;
-            }
-
-            void matrix_t::getInverse(const matrix_t &srcMatrix)
-            {
-                // transpose matrix
-                float src[16];
-                for (int index = 0; index < 4; ++index)
-                {
-                    src[index] = srcMatrix.data[index * 4];
-                    src[index + 4] = srcMatrix.data[index * 4 + 1];
-                    src[index + 8] = srcMatrix.data[index * 4 + 2];
-                    src[index + 12] = srcMatrix.data[index * 4 + 3];
-                }
-
-                // calculate pairs for first 8 elements (cofactors)
-                float tmp[12]; // temp array for pairs
-                tmp[0] = src[10] * src[15];
-                tmp[1] = src[11] * src[14];
-                tmp[2] = src[9] * src[15];
-                tmp[3] = src[11] * src[13];
-                tmp[4] = src[9] * src[14];
-                tmp[5] = src[10] * src[13];
-                tmp[6] = src[8] * src[15];
-                tmp[7] = src[11] * src[12];
-                tmp[8] = src[8] * src[14];
-                tmp[9] = src[10] * src[12];
-                tmp[10] = src[8] * src[13];
-                tmp[11] = src[9] * src[12];
-
-                // calculate first 8 elements (cofactors)
-                data[0] = (tmp[0] * src[5] + tmp[3] * src[6] + tmp[4] * src[7]) - (tmp[1] * src[5] + tmp[2] * src[6] + tmp[5] * src[7]);
-                data[1] = (tmp[1] * src[4] + tmp[6] * src[6] + tmp[9] * src[7]) - (tmp[0] * src[4] + tmp[7] * src[6] + tmp[8] * src[7]);
-                data[2] = (tmp[2] * src[4] + tmp[7] * src[5] + tmp[10] * src[7]) - (tmp[3] * src[4] + tmp[6] * src[5] + tmp[11] * src[7]);
-                data[3] = (tmp[5] * src[4] + tmp[8] * src[5] + tmp[11] * src[6]) - (tmp[4] * src[4] + tmp[9] * src[5] + tmp[10] * src[6]);
-                data[4] = (tmp[1] * src[1] + tmp[2] * src[2] + tmp[5] * src[3]) - (tmp[0] * src[1] + tmp[3] * src[2] + tmp[4] * src[3]);
-                data[5] = (tmp[0] * src[0] + tmp[7] * src[2] + tmp[8] * src[3]) - (tmp[1] * src[0] + tmp[6] * src[2] + tmp[9] * src[3]);
-                data[6] = (tmp[3] * src[0] + tmp[6] * src[1] + tmp[11] * src[3]) - (tmp[2] * src[0] + tmp[7] * src[1] + tmp[10] * src[3]);
-                data[7] = (tmp[4] * src[0] + tmp[9] * src[1] + tmp[10] * src[2]) - (tmp[5] * src[0] + tmp[8] * src[1] + tmp[11] * src[2]);
-
-                // calculate pairs for second 8 elements (cofactors)
-                tmp[0] = src[2] * src[7];
-                tmp[1] = src[3] * src[6];
-                tmp[2] = src[1] * src[7];
-                tmp[3] = src[3] * src[5];
-                tmp[4] = src[1] * src[6];
-                tmp[5] = src[2] * src[5];
-                tmp[6] = src[0] * src[7];
-                tmp[7] = src[3] * src[4];
-                tmp[8] = src[0] * src[6];
-                tmp[9] = src[2] * src[4];
-                tmp[10] = src[0] * src[5];
-                tmp[11] = src[1] * src[4];
-
-                // calculate second 8 elements (cofactors)
-                data[8] = (tmp[0] * src[13] + tmp[3] * src[14] + tmp[4] * src[15]) - (tmp[1] * src[13] + tmp[2] * src[14] + tmp[5] * src[15]);
-                data[9] = (tmp[1] * src[12] + tmp[6] * src[14] + tmp[9] * src[15]) - (tmp[0] * src[12] + tmp[7] * src[14] + tmp[8] * src[15]);
-                data[10] = (tmp[2] * src[12] + tmp[7] * src[13] + tmp[10] * src[15]) - (tmp[3] * src[12] + tmp[6] * src[13] + tmp[11] * src[15]);
-                data[11] = (tmp[5] * src[12] + tmp[8] * src[13] + tmp[11] * src[14]) - (tmp[4] * src[12] + tmp[9] * src[13] + tmp[10] * src[14]);
-                data[12] = (tmp[2] * src[10] + tmp[5] * src[11] + tmp[1] * src[9]) - (tmp[4] * src[11] + tmp[0] * src[9] + tmp[3] * src[10]);
-                data[13] = (tmp[8] * src[11] + tmp[0] * src[8] + tmp[7] * src[10]) - (tmp[6] * src[10] + tmp[9] * src[11] + tmp[1] * src[8]);
-                data[14] = (tmp[6] * src[9] + tmp[11] * src[11] + tmp[3] * src[8]) - (tmp[10] * src[11] + tmp[2] * src[8] + tmp[7] * src[9]);
-                data[15] = (tmp[10] * src[10] + tmp[4] * src[8] + tmp[9] * src[9]) - (tmp[8] * src[9] + tmp[11] * src[10] + tmp[5] * src[8]);
-
-                // calculate determinant
-                float det = src[0] * data[0] + src[1] * data[1] + src[2] * data[2] + src[3] * data[3];
-
-                // calculate matrix inverse
-                float invdet = 1 / det;
-                for (int step = 0; step < 16; ++step)
-                {
-                    data[step] *= invdet;
-                }
-            }
-
-            void matrix_t::MakeRotation(const Math::Float3 & axis, float angle)
-            {
-                float length2 = axis.getMagnitude();
-                if (length2 < FLT_EPSILON)
-                {
-                    SetToIdentity();
-                    return;
-                }
-
-                Math::Float3 n = axis * (1.0f / std::sqrt(length2));
-                float s = std::sin(angle);
-                float c = std::cos(angle);
-                float k = 1.0f - c;
-
-                float xx = n.x * n.x * k + c;
-                float yy = n.y * n.y * k + c;
-                float zz = n.z * n.z * k + c;
-                float xy = n.x * n.y * k;
-                float yz = n.y * n.z * k;
-                float zx = n.z * n.x * k;
-                float xs = n.x * s;
-                float ys = n.y * s;
-                float zs = n.z * s;
-
-                table[0][0] = xx;
-                table[0][1] = xy + zs;
-                table[0][2] = zx - ys;
-                table[0][3] = 0.0f;
-                table[1][0] = xy - zs;
-                table[1][1] = yy;
-                table[1][2] = yz + xs;
-                table[1][3] = 0.0f;
-                table[2][0] = zx + ys;
-                table[2][1] = yz - xs;
-                table[2][2] = zz;
-                table[2][3] = 0.0f;
-                table[3][0] = 0.0f;
-                table[3][1] = 0.0f;
-                table[3][2] = 0.0f;
-                table[3][3] = 1.0f;
-            }
-
             static const Math::Float3 directionUnary[3] =
             {
                 Math::Float3(1.0f, 0.0f, 0.0f),
@@ -352,67 +58,64 @@ namespace Gek
 
             static const int translationInfoIndex[] =
             {
-                0,0,0,
-                1,0,0,
-                2,0,0,
-                0,1,0,
-                1,2,0,
-                0,2,1,
-                0,1,2
+                0, 0, 0,
+                1, 0, 0,
+                2, 0, 0,
+                0, 1, 0,
+                1, 2, 0,
+                0, 2, 1,
+                0, 1, 2,
             };
 
-            static const float quadMin = 0.5f;
-            static const float quadMax = 0.8f;
-            static const float quadUV[8] =
+            static const float quadMinimum = 0.5f;
+            static const float quadMaximum = 0.8f;
+            static const float quadCoords[8] =
             {
-                quadMin, quadMin,
-                quadMin, quadMax,
-                quadMax, quadMax,
-                quadMax, quadMin
+                quadMinimum, quadMinimum,
+                quadMinimum, quadMaximum,
+                quadMaximum, quadMaximum,
+                quadMaximum, quadMinimum
             };
 
             static const int halfCircleSegmentCount = 64;
             static const float snapTension = 0.5f;
 
-            enum MOVETYPE
+            struct Control
             {
-                NONE,
-                MOVE_X,
-                MOVE_Y,
-                MOVE_Z,
-                MOVE_XY,
-                MOVE_XZ,
-                MOVE_YZ,
-                MOVE_SCREEN,
-                ROTATE_X,
-                ROTATE_Y,
-                ROTATE_Z,
-                ROTATE_SCREEN,
-                SCALE_X,
-                SCALE_Y,
-                SCALE_Z,
-                SCALE_XYZ,
+                enum
+                {
+                    None = 0,
+                    MoveX,
+                    MoveY,
+                    MoveZ,
+                    MoveXY,
+                    MoveXZ,
+                    MoveYZ,
+                    MoveScreen,
+                    RotateX,
+                    RotateY,
+                    RotateZ,
+                    RotateScreen,
+                    ScaleX,
+                    ScaleY,
+                    ScaleZ,
+                    ScaleXYZ,
+                };
             };
 
             struct Context
             {
-                Context()
-                    : mbUsing(false)
-                    , mbEnable(true)
-                {
-                }
+                ImDrawList* currentDrawList = nullptr;
 
-                ImDrawList* mDrawList;
-
-                Alignment mMode;
-                matrix_t mViewMat;
-                matrix_t mProjectionMat;
-                matrix_t mModel;
-                matrix_t mModelInverse;
-                matrix_t mModelSource;
-                matrix_t mModelSourceInverse;
-                matrix_t mMVP;
-                matrix_t mViewProjection;
+                Alignment currentAlignment = Alignment::Local;
+                Math::Float4x4 viewMatrix;
+                Math::Float4x4 projectionMatrix;
+                Math::Float4x4 modelMatrix;
+                Math::Float4x4 inverseModelMatrix;
+                Math::Float4x4 sourceModelMatrix;
+                Math::Float4x4 inverseSourceModelMatrix;
+                Math::Float4x4 modelViewProjectionMatrix;
+                Math::Float4x4 viewProjectionMatrix;
 
                 Math::Float3 mModelScaleOrigin;
                 Math::Float3 mCameraEye;
@@ -429,8 +132,8 @@ namespace Gek
                 float mScreenFactor;
                 Math::Float3 mRelativeOrigin;
 
-                bool mbUsing;
-                bool mbEnable;
+                bool isUsing = false;
+                bool isEnabled = true;
 
                 // translation
                 Shapes::Plane mTranslationPlane;
@@ -460,21 +163,21 @@ namespace Gek
                 Math::Float3 mBoundsLocalPivot;
                 int mBoundsBestAxis;
                 int mBoundsAxis[2];
-                matrix_t mBoundsMatrix;
+                Math::Float4x4 mBoundsMatrix;
 
                 //
-                int mCurrentOperation;
+                int currentControl = Control::None;
 
                 float mX = 0.0f;
                 float mY = 0.0f;
                 float mWidth = 0.0f;
                 float mHeight = 0.0f;
 
-                ImVec2 worldToPos(const Math::Float3& worldPos, const matrix_t& mat)
+                ImVec2 getPointFromPosition(Math::Float3 const &position, Math::Float4x4 const &matrix)
                 {
-                    ImGuiIO& io = ImGui::GetIO();
+                    ImGuiIO &imGuiIO = ImGui::GetIO();
 
-                    Math::Float4 trans = mat.transform(Math::Float4(worldPos, 1.0f));
+                    Math::Float4 trans = matrix.transform(Math::Float4(position, 1.0f));
                     trans *= 0.5f / trans.w;
                     trans.xy += Math::Float2(0.5f, 0.5f);
                     trans.y = 1.0f - trans.y;
@@ -487,13 +190,12 @@ namespace Gek
 
                 void ComputeCameraRay(Math::Float3 &rayOrigin, Math::Float3 &rayDir)
                 {
-                    ImGuiIO& io = ImGui::GetIO();
+                    ImGuiIO &imGuiIO = ImGui::GetIO();
 
-                    matrix_t mViewProjInverse;
-                    mViewProjInverse.getInverse(mViewMat * mProjectionMat);
+                    Math::Float4x4 mViewProjInverse = (viewMatrix * projectionMatrix).getInverse();
 
-                    float mox = ((io.MousePos.x - mX) / mWidth) * 2.0f - 1.0f;
-                    float moy = (1.0f - ((io.MousePos.y - mY) / mHeight)) * 2.0f - 1.0f;
+                    float mox = ((imGuiIO.MousePos.x - mX) / mWidth) * 2.0f - 1.0f;
+                    float moy = (1.0f - ((imGuiIO.MousePos.y - mY) / mHeight)) * 2.0f - 1.0f;
 
                     Math::Float4 rayStart;
                     rayStart = mViewProjInverse.transform(Math::Float4(mox, moy, 0.0f, 1.0f));
@@ -505,7 +207,7 @@ namespace Gek
                     rayDir = (rayEnd.xyz - rayOrigin).getNormal();
                 }
 
-                float IntersectRayPlane(const Math::Float3 & rOrigin, const Math::Float3& rVector, const Shapes::Plane& plane)
+                float IntersectRayPlane(const Math::Float3 & rOrigin, Math::Float3 const &rVector, const Shapes::Plane& plane)
                 {
                     float numer = plane.getDistance(rOrigin);
                     float denom = plane.normal.dot(rVector);
@@ -528,73 +230,71 @@ namespace Gek
 
                 void BeginFrame()
                 {
-                    mDrawList = ImGui::GetWindowDrawList();
-                    if (!mDrawList)
+                    currentDrawList = ImGui::GetWindowDrawList();
+                    if (!currentDrawList)
                     {
-                        ImGuiIO& io = ImGui::GetIO();
-                        ImGui::Begin("gizmo", NULL, io.DisplaySize, 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus);
-                        mDrawList = ImGui::GetWindowDrawList();
+                        ImGuiIO &imGuiIO = ImGui::GetIO();
+                        ImGui::Begin("gizmo", NULL, imGuiIO.DisplaySize, 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus);
+                        currentDrawList = ImGui::GetWindowDrawList();
                         ImGui::End();
                     }
                 }
 
                 bool IsUsing()
                 {
-                    return mbUsing;
+                    return isUsing;
                 }
 
                 bool IsOver()
                 {
-                    return (GetMoveType(NULL) != NONE) || GetRotateType() != NONE || GetScaleType() != NONE || IsUsing();
+                    return (GetMoveType(NULL) != Control::None) || GetRotateType() != Control::None || GetScaleType() != Control::None || IsUsing();
                 }
 
                 void Enable(bool enable)
                 {
-                    mbEnable = enable;
+                    isEnabled = enable;
                     if (!enable)
                     {
-                        mbUsing = false;
+                        isUsing = false;
                     }
                 }
 
-                float GetUniform(const Math::Float3& position, const matrix_t& mat)
+                float GetUniform(Math::Float3 const &position, Math::Float4x4 const &matrix)
                 {
-                    return mat.transform(Math::Float4(position, 1.0f)).w;
+                    return matrix.transform(Math::Float4(position, 1.0f)).w;
                 }
 
-                void ComputeContext(const float *view, const float *projection, float *matrix, Alignment mode)
+                void ComputeContext(Math::Float4x4 const &view, Math::Float4x4 const &projection, Math::Float4x4 &matrix, Alignment alignment)
                 {
-                    mMode = mode;
-                    mViewMat = *(matrix_t*)view;
-                    mProjectionMat = *(matrix_t*)projection;
-
-                    if (mode == Alignment::Local)
+                    currentAlignment = alignment;
+                    viewMatrix = view;
+                    projectionMatrix = projection;
+                    if (currentAlignment == Alignment::Local)
                     {
-                        mModel = *(matrix_t*)matrix;
-                        mModel.orthonormalize();
+                        modelMatrix = matrix;
+                        modelMatrix.orthonormalize();
                     }
                     else
                     {
-                        mModel.MakeTranslation(((matrix_t*)matrix)->rw.xyz);
+                        modelMatrix = Math::Float4x4::MakeTranslation(matrix.translation.xyz);
                     }
 
-                    mModelSource = *(matrix_t*)matrix;
-                    mModelScaleOrigin.set(mModelSource.rx.getLength(), mModelSource.ry.getLength(), mModelSource.rz.getLength());
+                    sourceModelMatrix = matrix;
+                    mModelScaleOrigin.set(sourceModelMatrix.rx.getLength(), sourceModelMatrix.ry.getLength(), sourceModelMatrix.rz.getLength());
 
-                    mModelInverse.getInverse(mModel);
-                    mModelSourceInverse.getInverse(mModelSource);
-                    mViewProjection = mViewMat * mProjectionMat;
-                    mMVP = mModel * mViewProjection;
+                    inverseModelMatrix = modelMatrix.getInverse();
+                    inverseSourceModelMatrix = sourceModelMatrix.getInverse();
+                    viewProjectionMatrix = viewMatrix * projectionMatrix;
+                    modelViewProjectionMatrix = modelMatrix * viewProjectionMatrix;
 
-                    matrix_t viewInverse;
-                    viewInverse.getInverse(mViewMat);
+                    Math::Float4x4 viewInverse = viewMatrix.getInverse();
                     mCameraDir = viewInverse.rz.xyz;
                     mCameraEye = viewInverse.rw.xyz;
                     mCameraRight = viewInverse.rx.xyz;
                     mCameraUp = viewInverse.ry.xyz;
-                    mScreenFactor = 0.15f * GetUniform(mModel.rw.xyz, mViewProjection);
+                    mScreenFactor = 0.15f * GetUniform(modelMatrix.rw.xyz, viewProjectionMatrix);
 
-                    ImVec2 centerSSpace = worldToPos(Math::Float3(0.0f, 0.0f, 0.0f), mMVP);
+                    ImVec2 centerSSpace = getPointFromPosition(Math::Float3(0.0f, 0.0f, 0.0f), modelViewProjectionMatrix);
                     mScreenSquareCenter = centerSSpace;
                     mScreenSquareMin = ImVec2(centerSSpace.x - 10.0f, centerSSpace.y - 10.0f);
                     mScreenSquareMax = ImVec2(centerSSpace.x + 10.0f, centerSSpace.y + 10.0f);
@@ -602,37 +302,37 @@ namespace Gek
                     ComputeCameraRay(mRayOrigin, mRayVector);
                 }
 
-                void ComputeColors(ImU32 *colors, int type, Operation operation)
+                void ComputeColors(ImU32 *colors, int control, Operation operation)
                 {
-                    if (mbEnable)
+                    if (isEnabled)
                     {
                         switch (operation)
                         {
                         case Operation::Translate:
-                            colors[0] = (type == MOVE_SCREEN) ? selectionColor : 0xFFFFFFFF;
+                            colors[0] = (control == Control::MoveScreen) ? selectionColor : 0xFFFFFFFF;
                             for (int index = 0; index < 3; index++)
                             {
                                 int colorPlaneIndex = (index + 2) % 3;
-                                colors[index + 1] = (type == (int)(MOVE_X + index)) ? selectionColor : directionColor[index];
-                                colors[index + 4] = (type == (int)(MOVE_XY + index)) ? selectionColor : directionColor[colorPlaneIndex];
+                                colors[index + 1] = (control == (int)(Control::MoveX + index)) ? selectionColor : directionColor[index];
+                                colors[index + 4] = (control == (int)(Control::MoveXY + index)) ? selectionColor : directionColor[colorPlaneIndex];
                             }
 
                             break;
 
                         case Operation::Rotate:
-                            colors[0] = (type == ROTATE_SCREEN) ? selectionColor : 0xFFFFFFFF;
+                            colors[0] = (control == Control::RotateScreen) ? selectionColor : 0xFFFFFFFF;
                             for (int index = 0; index < 3; index++)
                             {
-                                colors[index + 1] = (type == (int)(ROTATE_X + index)) ? selectionColor : directionColor[index];
+                                colors[index + 1] = (control == (int)(Control::RotateX + index)) ? selectionColor : directionColor[index];
                             }
 
                             break;
 
                         case Operation::Scale:
-                            colors[0] = (type == SCALE_XYZ) ? selectionColor : 0xFFFFFFFF;
+                            colors[0] = (control == Control::ScaleXYZ) ? selectionColor : 0xFFFFFFFF;
                             for (int index = 0; index < 3; index++)
                             {
-                                colors[index + 1] = (type == (int)(SCALE_X + index)) ? selectionColor : directionColor[index];
+                                colors[index + 1] = (control == (int)(Control::ScaleX + index)) ? selectionColor : directionColor[index];
                             }
 
                             break;
@@ -655,7 +355,7 @@ namespace Gek
                     const int planeNormal = (axisIndex + 2) % 3;
                     dirPlaneX = directionUnary[axisIndex];
                     dirPlaneY = directionUnary[(axisIndex + 1) % 3];
-                    if (mbUsing)
+                    if (isUsing)
                     {
                         // when using, use stored factors so the gizmo doesn't flip when we translate
                         belowAxisLimit = mBelowAxisLimit[axisIndex];
@@ -667,16 +367,16 @@ namespace Gek
                     else
                     {
                         Math::Float3 dirPlaneNormalWorld;
-                        dirPlaneNormalWorld = mModel.rotate(directionUnary[planeNormal]);
+                        dirPlaneNormalWorld = modelMatrix.rotate(directionUnary[planeNormal]);
                         dirPlaneNormalWorld.normalize();
 
-                        Math::Float3 dirPlaneXWorld = mModel.rotate(dirPlaneX);
+                        Math::Float3 dirPlaneXWorld = modelMatrix.rotate(dirPlaneX);
                         dirPlaneXWorld.normalize();
 
-                        Math::Float3 dirPlaneYWorld = mModel.rotate(dirPlaneY);
+                        Math::Float3 dirPlaneYWorld = modelMatrix.rotate(dirPlaneY);
                         dirPlaneYWorld.normalize();
 
-                        Math::Float3 cameraEyeToGizmo = (mModel.rw.xyz - mCameraEye).getNormal();
+                        Math::Float3 cameraEyeToGizmo = (modelMatrix.rw.xyz - mCameraEye).getNormal();
                         float dotCameraDirX = cameraEyeToGizmo.dot(dirPlaneXWorld);
                         float dotCameraDirY = cameraEyeToGizmo.dot(dirPlaneYWorld);
 
@@ -715,6 +415,7 @@ namespace Gek
                         *value = *value - modulo + snap * ((*value < 0.0f) ? -1.0f : 1.0f);
                     }
                 }
+
                 void ComputeSnap(Math::Float3& value, float *snap)
                 {
                     for (int index = 0; index < 3; index++)
@@ -726,7 +427,7 @@ namespace Gek
                 float ComputeAngleOnPlane()
                 {
                     const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
-                    Math::Float3 localPos = (mRayOrigin + mRayVector * len - mModel.rw.xyz).getNormal();
+                    Math::Float3 localPos = (mRayOrigin + mRayVector * len - modelMatrix.rw.xyz).getNormal();
 
                     Math::Float3 perpendicularVector;
                     perpendicularVector = mRotationVectorSource.cross(mTranslationPlane.normal);
@@ -737,15 +438,15 @@ namespace Gek
                     return angle;
                 }
 
-                void DrawRotationGizmo(int type)
+                void DrawRotationGizmo(int control)
                 {
-                    ImDrawList* drawList = mDrawList;
-                    ImGuiIO& io = ImGui::GetIO();
+                    ImDrawList* drawList = currentDrawList;
+                    ImGuiIO &imGuiIO = ImGui::GetIO();
 
                     // colors
                     ImU32 colors[7];
-                    ComputeColors(colors, type, Operation::Rotate);
-                    Math::Float3 cameraToModelNormalized = mModelInverse.rotate((mModel.rw.xyz - mCameraEye).getNormal());
+                    ComputeColors(colors, control, Operation::Rotate);
+                    Math::Float3 cameraToModelNormalized = inverseModelMatrix.rotate((modelMatrix.rw.xyz - mCameraEye).getNormal());
                     for (int axis = 0; axis < 3; axis++)
                     {
                         ImVec2 circlePos[halfCircleSegmentCount];
@@ -755,27 +456,27 @@ namespace Gek
                             float ng = angleStart + Math::Pi * ((float)index / (float)halfCircleSegmentCount);
                             Math::Float3 axisPos = Math::Float3(std::cos(ng), std::sin(ng), 0.0f);
                             Math::Float3 pos = Math::Float3(axisPos[axis], axisPos[(axis + 1) % 3], axisPos[(axis + 2) % 3]) * mScreenFactor;
-                            circlePos[index] = worldToPos(pos, mMVP);
+                            circlePos[index] = getPointFromPosition(pos, modelViewProjectionMatrix);
                         }
 
                         drawList->AddPolyline(circlePos, halfCircleSegmentCount, colors[3 - axis], false, 5, true);
                     }
 
-                    drawList->AddCircle(worldToPos(mModel.rw.xyz, mViewProjection), screenRotateSize * mHeight, colors[0], 64, 5);
-                    if (mbUsing)
+                    drawList->AddCircle(getPointFromPosition(modelMatrix.rw.xyz, viewProjectionMatrix), screenRotateSize * mHeight, colors[0], 64, 5);
+                    if (isUsing)
                     {
                         ImVec2 circlePos[halfCircleSegmentCount + 1];
 
-                        circlePos[0] = worldToPos(mModel.rw.xyz, mViewProjection);
+                        circlePos[0] = getPointFromPosition(modelMatrix.rw.xyz, viewProjectionMatrix);
                         for (uint32_t index = 1; index < halfCircleSegmentCount; index++)
                         {
                             float ng = mRotationAngle * ((float)(index - 1) / (float)(halfCircleSegmentCount - 1));
 
-                            matrix_t rotateVectorMatrix;
-                            rotateVectorMatrix.MakeRotation(mTranslationPlane.normal, ng);
+                            Math::Float4x4 rotateVectorMatrix;
+                            rotateVectorMatrix = Math::Float4x4::MakeAngularRotation(mTranslationPlane.normal, ng);
 
                             Math::Float3 pos = rotateVectorMatrix.transform(mRotationVectorSource) * mScreenFactor;
-                            circlePos[index] = worldToPos(pos + mModel.rw.xyz, mViewProjection);
+                            circlePos[index] = getPointFromPosition(pos + modelMatrix.rw.xyz, viewProjectionMatrix);
                         }
 
                         drawList->AddConvexPolyFilled(circlePos, halfCircleSegmentCount, 0x801080FF, true);
@@ -783,36 +484,36 @@ namespace Gek
 
                         ImVec2 destinationPosOnScreen = circlePos[1];
                         char tmps[512];
-                        ImFormatString(tmps, sizeof(tmps), rotationInfoMask[type - ROTATE_X], (mRotationAngle / Math::Pi)*180.0f, mRotationAngle);
+                        ImFormatString(tmps, sizeof(tmps), rotationInfoMask[control - Control::RotateX], (mRotationAngle / Math::Pi)*180.0f, mRotationAngle);
                         drawList->AddText(ImVec2(destinationPosOnScreen.x + 15, destinationPosOnScreen.y + 15), 0xFF000000, tmps);
                         drawList->AddText(ImVec2(destinationPosOnScreen.x + 14, destinationPosOnScreen.y + 14), 0xFFFFFFFF, tmps);
                     }
                 }
 
-                void DrawHatchedAxis(const Math::Float3& axis)
+                void DrawHatchedAxis(Math::Float3 const &axis)
                 {
                     for (int step = 1; step < 10; step++)
                     {
-                        ImVec2 baseSSpace2 = worldToPos(axis * 0.05f * (float)(step * 2) * mScreenFactor, mMVP);
-                        ImVec2 worldDirSSpace2 = worldToPos(axis * 0.05f * (float)(step * 2 + 1) * mScreenFactor, mMVP);
-                        mDrawList->AddLine(baseSSpace2, worldDirSSpace2, 0x80000000, 6.0f);
+                        ImVec2 baseSSpace2 = getPointFromPosition(axis * 0.05f * (float)(step * 2) * mScreenFactor, modelViewProjectionMatrix);
+                        ImVec2 worldDirSSpace2 = getPointFromPosition(axis * 0.05f * (float)(step * 2 + 1) * mScreenFactor, modelViewProjectionMatrix);
+                        currentDrawList->AddLine(baseSSpace2, worldDirSSpace2, 0x80000000, 6.0f);
                     }
                 }
 
-                void DrawScaleGizmo(int type)
+                void DrawScaleGizmo(int control)
                 {
-                    ImDrawList* drawList = mDrawList;
+                    ImDrawList* drawList = currentDrawList;
 
                     // colors
                     ImU32 colors[7];
-                    ComputeColors(colors, type, Operation::Scale);
+                    ComputeColors(colors, control, Operation::Scale);
 
                     // draw screen cirle
                     drawList->AddCircleFilled(mScreenSquareCenter, 12.0f, colors[0], 32);
 
                     // draw
                     Math::Float3 scaleDisplay(1.0f, 1.0f, 1.0f);
-                    if (mbUsing)
+                    if (isUsing)
                     {
                         scaleDisplay = mScale;
                     }
@@ -826,11 +527,11 @@ namespace Gek
                         // draw axis
                         if (belowAxisLimit)
                         {
-                            ImVec2 baseSSpace = worldToPos(dirPlaneX * 0.1f * mScreenFactor, mMVP);
-                            ImVec2 worldDirSSpaceNoScale = worldToPos(dirPlaneX * mScreenFactor, mMVP);
-                            ImVec2 worldDirSSpace = worldToPos((dirPlaneX * scaleDisplay[index]) * mScreenFactor, mMVP);
+                            ImVec2 baseSSpace = getPointFromPosition(dirPlaneX * 0.1f * mScreenFactor, modelViewProjectionMatrix);
+                            ImVec2 worldDirSSpaceNoScale = getPointFromPosition(dirPlaneX * mScreenFactor, modelViewProjectionMatrix);
+                            ImVec2 worldDirSSpace = getPointFromPosition((dirPlaneX * scaleDisplay[index]) * mScreenFactor, modelViewProjectionMatrix);
 
-                            if (mbUsing)
+                            if (isUsing)
                             {
                                 drawList->AddLine(baseSSpace, worldDirSSpaceNoScale, 0xFF404040, 6.0f);
                                 drawList->AddCircleFilled(worldDirSSpaceNoScale, 10.0f, 0xFF404040);
@@ -846,21 +547,21 @@ namespace Gek
                         }
                     }
 
-                    if (mbUsing)
+                    if (isUsing)
                     {
-                        ImVec2 destinationPosOnScreen = worldToPos(mModel.rw.xyz, mViewProjection);
+                        ImVec2 destinationPosOnScreen = getPointFromPosition(modelMatrix.rw.xyz, viewProjectionMatrix);
 
                         char tmps[512];
-                        int componentInfoIndex = (type - SCALE_X) * 3;
-                        ImFormatString(tmps, sizeof(tmps), scaleInfoMask[type - SCALE_X], scaleDisplay[translationInfoIndex[componentInfoIndex]]);
+                        int componentInfoIndex = (control - Control::ScaleX) * 3;
+                        ImFormatString(tmps, sizeof(tmps), scaleInfoMask[control - Control::ScaleX], scaleDisplay[translationInfoIndex[componentInfoIndex]]);
                         drawList->AddText(ImVec2(destinationPosOnScreen.x + 15, destinationPosOnScreen.y + 15), 0xFF000000, tmps);
                         drawList->AddText(ImVec2(destinationPosOnScreen.x + 14, destinationPosOnScreen.y + 14), 0xFFFFFFFF, tmps);
                     }
                 }
 
-                void DrawTranslationGizmo(int type)
+                void DrawTranslationGizmo(int control)
                 {
-                    ImDrawList* drawList = mDrawList;
+                    ImDrawList* drawList = currentDrawList;
                     if (!drawList)
                     {
                         return;
@@ -868,7 +569,7 @@ namespace Gek
 
                     // colors
                     ImU32 colors[7];
-                    ComputeColors(colors, type, Operation::Translate);
+                    ComputeColors(colors, control, Operation::Translate);
 
                     // draw screen quad
                     drawList->AddRectFilled(mScreenSquareMin, mScreenSquareMax, colors[0], 2.0f);
@@ -883,8 +584,8 @@ namespace Gek
                         // draw axis
                         if (belowAxisLimit)
                         {
-                            ImVec2 baseSSpace = worldToPos(dirPlaneX * 0.1f * mScreenFactor, mMVP);
-                            ImVec2 worldDirSSpace = worldToPos(dirPlaneX * mScreenFactor, mMVP);
+                            ImVec2 baseSSpace = getPointFromPosition(dirPlaneX * 0.1f * mScreenFactor, modelViewProjectionMatrix);
+                            ImVec2 worldDirSSpace = getPointFromPosition(dirPlaneX * mScreenFactor, modelViewProjectionMatrix);
                             drawList->AddLine(baseSSpace, worldDirSSpace, colors[index + 1], 6.0f);
                             if (mAxisFactor[index] < 0.0f)
                             {
@@ -898,18 +599,18 @@ namespace Gek
                             ImVec2 screenQuadPts[4];
                             for (int step = 0; step < 4; step++)
                             {
-                                Math::Float3 cornerWorldPos = (dirPlaneX * quadUV[step * 2] + dirPlaneY  * quadUV[step * 2 + 1]) * mScreenFactor;
-                                screenQuadPts[step] = worldToPos(cornerWorldPos, mMVP);
+                                Math::Float3 cornerWorldPos = (dirPlaneX * quadCoords[step * 2] + dirPlaneY  * quadCoords[step * 2 + 1]) * mScreenFactor;
+                                screenQuadPts[step] = getPointFromPosition(cornerWorldPos, modelViewProjectionMatrix);
                             }
 
                             drawList->AddConvexPolyFilled(screenQuadPts, 4, colors[index + 4], true);
                         }
                     }
 
-                    if (mbUsing)
+                    if (isUsing)
                     {
-                        ImVec2 sourcePosOnScreen = worldToPos(mMatrixOrigin, mViewProjection);
-                        ImVec2 destinationPosOnScreen = worldToPos(mModel.rw.xyz, mViewProjection);
+                        ImVec2 sourcePosOnScreen = getPointFromPosition(mMatrixOrigin, viewProjectionMatrix);
+                        ImVec2 destinationPosOnScreen = getPointFromPosition(modelMatrix.rw.xyz, viewProjectionMatrix);
                         Math::Float3 dif(destinationPosOnScreen.x - sourcePosOnScreen.x, destinationPosOnScreen.y - sourcePosOnScreen.y, 0.0f);
                         dif.normalize();
                         dif *= 5.0f;
@@ -919,9 +620,9 @@ namespace Gek
                         drawList->AddLine(ImVec2(sourcePosOnScreen.x + dif.x, sourcePosOnScreen.y + dif.y), ImVec2(destinationPosOnScreen.x - dif.x, destinationPosOnScreen.y - dif.y), translationLineColor, 2.0f);
 
                         char tmps[512];
-                        Math::Float3 deltaInfo = mModel.rw.xyz - mMatrixOrigin;
-                        int componentInfoIndex = (type - MOVE_X) * 3;
-                        ImFormatString(tmps, sizeof(tmps), translationInfoMask[type - MOVE_X], deltaInfo[translationInfoIndex[componentInfoIndex]], deltaInfo[translationInfoIndex[componentInfoIndex + 1]], deltaInfo[translationInfoIndex[componentInfoIndex + 2]]);
+                        Math::Float3 deltaInfo = modelMatrix.rw.xyz - mMatrixOrigin;
+                        int componentInfoIndex = (control - Control::MoveX) * 3;
+                        ImFormatString(tmps, sizeof(tmps), translationInfoMask[control - Control::MoveX], deltaInfo[translationInfoIndex[componentInfoIndex]], deltaInfo[translationInfoIndex[componentInfoIndex + 1]], deltaInfo[translationInfoIndex[componentInfoIndex + 2]]);
                         drawList->AddText(ImVec2(destinationPosOnScreen.x + 15, destinationPosOnScreen.y + 15), 0xFF000000, tmps);
                         drawList->AddText(ImVec2(destinationPosOnScreen.x + 14, destinationPosOnScreen.y + 14), 0xFFFFFFFF, tmps);
                     }
@@ -984,45 +685,465 @@ namespace Gek
                     return false;
                 }
 
-                void HandleBounds(float *bounds, matrix_t *matrix, float *snapValues)
+                int GetScaleType()
                 {
-                    ImGuiIO& io = ImGui::GetIO();
-                    ImDrawList* drawList = mDrawList;
+                    ImGuiIO &imGuiIO = ImGui::GetIO();
+                    int control = Control::None;
+
+                    // screen
+                    if (imGuiIO.MousePos.x >= mScreenSquareMin.x && imGuiIO.MousePos.x <= mScreenSquareMax.x &&
+                        imGuiIO.MousePos.y >= mScreenSquareMin.y && imGuiIO.MousePos.y <= mScreenSquareMax.y)
+                    {
+                        control = Control::ScaleXYZ;
+                    }
+
+                    const Math::Float3 direction[3] =
+                    {
+                        modelMatrix.rx.xyz,
+                        modelMatrix.ry.xyz,
+                        modelMatrix.rz.xyz,
+                    };
+
+                    // compute
+                    for (uint32_t index = 0; index < 3 && control == Control::None; index++)
+                    {
+                        Math::Float3 dirPlaneX, dirPlaneY;
+                        bool belowAxisLimit, belowPlaneLimit;
+                        ComputeTripodAxisAndVisibility(index, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
+                        dirPlaneX = modelMatrix.rotate(dirPlaneX);
+                        dirPlaneY = modelMatrix.rotate(dirPlaneY);
+
+                        const int planeNormal = (index + 2) % 3;
+                        const float len = IntersectRayPlane(mRayOrigin, mRayVector, Shapes::Plane(direction[planeNormal], modelMatrix.rw.xyz));
+                        Math::Float3 posOnPlane = mRayOrigin + mRayVector * len;
+
+                        const float dx = dirPlaneX.dot((posOnPlane - modelMatrix.rw.xyz) * (1.0f / mScreenFactor));
+                        const float dy = dirPlaneY.dot((posOnPlane - modelMatrix.rw.xyz) * (1.0f / mScreenFactor));
+                        if (belowAxisLimit && dy > -0.1f && dy < 0.1f && dx > 0.1f  && dx < 1.0f)
+                        {
+                            control = Control::ScaleX + index;
+                        }
+                    }
+
+                    return control;
+                }
+
+                int GetRotateType()
+                {
+                    ImGuiIO &imGuiIO = ImGui::GetIO();
+                    int control = Control::None;
+
+                    Math::Float3 deltaScreen(imGuiIO.MousePos.x - mScreenSquareCenter.x, imGuiIO.MousePos.y - mScreenSquareCenter.y, 0.0f);
+                    float dist = deltaScreen.getLength();
+                    if (dist >= (screenRotateSize - 0.005f) * mHeight && dist < (screenRotateSize + 0.005f) * mHeight)
+                    {
+                        control = Control::RotateScreen;
+                    }
+
+                    const Math::Float3 planeNormals[] =
+                    {
+                        modelMatrix.rx.xyz,
+                        modelMatrix.ry.xyz,
+                        modelMatrix.rz.xyz,
+                    };
+
+                    for (uint32_t index = 0; index < 3 && control == Control::None; index++)
+                    {
+                        // pickup plane
+                        Shapes::Plane pickupPlane(planeNormals[index], modelMatrix.rw.xyz);
+                        const float len = IntersectRayPlane(mRayOrigin, mRayVector, pickupPlane);
+                        Math::Float3 localPos = mRayOrigin + mRayVector * len - modelMatrix.rw.xyz;
+                        if (localPos.getNormal().dot(mRayVector) > FLT_EPSILON)
+                        {
+                            continue;
+                        }
+
+                        float distance = localPos.getLength() / mScreenFactor;
+                        if (distance > 0.85f && distance < 1.15f)
+                        {
+                            control = Control::RotateX + index;
+                        }
+                    }
+
+                    return control;
+                }
+
+                int GetMoveType(Math::Float3 *gizmoHitProportion)
+                {
+                    ImGuiIO &imGuiIO = ImGui::GetIO();
+                    int control = Control::None;
+
+                    // screen
+                    if (imGuiIO.MousePos.x >= mScreenSquareMin.x && imGuiIO.MousePos.x <= mScreenSquareMax.x &&
+                        imGuiIO.MousePos.y >= mScreenSquareMin.y && imGuiIO.MousePos.y <= mScreenSquareMax.y)
+                    {
+                        control = Control::MoveScreen;
+                    }
+
+                    const Math::Float3 direction[3] =
+                    {
+                        modelMatrix.rx.xyz,
+                        modelMatrix.ry.xyz,
+                        modelMatrix.rz.xyz,
+                    };
+
+                    // compute
+                    for (uint32_t index = 0; index < 3 && control == Control::None; index++)
+                    {
+                        Math::Float3 dirPlaneX, dirPlaneY;
+                        bool belowAxisLimit, belowPlaneLimit;
+                        ComputeTripodAxisAndVisibility(index, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
+                        dirPlaneX = modelMatrix.rotate(dirPlaneX);
+                        dirPlaneY = modelMatrix.rotate(dirPlaneY);
+
+                        const int planeNormal = (index + 2) % 3;
+                        const float len = IntersectRayPlane(mRayOrigin, mRayVector, Shapes::Plane(direction[planeNormal], modelMatrix.rw.xyz));
+                        Math::Float3 posOnPlane = mRayOrigin + mRayVector * len;
+
+                        const float dx = dirPlaneX.dot((posOnPlane - modelMatrix.rw.xyz) * (1.0f / mScreenFactor));
+                        const float dy = dirPlaneY.dot((posOnPlane - modelMatrix.rw.xyz) * (1.0f / mScreenFactor));
+                        if (belowAxisLimit && dy > -0.1f && dy < 0.1f && dx > 0.1f  && dx < 1.0f)
+                        {
+                            control = Control::MoveX + index;
+                        }
+
+                        if (belowPlaneLimit && dx >= quadCoords[0] && dx <= quadCoords[4] && dy >= quadCoords[1] && dy <= quadCoords[3])
+                        {
+                            control = Control::MoveXY + index;
+                        }
+
+                        if (gizmoHitProportion)
+                        {
+                            *gizmoHitProportion = Math::Float3(dx, dy, 0.0f);
+                        }
+                    }
+
+                    return control;
+                }
+
+                void HandleTranslation(Math::Float4x4 &matrix, float *snap)
+                {
+                    ImGuiIO &imGuiIO = ImGui::GetIO();
+                    bool applyRotationLocaly = currentAlignment == Alignment::Local;
+
+                    // move
+                    int control = Control::None;
+                    if (isUsing)
+                    {
+                        const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
+                        Math::Float3 newPos = mRayOrigin + mRayVector * len;
+
+                        // compute delta
+                        Math::Float3 newOrigin = newPos - mRelativeOrigin * mScreenFactor;
+                        Math::Float3 delta = newOrigin - modelMatrix.rw.xyz;
+
+                        // 1 axis constraint
+                        if (currentControl >= Control::MoveX && currentControl <= Control::MoveZ)
+                        {
+                            int axisIndex = currentControl - Control::MoveX;
+                            Math::Float3 const &axisValue = modelMatrix.rows[axisIndex].xyz;
+                            float lengthOnAxis = axisValue.dot(delta);
+                            delta = axisValue * lengthOnAxis;
+                        }
+
+                        // snap
+                        if (snap)
+                        {
+                            Math::Float3 cumulativeDelta = modelMatrix.rw.xyz + delta - mMatrixOrigin;
+                            if (applyRotationLocaly)
+                            {
+                                Math::Float4x4 modelSourceNormalized = sourceModelMatrix;
+                                modelSourceNormalized.orthonormalize();
+                                Math::Float4x4 modelSourceNormalizedInverse = modelSourceNormalized.getInverse();
+                                cumulativeDelta = modelSourceNormalizedInverse.rotate(cumulativeDelta);
+                                ComputeSnap(cumulativeDelta, snap);
+                                cumulativeDelta = modelSourceNormalized.rotate(cumulativeDelta);
+                            }
+                            else
+                            {
+                                ComputeSnap(cumulativeDelta, snap);
+                            }
+
+                            delta = mMatrixOrigin + cumulativeDelta - modelMatrix.rw.xyz;
+                        }
+
+                        // compute matrix & delta
+                        Math::Float4x4 deltaMatrixTranslation = Math::Float4x4::MakeTranslation(delta);
+                        matrix = sourceModelMatrix * deltaMatrixTranslation;
+                        if (!imGuiIO.MouseDown[0])
+                        {
+                            isUsing = false;
+                        }
+
+                        control = currentControl;
+                    }
+                    else
+                    {
+                        // find new possible way to move
+                        Math::Float3 gizmoHitProportion;
+                        control = GetMoveType(&gizmoHitProportion);
+                        if (imGuiIO.MouseDown[0] && control != Control::None)
+                        {
+                            isUsing = true;
+                            currentControl = control;
+                            const Math::Float3 movePlaneNormal[] =
+                            {
+                                modelMatrix.ry.xyz,
+                                modelMatrix.rz.xyz,
+                                modelMatrix.rx.xyz,
+                                modelMatrix.rz.xyz,
+                                modelMatrix.rx.xyz,
+                                modelMatrix.ry.xyz,
+                                -mCameraDir,
+                            };
+
+                            // pickup plane
+                            mTranslationPlane = Shapes::Plane(movePlaneNormal[control - Control::MoveX], modelMatrix.rw.xyz);
+                            const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
+                            mTranslationPlaneOrigin = mRayOrigin + mRayVector * len;
+                            mMatrixOrigin = modelMatrix.rw.xyz;
+
+                            mRelativeOrigin = (mTranslationPlaneOrigin - modelMatrix.rw.xyz) * (1.0f / mScreenFactor);
+                        }
+                    }
+
+                    DrawTranslationGizmo(control);
+                }
+
+                void HandleScale(Math::Float4x4 &matrix, float *snap)
+                {
+                    ImGuiIO &imGuiIO = ImGui::GetIO();
+
+                    int control = Control::None;
+                    if (!isUsing)
+                    {
+                        // find new possible way to scale
+                        control = GetScaleType();
+                        if (imGuiIO.MouseDown[0] && control != Control::None)
+                        {
+                            isUsing = true;
+                            currentControl = control;
+                            const Math::Float3 movePlaneNormal[] =
+                            {
+                                modelMatrix.ry.xyz,
+                                modelMatrix.rz.xyz,
+                                modelMatrix.rx.xyz,
+                                modelMatrix.rz.xyz,
+                                modelMatrix.ry.xyz,
+                                modelMatrix.rx.xyz,
+                                -mCameraDir,
+                            };
+
+                            // pickup plane
+                            mTranslationPlane = Shapes::Plane(movePlaneNormal[control - Control::ScaleX], modelMatrix.rw.xyz);
+                            const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
+                            mTranslationPlaneOrigin = mRayOrigin + mRayVector * len;
+                            mMatrixOrigin = modelMatrix.rw.xyz;
+                            mScale.set(1.0f, 1.0f, 1.0f);
+                            mRelativeOrigin = (mTranslationPlaneOrigin - modelMatrix.rw.xyz) * (1.0f / mScreenFactor);
+                            mScaleValueOrigin = Math::Float3(sourceModelMatrix.rx.getLength(), sourceModelMatrix.ry.getLength(), sourceModelMatrix.rz.getLength());
+                            mSaveMousePosx = imGuiIO.MousePos.x;
+                        }
+                    }
+
+                    // scale
+                    if (isUsing)
+                    {
+                        const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
+                        Math::Float3 newPos = mRayOrigin + mRayVector * len;
+                        Math::Float3 newOrigin = newPos - mRelativeOrigin * mScreenFactor;
+                        Math::Float3 delta = newOrigin - modelMatrix.rw.xyz;
+
+                        // 1 axis constraint
+                        if (currentControl >= Control::ScaleX && currentControl <= Control::ScaleZ)
+                        {
+                            int axisIndex = currentControl - Control::ScaleX;
+                            Math::Float3 const &axisValue = *(Math::Float3*)&modelMatrix.table[axisIndex];
+                            float lengthOnAxis = axisValue.dot(delta);
+                            delta = axisValue * lengthOnAxis;
+
+                            Math::Float3 baseVector = mTranslationPlaneOrigin - modelMatrix.rw.xyz;
+                            float ratio = axisValue.dot(baseVector + delta) / axisValue.dot(baseVector);
+
+                            mScale[axisIndex] = std::max(ratio, 0.001f);
+                        }
+                        else
+                        {
+                            float scaleDelta = (imGuiIO.MousePos.x - mSaveMousePosx)  * 0.01f;
+                            mScale.set(std::max(1.0f + scaleDelta, 0.001f));
+                        }
+
+                        // snap
+                        if (snap)
+                        {
+                            float scaleSnap[] = { snap[0], snap[0], snap[0] };
+                            ComputeSnap(mScale, scaleSnap);
+                        }
+
+                        // no 0 allowed
+                        for (int index = 0; index < 3; index++)
+                        {
+                            mScale[index] = std::max(mScale[index], 0.001f);
+                        }
+
+                        // compute matrix & delta
+                        Math::Float4x4 deltaMatrixScale = Math::Float4x4::MakeScaling(mScale * mScaleValueOrigin);
+                        matrix = deltaMatrixScale * modelMatrix;
+                        if (!imGuiIO.MouseDown[0])
+                        {
+                            isUsing = false;
+                        }
+
+                        control = currentControl;
+                    }
+
+                    DrawScaleGizmo(control);
+                }
+
+                void HandleRotation(Math::Float4x4 &matrix, float *snap)
+                {
+                    ImGuiIO &imGuiIO = ImGui::GetIO();
+                    bool applyRotationLocaly = currentAlignment == Alignment::Local;
+
+                    int control = Control::None;
+                    if (!isUsing)
+                    {
+                        control = GetRotateType();
+                        if (control == Control::RotateScreen)
+                        {
+                            applyRotationLocaly = true;
+                        }
+
+                        if (imGuiIO.MouseDown[0] && control != Control::None)
+                        {
+                            isUsing = true;
+                            currentControl = control;
+                            const Math::Float3 rotatePlaneNormal[] =
+                            {
+                                modelMatrix.rx.xyz,
+                                modelMatrix.ry.xyz,
+                                modelMatrix.rz.xyz,
+                                -mCameraDir,
+                            };
+
+                            // pickup plane
+                            if (applyRotationLocaly)
+                            {
+                                mTranslationPlane = Shapes::Plane(rotatePlaneNormal[control - Control::RotateX], modelMatrix.rw.xyz);
+                            }
+                            else
+                            {
+                                mTranslationPlane = Shapes::Plane(directionUnary[control - Control::RotateX], sourceModelMatrix.rw.xyz);
+                            }
+
+                            const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
+                            Math::Float3 localPos = mRayOrigin + mRayVector * len - modelMatrix.rw.xyz;
+                            mRotationVectorSource = localPos.getNormal();
+                            mRotationAngleOrigin = ComputeAngleOnPlane();
+                        }
+                    }
+
+                    // rotation
+                    if (isUsing)
+                    {
+                        mRotationAngle = ComputeAngleOnPlane();
+                        if (snap)
+                        {
+                            float snapInRadian = Math::DegreesToRadians(snap[0]);
+                            ComputeSnap(&mRotationAngle, snapInRadian);
+                        }
+
+                        Math::Float3 rotationAxisLocalSpace = inverseModelMatrix.rotate(mTranslationPlane.normal);
+                        rotationAxisLocalSpace.normalize();
+
+                        Math::Float4x4 deltaRotation = Math::Float4x4::MakeAngularRotation(rotationAxisLocalSpace, mRotationAngle - mRotationAngleOrigin);
+                        mRotationAngleOrigin = mRotationAngle;
+
+                        Math::Float4x4 scaleOrigin = Math::Float4x4::MakeScaling(mModelScaleOrigin);
+                        if (applyRotationLocaly)
+                        {
+                            matrix = scaleOrigin * deltaRotation * modelMatrix;
+                        }
+                        else
+                        {
+                            Math::Float4x4 res = sourceModelMatrix;
+                            res.rw.xyz = Math::Float3::Zero;
+
+                            matrix = res * deltaRotation;
+                            matrix.rw = sourceModelMatrix.rw;
+                        }
+
+                        if (!imGuiIO.MouseDown[0])
+                        {
+                            isUsing = false;
+                        }
+
+                        control = currentControl;
+                    }
+
+                    DrawRotationGizmo(control);
+                }
+
+                void HandleBounds(Shapes::AlignedBox &bounds, Math::Float4x4 &matrix, float *snapValues, LockAxis lockAxis)
+                {
+                    ImGuiIO &imGuiIO = ImGui::GetIO();
+                    ImDrawList* drawList = currentDrawList;
 
                     // compute best projection axis
                     Math::Float3 bestAxisWorldDirection;
                     int bestAxis = mBoundsBestAxis;
-                    if (!mbUsing)
+                    if (!isUsing)
                     {
-                        float bestDot = 0.0f;
-                        for (uint32_t index = 0; index < 3; index++)
+                        if (lockAxis == LockAxis::Automatic)
                         {
-                            Math::Float3 dirPlaneNormalWorld = mModelSource.rotate(directionUnary[index]);
-                            dirPlaneNormalWorld.normalize();
-
-                            float dt = (mCameraEye - mModelSource.rw.xyz).getNormal().dot(dirPlaneNormalWorld);
-                            if (std::abs(dt) >= bestDot)
+                            float bestDot = 0.0f;
+                            for (uint32_t index = 0; index < 3; index++)
                             {
-                                bestDot = std::abs(dt);
-                                bestAxis = index;
-                                bestAxisWorldDirection = dirPlaneNormalWorld;
+                                Math::Float3 dirPlaneNormalWorld = sourceModelMatrix.rotate(directionUnary[index]);
+                                dirPlaneNormalWorld.normalize();
+
+                                float dt = (mCameraEye - sourceModelMatrix.rw.xyz).getNormal().dot(dirPlaneNormalWorld);
+                                if (std::abs(dt) >= bestDot)
+                                {
+                                    bestDot = std::abs(dt);
+                                    bestAxis = index;
+                                    bestAxisWorldDirection = dirPlaneNormalWorld;
+                                }
                             }
+                        }
+                        else
+                        {
+                            switch (lockAxis)
+                            {
+                            case LockAxis::X:
+                                bestAxis = 0;
+                                break;
+
+                            case LockAxis::Y:
+                                bestAxis = 1;
+                                break;
+
+                            case LockAxis::Z:
+                                bestAxis = 2;
+                                break;
+                            };
+
+                            bestAxisWorldDirection = sourceModelMatrix.rotate(directionUnary[bestAxis]);
+                            bestAxisWorldDirection.normalize();
                         }
                     }
 
                     // corners
-                    Math::Float3 aabb[4];
-
-                    static const uint32_t anchorColors[3] = 
+                    const uint32_t anchorAlpha = isEnabled ? 0xFF000000 : 0x80000000;
+                    const uint32_t anchorColors[3] =
                     {
-                        0xFF0000,
-                        0x00FF00,
-                        0x0000FF,
+                        0xFF0000 + anchorAlpha,
+                        0x00FF00 + anchorAlpha,
+                        0x0000FF + anchorAlpha,
                     };
 
-                    int secondAxis = (bestAxis + 1) % 3;
-                    int thirdAxis = (bestAxis + 2) % 3;
-
+                    const int secondAxis = (bestAxis + 1) % 3;
+                    const int thirdAxis = (bestAxis + 2) % 3;
                     const uint32_t axisColors[4] =
                     {
                         anchorColors[secondAxis],
@@ -1031,22 +1152,23 @@ namespace Gek
                         anchorColors[thirdAxis],
                     };
 
+                    Math::Float3 aabb[4];
+                    float *boundsData = (float *)bounds.minimum.data;
                     for (int index = 0; index < 4; index++)
                     {
                         aabb[index][bestAxis] = 0.0f;
-                        aabb[index][secondAxis] = bounds[secondAxis + 3 * (index >> 1)];
-                        aabb[index][thirdAxis] = bounds[thirdAxis + 3 * ((index >> 1) ^ (index & 1))];
+                        aabb[index][secondAxis] = boundsData[secondAxis + 3 * (index >> 1)];
+                        aabb[index][thirdAxis] = boundsData[thirdAxis + 3 * ((index >> 1) ^ (index & 1))];
                     }
 
                     // draw bounds
-                    uint32_t anchorAlpha = mbEnable ? 0xFF000000 : 0x80000000;
-                    matrix_t boundsMVP = mModelSource * mViewProjection;
+                    const Math::Float4x4 boundsMVP = sourceModelMatrix * viewProjectionMatrix;
                     for (int index = 0; index < 4; index++)
                     {
-                        uint32_t axisColor = axisColors[index] + anchorAlpha;
+                        uint32_t axisColor = axisColors[index];
 
-                        ImVec2 worldBound1 = worldToPos(aabb[index], boundsMVP);
-                        ImVec2 worldBound2 = worldToPos(aabb[(index + 1) % 4], boundsMVP);
+                        ImVec2 worldBound1 = getPointFromPosition(aabb[index], boundsMVP);
+                        ImVec2 worldBound2 = getPointFromPosition(aabb[(index + 1) % 4], boundsMVP);
                         float boundDistance = std::sqrt(ImLengthSqr(worldBound1 - worldBound2));
                         int stepCount = (int)(boundDistance / 10.0f);
                         float stepLength = 1.0f / (float)stepCount;
@@ -1054,8 +1176,8 @@ namespace Gek
                         {
                             float t1 = (float)step * stepLength;
                             float t2 = (float)step * stepLength + stepLength * 0.5f;
-                            ImVec2 worldBoundSS1 = ImLerp(worldBound1, worldBound2, ImVec2(t1, t1));
-                            ImVec2 worldBoundSS2 = ImLerp(worldBound1, worldBound2, ImVec2(t2, t2));
+                            ImVec2 worldBoundSS1 = Math::Interpolate(worldBound1, worldBound2, t1);
+                            ImVec2 worldBoundSS2 = Math::Interpolate(worldBound1, worldBound2, t2);
                             if (isInside(worldBoundSS1.x, worldBoundSS1.y, worldBoundSS2.x, worldBoundSS2.y))
                             {
                                 drawList->AddLine(worldBoundSS1, worldBoundSS2, axisColor, 3.0f);
@@ -1065,18 +1187,18 @@ namespace Gek
 
                     for (int index = 0; index < 4; index++)
                     {
-                        uint32_t axisColor = axisColors[index] + anchorAlpha;
-                        uint32_t otherColor = axisColors[(index + 1) % 4] + anchorAlpha;
+                        uint32_t axisColor = axisColors[index];
+                        uint32_t otherColor = axisColors[(index + 1) % 4];
 
-                        ImVec2 worldBound1 = worldToPos(aabb[index], boundsMVP);
-                        ImVec2 worldBound2 = worldToPos(aabb[(index + 1) % 4], boundsMVP);
+                        ImVec2 worldBound1 = getPointFromPosition(aabb[index], boundsMVP);
+                        ImVec2 worldBound2 = getPointFromPosition(aabb[(index + 1) % 4], boundsMVP);
                         Math::Float3 midPoint = (aabb[index] + aabb[(index + 1) % 4]) * 0.5f;
-                        ImVec2 midBound = worldToPos(midPoint, boundsMVP);
+                        ImVec2 midBound = getPointFromPosition(midPoint, boundsMVP);
 
                         static const float AnchorBigRadius = 10.0f;
                         static const float AnchorSmallRadius = 8.0f;
-                        bool overBigAnchor = ImLengthSqr(worldBound1 - io.MousePos) <= (AnchorBigRadius*AnchorBigRadius);
-                        bool overSmallAnchor = ImLengthSqr(midBound - io.MousePos) <= (AnchorBigRadius*AnchorBigRadius);
+                        bool overBigAnchor = ImLengthSqr(worldBound1 - imGuiIO.MousePos) <= (AnchorBigRadius*AnchorBigRadius);
+                        bool overSmallAnchor = ImLengthSqr(midBound - imGuiIO.MousePos) <= (AnchorBigRadius*AnchorBigRadius);
                         uint32_t bigAnchorColor = overBigAnchor ? selectionColor : axisColor;
                         uint32_t otherAnchorColor = overBigAnchor ? selectionColor : otherColor;
                         uint32_t smallAnchorColor = overSmallAnchor ? selectionColor : axisColor;
@@ -1095,10 +1217,10 @@ namespace Gek
 
                         // big anchor on corners
                         int oppositeIndex = (index + 2) % 4;
-                        if (!mbUsing && mbEnable && overBigAnchor && io.MouseDown[0])
+                        if (!isUsing && isEnabled && overBigAnchor && imGuiIO.MouseDown[0])
                         {
-                            mBoundsPivot = mModelSource.transform(aabb[(index + 2) % 4]);
-                            mBoundsAnchor = mModelSource.transform(aabb[index]);
+                            mBoundsPivot = sourceModelMatrix.transform(aabb[(index + 2) % 4]);
+                            mBoundsAnchor = sourceModelMatrix.transform(aabb[index]);
                             mBoundsPlane = Shapes::Plane(bestAxisWorldDirection, mBoundsAnchor);
                             mBoundsBestAxis = bestAxis;
                             mBoundsAxis[0] = secondAxis;
@@ -1108,16 +1230,16 @@ namespace Gek
                             mBoundsLocalPivot[secondAxis] = aabb[oppositeIndex][secondAxis];
                             mBoundsLocalPivot[thirdAxis] = aabb[oppositeIndex][thirdAxis];
 
-                            mbUsing = true;
-                            mBoundsMatrix = mModelSource;
+                            isUsing = true;
+                            mBoundsMatrix = sourceModelMatrix;
                         }
 
                         // small anchor on middle of segment
-                        if (!mbUsing && mbEnable && overSmallAnchor && io.MouseDown[0])
+                        if (!isUsing && isEnabled && overSmallAnchor && imGuiIO.MouseDown[0])
                         {
                             Math::Float3 midPointOpposite = (aabb[(index + 2) % 4] + aabb[(index + 3) % 4]) * 0.5f;
-                            mBoundsPivot = mModelSource.transform(midPointOpposite);
-                            mBoundsAnchor = mModelSource.transform(midPoint);
+                            mBoundsPivot = sourceModelMatrix.transform(midPointOpposite);
+                            mBoundsAnchor = sourceModelMatrix.transform(midPoint);
                             mBoundsPlane = Shapes::Plane(bestAxisWorldDirection, mBoundsAnchor);
                             mBoundsBestAxis = bestAxis;
 
@@ -1131,17 +1253,16 @@ namespace Gek
                             mBoundsAxis[1] = -1;
 
                             mBoundsLocalPivot.set(0.0f);
-                            mBoundsLocalPivot[mBoundsAxis[0]] = aabb[oppositeIndex][indices[index % 2]];// bounds[mBoundsAxis[0]] * (((index + 1) & 2) ? 1.0f : -1.0f);
+                            mBoundsLocalPivot[mBoundsAxis[0]] = aabb[oppositeIndex][indices[index % 2]];
 
-                            mbUsing = true;
-                            mBoundsMatrix = mModelSource;
+                            isUsing = true;
+                            mBoundsMatrix = sourceModelMatrix;
                         }
                     }
 
-                    if (mbUsing)
+                    if (isUsing)
                     {
-                        matrix_t scale;
-                        scale.SetToIdentity();
+                        Math::Float4x4 scale = Math::Float4x4::Identity;
 
                         // compute projected mouse position on plane
                         const float len = IntersectRayPlane(mRayOrigin, mRayVector, mBoundsPlane);
@@ -1164,7 +1285,7 @@ namespace Gek
                             Math::Float3 axisDir = mBoundsMatrix[axisIndex].xyz.getAbsolute();
 
                             float dtAxis = axisDir.dot(referenceVector);
-                            float boundSize = bounds[axisIndex + 3] - bounds[axisIndex];
+                            float boundSize = boundsData[axisIndex + 3] - boundsData[axisIndex];
                             if (dtAxis > FLT_EPSILON)
                             {
                                 ratioAxis = axisDir.dot(deltaVector) / dtAxis;
@@ -1184,494 +1305,64 @@ namespace Gek
                         }
 
                         // transform matrix
-                        matrix_t preScale, postScale;
-                        preScale.MakeTranslation(-mBoundsLocalPivot);
-                        postScale.MakeTranslation(mBoundsLocalPivot);
-                        matrix_t res = preScale * scale * postScale * mBoundsMatrix;
-                        *matrix = res;
+                        Math::Float4x4 preScale, postScale;
+                        preScale = Math::Float4x4::MakeTranslation(-mBoundsLocalPivot);
+                        postScale = Math::Float4x4::MakeTranslation(mBoundsLocalPivot);
+                        matrix = preScale * scale * postScale * mBoundsMatrix;
 
                         // info text
                         char tmps[512];
-                        ImVec2 destinationPosOnScreen = worldToPos(mModel.rw.xyz, mViewProjection);
+                        ImVec2 destinationPosOnScreen = getPointFromPosition(modelMatrix.rw.xyz, viewProjectionMatrix);
                         ImFormatString(tmps, sizeof(tmps), "X: %.2f Y: %.2f Z:%.2f"
-                            , (bounds[3] - bounds[0]) * mBoundsMatrix.rows[0].getLength() * scale.rows[0].getLength()
-                            , (bounds[4] - bounds[1]) * mBoundsMatrix.rows[1].getLength() * scale.rows[1].getLength()
-                            , (bounds[5] - bounds[2]) * mBoundsMatrix.rows[2].getLength() * scale.rows[2].getLength()
+                            , (boundsData[3] - boundsData[0]) * mBoundsMatrix.rows[0].getLength() * scale.rows[0].getLength()
+                            , (boundsData[4] - boundsData[1]) * mBoundsMatrix.rows[1].getLength() * scale.rows[1].getLength()
+                            , (boundsData[5] - boundsData[2]) * mBoundsMatrix.rows[2].getLength() * scale.rows[2].getLength()
                         );
 
                         drawList->AddText(ImVec2(destinationPosOnScreen.x + 15, destinationPosOnScreen.y + 15), 0xFF000000, tmps);
                         drawList->AddText(ImVec2(destinationPosOnScreen.x + 14, destinationPosOnScreen.y + 14), 0xFFFFFFFF, tmps);
                     }
 
-                    if (!io.MouseDown[0])
+                    if (!imGuiIO.MouseDown[0])
                     {
-                        mbUsing = false;
+                        isUsing = false;
                     }
                 }
 
-                int GetScaleType()
+                void Manipulate(Math::Float4x4 const &view, Math::Float4x4 const &projection, Operation operation, Alignment alignment, Math::Float4x4 &matrix, float *snap, Shapes::AlignedBox *localBounds, LockAxis lockAxis)
                 {
-                    ImGuiIO& io = ImGui::GetIO();
-                    int type = NONE;
-
-                    // screen
-                    if (io.MousePos.x >= mScreenSquareMin.x && io.MousePos.x <= mScreenSquareMax.x &&
-                        io.MousePos.y >= mScreenSquareMin.y && io.MousePos.y <= mScreenSquareMax.y)
-                    {
-                        type = SCALE_XYZ;
-                    }
-
-                    const Math::Float3 direction[3] =
-                    {
-                        mModel.rx.xyz,
-                        mModel.ry.xyz,
-                        mModel.rz.xyz,
-                    };
-
-                    // compute
-                    for (uint32_t index = 0; index < 3 && type == NONE; index++)
-                    {
-                        Math::Float3 dirPlaneX, dirPlaneY;
-                        bool belowAxisLimit, belowPlaneLimit;
-                        ComputeTripodAxisAndVisibility(index, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
-                        dirPlaneX = mModel.rotate(dirPlaneX);
-                        dirPlaneY = mModel.rotate(dirPlaneY);
-
-                        const int planeNormal = (index + 2) % 3;
-                        const float len = IntersectRayPlane(mRayOrigin, mRayVector, Shapes::Plane(direction[planeNormal], mModel.rw.xyz));
-                        Math::Float3 posOnPlane = mRayOrigin + mRayVector * len;
-
-                        const float dx = dirPlaneX.dot((posOnPlane - mModel.rw.xyz) * (1.0f / mScreenFactor));
-                        const float dy = dirPlaneY.dot((posOnPlane - mModel.rw.xyz) * (1.0f / mScreenFactor));
-                        if (belowAxisLimit && dy > -0.1f && dy < 0.1f && dx > 0.1f  && dx < 1.0f)
-                        {
-                            type = SCALE_X + index;
-                        }
-                    }
-
-                    return type;
-                }
-
-                int GetRotateType()
-                {
-                    ImGuiIO& io = ImGui::GetIO();
-                    int type = NONE;
-
-                    Math::Float3 deltaScreen(io.MousePos.x - mScreenSquareCenter.x, io.MousePos.y - mScreenSquareCenter.y, 0.0f);
-                    float dist = deltaScreen.getLength();
-                    if (dist >= (screenRotateSize - 0.005f) * mHeight && dist < (screenRotateSize + 0.005f) * mHeight)
-                    {
-                        type = ROTATE_SCREEN;
-                    }
-
-                    const Math::Float3 planeNormals[] =
-                    {
-                        mModel.rx.xyz,
-                        mModel.ry.xyz,
-                        mModel.rz.xyz,
-                    };
-
-                    for (uint32_t index = 0; index < 3 && type == NONE; index++)
-                    {
-                        // pickup plane
-                        Shapes::Plane pickupPlane(planeNormals[index], mModel.rw.xyz);
-                        const float len = IntersectRayPlane(mRayOrigin, mRayVector, pickupPlane);
-                        Math::Float3 localPos = mRayOrigin + mRayVector * len - mModel.rw.xyz;
-                        if (localPos.getNormal().dot(mRayVector) > FLT_EPSILON)
-                        {
-                            continue;
-                        }
-
-                        float distance = localPos.getLength() / mScreenFactor;
-                        if (distance > 0.85f && distance < 1.15f)
-                        {
-                            type = ROTATE_X + index;
-                        }
-                    }
-
-                    return type;
-                }
-
-                int GetMoveType(Math::Float3 *gizmoHitProportion)
-                {
-                    ImGuiIO& io = ImGui::GetIO();
-                    int type = NONE;
-
-                    // screen
-                    if (io.MousePos.x >= mScreenSquareMin.x && io.MousePos.x <= mScreenSquareMax.x &&
-                        io.MousePos.y >= mScreenSquareMin.y && io.MousePos.y <= mScreenSquareMax.y)
-                    {
-                        type = MOVE_SCREEN;
-                    }
-
-                    const Math::Float3 direction[3] =
-                    {
-                        mModel.rx.xyz,
-                        mModel.ry.xyz,
-                        mModel.rz.xyz,
-                    };
-
-                    // compute
-                    for (uint32_t index = 0; index < 3 && type == NONE; index++)
-                    {
-                        Math::Float3 dirPlaneX, dirPlaneY;
-                        bool belowAxisLimit, belowPlaneLimit;
-                        ComputeTripodAxisAndVisibility(index, dirPlaneX, dirPlaneY, belowAxisLimit, belowPlaneLimit);
-                        dirPlaneX = mModel.rotate(dirPlaneX);
-                        dirPlaneY = mModel.rotate(dirPlaneY);
-
-                        const int planeNormal = (index + 2) % 3;
-                        const float len = IntersectRayPlane(mRayOrigin, mRayVector, Shapes::Plane(direction[planeNormal], mModel.rw.xyz));
-                        Math::Float3 posOnPlane = mRayOrigin + mRayVector * len;
-
-                        const float dx = dirPlaneX.dot((posOnPlane - mModel.rw.xyz) * (1.0f / mScreenFactor));
-                        const float dy = dirPlaneY.dot((posOnPlane - mModel.rw.xyz) * (1.0f / mScreenFactor));
-                        if (belowAxisLimit && dy > -0.1f && dy < 0.1f && dx > 0.1f  && dx < 1.0f)
-                        {
-                            type = MOVE_X + index;
-                        }
-
-                        if (belowPlaneLimit && dx >= quadUV[0] && dx <= quadUV[4] && dy >= quadUV[1] && dy <= quadUV[3])
-                        {
-                            type = MOVE_XY + index;
-                        }
-
-                        if (gizmoHitProportion)
-                        {
-                            *gizmoHitProportion = Math::Float3(dx, dy, 0.0f);
-                        }
-                    }
-
-                    return type;
-                }
-
-                void HandleTranslation(float *matrix, float *deltaMatrix, float *snap)
-                {
-                    ImGuiIO& io = ImGui::GetIO();
-                    bool applyRotationLocaly = mMode == Alignment::Local;
-
-                    // move
-                    int type = NONE;
-                    if (mbUsing)
-                    {
-                        const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
-                        Math::Float3 newPos = mRayOrigin + mRayVector * len;
-
-                        // compute delta
-                        Math::Float3 newOrigin = newPos - mRelativeOrigin * mScreenFactor;
-                        Math::Float3 delta = newOrigin - mModel.rw.xyz;
-
-                        // 1 axis constraint
-                        if (mCurrentOperation >= MOVE_X && mCurrentOperation <= MOVE_Z)
-                        {
-                            int axisIndex = mCurrentOperation - MOVE_X;
-                            const Math::Float3& axisValue = mModel.rows[axisIndex].xyz;
-                            float lengthOnAxis = axisValue.dot(delta);
-                            delta = axisValue * lengthOnAxis;
-                        }
-
-                        // snap
-                        if (snap)
-                        {
-                            Math::Float3 cumulativeDelta = mModel.rw.xyz + delta - mMatrixOrigin;
-                            if (applyRotationLocaly)
-                            {
-                                matrix_t modelSourceNormalized = mModelSource;
-                                modelSourceNormalized.orthonormalize();
-                                matrix_t modelSourceNormalizedInverse;
-                                modelSourceNormalizedInverse.getInverse(modelSourceNormalized);
-                                cumulativeDelta = modelSourceNormalizedInverse.rotate(cumulativeDelta);
-                                ComputeSnap(cumulativeDelta, snap);
-                                cumulativeDelta = modelSourceNormalized.rotate(cumulativeDelta);
-                            }
-                            else
-                            {
-                                ComputeSnap(cumulativeDelta, snap);
-                            }
-
-                            delta = mMatrixOrigin + cumulativeDelta - mModel.rw.xyz;
-                        }
-
-                        // compute matrix & delta
-                        matrix_t deltaMatrixTranslation;
-                        deltaMatrixTranslation.MakeTranslation(delta);
-                        if (deltaMatrix)
-                        {
-                            memcpy(deltaMatrix, deltaMatrixTranslation.data, sizeof(matrix_t));
-                        }
-
-
-                        matrix_t res = mModelSource * deltaMatrixTranslation;
-                        *(matrix_t*)matrix = res;
-
-                        if (!io.MouseDown[0])
-                        {
-                            mbUsing = false;
-                        }
-
-                        type = mCurrentOperation;
-                    }
-                    else
-                    {
-                        // find new possible way to move
-                        Math::Float3 gizmoHitProportion;
-                        type = GetMoveType(&gizmoHitProportion);
-                        if (io.MouseDown[0] && type != NONE)
-                        {
-                            mbUsing = true;
-                            mCurrentOperation = type;
-                            const Math::Float3 movePlaneNormal[] =
-                            {
-                                mModel.ry.xyz,
-                                mModel.rz.xyz,
-                                mModel.rx.xyz,
-                                mModel.rz.xyz,
-                                mModel.rx.xyz,
-                                mModel.ry.xyz,
-                                -mCameraDir,
-                            };
-
-                            // pickup plane
-                            mTranslationPlane = Shapes::Plane(movePlaneNormal[type - MOVE_X], mModel.rw.xyz);
-                            const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
-                            mTranslationPlaneOrigin = mRayOrigin + mRayVector * len;
-                            mMatrixOrigin = mModel.rw.xyz;
-
-                            mRelativeOrigin = (mTranslationPlaneOrigin - mModel.rw.xyz) * (1.0f / mScreenFactor);
-                        }
-                    }
-
-                    DrawTranslationGizmo(type);
-                }
-
-                void HandleScale(float *matrix, float *deltaMatrix, float *snap)
-                {
-                    ImGuiIO& io = ImGui::GetIO();
-
-                    int type = NONE;
-                    if (!mbUsing)
-                    {
-                        // find new possible way to scale
-                        type = GetScaleType();
-                        if (io.MouseDown[0] && type != NONE)
-                        {
-                            mbUsing = true;
-                            mCurrentOperation = type;
-                            const Math::Float3 movePlaneNormal[] =
-                            {
-                                mModel.ry.xyz,
-                                mModel.rz.xyz,
-                                mModel.rx.xyz,
-                                mModel.rz.xyz,
-                                mModel.ry.xyz,
-                                mModel.rx.xyz,
-                                -mCameraDir,
-                            };
-
-                            // pickup plane
-                            mTranslationPlane = Shapes::Plane(movePlaneNormal[type - SCALE_X], mModel.rw.xyz);
-                            const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
-                            mTranslationPlaneOrigin = mRayOrigin + mRayVector * len;
-                            mMatrixOrigin = mModel.rw.xyz;
-                            mScale.set(1.0f, 1.0f, 1.0f);
-                            mRelativeOrigin = (mTranslationPlaneOrigin - mModel.rw.xyz) * (1.0f / mScreenFactor);
-                            mScaleValueOrigin = Math::Float3(mModelSource.rx.getLength(), mModelSource.ry.getLength(), mModelSource.rz.getLength());
-                            mSaveMousePosx = io.MousePos.x;
-                        }
-                    }
-
-                    // scale
-                    if (mbUsing)
-                    {
-                        const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
-                        Math::Float3 newPos = mRayOrigin + mRayVector * len;
-                        Math::Float3 newOrigin = newPos - mRelativeOrigin * mScreenFactor;
-                        Math::Float3 delta = newOrigin - mModel.rw.xyz;
-
-                        // 1 axis constraint
-                        if (mCurrentOperation >= SCALE_X && mCurrentOperation <= SCALE_Z)
-                        {
-                            int axisIndex = mCurrentOperation - SCALE_X;
-                            const Math::Float3& axisValue = *(Math::Float3*)&mModel.table[axisIndex];
-                            float lengthOnAxis = axisValue.dot(delta);
-                            delta = axisValue * lengthOnAxis;
-
-                            Math::Float3 baseVector = mTranslationPlaneOrigin - mModel.rw.xyz;
-                            float ratio = axisValue.dot(baseVector + delta) / axisValue.dot(baseVector);
-
-                            mScale[axisIndex] = std::max(ratio, 0.001f);
-                        }
-                        else
-                        {
-                            float scaleDelta = (io.MousePos.x - mSaveMousePosx)  * 0.01f;
-                            mScale.set(std::max(1.0f + scaleDelta, 0.001f));
-                        }
-
-                        // snap
-                        if (snap)
-                        {
-                            float scaleSnap[] = { snap[0], snap[0], snap[0] };
-                            ComputeSnap(mScale, scaleSnap);
-                        }
-
-                        // no 0 allowed
-                        for (int index = 0; index < 3; index++)
-                        {
-                            mScale[index] = std::max(mScale[index], 0.001f);
-                        }
-
-                        // compute matrix & delta
-                        matrix_t deltaMatrixScale;
-                        deltaMatrixScale.MakeScaling(mScale * mScaleValueOrigin);
-
-                        matrix_t res = deltaMatrixScale * mModel;
-                        *(matrix_t*)matrix = res;
-
-                        if (deltaMatrix)
-                        {
-                            deltaMatrixScale.MakeScaling(mScale);
-                            memcpy(deltaMatrix, deltaMatrixScale.data, sizeof(matrix_t));
-                        }
-
-                        if (!io.MouseDown[0])
-                        {
-                            mbUsing = false;
-                        }
-
-                        type = mCurrentOperation;
-                    }
-
-                    DrawScaleGizmo(type);
-                }
-
-                void HandleRotation(float *matrix, float *deltaMatrix, float *snap)
-                {
-                    ImGuiIO& io = ImGui::GetIO();
-                    bool applyRotationLocaly = mMode == Alignment::Local;
-
-                    int type = NONE;
-                    if (!mbUsing)
-                    {
-                        type = GetRotateType();
-                        if (type == ROTATE_SCREEN)
-                        {
-                            applyRotationLocaly = true;
-                        }
-
-                        if (io.MouseDown[0] && type != NONE)
-                        {
-                            mbUsing = true;
-                            mCurrentOperation = type;
-                            const Math::Float3 rotatePlaneNormal[] =
-                            {
-                                mModel.rx.xyz,
-                                mModel.ry.xyz,
-                                mModel.rz.xyz,
-                                -mCameraDir,
-                            };
-
-                            // pickup plane
-                            if (applyRotationLocaly)
-                            {
-                                mTranslationPlane = Shapes::Plane(rotatePlaneNormal[type - ROTATE_X], mModel.rw.xyz);
-                            }
-                            else
-                            {
-                                mTranslationPlane = Shapes::Plane(directionUnary[type - ROTATE_X], mModelSource.rw.xyz);
-                            }
-
-                            const float len = IntersectRayPlane(mRayOrigin, mRayVector, mTranslationPlane);
-                            Math::Float3 localPos = mRayOrigin + mRayVector * len - mModel.rw.xyz;
-                            mRotationVectorSource = localPos.getNormal();
-                            mRotationAngleOrigin = ComputeAngleOnPlane();
-                        }
-                    }
-
-                    // rotation
-                    if (mbUsing)
-                    {
-                        mRotationAngle = ComputeAngleOnPlane();
-                        if (snap)
-                        {
-                            float snapInRadian = Math::DegreesToRadians(snap[0]);
-                            ComputeSnap(&mRotationAngle, snapInRadian);
-                        }
-
-                        Math::Float3 rotationAxisLocalSpace = mModelInverse.rotate(mTranslationPlane.normal);
-                        rotationAxisLocalSpace.normalize();
-
-                        matrix_t deltaRotation;
-                        deltaRotation.MakeRotation(rotationAxisLocalSpace, mRotationAngle - mRotationAngleOrigin);
-                        mRotationAngleOrigin = mRotationAngle;
-
-                        matrix_t scaleOrigin;
-                        scaleOrigin.MakeScaling(mModelScaleOrigin);
-
-                        if (applyRotationLocaly)
-                        {
-                            *(matrix_t*)matrix = scaleOrigin * deltaRotation * mModel;
-                        }
-                        else
-                        {
-                            matrix_t res = mModelSource;
-                            res.rw.set(0.0f);
-
-                            *(matrix_t*)matrix = res * deltaRotation;
-                            ((matrix_t*)matrix)->rw = mModelSource.rw;
-                        }
-
-                        if (deltaMatrix)
-                        {
-                            *(matrix_t*)deltaMatrix = mModelInverse * deltaRotation * mModel;
-                        }
-
-                        if (!io.MouseDown[0])
-                        {
-                            mbUsing = false;
-                        }
-
-                        type = mCurrentOperation;
-                    }
-
-                    DrawRotationGizmo(type);
-                }
-
-                void Manipulate(const float *view, const float *projection, Operation operation, Alignment mode, float *matrix, float *deltaMatrix, float *snap, float *localBounds, float *boundsSnap)
-                {
-                    ComputeContext(view, projection, matrix, mode);
-
-                    // set delta to identity 
-                    if (deltaMatrix)
-                    {
-                        ((matrix_t*)deltaMatrix)->SetToIdentity();
-                    }
+                    ComputeContext(view, projection, matrix, alignment);
 
                     // behind camera
-                    Math::Float3 camSpacePosition = mMVP.transform(Math::Float3(0.0f, 0.0f, 0.0f));
+                    Math::Float3 camSpacePosition = modelViewProjectionMatrix.transform(Math::Float3(0.0f, 0.0f, 0.0f));
                     if (camSpacePosition.z < 0.001f)
                     {
                         return;
                     }
 
                     // -- 
-                    if (mbEnable)
+                    if (isEnabled)
                     {
                         switch (operation)
                         {
                         case Operation::Rotate:
-                            HandleRotation(matrix, deltaMatrix, snap);
+                            HandleRotation(matrix, snap);
                             break;
 
                         case Operation::Translate:
-                            HandleTranslation(matrix, deltaMatrix, snap);
+                            HandleTranslation(matrix, snap);
                             break;
 
                         case Operation::Scale:
-                            HandleScale(matrix, deltaMatrix, snap);
+                            HandleScale(matrix, snap);
                             break;
 
                         case Operation::Bounds:
-                            HandleBounds(localBounds, (matrix_t*)matrix, boundsSnap);
+                            if (localBounds)
+                            {
+                                HandleBounds(*localBounds, matrix, snap, lockAxis);
+                            }
+
                             break;
                         };
                     }
@@ -1679,10 +1370,9 @@ namespace Gek
 
                 void DrawCube(const float *view, const float *projection, float *matrix)
                 {
-                    matrix_t viewInverse;
-                    viewInverse.getInverse(*(matrix_t*)view);
-                    const matrix_t& model = *(matrix_t*)matrix;
-                    matrix_t res = *(matrix_t*)matrix * *(matrix_t*)view * *(matrix_t*)projection;
+                    Math::Float4x4 viewInverse = (*(Math::Float4x4 *)view).getInverse();
+                    Math::Float4x4 const &model = *(Math::Float4x4 *)matrix;
+                    Math::Float4x4 res = *(Math::Float4x4 *)matrix * *(Math::Float4x4 *)view * *(Math::Float4x4 *)projection;
                     for (int iFace = 0; iFace < 6; iFace++)
                     {
                         const int normalIndex = (iFace % 3);
@@ -1719,7 +1409,7 @@ namespace Gek
                         ImVec2 faceCoordsScreen[4];
                         for (uint32_t iCoord = 0; iCoord < 4; iCoord++)
                         {
-                            faceCoordsScreen[iCoord] = worldToPos(faceCoords[iCoord] * 0.5f * invert, res);
+                            faceCoordsScreen[iCoord] = getPointFromPosition(faceCoords[iCoord] * 0.5f * invert, res);
                         }
 
                         // back face culling 
@@ -1733,7 +1423,7 @@ namespace Gek
                         }
 
                         // draw face with lighter color
-                        mDrawList->AddConvexPolyFilled(faceCoordsScreen, 4, directionColor[normalIndex] | 0x808080, true);
+                        currentDrawList->AddConvexPolyFilled(faceCoordsScreen, 4, directionColor[normalIndex] | 0x808080, true);
                     }
                 }
             };
@@ -1755,9 +1445,9 @@ namespace Gek
                 context->SetRect(x, y, width, height);
             }
 
-            void WorkSpace::manipulate(float const *view, float const *projection, Operation operation, Alignment alignment, float *matrix, float *deltaMatrix, float *snap, float *localBounds, float *boundsSnap)
+            void WorkSpace::manipulate(Math::Float4x4 const &view, Math::Float4x4 const &projection, Operation operation, Alignment alignment, Math::Float4x4 &matrix, float *snap, Shapes::AlignedBox *localBounds, LockAxis lockAxis)
             {
-                context->Manipulate(view, projection, operation, alignment, matrix, deltaMatrix, snap, localBounds, boundsSnap);
+                context->Manipulate(view, projection, operation, alignment, matrix, snap, localBounds, lockAxis);
             }
         }; // Gizmo
     }; // namespace UI
