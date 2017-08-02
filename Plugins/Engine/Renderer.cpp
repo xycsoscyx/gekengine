@@ -40,6 +40,7 @@ namespace Gek
 
         GEK_CONTEXT_USER(Renderer, Plugin::Core *)
             , public Plugin::Renderer
+            , public lsignal::slot
         {
         public:
             struct DirectionalLightData
@@ -402,12 +403,12 @@ namespace Gek
                 , pointLightData(200, core->getVideoDevice())
                 , spotLightData(200, core->getVideoDevice())
             {
-                population->onReset.connect<Renderer, &Renderer::onReset>(this);
-                population->onEntityCreated.connect<Renderer, &Renderer::onEntityCreated>(this);
-                population->onEntityDestroyed.connect<Renderer, &Renderer::onEntityDestroyed>(this);
-                population->onComponentAdded.connect<Renderer, &Renderer::onComponentAdded>(this);
-                population->onComponentRemoved.connect<Renderer, &Renderer::onComponentRemoved>(this);
-                population->onUpdate[1000].connect<Renderer, &Renderer::onUpdate>(this);
+                population->onReset.connect(this, &Renderer::onReset, this);
+                population->onEntityCreated.connect(this, &Renderer::onEntityCreated, this);
+                population->onEntityDestroyed.connect(this, &Renderer::onEntityDestroyed, this);
+                population->onComponentAdded.connect(this, &Renderer::onComponentAdded, this);
+                population->onComponentRemoved.connect(this, &Renderer::onComponentRemoved, this);
+                population->onUpdate[1000].connect(this, &Renderer::onUpdate, this);
 
                 initializeSystem();
                 initializeUI();
@@ -685,12 +686,12 @@ namespace Gek
             {
                 workerPool.drain();
 
-                population->onUpdate[1000].disconnect<Renderer, &Renderer::onUpdate>(this);
-                population->onComponentRemoved.disconnect<Renderer, &Renderer::onComponentRemoved>(this);
-                population->onComponentAdded.disconnect<Renderer, &Renderer::onComponentAdded>(this);
-                population->onEntityDestroyed.disconnect<Renderer, &Renderer::onEntityDestroyed>(this);
-                population->onEntityCreated.disconnect<Renderer, &Renderer::onEntityCreated>(this);
-                population->onReset.disconnect<Renderer, &Renderer::onReset>(this);
+                population->onReset.disconnect(this);
+                population->onEntityCreated.disconnect(this);
+                population->onEntityDestroyed.disconnect(this);
+                population->onComponentAdded.disconnect(this);
+                population->onComponentRemoved.disconnect(this);
+                population->onUpdate[1000].disconnect(this);
 
                 ImGui::GetIO().Fonts->TexID = 0;
                 ImGui::Shutdown();
@@ -1102,7 +1103,7 @@ namespace Gek
                 while (cameraQueue.try_pop(currentCamera))
                 {
                     drawCallList.clear();
-                    onQueueDrawCalls.emit(currentCamera.viewFrustum, currentCamera.viewMatrix, currentCamera.projectionMatrix);
+                    onQueueDrawCalls(currentCamera.viewFrustum, currentCamera.viewMatrix, currentCamera.projectionMatrix);
                     if (!drawCallList.empty())
                     {
                         const auto backBuffer = videoDevice->getBackBuffer();
@@ -1421,7 +1422,7 @@ namespace Gek
                 imGuiIo.DisplaySize = ImVec2(float(width), float(height));
 
                 ImGui::NewFrame();
-                onShowUserInterface.emit(ImGui::GetCurrentContext());
+                onShowUserInterface(ImGui::GetCurrentContext());
                 ImGui::Render();
 
                 videoDevice->present(true);

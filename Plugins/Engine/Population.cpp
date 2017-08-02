@@ -82,6 +82,7 @@ namespace Gek
 
         GEK_CONTEXT_USER(Population, Plugin::Core *)
             , public Edit::Population
+            , public lsignal::slot
         {
         private:
             Plugin::Core *core = nullptr;
@@ -129,15 +130,13 @@ namespace Gek
                     componentMap[component->getIdentifier()] = std::move(component);
                 });
 
-                core->onExit.connect<Population, &Population::onExit>(this);
+                core->onExit.connect(this, &Population::onExit, this);
             }
 
             ~Population(void)
             {
 				workerPool.drain();
-
-                core->onExit.disconnect<Population, &Population::onExit>(this);
-
+                core->onExit.disconnect(this);
                 entityList.clear();
                 componentTypeNameMap.clear();
                 componentMap.clear();
@@ -148,7 +147,7 @@ namespace Gek
                 entityQueue.push([this, entity](void) -> void
                 {
                     entityList.push_back(Plugin::EntityPtr(entity));
-                    onEntityCreated.emit(entity);
+                    onEntityCreated(entity);
                 });
             }
 
@@ -197,14 +196,14 @@ namespace Gek
                     Action action;
                     while (actionQueue.try_pop(action))
                     {
-                        onAction.emit(action);
+                        onAction(action);
                     };
                 }
 
 
                 for (auto &slot : onUpdate)
                 {
-                    slot.second.emit(frameTime);
+                    slot.second(frameTime);
                 }
 
                 std::function<void(void)> entityAction;
@@ -224,7 +223,7 @@ namespace Gek
                 workerPool.enqueue([this](void) -> void
                 {
                     actionQueue.clear();
-                    onReset.emit();
+                    onReset();
                     entityList.clear();
                 });
             }
@@ -354,7 +353,7 @@ namespace Gek
 
                     if (entitySearch != std::end(entityList))
                     {
-                        onEntityDestroyed.emit(entity);
+                        onEntityDestroyed(entity);
                         entityList.erase(entitySearch);
                     }
                 });
@@ -394,7 +393,7 @@ namespace Gek
             {
                 if (addComponent(static_cast<Entity *>(entity), componentData))
                 {
-                    onComponentAdded.emit(static_cast<Plugin::Entity *>(entity));
+                    onComponentAdded(static_cast<Plugin::Entity *>(entity));
                 }
             }
 
@@ -404,7 +403,7 @@ namespace Gek
 
                 if (entity->hasComponent(type))
                 {
-                    onComponentRemoved.emit(entity);
+                    onComponentRemoved(entity);
                     static_cast<Entity *>(entity)->removeComponent(type);
                 }
             }

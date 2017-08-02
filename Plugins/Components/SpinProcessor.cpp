@@ -45,6 +45,7 @@ namespace Gek
 
     GEK_CONTEXT_USER(SpinProcessor, Plugin::Core *)
         , public Plugin::Processor
+        , public lsignal::slot
     {
     private:
         Plugin::Core *core = nullptr;
@@ -58,12 +59,21 @@ namespace Gek
         {
             assert(population);
 
-            population->onUpdate[50].connect<SpinProcessor, &SpinProcessor::onUpdate>(this);
+            population->onUpdate[50].connect(this, &SpinProcessor::onUpdate);
         }
 
         ~SpinProcessor(void)
         {
-            population->onUpdate[50].disconnect<SpinProcessor, &SpinProcessor::onUpdate>(this);
+        }
+
+        // Plugin::Processor
+        void onInitialized(void)
+        {
+        }
+
+        void onDestroyed(void)
+        {
+            population->onUpdate[50].disconnect(this);
         }
 
         // Plugin::Population Slots

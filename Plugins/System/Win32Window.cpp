@@ -77,7 +77,7 @@ namespace Gek
                             if (LOWORD(lParam) == HTCLIENT)
                             {
                                 bool showCursor = true;
-                                window->onSetCursor.emit(showCursor);
+                                window->onSetCursor(showCursor);
                                 ShowCursor(TRUE);// showCursor);
                                 return TRUE;
                             }
@@ -89,41 +89,41 @@ namespace Gek
                             break;
 
                         case WM_LBUTTONDOWN:
-                            window->onMouseClicked.emit(Window::Button::Left, true);
+                            window->onMouseClicked(Window::Button::Left, true);
                             break;
 
                         case WM_LBUTTONUP:
-                            window->onMouseClicked.emit(Window::Button::Left, false);
+                            window->onMouseClicked(Window::Button::Left, false);
                             break;
 
                         case WM_RBUTTONDOWN:
-                            window->onMouseClicked.emit(Window::Button::Right, true);
+                            window->onMouseClicked(Window::Button::Right, true);
                             break;
 
                         case WM_RBUTTONUP:
-                            window->onMouseClicked.emit(Window::Button::Right, false);
+                            window->onMouseClicked(Window::Button::Right, false);
                             break;
 
                         case WM_MBUTTONDOWN:
-                            window->onMouseClicked.emit(Window::Button::Middle, true);
+                            window->onMouseClicked(Window::Button::Middle, true);
                             break;
 
                         case WM_MBUTTONUP:
-                            window->onMouseClicked.emit(Window::Button::Middle, false);
+                            window->onMouseClicked(Window::Button::Middle, false);
                             break;
 
                         case WM_MOUSEWHEEL:
-                            window->onMouseWheel.emit(float(GET_WHEEL_DELTA_WPARAM(wParam)) / float(WHEEL_DELTA));
+                            window->onMouseWheel(float(GET_WHEEL_DELTA_WPARAM(wParam)) / float(WHEEL_DELTA));
                             break;
 
                         case WM_MOUSEMOVE:
-                            window->onMousePosition.emit((int16_t)(lParam), (int16_t)(lParam >> 16));
+                            window->onMousePosition((int16_t)(lParam), (int16_t)(lParam >> 16));
                             break;
 
                         case WM_KEYDOWN:
                             if (wParam >= 0 && wParam < 256)
                             {
-                                window->onKeyPressed.emit(static_cast<Key>(NativeToKey[wParam]), true);
+                                window->onKeyPressed(static_cast<Key>(NativeToKey[wParam]), true);
                             }
 
                             break;
@@ -131,13 +131,13 @@ namespace Gek
                         case WM_KEYUP:
                             if (wParam >= 0 && wParam < 256)
                             {
-                                window->onKeyPressed.emit(static_cast<Key>(NativeToKey[wParam]), false);
+                                window->onKeyPressed(static_cast<Key>(NativeToKey[wParam]), false);
                             }
 
                             break;
 
                         case WM_CHAR:
-                            window->onCharacter.emit(wParam);
+                            window->onCharacter(wParam);
                             break;
 
                         case WM_INPUT:
@@ -153,7 +153,7 @@ namespace Gek
                                     RAWINPUT *rawInput = reinterpret_cast<RAWINPUT *>(rawInputBuffer.data());
                                     if (rawInput->header.dwType == RIM_TYPEMOUSE)
                                     {
-                                        window->onMouseMovement.emit(rawInput->data.mouse.lLastX, rawInput->data.mouse.lLastY);
+                                        window->onMouseMovement(rawInput->data.mouse.lLastX, rawInput->data.mouse.lLastY);
                                     }
                                 }
                             }
@@ -161,13 +161,13 @@ namespace Gek
                             break;
 
                         case WM_CLOSE:
-                            window->onClose.emit();
+                            window->onClose();
                             return TRUE;
 
                         case WM_ACTIVATE:
                             if (HIWORD(wParam))
                             {
-                                window->onActivate.emit(false);
+                                window->onActivate(false);
                             }
                             else
                             {
@@ -175,11 +175,11 @@ namespace Gek
                                 {
                                 case WA_ACTIVE:
                                 case WA_CLICKACTIVE:
-                                    window->onActivate.emit(true);
+                                    window->onActivate(true);
                                     break;
 
                                 case WA_INACTIVE:
-                                    window->onActivate.emit(false);
+                                    window->onActivate(false);
                                     break;
                                 };
                             }
@@ -187,7 +187,7 @@ namespace Gek
                             return TRUE;
 
                         case WM_SIZE:
-                            window->onSizeChanged.emit(wParam == SIZE_MINIMIZED);
+                            window->onSizeChanged(wParam == SIZE_MINIMIZED);
                             break;
                         };
                     }

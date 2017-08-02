@@ -76,6 +76,7 @@ namespace Gek
         , public Plugin::ProcessorMixin<ModelProcessor, Components::Model, Components::Transform>
         , public Plugin::Processor
         , public Gek::Processor::Model
+        , public lsignal::slot
     {
     public:
         struct Header
@@ -188,12 +189,12 @@ namespace Gek
 
             LockedWrite{ std::cout } << String::Format("Initializing model system");
 
-            population->onReset.connect<ModelProcessor, &ModelProcessor::onReset>(this);
-            population->onEntityCreated.connect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
-            population->onEntityDestroyed.connect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
-            population->onComponentAdded.connect<ModelProcessor, &ModelProcessor::onComponentAdded>(this);
-            population->onComponentRemoved.connect<ModelProcessor, &ModelProcessor::onComponentRemoved>(this);
-            renderer->onQueueDrawCalls.connect<ModelProcessor, &ModelProcessor::onQueueDrawCalls>(this);
+            population->onReset.connect(this, &ModelProcessor::onReset, this);
+            population->onEntityCreated.connect(this, &ModelProcessor::onEntityCreated, this);
+            population->onEntityDestroyed.connect(this, &ModelProcessor::onEntityDestroyed, this);
+            population->onComponentAdded.connect(this, &ModelProcessor::onComponentAdded, this);
+            population->onComponentRemoved.connect(this, &ModelProcessor::onComponentRemoved, this);
+            renderer->onQueueDrawCalls.connect(this, &ModelProcessor::onQueueDrawCalls, this);
 
             visual = resources->loadVisual("model");
 
@@ -208,13 +209,6 @@ namespace Gek
 
         ~ModelProcessor(void)
         {
-            loadPool.drain();
-            renderer->onQueueDrawCalls.disconnect<ModelProcessor, &ModelProcessor::onQueueDrawCalls>(this);
-            population->onComponentRemoved.disconnect<ModelProcessor, &ModelProcessor::onComponentRemoved>(this);
-            population->onComponentAdded.disconnect<ModelProcessor, &ModelProcessor::onComponentAdded>(this);
-            population->onEntityDestroyed.disconnect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
-            population->onEntityCreated.disconnect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
-            population->onReset.disconnect<ModelProcessor, &ModelProcessor::onReset>(this);
         }
 
         void addEntity(Plugin::Entity * const entity)
@@ -330,20 +324,20 @@ namespace Gek
         {
             core->listProcessors([&](Plugin::Processor *processor) -> void
             {
-                auto check = dynamic_cast<Plugin::Editor *>(processor);
-                if (check)
+                auto castCheck = dynamic_cast<Plugin::Editor *>(processor);
+                if (castCheck)
                 {
-                    editor = check;
-                    editor->onModified.connect<ModelProcessor, &ModelProcessor::onModified>(this);
+                    (editor = castCheck)->onModified.connect(this, &ModelProcessor::onModified, this);
                 }
             });
         }
 
         void onDestroyed(void)
         {
+            loadPool.drain();
             if (editor)
             {
-                editor->onModified.disconnect<ModelProcessor, &ModelProcessor::onModified>(this);
+                editor->onModified.disconnect(this);
             }
         }
 

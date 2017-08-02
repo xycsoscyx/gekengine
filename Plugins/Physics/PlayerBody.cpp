@@ -87,6 +87,7 @@ namespace Gek
 
 		class PlayerBody
 			: public Newton::Entity
+            , public lsignal::slot
 		{
 		public:
             Plugin::Core *core = nullptr;
@@ -209,12 +210,11 @@ namespace Gek
                 NewtonDestroyCollision(supportShape);
                 NewtonDestroyCollision(playerShape);
 
-                population->onAction.connect<PlayerBody, &PlayerBody::onAction>(this);
+                population->onAction.connect(this, &PlayerBody::onAction, this);
             }
 
 			~PlayerBody(void)
 			{
-                population->onAction.disconnect<PlayerBody, &PlayerBody::onAction>(this);
                 NewtonDestroyCollision(newtonCastingShape);
 			}
 

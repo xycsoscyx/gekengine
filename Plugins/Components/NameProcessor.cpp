@@ -52,6 +52,7 @@ namespace Gek
         , public Plugin::ProcessorMixin<NameProcessor, Components::Name>
         , public Plugin::Processor
         , public Gek::Processor::Name
+        , public lsignal::slot
     {
     public:
         struct Data
@@ -62,6 +63,7 @@ namespace Gek
         Plugin::Core *core = nullptr;
         Plugin::Population *population = nullptr;
         Plugin::Editor *editor = nullptr;
+
         using NameMap = std::unordered_map<std::string, Plugin::Entity *>;
         NameMap nameMap;
 
@@ -73,20 +75,15 @@ namespace Gek
         {
             assert(population);
 
-            population->onReset.connect<NameProcessor, &NameProcessor::onReset>(this);
-            population->onEntityCreated.connect<NameProcessor, &NameProcessor::onEntityCreated>(this);
-            population->onEntityDestroyed.connect<NameProcessor, &NameProcessor::onEntityDestroyed>(this);
-            population->onComponentAdded.connect<NameProcessor, &NameProcessor::onComponentAdded>(this);
-            population->onComponentRemoved.connect<NameProcessor, &NameProcessor::onComponentRemoved>(this);
+            population->onReset.connect(this, &NameProcessor::onReset, this);
+            population->onEntityCreated.connect(this, &NameProcessor::onEntityCreated, this);
+            population->onEntityDestroyed.connect(this, &NameProcessor::onEntityDestroyed, this);
+            population->onComponentAdded.connect(this, &NameProcessor::onComponentAdded, this);
+            population->onComponentRemoved.connect(this, &NameProcessor::onComponentRemoved, this);
         }
 
         ~NameProcessor(void)
         {
-            population->onComponentRemoved.disconnect<NameProcessor, &NameProcessor::onComponentRemoved>(this);
-            population->onComponentAdded.disconnect<NameProcessor, &NameProcessor::onComponentAdded>(this);
-            population->onEntityDestroyed.disconnect<NameProcessor, &NameProcessor::onEntityDestroyed>(this);
-            population->onEntityCreated.disconnect<NameProcessor, &NameProcessor::onEntityCreated>(this);
-            population->onReset.disconnect<NameProcessor, &NameProcessor::onReset>(this);
         }
 
         uint32_t uniqueIdentifier = 0;
@@ -139,11 +136,10 @@ namespace Gek
         {
             core->listProcessors([&](Plugin::Processor *processor) -> void
             {
-                auto check = dynamic_cast<Plugin::Editor *>(processor);
-                if (check)
+                auto castCheck = dynamic_cast<Plugin::Editor *>(processor);
+                if (castCheck)
                 {
-                    editor = check;
-                    editor->onModified.connect<NameProcessor, &NameProcessor::onModified>(this);
+                    (editor = castCheck)->onModified.connect(this, &NameProcessor::onModified);
                 }
             });
         }
@@ -152,8 +148,14 @@ namespace Gek
         {
             if (editor)
             {
-                editor->onModified.disconnect<NameProcessor, &NameProcessor::onModified>(this);
+                editor->onModified.disconnect(this);
             }
+
+            population->onReset.disconnect(this);
+            population->onEntityCreated.disconnect(this);
+            population->onEntityDestroyed.disconnect(this);
+            population->onComponentAdded.disconnect(this);
+            population->onComponentRemoved.disconnect(this);
         }
 
         // Model::Processor

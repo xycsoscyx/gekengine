@@ -20,6 +20,7 @@ namespace Gek
     {
         GEK_CONTEXT_USER(Core, Window *)
             , public Plugin::Core
+            , public lsignal::slot
         {
         private:
             WindowPtr window;
@@ -72,16 +73,16 @@ namespace Gek
                     window = getContext()->createClass<Window>("Default::System::Window", description);
                 }
 
-                window->onClose.connect<Core, &Core::onClose>(this);
-                window->onActivate.connect<Core, &Core::onActivate>(this);
-                window->onSizeChanged.connect<Core, &Core::onSizeChanged>(this);
-                window->onKeyPressed.connect<Core, &Core::onKeyPressed>(this);
-                window->onCharacter.connect<Core, &Core::onCharacter>(this);
-                window->onSetCursor.connect<Core, &Core::onSetCursor>(this);
-                window->onMouseClicked.connect<Core, &Core::onMouseClicked>(this);
-                window->onMouseWheel.connect<Core, &Core::onMouseWheel>(this);
-                window->onMousePosition.connect<Core, &Core::onMousePosition>(this);
-                window->onMouseMovement.connect<Core, &Core::onMouseMovement>(this);
+                window->onClose.connect(this, &Core::onClose, this);
+                window->onActivate.connect(this, &Core::onActivate, this);
+                window->onSizeChanged.connect(this, &Core::onSizeChanged, this);
+                window->onKeyPressed.connect(this, &Core::onKeyPressed, this);
+                window->onCharacter.connect(this, &Core::onCharacter, this);
+                window->onSetCursor.connect(this, &Core::onSetCursor, this);
+                window->onMouseClicked.connect(this, &Core::onMouseClicked, this);
+                window->onMouseWheel.connect(this, &Core::onMouseWheel, this);
+                window->onMousePosition.connect(this, &Core::onMousePosition, this);
+                window->onMouseMovement.connect(this, &Core::onMouseMovement, this);
 
                 configuration = JSON::Load(getContext()->getRootFileName("config.json"));
 
@@ -133,7 +134,7 @@ namespace Gek
                 population = getContext()->createClass<Plugin::Population>("Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Plugin::Core *)this);
                 renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Plugin::Core *)this);
-                renderer->onShowUserInterface.connect<Core, &Core::onShowUserInterface>(this);
+                renderer->onShowUserInterface.connect(this, &Core::onShowUserInterface, this);
 
                 LockedWrite{ std::cout } << String::Format("Loading processor plugins");
 
@@ -189,17 +190,17 @@ namespace Gek
 
             ~Core(void)
             {
-                renderer->onShowUserInterface.disconnect<Core, &Core::onShowUserInterface>(this);
-                window->onClose.disconnect<Core, &Core::onClose>(this);
-                window->onActivate.disconnect<Core, &Core::onActivate>(this);
-                window->onSizeChanged.disconnect<Core, &Core::onSizeChanged>(this);
-                window->onKeyPressed.disconnect<Core, &Core::onKeyPressed>(this);
-                window->onCharacter.disconnect<Core, &Core::onCharacter>(this);
-                window->onSetCursor.disconnect<Core, &Core::onSetCursor>(this);
-                window->onMouseClicked.disconnect<Core, &Core::onMouseClicked>(this);
-                window->onMouseWheel.disconnect<Core, &Core::onMouseWheel>(this);
-                window->onMousePosition.disconnect<Core, &Core::onMousePosition>(this);
-                window->onMouseMovement.disconnect<Core, &Core::onMouseMovement>(this);
+                renderer->onShowUserInterface.disconnect(this);
+                window->onClose.disconnect(this);
+                window->onActivate.disconnect(this);
+                window->onSizeChanged.disconnect(this);
+                window->onKeyPressed.disconnect(this);
+                window->onCharacter.disconnect(this);
+                window->onSetCursor.disconnect(this);
+                window->onMouseClicked.disconnect(this);
+                window->onMouseWheel.disconnect(this);
+                window->onMousePosition.disconnect(this);
+                window->onMouseMovement.disconnect(this);
 
                 for (auto &processor : processorList)
                 {
@@ -229,7 +230,7 @@ namespace Gek
                     }
 
                     videoDevice->setFullScreenState(requestFullScreen);
-                    onResize.emit();
+                    onResize();
                     if (!requestFullScreen)
                     {
                         window->move();
@@ -253,7 +254,7 @@ namespace Gek
                         configuration["display"]["mode"] = requestDisplayMode;
                         videoDevice->setDisplayMode(displayModeData);
                         window->move();
-                        onResize.emit();
+                        onResize();
 
                         return true;
                     }
@@ -266,7 +267,7 @@ namespace Gek
             void onClose(void)
             {
                 engineRunning = false;
-                onExit.emit();
+                onExit();
             }
 
             void onActivate(bool isActive)
@@ -284,7 +285,7 @@ namespace Gek
                 if (videoDevice && !isMinimized)
                 {
                     videoDevice->handleResize();
-                    onResize.emit();
+                    onResize();
                 }
             }
 
@@ -683,7 +684,7 @@ namespace Gek
                             {
                                 configuration["shaders"] = shadersSettings;
                                 configuration["filters"] = filtersSettings;
-                                onSettingsChanged.emit();
+                                onSettingsChanged();
                             }
 
                             showSettings = false;

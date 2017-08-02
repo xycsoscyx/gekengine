@@ -509,6 +509,7 @@ namespace Gek
         GEK_CONTEXT_USER(Resources, Plugin::Core *)
             , public Engine::Resources
             , public ResourceRequester
+            , public lsignal::slot
         {
         private:
             Plugin::Core *core = nullptr;
@@ -573,17 +574,13 @@ namespace Gek
                 assert(core);
                 assert(videoDevice);
 
-                core->onResize.connect<Resources, &Resources::onResize>(this);
-                core->onSettingsChanged.connect<Resources, &Resources::onSettingsChanged>(this);
+                core->onResize.connect(this, &Resources::onResize, this);
+                core->onSettingsChanged.connect(this, &Resources::onSettingsChanged, this);
             }
 
             ~Resources(void)
             {
-                assert(core);
-
                 loadPool.drain();
-                core->onSettingsChanged.disconnect<Resources, &Resources::onSettingsChanged>(this);
-                core->onResize.disconnect<Resources, &Resources::onResize>(this);
             }
 
             Validate &getValid(Video::Device::Context::Pipeline *videoPipeline)

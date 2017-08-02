@@ -30,6 +30,7 @@ namespace Gek
         GEK_CONTEXT_USER(Processor, Plugin::Core *)
             , public Plugin::Processor
             , public Newton::World
+            , public lsignal::slot
         {
         public:
             struct Header
@@ -115,28 +116,17 @@ namespace Gek
                 NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, nullptr, newtonOnAABBOverlap, newtonOnContactFriction);
 #endif
 
-                renderer->onShowUserInterface.connect<Processor, &Processor::onShowUserInterface>(this);
-                population->onReset.connect<Processor, &Processor::onReset>(this);
-                population->onEntityCreated.connect<Processor, &Processor::onEntityCreated>(this);
-                population->onEntityDestroyed.connect<Processor, &Processor::onEntityDestroyed>(this);
-                population->onComponentAdded.connect<Processor, &Processor::onComponentAdded>(this);
-                population->onComponentRemoved.connect<Processor, &Processor::onComponentRemoved>(this);
-                population->onUpdate[50].connect<Processor, &Processor::onUpdate>(this);
+                renderer->onShowUserInterface.connect(this, &Processor::onShowUserInterface, this);
+                population->onReset.connect(this, &Processor::onReset, this);
+                population->onEntityCreated.connect(this, &Processor::onEntityCreated, this);
+                population->onEntityDestroyed.connect(this, &Processor::onEntityDestroyed, this);
+                population->onComponentAdded.connect(this, &Processor::onComponentAdded, this);
+                population->onComponentRemoved.connect(this, &Processor::onComponentRemoved, this);
+                population->onUpdate[50].connect(this, &Processor::onUpdate, this);
             }
 
             ~Processor(void)
             {
-                population->onUpdate[50].disconnect<Processor, &Processor::onUpdate>(this);
-                population->onComponentRemoved.disconnect<Processor, &Processor::onComponentRemoved>(this);
-                population->onComponentAdded.disconnect<Processor, &Processor::onComponentAdded>(this);
-                population->onEntityDestroyed.disconnect<Processor, &Processor::onEntityDestroyed>(this);
-                population->onEntityCreated.disconnect<Processor, &Processor::onEntityCreated>(this);
-                population->onReset.disconnect<Processor, &Processor::onReset>(this);
-                renderer->onShowUserInterface.disconnect<Processor, &Processor::onShowUserInterface>(this);
-
-                onReset();
-
-                NewtonDestroy(newtonWorld);
                 assert(NewtonGetMemoryUsed() == 0);
             }
 
@@ -370,11 +360,10 @@ namespace Gek
             {
                 core->listProcessors([&](Plugin::Processor *processor) -> void
                 {
-                    auto check = dynamic_cast<Plugin::Editor *>(processor);
-                    if (check)
+                    auto castCheck = dynamic_cast<Plugin::Editor *>(processor);
+                    if (castCheck)
                     {
-                        editor = check;
-                        editor->onModified.connect<Processor, &Processor::onModified>(this);
+                        (editor = castCheck)->onModified.connect(this, &Processor::onModified, this);
                     }                    
                 });
             }
@@ -383,8 +372,20 @@ namespace Gek
             {
                 if (editor)
                 {
-                    editor->onModified.disconnect<Processor, &Processor::onModified>(this);
+                    editor->onModified.disconnect(this);
                 }
+
+                renderer->onShowUserInterface.disconnect(this);
+                population->onReset.disconnect(this);
+                population->onEntityCreated.disconnect(this);
+                population->onEntityDestroyed.disconnect(this);
+                population->onComponentAdded.disconnect(this);
+                population->onComponentRemoved.disconnect(this);
+                population->onUpdate[50].disconnect(this);
+
+                onReset();
+
+                NewtonDestroy(newtonWorld);
             }
 
             // Plugin::Editor Slots
@@ -586,7 +587,7 @@ namespace Gek
                     const Surface &surface0 = processor->getSurface(surfaceIndex0);
                     const Surface &surface1 = processor->getSurface(surfaceIndex1);
 
-                    processor->onCollision.emit(entity0, entity1, position, normal);
+                    processor->onCollision(entity0, entity1, position, normal);
                     if (surface0.ghost || surface1.ghost)
                     {
                         NewtonContactJointRemoveContact(contactJoint, newtonContact);

@@ -87,6 +87,7 @@ namespace Gek
     GEK_CONTEXT_USER(CameraProcessor, Plugin::Core *)
         , public Plugin::ProcessorMixin<CameraProcessor, Components::FirstPersonCamera, Components::Transform>
         , public Plugin::Processor
+        , public lsignal::slot
     {
     public:
         struct Data
@@ -112,22 +113,16 @@ namespace Gek
             assert(resources);
             assert(renderer);
 
-            population->onReset.connect<CameraProcessor, &CameraProcessor::onReset>(this);
-            population->onEntityCreated.connect<CameraProcessor, &CameraProcessor::onEntityCreated>(this);
-            population->onEntityDestroyed.connect<CameraProcessor, &CameraProcessor::onEntityDestroyed>(this);
-            population->onComponentAdded.connect<CameraProcessor, &CameraProcessor::onComponentAdded>(this);
-            population->onComponentRemoved.connect<CameraProcessor, &CameraProcessor::onComponentRemoved>(this);
-            population->onUpdate[90].connect<CameraProcessor, &CameraProcessor::onUpdate>(this);
+            population->onReset.connect(this, &CameraProcessor::onReset, this);
+            population->onEntityCreated.connect(this, &CameraProcessor::onEntityCreated, this);
+            population->onEntityDestroyed.connect(this, &CameraProcessor::onEntityDestroyed, this);
+            population->onComponentAdded.connect(this, &CameraProcessor::onComponentAdded, this);
+            population->onComponentRemoved.connect(this, &CameraProcessor::onComponentRemoved, this);
+            population->onUpdate[90].connect(this, &CameraProcessor::onUpdate, this);
         }
 
         ~CameraProcessor(void)
         {
-            population->onUpdate[90].disconnect<CameraProcessor, &CameraProcessor::onUpdate>(this);
-            population->onComponentRemoved.disconnect<CameraProcessor, &CameraProcessor::onComponentRemoved>(this);
-            population->onComponentAdded.disconnect<CameraProcessor, &CameraProcessor::onComponentAdded>(this);
-            population->onEntityDestroyed.disconnect<CameraProcessor, &CameraProcessor::onEntityDestroyed>(this);
-            population->onEntityCreated.disconnect<CameraProcessor, &CameraProcessor::onEntityCreated>(this);
-            population->onReset.disconnect<CameraProcessor, &CameraProcessor::onReset>(this);
         }
 
         void addEntity(Plugin::Entity * const entity)
@@ -145,6 +140,22 @@ namespace Gek
                     data.target = resources->createTexture(String::Format("camera:%v", cameraComponent.target), description);
                 }
             });
+        }
+
+        // Plugin::Processor
+        void onInitialized(void)
+        {
+        }
+
+        void onDestroyed(void)
+        {
+            population->onReset.disconnect(this);
+            population->onEntityCreated.disconnect(this);
+            population->onEntityDestroyed.disconnect(this);
+            population->onComponentAdded.disconnect(this);
+            population->onComponentRemoved.disconnect(this);
+            population->onUpdate[90].disconnect(this);
+            clear();
         }
 
         // Plugin::Population Slots

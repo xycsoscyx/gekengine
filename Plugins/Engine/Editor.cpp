@@ -28,6 +28,7 @@ namespace Gek
         GEK_CONTEXT_USER(Editor, Plugin::Core *)
             , public Plugin::Processor
             , public Plugin::Editor
+            , public lsignal::slot
         {
         private:
             Plugin::Core *core = nullptr;
@@ -73,8 +74,8 @@ namespace Gek
 
                 core->setOption("editor", "active", false);
 
-                population->onAction.connect<Editor, &Editor::onAction>(this);
-                population->onUpdate[90].connect<Editor, &Editor::onUpdate>(this);
+                population->onAction.connect(this, &Editor::onAction, this);
+                population->onUpdate[90].connect(this, &Editor::onUpdate, this);
 
                 if (!ImGui::TabWindow::DockPanelIconTextureID)
                 {
@@ -86,16 +87,14 @@ namespace Gek
 
                 dock = std::make_unique<UI::Dock::WorkSpace>();
                 gizmo = std::make_unique<UI::Gizmo::WorkSpace>();
-                renderer->onShowUserInterface.connect<Editor, &Editor::onShowUserInterface>(this);
+                renderer->onShowUserInterface.connect(this, &Editor::onShowUserInterface, this);
             }
 
             ~Editor(void)
             {
-                renderer->onShowUserInterface.disconnect<Editor, &Editor::onShowUserInterface>(this);
-
-                population->onUpdate[90].disconnect<Editor, &Editor::onUpdate>(this);
-                population->onAction.disconnect<Editor, &Editor::onAction>(this);
-
+                population->onAction.disconnect(this);
+                population->onUpdate[90].disconnect(this);
+                renderer->onShowUserInterface.disconnect(this);
                 gizmo = nullptr;
                 dock = nullptr;
             }
@@ -220,7 +219,7 @@ namespace Gek
                                         break;
                                     };
 
-                                    onModified.emit(selectedEntity, typeid(Components::Transform));
+                                    onModified(selectedEntity, typeid(Components::Transform));
                                 }
                             }
 
@@ -471,7 +470,7 @@ namespace Gek
                                                 {
                                                     if (component->onUserInterface(ImGui::GetCurrentContext(), entity, componentData))
                                                     {
-                                                        onModified.emit(entity, componentSearch.first);
+                                                        onModified(entity, componentSearch.first);
                                                     }
 
                                                     ImGui::TreePop();
