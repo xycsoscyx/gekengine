@@ -168,24 +168,18 @@ namespace Gek
                 //
                 int currentControl = Control::None;
 
-                float mX = 0.0f;
-                float mY = 0.0f;
-                float mWidth = 0.0f;
-                float mHeight = 0.0f;
+                Math::Float4 viewPort;
+                Math::Float4 viewBounds;
 
                 ImVec2 getPointFromPosition(Math::Float3 const &position, Math::Float4x4 const &matrix)
                 {
-                    ImGuiIO &imGuiIO = ImGui::GetIO();
-
-                    Math::Float4 trans = matrix.transform(Math::Float4(position, 1.0f));
-                    trans *= 0.5f / trans.w;
-                    trans.xy += Math::Float2(0.5f, 0.5f);
-                    trans.y = 1.0f - trans.y;
-                    trans.x *= mWidth;
-                    trans.y *= mHeight;
-                    trans.x += mX;
-                    trans.y += mY;
-                    return ImVec2(trans.x, trans.y);
+                    Math::Float4 clipPosition = matrix.transform(Math::Float4(position, 1.0f));
+                    Math::Float3 ndcPosition = clipPosition.xyz / clipPosition.w;
+                    Math::Float2 screenPosition = ((ndcPosition.xy + 1.0f) * 0.5f);
+                    screenPosition.getClamped(Math::Float2::Zero, Math::Float2::One);
+                    screenPosition.y = (1.0f - screenPosition.y);
+                    screenPosition = ((screenPosition * viewPort.size) + viewPort.position);
+                    return *(ImVec2 *)&screenPosition;
                 }
 
                 void ComputeCameraRay(Math::Float3 &rayOrigin, Math::Float3 &rayDir)
@@ -194,15 +188,14 @@ namespace Gek
 
                     Math::Float4x4 mViewProjInverse = (viewMatrix * projectionMatrix).getInverse();
 
-                    float mox = ((imGuiIO.MousePos.x - mX) / mWidth) * 2.0f - 1.0f;
-                    float moy = (1.0f - ((imGuiIO.MousePos.y - mY) / mHeight)) * 2.0f - 1.0f;
+                    auto mouse = (((*(Math::Float2 *)&imGuiIO.MousePos) - viewPort.position) / viewPort.size) * 2.0f - 1.0f;
 
                     Math::Float4 rayStart;
-                    rayStart = mViewProjInverse.transform(Math::Float4(mox, moy, 0.0f, 1.0f));
+                    rayStart = mViewProjInverse.transform(Math::Float4(mouse.x, mouse.y, 0.0f, 1.0f));
                     rayOrigin = rayStart.xyz;
                     rayOrigin *= 1.0f / rayStart.w;
                     Math::Float4 rayEnd;
-                    rayEnd = mViewProjInverse.transform(Math::Float4(mox, moy, 1.0f, 1.0f));
+                    rayEnd = mViewProjInverse.transform(Math::Float4(mouse.x, mouse.y, 1.0f, 1.0f));
                     rayEnd *= 1.0f / rayEnd.w;
                     rayDir = (rayEnd.xyz - rayOrigin).getNormal();
                 }
@@ -222,10 +215,10 @@ namespace Gek
 
                 void SetRect(float x, float y, float width, float height)
                 {
-                    mX = x;
-                    mY = y;
-                    mWidth = width;
-                    mHeight = height;
+                    viewPort = Math::Float4(x, y, width, height);
+                    viewBounds.minimum = viewPort.position;
+                    viewBounds.maximum = viewPort.position + viewPort.size;
+                    currentDrawList->PushClipRect(*(ImVec2 *)&viewBounds.minimum, *(ImVec2 *)&viewBounds.maximum, false);
                 }
 
                 void BeginFrame()
@@ -462,7 +455,7 @@ namespace Gek
                         drawList->AddPolyline(circlePos, halfCircleSegmentCount, colors[3 - axis], false, 5, true);
                     }
 
-                    drawList->AddCircle(getPointFromPosition(modelMatrix.rw.xyz, viewProjectionMatrix), screenRotateSize * mHeight, colors[0], 64, 5);
+                    drawList->AddCircle(getPointFromPosition(modelMatrix.rw.xyz, viewProjectionMatrix), screenRotateSize * viewPort.size.height, colors[0], 64, 5);
                     if (isUsing)
                     {
                         ImVec2 circlePos[halfCircleSegmentCount + 1];
@@ -628,63 +621,6 @@ namespace Gek
                     }
                 }
 
-                bool isZero(float v)
-                {
-                    return (v > -0.000001f && v < 0.000001f);
-                }
-
-                bool isPointInside(int x, int y)
-                {
-                    return (x >= mX && x <= (mX + mWidth) && y >= mY && y <= (mY + mHeight));
-                }
-
-                bool isClipped(float num, float denom)
-                {
-                    float t;
-                    if (isZero(denom))
-                    {
-                        return num < 0.0;
-                    }
-
-                    t = num / denom;
-                    if (denom > 0)
-                    {
-                        if (t > 1.0f)
-                        {
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        if (t < 0.0f)
-                        {
-                            return false;
-                        }
-                    }
-
-                    return true;
-                }
-
-                bool isInside(int x1, int y1, int x2, int y2)
-                {
-                    float dx = x2 - x1;
-                    float dy = y2 - y1;
-                    if (isZero(dx) && isZero(dy) && isPointInside(x1, y1))
-                    {
-                        return true;
-                    }
-
-                    if (isClipped(mX - x1, dx) &&
-                        isClipped(x1 - (mX + mWidth), -dx) &&
-                        isClipped(mY - y1, dy) &&
-                        isClipped(y1 - (mY + mHeight), -dy))
-                    {
-                        return true;
-                    }
-
-                    return false;
-                }
-
                 int GetScaleType()
                 {
                     ImGuiIO &imGuiIO = ImGui::GetIO();
@@ -735,7 +671,7 @@ namespace Gek
 
                     Math::Float3 deltaScreen(imGuiIO.MousePos.x - mScreenSquareCenter.x, imGuiIO.MousePos.y - mScreenSquareCenter.y, 0.0f);
                     float dist = deltaScreen.getLength();
-                    if (dist >= (screenRotateSize - 0.005f) * mHeight && dist < (screenRotateSize + 0.005f) * mHeight)
+                    if (dist >= (screenRotateSize - 0.005f) * viewPort.size.height && dist < (screenRotateSize + 0.005f) * viewPort.size.height)
                     {
                         control = Control::RotateScreen;
                     }
@@ -1169,8 +1105,9 @@ namespace Gek
 
                         ImVec2 worldBound1 = getPointFromPosition(aabb[index], boundsMVP);
                         ImVec2 worldBound2 = getPointFromPosition(aabb[(index + 1) % 4], boundsMVP);
-                        float boundDistance = std::sqrt(ImLengthSqr(worldBound1 - worldBound2));
-                        int stepCount = (int)(boundDistance / 10.0f);
+                        //float boundDistance = std::sqrt(ImLengthSqr(worldBound1 - worldBound2));
+                        float boundDistance = aabb[index].getDistance(aabb[(index + 1) % 4]);
+                        int stepCount = (int)(boundDistance * 3.0f) + 1;
                         float stepLength = 1.0f / (float)stepCount;
                         for (int step = 0; step < stepCount; step++)
                         {
@@ -1178,10 +1115,7 @@ namespace Gek
                             float t2 = (float)step * stepLength + stepLength * 0.5f;
                             ImVec2 worldBoundSS1 = Math::Interpolate(worldBound1, worldBound2, t1);
                             ImVec2 worldBoundSS2 = Math::Interpolate(worldBound1, worldBound2, t2);
-                            if (isInside(worldBoundSS1.x, worldBoundSS1.y, worldBoundSS2.x, worldBoundSS2.y))
-                            {
-                                drawList->AddLine(worldBoundSS1, worldBoundSS2, axisColor, 3.0f);
-                            }
+                            drawList->AddLine(worldBoundSS1, worldBoundSS2, axisColor, 3.0f);
                         }
                     }
 

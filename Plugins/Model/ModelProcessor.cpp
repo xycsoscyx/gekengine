@@ -1,7 +1,6 @@
 ﻿#include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Math/SIMD.hpp"
 #include "GEK/Shapes/AlignedBox.hpp"
-#include "GEK/Shapes/OrientedBox.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/ThreadPool.hpp"
 #include "GEK/Utility/FileSystem.hpp"

@@ -1,6 +1,5 @@
 ﻿#include "GEK/Math/Float4x4.hpp"
 #include "GEK/Shapes/AlignedBox.hpp"
-#include "GEK/Shapes/OrientedBox.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/XML.hpp"

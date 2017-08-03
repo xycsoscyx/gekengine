@@ -162,7 +162,6 @@ namespace Gek
                             auto size = ImGui::GetItemRectSize();
                             auto origin = ImGui::GetItemRectMin();
                             gizmo->beginFrame(origin.x, origin.y, size.x, size.y);
-                            ImGui::PushClipRect(ImVec2(origin.x, origin.y), ImVec2(origin.x + size.x, origin.y + size.y), false);
                             if (selectedEntity->hasComponent<Components::Transform>())
                             {
                                 auto &transformComponent = selectedEntity->getComponent<Components::Transform>();
@@ -197,7 +196,7 @@ namespace Gek
                                     boundingBox = modelProcessor->getBoundingBox(modelComponent.name);
                                 }
 
-                                if (isObjectInFrustum(Shapes::Frustum(viewMatrix * projectionMatrix), Shapes::OrientedBox(boundingBox, matrix)))
+                                if (isObjectInFrustum(Shapes::Frustum(viewMatrix * projectionMatrix), Shapes::OrientedBox(matrix, boundingBox)))
                                 {
                                     Math::Float4x4 deltaMatrix;
                                     gizmo->manipulate(viewMatrix, projectionMatrix, currentGizmoOperation, currentGizmoAlignment, matrix, snapData, &boundingBox, currentGizmoAxis);
@@ -224,8 +223,6 @@ namespace Gek
                                     onModified(selectedEntity, typeid(Components::Transform));
                                 }
                             }
-
-                            ImGui::PopClipRect();
                         }
                     }
                 }
