@@ -33,8 +33,6 @@ if(WIN32)
     #add_custom_command(TARGET DirectXTex PRE_BUILD WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/DirectXTex/DirectXTex/Shaders" COMMAND "CompileShaders.cmd" )
 endif()
 
-set(NEWTON_3_14 True)
-
 add_definitions(-D_NEWTON_STATIC_LIB -D_CUSTOM_JOINTS_STATIC_LIB -DPTW32_STATIC_LIB)
 
 project(tinyxml)
@@ -53,6 +51,8 @@ add_definitions(-DNO_IMGUISTRING)
 add_definitions(-DNO_IMGUIHELPER)
 add_definitions(-DNO_IMGUIFILESYSTEM)
 add_definitions(-DNO_IMGUICODEEDITOR)
+add_definitions(-DNO_IMGUILISTVIEW)
+add_definitions(-DNO_IMGUINODEGRAPHEDITOR)
 add_definitions(-DIMGUI_INCLUDE_IMGUI_USER_H -DIMGUI_INCLUDE_IMGUI_USER_INL)
 add_definitions(-DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_DEFINE_PLACEMENT_NEW)
 file(GLOB SOURCES "imgui-addons/*.cpp" "imgui-addons/*.h")

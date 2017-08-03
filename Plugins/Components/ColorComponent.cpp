@@ -1,14 +1,20 @@
 #include "GEK/Components/Color.hpp"
 #include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/String.hpp"
+#include "GEK/GUI/Utilities.hpp"
 #include "GEK/Engine/ComponentMixin.hpp"
 #include "GEK/Engine/Population.hpp"
-#include "GEK/Utility/String.hpp"
+#include <imgui_internal.h> // ImSaturate
 
 namespace Gek
 {
     GEK_CONTEXT_USER(Color, Plugin::Population *)
         , public Plugin::ComponentMixin<Components::Color, Edit::Component>
     {
+    private:
+        int currentMode = ImGuiColorEditFlags_RGB;
+        bool useHDR = false;
+
     public:
         Color(Context *context, Plugin::Population *population)
             : ContextRegistration(context)
@@ -35,7 +41,17 @@ namespace Gek
 
             auto &colorComponent = *dynamic_cast<Components::Color *>(data);
 
-            changed |= ImGui::ColorCombo("##color", (ImVec4 *)&colorComponent.value, true, ImGui::GetWindowContentRegionWidth() - ImGui::GetStyle().IndentSpacing * 2.0f);
+            UI::CheckButton("  Allow HDR  ", &useHDR);
+            ImGui::SameLine();
+            auto &style = ImGui::GetStyle();
+            float width = (ImGui::GetContentRegionAvailWidth() - style.ItemSpacing.x * 1.0f) / 2.0f;
+            UI::RadioButton("RGB", &currentMode, (int)ImGuiColorEditFlags_RGB, ImVec2(width, 0.0f));
+            ImGui::SameLine();
+            UI::RadioButton("HSV", &currentMode, (int)ImGuiColorEditFlags_HSV, ImVec2(width, 0.0f));
+
+            ImGui::PushItemWidth(-1.0f);
+            changed |= ImGui::ColorPicker4("##color", colorComponent.value.data, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_Float | currentMode | (useHDR ? ImGuiColorEditFlags_HDR : 0));
+            ImGui::PopItemWidth();
 
             ImGui::SetCurrentContext(nullptr);
             return changed;

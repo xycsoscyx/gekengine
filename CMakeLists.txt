@@ -16,6 +16,14 @@ add_definitions(/wd4305 /wd4800 /wd4244 /wd4099 -DNOMINMAX)
 
 add_subdirectory("External")
 
+add_definitions(-DNO_IMGUITOOLBAR)
+add_definitions(-DNO_IMGUIPANELMANAGER)
+add_definitions(-DNO_IMGUISTRING)
+add_definitions(-DNO_IMGUIHELPER)
+add_definitions(-DNO_IMGUIFILESYSTEM)
+add_definitions(-DNO_IMGUICODEEDITOR)
+add_definitions(-DNO_IMGUILISTVIEW)
+add_definitions(-DNO_IMGUINODEGRAPHEDITOR)
 add_definitions(-DIMGUI_INCLUDE_IMGUI_USER_H -DIMGUI_INCLUDE_IMGUI_USER_INL)
 add_definitions(-DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_DEFINE_PLACEMENT_NEW)
 

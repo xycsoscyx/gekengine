@@ -18,8 +18,8 @@ namespace Gek
         GEK_COMPONENT(FirstPersonCamera)
         {
             float fieldOfView = Math::DegreesToRadians(90.0f);
-            float nearClip = 1.0f;
-            float farClip = 100.0f;
+            float nearClip = 0.1f;
+            float farClip = 200.0f;
             std::string target;
         };
     };
@@ -64,14 +64,9 @@ namespace Gek
                 return ImGui::SliderAngle("##fieldOfView", &firstPersonCameraComponent.fieldOfView, 0.0f, 180.0f);
             });
 
-            changed |= editorElement("Near Clip", [&](void) -> bool
+            changed |= editorElement("Clip Range", [&](void) -> bool
             {
-                return ImGui::InputFloat("##nearClip", &firstPersonCameraComponent.nearClip, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-            });
-
-            changed |= editorElement("Far Clip", [&](void) -> bool
-            {
-                return ImGui::InputFloat("##farClip", &firstPersonCameraComponent.farClip, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                return ImGui::DragFloatRange2("##clipRange", &firstPersonCameraComponent.nearClip, &firstPersonCameraComponent.farClip);
             });
 
             changed |= editorElement("Target", [&](void) -> bool

@@ -399,6 +399,9 @@ namespace Gek
                         NewtonBodySetMatrix(entitySearch->second->getNewtonBody(), transformComponent.getMatrix().data);
                     }
                 }
+                else if (type == typeid(Components::Model))
+                {
+                }
             }
 
             // Plugin::Core Slots

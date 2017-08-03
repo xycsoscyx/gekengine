@@ -506,48 +506,6 @@ namespace Gek
             renderDevice->runQueue(gui->renderQueue.get());
         }
 
-        void drawSettings(ImGui::PanelManagerWindowData &windowData)
-        {
-            if (ImGui::Checkbox("FullScreen", &fullScreen))
-            {
-                if (fullScreen)
-                {
-                    window->move(Math::Int2::Zero);
-                }
-
-                renderDevice->setFullScreenState(fullScreen);
-                if (!fullScreen)
-                {
-                    window->move();
-                }
-            }
-
-            ImGui::PushItemWidth(350.0f);
-            auto listBoxSize = (windowData.size - (ImGui::GetStyle().WindowPadding * 2.0f));
-            listBoxSize.y -= ImGui::GetTextLineHeightWithSpacing();
-            listBoxSize.y -= ImGui::GetTextLineHeightWithSpacing();
-            if (ImGui::ListBoxHeader("##Display Mode", listBoxSize))
-            {
-                ImGuiListClipper clipper(displayModeStringList.size(), ImGui::GetTextLineHeightWithSpacing());
-                while (clipper.Step())
-                {
-                    for (auto mode = clipper.DisplayStart; mode < clipper.DisplayEnd; ++mode)
-                    {
-                        bool isSelected = (mode == currentDisplayMode);
-                        auto data = std::next(std::begin(displayModeStringList), mode);
-                        if (ImGui::Selectable(data->c_str(), &isSelected))
-                        {
-                            setDisplayMode(mode);
-                        }
-                    }
-                };
-
-                ImGui::ListBoxFooter();
-            }
-
-            ImGui::PopItemWidth();
-        }
-
         // Window slots
         void onClose(void)
         {

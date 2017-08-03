@@ -35,10 +35,16 @@ namespace Gek
     GEK_CONTEXT_USER(Model, Plugin::Population *)
         , public Plugin::ComponentMixin<Components::Model, Edit::Component>
     {
+    private:
+        int selectedModel = 0;
+        std::vector<std::string> modelList;
+        std::string const modelsPath;
+
     public:
         Model(Context *context, Plugin::Population *population)
             : ContextRegistration(context)
             , ComponentMixin(population)
+            , modelsPath(context->getRootFileName("data", "models").string())
         {
         }
 
@@ -63,8 +69,36 @@ namespace Gek
 
             changed |= editorElement("Model", [&](void) -> bool
             {
-                return UI::InputString("##model", modelComponent.name, 0);
+                if (modelList.empty())
+                {
+                    FileSystem::Find(modelsPath, [&](FileSystem::Path const &filePath) -> bool
+                    {
+                        if (String::GetLower(filePath.getExtension()) == ".gek")
+                        {
+                            modelList.push_back(filePath.withoutExtension().string().substr(modelsPath.size() + 1));
+                        }
+
+                        return true;
+                    });
+                }
+
+                return ImGui::Combo("##model", &selectedModel, [](void *userData, int index, char const **outputText) -> bool
+                {
+                    auto &modelList = *(std::vector<std::string> *)userData;
+                    if (index >= 0 && index < modelList.size())
+                    {
+                        *outputText = modelList[index].c_str();
+                        return true;
+                    }
+
+                    return false;
+                }, &modelList, modelList.size(), 10);
             });
+
+            if (changed)
+            {
+                modelComponent.name = modelList[selectedModel];
+            }
 
             ImGui::SetCurrentContext(nullptr);
             return changed;
@@ -361,7 +395,10 @@ namespace Gek
         // Plugin::Editor Slots
         void onModified(Plugin::Entity * const entity, const std::type_index &type)
         {
-            addEntity(entity);
+            if (type == typeid(Components::Model))
+            {
+                addEntity(entity);
+            }
         }
 
         // Plugin::Population Slots

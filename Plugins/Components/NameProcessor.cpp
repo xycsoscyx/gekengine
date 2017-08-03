@@ -91,7 +91,7 @@ namespace Gek
             ProcessorMixin::addEntity(entity, [&](bool isNewInsert, auto &data, auto &nameComponent) -> void
             {
                 auto nameSearch = nameMap.find(nameComponent.name);
-                if (nameSearch != std::end(nameMap))
+                if (nameSearch != std::end(nameMap) && nameSearch->second != entity)
                 {
                     nameComponent.name += String::Format("%v", ++uniqueIdentifier);
                 }
@@ -166,7 +166,10 @@ namespace Gek
         // Plugin::Editor Slots
         void onModified(Plugin::Entity * const entity, const std::type_index &type)
         {
-            addEntity(entity);
+            if (type == typeid(Components::Name))
+            {
+                addEntity(entity);
+            }
         }
 
         // Plugin::Population Slots
