@@ -698,7 +698,7 @@ namespace Gek
 
             void addEntity(Plugin::Entity * const entity)
             {
-                if (entity->hasComponent<Components::Transform>())
+                if (entity->hasComponents<Components::Transform, Components::Color>())
                 {
                     directionalLightData.addEntity(entity);
                     pointLightData.addEntity(entity);

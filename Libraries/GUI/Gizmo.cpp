@@ -174,10 +174,8 @@ namespace Gek
                 ImVec2 getPointFromPosition(Math::Float3 const &position, Math::Float4x4 const &matrix)
                 {
                     Math::Float4 clipPosition = matrix.transform(Math::Float4(position, 1.0f));
-                    Math::Float3 ndcPosition = clipPosition.xyz / clipPosition.w;
-                    Math::Float2 screenPosition = ((ndcPosition.xy + 1.0f) * 0.5f);
-                    screenPosition.getClamped(Math::Float2::Zero, Math::Float2::One);
-                    screenPosition.y = (1.0f - screenPosition.y);
+                    Math::Float2 ndcPosition = ((clipPosition.xy / clipPosition.w) * Math::Float2(1.0f, -1.0f));
+                    Math::Float2 screenPosition = ((ndcPosition + 1.0f) * 0.5f);
                     screenPosition = ((screenPosition * viewPort.size) + viewPort.position);
                     return *(ImVec2 *)&screenPosition;
                 }
@@ -185,15 +183,15 @@ namespace Gek
                 void ComputeCameraRay(Math::Float3 &rayOrigin, Math::Float3 &rayDir)
                 {
                     ImGuiIO &imGuiIO = ImGui::GetIO();
-
                     Math::Float4x4 mViewProjInverse = (viewMatrix * projectionMatrix).getInverse();
-
-                    auto mouse = (((*(Math::Float2 *)&imGuiIO.MousePos) - viewPort.position) / viewPort.size) * 2.0f - 1.0f;
+                    auto mouse = (((*(Math::Float2 *)&imGuiIO.MousePos) - viewPort.position) / viewPort.size);
+                    mouse = ((mouse * 2.0f) - 1.0f) * Math::Float2(1.0f, -1.0f);
 
                     Math::Float4 rayStart;
                     rayStart = mViewProjInverse.transform(Math::Float4(mouse.x, mouse.y, 0.0f, 1.0f));
                     rayOrigin = rayStart.xyz;
                     rayOrigin *= 1.0f / rayStart.w;
+
                     Math::Float4 rayEnd;
                     rayEnd = mViewProjInverse.transform(Math::Float4(mouse.x, mouse.y, 1.0f, 1.0f));
                     rayEnd *= 1.0f / rayEnd.w;
@@ -204,7 +202,6 @@ namespace Gek
                 {
                     float numer = plane.getDistance(rOrigin);
                     float denom = plane.normal.dot(rVector);
-
                     if (std::abs(denom) < FLT_EPSILON)  // normal is orthogonal to vector, cant intersect
                     {
                         return -1.0f;
