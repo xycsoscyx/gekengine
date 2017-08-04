@@ -171,6 +171,14 @@ namespace Gek
                 Math::Float4 viewPort;
                 Math::Float4 viewBounds;
 
+                ImVec2 getPointFromClipPosition(Math::Float4 const &clipPosition)
+                {
+                    Math::Float2 ndcPosition = ((clipPosition.xy / clipPosition.w) * Math::Float2(1.0f, -1.0f));
+                    Math::Float2 screenPosition = ((ndcPosition + 1.0f) * 0.5f);
+                    screenPosition = ((screenPosition * viewPort.size) + viewPort.position);
+                    return *(ImVec2 *)&screenPosition;
+                }
+
                 ImVec2 getPointFromPosition(Math::Float3 const &position, Math::Float4x4 const &matrix)
                 {
                     Math::Float4 clipPosition = matrix.transform(Math::Float4(position, 1.0f));
@@ -180,10 +188,10 @@ namespace Gek
                     return *(ImVec2 *)&screenPosition;
                 }
 
-                void ComputeCameraRay(Math::Float3 &rayOrigin, Math::Float3 &rayDir)
+                void getMouseRay(Math::Float3 &rayOrigin, Math::Float3 &rayDir)
                 {
                     ImGuiIO &imGuiIO = ImGui::GetIO();
-                    Math::Float4x4 mViewProjInverse = (viewMatrix * projectionMatrix).getInverse();
+                    Math::Float4x4 mViewProjInverse = viewProjectionMatrix.getInverse();
                     auto mouse = (((*(Math::Float2 *)&imGuiIO.MousePos) - viewPort.position) / viewPort.size);
                     mouse = ((mouse * 2.0f) - 1.0f) * Math::Float2(1.0f, -1.0f);
 
@@ -210,15 +218,7 @@ namespace Gek
                     return -(numer / denom);
                 }
 
-                void SetRect(float x, float y, float width, float height)
-                {
-                    viewPort = Math::Float4(x, y, width, height);
-                    viewBounds.minimum = viewPort.position;
-                    viewBounds.maximum = viewPort.position + viewPort.size;
-                    currentDrawList->PushClipRect(*(ImVec2 *)&viewBounds.minimum, *(ImVec2 *)&viewBounds.maximum, false);
-                }
-
-                void BeginFrame()
+                void beginFrame(Math::Float4x4 const &view, Math::Float4x4 const &projection, float x, float y, float width, float height)
                 {
                     currentDrawList = ImGui::GetWindowDrawList();
                     if (!currentDrawList)
@@ -228,16 +228,28 @@ namespace Gek
                         currentDrawList = ImGui::GetWindowDrawList();
                         ImGui::End();
                     }
-                }
 
-                bool IsUsing()
-                {
-                    return isUsing;
+                    viewPort = Math::Float4(x, y, width, height);
+                    viewBounds.minimum = viewPort.position;
+                    viewBounds.maximum = viewPort.position + viewPort.size;
+                    currentDrawList->PushClipRect(*(ImVec2 *)&viewBounds.minimum, *(ImVec2 *)&viewBounds.maximum, false);
+
+                    viewMatrix = view;
+                    projectionMatrix = projection;
+                    viewProjectionMatrix = viewMatrix * projectionMatrix;
+
+                    Math::Float4x4 viewInverse = viewMatrix.getInverse();
+                    mCameraDir = viewInverse.rz.xyz;
+                    mCameraEye = viewInverse.rw.xyz;
+                    mCameraRight = viewInverse.rx.xyz;
+                    mCameraUp = viewInverse.ry.xyz;
+
+                    getMouseRay(mRayOrigin, mRayVector);
                 }
 
                 bool IsOver()
                 {
-                    return (GetMoveType(NULL) != Control::None) || GetRotateType() != Control::None || GetScaleType() != Control::None || IsUsing();
+                    return (GetMoveType(NULL) != Control::None) || GetRotateType() != Control::None || GetScaleType() != Control::None || isUsing;
                 }
 
                 void Enable(bool enable)
@@ -254,11 +266,9 @@ namespace Gek
                     return matrix.transform(Math::Float4(position, 1.0f)).w;
                 }
 
-                void ComputeContext(Math::Float4x4 const &view, Math::Float4x4 const &projection, Math::Float4x4 &matrix, Alignment alignment)
+                void computeContext(Math::Float4x4 const &matrix, Alignment alignment)
                 {
                     currentAlignment = alignment;
-                    viewMatrix = view;
-                    projectionMatrix = projection;
                     if (currentAlignment == Alignment::Local)
                     {
                         modelMatrix = matrix;
@@ -274,22 +284,14 @@ namespace Gek
 
                     inverseModelMatrix = modelMatrix.getInverse();
                     inverseSourceModelMatrix = sourceModelMatrix.getInverse();
-                    viewProjectionMatrix = viewMatrix * projectionMatrix;
                     modelViewProjectionMatrix = modelMatrix * viewProjectionMatrix;
 
-                    Math::Float4x4 viewInverse = viewMatrix.getInverse();
-                    mCameraDir = viewInverse.rz.xyz;
-                    mCameraEye = viewInverse.rw.xyz;
-                    mCameraRight = viewInverse.rx.xyz;
-                    mCameraUp = viewInverse.ry.xyz;
                     mScreenFactor = 0.15f * GetUniform(modelMatrix.rw.xyz, viewProjectionMatrix);
 
                     ImVec2 centerSSpace = getPointFromPosition(Math::Float3(0.0f, 0.0f, 0.0f), modelViewProjectionMatrix);
                     mScreenSquareCenter = centerSSpace;
                     mScreenSquareMin = ImVec2(centerSSpace.x - 10.0f, centerSSpace.y - 10.0f);
                     mScreenSquareMax = ImVec2(centerSSpace.x + 10.0f, centerSSpace.y + 10.0f);
-
-                    ComputeCameraRay(mRayOrigin, mRayVector);
                 }
 
                 void ComputeColors(ImU32 *colors, int control, Operation operation)
@@ -1094,14 +1096,17 @@ namespace Gek
                         aabb[index][thirdAxis] = boundsData[thirdAxis + 3 * ((index >> 1) ^ (index & 1))];
                     }
 
+                    static const Shapes::Plane cameraPlane(Math::Float3(0.0f, 0.0f, 1.0f), 0.0f);
+
                     // draw bounds
                     const Math::Float4x4 boundsMVP = sourceModelMatrix * viewProjectionMatrix;
                     for (int index = 0; index < 4; index++)
                     {
-                        uint32_t axisColor = axisColors[index];
+                        auto clipBound1 = boundsMVP.transform(Math::Float4(aabb[index], 1.0f));
+                        auto clipBound2 = boundsMVP.transform(Math::Float4(aabb[(index + 1) % 4], 1.0f));
 
-                        ImVec2 worldBound1 = getPointFromPosition(aabb[index], boundsMVP);
-                        ImVec2 worldBound2 = getPointFromPosition(aabb[(index + 1) % 4], boundsMVP);
+                        auto worldBound1 = getPointFromClipPosition(clipBound1);
+                        auto worldBound2 = getPointFromClipPosition(clipBound2);
                         //float boundDistance = std::sqrt(ImLengthSqr(worldBound1 - worldBound2));
                         float boundDistance = aabb[index].getDistance(aabb[(index + 1) % 4]);
                         int stepCount = (int)(boundDistance * 3.0f) + 1;
@@ -1112,6 +1117,8 @@ namespace Gek
                             float t2 = (float)step * stepLength + stepLength * 0.5f;
                             ImVec2 worldBoundSS1 = Math::Interpolate(worldBound1, worldBound2, t1);
                             ImVec2 worldBoundSS2 = Math::Interpolate(worldBound1, worldBound2, t2);
+
+                            uint32_t axisColor = axisColors[index];
                             drawList->AddLine(worldBoundSS1, worldBoundSS2, axisColor, 3.0f);
                         }
                     }
@@ -1260,9 +1267,9 @@ namespace Gek
                     }
                 }
 
-                void Manipulate(Math::Float4x4 const &view, Math::Float4x4 const &projection, Operation operation, Alignment alignment, Math::Float4x4 &matrix, float *snap, Shapes::AlignedBox *localBounds, LockAxis lockAxis)
+                void manipulate(Operation operation, Alignment alignment, Math::Float4x4 &matrix, float *snap, Shapes::AlignedBox *localBounds, LockAxis lockAxis)
                 {
-                    ComputeContext(view, projection, matrix, alignment);
+                    computeContext(matrix, alignment);
 
                     // behind camera
                     Math::Float3 camSpacePosition = modelViewProjectionMatrix.transform(Math::Float3(0.0f, 0.0f, 0.0f));
@@ -1299,11 +1306,10 @@ namespace Gek
                     }
                 }
 
-                void DrawCube(const float *view, const float *projection, float *matrix)
+                void drawCube(Math::Float4x4 const &matrix)
                 {
-                    Math::Float4x4 viewInverse = (*(Math::Float4x4 *)view).getInverse();
-                    Math::Float4x4 const &model = *(Math::Float4x4 *)matrix;
-                    Math::Float4x4 res = *(Math::Float4x4 *)matrix * *(Math::Float4x4 *)view * *(Math::Float4x4 *)projection;
+                    computeContext(matrix, Alignment::Local);
+                    Math::Float4x4 viewInverse = viewMatrix.getInverse();
                     for (int iFace = 0; iFace < 6; iFace++)
                     {
                         const int normalIndex = (iFace % 3);
@@ -1323,7 +1329,7 @@ namespace Gek
                         bool skipFace = false;
                         for (uint32_t iCoord = 0; iCoord < 4; iCoord++)
                         {
-                            Math::Float3 camSpacePosition = res.transform(faceCoords[iCoord] * 0.5f * invert);
+                            Math::Float3 camSpacePosition = modelViewProjectionMatrix.transform(faceCoords[iCoord] * 0.5f * invert);
                             if (camSpacePosition.z < 0.001f)
                             {
                                 skipFace = true;
@@ -1340,13 +1346,13 @@ namespace Gek
                         ImVec2 faceCoordsScreen[4];
                         for (uint32_t iCoord = 0; iCoord < 4; iCoord++)
                         {
-                            faceCoordsScreen[iCoord] = getPointFromPosition(faceCoords[iCoord] * 0.5f * invert, res);
+                            faceCoordsScreen[iCoord] = getPointFromPosition(faceCoords[iCoord] * 0.5f * invert, modelViewProjectionMatrix);
                         }
 
                         // back face culling 
                         Math::Float3 cullPos, cullNormal;
-                        cullPos = model.transform(faceCoords[0] * 0.5f * invert);
-                        cullNormal = model.rotate(directionUnary[normalIndex] * invert);
+                        cullPos = matrix.transform(faceCoords[0] * 0.5f * invert);
+                        cullNormal = matrix.rotate(directionUnary[normalIndex] * invert);
                         float dt = (cullPos - viewInverse.rw.xyz).getNormal().dot(cullNormal.getNormal());
                         if (dt > 0.0f)
                         {
@@ -1370,15 +1376,19 @@ namespace Gek
                 ImGui::MemFree(context);
             }
 
-            void WorkSpace::beginFrame(float x, float y, float width, float height)
+            bool WorkSpace::isUsing(void)
             {
-                context->BeginFrame();
-                context->SetRect(x, y, width, height);
+                return context->isUsing;
             }
 
-            void WorkSpace::manipulate(Math::Float4x4 const &view, Math::Float4x4 const &projection, Operation operation, Alignment alignment, Math::Float4x4 &matrix, float *snap, Shapes::AlignedBox *localBounds, LockAxis lockAxis)
+            void WorkSpace::beginFrame(Math::Float4x4 const &view, Math::Float4x4 const &projection, float x, float y, float width, float height)
             {
-                context->Manipulate(view, projection, operation, alignment, matrix, snap, localBounds, lockAxis);
+                context->beginFrame(view, projection, x, y, width, height);
+            }
+
+            void WorkSpace::manipulate(Operation operation, Alignment alignment, Math::Float4x4 &matrix, float *snap, Shapes::AlignedBox *localBounds, LockAxis lockAxis)
+            {
+                context->manipulate(operation, alignment, matrix, snap, localBounds, lockAxis);
             }
         }; // Gizmo
     }; // namespace UI

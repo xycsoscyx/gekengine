@@ -94,7 +94,7 @@ namespace Gek
             HRESULT resultValue = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
             if (FAILED(resultValue))
             {
-                throw std::exception("Call to CoInitialize failed");
+                return;
             }
 
             Render::Device::Description deviceDescription;

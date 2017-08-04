@@ -88,7 +88,8 @@ namespace Gek
                 HRESULT resultValue = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
                 if (FAILED(resultValue))
                 {
-                    throw std::exception("Failed call to CoInitialize");
+                    LockedWrite{ std::cerr } << String::Format("Call to CoInitialize failed: %v", resultValue);
+                    return;
                 }
 
                 Video::Device::Description deviceDescription;

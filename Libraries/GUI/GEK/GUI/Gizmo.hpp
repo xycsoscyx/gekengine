@@ -48,8 +48,9 @@ namespace Gek
                 WorkSpace(void);
                 ~WorkSpace(void);
 
-                void beginFrame(float x, float y, float width, float height);
-                void manipulate(Math::Float4x4 const &view, Math::Float4x4 const &projection, Operation operation, Alignment alignment, Math::Float4x4 &matrix, float *snap = nullptr, Shapes::AlignedBox *localBounds = nullptr, LockAxis lockAxis = LockAxis::Automatic);
+                bool isUsing(void);
+                void beginFrame(Math::Float4x4 const &view, Math::Float4x4 const &projection, float x, float y, float width, float height);
+                void manipulate(Operation operation, Alignment alignment, Math::Float4x4 &matrix, float *snap = nullptr, Shapes::AlignedBox *localBounds = nullptr, LockAxis lockAxis = LockAxis::Automatic);
 
             private:
                 Context *context = nullptr;

@@ -37,6 +37,7 @@ namespace Gek
             void normalize(void);
 
             float getDistance(Math::Float3 const &point) const;
+            Math::Float3 getIntersection(Math::Float3 const &a, Math::Float3 const &b) const;
         };
     }; // namespace Shapes
 }; // namespace Gek

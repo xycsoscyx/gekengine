@@ -54,5 +54,13 @@ namespace Gek
             // +distance because we negated it when creating
             return (normal.dot(point) + distance);
         }
+
+        Math::Float3 Plane::getIntersection(Math::Float3 const &a, Math::Float3 const &b) const
+        {
+            Math::Float3 ba = b - a;
+            float nDotA = normal.dot(a);
+            float nDotBA = normal.dot(ba);
+            return a + (((distance - nDotA) / nDotBA) * ba);
+        }
     }; // namespace Shapes
 }; // namespace Gek
