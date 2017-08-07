@@ -29,6 +29,7 @@ namespace Gek
             JSON::Object configuration;
             JSON::Object shadersSettings;
             JSON::Object filtersSettings;
+            bool changedVisualOptions = false;
 
             Video::DisplayModeList displayModeList;
             std::vector<std::string> displayModeStringList;
@@ -451,6 +452,7 @@ namespace Gek
                             next = previous = current;
                             shadersSettings = configuration.get("shaders");
                             filtersSettings = configuration.get("filters");
+                            changedVisualOptions = false;
                         }
 
                         ImGui::Separator();
@@ -528,7 +530,55 @@ namespace Gek
                                         ImGui::Text(optionName.c_str());
                                         ImGui::SameLine();
                                         ImGui::PushItemWidth(-1.0f);
-                                        if (optionValue.is_array())
+                                        if (optionValue.is_object())
+                                        {
+                                            if (option.has("options"))
+                                            {
+                                                std::vector<std::string> optionList;
+                                                for (JSON::Reference choice : option.get("options").getArray())
+                                                {
+                                                    optionList.push_back(choice.convert(String::Empty));
+                                                }
+
+                                                int selection = 0;
+                                                auto &selectionNode = option.get("selection");
+                                                if (selectionNode.isString())
+                                                {
+                                                    auto selectedName = selectionNode.convert(String::Empty);
+                                                    auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string const &choice) -> bool
+                                                    {
+                                                        return (selectedName == choice);
+                                                    });
+
+                                                    if (optionsSearch != std::end(optionList))
+                                                    {
+                                                        selection = std::distance(std::begin(optionList), optionsSearch);
+                                                        optionValue.set("selection", selection);
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    selection = selectionNode.convert(0);
+                                                }
+
+                                                if (ImGui::Combo(label.c_str(), &selection, [](void *userData, int index, char const **outputText) -> bool
+                                                {
+                                                    auto &optionList = *(std::vector<std::string> *)userData;
+                                                    if (index >= 0 && index < optionList.size())
+                                                    {
+                                                        *outputText = optionList[index].c_str();
+                                                        return true;
+                                                    }
+
+                                                    return false;
+                                                }, &optionList, optionList.size(), 10))
+                                                {
+                                                    optionValue.set("selection", selection);
+                                                    changedVisualOptions = true;
+                                                }
+                                            }
+                                        }
+                                        else if (optionValue.is_array())
                                         {
                                             switch (optionValue.size())
                                             {
@@ -539,6 +589,7 @@ namespace Gek
                                                     if (ImGui::InputFloat(label.c_str(), &data))
                                                     {
                                                         optionValue = data;
+                                                        changedVisualOptions = true;
                                                     }
 
                                                     break;
@@ -553,6 +604,7 @@ namespace Gek
                                                     if (ImGui::InputFloat2(label.c_str(), data.data))
                                                     {
                                                         optionValue = JSON::Array({ data.x, data.y });
+                                                        changedVisualOptions = true;
                                                     }
 
                                                     break;
@@ -568,6 +620,7 @@ namespace Gek
                                                     if (ImGui::InputFloat3(label.c_str(), data.data))
                                                     {
                                                         optionValue = JSON::Array({ data.x, data.y, data.z });
+                                                        changedVisualOptions = true;
                                                     }
 
                                                     break;
@@ -584,6 +637,7 @@ namespace Gek
                                                     if (ImGui::InputFloat4(label.c_str(), data.data))
                                                     {
                                                         optionValue = JSON::Array({ data.x, data.y, data.z, data.w });
+                                                        changedVisualOptions = true;
                                                     }
 
                                                     break;
@@ -598,6 +652,7 @@ namespace Gek
                                                 if (ImGui::Checkbox(label.c_str(), &data))
                                                 {
                                                     optionValue = data;
+                                                    changedVisualOptions = true;
                                                 }
                                             }
                                             else if (optionValue.is_integer())
@@ -606,6 +661,7 @@ namespace Gek
                                                 if (ImGui::InputInt(label.c_str(), &data))
                                                 {
                                                     optionValue = data;
+                                                    changedVisualOptions = true;
                                                 }
                                             }
                                             else
@@ -614,6 +670,7 @@ namespace Gek
                                                 if (ImGui::InputFloat(label.c_str(), &data))
                                                 {
                                                     optionValue = data;
+                                                    changedVisualOptions = true;
                                                 }
                                             }
                                         }
@@ -667,8 +724,7 @@ namespace Gek
                                 modeChangeTimer = 10.0f;
                             }
 
-                            if (shadersSettings != configuration.get("shaders") ||
-                                filtersSettings != configuration.get("filters"))
+                            if (changedVisualOptions)
                             {
                                 configuration["shaders"] = shadersSettings;
                                 configuration["filters"] = filtersSettings;

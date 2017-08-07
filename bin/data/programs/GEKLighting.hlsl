@@ -1,7 +1,3 @@
-namespace Defines
-{
-    static const bool UseHalfLambert = true;
-}; // namespace Defines
 
 float getFalloff(float distance, float range)
 {
@@ -69,14 +65,13 @@ float3 getFresnelSchlick(float VdotH, float3 color)
 
 float3 getSurfaceIrradiance(
     float3 surfaceNormal, float3 viewDirection, float VdotN,
-    float3 materialAlbedo, float materialRoughness, float materialMetallic,
-    float materialAlpha, float materialDisneyAlpha,
+    float3 materialAlbedo, float materialRoughness, float materialMetallic, float materialAlpha,
     float3 lightDirection, float3 lightRadiance)
 {
     float LdotN = saturate(dot(surfaceNormal, lightDirection));
 
     float lambert;
-    if (Defines::UseHalfLambert)
+    if (Options::UseHalfLambert)
     {
         // http://developer.valvesoftware.com/wiki/Half_Lambert
         float halfLdotN = ((dot(surfaceNormal, lightDirection) * 0.5) + 0.5);
@@ -94,16 +89,45 @@ float3 getSurfaceIrradiance(
 
     float3 reflectedRadiance = lerp(materialAlbedo, lightRadiance, materialMetallic);
 
+    float D = 0.0f;
+    switch (Options::DistributionFactor::Selection)
+    {
+    case Options::DistributionFactor::Basic:
+        D = pow(abs(HdotN), 10.0f);
+        break;
 
-    //float D = pow(abs(HdotN), 10.0f);
-    float D = getDistributionGGX(materialAlpha, HdotN);
-    //float D = getDistribution1886GGX(materialAlpha, HdotN);
-    //float D = getDistributionDisneyGGX(materialDisneyAlpha, HdotN);
+    case Options::DistributionFactor::TrowbridgeReitzGGX:
+        D = getDistributionGGX(materialAlpha, HdotN);
+        break;
 
-    float G = getVisibilitySchlick(VdotN, materialAlpha, LdotN);
-    //float G = getVisibilitySmithGGX(VdotN, alpham LdotN);
+    case Options::DistributionFactor::TheOrder1886GGX:
+        D = getDistribution1886GGX(materialAlpha, HdotN);
+        break;
 
-    float3 F = getFresnelSchlick(VdotH, reflectedRadiance);
+    case Options::DistributionFactor::DisneyGGX:
+        D = getDistributionDisneyGGX(materialAlpha, HdotN);
+        break;
+    };
+
+    float3 F = 0.0f;
+    switch (Options::FresnelTerm::Selection)
+    {
+    case Options::FresnelTerm::Schlick:
+        F = getFresnelSchlick(VdotH, reflectedRadiance);
+        break;
+    };
+
+    float G = 0.0f;
+    switch (Options::GeometricAttenuationFunction::Selection)
+    {
+    case Options::GeometricAttenuationFunction::Schlick:
+        G = getVisibilitySchlick(VdotN, materialAlpha, LdotN);
+        break;
+
+    case Options::GeometricAttenuationFunction::SmithGGX:
+        G = getVisibilitySmithGGX(VdotN, materialAlpha, LdotN);
+        break;
+    };
 
     float specularHorizon = pow((1.0 - LdotN), 4.0);
     float3 specularRadiance = (lightRadiance - (lightRadiance * specularHorizon));
@@ -140,11 +164,17 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
 
     float VdotN = saturate(dot(viewDirection, surfaceNormal));
 
-    // materialAlpha modifications by Disney - s2012_pbs_disney_brdf_notes_v2.pdf
-    float materialAlpha = pow(materialRoughness, 2.0);
-
-    // reduce roughness range from [0 .. 1] to [0.5 .. 1]
-    float materialDisneyAlpha = pow(0.5 + materialRoughness * 0.5, 2.0);
+    float materialAlpha;
+    if (Options::UseDisneyAlpha)
+    {
+        // materialAlpha modifications by Disney - s2012_pbs_disney_brdf_notes_v2.pdf
+        materialAlpha = pow(materialRoughness, 2.0);
+    }
+    else
+    {
+        // reduce roughness range from [0 .. 1] to [0.5 .. 1]
+        materialAlpha = pow(0.5 + materialRoughness * 0.5, 2.0);
+    }
 
     float3 surfaceIrradiance = 0.0;
 
@@ -153,7 +183,7 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
         float3 lightDirection = Lights::directionalList[directionalIndex].direction;
         float3 lightRadiance = Lights::directionalList[directionalIndex].radiance;
 
-        surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, materialDisneyAlpha, lightDirection, lightRadiance);
+        surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, lightDirection, lightRadiance);
     }
 
     uint clusterOffset = getClusterOffset(screenCoord, surfacePosition.z);
@@ -174,7 +204,7 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
         float3 lightDirection = normalize(closestPoint);
         float3 lightRadiance = (lightData.radiance * getFalloff(lightDistance, lightData.range));
 
-        surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, materialDisneyAlpha, lightDirection, lightRadiance);
+        surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, lightDirection, lightRadiance);
     };
 
     while (spotLightCount-- > 0)
@@ -189,7 +219,7 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
         float spotFactor = pow(saturate(rho - lightData.outerAngle) / (lightData.innerAngle - lightData.outerAngle), lightData.coneFalloff);
         float3 lightRadiance = (lightData.radiance * getFalloff(lightDistance, lightData.range) * spotFactor);
 
-        surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, materialDisneyAlpha, lightDirection, lightRadiance);
+        surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, lightDirection, lightRadiance);
     };
 
     return surfaceIrradiance;

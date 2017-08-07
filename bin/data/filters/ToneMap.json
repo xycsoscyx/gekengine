@@ -18,11 +18,30 @@
     },
     "options": {
         "AdaptionRate": "1.25",
-        "TechniqueMode": 6,
-        "AutoExposureMode": 2,
+        "ToneMapper": {
+            "selection": "FilmicALU",
+            "options": [
+                "None",
+                "Logarithmic",
+                "Exponential",
+                "DragoLogarithmic",
+                "Reinhard",
+                "ReinhardModified",
+                "FilmicALU",
+                "FilmicU2"
+            ]
+        },
+        "AutoExposure": {
+            "selection": "Average",
+            "options": [
+                "None",
+                "Constant",
+                "Average"
+            ]
+        },
         "LuminanceSaturation": 1.0,
-        "KeyValue": 0.18,
-        "Exposure": 0.0,
+        "ConstantKeyValue": 0.18,
+        "ConstantExposure": 0.0,
         "WhiteLevel": 5.0,
         "Bias": 0.5,
         "ShoulderStrength": 0.2,

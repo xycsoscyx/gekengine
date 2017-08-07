@@ -88,6 +88,35 @@
         }
     },
     "output": "finalBuffer",
+    "options": {
+        "DistributionFactor": {
+            "selection": "DisneyGGX",
+            "options": [
+                "None",
+                "Basic",
+                "TrowbridgeReitzGGX",
+                "TheOrder1886GGX",
+                "DisneyGGX"
+            ]
+        },
+        "FresnelTerm": {
+            "selection": "Schlick",
+            "options": [
+                "None",
+                "Schlick"
+            ]
+        },
+        "GeometricAttenuationFunction": {
+            "selection": "SmithGGX",
+            "options": [
+                "None",
+                "Schlick",
+                "SmithGGX"
+            ]
+        },
+        "UseHalfLambert": true,
+        "UseDisneyAlpha": true
+    },
     "passes": [
         {
             "program": "StoreDeferred",

@@ -368,7 +368,7 @@ namespace Gek
                         pass.enabled = JSON::Reference(globalOptions).get(enableOption).convert(true);
                     }
 
-                    std::string defineData;
+                    std::string optionsData;
                     JSON::Object passOptions(globalOptions);
                     if (passNode.has("options"))
                     {
@@ -384,30 +384,70 @@ namespace Gek
                         auto optionName = optionPair.name();
                         auto &optionValue = optionPair.value();
                         JSON::Reference option(optionValue);
-                        if (optionValue.is_array())
+                        if (optionValue.is_object())
+                        {
+                            if (option.has("options"))
+                            {
+                                optionsData += String::Format("    namespace %v\r\n", optionName);
+                                optionsData += String::Format("    {\r\n");
+
+                                uint32_t optionValue = 0;
+                                std::vector<std::string> optionList;
+                                for (JSON::Reference choice : option.get("options").getArray())
+                                {
+                                    auto optionName = choice.convert(String::Empty);
+                                    optionsData += String::Format("        static const int %v = %v;\r\n", optionName, optionValue++);
+                                    optionList.push_back(optionName);
+                                }
+
+                                int selection = 0;
+                                auto &selectionNode = option.get("selection");
+                                if (selectionNode.isString())
+                                {
+                                    auto selectedName = selectionNode.convert(String::Empty);
+                                    auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string const &choice) -> bool
+                                    {
+                                        return (selectedName == choice);
+                                    });
+
+                                    if (optionsSearch != std::end(optionList))
+                                    {
+                                        selection = std::distance(std::begin(optionList), optionsSearch);
+                                    }
+                                }
+                                else
+                                {
+                                    selection = selectionNode.convert(0);
+                                }
+
+                                optionsData += String::Format("        static const int Selection = %v;\r\n", selection);
+                                optionsData += String::Format("    };\r\n");
+                            }
+                        }
+                        else if (optionValue.is_array())
                         {
                             switch (optionValue.size())
                             {
                             case 1:
-                                defineData += String::Format("    static const float %v = %v;\r\n", optionName,
+                                optionsData += String::Format("    static const float %v = %v;\r\n", optionName,
                                     JSON::Reference(optionValue[0]).convert(0.0f));
                                 break;
 
                             case 2:
-                                defineData += String::Format("    static const float2 %v = float2(%v, %v);\r\n", optionName,
+                                optionsData += String::Format("    static const float2 %v = float2(%v, %v);\r\n", optionName,
                                     JSON::Reference(optionValue[0]).convert(0.0f),
                                     JSON::Reference(optionValue[1]).convert(0.0f));
                                 break;
 
                             case 3:
-                                defineData += String::Format("    static const float3 %v = float3(%v, %v, %v);\r\n", optionName,
+                                optionsData += String::Format("    static const float3 %v = float3(%v, %v, %v);\r\n", optionName,
                                     JSON::Reference(optionValue[0]).convert(0.0f),
                                     JSON::Reference(optionValue[1]).convert(0.0f),
                                     JSON::Reference(optionValue[2]).convert(0.0f));
                                 break;
 
                             case 4:
-                                defineData += String::Format("    static const float4 %v = float4(%v, %v, %v, %v)\r\n", optionName,
+                                optionsData += String::Format("    static const float4 %v = float4(%v, %v, %v, %v)\r\n", optionName,
                                     JSON::Reference(optionValue[0]).convert(0.0f),
                                     JSON::Reference(optionValue[1]).convert(0.0f),
                                     JSON::Reference(optionValue[2]).convert(0.0f),
@@ -419,28 +459,28 @@ namespace Gek
                         {
                             if (optionValue.is_bool())
                             {
-                                defineData += String::Format("    static const bool %v = %v;\r\n", optionName, option.convert(false));
+                                optionsData += String::Format("    static const bool %v = %v;\r\n", optionName, option.convert(false));
                             }
                             else if (optionValue.is_integer())
                             {
-                                defineData += String::Format("    static const int %v = %v;\r\n", optionName, option.convert(0));
+                                optionsData += String::Format("    static const int %v = %v;\r\n", optionName, option.convert(0));
                             }
                             else
                             {
-                                defineData += String::Format("    static const float %v = %v;\r\n", optionName, option.convert(0.0f));
+                                optionsData += String::Format("    static const float %v = %v;\r\n", optionName, option.convert(0.0f));
                             }
                         }
                     }
 
                     std::string engineData;
-                    if (!defineData.empty())
+                    if (!optionsData.empty())
                     {
                         engineData += String::Format(
                             "namespace Options\r\n" \
                             "{\r\n" \
                             "%v" \
                             "};\r\n" \
-                            "\r\n", defineData);
+                            "\r\n", optionsData);
                     }
 
                     std::string mode(String::GetLower(passNode.get("mode").convert(String::Empty)));

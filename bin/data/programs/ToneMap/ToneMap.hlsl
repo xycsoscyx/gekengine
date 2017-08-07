@@ -3,38 +3,36 @@
 #include <GEKGlobal.hlsl>
 #include <GEKUtility.hlsl>
 
-// https://mynameismjp.wordpress.com/2010/04/30/a-closer-look-at-tone-mapping/
-#define TechniqueNone               0
-#define TechniqueLogarithmic        1
-#define TechniqueExponential        2
-#define TechniqueDragoLogarithmic   3
-#define TechniqueReinhard           4
-#define TechniqueReinhardModified   5
-#define TechniqueFilmicALU          6
-#define TechniqueFilmicU2           7
-
 float3 getExposedColor(float3 color, float averageLuminance, float threshold, out float exposure)
 {
     exposure = 0.0;
-    if (Options::AutoExposureMode >= 1 && Options::AutoExposureMode <= 2)
+    switch (Options::AutoExposure::Selection)
     {
-        float KeyValue = 0.0;
-        if (Options::AutoExposureMode == 1)
+    case Options::AutoExposure::None:
+        exposure = Options::ConstantExposure;
+        break;
+
+    default:
+        if (true)
         {
-            KeyValue = Options::KeyValue;
-        }
-        else if (Options::AutoExposureMode == 2)
-        {
-            KeyValue = 1.03 - (2.0 / (2.0 + log10(averageLuminance + 1.0)));
+            float keyValue = 0.0;
+            switch (Options::AutoExposure::Selection)
+            {
+            case Options::AutoExposure::Constant:
+                keyValue = Options::ConstantKeyValue;
+                break;
+
+            case Options::AutoExposure::Average:
+                keyValue = 1.03 - (2.0 / (2.0 + log10(averageLuminance + 1.0)));
+                break;
+            };
+
+            const float linearexposure = (keyValue / averageLuminance);
+            exposure = log2(max(linearexposure, Math::Epsilon));
         }
 
-        const float linearexposure = (KeyValue / averageLuminance);
-        exposure = log2(max(linearexposure, Math::Epsilon));
-    }
-    else
-    {
-        exposure = Options::Exposure;
-    }
+        break;
+    };
 
     exposure -= threshold;
     return exp2(exposure) * color;
@@ -116,33 +114,33 @@ float3 getToneMappedColor(float3 color, float averageLuminance, float threshold,
 {
     const float pixelLuminance = GetLuminance(color);
     color = getExposedColor(color, averageLuminance, threshold, exposure);
-    switch (Options::TechniqueMode)
+    switch (Options::ToneMapper::Selection)
     {
-    case TechniqueLogarithmic:
+    case Options::ToneMapper::Logarithmic:
         color = getToneMapLogarithmic(color);
         break;
 
-    case TechniqueExponential:
+    case Options::ToneMapper::Exponential:
         color = getToneMapExponential(color);
         break;
 
-    case TechniqueDragoLogarithmic:
+    case Options::ToneMapper::DragoLogarithmic:
         color = getToneMapDragoLogarithmic(color);
         break;
 
-    case TechniqueReinhard:
+    case Options::ToneMapper::Reinhard:
         color = getToneMapReinhard(color);
         break;
 
-    case TechniqueReinhardModified:
+    case Options::ToneMapper::ReinhardModified:
         color = getToneMapReinhardModified(color);
         break;
 
-    case TechniqueFilmicALU:
+    case Options::ToneMapper::FilmicALU:
         color = getToneMapFilmicALU(color);
         break;
 
-    case TechniqueFilmicU2:
+    case Options::ToneMapper::FilmicU2:
         color = getToneMapFilmicU2(color);
         break;
     };
