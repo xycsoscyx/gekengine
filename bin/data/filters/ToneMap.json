@@ -39,18 +39,18 @@
                 "Average"
             ]
         },
-        "LuminanceSaturation": 1.0,
         "ConstantKeyValue": 0.18,
         "ConstantExposure": 0.0,
+        "LuminanceSaturation": 1.0,
         "WhiteLevel": 5.0,
-        "Bias": 0.5,
-        "ShoulderStrength": 0.2,
-        "LinearStrength": 0.5,
-        "LinearAngle": 0.42,
-        "ToeStrength": 0.64,
-        "ToeNumerator": 0.19,
-        "ToeDenominator": 0.9,
-        "LinearWhite": 11.2
+        "DragoBias": 0.5,
+        "Uncharted2ShoulderStrength": 0.2,
+        "Uncharted2LinearStrength": 0.5,
+        "Uncharted2LinearAngle": 0.42,
+        "Uncharted2ToeStrength": 0.64,
+        "Uncharted2ToeNumerator": 0.19,
+        "Uncharted2ToeDenominator": 0.9,
+        "FilmicUncharted2LinearWhite": 11.2
     },
     "passes": [
         {

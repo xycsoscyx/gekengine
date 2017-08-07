@@ -52,8 +52,8 @@ float3 getToneMapDragoLogarithmic(float3 color)
     const float pixelLuminance = GetLuminance(color);
     float toneMappedLuminance = log10(1.0 + pixelLuminance);
     //toneMappedLuminance /= log10(1.0 + Options::WhiteLevel);
-    //toneMappedLuminance /= log10(2.0 + 8.0 * ((pixelLuminance / Options::WhiteLevel) * log10(Options::Bias) / log10(0.5f)));
-    toneMappedLuminance /= log10(2.0 + 8.0 * (pow((pixelLuminance / Options::WhiteLevel), log10(Options::Bias) / log10(0.5f))));
+    //toneMappedLuminance /= log10(2.0 + 8.0 * ((pixelLuminance / Options::WhiteLevel) * log10(Options::DragoBias) / log10(0.5f)));
+    toneMappedLuminance /= log10(2.0 + 8.0 * (pow((pixelLuminance / Options::WhiteLevel), log10(Options::DragoBias) / log10(0.5f))));
 	
 	return toneMappedLuminance * pow(color / pixelLuminance, Options::LuminanceSaturation);
 }
@@ -93,12 +93,12 @@ float3 getToneMapFilmicALU(float3 color)
 // Function used by the Uncharte2D tone mapping curve
 float3 getUncharted2Curve(float3 x)
 {
-    static const float A = Options::ShoulderStrength;
-	static const float B = Options::LinearStrength;
-	static const float C = Options::LinearAngle;
-	static const float D = Options::ToeStrength;
-	static const float E = Options::ToeNumerator;
-	static const float F = Options::ToeDenominator;
+    static const float A = Options::Uncharted2ShoulderStrength;
+	static const float B = Options::Uncharted2LinearStrength;
+	static const float C = Options::Uncharted2LinearAngle;
+	static const float D = Options::Uncharted2ToeStrength;
+	static const float E = Options::Uncharted2ToeNumerator;
+	static const float F = Options::Uncharted2ToeDenominator;
     return (((x*(A*x + C*B) + D*E) / (x*(A*x + B) + D*F)) - E / F);
 }
 
@@ -106,7 +106,7 @@ float3 getUncharted2Curve(float3 x)
 float3 getToneMapFilmicU2(float3 color)
 {
     const float3 numerator = getUncharted2Curve(color);
-	static const float3 denominator = getUncharted2Curve(Options::LinearWhite);
+	static const float3 denominator = getUncharted2Curve(Options::FilmicUncharted2LinearWhite);
     return (numerator / denominator);
 }
 
