@@ -4,7 +4,6 @@
 #include "GEK/GUI/Utilities.hpp"
 #include "GEK/Engine/ComponentMixin.hpp"
 #include "GEK/Engine/Population.hpp"
-#include <imgui_internal.h> // ImSaturate
 
 namespace Gek
 {
