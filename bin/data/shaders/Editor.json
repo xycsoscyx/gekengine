@@ -69,6 +69,21 @@
     },
     "output": "finalBuffer",
     "options": {
+        "fillMode": {
+            "selection": "Solid",
+            "options": [
+                "Solid",
+                "Wireframe"
+            ]
+        },
+        "cullMode": {
+            "selection": "Back",
+            "options": [
+                "Back",
+                "Front",
+                "None"
+            ]
+        }
     },
     "passes": [
         {
@@ -83,6 +98,16 @@
                 "comparisonFunction": "LessEqual",
                 "writeMask": "All",
                 "clear": 1
+            },
+            "renderState": {
+                "fillMode": "options.fillMode",
+                "cullMode": "options.cullMode"
+            },
+            "clear": {
+                "finalBuffer": {
+                    "type": "target",
+                    "value": 0.0
+                }
             },
             "targets": [
                 "finalBuffer"

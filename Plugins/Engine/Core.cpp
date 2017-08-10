@@ -48,6 +48,7 @@ namespace Gek
 
             Timer timer;
             float mouseSensitivity = 0.5f;
+            bool enableInterfaceControl = false;
 
             Video::DevicePtr videoDevice;
             Plugin::RendererPtr renderer;
@@ -266,7 +267,42 @@ namespace Gek
 
             void onSetCursor(bool &showCursor)
             {
-                showCursor = false;
+                switch (ImGui::GetMouseCursor())
+                {
+                case ImGuiMouseCursor_None:
+                    SetCursor(nullptr);
+                    break;
+
+                case ImGuiMouseCursor_Arrow:
+                    SetCursor(LoadCursor(nullptr, IDC_ARROW));
+                    break;
+
+                case ImGuiMouseCursor_TextInput:
+                    SetCursor(LoadCursor(nullptr, IDC_IBEAM));
+                    break;
+
+                case ImGuiMouseCursor_Move:
+                    SetCursor(LoadCursor(nullptr, IDC_HAND));
+                    break;
+
+                case ImGuiMouseCursor_ResizeNS:
+                    SetCursor(LoadCursor(nullptr, IDC_SIZENS));
+                    break;
+
+                case ImGuiMouseCursor_ResizeEW:
+                    SetCursor(LoadCursor(nullptr, IDC_SIZEWE));
+                    break;
+
+                case ImGuiMouseCursor_ResizeNESW:
+                    SetCursor(LoadCursor(nullptr, IDC_SIZENESW));
+                    break;
+
+                case ImGuiMouseCursor_ResizeNWSE:
+                    SetCursor(LoadCursor(nullptr, IDC_SIZENWSE));
+                    break;
+                };
+
+                showCursor = enableInterfaceControl;
             }
 
             void onSizeChanged(bool isMinimized)
@@ -287,7 +323,7 @@ namespace Gek
             void onKeyPressed(Window::Key key, bool state)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                if (imGuiIo.MouseDrawCursor)
+                if (enableInterfaceControl)
                 {
                     imGuiIo.KeysDown[static_cast<int>(key)] = state;
                 }
@@ -297,8 +333,9 @@ namespace Gek
                     switch (key)
                     {
                     case Window::Key::Escape:
-                        imGuiIo.MouseDrawCursor = !imGuiIo.MouseDrawCursor;
-                        if (imGuiIo.MouseDrawCursor)
+                        enableInterfaceControl = !enableInterfaceControl;
+                        imGuiIo.MouseDrawCursor = false;// enableInterfaceControl;
+                        if (enableInterfaceControl)
                         {
                             auto client = window->getClientRectangle();
                             imGuiIo.MousePos.x = ((float(client.maximum.x - client.minimum.x) * 0.5f) + client.minimum.x);
@@ -332,7 +369,7 @@ namespace Gek
                     }
                 }
 
-                if (!imGuiIo.MouseDrawCursor && population)
+                if (!enableInterfaceControl && population)
                 {
                     switch (key)
                     {
@@ -370,7 +407,7 @@ namespace Gek
             void onMouseClicked(Window::Button button, bool state)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                if (imGuiIo.MouseDrawCursor)
+                if (enableInterfaceControl)
                 {
                     switch (button)
                     {
@@ -392,7 +429,7 @@ namespace Gek
             void onMouseWheel(float numberOfRotations)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                if (imGuiIo.MouseDrawCursor)
+                if (enableInterfaceControl)
                 {
                     imGuiIo.MouseWheel += numberOfRotations;
                 }
@@ -401,7 +438,7 @@ namespace Gek
             void onMousePosition(int32_t xPosition, int32_t yPosition)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                if (imGuiIo.MouseDrawCursor)
+                if (enableInterfaceControl)
                 {
                     imGuiIo.MousePos.x = xPosition;
                     imGuiIo.MousePos.y = yPosition;
@@ -421,7 +458,7 @@ namespace Gek
             void onShowUserInterface(ImGuiContext * const guiContext)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                if (imGuiIo.MouseDrawCursor)
+                if (enableInterfaceControl)
                 {
                     ImGui::BeginMainMenuBar();
                     ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5.0f, 10.0f));
@@ -831,7 +868,7 @@ namespace Gek
                                 ImGui::GetIO().KeysDown[static_cast<int>(Window::Key::Enter)] = false;
                                 showLoadMenu = false;
                                 population->load(scenes[currentSelectedScene]);
-                                ImGui::GetIO().MouseDrawCursor = false;
+                                enableInterfaceControl = ImGui::GetIO().MouseDrawCursor = false;
                             }
                         }
 
@@ -886,7 +923,8 @@ namespace Gek
 
             void setOption(std::string const &system, std::string const &name, JSON::Object const &value)
             {
-                configuration[system][name] = value;
+                auto &systemNode = configuration[system];
+                systemNode[name] = value;
             }
 
             void deleteOption(std::string const &system, std::string const &name)
@@ -951,7 +989,7 @@ namespace Gek
                 {
                     float frameTime = timer.getUpdateTime();
                     modeChangeTimer -= frameTime;
-                    if (imGuiIo.MouseDrawCursor)
+                    if (enableInterfaceControl)
                     {
                         population->update(0.0f);
                     }

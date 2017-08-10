@@ -177,7 +177,7 @@ namespace Gek
 
         virtual void *getBaseWindow(void) const = 0;
 
-        virtual Math::Int4 getClientRectangle(void) const = 0;
+        virtual Math::Int4 getClientRectangle(bool moveToScreen = false) const = 0;
         virtual Math::Int4 getScreenRectangle(void) const = 0;
 
         virtual Math::Int2 getCursorPosition(void) const = 0;

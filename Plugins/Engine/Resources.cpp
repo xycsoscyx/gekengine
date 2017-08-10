@@ -1388,7 +1388,7 @@ namespace Gek
                 }
             }
 
-            void setMaterial(Video::Device::Context *videoContext, Engine::Shader::Pass *pass, MaterialHandle handle)
+            void setMaterial(Video::Device::Context *videoContext, Engine::Shader::Pass *pass, MaterialHandle handle, bool forceShader)
             {
                 assert(videoContext);
                 assert(pass);
@@ -1401,7 +1401,11 @@ namespace Gek
                         auto data = material->getData(pass->getMaterialHash());
                         if (drawPrimitiveValid = (data != nullptr))
                         {
-                            setRenderState(videoContext, material->getRenderState());
+                            if (!forceShader)
+                            {
+                                setRenderState(videoContext, material->getRenderState());
+                            }
+
                             setResourceList(videoContext->pixelPipeline(), data->resourceList, pass->getFirstResourceStage());
                         }
                     }

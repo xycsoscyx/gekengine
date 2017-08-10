@@ -82,22 +82,56 @@ namespace Gek
                     });
                 }
 
+                if (modelComponent.name.empty())
+                {
+                    selectedModel = 0;
+                }
+                else if (selectedModel <= 0 || selectedModel >= modelList.size() || modelList[selectedModel - 1] != modelComponent.name)
+                {
+                    auto modelSearch = std::find_if(std::begin(modelList), std::end(modelList), [&](std::string const &modelName) -> bool
+                    {
+                        return (modelName == modelComponent.name);
+                    });
+
+                    if (modelSearch != std::end(modelList))
+                    {
+                        selectedModel = (std::distance(std::begin(modelList), modelSearch) + 1);
+                    }
+                    else
+                    {
+                        selectedModel = 0;
+                    }
+                }
+
                 return ImGui::Combo("##model", &selectedModel, [](void *userData, int index, char const **outputText) -> bool
                 {
-                    auto &modelList = *(std::vector<std::string> *)userData;
-                    if (index >= 0 && index < modelList.size())
+                    if (index == 0)
                     {
-                        *outputText = modelList[index].c_str();
+                        *outputText = "(none)";
+                        return true;
+                    }
+
+                    auto &modelList = *(std::vector<std::string> *)userData;
+                    if (index > 0 && index <= modelList.size())
+                    {
+                        *outputText = modelList[index - 1].c_str();
                         return true;
                     }
 
                     return false;
-                }, &modelList, modelList.size(), 10);
+                }, &modelList, (modelList.size() + 1), 10);
             });
 
             if (changed)
             {
-                modelComponent.name = modelList[selectedModel];
+                if (selectedModel == 0)
+                {
+                    modelComponent.name.clear();
+                }
+                else
+                {
+                    modelComponent.name = modelList[selectedModel - 1];
+                }
             }
 
             ImGui::SetCurrentContext(nullptr);

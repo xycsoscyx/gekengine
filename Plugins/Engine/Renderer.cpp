@@ -1295,6 +1295,7 @@ namespace Gek
                         }
 
                         std::string finalOutput;
+                        auto forceShader = (currentCamera.forceShader ? resources->getShader(currentCamera.forceShader) : nullptr);
                         for (const auto &shaderDrawCallList : drawCallSetMap)
                         {
                             for (const auto &shaderDrawCall : shaderDrawCallList.second)
@@ -1324,7 +1325,7 @@ namespace Gek
                                                 if (currentMaterial != drawCall->material)
                                                 {
                                                     currentMaterial = drawCall->material;
-                                                    resources->setMaterial(videoContext, pass.get(), currentMaterial);
+                                                    resources->setMaterial(videoContext, pass.get(), currentMaterial, (forceShader == shader));
                                                 }
 
                                                 drawCall->onDraw(videoContext);

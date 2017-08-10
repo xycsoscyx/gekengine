@@ -134,6 +134,7 @@ namespace Gek
 
                 bool isUsing = false;
                 bool isEnabled = true;
+                bool isOver = false;
 
                 // translation
                 Shapes::Plane mTranslationPlane;
@@ -245,11 +246,6 @@ namespace Gek
                     mCameraUp = viewInverse.ry.xyz;
 
                     getMouseRay(mRayOrigin, mRayVector);
-                }
-
-                bool IsOver()
-                {
-                    return (GetMoveType(NULL) != Control::None) || GetRotateType() != Control::None || GetScaleType() != Control::None || isUsing;
                 }
 
                 void Enable(bool enable)
@@ -817,6 +813,7 @@ namespace Gek
                         // find new possible way to move
                         Math::Float3 gizmoHitProportion;
                         control = GetMoveType(&gizmoHitProportion);
+                        isOver = control != Control::None;
                         if (imGuiIO.MouseDown[0] && control != Control::None)
                         {
                             isUsing = true;
@@ -854,6 +851,7 @@ namespace Gek
                     {
                         // find new possible way to scale
                         control = GetScaleType();
+                        isOver = control != Control::None;
                         if (imGuiIO.MouseDown[0] && control != Control::None)
                         {
                             isUsing = true;
@@ -944,6 +942,7 @@ namespace Gek
                     if (!isUsing)
                     {
                         control = GetRotateType();
+                        isOver = control != Control::None;
                         if (control == Control::RotateScreen)
                         {
                             applyRotationLocaly = true;
@@ -1123,6 +1122,7 @@ namespace Gek
                         }
                     }
 
+                    isOver = false;
                     for (int index = 0; index < 4; index++)
                     {
                         uint32_t axisColor = axisColors[index];
@@ -1152,6 +1152,8 @@ namespace Gek
                         }
 
                         drawList->AddCircleFilled(midBound, AnchorSmallRadius, smallAnchorColor);
+
+                        isOver |= overBigAnchor | overSmallAnchor;
 
                         // big anchor on corners
                         int oppositeIndex = (index + 2) % 4;
@@ -1303,6 +1305,11 @@ namespace Gek
 
                             break;
                         };
+                    }
+
+                    if (isUsing || isOver)
+                    {
+                        ImGui::SetMouseCursor(ImGuiMouseCursor_Move);
                     }
                 }
 

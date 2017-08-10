@@ -233,6 +233,8 @@ namespace Gek
                 dock->EndTab();
             }
 
+            bool createNamedEntity = true;
+            std::string entityName;
             Plugin::Entity *selectedEntity = nullptr;
             bool showPopulationDock = true;
             void showPopulation(void)
@@ -305,29 +307,59 @@ namespace Gek
                     if (ImGui::Button(ICON_FA_USER_PLUS))
                     {
                         ImGui::OpenPopup("NewEntity");
+                        createNamedEntity = true;
+                        entityName.clear();
                     }
 
                     ImGui::PopStyleColor(3);
+                    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
                     if (ImGui::BeginPopup("NewEntity"))
                     {
-                        ImGui::Text("New Entity Name:");
+                        UI::TextFrame("Create Entity", ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f));
+                        ImGui::Spacing();
+                        ImGui::Spacing();
+                        ImGui::Spacing();
 
-                        std::string name;
-                        if (UI::InputString("##name", name, ImGuiInputTextFlags_EnterReturnsTrue))
+                        if (ImGui::RadioButton("Named", createNamedEntity))
+                        {
+                            createNamedEntity = true;
+                        }
+
+                        ImGui::SameLine();
+                        if (ImGui::RadioButton("Blank", !createNamedEntity))
+                        {
+                            createNamedEntity = false;
+                        }
+
+                        ImGui::Spacing();
+                        ImGui::PushStyleColor(ImGuiCol_FrameBg, createNamedEntity ? style.Colors[ImGuiCol_FrameBg] : ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+                        ImGui::PushStyleColor(ImGuiCol_Text, createNamedEntity ? style.Colors[ImGuiCol_Text] : ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+                        UI::InputString("##name", entityName, (createNamedEntity ? 0 : ImGuiInputTextFlags_ReadOnly));
+                        ImGui::PopStyleColor(2);
+
+                        ImGui::Spacing();
+                        if (ImGui::Button("Create", ImVec2(50.0f, 25.0f)))
                         {
                             std::vector<Plugin::Population::Component> componentList;
-                            if (!name.empty())
+                            if (createNamedEntity && !entityName.empty())
                             {
-                                componentList.push_back(std::make_pair("Name", name));
+                                componentList.push_back(std::make_pair("Name", entityName));
                             }
 
                             population->createEntity(componentList);
                             ImGui::CloseCurrentPopup();
                         }
 
+                        ImGui::SameLine();
+                        if (ImGui::Button("Cancel", ImVec2(50.0f, 25.0f)))
+                        {
+                            ImGui::CloseCurrentPopup();
+                        }
+
                         ImGui::EndPopup();
                     }
 
+                    ImGui::PopStyleVar();
                     ImGui::SameLine();
                     UI::TextFrame(String::Format("Population: %v", entityCount).c_str(), ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f));
                     if (ImGui::BeginChildFrame(665, ImVec2(-1.0f, -1.0f)))
@@ -361,10 +393,11 @@ namespace Gek
                                 }
 
                                 ImGui::PopStyleColor(3);
+                                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
                                 if (ImGui::BeginPopup("ConfirmEntityDelete"))
                                 {
                                     ImGui::Text("Are you sure you want to remove this entitiy?");
-
+                                    ImGui::Spacing();
                                     if (ImGui::Button("Yes", ImVec2(50.0f, 25.0f)))
                                     {
                                         deleteEntitySet.insert(entity);
@@ -380,6 +413,7 @@ namespace Gek
                                     ImGui::EndPopup();
                                 }
 
+                                ImGui::PopStyleVar();
                                 ImGui::SameLine();
                                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.5f, 0.0f, 1.0f));
                                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.75f, 0.0f, 1.0f));
@@ -391,12 +425,17 @@ namespace Gek
                                 }
 
                                 ImGui::PopStyleColor(3);
+                                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
                                 if (ImGui::BeginPopup("AddComponent"))
                                 {
-                                    ImGui::Text("Component Type");
+                                    UI::TextFrame("Select Component Type", ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f));
+                                    ImGui::Spacing();
+                                    ImGui::Spacing();
+                                    ImGui::Spacing();
+
                                     const auto &componentMap = population->getComponentMap();
-                                    const auto componentCount = componentMap.size();
-                                    if (ImGui::ListBoxHeader("##Components", componentCount, 7))
+                                    auto componentCount = componentMap.size();
+                                    if (ImGui::ListBoxHeader("##Components", componentCount, 10))
                                     {
                                         ImGuiListClipper clipper(componentCount, ImGui::GetTextLineHeightWithSpacing());
                                         while (clipper.Step())
@@ -420,6 +459,7 @@ namespace Gek
                                     ImGui::EndPopup();
                                 }
 
+                                ImGui::PopStyleVar();
                                 ImGui::PopID();
                                 ImGui::SameLine();
                                 ImGui::SetNextTreeNodeOpen(selectedEntity == entity);
@@ -447,10 +487,11 @@ namespace Gek
                                                 }
 
                                                 ImGui::PopStyleColor(3);
+                                                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
                                                 if (ImGui::BeginPopup("ConfirmComponentDelete"))
                                                 {
                                                     ImGui::Text("Are you sure you want to remove this component?");
-
+                                                    ImGui::Spacing();
                                                     if (ImGui::Button("Yes", ImVec2(50.0f, 25.0f)))
                                                     {
                                                         ImGui::CloseCurrentPopup();
@@ -466,6 +507,7 @@ namespace Gek
                                                     ImGui::EndPopup();
                                                 }
 
+                                                ImGui::PopStyleVar();
                                                 ImGui::PopID();
                                                 ImGui::SameLine();
                                                 if (ImGui::TreeNodeEx(component->getName().c_str(), ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))

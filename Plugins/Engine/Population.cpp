@@ -199,7 +199,6 @@ namespace Gek
                     };
                 }
 
-
                 for (auto &slot : onUpdate)
                 {
                     slot.second(frameTime);

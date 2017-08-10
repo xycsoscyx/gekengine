@@ -78,12 +78,30 @@ namespace Gek
                             {
                                 bool showCursor = true;
                                 window->onSetCursor(showCursor);
-                                ShowCursor(TRUE);// showCursor);
+                                if (showCursor)
+                                {
+                                    ShowCursor(true);
+                                }
+                                else
+                                {
+                                    auto cursor = window->getCursorPosition();
+                                    auto clientScreen = window->getClientRectangle(true);
+                                    if (cursor.x < clientScreen.minimum.x ||
+                                        cursor.y < clientScreen.minimum.y ||
+                                        cursor.x >= clientScreen.maximum.x ||
+                                        cursor.y >= clientScreen.maximum.y)
+                                    {
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        ShowCursor(false);
+                                        SetCursor(nullptr);
+                                    }
+
+                                }
+
                                 return TRUE;
-                            }
-                            else
-                            {
-                                ShowCursor(true);
                             }
 
                             break;
@@ -264,10 +282,16 @@ namespace Gek
                 return window;
             }
 
-            Math::Int4 getClientRectangle(void) const
+            Math::Int4 getClientRectangle(bool moveToScreen = false) const
             {
                 Math::Int4 rectangle;
                 GetClientRect(window, (RECT *)&rectangle);
+                if (moveToScreen)
+                {
+                    ClientToScreen(window, (POINT *)&rectangle.minimum);
+                    ClientToScreen(window, (POINT *)&rectangle.maximum);
+                }
+
                 return rectangle;
             }
 
