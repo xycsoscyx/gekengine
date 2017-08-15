@@ -58,6 +58,17 @@ namespace Gek
 
             std::unique_ptr<UI::Dock::WorkSpace> dock;
 
+            HCURSOR cursorList[7] = 
+            {
+                LoadCursor(nullptr, IDC_ARROW),
+                LoadCursor(nullptr, IDC_IBEAM),
+                LoadCursor(nullptr, IDC_HAND),
+                LoadCursor(nullptr, IDC_SIZENS),
+                LoadCursor(nullptr, IDC_SIZEWE),
+                LoadCursor(nullptr, IDC_SIZENESW),
+                LoadCursor(nullptr, IDC_SIZENWSE),
+            };
+
         public:
             Core(Context *context, Window *_window)
                 : ContextRegistration(context)
@@ -274,31 +285,31 @@ namespace Gek
                     break;
 
                 case ImGuiMouseCursor_Arrow:
-                    SetCursor(LoadCursor(nullptr, IDC_ARROW));
+                    SetCursor(cursorList[0]);
                     break;
 
                 case ImGuiMouseCursor_TextInput:
-                    SetCursor(LoadCursor(nullptr, IDC_IBEAM));
+                    SetCursor(cursorList[1]);
                     break;
 
                 case ImGuiMouseCursor_Move:
-                    SetCursor(LoadCursor(nullptr, IDC_HAND));
+                    SetCursor(cursorList[2]);
                     break;
 
                 case ImGuiMouseCursor_ResizeNS:
-                    SetCursor(LoadCursor(nullptr, IDC_SIZENS));
+                    SetCursor(cursorList[3]);
                     break;
 
                 case ImGuiMouseCursor_ResizeEW:
-                    SetCursor(LoadCursor(nullptr, IDC_SIZEWE));
+                    SetCursor(cursorList[4]);
                     break;
 
                 case ImGuiMouseCursor_ResizeNESW:
-                    SetCursor(LoadCursor(nullptr, IDC_SIZENESW));
+                    SetCursor(cursorList[5]);
                     break;
 
                 case ImGuiMouseCursor_ResizeNWSE:
-                    SetCursor(LoadCursor(nullptr, IDC_SIZENWSE));
+                    SetCursor(cursorList[6]);
                     break;
                 };
 
