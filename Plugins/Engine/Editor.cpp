@@ -154,14 +154,6 @@ namespace Gek
                         ImGui::Image(reinterpret_cast<ImTextureID>(cameraBuffer), cameraSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
                         if (selectedEntity)
                         {
-                            auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 0.1f, 200.0f));
-                            Math::Float4x4 viewMatrix(Math::Float4x4::MakePitchRotation(lookingAngle) * Math::Float4x4::MakeYawRotation(headingAngle));
-                            viewMatrix.translation.xyz = position;
-                            viewMatrix.invert();
-
-                            auto size = ImGui::GetItemRectSize();
-                            auto origin = ImGui::GetItemRectMin();
-                            gizmo->beginFrame(viewMatrix, projectionMatrix, origin.x, origin.y, size.x, size.y);
                             if (selectedEntity->hasComponent<Components::Transform>())
                             {
                                 auto &transformComponent = selectedEntity->getComponent<Components::Transform>();
@@ -196,9 +188,17 @@ namespace Gek
                                     boundingBox = modelProcessor->getBoundingBox(modelComponent.name);
                                 }
 
+                                auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 0.1f, 200.0f));
+                                Math::Float4x4 viewMatrix(Math::Float4x4::MakePitchRotation(lookingAngle) * Math::Float4x4::MakeYawRotation(headingAngle));
+                                viewMatrix.translation.xyz = position;
+                                viewMatrix.invert();
+
                                 if (isObjectInFrustum(Shapes::Frustum(viewMatrix * projectionMatrix), Shapes::OrientedBox(matrix, boundingBox)))
                                 {
                                     Math::Float4x4 deltaMatrix;
+                                    auto size = ImGui::GetItemRectSize();
+                                    auto origin = ImGui::GetItemRectMin();
+                                    gizmo->beginFrame(viewMatrix, projectionMatrix, origin.x, origin.y, size.x, size.y);
                                     gizmo->manipulate(currentGizmoOperation, currentGizmoAlignment, matrix, snapData, &boundingBox, currentGizmoAxis);
                                     if (gizmo->isUsing())
                                     {
@@ -557,7 +557,8 @@ namespace Gek
             void onShowUserInterface(ImGuiContext * const guiContext)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                if (imGuiIo.MouseDrawCursor)
+                bool mainMenuShowing = (ImGui::FindWindowByName("##MainMenuBar") ? true : false);
+                if (mainMenuShowing)
                 {
                     ImGui::BeginMainMenuBar();
                     ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5.0f, 10.0f));
@@ -585,7 +586,7 @@ namespace Gek
 
                 auto editorSize = imGuiIo.DisplaySize;
                 auto editorPosition = ImVec2(0.0f, 0.0f);
-                if (imGuiIo.MouseDrawCursor)
+                if (mainMenuShowing)
                 {
                     auto &style = ImGui::GetStyle();
                     editorSize.y -= ImGui::GetItemsLineHeightWithSpacing() - style.ItemSpacing.y;

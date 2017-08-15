@@ -51,6 +51,7 @@ namespace Gek
                 bool isUsing(void);
                 void beginFrame(Math::Float4x4 const &view, Math::Float4x4 const &projection, float x, float y, float width, float height);
                 void manipulate(Operation operation, Alignment alignment, Math::Float4x4 &matrix, float *snap = nullptr, Shapes::AlignedBox *localBounds = nullptr, LockAxis lockAxis = LockAxis::Automatic);
+                void drawCube(Math::Float4x4 const &matrix);
 
             private:
                 Context *context = nullptr;

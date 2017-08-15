@@ -1397,6 +1397,11 @@ namespace Gek
             {
                 context->manipulate(operation, alignment, matrix, snap, localBounds, lockAxis);
             }
+
+            void WorkSpace::drawCube(Math::Float4x4 const &matrix)
+            {
+                context->drawCube(matrix);
+            }
         }; // Gizmo
     }; // namespace UI
 }; // namespace Gek
