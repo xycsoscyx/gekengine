@@ -139,34 +139,47 @@ namespace Gek
             RightGUI = 231
         };
 
-        enum class Button : uint32_t
+        enum class Button
         {
             Left = 0,
             Middle,
             Right,
         };
 
+        enum class Cursor
+        {
+            None = 0,
+            Arrow,
+            Text,
+            Hand,
+            SizeNS,
+            SizeEW,
+            SizeNESW,
+            SizeNWSE,
+        };
+
         struct Description
         {
             std::string className;
             bool hasOwnContext = true;
+            bool readMouseMovement = true;
+            bool allowResize = false;
 
             std::string windowName;
             uint32_t initialWidth = 1;
             uint32_t initialHeight = 1;
-            bool readMouseMovement = true;
         };
 
         virtual ~Window(void) = default;
-        
+
         wink::signal<wink::slot<void(void)>> onClose;
         wink::signal<wink::slot<void(bool isActive)>> onActivate;
         wink::signal<wink::slot<void(bool isMinimized)>> onSizeChanged;
 
         wink::signal<wink::slot<void(Key key, bool state)>> onKeyPressed;
-        wink::signal<wink::slot<void(wchar_t character)>> onCharacter;
+        wink::signal<wink::slot<void(uint32_t character)>> onCharacter;
 
-        wink::signal<wink::slot<void(bool &showCursor)>> onSetCursor;
+        wink::signal<wink::slot<void(Cursor &cursor)>> onSetCursor;
         wink::signal<wink::slot<void(Button button, bool state)>> onMouseClicked;
         wink::signal<wink::slot<void(float numberOfRotations)>> onMouseWheel;
         wink::signal<wink::slot<void(int32_t xPosition, int32_t yPosition)>> onMousePosition;
@@ -176,7 +189,7 @@ namespace Gek
 
         virtual void *getBaseWindow(void) const = 0;
 
-        virtual Math::Int4 getClientRectangle(void) const = 0;
+        virtual Math::Int4 getClientRectangle(bool moveToScreen = false) const = 0;
         virtual Math::Int4 getScreenRectangle(void) const = 0;
 
         virtual Math::Int2 getCursorPosition(void) const = 0;

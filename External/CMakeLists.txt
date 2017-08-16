@@ -22,7 +22,6 @@ SET(ASSIMP_BUILD_TESTS False CACHE BOOL "" FORCE)
 SET(ASSIMP_INSTALL_PDB False CACHE BOOL "" FORCE)
 add_subdirectory("assimp")
 target_include_directories(assimp PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/assimp/include")
-message("${CMAKE_CURRENT_BINARY_DIR}/assimp/include")
 
 if(WIN32)
     project(DirectXTex)

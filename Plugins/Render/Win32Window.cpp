@@ -1,6 +1,7 @@
 #include "GEK/Render/Window.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include <atlbase.h>
+#include "resource.h"
 
 #ifndef HID_USAGE_PAGE_GENERIC
 #define HID_USAGE_PAGE_GENERIC         ((USHORT) 0x01)
@@ -12,9 +13,11 @@
 
 namespace Gek
 {
+    HINSTANCE GetDLLInstance(void);
+
     namespace Win32
     {
-        const unsigned char KeyToNative[256] =
+        static const uint8_t KeyToNative[256] =
         {
             255,255,255,255, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76,
             77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 49, 50,
@@ -34,7 +37,7 @@ namespace Gek
             255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255
         };
 
-        const unsigned char NativeToKey[256] =
+        static const uint8_t NativeToKey[256] =
         {
             255,255,255,255,255,255,255,255, 42, 43,255,255,255, 40,255,255,
             225,224,226, 72, 57,255,255,255,255,255,255, 41,255,255,255,255,
@@ -59,12 +62,24 @@ namespace Gek
         {
         private:
             HWND window = nullptr;
+            HCURSOR cursorList[7];
+            uint16_t highSurrogate = 0;
 
         public:
             Window(Context *context, Window::Description description)
                 : ContextRegistration(context)
+                , cursorList{
+                LoadCursor(nullptr, IDC_ARROW),
+                LoadCursor(nullptr, IDC_IBEAM),
+                LoadCursor(nullptr, IDC_HAND),
+                LoadCursor(nullptr, IDC_SIZENS),
+                LoadCursor(nullptr, IDC_SIZEWE),
+                LoadCursor(nullptr, IDC_SIZENESW),
+                LoadCursor(nullptr, IDC_SIZENWSE),
+            }
             {
-                WNDCLASS windowClass;
+                WNDCLASSEX windowClass;
+                windowClass.cbSize = sizeof(windowClass);
                 windowClass.style = CS_HREDRAW | CS_VREDRAW | (description.hasOwnContext ? CS_OWNDC : 0);
                 windowClass.lpfnWndProc = [](HWND handle, uint32_t message, WPARAM wParam, LPARAM lParam) -> LRESULT
                 {
@@ -76,14 +91,58 @@ namespace Gek
                         case WM_SETCURSOR:
                             if (LOWORD(lParam) == HTCLIENT)
                             {
-                                bool showCursor = true;
-                                window->onSetCursor(showCursor);
-                                ShowCursor(showCursor);
-                                return TRUE;
-                            }
-                            else
-                            {
-                                ShowCursor(true);
+                                Cursor cursor = Cursor::None;
+                                window->onSetCursor(cursor);
+                                if (cursor == Cursor::None)
+                                {
+                                    auto cursor = window->getCursorPosition();
+                                    auto clientScreen = window->getClientRectangle(true);
+                                    if (cursor.x >= clientScreen.minimum.x &&
+                                        cursor.y >= clientScreen.minimum.y &&
+                                        cursor.x < clientScreen.maximum.x &&
+                                        cursor.y < clientScreen.maximum.y)
+                                    {
+                                        ShowCursor(false);
+                                        SetCursor(nullptr);
+                                        return TRUE;
+                                    }
+                                }
+                                else
+                                {
+                                    ShowCursor(true);
+                                    switch (cursor)
+                                    {
+                                    case Cursor::Arrow:
+                                        SetCursor(window->cursorList[0]);
+                                        break;
+
+                                    case Cursor::Text:
+                                        SetCursor(window->cursorList[1]);
+                                        break;
+
+                                    case Cursor::Hand:
+                                        SetCursor(window->cursorList[2]);
+                                        break;
+
+                                    case Cursor::SizeNS:
+                                        SetCursor(window->cursorList[3]);
+                                        break;
+
+                                    case Cursor::SizeEW:
+                                        SetCursor(window->cursorList[4]);
+                                        break;
+
+                                    case Cursor::SizeNESW:
+                                        SetCursor(window->cursorList[5]);
+                                        break;
+
+                                    case Cursor::SizeNWSE:
+                                        SetCursor(window->cursorList[6]);
+                                        break;
+                                    };
+
+                                    return TRUE;
+                                }
                             }
 
                             break;
@@ -113,7 +172,7 @@ namespace Gek
                             break;
 
                         case WM_MOUSEWHEEL:
-                            window->onMouseWheel(GET_WHEEL_DELTA_WPARAM(wParam));
+                            window->onMouseWheel(float(GET_WHEEL_DELTA_WPARAM(wParam)) / float(WHEEL_DELTA));
                             break;
 
                         case WM_MOUSEMOVE:
@@ -137,9 +196,26 @@ namespace Gek
                             break;
 
                         case WM_CHAR:
-                            if ((HIWORD(lParam) & KF_REPEAT) == 0)
+                            if (IS_HIGH_SURROGATE(wParam))
                             {
-                                window->onCharacter(wParam);
+                                window->highSurrogate = static_cast<uint16_t>(wParam);
+                            }
+                            else
+                            {
+                                if (IS_LOW_SURROGATE(wParam))
+                                {
+                                    uint16_t lowSurrogate = static_cast<uint16_t>(wParam);
+                                    uint32_t character = (window->highSurrogate - HIGH_SURROGATE_START) << 10;
+                                    character |= (lowSurrogate - LOW_SURROGATE_START);
+                                    character += 0x10000;
+                                    window->highSurrogate = 0;
+                                    window->onCharacter(character);
+                                }
+                                else
+                                {
+                                    uint16_t character = static_cast<uint16_t>(wParam);
+                                    window->onCharacter(character);
+                                }
                             }
 
                             break;
@@ -193,6 +269,21 @@ namespace Gek
                         case WM_SIZE:
                             window->onSizeChanged(wParam == SIZE_MINIMIZED);
                             break;
+
+                        case WM_SYSCOMMAND:
+                            if (wParam == SC_KEYMENU)
+                            {
+                                /* Remove beeping sound when ALT + some key is pressed. */
+                                return FALSE;
+                            }
+
+                            break;
+
+                        case WM_SETFOCUS:
+                            break;
+
+                        case WM_KILLFOCUS:
+                            break;
                         };
                     }
 
@@ -202,19 +293,21 @@ namespace Gek
                 windowClass.cbClsExtra = 0;
                 windowClass.cbWndExtra = 0;
                 windowClass.hInstance = GetModuleHandle(nullptr);
-                windowClass.hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(103));
-                windowClass.hCursor = LoadCursor(GetModuleHandle(nullptr), IDC_ARROW);
+                windowClass.hIcon = LoadIcon(GetDLLInstance(), MAKEINTRESOURCE(IDI_HOURGLASS));
+                windowClass.hIconSm = LoadIcon(GetDLLInstance(), MAKEINTRESOURCE(IDI_HOURGLASS));
+                windowClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
                 windowClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
                 windowClass.lpszMenuName = nullptr;
-				auto wideClassName(String::Widen(description.className));
-				windowClass.lpszClassName = wideClassName.c_str();
-                ATOM classAtom = RegisterClass(&windowClass);
+                auto wideDescription(String::Widen(description.className));
+                windowClass.lpszClassName = wideDescription.c_str();
+                ATOM classAtom = RegisterClassEx(&windowClass);
                 if (!classAtom)
                 {
                     throw std::exception("Unable to register window class");
                 }
 
                 auto windowFlags = (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX);
+                windowFlags |= (description.allowResize ? WS_THICKFRAME | WS_MAXIMIZEBOX : 0);
 
                 RECT clientRectangle;
                 clientRectangle.left = 0;
@@ -224,7 +317,7 @@ namespace Gek
                 AdjustWindowRect(&clientRectangle, WS_OVERLAPPEDWINDOW, false);
                 int windowWidth = (clientRectangle.right - clientRectangle.left);
                 int windowHeight = (clientRectangle.bottom - clientRectangle.top);
-                window = CreateWindow(wideClassName.c_str(), String::Widen(description.windowName).c_str(), windowFlags, CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
+                window = CreateWindow(wideDescription.c_str(), String::Widen(description.windowName).c_str(), windowFlags, CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
                 if (window == nullptr)
                 {
                     throw std::exception("Unable to create window");
@@ -267,10 +360,16 @@ namespace Gek
                 return window;
             }
 
-            Math::Int4 getClientRectangle(void) const
+            Math::Int4 getClientRectangle(bool moveToScreen = false) const
             {
                 Math::Int4 rectangle;
                 GetClientRect(window, (RECT *)&rectangle);
+                if (moveToScreen)
+                {
+                    ClientToScreen(window, (POINT *)&rectangle.minimum);
+                    ClientToScreen(window, (POINT *)&rectangle.maximum);
+                }
+
                 return rectangle;
             }
 

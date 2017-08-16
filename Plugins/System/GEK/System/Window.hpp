@@ -139,11 +139,23 @@ namespace Gek
             RightGUI = 231
         };
 
-        enum class Button : uint32_t
+        enum class Button
         {
             Left = 0,
             Middle,
             Right,
+        };
+
+        enum class Cursor
+        {
+            None = 0,
+            Arrow,
+            Text,
+            Hand,
+            SizeNS,
+            SizeEW,
+            SizeNESW,
+            SizeNWSE,
         };
 
         struct Description
@@ -165,9 +177,9 @@ namespace Gek
         wink::signal<wink::slot<void(bool isMinimized)>> onSizeChanged;
 
         wink::signal<wink::slot<void(Key key, bool state)>> onKeyPressed;
-        wink::signal<wink::slot<void(wchar_t character)>> onCharacter;
+        wink::signal<wink::slot<void(uint32_t character)>> onCharacter;
 
-        wink::signal<wink::slot<void(bool &showCursor)>> onSetCursor;
+        wink::signal<wink::slot<void(Cursor &cursor)>> onSetCursor;
         wink::signal<wink::slot<void(Button button, bool state)>> onMouseClicked;
         wink::signal<wink::slot<void(float numberOfRotations)>> onMouseWheel;
         wink::signal<wink::slot<void(int32_t xPosition, int32_t yPosition)>> onMousePosition;

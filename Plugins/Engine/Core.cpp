@@ -58,17 +58,6 @@ namespace Gek
 
             std::unique_ptr<UI::Dock::WorkSpace> dock;
 
-            HCURSOR cursorList[7] = 
-            {
-                LoadCursor(nullptr, IDC_ARROW),
-                LoadCursor(nullptr, IDC_IBEAM),
-                LoadCursor(nullptr, IDC_HAND),
-                LoadCursor(nullptr, IDC_SIZENS),
-                LoadCursor(nullptr, IDC_SIZEWE),
-                LoadCursor(nullptr, IDC_SIZENESW),
-                LoadCursor(nullptr, IDC_SIZENWSE),
-            };
-
         public:
             Core(Context *context, Window *_window)
                 : ContextRegistration(context)
@@ -199,6 +188,7 @@ namespace Gek
                 window->setVisibility(true);
                 setFullScreen(JSON::Reference(configuration).get("display").get("fullScreen").convert(false));
 				LockedWrite{ std::cout } << String::Format("Starting engine");
+                window->readEvents();
             }
 
             ~Core(void)
@@ -276,44 +266,49 @@ namespace Gek
                 windowActive = isActive;
             }
 
-            void onSetCursor(bool &showCursor)
+            void onSetCursor(Window::Cursor &cursor)
             {
-                switch (ImGui::GetMouseCursor())
+                if (enableInterfaceControl)
                 {
-                case ImGuiMouseCursor_None:
-                    SetCursor(nullptr);
-                    break;
+                    switch (ImGui::GetMouseCursor())
+                    {
+                    case ImGuiMouseCursor_None:
+                        cursor = Window::Cursor::None;
+                        break;
 
-                case ImGuiMouseCursor_Arrow:
-                    SetCursor(cursorList[0]);
-                    break;
+                    case ImGuiMouseCursor_Arrow:
+                        cursor = Window::Cursor::Arrow;
+                        break;
 
-                case ImGuiMouseCursor_TextInput:
-                    SetCursor(cursorList[1]);
-                    break;
+                    case ImGuiMouseCursor_TextInput:
+                        cursor = Window::Cursor::Text;
+                        break;
 
-                case ImGuiMouseCursor_Move:
-                    SetCursor(cursorList[2]);
-                    break;
+                    case ImGuiMouseCursor_Move:
+                        cursor = Window::Cursor::Hand;
+                        break;
 
-                case ImGuiMouseCursor_ResizeNS:
-                    SetCursor(cursorList[3]);
-                    break;
+                    case ImGuiMouseCursor_ResizeNS:
+                        cursor = Window::Cursor::SizeNS;
+                        break;
 
-                case ImGuiMouseCursor_ResizeEW:
-                    SetCursor(cursorList[4]);
-                    break;
+                    case ImGuiMouseCursor_ResizeEW:
+                        cursor = Window::Cursor::SizeEW;
+                        break;
 
-                case ImGuiMouseCursor_ResizeNESW:
-                    SetCursor(cursorList[5]);
-                    break;
+                    case ImGuiMouseCursor_ResizeNESW:
+                        cursor = Window::Cursor::SizeNWSE;
+                        break;
 
-                case ImGuiMouseCursor_ResizeNWSE:
-                    SetCursor(cursorList[6]);
-                    break;
-                };
-
-                showCursor = enableInterfaceControl;
+                    case ImGuiMouseCursor_ResizeNWSE:
+                        cursor = Window::Cursor::SizeNWSE;
+                        break;
+                    };
+                }
+                else
+                {
+                    cursor = Window::Cursor::None;
+                }
             }
 
             void onSizeChanged(bool isMinimized)
@@ -325,7 +320,7 @@ namespace Gek
                 }
             }
 
-            void onCharacter(wchar_t character)
+            void onCharacter(uint32_t character)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 imGuiIo.AddInputCharacter(character);

@@ -517,9 +517,9 @@ namespace Gek
             windowActive = isActive;
         }
 
-        void onSetCursor(bool &showCursor)
+        void onSetCursor(Window::Cursor &cursor)
         {
-            showCursor = false;
+            cursor = Window::Cursor::None;
         }
 
         void onSizeChanged(bool isMinimized)
@@ -530,7 +530,7 @@ namespace Gek
             }
         }
 
-        void onCharacter(wchar_t character)
+        void onCharacter(uint32_t character)
         {
             ImGuiIO &imGuiIo = ImGui::GetIO();
             imGuiIo.AddInputCharacter(character);
