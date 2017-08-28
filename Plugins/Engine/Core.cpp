@@ -153,11 +153,7 @@ namespace Gek
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(processorName, (Plugin::Core *)this));
                 }
 
-                for (auto &processor : processorList)
-                {
-                    processor->onInitialized();
-                }
-
+                onInitialized.emit();
                 dock = std::make_unique<UI::Dock::WorkSpace>();
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
@@ -193,11 +189,6 @@ namespace Gek
 
             ~Core(void)
             {
-                for (auto &processor : processorList)
-                {
-                    processor->onDestroyed();
-                }
-
                 dock = nullptr;
                 processorList.clear();
                 renderer = nullptr;
@@ -221,7 +212,7 @@ namespace Gek
                     }
 
                     videoDevice->setFullScreenState(requestFullScreen);
-                    onResize();
+                    onChangedDisplay();
                     if (!requestFullScreen)
                     {
                         window->move();
@@ -245,7 +236,7 @@ namespace Gek
                         configuration["display"]["mode"] = requestDisplayMode;
                         videoDevice->setDisplayMode(displayModeData);
                         window->move();
-                        onResize();
+                        onChangedDisplay();
 
                         return true;
                     }
@@ -258,7 +249,7 @@ namespace Gek
             void onClose(void)
             {
                 engineRunning = false;
-                onExit();
+                onShutdown.emit();
             }
 
             void onActivate(bool isActive)
@@ -316,7 +307,7 @@ namespace Gek
                 if (videoDevice && !isMinimized)
                 {
                     videoDevice->handleResize();
-                    onResize();
+                    onChangedDisplay();
                 }
             }
 
@@ -771,7 +762,7 @@ namespace Gek
                             {
                                 configuration["shaders"] = shadersSettings;
                                 configuration["filters"] = filtersSettings;
-                                onSettingsChanged();
+                                onChangedSettings();
                             }
 
                             showSettings = false;
@@ -1002,6 +993,10 @@ namespace Gek
                     else
                     {
                         population->update(frameTime);
+                        auto rectangle = window->getScreenRectangle();
+                        window->setCursorPosition(Math::Int2(
+                            int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
+                            int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
                     }
                 }
 

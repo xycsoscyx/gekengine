@@ -6,6 +6,7 @@
 #include "GEK/Render/Window.hpp"
 #include "GEK/Render/Device.hpp"
 #include "GEK/GUI/Utilities.hpp"
+#include "GEK/GUI/Dock.hpp"
 #include <concurrent_unordered_map.h>
 #include <Windows.h>
 
@@ -25,11 +26,23 @@ namespace Gek
         bool engineRunning = false;
         bool windowActive = false;
 
-        int currentDisplayMode = 0;
-        int previousDisplayMode = 0;
         Render::DisplayModeList displayModeList;
         std::vector<std::string> displayModeStringList;
-        bool fullScreen = false;
+        struct Display
+        {
+            int mode = -1;
+            bool fullScreen = false;
+        } current, previous, next;
+
+        bool showResetDialog = false;
+        bool showLoadMenu = false;
+        int currentSelectedScene = 0;
+        bool showSettings = false;
+        bool showModeChange = false;
+        float modeChangeTimer = 0.0f;
+
+        float mouseSensitivity = 0.5f;
+        bool enableInterfaceControl = false;
 
         struct GUI
         {
@@ -49,11 +62,9 @@ namespace Gek
         };
 
         std::unique_ptr<GUI> gui = std::make_unique<GUI>();
+        std::unique_ptr<UI::Dock::WorkSpace> dock;
 
         bool showCursor = false;
-        bool showModeChange = false;
-        float modeChangeTimer = 0.0f;
-        bool consoleActive = false;
 
     protected:
         Context * const getContext(void) const
@@ -72,10 +83,9 @@ namespace Gek
 
             context = Context::Create(rootPath, searchPathList);
             configuration = JSON::Load(getContext()->getRootFileName("config.json"));
-            previousDisplayMode = currentDisplayMode = JSON::Reference(configuration).get("display").get("mode").convert(0);
-            configuration["display"]["mode"] = currentDisplayMode;
 
             Window::Description windowDescription;
+            windowDescription.allowResize = true;
             windowDescription.className = "GEK_Engine_Demo";
             windowDescription.windowName = "GEK Engine Demo";
             window = getContext()->createClass<Window>("Default::Render::Window", windowDescription);
@@ -99,38 +109,46 @@ namespace Gek
 
             Render::Device::Description deviceDescription;
             renderDevice = getContext()->createClass<Render::Device>("Default::Render::Device", window.get(), deviceDescription);
-            displayModeList = renderDevice->getDisplayModeList(deviceDescription.displayFormat);
+
+            uint32_t preferredDisplayMode = 0;
+            auto fullDisplayModeList = renderDevice->getDisplayModeList(deviceDescription.displayFormat);
+            for (const auto &displayMode : fullDisplayModeList)
+            {
+                if (displayMode.height >= 800)
+                {
+                    displayModeList.push_back(displayMode);
+                }
+            }
+
             for (const auto &displayMode : displayModeList)
             {
+                auto currentDisplayMode = displayModeStringList.size();
                 std::string displayModeString(String::Format("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
                 switch (displayMode.aspectRatio)
                 {
                 case Render::DisplayMode::AspectRatio::_4x3:
-                    displayModeString += " (4x3)";
+                    displayModeString.append(" (4x3)");
                     break;
 
                 case Render::DisplayMode::AspectRatio::_16x9:
-                    displayModeString += " (16x9)";
+                    preferredDisplayMode = (preferredDisplayMode == 0 && displayMode.height > 800 ? currentDisplayMode : preferredDisplayMode);
+                    displayModeString.append(" (16x9)");
                     break;
 
                 case Render::DisplayMode::AspectRatio::_16x10:
-                    displayModeString += " (16x10)";
+                    preferredDisplayMode = (preferredDisplayMode == 0 && displayMode.height > 800 ? currentDisplayMode : preferredDisplayMode);
+                    displayModeString.append(" (16x10)");
                     break;
                 };
 
                 displayModeStringList.push_back(displayModeString);
             }
 
-            auto baseFileName(getContext()->getRootFileName("data", "gui"));
-            gui->consoleButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, "console.png"), 0);
-            gui->performanceButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, "performance.png"), 0);
-            gui->settingsButton = renderDevice->loadTexture(FileSystem::GetFileName(baseFileName, "settings.png"), 0);
+            setDisplayMode(JSON::Reference(configuration).get("display").get("mode").convert(preferredDisplayMode));
+
             gui->renderQueue = renderDevice->createQueue(0);
 
             ImGuiIO &imGuiIo = ImGui::GetIO();
-            imGuiIo.Fonts->AddFontDefault();
-            imGuiIo.Fonts->Build();
-
             imGuiIo.KeyMap[ImGuiKey_Tab] = VK_TAB;
             imGuiIo.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
             imGuiIo.KeyMap[ImGuiKey_RightArrow] = VK_RIGHT;
@@ -150,14 +168,6 @@ namespace Gek
             imGuiIo.KeyMap[ImGuiKey_X] = 'X';
             imGuiIo.KeyMap[ImGuiKey_Y] = 'Y';
             imGuiIo.KeyMap[ImGuiKey_Z] = 'Z';
-
-            ImGuiStyle& style = ImGui::GetStyle();
-            //ImGui::SetupImGuiStyle(false, 0.9f);
-            ImGui::ResetStyle(ImGuiStyle_EdinBlack, style);
-            style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
-            style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
-            style.WindowRounding = 0.0f;
-            style.FrameRounding = 3.0f;
 
             static char const * const guiProgram =
                 "DeclareConstantBuffer(Constants, 0)\r\n" \
@@ -253,6 +263,30 @@ namespace Gek
             constantBufferDescription.type = Render::BufferDescription::Type::Constant;
             gui->constantBuffer = renderDevice->createBuffer(constantBufferDescription, nullptr, "ImGui::Constants");
 
+            Render::SamplerStateInformation samplerStateInformation;
+            samplerStateInformation.filterMode = Render::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapPoint;
+            samplerStateInformation.addressModeU = Render::SamplerStateInformation::AddressMode::Clamp;
+            samplerStateInformation.addressModeV = Render::SamplerStateInformation::AddressMode::Clamp;
+            samplerStateInformation.addressModeW = Render::SamplerStateInformation::AddressMode::Clamp;
+            gui->samplerState = renderDevice->createSamplerState(samplerStateInformation, "ImGui::Sampler");
+
+            dock = std::make_unique<UI::Dock::WorkSpace>();
+
+            imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "Ruda-Bold.ttf").u8string().c_str(), 14.0f);
+
+            ImFontConfig fontConfig;
+            fontConfig.MergeMode = true;
+
+            fontConfig.GlyphOffset.y = 1.0f;
+            const ImWchar fontAwesomeRanges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+            imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "fontawesome-webfont.ttf").u8string().c_str(), 16.0f, &fontConfig, fontAwesomeRanges);
+
+            fontConfig.GlyphOffset.y = 3.0f;
+            const ImWchar googleIconRanges[] = { ICON_MIN_MD, ICON_MAX_MD, 0 };
+            imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "MaterialIcons-Regular.ttf").u8string().c_str(), 16.0f, &fontConfig, googleIconRanges);
+
+            imGuiIo.Fonts->Build();
+
             uint8_t *pixels = nullptr;
             int32_t fontWidth = 0, fontHeight = 0;
             imGuiIo.Fonts->GetTexDataAsRGBA32(&pixels, &fontWidth, &fontHeight);
@@ -262,15 +296,14 @@ namespace Gek
             fontDescription.width = fontWidth;
             fontDescription.height = fontHeight;
             fontDescription.flags = Render::TextureDescription::Flags::Resource;
-            gui->fontTexture = renderDevice->createTexture(fontDescription, pixels, "ImGui::Font");
-            imGuiIo.Fonts->TexID = &gui->fontTexture;
+            gui->fontTexture = renderDevice->createTexture(fontDescription, pixels);
 
-            Render::SamplerStateInformation samplerStateInformation;
-            samplerStateInformation.filterMode = Render::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapPoint;
-            samplerStateInformation.addressModeU = Render::SamplerStateInformation::AddressMode::Clamp;
-            samplerStateInformation.addressModeV = Render::SamplerStateInformation::AddressMode::Clamp;
-            samplerStateInformation.addressModeW = Render::SamplerStateInformation::AddressMode::Clamp;
-            gui->samplerState = renderDevice->createSamplerState(samplerStateInformation, "ImGui::Sampler");
+            imGuiIo.Fonts->TexID = reinterpret_cast<ImTextureID>(&gui->fontTexture);
+
+            ImGui::ResetStyle(ImGuiStyle_OSXInverse);
+            auto &style = ImGui::GetStyle();
+            style.WindowPadding.x = style.WindowPadding.y;
+            style.FramePadding.x = style.FramePadding.y;
 
             imGuiIo.UserData = this;
             imGuiIo.RenderDrawListsFn = [](ImDrawData *drawData)
@@ -280,9 +313,8 @@ namespace Gek
                 core->renderDrawData(drawData);
             };
 
-            setDisplayMode(currentDisplayMode);
             window->setVisibility(true);
-
+            setFullScreen(JSON::Reference(configuration).get("display").get("fullScreen").convert(false));
             engineRunning = true;
             windowActive = true;
         }
@@ -300,14 +332,179 @@ namespace Gek
             CoUninitialize();
         }
 
-        void setDisplayMode(uint32_t displayMode)
+        bool setFullScreen(bool requestFullScreen)
         {
-            auto &displayModeData = displayModeList[displayMode];
-            if (displayMode < displayModeList.size())
+            if (current.fullScreen != requestFullScreen)
             {
-                currentDisplayMode = displayMode;
-                renderDevice->setDisplayMode(displayModeData);
-                window->move();
+                current.fullScreen = requestFullScreen;
+                configuration["display"]["fullScreen"] = requestFullScreen;
+                if (requestFullScreen)
+                {
+                    window->move(Math::Int2::Zero);
+                }
+
+                renderDevice->setFullScreenState(requestFullScreen);
+                if (!requestFullScreen)
+                {
+                    window->move();
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        bool setDisplayMode(uint32_t requestDisplayMode)
+        {
+            if (current.mode != requestDisplayMode)
+            {
+                auto &displayModeData = displayModeList[requestDisplayMode];
+                LockedWrite{ std::cout } << String::Format("Setting display mode: %vx%v", displayModeData.width, displayModeData.height);
+                if (requestDisplayMode < displayModeList.size())
+                {
+                    current.mode = requestDisplayMode;
+                    configuration["display"]["mode"] = requestDisplayMode;
+                    renderDevice->setDisplayMode(displayModeData);
+                    window->move();
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        void onShowUserInterface(void)
+        {
+            ImGuiIO &imGuiIo = ImGui::GetIO();
+            if (enableInterfaceControl)
+            {
+                ImGui::BeginMainMenuBar();
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5.0f, 10.0f));
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5.0f, 10.0f));
+                if (ImGui::BeginMenu("File"))
+                {
+                    if (ImGui::MenuItem("Settings", "CTRL+O"))
+                    {
+                        showSettings = true;
+                        next = previous = current;
+                    }
+
+                    ImGui::Separator();
+                    if (ImGui::MenuItem("Quit", "CTRL+Q"))
+                    {
+                        onClose();
+                    }
+
+                    ImGui::EndMenu();
+                }
+
+                ImGui::PopStyleVar(2);
+                ImGui::EndMainMenuBar();
+                showSettingsWindow();
+                showDisplayBackup();
+            }
+        }
+
+        void showDisplay(void)
+        {
+            if (dock->BeginTab("Display", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
+            {
+                auto &style = ImGui::GetStyle();
+                ImGui::PushItemWidth(-1.0f);
+                ImGui::ListBox("##DisplayMode", &next.mode, [](void *data, int index, const char **text) -> bool
+                {
+                    Core *core = static_cast<Core *>(data);
+                    auto &mode = core->displayModeStringList[index];
+                    (*text) = mode.c_str();
+                    return true;
+                }, this, displayModeStringList.size(), 10);
+
+                ImGui::PopItemWidth();
+                ImGui::Spacing();
+                ImGui::Checkbox("FullScreen", &next.fullScreen);
+            }
+
+            dock->EndTab();
+        }
+
+        void showSettingsWindow(void)
+        {
+            if (showSettings)
+            {
+                auto &style = ImGui::GetStyle();
+                ImGui::SetNextWindowPosCenter();
+                if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoSavedSettings))
+                {
+                    dock->Begin("##Settings", ImVec2(500.0f, 350.0f), true);
+                    showDisplay();
+                    dock->End();
+
+                    ImGui::Dummy(ImVec2(0.0f, 3.0f));
+
+                    auto size = UI::GetWindowContentRegionSize();
+                    float buttonPositionX = (size.x - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
+                    ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("Accept", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[static_cast<int>(Window::Key::Enter)])
+                    {
+                        ImGui::GetIO().KeysDown[static_cast<int>(Window::Key::Enter)] = false;
+                        bool changedDisplayMode = setDisplayMode(next.mode);
+                        bool changedFullScreen = setFullScreen(next.fullScreen);
+                        if (changedDisplayMode || changedFullScreen)
+                        {
+                            showModeChange = true;
+                            modeChangeTimer = 10.0f;
+                        }
+
+                        showSettings = false;
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[static_cast<int>(Window::Key::Escape)])
+                    {
+                        showSettings = false;
+                    }
+                }
+
+                ImGui::End();
+            }
+        }
+
+        void showDisplayBackup(void)
+        {
+            if (showModeChange)
+            {
+                ImGui::SetNextWindowPosCenter();
+                if (ImGui::Begin("Keep Display Mode", &showModeChange, ImVec2(225.0f, 0.0f), -1.0f, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+                {
+                    ImGui::Text("Keep Display Mode?");
+
+                    auto &style = ImGui::GetStyle();
+                    float buttonPositionX = (ImGui::GetWindowContentRegionWidth() - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
+                    ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[static_cast<int>(Window::Key::Enter)])
+                    {
+                        ImGui::GetIO().KeysDown[static_cast<int>(Window::Key::Enter)] = false;
+                        showModeChange = false;
+                        previous = current;
+                    }
+
+                    ImGui::SameLine();
+                    if (modeChangeTimer <= 0.0f || ImGui::Button("No", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[static_cast<int>(Window::Key::Escape)])
+                    {
+                        showModeChange = false;
+                        setDisplayMode(previous.mode);
+                        setFullScreen(previous.fullScreen);
+                    }
+
+                    ImGui::Text(String::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)).c_str());
+                }
+
+                ImGui::End();
             }
         }
 
@@ -341,45 +538,10 @@ namespace Gek
                 ImGui::Begin("GEK Engine", nullptr, ImVec2(0, 0), 0.0f, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
                 if (windowActive)
                 {
-                    if (showCursor)
-                    {
-                        if (showModeChange)
-                        {
-                            ImGui::SetNextWindowPosCenter();
-                            ImGui::Begin("Keep Display Mode", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
-                            ImGui::Text("Keep Display Mode?");
-
-                            if (ImGui::Button("Yes"))
-                            {
-                                showModeChange = false;
-                                previousDisplayMode = currentDisplayMode;
-                            }
-
-                            ImGui::SameLine();
-                            modeChangeTimer -= 0.001f;
-                            if (modeChangeTimer <= 0.0f || ImGui::Button("No"))
-                            {
-                                showModeChange = false;
-                                setDisplayMode(previousDisplayMode);
-                            }
-
-                            ImGui::Text(String::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)).c_str());
-
-                            ImGui::End();
-                        }
-                    }
+                    onShowUserInterface();
                 }
 
-                if (!windowActive)
-                {
-                    ImGui::SetNextWindowPosCenter();
-                    ImGui::Begin("GEK Engine##Paused", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoCollapse);
-                    ImGui::Dummy(ImVec2(200, 0));
-                    ImGui::Text("Paused");
-                    ImGui::End();
-                }
-
-                if (windowActive && !showCursor)
+                if (windowActive && !enableInterfaceControl)
                 {
                     auto rectangle = window->getScreenRectangle();
                     window->setCursorPosition(Math::Int2(
@@ -491,7 +653,7 @@ namespace Gek
                             scissorBoxList[0].maximum.y = uint32_t(command->ClipRect.w);
                             gui->renderQueue->setScissorList(scissorBoxList);
 
-                            gui->renderQueue->bindResourceList({ *(Render::ResourceHandle *)command->TextureId }, 0, Render::Pipeline::Pixel);
+                            gui->renderQueue->bindResourceList({ *static_cast<Render::ResourceHandle *>(command->TextureId) }, 0, Render::Pipeline::Pixel);
 
                             gui->renderQueue->drawIndexedPrimitive(command->ElemCount, indexOffset, vertexOffset);
                         }
@@ -519,7 +681,47 @@ namespace Gek
 
         void onSetCursor(Window::Cursor &cursor)
         {
-            cursor = Window::Cursor::None;
+            if (enableInterfaceControl)
+            {
+                switch (ImGui::GetMouseCursor())
+                {
+                case ImGuiMouseCursor_None:
+                    cursor = Window::Cursor::None;
+                    break;
+
+                case ImGuiMouseCursor_Arrow:
+                    cursor = Window::Cursor::Arrow;
+                    break;
+
+                case ImGuiMouseCursor_TextInput:
+                    cursor = Window::Cursor::Text;
+                    break;
+
+                case ImGuiMouseCursor_Move:
+                    cursor = Window::Cursor::Hand;
+                    break;
+
+                case ImGuiMouseCursor_ResizeNS:
+                    cursor = Window::Cursor::SizeNS;
+                    break;
+
+                case ImGuiMouseCursor_ResizeEW:
+                    cursor = Window::Cursor::SizeEW;
+                    break;
+
+                case ImGuiMouseCursor_ResizeNESW:
+                    cursor = Window::Cursor::SizeNWSE;
+                    break;
+
+                case ImGuiMouseCursor_ResizeNWSE:
+                    cursor = Window::Cursor::SizeNWSE;
+                    break;
+                };
+            }
+            else
+            {
+                cursor = Window::Cursor::None;
+            }
         }
 
         void onSizeChanged(bool isMinimized)
@@ -539,14 +741,34 @@ namespace Gek
         void onKeyPressed(Window::Key key, bool state)
         {
             ImGuiIO &imGuiIo = ImGui::GetIO();
-            imGuiIo.KeysDown[static_cast<int>(key)] = state;
-            if (state)
+            if (enableInterfaceControl)
+            {
+                imGuiIo.KeysDown[static_cast<int>(key)] = state;
+            }
+
+            if (!state)
             {
                 switch (key)
                 {
                 case Window::Key::Escape:
-                    showCursor = !showCursor;
-                    imGuiIo.MouseDrawCursor = showCursor;
+                    enableInterfaceControl = !enableInterfaceControl;
+                    imGuiIo.MouseDrawCursor = false;// enableInterfaceControl;
+                    if (enableInterfaceControl)
+                    {
+                        auto client = window->getClientRectangle();
+                        imGuiIo.MousePos.x = ((float(client.maximum.x - client.minimum.x) * 0.5f) + client.minimum.x);
+                        imGuiIo.MousePos.y = ((float(client.maximum.y - client.minimum.y) * 0.5f) + client.minimum.y);
+                    }
+                    else
+                    {
+                        imGuiIo.MousePos.x = -1.0f;
+                        imGuiIo.MousePos.y = -1.0f;
+                    }
+
+                    break;
+
+                case Window::Key::F1:
+                    configuration["editor"]["active"] = !JSON::Reference(configuration).get("editor").get("active").convert(false);
                     break;
                 };
             }
@@ -574,14 +796,20 @@ namespace Gek
         void onMouseWheel(float numberOfRotations)
         {
             ImGuiIO &imGuiIo = ImGui::GetIO();
-            imGuiIo.MouseWheel += numberOfRotations;
+            if (enableInterfaceControl)
+            {
+                imGuiIo.MouseWheel += numberOfRotations;
+            }
         }
 
         void onMousePosition(int32_t xPosition, int32_t yPosition)
         {
             ImGuiIO &imGuiIo = ImGui::GetIO();
-            imGuiIo.MousePos.x = xPosition;
-            imGuiIo.MousePos.y = yPosition;
+            if (enableInterfaceControl)
+            {
+                imGuiIo.MousePos.x = xPosition;
+                imGuiIo.MousePos.y = yPosition;
+            }
         }
 
         void onMouseMovement(int32_t xMovement, int32_t yMovement)

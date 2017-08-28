@@ -513,6 +513,7 @@ namespace Gek
         private:
             Plugin::Core *core = nullptr;
             Video::Device *videoDevice = nullptr;
+            Plugin::Renderer *renderer = nullptr;
 
             ThreadPool loadPool;
             std::recursive_mutex shaderMutex;
@@ -573,13 +574,10 @@ namespace Gek
                 assert(core);
                 assert(videoDevice);
 
-                core->onResize.connect(this, &Resources::onResize);
-                core->onSettingsChanged.connect(this, &Resources::onSettingsChanged);
-            }
-
-            ~Resources(void)
-            {
-                loadPool.drain();
+                core->onChangedDisplay.connect(this, &Resources::onChangedDisplay);
+                core->onChangedSettings.connect(this, &Resources::onChangedSettings);
+                core->onInitialized.connect(this, &Resources::onInitialized);
+                core->onShutdown.connect(this, &Resources::onShutdown);
             }
 
             Validate &getValid(Video::Device::Context::Pipeline *videoPipeline)
@@ -666,15 +664,68 @@ namespace Gek
                 }
             }
 
+            // Renderer
+            bool showResources = false;
+            void onShowUserInterface(ImGuiContext * const guiContext)
+            {
+                ImGuiIO &imGuiIo = ImGui::GetIO();
+                bool mainMenuShowing = (ImGui::FindWindowByName("##MainMenuBar") ? true : false);
+                if (mainMenuShowing)
+                {
+                    ImGui::BeginMainMenuBar();
+                    ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5.0f, 10.0f));
+                    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5.0f, 10.0f));
+                    if (ImGui::BeginMenu("Resources"))
+                    {
+                        ImGui::MenuItem("Show", "CTRL+S", &showResources);
+                        ImGui::EndMenu();
+                    }
+
+                    ImGui::PopStyleVar(2);
+                    ImGui::EndMainMenuBar();
+                }
+
+                if (showResources)
+                {
+                    if (ImGui::Begin("Resources"))
+                    {
+                        ImGui::End();
+                    }
+                }
+            }
+
+            // Plugin::Processor
+            void onInitialized(void)
+            {
+                core->listProcessors([&](Plugin::Processor *processor) -> void
+                {
+                    auto check = dynamic_cast<Plugin::Renderer *>(processor);
+                    if (check)
+                    {
+                        renderer = check;
+                        renderer->onShowUserInterface.connect(this, &Resources::onShowUserInterface);
+                    }
+                });
+            }
+
+            void onShutdown(void)
+            {
+                loadPool.drain();
+                if (renderer)
+                {
+                    renderer->onShowUserInterface.disconnect(this, &Resources::onShowUserInterface);
+                }
+            }
+
             // Plugin::Core Slots
-            void onResize(void)
+            void onChangedDisplay(void)
             {
                 programCache.clear();
                 shaderCache.reload();
                 filterCache.reload();
             }
 
-            void onSettingsChanged(void)
+            void onChangedSettings(void)
             {
                 programCache.clear();
                 shaderCache.reload();

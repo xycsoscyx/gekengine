@@ -83,18 +83,14 @@ namespace Gek
 
                 dock = std::make_unique<UI::Dock::WorkSpace>();
                 gizmo = std::make_unique<UI::Gizmo::WorkSpace>();
+                core->onInitialized.connect(this, &Editor::onInitialized);
+                core->onShutdown.connect(this, &Editor::onShutdown);
                 population->onAction.connect(this, &Editor::onAction);
                 population->onUpdate[90].connect(this, &Editor::onUpdate);
                 renderer->onShowUserInterface.connect(this, &Editor::onShowUserInterface);
             }
 
-            ~Editor(void)
-            {
-                gizmo = nullptr;
-                dock = nullptr;
-            }
-
-            // Plugin::Processor
+            // Plugin::Core
             void onInitialized(void)
             {
                 core->listProcessors([&](Plugin::Processor *processor) -> void
@@ -107,11 +103,11 @@ namespace Gek
                 });
             }
 
-            void onDestroyed(void)
+            void onShutdown(void)
             {
+                renderer->onShowUserInterface.disconnect(this, &Editor::onShowUserInterface);
                 population->onAction.disconnect(this, &Editor::onAction);
                 population->onUpdate[90].disconnect(this, &Editor::onUpdate);
-                renderer->onShowUserInterface.disconnect(this, &Editor::onShowUserInterface);
             }
 
             // Renderer

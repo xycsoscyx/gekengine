@@ -27,9 +27,11 @@ namespace Gek
         {
             using ListenerHandle = uint64_t;
 
-            wink::signal<wink::slot<void(void)>> onResize;
-            wink::signal<wink::slot<void(void)>> onSettingsChanged;
-            wink::signal<wink::slot<void(void)>> onExit;
+            wink::signal<wink::slot<void(void)>> onInitialized;
+            wink::signal<wink::slot<void(void)>> onShutdown;
+
+            wink::signal<wink::slot<void(void)>> onChangedDisplay;
+            wink::signal<wink::slot<void(void)>> onChangedSettings;
 
             virtual ~Core(void) = default;
 

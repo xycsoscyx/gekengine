@@ -74,15 +74,13 @@ namespace Gek
         {
             assert(population);
 
+            core->onInitialized.connect(this, &NameProcessor::onInitialized);
+            core->onShutdown.connect(this, &NameProcessor::onShutdown);
             population->onReset.connect(this, &NameProcessor::onReset);
             population->onEntityCreated.connect(this, &NameProcessor::onEntityCreated);
             population->onEntityDestroyed.connect(this, &NameProcessor::onEntityDestroyed);
             population->onComponentAdded.connect(this, &NameProcessor::onComponentAdded);
             population->onComponentRemoved.connect(this, &NameProcessor::onComponentRemoved);
-        }
-
-        ~NameProcessor(void)
-        {
         }
 
         uint32_t uniqueIdentifier = 0;
@@ -130,7 +128,7 @@ namespace Gek
             }
         }
 
-        // Plugin::Processor
+        // Plugin::Core
         void onInitialized(void)
         {
             core->listProcessors([&](Plugin::Processor *processor) -> void
@@ -143,7 +141,7 @@ namespace Gek
             });
         }
 
-        void onDestroyed(void)
+        void onShutdown(void)
         {
             if (editor)
             {

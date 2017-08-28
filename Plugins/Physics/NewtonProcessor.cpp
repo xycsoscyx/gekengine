@@ -97,9 +97,6 @@ namespace Gek
                 assert(newtonWorld);
 
                 NewtonSetSolverModel(newtonWorld, 1);
-#if NEWTON_MINOR_VERSION < 14
-                NewtonSetFrictionModel(newtonWorld, 1);
-#endif
                 NewtonWorldSetUserData(newtonWorld, static_cast<Newton::World *>(this));
 
                 newtonListener = NewtonWorldAddListener(newtonWorld, "__gek_pre_listener__", this);
@@ -109,24 +106,17 @@ namespace Gek
                 NewtonWorldListenerSetPostUpdateCallback(newtonWorld, newtonListener, newtonWorldPostUpdate);
 
                 int defaultMaterialID = NewtonMaterialGetDefaultGroupID(newtonWorld);
-#if NEWTON_MINOR_VERSION >= 14
                 NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, newtonOnAABBOverlap, newtonOnContactFriction);
-#else
-                NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, nullptr, newtonOnAABBOverlap, newtonOnContactFriction);
-#endif
 
-                renderer->onShowUserInterface.connect(this, &Processor::onShowUserInterface);
+                core->onInitialized.connect(this, &Processor::onInitialized);
+                core->onShutdown.connect(this, &Processor::onShutdown);
                 population->onReset.connect(this, &Processor::onReset);
                 population->onEntityCreated.connect(this, &Processor::onEntityCreated);
                 population->onEntityDestroyed.connect(this, &Processor::onEntityDestroyed);
                 population->onComponentAdded.connect(this, &Processor::onComponentAdded);
                 population->onComponentRemoved.connect(this, &Processor::onComponentRemoved);
                 population->onUpdate[50].connect(this, &Processor::onUpdate);
-            }
-
-            ~Processor(void)
-            {
-                assert(NewtonGetMemoryUsed() == 0);
+                renderer->onShowUserInterface.connect(this, &Processor::onShowUserInterface);
             }
 
             uint32_t getStaticSceneSurface(Math::Float3 const &position, Math::Float3 const &normal)
@@ -354,7 +344,7 @@ namespace Gek
                 }
             }
 
-            // Plugin::Processor
+            // Plugin::Core
             void onInitialized(void)
             {
                 core->listProcessors([&](Plugin::Processor *processor) -> void
@@ -367,7 +357,7 @@ namespace Gek
                 });
             }
 
-            void onDestroyed(void)
+            void onShutdown(void)
             {
                 if (editor)
                 {
@@ -385,6 +375,7 @@ namespace Gek
                 onReset();
 
                 NewtonDestroy(newtonWorld);
+                assert(NewtonGetMemoryUsed() == 0);
             }
 
             // Plugin::Editor Slots

@@ -58,19 +58,12 @@ namespace Gek
         {
             assert(population);
 
+            core->onShutdown.connect(this, &SpinProcessor::onShutdown);
             population->onUpdate[50].connect(this, &SpinProcessor::onUpdate);
         }
 
-        ~SpinProcessor(void)
-        {
-        }
-
-        // Plugin::Processor
-        void onInitialized(void)
-        {
-        }
-
-        void onDestroyed(void)
+        // Plugin::Core
+        void onShutdown(void)
         {
             population->onUpdate[50].disconnect(this, &SpinProcessor::onUpdate);
         }

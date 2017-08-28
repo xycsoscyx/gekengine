@@ -255,6 +255,8 @@ namespace Gek
 
             LockedWrite{ std::cout } << String::Format("Initializing model system");
 
+            core->onInitialized.connect(this, &ModelProcessor::onInitialized);
+            core->onShutdown.connect(this, &ModelProcessor::onShutdown);
             population->onReset.connect(this, &ModelProcessor::onReset);
             population->onEntityCreated.connect(this, &ModelProcessor::onEntityCreated);
             population->onEntityDestroyed.connect(this, &ModelProcessor::onEntityDestroyed);
@@ -271,10 +273,6 @@ namespace Gek
             instanceDescription.flags = Video::Buffer::Description::Flags::Mappable;
             instanceBuffer = videoDevice->createBuffer(instanceDescription);
             instanceBuffer->setName("model:instances");
-        }
-
-        ~ModelProcessor(void)
-        {
         }
 
         void addEntity(Plugin::Entity * const entity)
@@ -398,7 +396,7 @@ namespace Gek
             });
         }
 
-        void onDestroyed(void)
+        void onShutdown(void)
         {
             loadPool.drain();
             if (editor)

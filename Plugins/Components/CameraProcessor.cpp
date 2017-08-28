@@ -107,16 +107,13 @@ namespace Gek
             assert(resources);
             assert(renderer);
 
+            core->onShutdown.connect(this, &CameraProcessor::onShutdown);
             population->onReset.connect(this, &CameraProcessor::onReset);
             population->onEntityCreated.connect(this, &CameraProcessor::onEntityCreated);
             population->onEntityDestroyed.connect(this, &CameraProcessor::onEntityDestroyed);
             population->onComponentAdded.connect(this, &CameraProcessor::onComponentAdded);
             population->onComponentRemoved.connect(this, &CameraProcessor::onComponentRemoved);
             population->onUpdate[90].connect(this, &CameraProcessor::onUpdate);
-        }
-
-        ~CameraProcessor(void)
-        {
         }
 
         void addEntity(Plugin::Entity * const entity)
@@ -136,12 +133,8 @@ namespace Gek
             });
         }
 
-        // Plugin::Processor
-        void onInitialized(void)
-        {
-        }
-
-        void onDestroyed(void)
+        // Plugin::Core
+        void onShutdown(void)
         {
             population->onReset.disconnect(this, &CameraProcessor::onReset);
             population->onEntityCreated.disconnect(this, &CameraProcessor::onEntityCreated);
