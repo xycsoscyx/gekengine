@@ -39,7 +39,7 @@ namespace Gek
                     throw MissingParameter("Missing shader encountered");
                 }
 
-                Video::RenderStateInformation renderStateInformation;
+                Video::RenderState::Description renderStateInformation;
                 renderStateInformation.load(shaderNode.get("renderState"));
                 renderState = resources->createRenderState(renderStateInformation);
 

@@ -338,9 +338,9 @@ namespace Gek
             Plugin::Population *population = nullptr;
             Engine::Resources *resources = nullptr;
 
-            Video::ObjectPtr bufferSamplerState;
-            Video::ObjectPtr textureSamplerState;
-            Video::ObjectPtr mipMapSamplerState;
+            Video::SamplerStatePtr bufferSamplerState;
+            Video::SamplerStatePtr textureSamplerState;
+            Video::SamplerStatePtr mipMapSamplerState;
             std::vector<Video::Object *> samplerList;
 
             Video::BufferPtr engineConstantBuffer;
@@ -352,9 +352,9 @@ namespace Gek
 
             Video::ObjectPtr deferredVertexProgram;
             Video::ObjectPtr deferredPixelProgram;
-            Video::ObjectPtr blendState;
-            Video::ObjectPtr renderState;
-            Video::ObjectPtr depthState;
+            Video::BlendStatePtr blendState;
+            Video::RenderStatePtr renderState;
+            Video::DepthStatePtr depthState;
 
             ThreadPool workerPool;
             LightData<Components::DirectionalLight, DirectionalLightData> directionalLightData;
@@ -417,40 +417,40 @@ namespace Gek
             {
                 LockedWrite{ std::cout } << String::Format("Initializing rendering system components");
 
-                Video::SamplerStateInformation bufferSamplerStateData;
-                bufferSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapPoint;
-                bufferSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
-                bufferSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
+                Video::SamplerState::Description bufferSamplerStateData;
+                bufferSamplerStateData.filterMode = Video::SamplerState::Description::FilterMode::MinificationMagnificationMipMapPoint;
+                bufferSamplerStateData.addressModeU = Video::SamplerState::Description::AddressMode::Clamp;
+                bufferSamplerStateData.addressModeV = Video::SamplerState::Description::AddressMode::Clamp;
                 bufferSamplerState = videoDevice->createSamplerState(bufferSamplerStateData);
                 bufferSamplerState->setName("renderer:bufferSamplerState");
 
-                Video::SamplerStateInformation textureSamplerStateData;
+                Video::SamplerState::Description textureSamplerStateData;
                 textureSamplerStateData.maximumAnisotropy = 8;
-                textureSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::Anisotropic;
-                textureSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Wrap;
-                textureSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
+                textureSamplerStateData.filterMode = Video::SamplerState::Description::FilterMode::Anisotropic;
+                textureSamplerStateData.addressModeU = Video::SamplerState::Description::AddressMode::Wrap;
+                textureSamplerStateData.addressModeV = Video::SamplerState::Description::AddressMode::Wrap;
                 textureSamplerState = videoDevice->createSamplerState(textureSamplerStateData);
                 textureSamplerState->setName("renderer:textureSamplerState");
 
-                Video::SamplerStateInformation mipMapSamplerStateData;
+                Video::SamplerState::Description mipMapSamplerStateData;
                 mipMapSamplerStateData.maximumAnisotropy = 8;
-                mipMapSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapLinear;
-                mipMapSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
-                mipMapSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
+                mipMapSamplerStateData.filterMode = Video::SamplerState::Description::FilterMode::MinificationMagnificationMipMapLinear;
+                mipMapSamplerStateData.addressModeU = Video::SamplerState::Description::AddressMode::Clamp;
+                mipMapSamplerStateData.addressModeV = Video::SamplerState::Description::AddressMode::Clamp;
                 mipMapSamplerState = videoDevice->createSamplerState(mipMapSamplerStateData);
                 mipMapSamplerState->setName("renderer:mipMapSamplerState");
 
                 samplerList = { textureSamplerState.get(), mipMapSamplerState.get(), };
 
-                Video::UnifiedBlendStateInformation blendStateInformation;
+                Video::BlendState::Description blendStateInformation;
                 blendState = videoDevice->createBlendState(blendStateInformation);
                 blendState->setName("renderer:blendState");
 
-                Video::RenderStateInformation renderStateInformation;
+                Video::RenderState::Description renderStateInformation;
                 renderState = videoDevice->createRenderState(renderStateInformation);
                 renderState->setName("renderer:renderState");
 
-                Video::DepthStateInformation depthStateInformation;
+                Video::DepthState::Description depthStateInformation;
                 depthState = videoDevice->createDepthState(depthStateInformation);
                 depthState->setName("renderer:depthState");
 
@@ -612,29 +612,29 @@ namespace Gek
                 gui.pixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiled.data(), compiled.size());
                 gui.pixelProgram->setName("core:pixelProgram");
 
-                Video::UnifiedBlendStateInformation blendStateInformation;
-                blendStateInformation.enable = true;
-                blendStateInformation.colorSource = Video::BlendStateInformation::Source::SourceAlpha;
-                blendStateInformation.colorDestination = Video::BlendStateInformation::Source::InverseSourceAlpha;
-                blendStateInformation.colorOperation = Video::BlendStateInformation::Operation::Add;
-                blendStateInformation.alphaSource = Video::BlendStateInformation::Source::InverseSourceAlpha;
-                blendStateInformation.alphaDestination = Video::BlendStateInformation::Source::Zero;
-                blendStateInformation.alphaOperation = Video::BlendStateInformation::Operation::Add;
+                Video::BlendState::Description blendStateInformation;
+                blendStateInformation[0].enable = true;
+                blendStateInformation[0].colorSource = Video::BlendState::Description::Source::SourceAlpha;
+                blendStateInformation[0].colorDestination = Video::BlendState::Description::Source::InverseSourceAlpha;
+                blendStateInformation[0].colorOperation = Video::BlendState::Description::Operation::Add;
+                blendStateInformation[0].alphaSource = Video::BlendState::Description::Source::InverseSourceAlpha;
+                blendStateInformation[0].alphaDestination = Video::BlendState::Description::Source::Zero;
+                blendStateInformation[0].alphaOperation = Video::BlendState::Description::Operation::Add;
                 gui.blendState = videoDevice->createBlendState(blendStateInformation);
                 gui.blendState->setName("core:blendState");
 
-                Video::RenderStateInformation renderStateInformation;
-                renderStateInformation.fillMode = Video::RenderStateInformation::FillMode::Solid;
-                renderStateInformation.cullMode = Video::RenderStateInformation::CullMode::None;
+                Video::RenderState::Description renderStateInformation;
+                renderStateInformation.fillMode = Video::RenderState::Description::FillMode::Solid;
+                renderStateInformation.cullMode = Video::RenderState::Description::CullMode::None;
                 renderStateInformation.scissorEnable = true;
                 renderStateInformation.depthClipEnable = true;
                 gui.renderState = videoDevice->createRenderState(renderStateInformation);
                 gui.renderState->setName("core:renderState");
 
-                Video::DepthStateInformation depthStateInformation;
+                Video::DepthState::Description depthStateInformation;
                 depthStateInformation.enable = true;
                 depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
-                depthStateInformation.writeMask = Video::DepthStateInformation::Write::Zero;
+                depthStateInformation.writeMask = Video::DepthState::Description::Write::Zero;
                 gui.depthState = videoDevice->createDepthState(depthStateInformation);
                 gui.depthState->setName("core:depthState");
 

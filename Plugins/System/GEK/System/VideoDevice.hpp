@@ -193,225 +193,6 @@ namespace Gek
 			}
         };
 
-        struct RenderStateInformation
-        {
-			enum class FillMode : uint8_t
-			{
-				WireFrame = 0,
-				Solid,
-			};
-
-			enum class CullMode : uint8_t
-			{
-				None = 0,
-				Front,
-				Back,
-			};
-
-            FillMode fillMode = FillMode::Solid;
-            CullMode cullMode = CullMode::Back;
-            bool frontCounterClockwise = false;
-            uint32_t depthBias = 0;
-            float depthBiasClamp = 0.0f;
-            float slopeScaledDepthBias = 0.0f;
-            bool depthClipEnable = true;
-            bool scissorEnable = false;
-            bool multisampleEnable = false;
-            bool antialiasedLineEnable = false;
-
-            void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
-            size_t getHash(void) const;
-        };
-
-        struct DepthStateInformation
-        {
-			enum class Write : uint8_t
-			{
-				Zero = 0,
-				All,
-			};
-
-			struct StencilStateInformation
-            {
-				enum class Operation : uint8_t
-				{
-					Zero = 0,
-					Keep,
-					Replace,
-					Invert,
-					Increase,
-					IncreaseSaturated,
-					Decrease,
-					DecreaseSaturated,
-				};
-
-                Operation failOperation = Operation::Keep;
-                Operation depthFailOperation = Operation::Keep;
-                Operation passOperation = Operation::Keep;
-                ComparisonFunction comparisonFunction = ComparisonFunction::Always;
-
-                void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
-                size_t getHash(void) const;
-            };
-
-            bool enable = false;
-            Write writeMask = Write::All;
-            ComparisonFunction comparisonFunction = ComparisonFunction::Always;
-            bool stencilEnable = false;
-            uint8_t stencilReadMask = 0xFF;
-            uint8_t stencilWriteMask = 0xFF;
-            StencilStateInformation stencilFrontState;
-            StencilStateInformation stencilBackState;
-
-            void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
-            size_t getHash(void) const;
-        };
-
-        struct BlendStateInformation
-        {
-			friend struct UnifiedBlendStateInformation;
-			friend struct IndependentBlendStateInformation;
-
-			enum class Source : uint8_t
-			{
-				Zero = 0,
-				One,
-				BlendFactor,
-				InverseBlendFactor,
-				SourceColor,
-				InverseSourceColor,
-				SourceAlpha,
-				InverseSourceAlpha,
-				SourceAlphaSaturated,
-				DestinationColor,
-				InverseDestinationColor,
-				DestinationAlpha,
-				InverseDestinationAlpha,
-				SecondarySourceColor,
-				InverseSecondarySourceColor,
-				SecondarySourceAlpha,
-				InverseSecondarySourceAlpha,
-			};
-
-			enum class Operation : uint8_t
-			{
-				Add = 0,
-				Subtract,
-				ReverseSubtract,
-				Minimum,
-				Maximum,
-			};
-
-			struct Mask
-			{
-				enum
-				{
-					R = 1 << 0,
-					G = 1 << 1,
-					B = 1 << 2,
-					A = 1 << 3,
-					RGB = (R | G | B),
-					RGBA = (R | G | B | A),
-				};
-			}; // struct Mask
-
-			bool enable = false;
-            Source colorSource = Source::One;
-            Source colorDestination = Source::One;
-            Operation colorOperation = Operation::Add;
-            Source alphaSource = Source::One;
-            Source alphaDestination = Source::One;
-            Operation alphaOperation = Operation::Add;
-            uint8_t writeMask = Mask::RGBA;
-
-            void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
-            size_t getHash(void) const;
-        };
-
-        struct UnifiedBlendStateInformation
-            : public BlendStateInformation
-        {
-            bool alphaToCoverage = false;
-
-            void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
-            size_t getHash(void) const;
-        };
-
-        struct IndependentBlendStateInformation
-        {
-            bool alphaToCoverage = false;
-            std::array<BlendStateInformation, 8> targetStates;
-
-            void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
-            size_t getHash(void) const;
-        };
-
-        struct SamplerStateInformation
-        {
-            enum class FilterMode : uint8_t
-            {
-                MinificationMagnificationMipMapPoint = 0,
-                MinificationMagnificationPointMipMapLinear,
-                MinificationPointMagnificationLinearMipMapPoint,
-                MinificationPointMagnificationMipMapLinear,
-                MinificationLinearMagnificationMipMapPoint,
-                MinificationLinearMagnificationPointMipMapLinear,
-                MinificationMagnificationLinearMipMapPoint,
-                MinificationMagnificationMipMapLinear,
-                Anisotropic,
-                ComparisonMinificationMagnificationMipMapPoint,
-                ComparisonMinificationMagnificationPointMipMapLinear,
-                ComparisonMinificationPointMagnificationLinearMipMapPoint,
-                ComparisonMinificationPointMagnificationMipMapLinear,
-                ComparisonMinificationLinearMagnificationMipMapPoint,
-                ComparisonMinificationLinearMagnificationPointMipMapLinear,
-                ComparisonMinificationMagnificationLinearMipMapPoint,
-                ComparisonMinificationMagnificationMipMapLinear,
-                ComparisonAnisotropic,
-                MinimumMinificationMagnificationMipMapPoint,
-                MinimumMinificationMagnificationPointMipMapLinear,
-                MinimumMinificationPointMagnificationLinearMipMapPoint,
-                MinimumMinificationPointMagnificationMipMapLinear,
-                MinimumMinificationLinearMagnificationMipMapPoint,
-                MinimumMinificationLinearMagnificationPointMipMapLinear,
-                MinimumMinificationMagnificationLinearMipMapPoint,
-                MinimumMinificationMagnificationMipMapLinear,
-                MinimumAnisotropic,
-                MaximumMinificationMagnificationMipMapPoint,
-                MaximumMinificationMagnificationPointMipMapLinear,
-                MaximumMinificationPointMagnificationLinearMipMapPoint,
-                MaximumMinificationPointMagnificationMipMapLinear,
-                MaximumMinificationLinearMagnificationMipMapPoint,
-                MaximumMinificationLinearMagnificationPointMipMapLinear,
-                MaximumMinificationMagnificationLinearMipMapPoint,
-                MaximumMinificationMagnificationMipMapLinear,
-                MaximumAnisotropic,
-            };
-
-			enum class AddressMode : uint8_t
-			{
-				Clamp = 0,
-				Wrap,
-				Mirror,
-				MirrorOnce,
-				Border,
-			};
-
-			FilterMode filterMode = FilterMode::MinificationMagnificationMipMapPoint;
-            AddressMode addressModeU = AddressMode::Clamp;
-            AddressMode addressModeV = AddressMode::Clamp;
-            AddressMode addressModeW = AddressMode::Clamp;
-            float mipLevelBias = 0.0f;
-            uint32_t maximumAnisotropy = 1;
-            ComparisonFunction comparisonFunction = ComparisonFunction::Never;
-            Math::Float4 borderColor = Math::Float4(0.0f, 0.0f, 0.0f, 1.0f);
-            float minimumMipLevel = 0.0f;
-            float maximumMipLevel = Math::Infinity;
-
-            void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
-            size_t getHash(void) const;
-        };
-
         struct InputElement
         {
 			enum class Source : uint8_t
@@ -448,6 +229,251 @@ namespace Gek
             virtual ~Object(void) = default;
 
             virtual void setName(std::string const &name) = 0;
+        };
+
+        GEK_INTERFACE(RenderState)
+            : virtual public Object
+        {
+            struct Description
+            {
+                enum class FillMode : uint8_t
+                {
+                    WireFrame = 0,
+                    Solid,
+                };
+
+                enum class CullMode : uint8_t
+                {
+                    None = 0,
+                    Front,
+                    Back,
+                };
+
+                FillMode fillMode = FillMode::Solid;
+                CullMode cullMode = CullMode::Back;
+                bool frontCounterClockwise = false;
+                uint32_t depthBias = 0;
+                float depthBiasClamp = 0.0f;
+                float slopeScaledDepthBias = 0.0f;
+                bool depthClipEnable = true;
+                bool scissorEnable = false;
+                bool multisampleEnable = false;
+                bool antialiasedLineEnable = false;
+
+                void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
+                size_t getHash(void) const;
+            };
+
+            virtual ~RenderState(void) = default;
+
+            virtual Description const &getDescription(void) const = 0;
+        };
+
+        GEK_INTERFACE(DepthState)
+            : virtual public Object
+        {
+            struct Description
+            {
+                enum class Write : uint8_t
+                {
+                    Zero = 0,
+                    All,
+                };
+
+                struct StencilState
+                {
+                    enum class Operation : uint8_t
+                    {
+                        Zero = 0,
+                        Keep,
+                        Replace,
+                        Invert,
+                        Increase,
+                        IncreaseSaturated,
+                        Decrease,
+                        DecreaseSaturated,
+                    };
+
+                    Operation failOperation = Operation::Keep;
+                    Operation depthFailOperation = Operation::Keep;
+                    Operation passOperation = Operation::Keep;
+                    ComparisonFunction comparisonFunction = ComparisonFunction::Always;
+
+                    void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
+                    size_t getHash(void) const;
+                };
+
+                bool enable = false;
+                Write writeMask = Write::All;
+                ComparisonFunction comparisonFunction = ComparisonFunction::Always;
+                bool stencilEnable = false;
+                uint8_t stencilReadMask = 0xFF;
+                uint8_t stencilWriteMask = 0xFF;
+                StencilState stencilFrontState;
+                StencilState stencilBackState;
+
+                void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
+                size_t getHash(void) const;
+            };
+
+            virtual ~DepthState(void) = default;
+
+            virtual Description const &getDescription(void) const = 0;
+        };
+
+        GEK_INTERFACE(BlendState)
+            : virtual public Object
+        {
+            struct Description
+            {
+                enum class Source : uint8_t
+                {
+                    Zero = 0,
+                    One,
+                    BlendFactor,
+                    InverseBlendFactor,
+                    SourceColor,
+                    InverseSourceColor,
+                    SourceAlpha,
+                    InverseSourceAlpha,
+                    SourceAlphaSaturated,
+                    DestinationColor,
+                    InverseDestinationColor,
+                    DestinationAlpha,
+                    InverseDestinationAlpha,
+                    SecondarySourceColor,
+                    InverseSecondarySourceColor,
+                    SecondarySourceAlpha,
+                    InverseSecondarySourceAlpha,
+                };
+
+                enum class Operation : uint8_t
+                {
+                    Add = 0,
+                    Subtract,
+                    ReverseSubtract,
+                    Minimum,
+                    Maximum,
+                };
+
+                struct Mask
+                {
+                    enum
+                    {
+                        R = 1 << 0,
+                        G = 1 << 1,
+                        B = 1 << 2,
+                        A = 1 << 3,
+                        RGB = (R | G | B),
+                        RGBA = (R | G | B | A),
+                    };
+                }; // struct Mask
+
+                struct TargetState
+                {
+                    bool enable = false;
+                    Source colorSource = Source::One;
+                    Source colorDestination = Source::One;
+                    Operation colorOperation = Operation::Add;
+                    Source alphaSource = Source::One;
+                    Source alphaDestination = Source::One;
+                    Operation alphaOperation = Operation::Add;
+                    uint8_t writeMask = Mask::RGBA;
+
+                    void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
+                    size_t getHash(void) const;
+                };
+
+                bool alphaToCoverage = false;
+                bool independentBlendStates = false;
+                std::array<TargetState, 8> targetStates;
+
+                TargetState &operator [] (size_t index)
+                {
+                    return targetStates[index];
+                }
+
+                void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
+                size_t getHash(void) const;
+            };
+
+            virtual ~BlendState(void) = default;
+
+            virtual Description const &getDescription(void) const = 0;
+        };
+
+        GEK_INTERFACE(SamplerState)
+            : virtual public Object
+        {
+            struct Description
+            {
+                enum class FilterMode : uint8_t
+                {
+                    MinificationMagnificationMipMapPoint = 0,
+                    MinificationMagnificationPointMipMapLinear,
+                    MinificationPointMagnificationLinearMipMapPoint,
+                    MinificationPointMagnificationMipMapLinear,
+                    MinificationLinearMagnificationMipMapPoint,
+                    MinificationLinearMagnificationPointMipMapLinear,
+                    MinificationMagnificationLinearMipMapPoint,
+                    MinificationMagnificationMipMapLinear,
+                    Anisotropic,
+                    ComparisonMinificationMagnificationMipMapPoint,
+                    ComparisonMinificationMagnificationPointMipMapLinear,
+                    ComparisonMinificationPointMagnificationLinearMipMapPoint,
+                    ComparisonMinificationPointMagnificationMipMapLinear,
+                    ComparisonMinificationLinearMagnificationMipMapPoint,
+                    ComparisonMinificationLinearMagnificationPointMipMapLinear,
+                    ComparisonMinificationMagnificationLinearMipMapPoint,
+                    ComparisonMinificationMagnificationMipMapLinear,
+                    ComparisonAnisotropic,
+                    MinimumMinificationMagnificationMipMapPoint,
+                    MinimumMinificationMagnificationPointMipMapLinear,
+                    MinimumMinificationPointMagnificationLinearMipMapPoint,
+                    MinimumMinificationPointMagnificationMipMapLinear,
+                    MinimumMinificationLinearMagnificationMipMapPoint,
+                    MinimumMinificationLinearMagnificationPointMipMapLinear,
+                    MinimumMinificationMagnificationLinearMipMapPoint,
+                    MinimumMinificationMagnificationMipMapLinear,
+                    MinimumAnisotropic,
+                    MaximumMinificationMagnificationMipMapPoint,
+                    MaximumMinificationMagnificationPointMipMapLinear,
+                    MaximumMinificationPointMagnificationLinearMipMapPoint,
+                    MaximumMinificationPointMagnificationMipMapLinear,
+                    MaximumMinificationLinearMagnificationMipMapPoint,
+                    MaximumMinificationLinearMagnificationPointMipMapLinear,
+                    MaximumMinificationMagnificationLinearMipMapPoint,
+                    MaximumMinificationMagnificationMipMapLinear,
+                    MaximumAnisotropic,
+                };
+
+                enum class AddressMode : uint8_t
+                {
+                    Clamp = 0,
+                    Wrap,
+                    Mirror,
+                    MirrorOnce,
+                    Border,
+                };
+
+                FilterMode filterMode = FilterMode::MinificationMagnificationMipMapPoint;
+                AddressMode addressModeU = AddressMode::Clamp;
+                AddressMode addressModeV = AddressMode::Clamp;
+                AddressMode addressModeW = AddressMode::Clamp;
+                float mipLevelBias = 0.0f;
+                uint32_t maximumAnisotropy = 1;
+                ComparisonFunction comparisonFunction = ComparisonFunction::Never;
+                Math::Float4 borderColor = Math::Float4(0.0f, 0.0f, 0.0f, 1.0f);
+                float minimumMipLevel = 0.0f;
+                float maximumMipLevel = Math::Infinity;
+
+                void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
+                size_t getHash(void) const;
+            };
+
+            virtual ~SamplerState(void) = default;
+
+            virtual Description const &getDescription(void) const = 0;
         };
 
         GEK_INTERFACE(Buffer)
@@ -487,7 +513,7 @@ namespace Gek
 
             virtual ~Buffer(void) = default;
         
-            virtual const Buffer::Description &getDescription(void) const = 0;
+            virtual Description const &getDescription(void) const = 0;
         };
 
         GEK_INTERFACE(Texture)
@@ -520,7 +546,7 @@ namespace Gek
 
             virtual ~Texture(void) = default;
         
-            virtual const Texture::Description &getDescription(void) const = 0;
+            virtual Description const &getDescription(void) const = 0;
         };
 
         GEK_INTERFACE(Target)
@@ -528,7 +554,7 @@ namespace Gek
         {
             virtual ~Target(void) = default;
             
-            virtual const Video::ViewPort &getViewPort(void) const = 0;
+            virtual Video::ViewPort const &getViewPort(void) const = 0;
         };
 
         GEK_INTERFACE(Query)
@@ -651,11 +677,10 @@ namespace Gek
             virtual ContextPtr createDeferredContext(void) = 0;
             virtual QueryPtr createQuery(Query::Type type) = 0;
 
-            virtual ObjectPtr createRenderState(const Video::RenderStateInformation &renderState) = 0;
-            virtual ObjectPtr createDepthState(const Video::DepthStateInformation &depthState) = 0;
-            virtual ObjectPtr createBlendState(const Video::UnifiedBlendStateInformation &blendState) = 0;
-            virtual ObjectPtr createBlendState(const Video::IndependentBlendStateInformation &blendState) = 0;
-            virtual ObjectPtr createSamplerState(const Video::SamplerStateInformation &samplerState) = 0;
+            virtual RenderStatePtr createRenderState(const Video::RenderState::Description &description) = 0;
+            virtual DepthStatePtr createDepthState(const Video::DepthState::Description &description) = 0;
+            virtual BlendStatePtr createBlendState(const Video::BlendState::Description &description) = 0;
+            virtual SamplerStatePtr createSamplerState(const Video::SamplerState::Description &description) = 0;
 
             virtual TexturePtr createTexture(const Texture::Description &description, const void *data = nullptr) = 0;
             virtual TexturePtr loadTexture(void const *buffer, size_t size, uint32_t flags) = 0;

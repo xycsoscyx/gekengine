@@ -524,9 +524,9 @@ namespace Gek
             ReloadResourceCache<ShaderHandle, Engine::Shader> shaderCache;
             ReloadResourceCache<ResourceHandle, Engine::Filter> filterCache;
             DynamicResourceCache<ResourceHandle, Video::Object> dynamicCache;
-            GeneralResourceCache<RenderStateHandle, Video::Object> renderStateCache;
-            GeneralResourceCache<DepthStateHandle, Video::Object> depthStateCache;
-            GeneralResourceCache<BlendStateHandle, Video::Object> blendStateCache;
+            GeneralResourceCache<RenderStateHandle, Video::RenderState> renderStateCache;
+            GeneralResourceCache<DepthStateHandle, Video::DepthState> depthStateCache;
+            GeneralResourceCache<BlendStateHandle, Video::BlendState> blendStateCache;
 
             concurrency::concurrent_unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
             concurrency::concurrent_unordered_map<ResourceHandle, Video::Texture::Description> textureDescriptionMap;
@@ -574,8 +574,8 @@ namespace Gek
                 assert(core);
                 assert(videoDevice);
 
-                core->onChangedDisplay.connect(this, &Resources::onChangedDisplay);
-                core->onChangedSettings.connect(this, &Resources::onChangedSettings);
+                core->onChangedDisplay.connect(this, &Resources::onReload);
+                core->onChangedSettings.connect(this, &Resources::onReload);
                 core->onInitialized.connect(this, &Resources::onInitialized);
                 core->onShutdown.connect(this, &Resources::onShutdown);
             }
@@ -678,6 +678,11 @@ namespace Gek
                     if (ImGui::BeginMenu("Resources"))
                     {
                         ImGui::MenuItem("Show", "CTRL+S", &showResources);
+                        if (ImGui::MenuItem("Reload", "CTRL+R"))
+                        {
+                            onReload();
+                        }
+
                         ImGui::EndMenu();
                     }
 
@@ -687,25 +692,100 @@ namespace Gek
 
                 if (showResources)
                 {
+                    ImGui::SetNextWindowSize(ImVec2(500.0f, 350.0f), ImGuiSetCond_Once);
                     if (ImGui::Begin("Resources"))
                     {
+                        showProgramCache();
+                        showVisualCache();
+                        showMaterialCache();
+                        showShaderCache();
+                        showFilterCache();
+                        showDynamicCache();
+                        showRenderStateCache();
+                        showDepthStateCache();
+                        showBlendStateCache();
                         ImGui::End();
                     }
+                }
+            }
+
+            void showVisualCache(void)
+            {
+                if (ImGui::TreeNodeEx("Visuals", ImGuiTreeNodeFlags_Framed))
+                {
+                    ImGui::TreePop();
+                }
+            }
+
+            void showShaderCache(void)
+            {
+                if (ImGui::TreeNodeEx("Shaders", ImGuiTreeNodeFlags_Framed))
+                {
+                    ImGui::TreePop();
+                }
+            }
+
+            void showFilterCache(void)
+            {
+                if (ImGui::TreeNodeEx("Filters", ImGuiTreeNodeFlags_Framed))
+                {
+                    ImGui::TreePop();
+                }
+            }
+
+            void showProgramCache(void)
+            {
+                if (ImGui::TreeNodeEx("Programs", ImGuiTreeNodeFlags_Framed))
+                {
+                    ImGui::TreePop();
+                }
+            }
+
+            void showMaterialCache(void)
+            {
+                if (ImGui::TreeNodeEx("Materials", ImGuiTreeNodeFlags_Framed))
+                {
+                    ImGui::TreePop();
+                }
+            }
+
+            void showDynamicCache(void)
+            {
+                if (ImGui::TreeNodeEx("Resources", ImGuiTreeNodeFlags_Framed))
+                {
+                    ImGui::TreePop();
+                }
+            }
+
+            void showRenderStateCache(void)
+            {
+                if (ImGui::TreeNodeEx("Render States", ImGuiTreeNodeFlags_Framed))
+                {
+                    ImGui::TreePop();
+                }
+            }
+
+            void showDepthStateCache(void)
+            {
+                if (ImGui::TreeNodeEx("Depth States", ImGuiTreeNodeFlags_Framed))
+                {
+                    ImGui::TreePop();
+                }
+            }
+
+            void showBlendStateCache(void)
+            {
+                if (ImGui::TreeNodeEx("Blend States", ImGuiTreeNodeFlags_Framed))
+                {
+                    ImGui::TreePop();
                 }
             }
 
             // Plugin::Processor
             void onInitialized(void)
             {
-                core->listProcessors([&](Plugin::Processor *processor) -> void
-                {
-                    auto check = dynamic_cast<Plugin::Renderer *>(processor);
-                    if (check)
-                    {
-                        renderer = check;
-                        renderer->onShowUserInterface.connect(this, &Resources::onShowUserInterface);
-                    }
-                });
+                renderer = core->getRenderer();
+                renderer->onShowUserInterface.connect(this, &Resources::onShowUserInterface);
             }
 
             void onShutdown(void)
@@ -718,14 +798,7 @@ namespace Gek
             }
 
             // Plugin::Core Slots
-            void onChangedDisplay(void)
-            {
-                programCache.clear();
-                shaderCache.reload();
-                filterCache.reload();
-            }
-
-            void onChangedSettings(void)
+            void onReload(void)
             {
                 programCache.clear();
                 shaderCache.reload();
@@ -1312,55 +1385,42 @@ namespace Gek
                 return programCache.getHandle(std::move(load));
             }
 
-            RenderStateHandle createRenderState(const Video::RenderStateInformation &renderState)
+            RenderStateHandle createRenderState(Video::RenderState::Description const &description)
             {
-                auto load = [this, renderState](RenderStateHandle) -> Video::ObjectPtr
+                auto load = [this, description](RenderStateHandle) -> Video::RenderStatePtr
                 {
-                    auto state = videoDevice->createRenderState(renderState);
+                    auto state = videoDevice->createRenderState(description);
 					//state->setName(stateName);
 					return state;
                 };
 
-                auto hash = renderState.getHash();
+                auto hash = description.getHash();
                 return renderStateCache.getHandle(hash, std::move(load)).second;
             }
 
-            DepthStateHandle createDepthState(const Video::DepthStateInformation &depthState)
+            DepthStateHandle createDepthState(Video::DepthState::Description const &description)
             {
-                auto load = [this, depthState](DepthStateHandle) -> Video::ObjectPtr
+                auto load = [this, description](DepthStateHandle) -> Video::DepthStatePtr
                 {
-					auto state = videoDevice->createDepthState(depthState);
+					auto state = videoDevice->createDepthState(description);
 					//state->setName(stateName);
 					return state;
 				};
 
-                auto hash = depthState.getHash();
+                auto hash = description.getHash();
                 return depthStateCache.getHandle(hash, std::move(load)).second;
             }
 
-            BlendStateHandle createBlendState(const Video::UnifiedBlendStateInformation &blendState)
+            BlendStateHandle createBlendState(Video::BlendState::Description const &description)
             {
-                auto load = [this, blendState](BlendStateHandle) -> Video::ObjectPtr
+                auto load = [this, description](BlendStateHandle) -> Video::BlendStatePtr
                 {
-					auto state = videoDevice->createBlendState(blendState);
+					auto state = videoDevice->createBlendState(description);
 					//state->setName(stateName);
 					return state;
 				};
 
-                auto hash = blendState.getHash();
-                return blendStateCache.getHandle(hash, std::move(load)).second;
-            }
-
-            BlendStateHandle createBlendState(const Video::IndependentBlendStateInformation &blendState)
-            {
-                auto load = [this, blendState](BlendStateHandle) -> Video::ObjectPtr
-                {
-                    auto state = videoDevice->createBlendState(blendState);
-					//state->setName(stateName);
-					return state;
-				};
-
-                auto hash = blendState.getHash();
+                auto hash = description.getHash();
                 return blendStateCache.getHandle(hash, std::move(load)).second;
             }
 

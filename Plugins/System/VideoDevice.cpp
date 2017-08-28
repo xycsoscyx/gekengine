@@ -176,7 +176,7 @@ namespace Gek
             return value;
         }
 
-		void RenderStateInformation::load(JSON::Reference object, JSON::Reference const &configs)
+		void RenderState::Description::load(JSON::Reference object, JSON::Reference const &configs)
         {
 			auto getFillMode = [](std::string const &string) -> auto
 			{
@@ -213,12 +213,12 @@ namespace Gek
             antialiasedLineEnable = object.get("antialiasedLineEnable").convert(false);
         }
 
-        size_t RenderStateInformation::getHash(void) const
+        size_t RenderState::Description::getHash(void) const
         {
             return GetHash(fillMode, cullMode, frontCounterClockwise, depthBias, depthBiasClamp, slopeScaledDepthBias, depthClipEnable, scissorEnable, multisampleEnable, antialiasedLineEnable);
         }
 
-        void DepthStateInformation::StencilStateInformation::load(JSON::Reference object, JSON::Reference const &configs)
+        void DepthState::Description::StencilState::load(JSON::Reference object, JSON::Reference const &configs)
         {
             auto getOperation = [](std::string const &string) -> auto
             {
@@ -242,12 +242,12 @@ namespace Gek
             comparisonFunction = getComparisonFunction(object.get("comparisonFunction").convert("Always"s));
         }
 
-        size_t DepthStateInformation::StencilStateInformation::getHash(void) const
+        size_t DepthState::Description::StencilState::getHash(void) const
         {
             return GetHash(failOperation, depthFailOperation, passOperation, comparisonFunction);
         }
 
-        void DepthStateInformation::load(JSON::Reference object, JSON::Reference const &configs)
+        void DepthState::Description::load(JSON::Reference object, JSON::Reference const &configs)
         {
 			auto getWriteMask = [](std::string const &string) -> auto
 			{
@@ -270,14 +270,14 @@ namespace Gek
             stencilBackState.load(object.get("stencilBackState"), configs);
         }
 
-        size_t DepthStateInformation::getHash(void) const
+        size_t DepthState::Description::getHash(void) const
         {
             return CombineHashes(
                 GetHash(enable, writeMask, comparisonFunction, stencilEnable, stencilReadMask, stencilWriteMask),
                 CombineHashes(stencilFrontState.getHash(), stencilBackState.getHash()));
         }
 
-        void BlendStateInformation::load(JSON::Reference object, JSON::Reference const &configs)
+        void BlendState::Description::TargetState::load(JSON::Reference object, JSON::Reference const &configs)
         {
             auto getSource = [](std::string const &string) -> Source
             {
@@ -356,25 +356,15 @@ namespace Gek
             }
         }
 
-        size_t BlendStateInformation::getHash(void) const
+        size_t BlendState::Description::TargetState::getHash(void) const
         {
             return GetHash(enable, colorSource, colorDestination, colorOperation, alphaSource, alphaDestination, alphaOperation, writeMask);
         }
 
-        void UnifiedBlendStateInformation::load(JSON::Reference object, JSON::Reference const &configs)
+        void BlendState::Description::load(JSON::Reference object, JSON::Reference const &configs)
         {
             alphaToCoverage = object.get("alphaToCoverage").convert(false);
-            BlendStateInformation::load(object, configs);
-        }
-
-        size_t UnifiedBlendStateInformation::getHash(void) const
-        {
-            return CombineHashes(GetHash(alphaToCoverage), BlendStateInformation::getHash());
-        }
-
-        void IndependentBlendStateInformation::load(JSON::Reference object, JSON::Reference const &configs)
-        {
-            alphaToCoverage = object.get("alphaToCoverage").convert(false);
+            independentBlendStates = object.get("independentBlendStates").convert(false);
             auto targetStates = object.get("targetStates").getArray();
             size_t targetCount = std::min(targetStates.size(), this->targetStates.size());
             for (size_t target = 0; target < targetCount; ++target)
@@ -383,9 +373,9 @@ namespace Gek
             }
         }
 
-        size_t IndependentBlendStateInformation::getHash(void) const
+        size_t BlendState::Description::getHash(void) const
         {
-            auto hash = GetHash(alphaToCoverage);
+            auto hash = GetHash(alphaToCoverage, independentBlendStates);
             for (const auto &targetState : targetStates)
             {
                 CombineHashes(hash, targetState.getHash());
@@ -394,7 +384,7 @@ namespace Gek
             return hash;
         }
 
-        void SamplerStateInformation::load(JSON::Reference object, JSON::Reference const &configs)
+        void SamplerState::Description::load(JSON::Reference object, JSON::Reference const &configs)
         {
             auto getFilterMode = [](std::string const &string) -> FilterMode
             {
@@ -467,7 +457,7 @@ namespace Gek
             borderColor = object.get("borderColor").convert(Math::Float4::Zero);
         }
 
-        size_t SamplerStateInformation::getHash(void) const
+        size_t SamplerState::Description::getHash(void) const
         {
             return GetHash(filterMode, addressModeU, addressModeV, addressModeW, mipLevelBias, maximumAnisotropy, comparisonFunction, borderColor.x, borderColor.y, borderColor.z, borderColor.w, minimumMipLevel, maximumMipLevel);
         }

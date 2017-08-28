@@ -11,13 +11,18 @@ namespace Gek
 {
     namespace Direct3D12
     {
-        class CommandList
-            : public Video::Object
+        template <typename BASE = Video::Object>
+        class BaseVideoObject
+            : public BASE
         {
         public:
 
         public:
-            CommandList(void)
+            BaseVideoObject(void)
+            {
+            }
+
+            virtual ~BaseVideoObject(void)
             {
             }
 
@@ -26,155 +31,44 @@ namespace Gek
             }
         };
 
-        class RenderState
-            : public Video::Object
+        template <typename BASE>
+        class DescribedVideoObject
+            : public BASE
         {
         public:
+            typename BASE::Description description;
 
         public:
-            RenderState(void)
+            DescribedVideoObject(typename BASE::Description const &description)
+                : description(description)
+            {
+            }
+
+            virtual ~DescribedVideoObject(void)
             {
             }
 
             void setName(std::string const &name)
             {
             }
-        };
 
-        class DepthState
-            : public Video::Object
-        {
-        public:
-
-        public:
-            DepthState(void)
+            typename BASE::Description const &getDescription(void) const
             {
-            }
-
-            void setName(std::string const &name)
-            {
+                return description;
             }
         };
 
-        class BlendState
-            : public Video::Object
-        {
-        public:
-
-        public:
-            BlendState(void)
-            {
-            }
-
-            void setName(std::string const &name)
-            {
-            }
-        };
-
-        class SamplerState
-            : public Video::Object
-        {
-        public:
-
-        public:
-            SamplerState(void)
-            {
-            }
-
-            void setName(std::string const &name)
-            {
-            }
-        };
-
-        class Query
-            : public Video::Query
-        {
-        public:
-
-        public:
-            Query(void)
-            {
-            }
-
-            void setName(std::string const &name)
-            {
-            }
-        };
-
-        class InputLayout
-            : public Video::Object
-        {
-        public:
-
-        public:
-            InputLayout(void)
-            {
-            }
-
-            void setName(std::string const &name)
-            {
-            }
-        };
-
-        class ComputeProgram
-            : public Video::Object
-        {
-        public:
-
-        public:
-            ComputeProgram(void)
-            {
-            }
-
-            void setName(std::string const &name)
-            {
-            }
-        };
-
-        class VertexProgram
-            : public Video::Object
-        {
-        public:
-
-        public:
-            VertexProgram(void)
-            {
-            }
-
-            void setName(std::string const &name)
-            {
-            }
-        };
-
-        class GeometryProgram
-            : public Video::Object
-        {
-        public:
-
-        public:
-            GeometryProgram(void)
-            {
-            }
-
-            void setName(std::string const &name)
-            {
-            }
-        };
-
-        class PixelProgram
-            : public Video::Object
-        {
-        public:
-
-        public:
-            PixelProgram(void)
-            {
-            }
-
-            void setName(std::string const &name)
-            {
-            }
-        };
+        using Query = BaseVideoObject<Video::Query>;
+        using CommandList = BaseVideoObject<>;
+        using RenderState = DescribedVideoObject<Video::RenderState>;
+        using DepthState = DescribedVideoObject<Video::DepthState>;
+        using BlendState = DescribedVideoObject<Video::BlendState>;
+        using SamplerState = DescribedVideoObject<Video::SamplerState>;
+        using InputLayout = BaseVideoObject<>;
+        using ComputeProgram = BaseVideoObject<>;
+        using VertexProgram = BaseVideoObject<>;
+        using GeometryProgram = BaseVideoObject<>;
+        using PixelProgram = BaseVideoObject<>;
 
         class Resource
         {
@@ -866,29 +760,24 @@ namespace Gek
                 return false;
             }
 
-            Video::ObjectPtr createRenderState(const Video::RenderStateInformation &renderState)
+            Video::RenderStatePtr createRenderState(Video::RenderState::Description const &description)
             {
-                return std::make_unique<RenderState>();
+                return std::make_unique<RenderState>(description);
             }
 
-            Video::ObjectPtr createDepthState(const Video::DepthStateInformation &depthState)
+            Video::DepthStatePtr createDepthState(Video::DepthState::Description const &description)
             {
-                return std::make_unique<DepthState>();
+                return std::make_unique<DepthState>(description);
             }
 
-            Video::ObjectPtr createBlendState(const Video::UnifiedBlendStateInformation &blendState)
+            Video::BlendStatePtr createBlendState(Video::BlendState::Description const &description)
             {
-                return std::make_unique<BlendState>();
+                return std::make_unique<BlendState>(description);
             }
 
-            Video::ObjectPtr createBlendState(const Video::IndependentBlendStateInformation &blendState)
+            Video::SamplerStatePtr createSamplerState(Video::SamplerState::Description const &description)
             {
-                return std::make_unique<BlendState>();
-            }
-
-            Video::ObjectPtr createSamplerState(const Video::SamplerStateInformation &samplerState)
-            {
-                return std::make_unique<SamplerState>();
+                return std::make_unique<SamplerState>(description);
             }
 
             Video::BufferPtr createBuffer(const Video::Buffer::Description &description, const void *data)

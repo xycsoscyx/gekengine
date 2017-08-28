@@ -627,9 +627,9 @@ namespace Gek
             }
         };
 
-        template <typename TYPE>
+        template <typename TYPE, typename BASE = Video::Object>
         class BaseVideoObject
-            : public Video::Object
+            : public BASE
         {
         public:
             TYPE *d3dObject = nullptr;
@@ -655,12 +655,48 @@ namespace Gek
                 setDebugName(d3dObject, name);
             }
         };
+        
+        template <typename TYPE, typename BASE>
+        class DescribedVideoObject
+            : public BASE
+        {
+        public:
+            TYPE *d3dObject = nullptr;
+            typename BASE::Description description;
+
+        public:
+            template <typename SOURCE>
+            DescribedVideoObject(CComPtr<SOURCE> &d3dSource, typename BASE::Description const &description)
+                : description(description)
+            {
+                InterlockedExchangePointer(reinterpret_cast<void **>(&d3dObject), dynamic_cast<TYPE *>(d3dSource.p));
+                d3dObject->AddRef();
+            }
+
+            virtual ~DescribedVideoObject(void)
+            {
+                if (d3dObject)
+                {
+                    reinterpret_cast<TYPE *>(InterlockedExchangePointer((void **)&d3dObject, nullptr))->Release();
+                }
+            }
+
+            void setName(std::string const &name)
+            {
+                setDebugName(d3dObject, name);
+            }
+
+            typename BASE::Description const &getDescription(void) const
+            {
+                return description;
+            }
+        };
 
         using CommandList = BaseVideoObject<ID3D11CommandList>;
-        using RenderState = BaseVideoObject<ID3D11RasterizerState>;
-        using DepthState = BaseVideoObject<ID3D11DepthStencilState>;
-        using BlendState = BaseVideoObject<ID3D11BlendState>;
-        using SamplerState = BaseVideoObject<ID3D11SamplerState>;
+        using RenderState = DescribedVideoObject<ID3D11RasterizerState, Video::RenderState>;
+        using DepthState = DescribedVideoObject<ID3D11DepthStencilState, Video::DepthState>;
+        using BlendState = DescribedVideoObject<ID3D11BlendState, Video::BlendState>;
+        using SamplerState = DescribedVideoObject<ID3D11SamplerState, Video::SamplerState>;
         using InputLayout = BaseVideoObject<ID3D11InputLayout>;
         using ComputeProgram = BaseVideoObject<ID3D11ComputeShader>;
         using VertexProgram = BaseVideoObject<ID3D11VertexShader>;
@@ -1989,21 +2025,21 @@ namespace Gek
                 return std::make_unique<Query>(d3dQuery);
             }
 
-            Video::ObjectPtr createRenderState(const Video::RenderStateInformation &renderState)
+            Video::RenderStatePtr createRenderState(Video::RenderState::Description const &description)
             {
                 assert(d3dDevice);
 
                 D3D11_RASTERIZER_DESC rasterizerDescription;
-                rasterizerDescription.FrontCounterClockwise = renderState.frontCounterClockwise;
-                rasterizerDescription.DepthBias = renderState.depthBias;
-                rasterizerDescription.DepthBiasClamp = renderState.depthBiasClamp;
-                rasterizerDescription.SlopeScaledDepthBias = renderState.slopeScaledDepthBias;
-                rasterizerDescription.DepthClipEnable = renderState.depthClipEnable;
-                rasterizerDescription.ScissorEnable = renderState.scissorEnable;
-                rasterizerDescription.MultisampleEnable = renderState.multisampleEnable;
-                rasterizerDescription.AntialiasedLineEnable = renderState.antialiasedLineEnable;
-                rasterizerDescription.FillMode = DirectX::FillModeList[static_cast<uint8_t>(renderState.fillMode)];
-                rasterizerDescription.CullMode = DirectX::CullModeList[static_cast<uint8_t>(renderState.cullMode)];
+                rasterizerDescription.FrontCounterClockwise = description.frontCounterClockwise;
+                rasterizerDescription.DepthBias = description.depthBias;
+                rasterizerDescription.DepthBiasClamp = description.depthBiasClamp;
+                rasterizerDescription.SlopeScaledDepthBias = description.slopeScaledDepthBias;
+                rasterizerDescription.DepthClipEnable = description.depthClipEnable;
+                rasterizerDescription.ScissorEnable = description.scissorEnable;
+                rasterizerDescription.MultisampleEnable = description.multisampleEnable;
+                rasterizerDescription.AntialiasedLineEnable = description.antialiasedLineEnable;
+                rasterizerDescription.FillMode = DirectX::FillModeList[static_cast<uint8_t>(description.fillMode)];
+                rasterizerDescription.CullMode = DirectX::CullModeList[static_cast<uint8_t>(description.cullMode)];
 
                 CComPtr<ID3D11RasterizerState> d3dStates;
                 HRESULT resultValue = d3dDevice->CreateRasterizerState(&rasterizerDescription, &d3dStates);
@@ -2012,28 +2048,28 @@ namespace Gek
                     throw Video::CreateObjectFailed("Unable to create rasterizer state");
                 }
 
-                return std::make_unique<RenderState>(d3dStates);
+                return std::make_unique<RenderState>(d3dStates, description);
             }
 
-            Video::ObjectPtr createDepthState(const Video::DepthStateInformation &depthState)
+            Video::DepthStatePtr createDepthState(Video::DepthState::Description const &description)
             {
                 assert(d3dDevice);
 
                 D3D11_DEPTH_STENCIL_DESC depthStencilDescription;
-                depthStencilDescription.DepthEnable = depthState.enable;
-                depthStencilDescription.DepthFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(depthState.comparisonFunction)];
-                depthStencilDescription.StencilEnable = depthState.stencilEnable;
-                depthStencilDescription.StencilReadMask = depthState.stencilReadMask;
-                depthStencilDescription.StencilWriteMask = depthState.stencilWriteMask;
-                depthStencilDescription.FrontFace.StencilFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthState.stencilFrontState.failOperation)];
-                depthStencilDescription.FrontFace.StencilDepthFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthState.stencilFrontState.depthFailOperation)];
-                depthStencilDescription.FrontFace.StencilPassOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthState.stencilFrontState.passOperation)];
-                depthStencilDescription.FrontFace.StencilFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(depthState.stencilFrontState.comparisonFunction)];
-                depthStencilDescription.BackFace.StencilFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthState.stencilBackState.failOperation)];
-                depthStencilDescription.BackFace.StencilDepthFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthState.stencilBackState.depthFailOperation)];
-                depthStencilDescription.BackFace.StencilPassOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthState.stencilBackState.passOperation)];
-                depthStencilDescription.BackFace.StencilFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(depthState.stencilBackState.comparisonFunction)];
-                depthStencilDescription.DepthWriteMask = DirectX::DepthWriteMaskList[static_cast<uint8_t>(depthState.writeMask)];
+                depthStencilDescription.DepthEnable = description.enable;
+                depthStencilDescription.DepthFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(description.comparisonFunction)];
+                depthStencilDescription.StencilEnable = description.stencilEnable;
+                depthStencilDescription.StencilReadMask = description.stencilReadMask;
+                depthStencilDescription.StencilWriteMask = description.stencilWriteMask;
+                depthStencilDescription.FrontFace.StencilFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(description.stencilFrontState.failOperation)];
+                depthStencilDescription.FrontFace.StencilDepthFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(description.stencilFrontState.depthFailOperation)];
+                depthStencilDescription.FrontFace.StencilPassOp = DirectX::StencilOperationList[static_cast<uint8_t>(description.stencilFrontState.passOperation)];
+                depthStencilDescription.FrontFace.StencilFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(description.stencilFrontState.comparisonFunction)];
+                depthStencilDescription.BackFace.StencilFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(description.stencilBackState.failOperation)];
+                depthStencilDescription.BackFace.StencilDepthFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(description.stencilBackState.depthFailOperation)];
+                depthStencilDescription.BackFace.StencilPassOp = DirectX::StencilOperationList[static_cast<uint8_t>(description.stencilBackState.passOperation)];
+                depthStencilDescription.BackFace.StencilFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(description.stencilBackState.comparisonFunction)];
+                depthStencilDescription.DepthWriteMask = DirectX::DepthWriteMaskList[static_cast<uint8_t>(description.writeMask)];
 
                 CComPtr<ID3D11DepthStencilState> d3dStates;
                 HRESULT resultValue = d3dDevice->CreateDepthStencilState(&depthStencilDescription, &d3dStates);
@@ -2042,87 +2078,42 @@ namespace Gek
                     throw Video::CreateObjectFailed("Unable to create depth stencil state");
                 }
 
-                return std::make_unique<DepthState>(d3dStates);
+                return std::make_unique<DepthState>(d3dStates, description);
             }
 
-            Video::ObjectPtr createBlendState(const Video::UnifiedBlendStateInformation &blendState)
+            Video::BlendStatePtr createBlendState(Video::BlendState::Description const &description)
             {
                 assert(d3dDevice);
 
                 D3D11_BLEND_DESC blendDescription;
-                blendDescription.AlphaToCoverageEnable = blendState.alphaToCoverage;
-                blendDescription.IndependentBlendEnable = false;
-                blendDescription.RenderTarget[0].BlendEnable = blendState.enable;
-                blendDescription.RenderTarget[0].SrcBlend = DirectX::BlendSourceList[static_cast<uint8_t>(blendState.colorSource)];
-                blendDescription.RenderTarget[0].DestBlend = DirectX::BlendSourceList[static_cast<uint8_t>(blendState.colorDestination)];
-                blendDescription.RenderTarget[0].BlendOp = DirectX::BlendOperationList[static_cast<uint8_t>(blendState.colorOperation)];
-                blendDescription.RenderTarget[0].SrcBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(blendState.alphaSource)];
-                blendDescription.RenderTarget[0].DestBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(blendState.alphaDestination)];
-                blendDescription.RenderTarget[0].BlendOpAlpha = DirectX::BlendOperationList[static_cast<uint8_t>(blendState.alphaOperation)];
-                blendDescription.RenderTarget[0].RenderTargetWriteMask = 0;
-                if (blendState.writeMask & Video::BlendStateInformation::Mask::R)
-                {
-                    blendDescription.RenderTarget[0].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_RED;
-                }
-
-                if (blendState.writeMask & Video::BlendStateInformation::Mask::G)
-                {
-                    blendDescription.RenderTarget[0].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_GREEN;
-                }
-
-                if (blendState.writeMask & Video::BlendStateInformation::Mask::B)
-                {
-                    blendDescription.RenderTarget[0].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_BLUE;
-                }
-
-                if (blendState.writeMask & Video::BlendStateInformation::Mask::A)
-                {
-                    blendDescription.RenderTarget[0].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_ALPHA;
-                }
-
-                CComPtr<ID3D11BlendState> d3dStates;
-                HRESULT resultValue = d3dDevice->CreateBlendState(&blendDescription, &d3dStates);
-                if (FAILED(resultValue) || !d3dStates)
-                {
-                    throw Video::CreateObjectFailed("Unable to create unified blend state");
-                }
-
-                return std::make_unique<BlendState>(d3dStates);
-            }
-
-            Video::ObjectPtr createBlendState(const Video::IndependentBlendStateInformation &blendState)
-            {
-                assert(d3dDevice);
-
-                D3D11_BLEND_DESC blendDescription;
-                blendDescription.AlphaToCoverageEnable = blendState.alphaToCoverage;
-                blendDescription.IndependentBlendEnable = true;
+                blendDescription.AlphaToCoverageEnable = description.alphaToCoverage;
+                blendDescription.IndependentBlendEnable = description.independentBlendStates;
                 for (uint32_t renderTarget = 0; renderTarget < 8; ++renderTarget)
                 {
-                    blendDescription.RenderTarget[renderTarget].BlendEnable = blendState.targetStates[renderTarget].enable;
-                    blendDescription.RenderTarget[renderTarget].SrcBlend = DirectX::BlendSourceList[static_cast<uint8_t>(blendState.targetStates[renderTarget].colorSource)];
-                    blendDescription.RenderTarget[renderTarget].DestBlend = DirectX::BlendSourceList[static_cast<uint8_t>(blendState.targetStates[renderTarget].colorDestination)];
-                    blendDescription.RenderTarget[renderTarget].BlendOp = DirectX::BlendOperationList[static_cast<uint8_t>(blendState.targetStates[renderTarget].colorOperation)];
-                    blendDescription.RenderTarget[renderTarget].SrcBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(blendState.targetStates[renderTarget].alphaSource)];
-                    blendDescription.RenderTarget[renderTarget].DestBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(blendState.targetStates[renderTarget].alphaDestination)];
-                    blendDescription.RenderTarget[renderTarget].BlendOpAlpha = DirectX::BlendOperationList[static_cast<uint8_t>(blendState.targetStates[renderTarget].alphaOperation)];
+                    blendDescription.RenderTarget[renderTarget].BlendEnable = description.targetStates[renderTarget].enable;
+                    blendDescription.RenderTarget[renderTarget].SrcBlend = DirectX::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].colorSource)];
+                    blendDescription.RenderTarget[renderTarget].DestBlend = DirectX::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].colorDestination)];
+                    blendDescription.RenderTarget[renderTarget].BlendOp = DirectX::BlendOperationList[static_cast<uint8_t>(description.targetStates[renderTarget].colorOperation)];
+                    blendDescription.RenderTarget[renderTarget].SrcBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].alphaSource)];
+                    blendDescription.RenderTarget[renderTarget].DestBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].alphaDestination)];
+                    blendDescription.RenderTarget[renderTarget].BlendOpAlpha = DirectX::BlendOperationList[static_cast<uint8_t>(description.targetStates[renderTarget].alphaOperation)];
                     blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask = 0;
-                    if (blendState.targetStates[renderTarget].writeMask & Video::BlendStateInformation::Mask::R)
+                    if (description.targetStates[renderTarget].writeMask & Video::BlendState::Description::Mask::R)
                     {
                         blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_RED;
                     }
 
-                    if (blendState.targetStates[renderTarget].writeMask & Video::BlendStateInformation::Mask::G)
+                    if (description.targetStates[renderTarget].writeMask & Video::BlendState::Description::Mask::G)
                     {
                         blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_GREEN;
                     }
 
-                    if (blendState.targetStates[renderTarget].writeMask & Video::BlendStateInformation::Mask::B)
+                    if (description.targetStates[renderTarget].writeMask & Video::BlendState::Description::Mask::B)
                     {
                         blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_BLUE;
                     }
 
-                    if (blendState.targetStates[renderTarget].writeMask & Video::BlendStateInformation::Mask::A)
+                    if (description.targetStates[renderTarget].writeMask & Video::BlendState::Description::Mask::A)
                     {
                         blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_ALPHA;
                     }
@@ -2135,27 +2126,27 @@ namespace Gek
                     throw Video::CreateObjectFailed("Unable to create independent blend state");
                 }
 
-                return std::make_unique<BlendState>(d3dStates);
+                return std::make_unique<BlendState>(d3dStates, description);
             }
 
-            Video::ObjectPtr createSamplerState(const Video::SamplerStateInformation &samplerState)
+            Video::SamplerStatePtr createSamplerState(Video::SamplerState::Description const &description)
             {
                 assert(d3dDevice);
 
                 D3D11_SAMPLER_DESC samplerDescription;
-                samplerDescription.AddressU = DirectX::AddressModeList[static_cast<uint8_t>(samplerState.addressModeU)];
-                samplerDescription.AddressV = DirectX::AddressModeList[static_cast<uint8_t>(samplerState.addressModeV)];
-                samplerDescription.AddressW = DirectX::AddressModeList[static_cast<uint8_t>(samplerState.addressModeW)];
-                samplerDescription.MipLODBias = samplerState.mipLevelBias;
-                samplerDescription.MaxAnisotropy = samplerState.maximumAnisotropy;
-                samplerDescription.ComparisonFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(samplerState.comparisonFunction)];
-                samplerDescription.BorderColor[0] = samplerState.borderColor.r;
-                samplerDescription.BorderColor[1] = samplerState.borderColor.g;
-                samplerDescription.BorderColor[2] = samplerState.borderColor.b;
-                samplerDescription.BorderColor[3] = samplerState.borderColor.a;
-                samplerDescription.MinLOD = samplerState.minimumMipLevel;
-                samplerDescription.MaxLOD = samplerState.maximumMipLevel;
-                samplerDescription.Filter = DirectX::FilterList[static_cast<uint8_t>(samplerState.filterMode)];
+                samplerDescription.AddressU = DirectX::AddressModeList[static_cast<uint8_t>(description.addressModeU)];
+                samplerDescription.AddressV = DirectX::AddressModeList[static_cast<uint8_t>(description.addressModeV)];
+                samplerDescription.AddressW = DirectX::AddressModeList[static_cast<uint8_t>(description.addressModeW)];
+                samplerDescription.MipLODBias = description.mipLevelBias;
+                samplerDescription.MaxAnisotropy = description.maximumAnisotropy;
+                samplerDescription.ComparisonFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(description.comparisonFunction)];
+                samplerDescription.BorderColor[0] = description.borderColor.r;
+                samplerDescription.BorderColor[1] = description.borderColor.g;
+                samplerDescription.BorderColor[2] = description.borderColor.b;
+                samplerDescription.BorderColor[3] = description.borderColor.a;
+                samplerDescription.MinLOD = description.minimumMipLevel;
+                samplerDescription.MaxLOD = description.maximumMipLevel;
+                samplerDescription.Filter = DirectX::FilterList[static_cast<uint8_t>(description.filterMode)];
 
                 CComPtr<ID3D11SamplerState> d3dStates;
                 HRESULT resultValue = d3dDevice->CreateSamplerState(&samplerDescription, &d3dStates);
@@ -2164,7 +2155,7 @@ namespace Gek
                     throw Video::CreateObjectFailed("Unable to create sampler state");
                 }
 
-                return std::make_unique<SamplerState>(d3dStates);
+                return std::make_unique<SamplerState>(d3dStates, description);
             }
 
             Video::BufferPtr createBuffer(const Video::Buffer::Description &description, const void *data)

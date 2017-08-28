@@ -346,7 +346,7 @@ namespace Gek
                         materialData.initializerList.push_back(initializer);
                     }
 
-                    Video::RenderStateInformation renderStateInformation;
+                    Video::RenderState::Description renderStateInformation;
                     renderStateInformation.load(materialNode.get("renderState"), globalOptions);
                     materialData.renderState = resources->createRenderState(renderStateInformation);
                 }
@@ -573,7 +573,7 @@ namespace Gek
                                 "\r\n", outputData);
                         }
 
-                        Video::DepthStateInformation depthStateInformation;
+                        Video::DepthState::Description depthStateInformation;
                         auto &depthStateNode = passNode.get("depthState");
                         depthStateInformation.load(depthStateNode, passOptions);
                         pass.clearDepthValue = depthStateNode.get("clear").convert(Math::Infinity);
@@ -596,10 +596,10 @@ namespace Gek
 							}
                         }
 
-                        Video::UnifiedBlendStateInformation blendStateInformation;
+                        Video::BlendState::Description blendStateInformation;
                         blendStateInformation.load(passNode.get("blendState"), passOptions);
 
-                        Video::RenderStateInformation renderStateInformation;
+                        Video::RenderState::Description renderStateInformation;
                         renderStateInformation.load(passNode.get("renderState"), passOptions);
 
                         pass.depthState = resources->createDepthState(depthStateInformation);

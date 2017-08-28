@@ -96,8 +96,8 @@ namespace Gek
 
                 auto backBuffer = videoDevice->getBackBuffer();
                 auto &backBufferDescription = backBuffer->getDescription();
-                depthState = resources->createDepthState(Video::DepthStateInformation());
-                renderState = resources->createRenderState(Video::RenderStateInformation());
+                depthState = resources->createDepthState(Video::DepthState::Description());
+                renderState = resources->createRenderState(Video::RenderState::Description());
 
                 const JSON::Instance filterNode = JSON::Load(getContext()->getRootFileName("data", "filters", filterName).withExtension(".json"));
 
@@ -441,7 +441,7 @@ namespace Gek
                                 "\r\n", outputData);
                         }
 
-                        Video::UnifiedBlendStateInformation blendStateInformation;
+                        Video::BlendState::Description blendStateInformation;
                         blendStateInformation.load(passNode.get("blendState"));
                         pass.blendState = resources->createBlendState(blendStateInformation);
                     }
