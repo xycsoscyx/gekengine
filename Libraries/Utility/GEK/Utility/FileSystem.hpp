@@ -120,3 +120,11 @@ namespace Gek
 		}
 	}; // namespace File
 }; // namespace Gek
+
+namespace std
+{
+    inline std::string to_string(Gek::FileSystem::Path const &path)
+    {
+        return path.u8string();
+    }
+};

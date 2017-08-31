@@ -55,9 +55,9 @@ namespace Gek
                     else
                     {
                         Video::InputElement element;
-                        element.format = Video::getFormat(elementNode.get("format").convert(String::Empty));
-                        element.semantic = Video::InputElement::getSemantic(elementNode.get("semantic").convert(String::Empty));
-                        element.source = Video::InputElement::getSource(elementNode.get("source").convert(String::Empty));
+                        element.format = Video::GetFormat(elementNode.get("format").convert(String::Empty));
+                        element.semantic = Video::InputElement::GetSemantic(elementNode.get("semantic").convert(String::Empty));
+                        element.source = Video::InputElement::GetSource(elementNode.get("source").convert(String::Empty));
                         element.sourceIndex = elementNode.get("sourceIndex").convert(0);
 
                         uint32_t count = elementNode.get("count").convert(1);
@@ -78,8 +78,8 @@ namespace Gek
 				{
                     JSON::Reference elementNode(baseElementNode);
                     std::string elementName(elementNode.get("name").convert(String::Empty));
-                    Video::Format format = Video::getFormat(elementNode.get("format").convert(String::Empty));
-					auto semantic = Video::InputElement::getSemantic(elementNode.get("semantic").convert(String::Empty));
+                    Video::Format format = Video::GetFormat(elementNode.get("format").convert(String::Empty));
+					auto semantic = Video::InputElement::GetSemantic(elementNode.get("semantic").convert(String::Empty));
                     uint32_t count = elementNode.get("count").convert(1);
                     auto semanticIndex = outputIndexList[static_cast<uint8_t>(semantic)];
                     outputIndexList[static_cast<uint8_t>(semantic)] += count;

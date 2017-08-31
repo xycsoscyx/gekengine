@@ -281,11 +281,11 @@ namespace Gek
                         {
                             if (entity->hasComponent<Components::Model>())
                             {
-                                const auto &modelComponent = entity->getComponent<Components::Model>();
+                                auto const &modelComponent = entity->getComponent<Components::Model>();
                                 auto newtonCollision = loadCollision(modelComponent);
                                 if (newtonCollision)
                                 {
-                                    const auto &staticComponent = entity->getComponent<Components::Static>();
+                                    auto const &staticComponent = entity->getComponent<Components::Static>();
                                     auto newtonStaticGroup = getStaticGroup(staticComponent.group);
 
                                     NewtonSceneCollisionBeginAddRemove(newtonStaticGroup);
@@ -313,7 +313,7 @@ namespace Gek
                             }
                             else if (entity->hasComponent<Components::Model>())
                             {
-                                const auto &modelComponent = entity->getComponent<Components::Model>();
+                                auto const &modelComponent = entity->getComponent<Components::Model>();
                                 auto newtonCollision = loadCollision(modelComponent);
                                 if (newtonCollision)
                                 {
@@ -404,7 +404,7 @@ namespace Gek
             void onReset(void)
             {
                 NewtonWaitForUpdateToFinish(newtonWorld);
-                for (const auto &collisionPair : collisionMap)
+                for (auto const &collisionPair : collisionMap)
                 {
                     if (collisionPair.second)
                     {
@@ -513,7 +513,7 @@ namespace Gek
             {
                 std::map<Newton::Entity *, float> updateMap;
                 Processor *processor = static_cast<Processor *>(userData);
-                for (const auto &entityPair : processor->entityMap)
+                for (auto const &entityPair : processor->entityMap)
                 {
                     auto updatePair = (*updateMap.insert(std::make_pair(entityPair.second.get(), frameTime)).first);
                     NewtonDispachThreadJob(processor->newtonWorld, [](NewtonWorld* const world, void* const userData, int threadIndex) -> void
@@ -530,7 +530,7 @@ namespace Gek
             {
                 std::map<Newton::Entity *, float> updateMap;
                 Processor *processor = static_cast<Processor *>(userData);
-                for (const auto &entityPair : processor->entityMap)
+                for (auto const &entityPair : processor->entityMap)
                 {
                     auto updatePair = (*updateMap.insert(std::make_pair(entityPair.second.get(), frameTime)).first);
                     NewtonDispachThreadJob(processor->newtonWorld, [](NewtonWorld* const world, void* const userData, int threadIndex) -> void

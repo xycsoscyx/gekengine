@@ -95,7 +95,8 @@ namespace Gek
             Count,
         };
 
-        Format getFormat(std::string const &format);
+        Format GetFormat(std::string const &format);
+        std::string GetFormat(Format format);
 
         struct DisplayMode
         {
@@ -140,6 +141,8 @@ namespace Gek
             GreaterEqual,
         };
 
+        std::string GetComparisonFunction(ComparisonFunction function);
+
         enum class PrimitiveType : uint8_t
         {
             PointList = 0,
@@ -148,6 +151,8 @@ namespace Gek
             TriangleList,
             TriangleStrip,
         };
+
+        std::string GetPrimitiveType(PrimitiveType type);
 
         enum class Map : uint8_t
         {
@@ -214,8 +219,10 @@ namespace Gek
 
             static const uint32_t AppendAligned = 0xFFFFFFFF;
 
-            static Source getSource(std::string const &elementSource);
-            static Semantic getSemantic(std::string const &semantic);
+            static Source GetSource(std::string const &elementSource);
+            static std::string GetSource(Source elementSource);
+            static Semantic GetSemantic(std::string const &semantic);
+            static std::string GetSemantic(Semantic semantic);
 
             Video::Format format = Format::Unknown;
             Semantic semantic = Semantic::TexCoord;
@@ -228,27 +235,33 @@ namespace Gek
         {
             virtual ~Object(void) = default;
 
+            virtual std::type_index getTypeInfo(void) const = 0;
+
             virtual void setName(std::string const &name) = 0;
+            virtual std::string const &getName(void) const = 0;
         };
 
         GEK_INTERFACE(RenderState)
             : virtual public Object
         {
+            enum class FillMode : uint8_t
+            {
+                WireFrame = 0,
+                Solid,
+            };
+
+            enum class CullMode : uint8_t
+            {
+                None = 0,
+                Front,
+                Back,
+            };
+
+            static std::string GetFillMode(FillMode fillMode);
+            static std::string GetCullMode(CullMode cullMode);
+
             struct Description
             {
-                enum class FillMode : uint8_t
-                {
-                    WireFrame = 0,
-                    Solid,
-                };
-
-                enum class CullMode : uint8_t
-                {
-                    None = 0,
-                    Front,
-                    Back,
-                };
-
                 FillMode fillMode = FillMode::Solid;
                 CullMode cullMode = CullMode::Back;
                 bool frontCounterClockwise = false;
@@ -272,28 +285,31 @@ namespace Gek
         GEK_INTERFACE(DepthState)
             : virtual public Object
         {
+            enum class Write : uint8_t
+            {
+                Zero = 0,
+                All,
+            };
+
+            enum class Operation : uint8_t
+            {
+                Zero = 0,
+                Keep,
+                Replace,
+                Invert,
+                Increase,
+                IncreaseSaturated,
+                Decrease,
+                DecreaseSaturated,
+            };
+
+            static std::string GetWrite(Write write);
+            static std::string GetOperation(Operation operation);
+
             struct Description
             {
-                enum class Write : uint8_t
-                {
-                    Zero = 0,
-                    All,
-                };
-
                 struct StencilState
                 {
-                    enum class Operation : uint8_t
-                    {
-                        Zero = 0,
-                        Keep,
-                        Replace,
-                        Invert,
-                        Increase,
-                        IncreaseSaturated,
-                        Decrease,
-                        DecreaseSaturated,
-                    };
-
                     Operation failOperation = Operation::Keep;
                     Operation depthFailOperation = Operation::Keep;
                     Operation passOperation = Operation::Keep;
@@ -324,51 +340,55 @@ namespace Gek
         GEK_INTERFACE(BlendState)
             : virtual public Object
         {
+            enum class Source : uint8_t
+            {
+                Zero = 0,
+                One,
+                BlendFactor,
+                InverseBlendFactor,
+                SourceColor,
+                InverseSourceColor,
+                SourceAlpha,
+                InverseSourceAlpha,
+                SourceAlphaSaturated,
+                DestinationColor,
+                InverseDestinationColor,
+                DestinationAlpha,
+                InverseDestinationAlpha,
+                SecondarySourceColor,
+                InverseSecondarySourceColor,
+                SecondarySourceAlpha,
+                InverseSecondarySourceAlpha,
+            };
+
+            enum class Operation : uint8_t
+            {
+                Add = 0,
+                Subtract,
+                ReverseSubtract,
+                Minimum,
+                Maximum,
+            };
+
+            struct Mask
+            {
+                enum
+                {
+                    R = 1 << 0,
+                    G = 1 << 1,
+                    B = 1 << 2,
+                    A = 1 << 3,
+                    RGB = (R | G | B),
+                    RGBA = (R | G | B | A),
+                };
+            }; // struct Mask
+
+            static std::string GetSource(Source source);
+            static std::string GetOperation(Operation operation);
+            static std::string GetMask(uint32_t mask);
+
             struct Description
             {
-                enum class Source : uint8_t
-                {
-                    Zero = 0,
-                    One,
-                    BlendFactor,
-                    InverseBlendFactor,
-                    SourceColor,
-                    InverseSourceColor,
-                    SourceAlpha,
-                    InverseSourceAlpha,
-                    SourceAlphaSaturated,
-                    DestinationColor,
-                    InverseDestinationColor,
-                    DestinationAlpha,
-                    InverseDestinationAlpha,
-                    SecondarySourceColor,
-                    InverseSecondarySourceColor,
-                    SecondarySourceAlpha,
-                    InverseSecondarySourceAlpha,
-                };
-
-                enum class Operation : uint8_t
-                {
-                    Add = 0,
-                    Subtract,
-                    ReverseSubtract,
-                    Minimum,
-                    Maximum,
-                };
-
-                struct Mask
-                {
-                    enum
-                    {
-                        R = 1 << 0,
-                        G = 1 << 1,
-                        B = 1 << 2,
-                        A = 1 << 3,
-                        RGB = (R | G | B),
-                        RGBA = (R | G | B | A),
-                    };
-                }; // struct Mask
-
                 struct TargetState
                 {
                     bool enable = false;
@@ -405,57 +425,60 @@ namespace Gek
         GEK_INTERFACE(SamplerState)
             : virtual public Object
         {
+            enum class FilterMode : uint8_t
+            {
+                MinificationMagnificationMipMapPoint = 0,
+                MinificationMagnificationPointMipMapLinear,
+                MinificationPointMagnificationLinearMipMapPoint,
+                MinificationPointMagnificationMipMapLinear,
+                MinificationLinearMagnificationMipMapPoint,
+                MinificationLinearMagnificationPointMipMapLinear,
+                MinificationMagnificationLinearMipMapPoint,
+                MinificationMagnificationMipMapLinear,
+                Anisotropic,
+                ComparisonMinificationMagnificationMipMapPoint,
+                ComparisonMinificationMagnificationPointMipMapLinear,
+                ComparisonMinificationPointMagnificationLinearMipMapPoint,
+                ComparisonMinificationPointMagnificationMipMapLinear,
+                ComparisonMinificationLinearMagnificationMipMapPoint,
+                ComparisonMinificationLinearMagnificationPointMipMapLinear,
+                ComparisonMinificationMagnificationLinearMipMapPoint,
+                ComparisonMinificationMagnificationMipMapLinear,
+                ComparisonAnisotropic,
+                MinimumMinificationMagnificationMipMapPoint,
+                MinimumMinificationMagnificationPointMipMapLinear,
+                MinimumMinificationPointMagnificationLinearMipMapPoint,
+                MinimumMinificationPointMagnificationMipMapLinear,
+                MinimumMinificationLinearMagnificationMipMapPoint,
+                MinimumMinificationLinearMagnificationPointMipMapLinear,
+                MinimumMinificationMagnificationLinearMipMapPoint,
+                MinimumMinificationMagnificationMipMapLinear,
+                MinimumAnisotropic,
+                MaximumMinificationMagnificationMipMapPoint,
+                MaximumMinificationMagnificationPointMipMapLinear,
+                MaximumMinificationPointMagnificationLinearMipMapPoint,
+                MaximumMinificationPointMagnificationMipMapLinear,
+                MaximumMinificationLinearMagnificationMipMapPoint,
+                MaximumMinificationLinearMagnificationPointMipMapLinear,
+                MaximumMinificationMagnificationLinearMipMapPoint,
+                MaximumMinificationMagnificationMipMapLinear,
+                MaximumAnisotropic,
+            };
+
+            enum class AddressMode : uint8_t
+            {
+                Clamp = 0,
+                Wrap,
+                Mirror,
+                MirrorOnce,
+                Border,
+            };
+
+            static std::string GetFilterMode(FilterMode filterMode);
+            static std::string GeAddressMode(AddressMode addressMode);
+
             struct Description
             {
-                enum class FilterMode : uint8_t
-                {
-                    MinificationMagnificationMipMapPoint = 0,
-                    MinificationMagnificationPointMipMapLinear,
-                    MinificationPointMagnificationLinearMipMapPoint,
-                    MinificationPointMagnificationMipMapLinear,
-                    MinificationLinearMagnificationMipMapPoint,
-                    MinificationLinearMagnificationPointMipMapLinear,
-                    MinificationMagnificationLinearMipMapPoint,
-                    MinificationMagnificationMipMapLinear,
-                    Anisotropic,
-                    ComparisonMinificationMagnificationMipMapPoint,
-                    ComparisonMinificationMagnificationPointMipMapLinear,
-                    ComparisonMinificationPointMagnificationLinearMipMapPoint,
-                    ComparisonMinificationPointMagnificationMipMapLinear,
-                    ComparisonMinificationLinearMagnificationMipMapPoint,
-                    ComparisonMinificationLinearMagnificationPointMipMapLinear,
-                    ComparisonMinificationMagnificationLinearMipMapPoint,
-                    ComparisonMinificationMagnificationMipMapLinear,
-                    ComparisonAnisotropic,
-                    MinimumMinificationMagnificationMipMapPoint,
-                    MinimumMinificationMagnificationPointMipMapLinear,
-                    MinimumMinificationPointMagnificationLinearMipMapPoint,
-                    MinimumMinificationPointMagnificationMipMapLinear,
-                    MinimumMinificationLinearMagnificationMipMapPoint,
-                    MinimumMinificationLinearMagnificationPointMipMapLinear,
-                    MinimumMinificationMagnificationLinearMipMapPoint,
-                    MinimumMinificationMagnificationMipMapLinear,
-                    MinimumAnisotropic,
-                    MaximumMinificationMagnificationMipMapPoint,
-                    MaximumMinificationMagnificationPointMipMapLinear,
-                    MaximumMinificationPointMagnificationLinearMipMapPoint,
-                    MaximumMinificationPointMagnificationMipMapLinear,
-                    MaximumMinificationLinearMagnificationMipMapPoint,
-                    MaximumMinificationLinearMagnificationPointMipMapLinear,
-                    MaximumMinificationMagnificationLinearMipMapPoint,
-                    MaximumMinificationMagnificationMipMapLinear,
-                    MaximumAnisotropic,
-                };
-
-                enum class AddressMode : uint8_t
-                {
-                    Clamp = 0,
-                    Wrap,
-                    Mirror,
-                    MirrorOnce,
-                    Border,
-                };
-
                 FilterMode filterMode = FilterMode::MinificationMagnificationMipMapPoint;
                 AddressMode addressModeU = AddressMode::Clamp;
                 AddressMode addressModeV = AddressMode::Clamp;
@@ -479,29 +502,32 @@ namespace Gek
         GEK_INTERFACE(Buffer)
             : virtual public Object
         {
+            struct Flags
+            {
+                enum
+                {
+                    Staging = 1 << 0,
+                    Mappable = 1 << 1,
+                    Resource = 1 << 2,
+                    UnorderedAccess = 1 << 3,
+                    Counter = 1 << 4,
+                };
+            }; // Flags
+
+            enum class Type : uint8_t
+            {
+                Raw = 0,
+                Vertex,
+                Index,
+                Constant,
+                Structured,
+            };
+
+            static std::string GeFlags(uint32_t flags);
+            static std::string GetType(Type type);
+
             struct Description
             {
-                struct Flags
-                {
-                    enum
-                    {
-                        Staging = 1 << 0,
-                        Mappable = 1 << 1,
-                        Resource = 1 << 2,
-                        UnorderedAccess = 1 << 3,
-                        Counter = 1 << 4,
-                    };
-                }; // Flags
-
-                enum class Type : uint8_t
-                {
-                    Raw = 0,
-                    Vertex,
-                    Index,
-                    Constant,
-                    Structured,
-                };
-
                 Video::Format format = Video::Format::Unknown;
                 uint32_t stride = 0;
                 uint32_t count = 0;
@@ -512,26 +538,26 @@ namespace Gek
             };
 
             virtual ~Buffer(void) = default;
-        
+
             virtual Description const &getDescription(void) const = 0;
         };
 
         GEK_INTERFACE(Texture)
             : virtual public Object
         {
+            struct Flags
+            {
+                enum
+                {
+                    RenderTarget = 1 << 0,
+                    DepthTarget = 1 << 1,
+                    Resource = 1 << 2,
+                    UnorderedAccess = 1 << 3,
+                };
+            }; // Flags
+
             struct Description
             {
-                struct Flags
-                {
-                    enum
-                    {
-                        RenderTarget = 1 << 0,
-                        DepthTarget = 1 << 1,
-                        Resource = 1 << 2,
-                        UnorderedAccess = 1 << 3,
-                    };
-                }; // Flags
-
                 Video::Format format = Video::Format::Unknown;
                 uint32_t width = 1;
                 uint32_t height = 1;

@@ -27,7 +27,7 @@ namespace Gek
 
             auto size = (initialDelimiter ? 1 : 0); // initial length
             size += (list.size() - 1); // insert delimiters between list elements
-            for (const auto &string : list)
+            for (auto const &string : list)
             {
                 size += string.length();
             }
@@ -90,20 +90,6 @@ namespace Gek
         std::string Narrow(std::wstring_view const &string)
         {
             return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>{}.to_bytes(string.data());
-        }
-
-        std::string Convert(bool const &value)
-        {
-            std::stringstream stream;
-            stream << std::boolalpha << value;
-            return stream.str();
-        }
-
-        std::string Convert(float const &value)
-        {
-            std::stringstream stream;
-            stream << std::showpoint << value;
-            return stream.str();
         }
 
         bool Convert(std::string const &string, bool defaultValue)

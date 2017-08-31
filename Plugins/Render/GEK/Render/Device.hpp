@@ -101,7 +101,7 @@ namespace Gek
             Count,
         };
 
-        Format getFormat(std::string const &format);
+        Format GetFormat(std::string const &format);
 
         struct DisplayMode
         {
@@ -432,7 +432,7 @@ namespace Gek
                 Count,
             };
 
-            static Semantic getSemantic(std::string const &semantic);
+            static Semantic GetSemantic(std::string const &semantic);
 
             Semantic semantic = Semantic::TexCoord;
 
@@ -450,7 +450,7 @@ namespace Gek
 
             static const uint32_t AppendAligned = 0xFFFFFFFF;
 
-            static Source getSource(std::string const &elementSource);
+            static Source GetSource(std::string const &elementSource);
 
             Source source = Source::Vertex;
             uint32_t sourceIndex = 0;

@@ -24,7 +24,7 @@ namespace Gek
             return GetHash(name, format);
         }
 
-        ElementDeclaration::Semantic ElementDeclaration::getSemantic(std::string const &string)
+        ElementDeclaration::Semantic ElementDeclaration::GetSemantic(std::string const &string)
         {
 			static const std::unordered_map<std::string, Semantic> data =
 			{
@@ -44,7 +44,7 @@ namespace Gek
             return CombineHashes(NamedDeclaration::getHash(), GetHash(semantic));
         }
 
-        VertexDeclaration::Source VertexDeclaration::getSource(std::string const &string)
+        VertexDeclaration::Source VertexDeclaration::GetSource(std::string const &string)
         {
 			static const std::unordered_map<std::string, Source> data =
 			{
@@ -60,7 +60,7 @@ namespace Gek
             return CombineHashes(ElementDeclaration::getHash(), GetHash(source, sourceIndex, alignedByteOffset));
         }
 
-		Format getFormat(std::string const &string)
+		Format GetFormat(std::string const &string)
 		{
 			static const std::unordered_map<std::string, Format> data =
 			{
@@ -243,7 +243,7 @@ namespace Gek
 
         void BlendStateInformation::TargetStateInformation::load(JSON::Reference object)
         {
-			auto getSource = [](std::string const &string) -> Source
+			auto GetSource = [](std::string const &string) -> Source
 			{
 				static const std::unordered_map<std::string, Source> data =
 				{
@@ -284,11 +284,11 @@ namespace Gek
 			};
 
 			enable = object.get("enable").convert(false);
-            colorSource = getSource(object.get("colorSource").convert("One"s));
-            colorDestination = getSource(object.get("colorDestination").convert("One"s));
+            colorSource = GetSource(object.get("colorSource").convert("One"s));
+            colorDestination = GetSource(object.get("colorDestination").convert("One"s));
             colorOperation = getOperation(object.get("colorOperation").convert("Add"s));
-            alphaSource = getSource(object.get("alphaSource").convert("One"s));
-            alphaDestination = getSource(object.get("alphaDestination").convert("One"s));
+            alphaSource = GetSource(object.get("alphaSource").convert("One"s));
+            alphaDestination = GetSource(object.get("alphaDestination").convert("One"s));
             alphaOperation = getOperation(object.get("alphaOperation").convert("Add"s));
             std::string writeMask(String::GetLower(object.get("writeMask").convert("RGBA"s)));
             if (writeMask.empty())
@@ -341,7 +341,7 @@ namespace Gek
         size_t BlendStateInformation::getHash(void) const
         {
             auto hash = GetHash(alphaToCoverage, unifiedBlendState);
-            for (const auto &targetState : targetStateList)
+            for (auto const &targetState : targetStateList)
             {
                 CombineHashes(hash, targetState.getHash());
             }
@@ -437,18 +437,18 @@ namespace Gek
             hash = CombineHashes(hash, sampleMask);
             hash = CombineHashes(hash, rasterizerStateInformation.getHash());
             hash = CombineHashes(hash, depthStateInformation.getHash());
-            for (const auto &vertexElement : vertexDeclaration)
+            for (auto const &vertexElement : vertexDeclaration)
             {
                 hash = CombineHashes(hash, vertexElement.getHash());
             }
 
-            for (const auto &pixelElement : pixelDeclaration)
+            for (auto const &pixelElement : pixelDeclaration)
             {
                 hash = CombineHashes(hash, pixelElement.getHash());
             }
 
             hash = CombineHashes(hash, GetHash(primitiveType));
-            for (const auto &renderTarget : renderTargetList)
+            for (auto const &renderTarget : renderTargetList)
             {
                 hash = CombineHashes(hash, renderTarget.getHash());
             }

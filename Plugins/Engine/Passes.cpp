@@ -127,7 +127,7 @@ namespace Gek
         uint32_t flags = 0;
         int position = 0;
 		std::vector<std::string> flagList(String::Split(String::GetLower(loadFlags), ','));
-        for (const auto &flag : flagList)
+        for (auto const &flag : flagList)
         {
             if (flag == "srgb")
             {
@@ -143,23 +143,23 @@ namespace Gek
         uint32_t flags = 0;
         int position = 0;
         std::vector<std::string> flagList(String::Split(String::GetLower(createFlags), ','));
-        for (const auto &flag : flagList)
+        for (auto const &flag : flagList)
         {
             if (flag == "target")
             {
-                flags |= Video::Texture::Description::Flags::RenderTarget;
+                flags |= Video::Texture::Flags::RenderTarget;
             }
             else if (flag == "depth")
             {
-                flags |= Video::Texture::Description::Flags::DepthTarget;
+                flags |= Video::Texture::Flags::DepthTarget;
             }
             else if (flag == "unorderedaccess")
             {
-                flags |= Video::Texture::Description::Flags::UnorderedAccess;
+                flags |= Video::Texture::Flags::UnorderedAccess;
             }
         }
 
-        return (flags | Video::Texture::Description::Flags::Resource);
+        return (flags | Video::Texture::Flags::Resource);
     }
 
     uint32_t getBufferFlags(std::string const &createFlags)
@@ -167,19 +167,19 @@ namespace Gek
         uint32_t flags = 0;
         int position = 0;
         std::vector<std::string> flagList(String::Split(String::GetLower(createFlags), ','));
-        for (const auto &flag : flagList)
+        for (auto const &flag : flagList)
         {
             if (flag == "unorderedaccess")
             {
-                flags |= Video::Buffer::Description::Flags::UnorderedAccess;
+                flags |= Video::Buffer::Flags::UnorderedAccess;
             }
             else if (flag == "counter")
             {
-                flags |= Video::Buffer::Description::Flags::Counter;
+                flags |= Video::Buffer::Flags::Counter;
             }
         }
 
-        return (flags | Video::Buffer::Description::Flags::Resource);
+        return (flags | Video::Buffer::Flags::Resource);
     }
 
     std::unordered_map<std::string, std::string> getAliasedMap(JSON::Reference parent, std::string const &name)

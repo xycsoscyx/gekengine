@@ -405,7 +405,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
 
     std::unordered_map<std::string, std::vector<Part>> albedoPartMap;
-    for (const auto &modelAlbedo : scenePartMap)
+    for (auto const &modelAlbedo : scenePartMap)
     {
 		std::string albedoName(String::GetLower(FileSystem::Path(modelAlbedo.first).withoutExtension().u8string()));
         LockedWrite{ std::cout } << String::Format("Found Albedo: %v", albedoName);
@@ -442,12 +442,12 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
 
     std::unordered_map<std::string, Part> materialPartMap;
-    for (const auto &multiMaterial : albedoPartMap)
+    for (auto const &multiMaterial : albedoPartMap)
     {
         Part &material = materialPartMap[multiMaterial.first];
-        for (const auto &instance : multiMaterial.second)
+        for (auto const &instance : multiMaterial.second)
         {
-            for (const auto &index : instance.indexList)
+            for (auto const &index : instance.indexList)
             {
                 material.indexList.push_back(uint16_t(index + material.vertexPositionList.size()));
             }
@@ -482,7 +482,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     header.partCount = materialPartMap.size();
     header.boundingBox = boundingBox;
     fwrite(&header, sizeof(Header), 1, file);
-    for (const auto &material : materialPartMap)
+    for (auto const &material : materialPartMap)
     {
 		std::string name = material.first;
 		LockedWrite{ std::cout } << String::Format("-    Material: %v", name);
@@ -496,7 +496,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         fwrite(&materialHeader, sizeof(Header::Material), 1, file);
     }
 
-    for (const auto &material : materialPartMap)
+    for (auto const &material : materialPartMap)
     {
         fwrite(material.second.indexList.data(), sizeof(uint16_t), material.second.indexList.size(), file);
         fwrite(material.second.vertexPositionList.data(), sizeof(Math::Float3), material.second.vertexPositionList.size(), file);

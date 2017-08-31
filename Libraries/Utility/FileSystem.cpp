@@ -150,7 +150,7 @@ namespace Gek
         void Find(Path const &rootDirectory, std::function<bool(Path const &)> onFileFound)
 		{
             std::error_code errorCode;
-            for (const auto &fileSearch : std::experimental::filesystem::directory_iterator(rootDirectory, errorCode))
+            for (auto const &fileSearch : std::experimental::filesystem::directory_iterator(rootDirectory, errorCode))
 			{
                 if (!onFileFound(fileSearch.path().u8string()))
                 {

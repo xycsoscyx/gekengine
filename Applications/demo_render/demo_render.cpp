@@ -112,7 +112,7 @@ namespace Gek
 
             uint32_t preferredDisplayMode = 0;
             auto fullDisplayModeList = renderDevice->getDisplayModeList(deviceDescription.displayFormat);
-            for (const auto &displayMode : fullDisplayModeList)
+            for (auto const &displayMode : fullDisplayModeList)
             {
                 if (displayMode.height >= 800)
                 {
@@ -120,7 +120,7 @@ namespace Gek
                 }
             }
 
-            for (const auto &displayMode : displayModeList)
+            for (auto const &displayMode : displayModeList)
             {
                 auto currentDisplayMode = displayModeStringList.size();
                 std::string displayModeString(String::Format("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));

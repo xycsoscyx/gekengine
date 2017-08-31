@@ -135,7 +135,7 @@ namespace Gek
                     else if (textureNode.has("format"))
                     {
                         Video::Texture::Description description(backBufferDescription);
-                        description.format = Video::getFormat(textureNode.get("format").convert(String::Empty));
+                        description.format = Video::GetFormat(textureNode.get("format").convert(String::Empty));
                         auto &size = textureNode.get("size");
                         if (size.isFloat())
                         {
@@ -199,12 +199,12 @@ namespace Gek
                     description.flags = getBufferFlags(bufferValue.get("flags").convert(String::Empty));
                     if (bufferValue.has("format"))
                     {
-                        description.type = Video::Buffer::Description::Type::Raw;
-                        description.format = Video::getFormat(bufferValue.get("format").convert(String::Empty));
+                        description.type = Video::Buffer::Type::Raw;
+                        description.format = Video::GetFormat(bufferValue.get("format").convert(String::Empty));
                     }
                     else
                     {
-                        description.type = Video::Buffer::Description::Type::Structured;
+                        description.type = Video::Buffer::Type::Structured;
                         description.stride = evaluate(bufferValue.get("stride"), 0);
                     }
 
@@ -619,7 +619,7 @@ namespace Gek
                     return Pass::Mode::None;
                 }
 
-                for (const auto &clearTarget : pass.clearResourceMap)
+                for (auto const &clearTarget : pass.clearResourceMap)
                 {
                     switch (clearTarget.second.type)
                     {
@@ -637,12 +637,12 @@ namespace Gek
                     };
                 }
 
-                for (const auto &resource : pass.generateMipMapsList)
+                for (auto const &resource : pass.generateMipMapsList)
                 {
                     resources->generateMipMaps(videoContext, resource);
                 }
 
-                for (const auto &copyResource : pass.copyResourceMap)
+                for (auto const &copyResource : pass.copyResourceMap)
                 {
                     resources->copyResource(copyResource.first, copyResource.second);
                 }

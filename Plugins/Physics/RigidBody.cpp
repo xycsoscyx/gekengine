@@ -28,8 +28,8 @@ namespace Gek
                 assert(world);
                 assert(entity);
 
-				const auto &physical = entity->getComponent<Components::Physical>();
-				const auto &transform = entity->getComponent<Components::Transform>();
+				auto const &physical = entity->getComponent<Components::Physical>();
+				auto const &transform = entity->getComponent<Components::Transform>();
 
                 Math::Float4x4 matrix(transform.getMatrix());
                 newtonBody = NewtonCreateDynamicBody(newtonWorld, newtonCollision, matrix.data);
@@ -63,8 +63,8 @@ namespace Gek
 
             void onPreUpdate(float frameTime, int threadHandle)
             {
-				const auto &physical = entity->getComponent<Components::Physical>();
-				const auto &transform = entity->getComponent<Components::Transform>();
+				auto const &physical = entity->getComponent<Components::Physical>();
+				auto const &transform = entity->getComponent<Components::Transform>();
 
                 //NewtonCollisionSetScale(NewtonBodyGetCollision(newtonBody), 1.0f, 1.0f, 1.0f);
 

@@ -140,7 +140,7 @@ namespace Gek
                     Video::Texture::Description description;
                     description.width = cameraSize.x;
                     description.height = cameraSize.y;
-                    description.flags = Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource;
+                    description.flags = Video::Texture::Flags::RenderTarget | Video::Texture::Flags::Resource;
                     description.format = Video::Format::R11G11B10_FLOAT;
                     cameraTarget = core->getResources()->createTexture("editorTarget", description, Plugin::Resources::Flags::LoadImmediately);
 
@@ -429,7 +429,7 @@ namespace Gek
                                     ImGui::Spacing();
                                     ImGui::Spacing();
 
-                                    const auto &componentMap = population->getComponentMap();
+                                    auto const &componentMap = population->getComponentMap();
                                     auto componentCount = componentMap.size();
                                     if (ImGui::ListBoxHeader("##Components", componentCount, 10))
                                     {
@@ -466,7 +466,7 @@ namespace Gek
                                     if (editorEntity)
                                     {
                                         std::set<std::type_index> deleteComponentSet;
-                                        const auto &entityComponentMap = editorEntity->getComponentMap();
+                                        auto const &entityComponentMap = editorEntity->getComponentMap();
                                         for (auto &componentSearch : entityComponentMap)
                                         {
                                             Edit::Component *component = population->getComponent(componentSearch.first);

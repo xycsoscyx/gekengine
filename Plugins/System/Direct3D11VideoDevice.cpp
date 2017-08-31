@@ -492,7 +492,7 @@ namespace Gek
 
         static_assert(ARRAYSIZE(SemanticNameList) == static_cast<uint8_t>(Video::InputElement::Semantic::Count), "New input element semantic added without adding to all SemanticNameList.");
 
-        Video::Format getFormat(DXGI_FORMAT format)
+        Video::Format GetFormat(DXGI_FORMAT format)
         {
             switch (format)
             {
@@ -551,15 +551,6 @@ namespace Gek
 
     namespace Direct3D11
     {
-        template <typename CLASS>
-        void setDebugName(CLASS *object, std::string const &name)
-        {
-            if (object)
-            {
-                object->SetPrivateData(WKPDID_D3DDebugObjectName, UINT(name.size()), name.c_str());
-            }
-        }
-
         template <typename CONVERT, typename SOURCE>
         auto getObject(SOURCE *source)
         {
@@ -627,9 +618,42 @@ namespace Gek
             }
         };
 
+        template <typename BASE = Video::Object>
+        class NamedObject
+            : public BASE
+        {
+        public:
+            std::string name;
+
+        public:
+            template <typename CLASS>
+            void setDebugName(CLASS *object)
+            {
+                if (object)
+                {
+                    object->SetPrivateData(WKPDID_D3DDebugObjectName, UINT(name.size()), name.c_str());
+                }
+            }
+
+            std::type_index getTypeInfo(void) const
+            {
+                return typeid(BASE);
+            }
+
+            virtual void setName(std::string const &name)
+            {
+                this->name = name;
+            }
+
+            std::string const &getName(void) const
+            {
+                return name;
+            }
+        };
+
         template <typename TYPE, typename BASE = Video::Object>
         class BaseVideoObject
-            : public BASE
+            : public NamedObject<BASE>
         {
         public:
             TYPE *d3dObject = nullptr;
@@ -652,13 +676,14 @@ namespace Gek
 
             void setName(std::string const &name)
             {
-                setDebugName(d3dObject, name);
+                NamedObject::setName(name);
+                setDebugName(d3dObject);
             }
         };
         
         template <typename TYPE, typename BASE>
         class DescribedVideoObject
-            : public BASE
+            : public NamedObject<BASE>
         {
         public:
             TYPE *d3dObject = nullptr;
@@ -683,7 +708,8 @@ namespace Gek
 
             void setName(std::string const &name)
             {
-                setDebugName(d3dObject, name);
+                NamedObject::setName(name);
+                setDebugName(d3dObject);
             }
 
             typename BASE::Description const &getDescription(void) const
@@ -709,7 +735,7 @@ namespace Gek
         using RenderTargetView = BaseObject<ID3D11RenderTargetView>;
 
         class Query
-            : public Video::Query
+            : public NamedObject<Video::Query>
         {
         public:
             ID3D11Query *d3dObject = nullptr;
@@ -731,12 +757,13 @@ namespace Gek
 
             void setName(std::string const &name)
             {
-                setDebugName(d3dObject, name);
+                NamedObject::setName(name);
+                setDebugName(d3dObject);
             }
         };
 
         class Buffer
-            : public Video::Buffer
+            : public NamedObject<Video::Buffer>
             , public Resource
             , public ShaderResourceView
             , public UnorderedAccessView
@@ -769,10 +796,11 @@ namespace Gek
 
             void setName(std::string const &name)
             {
-                setDebugName(d3dObject, name);
-                setDebugName(Resource::d3dObject, name);
-                setDebugName(ShaderResourceView::d3dObject, name);
-                setDebugName(UnorderedAccessView::d3dObject, name);
+                NamedObject::setName(name);
+                setDebugName(d3dObject);
+                setDebugName(Resource::d3dObject);
+                setDebugName(ShaderResourceView::d3dObject);
+                setDebugName(UnorderedAccessView::d3dObject);
             }
 
             // Video::Buffer
@@ -795,7 +823,7 @@ namespace Gek
         };
 
         class Texture
-            : virtual public Video::Texture
+            : virtual public NamedObject<Video::Texture>
             , public BaseTexture
         {
         public:
@@ -830,8 +858,9 @@ namespace Gek
 
             void setName(std::string const &name)
             {
-                setDebugName(Resource::d3dObject, name);
-                setDebugName(ShaderResourceView::d3dObject, name);
+                NamedObject::setName(name);
+                setDebugName(Resource::d3dObject);
+                setDebugName(ShaderResourceView::d3dObject);
             }
         };
 
@@ -855,14 +884,15 @@ namespace Gek
 
             void setName(std::string const &name)
             {
-                setDebugName(Resource::d3dObject, name);
-                setDebugName(ShaderResourceView::d3dObject, name);
-                setDebugName(UnorderedAccessView::d3dObject, name);
+                NamedObject::setName(name);
+                setDebugName(Resource::d3dObject);
+                setDebugName(ShaderResourceView::d3dObject);
+                setDebugName(UnorderedAccessView::d3dObject);
             }
         };
 
         class Target
-            : virtual public Video::Target
+            : virtual public NamedObject<Video::Target>
             , public BaseTexture
         {
         public:
@@ -909,8 +939,9 @@ namespace Gek
 
             void setName(std::string const &name)
             {
-                setDebugName(Resource::d3dObject, name);
-                setDebugName(RenderTargetView::d3dObject, name);
+                NamedObject::setName(name);
+                setDebugName(Resource::d3dObject);
+                setDebugName(RenderTargetView::d3dObject);
             }
         };
 
@@ -932,9 +963,8 @@ namespace Gek
 
             void setName(std::string const &name)
             {
-                setDebugName(Resource::d3dObject, name);
-                setDebugName(RenderTargetView::d3dObject, name);
-                setDebugName(ShaderResourceView::d3dObject, name);
+                TargetTexture::setName(name);
+                setDebugName(ShaderResourceView::d3dObject);
             }
         };
 
@@ -959,10 +989,9 @@ namespace Gek
 
             void setName(std::string const &name)
             {
-                setDebugName(Resource::d3dObject, name);
-                setDebugName(RenderTargetView::d3dObject, name);
-                setDebugName(ShaderResourceView::d3dObject, name);
-                setDebugName(UnorderedAccessView::d3dObject, name);
+                TargetTexture::setName(name);
+                setDebugName(ShaderResourceView::d3dObject);
+                setDebugName(UnorderedAccessView::d3dObject);
             }
         };
 
@@ -1000,10 +1029,11 @@ namespace Gek
 
             void setName(std::string const &name)
             {
-                setDebugName(Resource::d3dObject, name);
-                setDebugName(ShaderResourceView::d3dObject, name);
-                setDebugName(UnorderedAccessView::d3dObject, name);
-                setDebugName(d3dObject, name);
+                NamedObject::setName(name);
+                setDebugName(Resource::d3dObject);
+                setDebugName(ShaderResourceView::d3dObject);
+                setDebugName(UnorderedAccessView::d3dObject);
+                setDebugName(d3dObject);
             }
         };
 
@@ -1806,7 +1836,7 @@ namespace Gek
 
                     std::vector<DXGI_MODE_DESC> dxgiDisplayModeList(modeCount);
                     dxgiOutput->GetDisplayModeList(DirectX::TextureFormatList[static_cast<uint8_t>(format)], 0, &modeCount, dxgiDisplayModeList.data());
-                    for (const auto &dxgiDisplayMode : dxgiDisplayModeList)
+                    for (auto const &dxgiDisplayMode : dxgiDisplayModeList)
                     {
                         auto getAspectRatio = [](uint32_t width, uint32_t height) -> Video::DisplayMode::AspectRatio
                         {
@@ -1835,7 +1865,7 @@ namespace Gek
                         Video::DisplayMode displayMode;
                         displayMode.width = dxgiDisplayMode.Width;
                         displayMode.height = dxgiDisplayMode.Height;
-                        displayMode.format = DirectX::getFormat(dxgiDisplayMode.Format);
+                        displayMode.format = DirectX::GetFormat(dxgiDisplayMode.Format);
                         displayMode.aspectRatio = getAspectRatio(displayMode.width, displayMode.height);
                         displayMode.refreshRate.numerator = dxgiDisplayMode.RefreshRate.Numerator;
                         displayMode.refreshRate.denominator = dxgiDisplayMode.RefreshRate.Denominator;
@@ -1979,7 +2009,7 @@ namespace Gek
                     Video::Texture::Description description;
                     description.width = textureDescription.Width;
                     description.height = textureDescription.Height;
-                    description.format = DirectX::getFormat(textureDescription.Format);
+                    description.format = DirectX::GetFormat(textureDescription.Format);
                     backBuffer = std::make_unique<TargetViewTexture>(CComQIPtr<ID3D11Resource>(d3dRenderTarget), d3dRenderTargetView, d3dShaderResourceView, description);
                 }
 
@@ -2098,22 +2128,22 @@ namespace Gek
                     blendDescription.RenderTarget[renderTarget].DestBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].alphaDestination)];
                     blendDescription.RenderTarget[renderTarget].BlendOpAlpha = DirectX::BlendOperationList[static_cast<uint8_t>(description.targetStates[renderTarget].alphaOperation)];
                     blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask = 0;
-                    if (description.targetStates[renderTarget].writeMask & Video::BlendState::Description::Mask::R)
+                    if (description.targetStates[renderTarget].writeMask & Video::BlendState::Mask::R)
                     {
                         blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_RED;
                     }
 
-                    if (description.targetStates[renderTarget].writeMask & Video::BlendState::Description::Mask::G)
+                    if (description.targetStates[renderTarget].writeMask & Video::BlendState::Mask::G)
                     {
                         blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_GREEN;
                     }
 
-                    if (description.targetStates[renderTarget].writeMask & Video::BlendState::Description::Mask::B)
+                    if (description.targetStates[renderTarget].writeMask & Video::BlendState::Mask::B)
                     {
                         blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_BLUE;
                     }
 
-                    if (description.targetStates[renderTarget].writeMask & Video::BlendState::Description::Mask::A)
+                    if (description.targetStates[renderTarget].writeMask & Video::BlendState::Mask::A)
                     {
                         blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_ALPHA;
                     }
@@ -2185,7 +2215,7 @@ namespace Gek
                 bufferDescription.ByteWidth = (stride * description.count);
                 switch (description.type)
                 {
-                case Video::Buffer::Description::Type::Structured:
+                case Video::Buffer::Type::Structured:
                     bufferDescription.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
                     bufferDescription.StructureByteStride = stride;
                     bufferDescription.BindFlags = 0;
@@ -2196,15 +2226,15 @@ namespace Gek
                     bufferDescription.StructureByteStride = 0;
                     switch (description.type)
                     {
-                    case Video::Buffer::Description::Type::Vertex:
+                    case Video::Buffer::Type::Vertex:
                         bufferDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
                         break;
 
-                    case Video::Buffer::Description::Type::Index:
+                    case Video::Buffer::Type::Index:
                         bufferDescription.BindFlags = D3D11_BIND_INDEX_BUFFER;
                         break;
 
-                    case Video::Buffer::Description::Type::Constant:
+                    case Video::Buffer::Type::Constant:
                         bufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
                         break;
 
@@ -2219,12 +2249,12 @@ namespace Gek
                     bufferDescription.Usage = D3D11_USAGE_IMMUTABLE;
                     bufferDescription.CPUAccessFlags = 0;
                 }
-                else if (description.flags & Video::Buffer::Description::Flags::Staging)
+                else if (description.flags & Video::Buffer::Flags::Staging)
                 {
                     bufferDescription.Usage = D3D11_USAGE_STAGING;
                     bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
                 }
-                else if (description.flags & Video::Buffer::Description::Flags::Mappable)
+                else if (description.flags & Video::Buffer::Flags::Mappable)
                 {
                     bufferDescription.Usage = D3D11_USAGE_DYNAMIC;
                     bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -2235,12 +2265,12 @@ namespace Gek
                     bufferDescription.CPUAccessFlags = 0;
                 }
 
-                if (description.flags & Video::Buffer::Description::Flags::Resource)
+                if (description.flags & Video::Buffer::Flags::Resource)
                 {
                     bufferDescription.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
                 }
 
-                if (description.flags & Video::Buffer::Description::Flags::UnorderedAccess)
+                if (description.flags & Video::Buffer::Flags::UnorderedAccess)
                 {
                     bufferDescription.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
                 }
@@ -2268,7 +2298,7 @@ namespace Gek
                 }
 
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                if (description.flags & Video::Buffer::Description::Flags::Resource)
+                if (description.flags & Video::Buffer::Flags::Resource)
                 {
                     D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
                     viewDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(description.format)];
@@ -2283,14 +2313,14 @@ namespace Gek
                 }
 
                 CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
-                if (description.flags & Video::Buffer::Description::Flags::UnorderedAccess)
+                if (description.flags & Video::Buffer::Flags::UnorderedAccess)
                 {
                     D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
                     viewDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(description.format)];
                     viewDescription.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
                     viewDescription.Buffer.FirstElement = 0;
                     viewDescription.Buffer.NumElements = description.count;
-                    viewDescription.Buffer.Flags = (description.flags & Video::Buffer::Description::Flags::Counter ? D3D11_BUFFER_UAV_FLAG_COUNTER : 0);
+                    viewDescription.Buffer.Flags = (description.flags & Video::Buffer::Flags::Counter ? D3D11_BUFFER_UAV_FLAG_COUNTER : 0);
 
                     HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView);
                     if (FAILED(resultValue) || !d3dUnorderedAccessView)
@@ -2374,7 +2404,7 @@ namespace Gek
 
                 uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
                 std::vector<D3D11_INPUT_ELEMENT_DESC> d3dElementList;
-                for (const auto &element : elementList)
+                for (auto const &element : elementList)
                 {
                     D3D11_INPUT_ELEMENT_DESC elementDesc;
                     elementDesc.Format = DirectX::BufferFormatList[static_cast<uint8_t>(element.format)];
@@ -2509,9 +2539,9 @@ namespace Gek
                 assert(description.depth != 0);
 
                 uint32_t bindFlags = 0;
-                if (description.flags & Video::Texture::Description::Flags::RenderTarget)
+                if (description.flags & Video::Texture::Flags::RenderTarget)
                 {
-                    if (description.flags & Video::Texture::Description::Flags::DepthTarget)
+                    if (description.flags & Video::Texture::Flags::DepthTarget)
                     {
                         throw Video::InvalidParameter("Cannot create render target when depth target flag also specified");
                     }
@@ -2519,7 +2549,7 @@ namespace Gek
                     bindFlags |= D3D11_BIND_RENDER_TARGET;
                 }
 
-                if (description.flags & Video::Texture::Description::Flags::DepthTarget)
+                if (description.flags & Video::Texture::Flags::DepthTarget)
                 {
                     if (description.depth > 1)
                     {
@@ -2529,12 +2559,12 @@ namespace Gek
                     bindFlags |= D3D11_BIND_DEPTH_STENCIL;
                 }
 
-                if (description.flags & Video::Texture::Description::Flags::Resource)
+                if (description.flags & Video::Texture::Flags::Resource)
                 {
                     bindFlags |= D3D11_BIND_SHADER_RESOURCE;
                 }
 
-                if (description.flags & Video::Texture::Description::Flags::UnorderedAccess)
+                if (description.flags & Video::Texture::Flags::UnorderedAccess)
                 {
                     bindFlags |= D3D11_BIND_UNORDERED_ACCESS;
                 }
@@ -2612,7 +2642,7 @@ namespace Gek
                 }
 
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                if (description.flags & Video::Texture::Description::Flags::Resource)
+                if (description.flags & Video::Texture::Flags::Resource)
                 {
                     D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
                     viewDescription.Format = DirectX::ViewFormatList[static_cast<uint8_t>(description.format)];
@@ -2637,7 +2667,7 @@ namespace Gek
                 }
 
                 CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
-                if (description.flags & Video::Texture::Description::Flags::UnorderedAccess)
+                if (description.flags & Video::Texture::Flags::UnorderedAccess)
                 {
                     D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
                     viewDescription.Format = DirectX::ViewFormatList[static_cast<uint8_t>(description.format)];
@@ -2661,7 +2691,7 @@ namespace Gek
                     }
                 }
 
-                if (description.flags & Video::Texture::Description::Flags::RenderTarget)
+                if (description.flags & Video::Texture::Flags::RenderTarget)
                 {
                     D3D11_RENDER_TARGET_VIEW_DESC renderViewDescription;
                     renderViewDescription.Format = DirectX::ViewFormatList[static_cast<uint8_t>(description.format)];
@@ -2687,7 +2717,7 @@ namespace Gek
 
                     return std::make_unique<UnorderedTargetViewTexture>(d3dResource, d3dRenderTargetView, d3dShaderResourceView, d3dUnorderedAccessView, description);
                 }
-                else if (description.flags & Video::Texture::Description::Flags::DepthTarget)
+                else if (description.flags & Video::Texture::Flags::DepthTarget)
                 {
                     D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilDescription;
                     depthStencilDescription.Format = DirectX::DepthFormatList[static_cast<uint8_t>(description.format)];
@@ -2778,7 +2808,7 @@ namespace Gek
                 description.width = image.GetMetadata().width;
                 description.height = image.GetMetadata().height;
                 description.depth = image.GetMetadata().depth;
-                description.format = DirectX::getFormat(image.GetMetadata().format);
+                description.format = DirectX::GetFormat(image.GetMetadata().format);
                 description.mipMapCount = image.GetMetadata().mipLevels;
                 return std::make_unique<ViewTexture>(d3dResource, d3dShaderResourceView, description);
             }
@@ -2825,7 +2855,7 @@ namespace Gek
                 description.width = image.GetMetadata().width;
                 description.height = image.GetMetadata().height;
                 description.depth = image.GetMetadata().depth;
-                description.format = DirectX::getFormat(image.GetMetadata().format);
+                description.format = DirectX::GetFormat(image.GetMetadata().format);
                 description.mipMapCount = image.GetMetadata().mipLevels;
                 return std::make_unique<ViewTexture>(d3dResource, d3dShaderResourceView, description);
             }
@@ -2883,7 +2913,7 @@ namespace Gek
                 description.height = metadata.height;
                 description.depth = metadata.depth;
                 description.mipMapCount = metadata.mipLevels;
-                description.format = DirectX::getFormat(metadata.format);
+                description.format = DirectX::GetFormat(metadata.format);
                 return description;
             }
 

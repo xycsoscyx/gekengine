@@ -497,7 +497,7 @@ namespace Gek
         static_assert(ARRAYSIZE(VertexSemanticList) == static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count), "New element semantic added without adding to all VertexSemanticList.");
         static_assert(ARRAYSIZE(PixelSemanticList) == static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count), "New element semantic added without adding to all PixelSemanticList.");
 
-        Render::Format getFormat(DXGI_FORMAT format)
+        Render::Format GetFormat(DXGI_FORMAT format)
         {
             switch (format)
             {
@@ -1200,7 +1200,7 @@ namespace Gek
                 Render::TextureDescription description;
                 description.width = textureDescription.Width;
                 description.height = textureDescription.Height;
-                description.format = DirectX::getFormat(textureDescription.Format);
+                description.format = DirectX::GetFormat(textureDescription.Format);
                 textureDescriptionMap[SwapChain] = description;
             }
 
@@ -1312,7 +1312,7 @@ namespace Gek
             {
                 uint32_t semanticIndexList[static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count)] = { 0 };
                 std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDescriptionList;
-                for (const auto &vertexElement : vertexDeclaration)
+                for (auto const &vertexElement : vertexDeclaration)
                 {
                     D3D11_INPUT_ELEMENT_DESC elementDescription;
                     elementDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(vertexElement.format)];
@@ -1357,7 +1357,7 @@ namespace Gek
                 std::string shader(ConversionFunctions);
                 shader.append("struct Vertex\r\n{\r\n");
                 uint32_t vertexSemanticIndexList[static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count)] = { 0 };
-                for (const auto &vertexElement : pipelineStateInformation.vertexDeclaration)
+                for (auto const &vertexElement : pipelineStateInformation.vertexDeclaration)
                 {
                     std::string semantic = DirectX::VertexSemanticList[static_cast<uint8_t>(vertexElement.semantic)];
                     std::string format = DirectX::getFormatSemantic(vertexElement.format);
@@ -1366,7 +1366,7 @@ namespace Gek
 
                 shader.append("};\r\n\r\nstruct Pixel\r\n{\r\n");
                 uint32_t pixelSemanticIndexList[static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count)] = { 0 };
-                for (const auto &pixelElement : pipelineStateInformation.pixelDeclaration)
+                for (auto const &pixelElement : pipelineStateInformation.pixelDeclaration)
                 {
                     std::string semantic = DirectX::PixelSemanticList[static_cast<uint8_t>(pixelElement.semantic)];
                     std::string format = DirectX::getFormatSemantic(pixelElement.format);
@@ -1375,7 +1375,7 @@ namespace Gek
 
                 shader.append("};\r\n\r\nstruct Output\r\n{\r\n");
                 uint32_t renderTargetIndex = 0;
-                for (const auto &renderTarget : pipelineStateInformation.renderTargetList)
+                for (auto const &renderTarget : pipelineStateInformation.renderTargetList)
                 {
                     std::string format = DirectX::getFormatSemantic(renderTarget.format);
                     shader += String::Format("    %v %v : SV_TARGET%v;\r\n", format, renderTarget.name, renderTargetIndex++);
@@ -1434,7 +1434,7 @@ namespace Gek
                     std::vector<DXGI_MODE_DESC> dxgiDisplayModeList(modeCount);
                     dxgiOutput->GetDisplayModeList(DirectX::TextureFormatList[static_cast<uint8_t>(format)], 0, &modeCount, dxgiDisplayModeList.data());
 
-                    for (const auto &dxgiDisplayMode : dxgiDisplayModeList)
+                    for (auto const &dxgiDisplayMode : dxgiDisplayModeList)
                     {
                         if (dxgiDisplayMode.ScanlineOrdering == DXGI_MODE_SCANLINE_ORDER_PROGRESSIVE && dxgiDisplayMode.Scaling == DXGI_MODE_SCALING_CENTERED)
                         {
@@ -1465,7 +1465,7 @@ namespace Gek
                             Render::DisplayMode displayMode;
                             displayMode.width = dxgiDisplayMode.Width;
                             displayMode.height = dxgiDisplayMode.Height;
-                            displayMode.format = DirectX::getFormat(dxgiDisplayMode.Format);
+                            displayMode.format = DirectX::GetFormat(dxgiDisplayMode.Format);
                             displayMode.aspectRatio = getAspectRatio(displayMode.width, displayMode.height);
                             displayMode.refreshRate.numerator = dxgiDisplayMode.RefreshRate.Numerator;
                             displayMode.refreshRate.denominator = dxgiDisplayMode.RefreshRate.Denominator;
@@ -2184,7 +2184,7 @@ namespace Gek
                     description.width = image.GetMetadata().width;
                     description.height = image.GetMetadata().height;
                     description.depth = image.GetMetadata().depth;
-                    description.format = DirectX::getFormat(image.GetMetadata().format);
+                    description.format = DirectX::GetFormat(image.GetMetadata().format);
                     description.mipMapCount = image.GetMetadata().mipLevels;
                     textureDescriptionMap.insert(std::make_pair(handle, description));
                     return d3dResource;

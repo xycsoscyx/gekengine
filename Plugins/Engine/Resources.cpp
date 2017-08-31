@@ -27,6 +27,8 @@
 #include <concurrent_vector.h>
 #include <ppl.h>
 
+using namespace std::string_literals; // enables s-suffix for std::string literals  
+
 class Float16Compressor
 {
     union Bits
@@ -136,6 +138,11 @@ namespace Gek
             }
 
             virtual ~ResourceCache(void) = default;
+
+            ResourceMap &getResourceMap(void)
+            {
+                return resourceMap;
+            }
 
             virtual void clear(void)
             {
@@ -608,7 +615,7 @@ namespace Gek
                     auto programLines = String::Split(baseProgram, '$', false);
 
                     std::string uncompiledProgram;
-                    for (const auto &line : programLines)
+                    for (auto const &line : programLines)
                     {
                         if (line.empty())
                         {
@@ -709,76 +716,157 @@ namespace Gek
                 }
             }
 
-            void showVisualCache(void)
+            template <typename CACHE>
+            void showVideoObjectMap(CACHE &cache, std::string const &name, std::function<void(typename CACHE::TypePtr &)> onObject)
             {
-                if (ImGui::TreeNodeEx("Visuals", ImGuiTreeNodeFlags_Framed))
+                auto lowerName = String::GetLower(name);
+                if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_Framed))
                 {
+                    auto &resourceMap = cache.getResourceMap();
+                    for (auto &resourcePair : resourceMap)
+                    {
+                        auto handle = resourcePair.first;
+                        auto &object = resourcePair.second;
+                        std::string nodeName(object->getName());
+                        if (nodeName.empty())
+                        {
+                            nodeName = String::Format("%v_%v", lowerName, static_cast<uint64_t>(handle.identifier));
+                        }
+
+                        if (ImGui::TreeNodeEx(nodeName.c_str(), ImGuiTreeNodeFlags_Framed))
+                        {
+                            onObject(object);
+                            ImGui::TreePop();
+                        }
+                    }
+
                     ImGui::TreePop();
                 }
+            }
+
+            template <typename CACHE>
+            void showVideoResourceMap(CACHE &cache, std::string const &name, std::function<void(typename CACHE::TypePtr &)> onObject)
+            {
+                if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_Framed))
+                {
+                    auto lowerName = String::GetLower(name);
+                    std::unordered_map<std::type_index, std::vector<CACHE::ResourceMap::value_type>> typeDataMap;
+                    auto &resourceMap = cache.getResourceMap();
+                    for (auto &resourcePair : resourceMap)
+                    {
+                        auto &object = resourcePair.second;
+                        typeDataMap[object->getTypeInfo()].push_back(resourcePair);
+                    }
+
+                    for (auto &typePair : typeDataMap)
+                    {
+                        auto name = (std::strrchr(typePair.first.name(), ':') + 1);
+                        if (ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_Framed))
+                        {
+                            for (auto &resourcePair : typePair.second)
+                            {
+                                auto handle = resourcePair.first;
+                                auto &object = resourcePair.second;
+                                std::string nodeName(object->getName());
+                                if (nodeName.empty())
+                                {
+                                    nodeName = String::Format("%v_%v", lowerName, static_cast<uint64_t>(handle.identifier));
+                                }
+
+                                if (ImGui::TreeNodeEx(nodeName.c_str(), ImGuiTreeNodeFlags_Framed))
+                                {
+                                    onObject(object);
+                                    ImGui::TreePop();
+                                }
+                            }
+
+                            ImGui::TreePop();
+                        }
+                    }
+
+                    ImGui::TreePop();
+                }
+            }
+
+            void showVisualCache(void)
+            {
+                //showResourceMap(visualCache, "Visuals"s);
             }
 
             void showShaderCache(void)
             {
-                if (ImGui::TreeNodeEx("Shaders", ImGuiTreeNodeFlags_Framed))
-                {
-                    ImGui::TreePop();
-                }
+                //showResourceMap(visualCache, "Shaders"s);
             }
 
             void showFilterCache(void)
             {
-                if (ImGui::TreeNodeEx("Filters", ImGuiTreeNodeFlags_Framed))
-                {
-                    ImGui::TreePop();
-                }
+                //showResourceMap(visualCache, "Filters"s);
             }
 
             void showProgramCache(void)
             {
-                if (ImGui::TreeNodeEx("Programs", ImGuiTreeNodeFlags_Framed))
+                showVideoObjectMap(programCache, "Programs"s, [&](auto &object) -> void
                 {
-                    ImGui::TreePop();
-                }
+                });
             }
 
             void showMaterialCache(void)
             {
-                if (ImGui::TreeNodeEx("Materials", ImGuiTreeNodeFlags_Framed))
-                {
-                    ImGui::TreePop();
-                }
+                //showResourceMap(visualCache, "Materials"s);
             }
 
             void showDynamicCache(void)
             {
-                if (ImGui::TreeNodeEx("Resources", ImGuiTreeNodeFlags_Framed))
+                showVideoResourceMap(dynamicCache, "Resources"s, [&](auto &object) -> void
                 {
-                    ImGui::TreePop();
-                }
+                    if (object->getTypeInfo() == typeid(Video::Texture) || object->getTypeInfo() == typeid(Video::Target))
+                    {
+                        auto texture = dynamic_cast<Video::Texture *>(object.get());
+                        auto const &description = texture->getDescription();
+                        UI::InputString("Format", Video::GetFormat(description.format), ImGuiInputTextFlags_ReadOnly);
+                        UI::InputString("Width", std::to_string(description.width), ImGuiInputTextFlags_ReadOnly);
+                        UI::InputString("Height", std::to_string(description.height), ImGuiInputTextFlags_ReadOnly);
+                        UI::InputString("Depth", std::to_string(description.depth), ImGuiInputTextFlags_ReadOnly);
+                        UI::InputString("MipMap Levels", std::to_string(description.mipMapCount), ImGuiInputTextFlags_ReadOnly);
+                        UI::InputString("MultiSample Count", std::to_string(description.sampleCount), ImGuiInputTextFlags_ReadOnly);
+                        UI::InputString("MultiSample Quality", std::to_string(description.sampleQuality), ImGuiInputTextFlags_ReadOnly);
+                        UI::InputString("Flags", std::to_string(description.flags), ImGuiInputTextFlags_ReadOnly);
+                    }
+                    else if (object->getTypeInfo() == typeid(Video::Buffer))
+                    {
+                        auto buffer = dynamic_cast<Video::Buffer *>(object.get());
+                        auto const &description = buffer->getDescription();
+                        UI::InputString("Format", Video::GetFormat(description.format), ImGuiInputTextFlags_ReadOnly);
+                        UI::InputString("Count", std::to_string(description.count), ImGuiInputTextFlags_ReadOnly);
+                        UI::InputString("Stride", std::to_string(description.stride), ImGuiInputTextFlags_ReadOnly);
+                        UI::InputString("Flags", std::to_string(description.flags), ImGuiInputTextFlags_ReadOnly);
+                        UI::InputString("Type", Video::Buffer::GetType(description.type), ImGuiInputTextFlags_ReadOnly);
+                    }
+                });
             }
 
             void showRenderStateCache(void)
             {
-                if (ImGui::TreeNodeEx("Render States", ImGuiTreeNodeFlags_Framed))
+                showVideoObjectMap(renderStateCache, "Render States"s, [&](auto &object) -> void
                 {
-                    ImGui::TreePop();
-                }
+                    auto const &description = object->getDescription();
+                });
             }
 
             void showDepthStateCache(void)
             {
-                if (ImGui::TreeNodeEx("Depth States", ImGuiTreeNodeFlags_Framed))
+                showVideoObjectMap(depthStateCache, "Depth States"s, [&](auto &object) -> void
                 {
-                    ImGui::TreePop();
-                }
+                    auto const &description = object->getDescription();
+                });
             }
 
             void showBlendStateCache(void)
             {
-                if (ImGui::TreeNodeEx("Blend States", ImGuiTreeNodeFlags_Framed))
+                showVideoObjectMap(blendStateCache, "Blend States"s, [&](auto &object) -> void
                 {
-                    ImGui::TreePop();
-                }
+                    auto const &description = object->getDescription();
+                });
             }
 
             // Plugin::Processor
@@ -860,7 +948,7 @@ namespace Gek
                 };
 
                 auto texturePath(getContext()->getRootFileName("data", "textures", textureName));
-                for (const auto &format : formatList)
+                for (auto const &format : formatList)
                 {
                     auto filePath(texturePath.withExtension(format));
                     if (filePath.isFile())
@@ -991,7 +1079,7 @@ namespace Gek
                     }
                 }
 
-                description.flags = Video::Texture::Description::Flags::Resource;
+                description.flags = Video::Texture::Flags::Resource;
                 std::string name(String::Format("%v:%v", pattern, parameters.convert(String::Empty)));
                 auto load = [this, name, description, data = move(data)](ResourceHandle) mutable -> Video::TexturePtr
                 {

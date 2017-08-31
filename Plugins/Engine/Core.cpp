@@ -99,7 +99,7 @@ namespace Gek
 
                 uint32_t preferredDisplayMode = 0;
                 auto fullDisplayModeList = videoDevice->getDisplayModeList(deviceDescription.displayFormat);
-                for (const auto &displayMode : fullDisplayModeList)
+                for (auto const &displayMode : fullDisplayModeList)
                 {
                     if (displayMode.height >= 800)
                     {
@@ -107,7 +107,7 @@ namespace Gek
                     }
                 }
 
-                for (const auto &displayMode : displayModeList)
+                for (auto const &displayMode : displayModeList)
                 {
                     auto currentDisplayMode = displayModeStringList.size();
                     std::string displayModeString(String::Format("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
@@ -147,7 +147,7 @@ namespace Gek
                 });
 
                 processorList.reserve(processorNameList.size());
-                for (const auto &processorName : processorNameList)
+                for (auto const &processorName : processorNameList)
                 {
                     LockedWrite{ std::cout } << String::Format("Processor found: %v", processorName);
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(processorName, (Plugin::Core *)this));
@@ -959,7 +959,7 @@ namespace Gek
 
             void listProcessors(std::function<void(Plugin::Processor *)> onProcessor)
             {
-                for (const auto &processor : processorList)
+                for (auto const &processor : processorList)
                 {
                     onProcessor(processor.get());
                 }

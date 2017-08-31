@@ -95,17 +95,6 @@ namespace Gek
 
         std::vector<std::string> Split(const std::string &string, char delimiter, bool clearSpaces = true);
 
-		inline std::string_view const &Combine(std::string_view const &string)
-		{
-			return string;
-		}
-
-		template<typename... PARAMETERS>
-		std::string Combine(std::string_view const &string, std::string_view const &section, PARAMETERS&&... arguments)
-		{
-			return Combine((string + section), arguments...);
-		}
-
 		inline char const *Format(char const *string)
         {
             return string;
@@ -129,7 +118,7 @@ namespace Gek
                     else if (nextCharacter == 'v')
                     {
                         // %v
-                        return (result + Convert(value) + Format(formatting, arguments...));
+                        return (result + std::to_string(value) + Format(formatting, arguments...));
                     }
                     else
                     {
@@ -152,17 +141,6 @@ namespace Gek
         std::wstring Widen(std::string_view const &string);
         std::string Narrow(std::wstring_view const &string);
 
-        std::string Convert(bool const &value);
-        std::string Convert(float const &value);
-
-        template <typename TYPE>
-        std::string Convert(TYPE const &value)
-        {
-            std::stringstream stream;
-            stream << value;
-            return stream.str();
-        }
-
         bool Convert(std::string const &string, bool defaultValue);
         float Convert(std::string const &string, float defaultValue);
 
@@ -176,3 +154,16 @@ namespace Gek
         }
     }; // namespace String
 }; // namespace Gek
+
+namespace std
+{
+    inline std::string const &to_string(std::string const &string)
+    {
+        return string;
+    }
+
+    inline std::string to_string(void const *pointer)
+    {
+        return std::to_string(reinterpret_cast<size_t>(pointer));
+    }
+};

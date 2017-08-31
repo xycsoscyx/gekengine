@@ -132,9 +132,9 @@ namespace Gek
 				, entity(entity)
 				, currentState(std::make_unique<IdleState>())
 			{
-                const auto &physicalComponent = entity->getComponent<Components::Physical>();
-				const auto &transformComponent = entity->getComponent<Components::Transform>();
-				const auto &playerComponent = entity->getComponent<Components::Player>();
+                auto const &physicalComponent = entity->getComponent<Components::Physical>();
+				auto const &transformComponent = entity->getComponent<Components::Transform>();
+				auto const &playerComponent = entity->getComponent<Components::Player>();
 
                 setRestrainingDistance(0.0f);
                 setClimbSlope(Math::DegreesToRadians(45.0f));
@@ -479,7 +479,7 @@ namespace Gek
 
             void onPostUpdate(float frameTime, int threadHandle)
 			{
-                const auto &playerComponent = entity->getComponent<Components::Player>();
+                auto const &playerComponent = entity->getComponent<Components::Player>();
 
                 // get the body motion state 
                 Math::Float4x4 matrix;

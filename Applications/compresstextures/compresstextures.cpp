@@ -15,21 +15,21 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 {
 	if (!inputFilePath.isFile())
 	{
-        LockedWrite{ std::cerr } << String::Format("Input file not found: %v", inputFilePath.c_str());
+        LockedWrite{ std::cerr } << String::Format("Input file not found: %v", inputFilePath);
         return;
 	}
 
     auto outputFilePath(inputFilePath.withExtension(".dds"));
 	if (outputFilePath.isFile() && outputFilePath.isNewerThan(inputFilePath))
 	{
-		LockedWrite{ std::cerr } << String::Format("Input file hasn't changed since last compression: %v", inputFilePath.c_str());
+		LockedWrite{ std::cerr } << String::Format("Input file hasn't changed since last compression: %v", inputFilePath);
         return;
     }
 
     std::string extension(String::GetLower(inputFilePath.getExtension()));
     if (extension == ".dds")
     {
-        LockedWrite{ std::cerr } << String::Format("Input file is alrady compressed: %v", inputFilePath.c_str());
+        LockedWrite{ std::cerr } << String::Format("Input file is alrady compressed: %v", inputFilePath);
         return;
     }
 
@@ -62,7 +62,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 */
 	if (!load)
 	{
-        LockedWrite{ std::cerr } << String::Format("Unknown file type of %v for input: %v", extension, inputFilePath.c_str());
+        LockedWrite{ std::cerr } << String::Format("Unknown file type of %v for input: %v", extension, inputFilePath);
         return;
     }
 
@@ -73,7 +73,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
     HRESULT resultValue = load(buffer, image);
     if (FAILED(resultValue))
     {
-        LockedWrite{ std::cerr } << String::Format("Unable to load input file: %v", inputFilePath.c_str());
+        LockedWrite{ std::cerr } << String::Format("Unable to load input file: %v", inputFilePath);
         return;
     }
 

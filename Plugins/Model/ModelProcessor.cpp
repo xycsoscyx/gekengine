@@ -269,8 +269,8 @@ namespace Gek
             Video::Buffer::Description instanceDescription;
             instanceDescription.stride = sizeof(Math::Float4x4);
             instanceDescription.count = 100;
-            instanceDescription.type = Video::Buffer::Description::Type::Vertex;
-            instanceDescription.flags = Video::Buffer::Description::Flags::Mappable;
+            instanceDescription.type = Video::Buffer::Type::Vertex;
+            instanceDescription.flags = Video::Buffer::Flags::Mappable;
             instanceBuffer = videoDevice->createBuffer(instanceDescription);
             instanceBuffer->setName("model:instances");
         }
@@ -344,14 +344,14 @@ namespace Gek
                                 Video::Buffer::Description indexBufferDescription;
                                 indexBufferDescription.format = Video::Format::R16_UINT;
                                 indexBufferDescription.count = partHeader.indexCount;
-                                indexBufferDescription.type = Video::Buffer::Description::Type::Index;
+                                indexBufferDescription.type = Video::Buffer::Type::Index;
                                 part.indexBuffer = resources->createBuffer(String::Format("model:indices:%v:%v", name, partIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
                                 bufferData += (sizeof(uint16_t) * partHeader.indexCount);
 
                                 Video::Buffer::Description vertexBufferDescription;
                                 vertexBufferDescription.stride = sizeof(Math::Float3);
                                 vertexBufferDescription.count = partHeader.vertexCount;
-                                vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
+                                vertexBufferDescription.type = Video::Buffer::Type::Vertex;
                                 part.vertexBufferList[0] = resources->createBuffer(String::Format("model:positions:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                 bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
 
@@ -525,10 +525,10 @@ namespace Gek
                 auto &partMap = materialPair.second;
 
                 size_t partInstanceCount = 0;
-                for (const auto &partPair : partMap)
+                for (auto const &partPair : partMap)
                 {
                     const auto part = partPair.first;
-                    const auto &partInstanceList = partPair.second;
+                    auto const &partInstanceList = partPair.second;
                     partInstanceCount += partInstanceList.size();
                 }
 
@@ -555,7 +555,7 @@ namespace Gek
                         std::copy(std::begin(instanceList), std::end(instanceList), instanceData);
                         videoDevice->unmapBuffer(instanceBuffer.get());
                         videoContext->setVertexBufferList({ instanceBuffer.get() }, 5);
-                        for (const auto &drawData : drawDataList)
+                        for (auto const &drawData : drawDataList)
                         {
                             if (drawData.part)
                             {
@@ -574,8 +574,8 @@ namespace Gek
                 Video::Buffer::Description instanceDescription;
                 instanceDescription.stride = sizeof(Math::Float4x4);
                 instanceDescription.count = maximumInstanceCount;
-                instanceDescription.type = Video::Buffer::Description::Type::Vertex;
-                instanceDescription.flags = Video::Buffer::Description::Flags::Mappable;
+                instanceDescription.type = Video::Buffer::Type::Vertex;
+                instanceDescription.flags = Video::Buffer::Flags::Mappable;
                 instanceBuffer = videoDevice->createBuffer(instanceDescription);
                 instanceBuffer->setName("model:instances");
             }

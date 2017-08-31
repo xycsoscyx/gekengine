@@ -39,7 +39,7 @@ namespace Gek
 
             void listComponents(std::function<void(std::type_index const &, Plugin::Component::Data const *)> onComponent)
             {
-                for (const auto &component : componentMap)
+                for (auto const &component : componentMap)
                 {
                     onComponent(component.first, component.second.get());
                 }
@@ -238,20 +238,20 @@ namespace Gek
                     auto templatesNode = worldNode.get("Templates");
                     auto &populationNode = worldNode.get("Population");
                     LockedWrite{ std::cout } << String::Format("Found %v Entity Definitions", populationNode.getArray().size());
-                    for (const auto &entityNode : populationNode.getArray())
+                    for (auto const &entityNode : populationNode.getArray())
                     {
                         std::vector<Component> entityComponentList;
                         if (entityNode.has_member("Template"))
                         {
                             auto &entityTemplateNode = entityNode["Template"];
                             auto &templateNode = templatesNode.get(entityTemplateNode.as_string());
-                            for (const auto &componentNode : templateNode.getMembers())
+                            for (auto const &componentNode : templateNode.getMembers())
                             {
                                 entityComponentList.push_back(std::make_pair(componentNode.name(), componentNode.value()));
                             }
                         }
 
-                        for (const auto &componentNode : entityNode.members())
+                        for (auto const &componentNode : entityNode.members())
                         {
                             auto componentSearch = std::find_if(std::begin(entityComponentList), std::end(entityComponentList), [&](Component const &componentData) -> bool
                             {
@@ -265,7 +265,7 @@ namespace Gek
                             else
                             {
                                 auto &componentData = (*componentSearch);
-                                for (const auto &attribute : componentNode.value().members())
+                                for (auto const &attribute : componentNode.value().members())
                                 {
                                     componentData.second[attribute.name()] = attribute.value();
                                 }
@@ -273,7 +273,7 @@ namespace Gek
                         }
 
                         auto populationEntity = new Entity();
-                        for (const auto &componentData : entityComponentList)
+                        for (auto const &componentData : entityComponentList)
                         {
                             if (componentData.first != "Template")
                             {
@@ -290,7 +290,7 @@ namespace Gek
             void save(std::string const &populationName)
             {
                 JSON::Object population = JSON::EmptyArray;
-                for (const auto &entity : entityList)
+                for (auto const &entity : entityList)
                 {
                     JSON::Object entityData = JSON::EmptyObject;
                     Entity *editorEntity = static_cast<Entity *>(entity.get());
@@ -329,7 +329,7 @@ namespace Gek
             Plugin::Entity *createEntity(const std::vector<Component> &componentList)
             {
                 auto populationEntity = new Entity();
-                for (const auto &componentData : componentList)
+                for (auto const &componentData : componentList)
                 {
                     addComponent(populationEntity, componentData);
                 }
@@ -343,7 +343,7 @@ namespace Gek
             {
                 entityQueue.push([this, entity](void) -> void
                 {
-                    auto entitySearch = std::find_if(std::begin(entityList), std::end(entityList), [entity](const auto &entitySearch) -> bool
+                    auto entitySearch = std::find_if(std::begin(entityList), std::end(entityList), [entity](auto const &entitySearch) -> bool
                     {
                         return (entitySearch.get() == entity);
                     });

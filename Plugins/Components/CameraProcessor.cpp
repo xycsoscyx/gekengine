@@ -127,7 +127,7 @@ namespace Gek
                     description.format = Video::Format::R11G11B10_FLOAT;
                     description.width = backBuffer->getDescription().width;
                     description.height = backBuffer->getDescription().height;
-                    description.flags = Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource;
+                    description.flags = Video::Texture::Flags::RenderTarget | Video::Texture::Flags::Resource;
                     data.target = resources->createTexture(String::Format("camera:%v", cameraComponent.target), description);
                 }
             });

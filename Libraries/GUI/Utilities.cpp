@@ -67,7 +67,7 @@ namespace Gek
             const bool state = storedState ? *storedState : false;
             if (!state)
             {
-                const auto &style(ImGui::GetStyle());
+                auto const &style(ImGui::GetStyle());
                 ImVec4 CheckButtonColor = ImVec4(1.0f, 1.0f, 1.0f, 0.0f) - style.Colors[ImGuiCol_Button];
                 ImVec4 CheckButtonActiveColor = ImVec4(1.0f, 1.0f, 1.0f, 0.0f) - style.Colors[ImGuiCol_ButtonActive];
                 ImGui::PushStyleColor(ImGuiCol_Button, CheckButtonColor);

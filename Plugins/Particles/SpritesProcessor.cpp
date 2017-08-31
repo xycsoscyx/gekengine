@@ -344,7 +344,7 @@ namespace Gek
                 videoDevice->mapBuffer(spritesBuffer, bufferData);
                 for (auto emitterSearch = visibleBegin; emitterSearch != visibleEnd; ++emitterSearch)
                 {
-                    const auto &emitter = *emitterSearch->second;
+                    auto const &emitter = *emitterSearch->second;
 
                     uint32_t spritesCopied = 0;
                     uint32_t spritesCount = emitter.spritesList.size();

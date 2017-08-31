@@ -295,7 +295,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         }
 
         std::unordered_map<std::string, std::vector<Part>> albedoPartMap;
-        for (const auto &modelAlbedo : scenePartMap)
+        for (auto const &modelAlbedo : scenePartMap)
         {
 			std::string albedoName(String::GetLower(FileSystem::Path(modelAlbedo.first).withoutExtension().u8string()));
             if (albedoName.find("textures\\") == 0)
@@ -331,12 +331,12 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         }
 
         std::unordered_map<std::string, Part> materialPartMap;
-        for (const auto &multiMaterial : albedoPartMap)
+        for (auto const &multiMaterial : albedoPartMap)
         {
             Part &material = materialPartMap[multiMaterial.first];
-            for (const auto &instance : multiMaterial.second)
+            for (auto const &instance : multiMaterial.second)
             {
-                for (const auto &index : instance.indexList)
+                for (auto const &index : instance.indexList)
                 {
                     material.indexList.push_back(uint16_t(index + material.vertexList.size()));
                 }
@@ -363,7 +363,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
         int materialIdentifier = 0;
         NewtonTreeCollisionBeginBuild(newtonCollision);
-        for (const auto &material : materialPartMap)
+        for (auto const &material : materialPartMap)
         {
 			LockedWrite{ std::cout } << String::Format("-  %v", material.first);
             LockedWrite{ std::cout } << String::Format("    %v vertices", material.second.vertexList.size());
@@ -398,7 +398,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         Header header;
         header.partCount = materialPartMap.size();
         fwrite(&header, sizeof(Header), 1, file);
-        for (const auto &material : materialPartMap)
+        for (auto const &material : materialPartMap)
         {
             Header::Material materialHeader;
             std::strncpy(materialHeader.name, material.first.c_str(), 63);

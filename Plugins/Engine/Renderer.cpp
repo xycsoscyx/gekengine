@@ -237,8 +237,8 @@ namespace Gek
                         lightDataBuffer = nullptr;
 
                         Video::Buffer::Description lightBufferDescription;
-                        lightBufferDescription.type = Video::Buffer::Description::Type::Structured;
-                        lightBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
+                        lightBufferDescription.type = Video::Buffer::Type::Structured;
+                        lightBufferDescription.flags = Video::Buffer::Flags::Mappable | Video::Buffer::Flags::Resource;
 
                         lightBufferDescription.stride = sizeof(DATA);
                         lightBufferDescription.count = lightList.capacity();
@@ -418,25 +418,25 @@ namespace Gek
                 LockedWrite{ std::cout } << String::Format("Initializing rendering system components");
 
                 Video::SamplerState::Description bufferSamplerStateData;
-                bufferSamplerStateData.filterMode = Video::SamplerState::Description::FilterMode::MinificationMagnificationMipMapPoint;
-                bufferSamplerStateData.addressModeU = Video::SamplerState::Description::AddressMode::Clamp;
-                bufferSamplerStateData.addressModeV = Video::SamplerState::Description::AddressMode::Clamp;
+                bufferSamplerStateData.filterMode = Video::SamplerState::FilterMode::MinificationMagnificationMipMapPoint;
+                bufferSamplerStateData.addressModeU = Video::SamplerState::AddressMode::Clamp;
+                bufferSamplerStateData.addressModeV = Video::SamplerState::AddressMode::Clamp;
                 bufferSamplerState = videoDevice->createSamplerState(bufferSamplerStateData);
                 bufferSamplerState->setName("renderer:bufferSamplerState");
 
                 Video::SamplerState::Description textureSamplerStateData;
                 textureSamplerStateData.maximumAnisotropy = 8;
-                textureSamplerStateData.filterMode = Video::SamplerState::Description::FilterMode::Anisotropic;
-                textureSamplerStateData.addressModeU = Video::SamplerState::Description::AddressMode::Wrap;
-                textureSamplerStateData.addressModeV = Video::SamplerState::Description::AddressMode::Wrap;
+                textureSamplerStateData.filterMode = Video::SamplerState::FilterMode::Anisotropic;
+                textureSamplerStateData.addressModeU = Video::SamplerState::AddressMode::Wrap;
+                textureSamplerStateData.addressModeV = Video::SamplerState::AddressMode::Wrap;
                 textureSamplerState = videoDevice->createSamplerState(textureSamplerStateData);
                 textureSamplerState->setName("renderer:textureSamplerState");
 
                 Video::SamplerState::Description mipMapSamplerStateData;
                 mipMapSamplerStateData.maximumAnisotropy = 8;
-                mipMapSamplerStateData.filterMode = Video::SamplerState::Description::FilterMode::MinificationMagnificationMipMapLinear;
-                mipMapSamplerStateData.addressModeU = Video::SamplerState::Description::AddressMode::Clamp;
-                mipMapSamplerStateData.addressModeV = Video::SamplerState::Description::AddressMode::Clamp;
+                mipMapSamplerStateData.filterMode = Video::SamplerState::FilterMode::MinificationMagnificationMipMapLinear;
+                mipMapSamplerStateData.addressModeU = Video::SamplerState::AddressMode::Clamp;
+                mipMapSamplerStateData.addressModeV = Video::SamplerState::AddressMode::Clamp;
                 mipMapSamplerState = videoDevice->createSamplerState(mipMapSamplerStateData);
                 mipMapSamplerState->setName("renderer:mipMapSamplerState");
 
@@ -457,7 +457,7 @@ namespace Gek
                 Video::Buffer::Description constantBufferDescription;
                 constantBufferDescription.stride = sizeof(EngineConstantData);
                 constantBufferDescription.count = 1;
-                constantBufferDescription.type = Video::Buffer::Description::Type::Constant;
+                constantBufferDescription.type = Video::Buffer::Type::Constant;
                 engineConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
                 engineConstantBuffer->setName("renderer:engineConstantBuffer");
 
@@ -512,12 +512,12 @@ namespace Gek
                 deferredPixelProgram->setName("renderer:deferredPixelProgram");
 
                 Video::Buffer::Description lightBufferDescription;
-                lightBufferDescription.type = Video::Buffer::Description::Type::Structured;
-                lightBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
+                lightBufferDescription.type = Video::Buffer::Type::Structured;
+                lightBufferDescription.flags = Video::Buffer::Flags::Mappable | Video::Buffer::Flags::Resource;
 
                 Video::Buffer::Description tileBufferDescription;
-                tileBufferDescription.type = Video::Buffer::Description::Type::Raw;
-                tileBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
+                tileBufferDescription.type = Video::Buffer::Type::Raw;
+                tileBufferDescription.flags = Video::Buffer::Flags::Mappable | Video::Buffer::Flags::Resource;
                 tileBufferDescription.format = Video::Format::R32G32_UINT;
                 tileBufferDescription.count = GridSize;
                 tileOffsetCountBuffer = videoDevice->createBuffer(tileBufferDescription);
@@ -588,7 +588,7 @@ namespace Gek
                 Video::Buffer::Description constantBufferDescription;
                 constantBufferDescription.stride = sizeof(Math::Float4x4);
                 constantBufferDescription.count = 1;
-                constantBufferDescription.type = Video::Buffer::Description::Type::Constant;
+                constantBufferDescription.type = Video::Buffer::Type::Constant;
                 gui.constantBuffer = videoDevice->createBuffer(constantBufferDescription);
                 gui.constantBuffer->setName("core:constantBuffer");
 
@@ -614,18 +614,18 @@ namespace Gek
 
                 Video::BlendState::Description blendStateInformation;
                 blendStateInformation[0].enable = true;
-                blendStateInformation[0].colorSource = Video::BlendState::Description::Source::SourceAlpha;
-                blendStateInformation[0].colorDestination = Video::BlendState::Description::Source::InverseSourceAlpha;
-                blendStateInformation[0].colorOperation = Video::BlendState::Description::Operation::Add;
-                blendStateInformation[0].alphaSource = Video::BlendState::Description::Source::InverseSourceAlpha;
-                blendStateInformation[0].alphaDestination = Video::BlendState::Description::Source::Zero;
-                blendStateInformation[0].alphaOperation = Video::BlendState::Description::Operation::Add;
+                blendStateInformation[0].colorSource = Video::BlendState::Source::SourceAlpha;
+                blendStateInformation[0].colorDestination = Video::BlendState::Source::InverseSourceAlpha;
+                blendStateInformation[0].colorOperation = Video::BlendState::Operation::Add;
+                blendStateInformation[0].alphaSource = Video::BlendState::Source::InverseSourceAlpha;
+                blendStateInformation[0].alphaDestination = Video::BlendState::Source::Zero;
+                blendStateInformation[0].alphaOperation = Video::BlendState::Operation::Add;
                 gui.blendState = videoDevice->createBlendState(blendStateInformation);
                 gui.blendState->setName("core:blendState");
 
                 Video::RenderState::Description renderStateInformation;
-                renderStateInformation.fillMode = Video::RenderState::Description::FillMode::Solid;
-                renderStateInformation.cullMode = Video::RenderState::Description::CullMode::None;
+                renderStateInformation.fillMode = Video::RenderState::FillMode::Solid;
+                renderStateInformation.cullMode = Video::RenderState::CullMode::None;
                 renderStateInformation.scissorEnable = true;
                 renderStateInformation.depthClipEnable = true;
                 gui.renderState = videoDevice->createRenderState(renderStateInformation);
@@ -634,7 +634,7 @@ namespace Gek
                 Video::DepthState::Description depthStateInformation;
                 depthStateInformation.enable = true;
                 depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
-                depthStateInformation.writeMask = Video::DepthState::Description::Write::Zero;
+                depthStateInformation.writeMask = Video::DepthState::Write::Zero;
                 gui.depthState = videoDevice->createDepthState(depthStateInformation);
                 gui.depthState->setName("core:depthState");
 
@@ -662,7 +662,7 @@ namespace Gek
                 fontDescription.format = Video::Format::R8G8B8A8_UNORM;
                 fontDescription.width = fontWidth;
                 fontDescription.height = fontHeight;
-                fontDescription.flags = Video::Texture::Description::Flags::Resource;
+                fontDescription.flags = Video::Texture::Flags::Resource;
                 gui.fontTexture = videoDevice->createTexture(fontDescription, pixels);
 
                 imGuiIo.Fonts->TexID = static_cast<Video::Object *>(gui.fontTexture.get());
@@ -723,8 +723,8 @@ namespace Gek
                     Video::Buffer::Description vertexBufferDescription;
                     vertexBufferDescription.stride = sizeof(ImDrawVert);
                     vertexBufferDescription.count = drawData->TotalVtxCount;
-                    vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
-                    vertexBufferDescription.flags = Video::Buffer::Description::Flags::Mappable;
+                    vertexBufferDescription.type = Video::Buffer::Type::Vertex;
+                    vertexBufferDescription.flags = Video::Buffer::Flags::Mappable;
                     gui.vertexBuffer = videoDevice->createBuffer(vertexBufferDescription);
                     gui.vertexBuffer->setName(String::Format("core:vertexBuffer:%v", gui.vertexBuffer.get()));
                 }
@@ -733,8 +733,8 @@ namespace Gek
                 {
                     Video::Buffer::Description vertexBufferDescription;
                     vertexBufferDescription.count = drawData->TotalIdxCount;
-                    vertexBufferDescription.type = Video::Buffer::Description::Type::Index;
-                    vertexBufferDescription.flags = Video::Buffer::Description::Flags::Mappable;
+                    vertexBufferDescription.type = Video::Buffer::Type::Index;
+                    vertexBufferDescription.flags = Video::Buffer::Flags::Mappable;
                     switch (sizeof(ImDrawIdx))
                     {
                     case 2:
@@ -994,8 +994,8 @@ namespace Gek
 
             void addLight(Plugin::Entity * const entity, const Components::PointLight &lightComponent)
             {
-                const auto &transformComponent = entity->getComponent<Components::Transform>();
-                const auto &colorComponent = entity->getComponent<Components::Color>();
+                auto const &transformComponent = entity->getComponent<Components::Transform>();
+                auto const &colorComponent = entity->getComponent<Components::Color>();
 
                 auto lightIterator = pointLightData.lightList.grow_by(1);
                 PointLightData &lightData = (*lightIterator);
@@ -1010,8 +1010,8 @@ namespace Gek
 
             void addLight(Plugin::Entity * const entity, const Components::SpotLight &lightComponent)
             {
-                const auto &transformComponent = entity->getComponent<Components::Transform>();
-                const auto &colorComponent = entity->getComponent<Components::Color>();
+                auto const &transformComponent = entity->getComponent<Components::Transform>();
+                auto const &colorComponent = entity->getComponent<Components::Color>();
 
                 auto lightIterator = spotLightData.lightList.grow_by(1);
                 SpotLightData &lightData = (*lightIterator);
@@ -1148,9 +1148,9 @@ namespace Gek
                                 directionalLightData.lightList.reserve(directionalLightData.entityList.size());
                                 std::for_each(std::begin(directionalLightData.entityList), std::end(directionalLightData.entityList), [&](Plugin::Entity * const entity) -> void
                                 {
-                                    const auto &transformComponent = entity->getComponent<Components::Transform>();
-                                    const auto &colorComponent = entity->getComponent<Components::Color>();
-                                    const auto &lightComponent = entity->getComponent<Components::DirectionalLight>();
+                                    auto const &transformComponent = entity->getComponent<Components::Transform>();
+                                    auto const &colorComponent = entity->getComponent<Components::Color>();
+                                    auto const &lightComponent = entity->getComponent<Components::DirectionalLight>();
 
                                     DirectionalLightData lightData;
                                     lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
@@ -1195,7 +1195,7 @@ namespace Gek
                             for (uint32_t tileIndex = 0; tileIndex < GridSize; ++tileIndex)
                             {
                                 auto &tileOffsetCount = tileOffsetCountList[tileIndex];
-                                const auto &tileLightIndex = tileLightIndexList[tileIndex];
+                                auto const &tileLightIndex = tileLightIndexList[tileIndex];
                                 tileOffsetCount.indexOffset = lightIndexList.size();
                                 tileOffsetCount.pointLightCount = uint16_t(tileLightIndex.pointLightList.size() & 0xFFFF);
                                 tileOffsetCount.spotLightCount = uint16_t(tileLightIndex.spotLightList.size() & 0xFFFF);
@@ -1228,8 +1228,8 @@ namespace Gek
                                     lightIndexBuffer = nullptr;
 
                                     Video::Buffer::Description tileBufferDescription;
-                                    tileBufferDescription.type = Video::Buffer::Description::Type::Raw;
-                                    tileBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
+                                    tileBufferDescription.type = Video::Buffer::Type::Raw;
+                                    tileBufferDescription.flags = Video::Buffer::Flags::Mappable | Video::Buffer::Flags::Resource;
                                     tileBufferDescription.format = Video::Format::R16_UINT;
                                     tileBufferDescription.count = lightIndexList.size();
                                     lightIndexBuffer = videoDevice->createBuffer(tileBufferDescription);
@@ -1296,9 +1296,9 @@ namespace Gek
 
                         std::string finalOutput;
                         auto forceShader = (currentCamera.forceShader ? resources->getShader(currentCamera.forceShader) : nullptr);
-                        for (const auto &shaderDrawCallList : drawCallSetMap)
+                        for (auto const &shaderDrawCallList : drawCallSetMap)
                         {
-                            for (const auto &shaderDrawCall : shaderDrawCallList.second)
+                            for (auto const &shaderDrawCall : shaderDrawCallList.second)
                             {
                                 auto &shader = shaderDrawCall.shader;
 
@@ -1379,7 +1379,7 @@ namespace Gek
                     videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
 
                     videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                    for (const auto &filterName : { "tonemap" })
+                    for (auto const &filterName : { "tonemap" })
                     {
                         Engine::Filter * const filter = resources->getFilter(filterName);
                         if (filter)

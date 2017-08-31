@@ -544,7 +544,7 @@ namespace Gek
 		std::stack<Token> tokenStack;
         std::stack<bool> parameterExistsStack;
 		std::stack<uint32_t> parameterCountStack;
-        for (const auto &token : infixTokenList)
+        for (auto const &token : infixTokenList)
         {
             switch (token.type)
             {
@@ -687,7 +687,7 @@ namespace Gek
         }
 
         std::stack<float> stack;
-        for (const auto &operand : rpnOperandList)
+        for (auto const &operand : rpnOperandList)
         {
             switch (operand.type)
             {
