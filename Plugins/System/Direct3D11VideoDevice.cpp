@@ -13,6 +13,7 @@
 #include <DirectXTex.h>
 #include <wincodec.h>
 #include <algorithm>
+#include <comdef.h>
 #include <memory>
 #include <ppl.h>
 
@@ -2498,7 +2499,9 @@ namespace Gek
                 HRESULT resultValue = D3DCompile(uncompiledProgram.c_str(), (uncompiledProgram.size() + 1), name.c_str(), nullptr, nullptr, entryFunction.c_str(), type.c_str(), flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
-                    LockedWrite{ std::cerr } << String::Format("D3DCompile Failed (%v): %v", resultValue, (char const * const)d3dCompilerErrors->GetBufferPointer());
+                    _com_error error(resultValue);
+                    std::string compilerError((char const *)d3dCompilerErrors->GetBufferPointer());
+                    LockedWrite{ std::cerr } << String::Format("D3DCompile Failed (%v): %v", error.ErrorMessage(), compilerError);
                     throw Video::ProgramCompilationFailed("Unable to compile program");
                 }
 

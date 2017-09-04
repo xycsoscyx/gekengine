@@ -404,9 +404,11 @@ namespace Gek
                     size_t getHash(void) const;
                 };
 
+                using TargetStates = std::array<TargetState, 8>;
+
                 bool alphaToCoverage = false;
                 bool independentBlendStates = false;
-                std::array<TargetState, 8> targetStates;
+                TargetStates targetStates;
 
                 TargetState &operator [] (size_t index)
                 {

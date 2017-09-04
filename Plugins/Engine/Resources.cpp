@@ -815,6 +815,17 @@ namespace Gek
                 //showResourceMap(visualCache, "Materials"s);
             }
 
+            bool showResourceValue(char const *text, const char *label, std::string &value)
+            {
+                ImGui::AlignFirstTextHeightToWidgets();
+                ImGui::Text(text);
+                ImGui::SameLine();
+                ImGui::PushItemWidth(-1.0f);
+                bool changed = UI::InputString(label, value, ImGuiInputTextFlags_ReadOnly);
+                ImGui::PopItemWidth();
+                return changed;
+            }
+
             void showDynamicCache(void)
             {
                 showVideoResourceMap(dynamicCache, "Resources"s, [&](auto &object) -> void
@@ -822,25 +833,28 @@ namespace Gek
                     if (object->getTypeInfo() == typeid(Video::Texture) || object->getTypeInfo() == typeid(Video::Target))
                     {
                         auto texture = dynamic_cast<Video::Texture *>(object.get());
+                        Video::Object *object = texture;
+
                         auto const &description = texture->getDescription();
-                        UI::InputString("Format", Video::GetFormat(description.format), ImGuiInputTextFlags_ReadOnly);
-                        UI::InputString("Width", std::to_string(description.width), ImGuiInputTextFlags_ReadOnly);
-                        UI::InputString("Height", std::to_string(description.height), ImGuiInputTextFlags_ReadOnly);
-                        UI::InputString("Depth", std::to_string(description.depth), ImGuiInputTextFlags_ReadOnly);
-                        UI::InputString("MipMap Levels", std::to_string(description.mipMapCount), ImGuiInputTextFlags_ReadOnly);
-                        UI::InputString("MultiSample Count", std::to_string(description.sampleCount), ImGuiInputTextFlags_ReadOnly);
-                        UI::InputString("MultiSample Quality", std::to_string(description.sampleQuality), ImGuiInputTextFlags_ReadOnly);
-                        UI::InputString("Flags", std::to_string(description.flags), ImGuiInputTextFlags_ReadOnly);
+                        showResourceValue("Format", "##format", Video::GetFormat(description.format));
+                        showResourceValue("Width", "##width", std::to_string(description.width));
+                        showResourceValue("Height", "##height", std::to_string(description.height));
+                        showResourceValue("Depth", "##depth", std::to_string(description.depth));
+                        showResourceValue("MipMap Levels", "##mipMapCount", std::to_string(description.mipMapCount));
+                        showResourceValue("MultiSample Count", "##sampleCount", std::to_string(description.sampleCount));
+                        showResourceValue("MultiSample Quality", "##sampleQuality", std::to_string(description.sampleQuality));
+                        showResourceValue("Flags", "##flags", std::to_string(description.flags));
+                        ImGui::Image(reinterpret_cast<ImTextureID>(object), ImVec2(ImGui::GetContentRegionAvailWidth(), ImGui::GetContentRegionAvailWidth()));
                     }
                     else if (object->getTypeInfo() == typeid(Video::Buffer))
                     {
                         auto buffer = dynamic_cast<Video::Buffer *>(object.get());
                         auto const &description = buffer->getDescription();
-                        UI::InputString("Format", Video::GetFormat(description.format), ImGuiInputTextFlags_ReadOnly);
-                        UI::InputString("Count", std::to_string(description.count), ImGuiInputTextFlags_ReadOnly);
-                        UI::InputString("Stride", std::to_string(description.stride), ImGuiInputTextFlags_ReadOnly);
-                        UI::InputString("Flags", std::to_string(description.flags), ImGuiInputTextFlags_ReadOnly);
-                        UI::InputString("Type", Video::Buffer::GetType(description.type), ImGuiInputTextFlags_ReadOnly);
+                        showResourceValue("Format", "##format", Video::GetFormat(description.format));
+                        showResourceValue("Count", "##count", std::to_string(description.count));
+                        showResourceValue("Stride", "##stride", std::to_string(description.stride));
+                        showResourceValue("Flags", "##flags", std::to_string(description.flags));
+                        showResourceValue("Type", "##type", Video::Buffer::GetType(description.type));
                     }
                 });
             }
@@ -850,7 +864,29 @@ namespace Gek
                 showVideoObjectMap(renderStateCache, "Render States"s, [&](auto &object) -> void
                 {
                     auto const &description = object->getDescription();
+                    showResourceValue("Fill Mode", "##fillMode", Video::RenderState::GetFillMode(description.fillMode));
+                    showResourceValue("Cull Mode", "##cullMode", Video::RenderState::GetCullMode(description.cullMode));
+                    showResourceValue("Front Counter Clockwise", "##frontCounterClockwise", std::to_string(description.frontCounterClockwise));
+                    showResourceValue("Depth Bias", "##depthBias", std::to_string(description.depthBias));
+                    showResourceValue("Depth Bias Clamp", "##depthBiasClamp", std::to_string(description.depthBiasClamp));
+                    showResourceValue("Slope Scaled Depth Bias", "##slopeScaledDepthBias", std::to_string(description.slopeScaledDepthBias));
+                    showResourceValue("Depth Clip Enable", "##depthClipEnable", std::to_string(description.depthClipEnable));
+                    showResourceValue("Scissor Enable", "##scissorEnable", std::to_string(description.scissorEnable));
+                    showResourceValue("Multisample Enable", "##multisampleEnable", std::to_string(description.multisampleEnable));
+                    showResourceValue("AntiAliased Line Enable", "##antialiasedLineEnable", std::to_string(description.antialiasedLineEnable));
                 });
+            }
+
+            void showStencilState(char const *text, Video::DepthState::Description::StencilState const &stencilState)
+            {
+                if (ImGui::TreeNodeEx(text, ImGuiTreeNodeFlags_Framed))
+                {
+                    showResourceValue("failOperation", "##failOperation", Video::DepthState::GetOperation(stencilState.failOperation));
+                    showResourceValue("depthFailOperation", "##depthFailOperation", Video::DepthState::GetOperation(stencilState.depthFailOperation));
+                    showResourceValue("passOperation", "##passOperation", Video::DepthState::GetOperation(stencilState.passOperation));
+                    showResourceValue("comparisonFunction", "##comparisonFunction", Video::GetComparisonFunction(stencilState.comparisonFunction));
+                    ImGui::TreePop();
+                }
             }
 
             void showDepthStateCache(void)
@@ -858,14 +894,43 @@ namespace Gek
                 showVideoObjectMap(depthStateCache, "Depth States"s, [&](auto &object) -> void
                 {
                     auto const &description = object->getDescription();
+                    showResourceValue("Enable", "##enable", std::to_string(description.enable));
+                    showResourceValue("Write Mask", "##writeMask", Video::DepthState::GetWrite(description.writeMask));
+                    showResourceValue("Comparison Function", "##comparisonFunction", Video::GetComparisonFunction(description.comparisonFunction));
+                    showResourceValue("Stencil Enable", "##stencilEnable", std::to_string(description.stencilEnable));
+                    showResourceValue("Stencil Read Mask", "##stencilReadMask", std::to_string(description.stencilReadMask));
+                    showResourceValue("Stencil Write Mask", "##stencilWriteMask", std::to_string(description.stencilWriteMask));
+                    showStencilState("Stencil Front State", description.stencilFrontState);
+                    showStencilState("Stencil Back State", description.stencilBackState);
                 });
             }
 
+            int currentBlendStateTarget = 0;
             void showBlendStateCache(void)
             {
                 showVideoObjectMap(blendStateCache, "Blend States"s, [&](auto &object) -> void
                 {
                     auto const &description = object->getDescription();
+                    showResourceValue("Alpha To Coverage", "##alphaToCoverage", std::to_string(description.alphaToCoverage));
+                    showResourceValue("Independent Blend States", "##independentBlendStates", std::to_string(description.independentBlendStates));
+
+                    ImGui::Text("Target State");
+                    ImGui::SameLine();
+                    ImGui::PushItemWidth(-1.0f);
+                    ImGui::SliderInt("##targetState", &currentBlendStateTarget, 0, 7);
+                    ImGui::PopItemWidth();
+
+                    auto const &targetState = description.targetStates[currentBlendStateTarget];
+                    ImGui::Indent();
+                    showResourceValue("enable", "##enable", std::to_string(targetState.enable));
+                    showResourceValue("Color Source", "##colorSource", Video::BlendState::GetSource(targetState.colorSource));
+                    showResourceValue("Color Destination", "##colorDestination", Video::BlendState::GetSource(targetState.colorDestination));
+                    showResourceValue("Color Operation", "##colorOperation", Video::BlendState::GetOperation(targetState.colorOperation));
+                    showResourceValue("Alpha Source", "##alphaSource", Video::BlendState::GetSource(targetState.alphaSource));
+                    showResourceValue("Alpha Destination", "##alphaDestination", Video::BlendState::GetSource(targetState.alphaDestination));
+                    showResourceValue("Alpha Operation", "##alphaOperation", Video::BlendState::GetOperation(targetState.alphaOperation));
+                    showResourceValue("Write Mask", "##writeMask", Video::BlendState::GetMask(targetState.writeMask));
+                    ImGui::Unindent();
                 });
             }
 

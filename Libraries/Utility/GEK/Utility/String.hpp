@@ -17,6 +17,24 @@
 #include <vector>
 #include <ppl.h>
 
+namespace std
+{
+    inline std::string const &to_string(std::string const &string)
+    {
+        return string;
+    }
+
+    inline std::string to_string(void const *pointer)
+    {
+        return std::to_string(reinterpret_cast<size_t>(pointer));
+    }
+
+    inline std::string to_string(char const *data)
+    {
+        return std::string(data);
+    }
+};
+
 namespace Gek
 {
     class LockedWrite
@@ -154,16 +172,3 @@ namespace Gek
         }
     }; // namespace String
 }; // namespace Gek
-
-namespace std
-{
-    inline std::string const &to_string(std::string const &string)
-    {
-        return string;
-    }
-
-    inline std::string to_string(void const *pointer)
-    {
-        return std::to_string(reinterpret_cast<size_t>(pointer));
-    }
-};

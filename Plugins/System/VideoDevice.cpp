@@ -33,25 +33,25 @@ namespace Gek
             };
 
             auto result = data.find(type);
-            return (result == std::end(data) ? "Raw" : result->second);
+            return (result == std::end(data) ? "Raw"s : result->second);
         }
 
         std::string GetComparisonFunction(ComparisonFunction function)
         {
             static const std::unordered_map<ComparisonFunction, std::string> data =
             {
-                { ComparisonFunction::Always, ""s },
-                { ComparisonFunction::Never, ""s },
-                { ComparisonFunction::Equal, ""s },
-                { ComparisonFunction::NotEqual, ""s },
-                { ComparisonFunction::Less, ""s },
-                { ComparisonFunction::LessEqual, ""s },
-                { ComparisonFunction::Greater, ""s },
-                { ComparisonFunction::GreaterEqual, ""s },
+                { ComparisonFunction::Always, "Always"s },
+                { ComparisonFunction::Never, "Never"s },
+                { ComparisonFunction::Equal, "Equal"s },
+                { ComparisonFunction::NotEqual, "Not Equal"s },
+                { ComparisonFunction::Less, "Less"s },
+                { ComparisonFunction::LessEqual, "Less Equal"s },
+                { ComparisonFunction::Greater, "Greater"s },
+                { ComparisonFunction::GreaterEqual, "Greater Equal"s },
             };
 
             auto result = data.find(function);
-            return (result == std::end(data) ? "raw" : result->second);
+            return (result == std::end(data) ? "Always"s : result->second);
         }
 
         std::string GetPrimitiveType(PrimitiveType type)
@@ -66,7 +66,114 @@ namespace Gek
             };
 
             auto result = data.find(type);
-            return (result == std::end(data) ? "Point List" : result->second);
+            return (result == std::end(data) ? "Point List"s : result->second);
+        }
+
+        std::string RenderState::GetFillMode(FillMode fillMode)
+        {
+            static const std::unordered_map<FillMode, std::string> data =
+            {
+                { FillMode::WireFrame, "Wire Frame"s },
+                { FillMode::Solid, "Solid"s },
+            };
+
+            auto result = data.find(fillMode);
+            return (result == std::end(data) ? "Wire Frame"s : result->second);
+        }
+
+        std::string RenderState::GetCullMode(CullMode cullMode)
+        {
+            static const std::unordered_map<CullMode, std::string> data =
+            {
+                { CullMode::None, "None"s },
+                { CullMode::Front, "Front"s },
+                { CullMode::Back, "Back"s },
+            };
+
+            auto result = data.find(cullMode);
+            return (result == std::end(data) ? "None"s : result->second);
+        }
+
+        std::string DepthState::GetWrite(Write write)
+        {
+            static const std::unordered_map<Write, std::string> data =
+            {
+                { Write::Zero, "Zero"s },
+                { Write::All, "All"s },
+            };
+
+            auto result = data.find(write);
+            return (result == std::end(data) ? "Zero"s : result->second);
+        }
+
+        std::string DepthState::GetOperation(Operation operation)
+        {
+            static const std::unordered_map<Operation, std::string> data =
+            {
+                { Operation::Zero, "Zero"s },
+                { Operation::Keep, "Keep"s },
+                { Operation::Replace, "Replace"s },
+                { Operation::Invert, "Invert"s },
+                { Operation::Increase, "Increase"s },
+                { Operation::IncreaseSaturated, "Increase Saturated"s },
+                { Operation::Decrease, "Decrease"s },
+                { Operation::DecreaseSaturated, "Decrease Saturated"s },
+            };
+
+            auto result = data.find(operation);
+            return (result == std::end(data) ? "Zero"s : result->second);
+        }
+
+        std::string BlendState::GetSource(Source source)
+        {
+            static const std::unordered_map<Source, std::string> data =
+            {
+                { Source::Zero, "Zero"s },
+                { Source::One, "One"s },
+                { Source::BlendFactor, "Blend Factor"s },
+                { Source::InverseBlendFactor, "Inverse Blend Factor"s },
+                { Source::SourceColor, "Source Color"s },
+                { Source::InverseSourceColor, "Inverse Source Color"s },
+                { Source::SourceAlpha, "Source Alpha"s },
+                { Source::InverseSourceAlpha, "Inverse Source Alpha"s },
+                { Source::SourceAlphaSaturated, "Source Alph aSaturated"s },
+                { Source::DestinationColor, "Destination Color"s },
+                { Source::InverseDestinationColor, "Inverse Destination Color"s },
+                { Source::DestinationAlpha, "Destination Alpha"s },
+                { Source::InverseDestinationAlpha, "Inverse Destination Alpha"s },
+                { Source::SecondarySourceColor, "Secondary Source Color"s },
+                { Source::InverseSecondarySourceColor, "Inverse Secondary Source Color"s },
+                { Source::SecondarySourceAlpha, "Secondary Source Alpha"s },
+                { Source::InverseSecondarySourceAlpha, "InverseSecondary Source Alpha"s },
+            };
+
+            auto result = data.find(source);
+            return (result == std::end(data) ? "Zero"s : result->second);
+        }
+
+        std::string BlendState::GetOperation(Operation operation)
+        {
+            static const std::unordered_map<Operation, std::string> data =
+            {
+                { Operation::Add, "Add"s },
+                { Operation::Subtract, "Subtract"s },
+                { Operation::ReverseSubtract, "Reverse Subtract"s },
+                { Operation::Minimum, "Minimum"s },
+                { Operation::Maximum, "Maximum"s },
+            };
+
+            auto result = data.find(operation);
+            return (result == std::end(data) ? "Add"s : result->second);
+        }
+
+        std::string BlendState::GetMask(uint32_t mask)
+        {
+            std::string result;
+            if (mask & Mask::R) result += "R"s;
+            if (mask & Mask::G) result += "G"s;
+            if (mask & Mask::B) result += "B"s;
+            if (mask & Mask::A) result += "A"s;
+            return (result.empty() ? "None"s : result);
         }
 
         size_t Buffer::Description::getHash(void) const
