@@ -66,6 +66,8 @@ project(jsoncons)
 add_library(jsoncons INTERFACE)
 target_include_directories(jsoncons INTERFACE "${CMAKE_CURRENT_LIST_DIR}/jsoncons/src")
 
+add_subdirectory("OpenMesh")
+
 set_property(TARGET pack PROPERTY FOLDER "External/GLBinding")
 set_property(TARGET check-glmeta PROPERTY FOLDER "External/GLBinding")
 set_property(TARGET glmeta PROPERTY FOLDER "External/GLBinding")
@@ -99,3 +101,6 @@ set_property(TARGET imgui_gek PROPERTY FOLDER "External/ImGui")
 if(WIN32)
     set_property(TARGET DirectXTex PROPERTY FOLDER "External/DirectXTex")
 endif()
+
+set_property(TARGET OpenMeshCore PROPERTY FOLDER "External/OpenMesh")
+set_property(TARGET OpenMeshTools PROPERTY FOLDER "External/OpenMesh")

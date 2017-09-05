@@ -13,6 +13,7 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
 endif()
 
 add_definitions(/wd4305 /wd4800 /wd4244 /wd4099 -DNOMINMAX)
+add_definitions(-D_USE_MATH_DEFINES)
 
 add_subdirectory("External")
 

@@ -12,12 +12,41 @@
 #include <vector>
 #include <map>
 
+namespace std
+{
+    template <class _Arg, class _Result>
+    struct unary_function
+    {
+        typedef _Arg    argument_type;
+        typedef _Result result_type;
+    };
+}; // namespace std
+
 #include <assimp/config.h>
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <OpenMesh/Core/System/config.h>
+#include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
 
 using namespace Gek;
+
+struct Traits : OpenMesh::DefaultTraits
+{
+    VertexTraits
+    {
+    public:
+        OpenMesh::Vec3f tangent;
+        OpenMesh::Vec3f biTangent;
+
+    public:
+        VertexT()
+            : tangent(OpenMesh::Vec3f(0.0f, 0.0f, 0.0f))
+            , biTangent(OpenMesh::Vec3f(0.0f, 0.0f, 0.0f))
+        {
+        }
+    };
+};
 
 struct Header
 {
@@ -34,18 +63,10 @@ struct Header
 
     Shapes::AlignedBox boundingBox;
 
-    uint32_t partCount;
+    uint32_t meshCount;
 };
 
-struct Part
-{
-    std::vector<uint16_t> indexList;
-    std::vector<Math::Float3> vertexPositionList;
-    std::vector<Math::Float2> vertexTexCoordList;
-    std::vector<Math::Float3> vertexTangentList;
-    std::vector<Math::Float3> vertexBiTangentList;
-    std::vector<Math::Float3> vertexNormalList;
-};
+using Mesh = OpenMesh::TriMesh_ArrayKernelT<Traits>;
 
 struct Parameters
 {
@@ -53,148 +74,147 @@ struct Parameters
     std::string forceMaterial;
 };
 
-bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiNode *node, std::unordered_map<std::string, std::vector<Part>> &scenePartMap, Shapes::AlignedBox &boundingBox)
+bool getSceneMeshes(const Parameters &parameters, const aiScene *inputScene, const aiNode *inputNode, std::unordered_map<std::string, Mesh> &sceneMeshMap, Shapes::AlignedBox &boundingBox)
 {
-    if (node == nullptr)
+    if (inputNode == nullptr)
     {
-        LockedWrite{ std::cerr } << String::Format("Invalid scene node");
+        LockedWrite{ std::cerr } << String::Format("Invalid inputScene inputNode");
         return false;
     }
 
-    if (node->mNumMeshes > 0)
+    if (inputNode->mNumMeshes > 0)
     {
-        if (node->mMeshes == nullptr)
+        if (inputNode->mMeshes == nullptr)
         {
             LockedWrite{ std::cerr } << String::Format("Invalid mesh list");
             return false;
         }
 
-        for (uint32_t meshIndex = 0; meshIndex < node->mNumMeshes; ++meshIndex)
+        for (uint32_t meshIndex = 0; meshIndex < inputNode->mNumMeshes; ++meshIndex)
         {
-            uint32_t nodeMeshIndex = node->mMeshes[meshIndex];
-            if (nodeMeshIndex >= scene->mNumMeshes)
+            uint32_t nodeMeshIndex = inputNode->mMeshes[meshIndex];
+            if (nodeMeshIndex >= inputScene->mNumMeshes)
             {
                 LockedWrite{ std::cerr } << String::Format("Invalid mesh index");
                 return false;
             }
 
-            const aiMesh *mesh = scene->mMeshes[nodeMeshIndex];
-            if (mesh->mNumFaces > 0)
+            const aiMesh *inputMesh = inputScene->mMeshes[nodeMeshIndex];
+            if (inputMesh->mNumFaces > 0)
             {
-                if (mesh->mFaces == nullptr)
+                if (inputMesh->mFaces == nullptr)
                 {
-                    LockedWrite{ std::cerr } << String::Format("Invalid mesh face list");
+                    LockedWrite{ std::cerr } << String::Format("Invalid inputMesh face list");
                     return false;
                 }
 
-                if (mesh->mVertices == nullptr)
+                if (inputMesh->mVertices == nullptr)
                 {
-                    LockedWrite{ std::cerr } << String::Format("Invalid mesh vertex list");
+                    LockedWrite{ std::cerr } << String::Format("Invalid inputMesh vertex list");
                     return false;
                 }
 
-                if (mesh->mTextureCoords[0] == nullptr)
+                if (inputMesh->mTextureCoords[0] == nullptr)
                 {
-                    LockedWrite{ std::cerr } << String::Format("Invalid mesh texture coordinate list");
+                    LockedWrite{ std::cerr } << String::Format("Invalid inputMesh texture coordinate list");
                     return false;
                 }
 
-                if (mesh->mTangents == nullptr)
+                if (inputMesh->mTangents == nullptr)
                 {
-                    LockedWrite{ std::cerr } << String::Format("Invalid mesh tangent list");
+                    LockedWrite{ std::cerr } << String::Format("Invalid inputMesh tangent list");
                     return false;
                 }
 
-                if (mesh->mBitangents == nullptr)
+                if (inputMesh->mBitangents == nullptr)
                 {
-                    LockedWrite{ std::cerr } << String::Format("Invalid mesh bitangent list");
+                    LockedWrite{ std::cerr } << String::Format("Invalid inputMesh bitangent list");
                     return false;
                 }
 
-                if (mesh->mNormals == nullptr)
+                if (inputMesh->mNormals == nullptr)
                 {
-                    LockedWrite{ std::cerr } << String::Format("Invalid mesh normal list");
+                    LockedWrite{ std::cerr } << String::Format("Invalid inputMesh normal list");
                     return false;
                 }
 
-                Part part;
-                part.indexList.resize(mesh->mNumFaces * 3);
-                for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex)
+                std::string materialName;
+                if (parameters.forceMaterial.empty())
                 {
-                    const aiFace &face = mesh->mFaces[faceIndex];
+                    aiString sceneDiffuseMaterial;
+                    const aiMaterial *sceneMaterial = inputScene->mMaterials[inputMesh->mMaterialIndex];
+                    sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
+                    materialName = sceneDiffuseMaterial.C_Str();
+                }
+                else
+                {
+                    materialName = parameters.forceMaterial;
+                }
+
+                auto &mesh = sceneMeshMap[materialName];
+                for (uint32_t vertexIndex = 0; vertexIndex < inputMesh->mNumVertices; ++vertexIndex)
+                {
+                    auto vertexHandle = mesh.add_vertex(OpenMesh::Vec3f(
+                        (inputMesh->mVertices[vertexIndex].x * parameters.feetPerUnit),
+                        (inputMesh->mVertices[vertexIndex].y * parameters.feetPerUnit),
+                        (inputMesh->mVertices[vertexIndex].z * parameters.feetPerUnit)));
+                    boundingBox.extend(*(Math::Float3 *)&mesh.point(vertexHandle));
+
+                    mesh.set_texcoord2D(vertexHandle, OpenMesh::Vec2f(
+                        inputMesh->mTextureCoords[0][vertexIndex].x,
+                        inputMesh->mTextureCoords[0][vertexIndex].y));
+
+                    mesh.data(vertexHandle).tangent = OpenMesh::Vec3f(
+                        inputMesh->mTangents[vertexIndex].x,
+                        inputMesh->mTangents[vertexIndex].y,
+                        inputMesh->mTangents[vertexIndex].z);
+
+                    mesh.data(vertexHandle).biTangent = OpenMesh::Vec3f(
+                        inputMesh->mBitangents[vertexIndex].x,
+                        inputMesh->mBitangents[vertexIndex].y,
+                        inputMesh->mBitangents[vertexIndex].z);
+
+                    mesh.set_normal(vertexHandle, OpenMesh::Vec3f(
+                        inputMesh->mNormals[vertexIndex].x,
+                        inputMesh->mNormals[vertexIndex].y,
+                        inputMesh->mNormals[vertexIndex].z));
+                }
+
+                auto meshVertexStart = mesh.n_vertices();
+                std::vector<Mesh::VertexHandle> faceHandles(3);
+                for (uint32_t faceIndex = 0; faceIndex < inputMesh->mNumFaces; ++faceIndex)
+                {
+                    const aiFace &face = inputMesh->mFaces[faceIndex];
                     if (face.mNumIndices != 3)
                     {
                         LockedWrite{ std::cerr } << String::Format("Non-triangular face encountered");
                         return false;
                     }
 
+                    faceHandles.clear();
                     uint32_t edgeStartIndex = (faceIndex * 3);
                     for (uint32_t edgeIndex = 0; edgeIndex < 3; ++edgeIndex)
                     {
-                        part.indexList[edgeStartIndex + edgeIndex] = face.mIndices[edgeIndex];
+                        faceHandles.push_back(mesh.vertex_handle(meshVertexStart + face.mIndices[edgeIndex]));
                     }
-                }
 
-                part.vertexPositionList.resize(mesh->mNumVertices);
-                part.vertexTexCoordList.resize(mesh->mNumVertices);
-                part.vertexTangentList.resize(mesh->mNumVertices);
-                part.vertexBiTangentList.resize(mesh->mNumVertices);
-                part.vertexNormalList.resize(mesh->mNumVertices);
-                for (uint32_t vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex)
-                {
-                    part.vertexPositionList[vertexIndex].set(
-                        (mesh->mVertices[vertexIndex].x * parameters.feetPerUnit),
-                        (mesh->mVertices[vertexIndex].y * parameters.feetPerUnit),
-                        (mesh->mVertices[vertexIndex].z * parameters.feetPerUnit));
-                    boundingBox.extend(part.vertexPositionList[vertexIndex]);
-
-                    part.vertexTexCoordList[vertexIndex].set(
-                        mesh->mTextureCoords[0][vertexIndex].x,
-                        mesh->mTextureCoords[0][vertexIndex].y);
-
-                    part.vertexTangentList[vertexIndex].set(
-                        mesh->mTangents[vertexIndex].x,
-                        mesh->mTangents[vertexIndex].y,
-                        mesh->mTangents[vertexIndex].z);
-
-                    part.vertexBiTangentList[vertexIndex].set(
-                        mesh->mBitangents[vertexIndex].x,
-                        mesh->mBitangents[vertexIndex].y,
-                        mesh->mBitangents[vertexIndex].z);
-
-                    part.vertexNormalList[vertexIndex].set(
-                        mesh->mNormals[vertexIndex].x,
-                        mesh->mNormals[vertexIndex].y,
-                        mesh->mNormals[vertexIndex].z);
-                }
-
-                if (parameters.forceMaterial.empty())
-                {
-                    aiString sceneDiffuseMaterial;
-                    const aiMaterial *sceneMaterial = scene->mMaterials[mesh->mMaterialIndex];
-                    sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
-                    std::string materialPath = sceneDiffuseMaterial.C_Str();
-                    scenePartMap[materialPath].push_back(std::move(part));
-                }
-                else
-                {
-                    scenePartMap[parameters.forceMaterial].push_back(std::move(part));
+                    mesh.add_face(faceHandles);
                 }
             }
         }
     }
 
-    if (node->mNumChildren > 0)
+    if (inputNode->mNumChildren > 0)
     {
-        if (node->mChildren == nullptr)
+        if (inputNode->mChildren == nullptr)
         {
             LockedWrite{ std::cerr } << String::Format("Invalid child list");
             return false;
         }
 
-        for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
+        for (uint32_t childIndex = 0; childIndex < inputNode->mNumChildren; ++childIndex)
         {
-            if (!getSceneParts(parameters, scene, node->mChildren[childIndex], scenePartMap, boundingBox))
+            if (!getSceneMeshes(parameters, inputScene, inputNode->mChildren[childIndex], sceneMeshMap, boundingBox))
             {
                 return false;
             }
@@ -206,7 +226,7 @@ bool getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    LockedWrite{ std::cout } << String::Format("GEK Part Converter");
+    LockedWrite{ std::cout } << String::Format("GEK Model Converter");
 
     FileSystem::Path fileNameInput;
     FileSystem::Path fileNameOutput;
@@ -319,48 +339,48 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
-    auto scene = aiImportFileExWithProperties(fileNameInput.u8string().c_str(), importFlags, nullptr, propertyStore);
-    if (scene == nullptr)
+    auto inputScene = aiImportFileExWithProperties(fileNameInput.u8string().c_str(), importFlags, nullptr, propertyStore);
+    if (inputScene == nullptr)
     {
-        LockedWrite{ std::cerr } << String::Format("Unable to load scene with Assimp");
+        LockedWrite{ std::cerr } << String::Format("Unable to load inputScene with Assimp");
         return -__LINE__;
     }
 
-    scene = aiApplyPostProcessing(scene, textureProcessFlags);
-    if (scene == nullptr)
+    inputScene = aiApplyPostProcessing(inputScene, textureProcessFlags);
+    if (inputScene == nullptr)
     {
         LockedWrite{ std::cerr } << String::Format("Unable to apply texture post processing with Assimp");
         return -__LINE__;
     }
 
-    scene = aiApplyPostProcessing(scene, tangentProcessFlags);
-    if (scene == nullptr)
+    inputScene = aiApplyPostProcessing(inputScene, tangentProcessFlags);
+    if (inputScene == nullptr)
     {
         LockedWrite{ std::cerr } << String::Format("Unable to apply tangent post processing with Assimp");
         return -__LINE__;
     }
 
-    if (!scene->HasMeshes())
+    if (!inputScene->HasMeshes())
     {
         LockedWrite{ std::cerr } << String::Format("Scene has no meshes");
         return -__LINE__;
     }
 
-    if (!scene->HasMaterials())
+    if (!inputScene->HasMaterials())
     {
-        LockedWrite{ std::cerr } << String::Format("Exporting to model requires materials in scene");
+        LockedWrite{ std::cerr } << String::Format("Exporting to model requires materials in inputScene");
         return -__LINE__;
     }
 
     Shapes::AlignedBox boundingBox;
-    std::unordered_map<std::string, std::vector<Part>> scenePartMap;
-    if (!getSceneParts(parameters, scene, scene->mRootNode, scenePartMap, boundingBox))
+    std::unordered_map<std::string, Mesh> sceneMeshMap;
+    if (!getSceneMeshes(parameters, inputScene, inputScene->mRootNode, sceneMeshMap, boundingBox))
     {
         return -__LINE__;
     }
 
     aiReleasePropertyStore(propertyStore);
-    aiReleaseImport(scene);
+    aiReleaseImport(inputScene);
 
     auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
     auto dataPath(FileSystem::GetFileName(rootPath, "Data"));
@@ -404,8 +424,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         return -__LINE__;
     }
 
-    std::unordered_map<std::string, std::vector<Part>> albedoPartMap;
-    for (auto const &modelAlbedo : scenePartMap)
+    std::unordered_map<std::string, Mesh> materialMeshMap;
+    for (auto const &modelAlbedo : sceneMeshMap)
     {
 		std::string albedoName(String::GetLower(FileSystem::Path(modelAlbedo.first).withoutExtension().u8string()));
         LockedWrite{ std::cout } << String::Format("Found Albedo: %v", albedoName);
@@ -437,36 +457,11 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         }
         else
         {
-            albedoPartMap[materialAlebedoSearch->second] = modelAlbedo.second;
+            materialMeshMap[materialAlebedoSearch->second] = modelAlbedo.second;
         }
     }
 
-    std::unordered_map<std::string, Part> materialPartMap;
-    for (auto const &multiMaterial : albedoPartMap)
-    {
-        Part &material = materialPartMap[multiMaterial.first];
-        for (auto const &instance : multiMaterial.second)
-        {
-            for (auto const &index : instance.indexList)
-            {
-                material.indexList.push_back(uint16_t(index + material.vertexPositionList.size()));
-            }
-
-            material.vertexPositionList.insert(std::end(material.vertexPositionList), std::begin(instance.vertexPositionList), std::end(instance.vertexPositionList));
-            material.vertexTexCoordList.insert(std::end(material.vertexTexCoordList), std::begin(instance.vertexTexCoordList), std::end(instance.vertexTexCoordList));
-            material.vertexTangentList.insert(std::end(material.vertexTangentList), std::begin(instance.vertexTangentList), std::end(instance.vertexTangentList));
-            material.vertexBiTangentList.insert(std::end(material.vertexBiTangentList), std::begin(instance.vertexBiTangentList), std::end(instance.vertexBiTangentList));
-            material.vertexNormalList.insert(std::end(material.vertexNormalList), std::begin(instance.vertexNormalList), std::end(instance.vertexNormalList));
-        }
-    }
-
-    if (materialPartMap.empty())
-    {
-        LockedWrite{ std::cerr } << String::Format("No valid material models found");
-        return -__LINE__;
-    }
-
-	LockedWrite{ std::cout } << String::Format("> Num. Parts: %v", materialPartMap.size());
+	LockedWrite{ std::cout } << String::Format("> Num. Parts: %v", materialMeshMap.size());
     LockedWrite{ std::cout } << String::Format("< Size: Minimum[%v, %v, %v]", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
     LockedWrite{ std::cout } << String::Format("< Size: Maximum[%v, %v, %v]", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
 
@@ -479,31 +474,35 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
 
     Header header;
-    header.partCount = materialPartMap.size();
+    header.meshCount = materialMeshMap.size();
     header.boundingBox = boundingBox;
     fwrite(&header, sizeof(Header), 1, file);
-    for (auto const &material : materialPartMap)
+    for (auto const &materialMesh : materialMeshMap)
     {
-		std::string name = material.first;
-		LockedWrite{ std::cout } << String::Format("-    Material: %v", name);
-        LockedWrite{ std::cout } << String::Format("       Num. Vertices: %v", material.second.vertexPositionList.size());
-        LockedWrite{ std::cout } << String::Format("       Num. Indices: %v", material.second.indexList.size());
+		std::string material = materialMesh.first;
+        auto &mesh = materialMesh.second;
+
+		LockedWrite{ std::cout } << String::Format("-    Material: %v", material);
+        LockedWrite{ std::cout } << String::Format("       Num. Vertices: %v", mesh.n_vertices());
+        LockedWrite{ std::cout } << String::Format("       Num. Faces: %v", mesh.n_faces());
 
         Header::Material materialHeader;
-        std::strncpy(materialHeader.name, name.c_str(), 63);
-        materialHeader.vertexCount = material.second.vertexPositionList.size();
-        materialHeader.indexCount = material.second.indexList.size();
+        std::strncpy(materialHeader.name, material.c_str(), 63);
+        materialHeader.vertexCount = mesh.n_vertices();
+        materialHeader.indexCount = (mesh.n_faces() * 3);
         fwrite(&materialHeader, sizeof(Header::Material), 1, file);
     }
 
-    for (auto const &material : materialPartMap)
+    for (auto const &materialMesh : materialMeshMap)
     {
-        fwrite(material.second.indexList.data(), sizeof(uint16_t), material.second.indexList.size(), file);
-        fwrite(material.second.vertexPositionList.data(), sizeof(Math::Float3), material.second.vertexPositionList.size(), file);
-        fwrite(material.second.vertexTexCoordList.data(), sizeof(Math::Float2), material.second.vertexTexCoordList.size(), file);
-        fwrite(material.second.vertexTangentList.data(), sizeof(Math::Float3), material.second.vertexTangentList.size(), file);
-        fwrite(material.second.vertexBiTangentList.data(), sizeof(Math::Float3), material.second.vertexBiTangentList.size(), file);
-        fwrite(material.second.vertexNormalList.data(), sizeof(Math::Float3), material.second.vertexNormalList.size(), file);
+        auto &mesh = materialMesh.second;
+
+        fwrite(&mesh.faces().begin(), sizeof(uint16_t), (mesh.n_faces() * 3), file);
+        fwrite(mesh.points(), sizeof(Math::Float3), mesh.n_vertices(), file);
+        fwrite(mesh.texcoords2D(), sizeof(Math::Float2), mesh.n_vertices(), file);
+        //fwrite(material.second.vertexTangentList.data(), sizeof(Math::Float3), material.second.vertexTangentList.size(), file);
+        //fwrite(material.second.vertexBiTangentList.data(), sizeof(Math::Float3), material.second.vertexBiTangentList.size(), file);
+        fwrite(mesh.vertex_normals(), sizeof(Math::Float3), mesh.n_vertices(), file);
     }
 
     fclose(file);
