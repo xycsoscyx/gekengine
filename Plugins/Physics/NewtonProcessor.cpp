@@ -292,6 +292,7 @@ namespace Gek
 
                                     NewtonCollision *clonedCollision = NewtonCollisionCreateInstance(newtonCollision);
                                     NewtonCollisionSetMatrix(clonedCollision, transformComponent.getMatrix().data);
+                                    NewtonCollisionSetScale(clonedCollision, transformComponent.scale.x, transformComponent.scale.y, transformComponent.scale.z);
                                     NewtonSceneCollisionAddSubCollision(newtonStaticGroup, clonedCollision);
                                     NewtonDestroyCollision(clonedCollision);
 
@@ -388,6 +389,7 @@ namespace Gek
                     {
                         auto &transformComponent = entity->getComponent<Components::Transform>();
                         NewtonBodySetMatrix(entitySearch->second->getNewtonBody(), transformComponent.getMatrix().data);
+                        NewtonBodySetCollisionScale(entitySearch->second->getNewtonBody(), transformComponent.scale.x, transformComponent.scale.y, transformComponent.scale.z);
                     }
                 }
                 else if (type == typeid(Components::Model))

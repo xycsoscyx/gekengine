@@ -28,15 +28,16 @@ namespace Gek
                 assert(world);
                 assert(entity);
 
-				auto const &physical = entity->getComponent<Components::Physical>();
-				auto const &transform = entity->getComponent<Components::Transform>();
+				auto const &physicalComponent = entity->getComponent<Components::Physical>();
+				auto const &transformComponent = entity->getComponent<Components::Transform>();
 
-                Math::Float4x4 matrix(transform.getMatrix());
+                Math::Float4x4 matrix(transformComponent.getMatrix());
                 newtonBody = NewtonCreateDynamicBody(newtonWorld, newtonCollision, matrix.data);
 				assert(newtonBody && "Unable to create rigid body");
 
+                NewtonBodySetCollisionScale(newtonBody, transformComponent.scale.x, transformComponent.scale.y, transformComponent.scale.z);
                 NewtonBodySetUserData(newtonBody, dynamic_cast<Newton::Entity *>(this));
-                NewtonBodySetMassProperties(newtonBody, physical.mass, newtonCollision);
+                NewtonBodySetMassProperties(newtonBody, physicalComponent.mass, newtonCollision);
                 NewtonBodySetCollidable(newtonBody, true);
                 NewtonBodySetAutoSleep(newtonBody, true);
             }
@@ -63,21 +64,19 @@ namespace Gek
 
             void onPreUpdate(float frameTime, int threadHandle)
             {
-				auto const &physical = entity->getComponent<Components::Physical>();
-				auto const &transform = entity->getComponent<Components::Transform>();
+				auto const &physicalComponent = entity->getComponent<Components::Physical>();
+				auto const &transformComponent = entity->getComponent<Components::Transform>();
 
-                //NewtonCollisionSetScale(NewtonBodyGetCollision(newtonBody), 1.0f, 1.0f, 1.0f);
-
-                Math::Float3 gravity(world->getGravity(transform.position));
-                NewtonBodyAddForce(newtonBody, (gravity * physical.mass).data);
+                Math::Float3 gravity(world->getGravity(transformComponent.position));
+                NewtonBodyAddForce(newtonBody, (gravity * physicalComponent.mass).data);
             }
 
             void onSetTransform(const float* const matrixData, int threadHandle)
             {
                 Math::Float4x4 matrix(matrixData);
-				auto &transform = entity->getComponent<Components::Transform>();
-                transform.rotation = matrix.getRotation();
-                transform.position = matrix.translation.xyz;
+				auto &transformComponent = entity->getComponent<Components::Transform>();
+                transformComponent.rotation = matrix.getRotation();
+                transformComponent.position = matrix.translation.xyz;
             }
         };
 
