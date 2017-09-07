@@ -28,45 +28,62 @@ namespace std
 #include <assimp/postprocess.h>
 #include <OpenMesh/Core/System/config.h>
 #include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
+#include <OpenMesh/Tools/Decimater/DecimaterT.hh>
+#include <OpenMesh/Tools/Decimater/ModQuadricT.hh>
+#include <OpenMesh/Tools/Decimater/ModHausdorffT.hh>
+#include <OpenMesh/Tools/Decimater/ModAspectRatioT.hh>
+#include <OpenMesh/Tools/Decimater/ModNormalDeviationT.hh>
+#include <OpenMesh/Tools/Decimater/ModNormalFlippingT.hh>
 
 using namespace Gek;
-
-struct Traits : OpenMesh::DefaultTraits
-{
-    VertexTraits
-    {
-    public:
-        OpenMesh::Vec3f tangent;
-        OpenMesh::Vec3f biTangent;
-
-    public:
-        VertexT()
-            : tangent(OpenMesh::Vec3f(0.0f, 0.0f, 0.0f))
-            , biTangent(OpenMesh::Vec3f(0.0f, 0.0f, 0.0f))
-        {
-        }
-    };
-};
 
 struct Header
 {
     struct Material
     {
         char name[64] = "";
-        uint32_t vertexCount = 0;
-        uint32_t indexCount = 0;
+        struct Level
+        {
+            uint32_t vertexCount = 0;
+            uint32_t indexCount = 0;
+        };
     };
 
     uint32_t identifier = *(uint32_t *)"GEKX";
     uint16_t type = 0;
-    uint16_t version = 6;
+    uint16_t version = 7;
+    uint8_t levelCount = 5;
 
     Shapes::AlignedBox boundingBox;
 
-    uint32_t meshCount;
+    uint32_t materialCount;
+};
+
+struct Traits : OpenMesh::DefaultTraits
+{
+    typedef OpenMesh::Vec3f Tangent;
+    typedef OpenMesh::Vec3f BiTangent;
+
+    VertexAttributes(OpenMesh::Attributes::Normal | OpenMesh::Attributes::TexCoord2D);
+
+    HalfedgeAttributes(OpenMesh::Attributes::PrevHalfedge);
+
+    FaceAttributes(OpenMesh::Attributes::Normal);
+
+    VertexTraits
+    {
+        OpenMesh::Vec3f tangent;
+        OpenMesh::Vec3f biTangent;
+    };
 };
 
 using Mesh = OpenMesh::TriMesh_ArrayKernelT<Traits>;
+using Decimater = OpenMesh::Decimater::DecimaterT<Mesh>;
+using QuadraticModule = OpenMesh::Decimater::ModQuadricT<Mesh>::Handle;
+using HausdorffModule = OpenMesh::Decimater::ModHausdorffT<Mesh>::Handle;
+using AspectModule = OpenMesh::Decimater::ModAspectRatioT<Mesh>::Handle;
+using DeviationModule = OpenMesh::Decimater::ModNormalDeviationT<Mesh>::Handle;
+using FlippingModule = OpenMesh::Decimater::ModNormalFlippingT<Mesh>::Handle;
 
 struct Parameters
 {
@@ -74,7 +91,7 @@ struct Parameters
     std::string forceMaterial;
 };
 
-bool getSceneMeshes(const Parameters &parameters, const aiScene *inputScene, const aiNode *inputNode, std::unordered_map<std::string, Mesh> &sceneMeshMap, Shapes::AlignedBox &boundingBox)
+bool GetModelMaterials(const Parameters &parameters, const aiScene *inputScene, const aiNode *inputNode, std::unordered_map<std::string, Mesh> &modelMaterialMap, Shapes::AlignedBox &boundingBox)
 {
     if (inputNode == nullptr)
     {
@@ -151,7 +168,9 @@ bool getSceneMeshes(const Parameters &parameters, const aiScene *inputScene, con
                     materialName = parameters.forceMaterial;
                 }
 
-                auto &mesh = sceneMeshMap[materialName];
+                auto &mesh = modelMaterialMap[materialName];
+                std::vector<OpenMesh::VertexHandle> vertexHandleList;
+                vertexHandleList.reserve(inputMesh->mNumVertices);
                 for (uint32_t vertexIndex = 0; vertexIndex < inputMesh->mNumVertices; ++vertexIndex)
                 {
                     auto vertexHandle = mesh.add_vertex(OpenMesh::Vec3f(
@@ -159,6 +178,7 @@ bool getSceneMeshes(const Parameters &parameters, const aiScene *inputScene, con
                         (inputMesh->mVertices[vertexIndex].y * parameters.feetPerUnit),
                         (inputMesh->mVertices[vertexIndex].z * parameters.feetPerUnit)));
                     boundingBox.extend(*(Math::Float3 *)&mesh.point(vertexHandle));
+                    vertexHandleList.push_back(vertexHandle);
 
                     mesh.set_texcoord2D(vertexHandle, OpenMesh::Vec2f(
                         inputMesh->mTextureCoords[0][vertexIndex].x,
@@ -180,7 +200,6 @@ bool getSceneMeshes(const Parameters &parameters, const aiScene *inputScene, con
                         inputMesh->mNormals[vertexIndex].z));
                 }
 
-                auto meshVertexStart = mesh.n_vertices();
                 std::vector<Mesh::VertexHandle> faceHandles(3);
                 for (uint32_t faceIndex = 0; faceIndex < inputMesh->mNumFaces; ++faceIndex)
                 {
@@ -191,11 +210,10 @@ bool getSceneMeshes(const Parameters &parameters, const aiScene *inputScene, con
                         return false;
                     }
 
-                    faceHandles.clear();
                     uint32_t edgeStartIndex = (faceIndex * 3);
                     for (uint32_t edgeIndex = 0; edgeIndex < 3; ++edgeIndex)
                     {
-                        faceHandles.push_back(mesh.vertex_handle(meshVertexStart + face.mIndices[edgeIndex]));
+                        faceHandles[edgeIndex] = vertexHandleList[face.mIndices[edgeIndex]];
                     }
 
                     mesh.add_face(faceHandles);
@@ -214,7 +232,7 @@ bool getSceneMeshes(const Parameters &parameters, const aiScene *inputScene, con
 
         for (uint32_t childIndex = 0; childIndex < inputNode->mNumChildren; ++childIndex)
         {
-            if (!getSceneMeshes(parameters, inputScene, inputNode->mChildren[childIndex], sceneMeshMap, boundingBox))
+            if (!GetModelMaterials(parameters, inputScene, inputNode->mChildren[childIndex], modelMaterialMap, boundingBox))
             {
                 return false;
             }
@@ -373,8 +391,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
 
     Shapes::AlignedBox boundingBox;
-    std::unordered_map<std::string, Mesh> sceneMeshMap;
-    if (!getSceneMeshes(parameters, inputScene, inputScene->mRootNode, sceneMeshMap, boundingBox))
+    std::unordered_map<std::string, Mesh> modelMaterialMap;
+    if (!GetModelMaterials(parameters, inputScene, inputScene->mRootNode, modelMaterialMap, boundingBox))
     {
         return -__LINE__;
     }
@@ -388,7 +406,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	std::string texturesPath(String::GetLower(FileSystem::GetFileName(dataPath, "Textures").u8string()));
     auto materialsPath(FileSystem::GetFileName(dataPath, "Materials").u8string());
 
-	std::map<std::string, std::string> albedoToMaterialMap;
+	std::map<std::string, std::string> diffuseToMaterialMap;
     std::function<bool(FileSystem::Path const &)> findMaterials;
     findMaterials = [&](FileSystem::Path const &filePath) -> bool
     {
@@ -404,7 +422,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             auto albedoNode = dataNode.get("albedo");
             std::string albedoPath(albedoNode.get("file").convert(String::Empty));
             std::string materialName(String::GetLower(filePath.withoutExtension().u8string().substr(materialsPath.size() + 1)));
-            albedoToMaterialMap[albedoPath] = materialName;
+            diffuseToMaterialMap[albedoPath] = materialName;
         }
 
         return true;
@@ -418,17 +436,32 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
 
     FileSystem::Find(materialsPath, findMaterials);
-    if (albedoToMaterialMap.empty())
+    if (diffuseToMaterialMap.empty())
     {
         LockedWrite{ std::cerr } << String::Format("Unable to locate any materials");
         return -__LINE__;
     }
 
-    std::unordered_map<std::string, Mesh> materialMeshMap;
-    for (auto const &modelAlbedo : sceneMeshMap)
+	LockedWrite{ std::cout } << String::Format("> Num. Materials: %v", modelMaterialMap.size());
+    LockedWrite{ std::cout } << String::Format("< Size: Minimum[%v, %v, %v]", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
+    LockedWrite{ std::cout } << String::Format("< Size: Maximum[%v, %v, %v]", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
+
+    FILE *file = nullptr;
+    _wfopen_s(&file, fileNameOutput.c_str(), L"wb");
+    if (file == nullptr)
     {
-		std::string albedoName(String::GetLower(FileSystem::Path(modelAlbedo.first).withoutExtension().u8string()));
-        LockedWrite{ std::cout } << String::Format("Found Albedo: %v", albedoName);
+        LockedWrite{ std::cerr } << String::Format("Unable to create output file");
+        return -__LINE__;
+    }
+
+    Header header;
+    header.materialCount = modelMaterialMap.size();
+    header.boundingBox = boundingBox;
+    fwrite(&header, sizeof(Header), 1, file);
+    for (auto const &meshPair : modelMaterialMap)
+    {
+        FileSystem::Path diffusePath(meshPair.first);
+        std::string albedoName(String::GetLower(diffusePath.withoutExtension().u8string()));
         if (albedoName.find("textures\\") == 0)
         {
             albedoName = albedoName.substr(9);
@@ -450,59 +483,107 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             }
         }
 
-        auto materialAlebedoSearch = albedoToMaterialMap.find(albedoName);
-        if (materialAlebedoSearch == std::end(albedoToMaterialMap))
+        auto materialAlebedoSearch = diffuseToMaterialMap.find(albedoName);
+        if (materialAlebedoSearch == std::end(diffuseToMaterialMap))
         {
             LockedWrite{ std::cerr } << String::Format("! Unable to find material for albedo: %v", albedoName.c_str());
+            continue;
         }
-        else
-        {
-            materialMeshMap[materialAlebedoSearch->second] = modelAlbedo.second;
-        }
-    }
 
-	LockedWrite{ std::cout } << String::Format("> Num. Parts: %v", materialMeshMap.size());
-    LockedWrite{ std::cout } << String::Format("< Size: Minimum[%v, %v, %v]", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
-    LockedWrite{ std::cout } << String::Format("< Size: Maximum[%v, %v, %v]", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
-
-    FILE *file = nullptr;
-    _wfopen_s(&file, fileNameOutput.c_str(), L"wb");
-    if (file == nullptr)
-    {
-        LockedWrite{ std::cerr } << String::Format("Unable to create output file");
-        return -__LINE__;
-    }
-
-    Header header;
-    header.meshCount = materialMeshMap.size();
-    header.boundingBox = boundingBox;
-    fwrite(&header, sizeof(Header), 1, file);
-    for (auto const &materialMesh : materialMeshMap)
-    {
-		std::string material = materialMesh.first;
-        auto &mesh = materialMesh.second;
-
-		LockedWrite{ std::cout } << String::Format("-    Material: %v", material);
-        LockedWrite{ std::cout } << String::Format("       Num. Vertices: %v", mesh.n_vertices());
-        LockedWrite{ std::cout } << String::Format("       Num. Faces: %v", mesh.n_faces());
-
+        std::string material = materialAlebedoSearch->second;
+      
         Header::Material materialHeader;
         std::strncpy(materialHeader.name, material.c_str(), 63);
-        materialHeader.vertexCount = mesh.n_vertices();
-        materialHeader.indexCount = (mesh.n_faces() * 3);
         fwrite(&materialHeader, sizeof(Header::Material), 1, file);
     }
 
-    for (auto const &materialMesh : materialMeshMap)
+    for (auto &meshPair : modelMaterialMap)
     {
-        auto &mesh = materialMesh.second;
+        std::string material = meshPair.first;
 
-        fwrite(&mesh.faces().begin(), sizeof(uint16_t), (mesh.n_faces() * 3), file);
-        fwrite(mesh.points(), sizeof(Math::Float3), mesh.n_vertices(), file);
-        fwrite(mesh.texcoords2D(), sizeof(Math::Float2), mesh.n_vertices(), file);
-        //fwrite(material.second.vertexTangentList.data(), sizeof(Math::Float3), material.second.vertexTangentList.size(), file);
-        //fwrite(material.second.vertexBiTangentList.data(), sizeof(Math::Float3), material.second.vertexBiTangentList.size(), file);
-        fwrite(mesh.vertex_normals(), sizeof(Math::Float3), mesh.n_vertices(), file);
+        auto &mesh = meshPair.second;
+        mesh.request_face_normals();
+        mesh.request_halfedge_normals();
+        mesh.request_vertex_normals();
+        mesh.update_normals();
+
+        Decimater decimater(mesh);
+
+        HausdorffModule hausdorffModule;
+        //decimater.add(hausdorffModule);
+        //decimater.module(hausdorffModule).set_binary(false);
+        //decimater.module(hausdorffModule).set_tolerance(0.1f);
+
+        QuadraticModule quadraticModule;
+        decimater.add(quadraticModule);
+        decimater.module(quadraticModule).set_binary(false);
+
+        FlippingModule flippingModule;
+        decimater.add(flippingModule);
+
+        AspectModule aspectModule;
+        //decimater.add(aspectModule);
+
+        decimater.initialize();
+
+        LockedWrite{ std::cout } << String::Format("-    Material: %v", material);
+
+        uint32_t originalFaceCount = mesh.n_faces();
+        uint32_t decimateStepCount = (originalFaceCount / (header.levelCount + 1));
+        uint32_t decimateFaceCount = originalFaceCount;
+        for (uint32_t level = 0; level < header.levelCount; ++level, decimateFaceCount -= decimateStepCount)
+        {
+            if (level > 0)
+            {
+                decimater.decimate_to_faces(0, decimateFaceCount);
+                mesh.garbage_collection();
+            }
+
+            std::vector<uint16_t> indexList;
+            indexList.reserve(mesh.n_faces());
+            for (auto faceIterator = mesh.faces_sbegin(); faceIterator != mesh.faces_end(); ++faceIterator)
+            {
+                for (auto vertexIterator = mesh.fv_begin(*faceIterator); vertexIterator != mesh.fv_end(*faceIterator); ++vertexIterator)
+                {
+                    indexList.push_back(vertexIterator->idx());
+                }
+            }
+
+            std::vector<OpenMesh::Vec3f> pointList;
+            std::vector<OpenMesh::Vec2f> texCoordList;
+            std::vector<OpenMesh::Vec3f> tangentList;
+            std::vector<OpenMesh::Vec3f> biTangentList;
+            std::vector<OpenMesh::Vec3f> normalList;
+            pointList.reserve(mesh.n_vertices());
+            texCoordList.reserve(mesh.n_vertices());
+            tangentList.reserve(mesh.n_vertices());
+            biTangentList.reserve(mesh.n_vertices());
+            normalList.reserve(mesh.n_vertices());
+            for (auto vertexIterator = mesh.vertices_sbegin(); vertexIterator != mesh.vertices_end(); ++vertexIterator)
+            {
+                pointList.push_back(mesh.point(*vertexIterator));
+                texCoordList.push_back(mesh.texcoord2D(*vertexIterator));
+                auto &meshData = mesh.data(*vertexIterator);
+                tangentList.push_back(meshData.tangent);
+                biTangentList.push_back(meshData.biTangent);
+                normalList.push_back(mesh.normal(*vertexIterator));
+            }
+
+            Header::Material::Level levelHeader;
+            levelHeader.vertexCount = pointList.size();
+            levelHeader.indexCount = indexList.size();
+            fwrite(&levelHeader, sizeof(Header::Material::Level), 1, file);
+            fwrite(indexList.data(), sizeof(uint16_t), indexList.size(), file);
+            fwrite(pointList.data(), sizeof(Math::Float3), pointList.size(), file);
+            fwrite(texCoordList.data(), sizeof(Math::Float2), texCoordList.size(), file);
+            fwrite(tangentList.data(), sizeof(Math::Float3), tangentList.size(), file);
+            fwrite(biTangentList.data(), sizeof(Math::Float3), biTangentList.size(), file);
+            fwrite(normalList.data(), sizeof(Math::Float3), normalList.size(), file);
+
+            LockedWrite{ std::cout } << String::Format("       Level: %v", level);
+            LockedWrite{ std::cout } << String::Format("           Num. Vertices: %v", levelHeader.vertexCount);
+            LockedWrite{ std::cout } << String::Format("           Num. Faces: %v", (levelHeader.indexCount / 3));
+        }
     }
 
     fclose(file);

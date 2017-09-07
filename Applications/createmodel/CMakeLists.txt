@@ -8,7 +8,7 @@ add_definitions(-D_NEWTON_STATIC_LIB=1)
 file(GLOB SOURCES "*.cpp" "*.rc")
 add_executable(${ProjectID} ${SOURCES})
 
-target_link_libraries(${ProjectID} Math Utility Shapes Resources assimp OpenMeshCore)
+target_link_libraries(${ProjectID} Math Utility Shapes Resources assimp OpenMeshCore OpenMeshTools)
 
 target_include_directories(${ProjectID} PUBLIC "${CMAKE_SOURCE_DIR}/external/assimp/include" "${CMAKE_SOURCE_DIR}/external/OpenMesh/src")
 

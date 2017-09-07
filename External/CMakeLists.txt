@@ -104,3 +104,5 @@ endif()
 
 set_property(TARGET OpenMeshCore PROPERTY FOLDER "External/OpenMesh")
 set_property(TARGET OpenMeshTools PROPERTY FOLDER "External/OpenMesh")
+set_property(TARGET doc PROPERTY FOLDER "External/OpenMesh")
+set_property(TARGET doc-install PROPERTY FOLDER "External/OpenMesh")

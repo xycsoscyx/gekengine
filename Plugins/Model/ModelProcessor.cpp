@@ -147,21 +147,25 @@ namespace Gek
     public:
         struct Header
         {
-            struct Part
+            struct Material
             {
                 char name[64];
-                uint32_t vertexCount = 0;
-                uint32_t indexCount = 0;
+                struct Level
+                {
+                    uint32_t vertexCount = 0;
+                    uint32_t indexCount = 0;
+                };
             };
 
             uint32_t identifier = 0;
             uint16_t type = 0;
             uint16_t version = 0;
+            uint8_t levelCount = 0;
 
             Shapes::AlignedBox boundingBox;
 
-            uint32_t partCount = 0;
-            Part partList[1];
+            uint32_t materialCount = 0;
+            Material materialList[1];
         };
 
         struct Vertex
@@ -175,16 +179,21 @@ namespace Gek
 
         struct Model
         {
-            struct Part
+            struct Material
             {
-                MaterialHandle material;
-                std::vector<ResourceHandle> vertexBufferList = std::vector<ResourceHandle>(5);
-                ResourceHandle indexBuffer;
-                uint32_t indexCount = 0;
+                MaterialHandle handle;
+                struct Level
+                {
+                    std::vector<ResourceHandle> vertexBufferList = std::vector<ResourceHandle>(5);
+                    ResourceHandle indexBuffer;
+                    uint32_t indexCount = 0;
+                };
+
+                std::vector<Level> levelList;
             };
 
             Shapes::AlignedBox boundingBox;
-            std::vector<Part> partList;
+            std::vector<Material> materialList;
         };
 
         struct Data
@@ -202,12 +211,12 @@ namespace Gek
         {
             uint32_t instanceStart = 0;
             uint32_t instanceCount = 0;
-            const Model::Part *part = nullptr;
+            const Model::Material *material = nullptr;
 
-            DrawData(uint32_t instanceStart = 0, uint32_t instanceCount = 0, const Model::Part *part = nullptr)
+            DrawData(uint32_t instanceStart = 0, uint32_t instanceCount = 0, const Model::Material *material = nullptr)
                 : instanceStart(instanceStart)
                 , instanceCount(instanceCount)
-                , part(part)
+                , material(material)
             {
             }
         };
@@ -233,9 +242,9 @@ namespace Gek
         std::vector<bool> visibilityList;
 
         using InstanceList = concurrency::concurrent_vector<Math::Float4x4>;
-        using PartMap = concurrency::concurrent_unordered_map<const Model::Part *, InstanceList>;
-        using MaterialMap = concurrency::concurrent_unordered_map<MaterialHandle, PartMap>;
-        MaterialMap materialMap;
+        using MaterialMap = concurrency::concurrent_unordered_map<const Model::Material *, InstanceList>;
+        using HandleMap = concurrency::concurrent_unordered_map<MaterialHandle, MaterialMap>;
+        HandleMap renderList;
 
     public:
         ModelProcessor(Context *context, Plugin::Core *core)
@@ -313,65 +322,74 @@ namespace Gek
 							return;
 						}
 
-                        if (header->version != 6)
+                        if (header->version != 7)
                         {
-                            LockedWrite{ std::cerr } << String::Format("Unsupported model version encountered (requires: 6, has: %v): %v", header->version, fileName);
+                            LockedWrite{ std::cerr } << String::Format("Unsupported model version encountered (requires: 7, has: %v): %v", header->version, fileName);
 							return;
 						}
 
                         model.boundingBox = header->boundingBox;
-                        LockedWrite{ std::cout } << String::Format("Model: %v, %v parts", name, header->partCount);
+                        LockedWrite{ std::cout } << String::Format("Model: %v, %v materials", name, header->materialCount);
                         loadPool.enqueue([this, name = name, fileName, &model](void) -> void
                         {
 							std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer));
 
 							Header *header = (Header *)buffer.data();
-							if (buffer.size() < (sizeof(Header) + (sizeof(Header::Part) * header->partCount)))
+							if (buffer.size() < (sizeof(Header) + (sizeof(Header::Material) * header->materialCount)))
 							{
-								LockedWrite{ std::cerr } << String::Format("Model file too small to contain part headers: %v", fileName);
+								LockedWrite{ std::cerr } << String::Format("Model file too small to contain material headers: %v", fileName);
 								return;
 							}
 
-                            model.partList.resize(header->partCount);
-                            uint8_t *bufferData = (uint8_t *)&header->partList[header->partCount];
-                            for (uint32_t partIndex = 0; partIndex < header->partCount; ++partIndex)
+                            model.materialList.resize(header->materialCount);
+                            uint8_t *bufferData = (uint8_t *)&header->materialList[header->materialCount];
+                            for (uint32_t materialIndex = 0; materialIndex < header->materialCount; ++materialIndex)
                             {
-                                Header::Part &partHeader = header->partList[partIndex];
-								Model::Part &part = model.partList[partIndex];
+                                Header::Material &materialHeader = header->materialList[materialIndex];
+								Model::Material &material = model.materialList[materialIndex];
 
-                                part.material = resources->loadMaterial(partHeader.name);
+                                material.handle = resources->loadMaterial(materialHeader.name);
 
-                                Video::Buffer::Description indexBufferDescription;
-                                indexBufferDescription.format = Video::Format::R16_UINT;
-                                indexBufferDescription.count = partHeader.indexCount;
-                                indexBufferDescription.type = Video::Buffer::Type::Index;
-                                part.indexBuffer = resources->createBuffer(String::Format("model:indices:%v:%v", name, partIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
-                                bufferData += (sizeof(uint16_t) * partHeader.indexCount);
+                                material.levelList.resize(header->levelCount);
+                                for (uint8_t levelIndex = 0; levelIndex < header->levelCount; ++levelIndex)
+                                {
+                                    auto &level = material.levelList[levelIndex];
 
-                                Video::Buffer::Description vertexBufferDescription;
-                                vertexBufferDescription.stride = sizeof(Math::Float3);
-                                vertexBufferDescription.count = partHeader.vertexCount;
-                                vertexBufferDescription.type = Video::Buffer::Type::Vertex;
-                                part.vertexBufferList[0] = resources->createBuffer(String::Format("model:positions:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
+                                    auto &levelHeader = *(Header::Material::Level *)bufferData;
+                                    bufferData += sizeof(Header::Material::Level);
 
-                                vertexBufferDescription.stride = sizeof(Math::Float2);
-                                part.vertexBufferList[1] = resources->createBuffer(String::Format("model:texcoords:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
-                                bufferData += (sizeof(Math::Float2) * partHeader.vertexCount);
+                                    Video::Buffer::Description indexBufferDescription;
+                                    indexBufferDescription.format = Video::Format::R16_UINT;
+                                    indexBufferDescription.count = levelHeader.indexCount;
+                                    indexBufferDescription.type = Video::Buffer::Type::Index;
+                                    level.indexBuffer = resources->createBuffer(String::Format("model:%v:indices:%v", name, materialIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
+                                    bufferData += (sizeof(uint16_t) * levelHeader.indexCount);
 
-                                vertexBufferDescription.stride = sizeof(Math::Float3);
-                                part.vertexBufferList[2] = resources->createBuffer(String::Format("model:tangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
+                                    Video::Buffer::Description vertexBufferDescription;
+                                    vertexBufferDescription.stride = sizeof(Math::Float3);
+                                    vertexBufferDescription.count = levelHeader.vertexCount;
+                                    vertexBufferDescription.type = Video::Buffer::Type::Vertex;
+                                    level.vertexBufferList[0] = resources->createBuffer(String::Format("model:%v:positions:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
 
-                                vertexBufferDescription.stride = sizeof(Math::Float3);
-                                part.vertexBufferList[3] = resources->createBuffer(String::Format("model:bitangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
+                                    vertexBufferDescription.stride = sizeof(Math::Float2);
+                                    level.vertexBufferList[1] = resources->createBuffer(String::Format("model:%v:texcoords:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float2) * levelHeader.vertexCount);
 
-                                vertexBufferDescription.stride = sizeof(Math::Float3);
-                                part.vertexBufferList[4] = resources->createBuffer(String::Format("model:normals:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
+                                    vertexBufferDescription.stride = sizeof(Math::Float3);
+                                    level.vertexBufferList[2] = resources->createBuffer(String::Format("model:%v:tangents:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
 
-                                part.indexCount = partHeader.indexCount;
+                                    vertexBufferDescription.stride = sizeof(Math::Float3);
+                                    level.vertexBufferList[3] = resources->createBuffer(String::Format("model:%v:bitangents:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
+
+                                    vertexBufferDescription.stride = sizeof(Math::Float3);
+                                    level.vertexBufferList[4] = resources->createBuffer(String::Format("model:%v:normals:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
+
+                                    level.indexCount = levelHeader.indexCount;
+                                }
                             }
 							
 							LockedWrite{ std::cout } << String::Format("Model successfully loaded: %v", name);
@@ -509,40 +527,40 @@ namespace Gek
                     ++entitySearch;
 
                     auto modelViewMatrix(transformComponent.getScaledMatrix() * viewMatrix);
-                    concurrency::parallel_for_each(std::begin(model.partList), std::end(model.partList), [&](const Model::Part &part) -> void
+                    concurrency::parallel_for_each(std::begin(model.materialList), std::end(model.materialList), [&](const Model::Material &material) -> void
                     {
-                        auto &partMap = materialMap[part.material];
-                        auto &instanceList = partMap[&part];
+                        auto &materialMap = renderList[material.handle];
+                        auto &instanceList = materialMap[&material];
                         instanceList.push_back(modelViewMatrix);
                     });
                 }
             }
 
 			size_t maximumInstanceCount = 0;
-            for (auto &materialPair : materialMap)
+            for (auto &materialPair : renderList)
             {
                 const auto material = materialPair.first;
-                auto &partMap = materialPair.second;
+                auto &materialMap = materialPair.second;
 
-                size_t partInstanceCount = 0;
-                for (auto const &partPair : partMap)
+                size_t materialInstanceCount = 0;
+                for (auto const &materialPair : materialMap)
                 {
-                    const auto part = partPair.first;
-                    auto const &partInstanceList = partPair.second;
-                    partInstanceCount += partInstanceList.size();
+                    const auto material = materialPair.first;
+                    auto const &materialInstanceList = materialPair.second;
+                    materialInstanceCount += materialInstanceList.size();
                 }
 
-                std::vector<DrawData> drawDataList(partMap.size());
-                std::vector<Math::Float4x4> instanceList(partInstanceCount);
-                for (auto &partPair : partMap)
+                std::vector<DrawData> drawDataList(materialMap.size());
+                std::vector<Math::Float4x4> instanceList(materialInstanceCount);
+                for (auto &materialPair : materialMap)
                 {
-                    auto part = partPair.first;
-                    if (part)
+                    auto material = materialPair.first;
+                    if (material)
                     {
-                        auto &partInstanceList = partPair.second;
-                        drawDataList.push_back(DrawData(instanceList.size(), partInstanceList.size(), part));
-                        instanceList.insert(std::end(instanceList), std::begin(partInstanceList), std::end(partInstanceList));
-                        partInstanceList.clear();
+                        auto &materialInstanceList = materialPair.second;
+                        drawDataList.push_back(DrawData(instanceList.size(), materialInstanceList.size(), material));
+                        instanceList.insert(std::end(instanceList), std::begin(materialInstanceList), std::end(materialInstanceList));
+                        materialInstanceList.clear();
                     }
                 }
 
@@ -557,11 +575,12 @@ namespace Gek
                         videoContext->setVertexBufferList({ instanceBuffer.get() }, 5);
                         for (auto const &drawData : drawDataList)
                         {
-                            if (drawData.part)
+                            if (drawData.material)
                             {
-                                resources->setVertexBufferList(videoContext, drawData.part->vertexBufferList, 0);
-                                resources->setIndexBuffer(videoContext, drawData.part->indexBuffer, 0);
-                                resources->drawInstancedIndexedPrimitive(videoContext, drawData.instanceCount, drawData.instanceStart, drawData.part->indexCount, 0, 0);
+                                auto &level = drawData.material->levelList[1];
+                                resources->setVertexBufferList(videoContext, level.vertexBufferList, 0);
+                                resources->setIndexBuffer(videoContext, level.indexBuffer, 0);
+                                resources->drawInstancedIndexedPrimitive(videoContext, drawData.instanceCount, drawData.instanceStart, level.indexCount, 0, 0);
                             }
                         }
                     }
