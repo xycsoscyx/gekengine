@@ -19,7 +19,7 @@ namespace Gek
         struct Vector4
         {
         public:
-			static const Vector4 Zero;
+            static const Vector4 Zero;
 			static const Vector4 One;
 			static const Vector4 Black;
 			static const Vector4 White;
