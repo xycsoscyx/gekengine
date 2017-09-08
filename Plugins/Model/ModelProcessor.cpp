@@ -248,7 +248,7 @@ namespace Gek
         std::vector<bool> visibilityList;
 
         using InstanceList = concurrency::concurrent_vector<Math::Float4x4>;
-        using MaterialMap = concurrency::concurrent_unordered_map<const Model::Material *, InstanceList>;
+        using MaterialMap = concurrency::concurrent_unordered_map<const Model::Material::Level *, InstanceList>;
         using HandleMap = concurrency::concurrent_unordered_map<MaterialHandle, MaterialMap>;
         HandleMap renderList;
 
@@ -359,7 +359,7 @@ namespace Gek
                                     return;
                                 }
 
-                                LockedWrite{ std::cout } << String::Format("Model %v, Mesh %v: %v materials", name, fileName, header->materialCount);
+                                LockedWrite{ std::cout } << String::Format("Model %v, loading mesh %v: %v materials", name, fileName, header->materialCount);
 
                                 mesh.boundingBox = header->boundingBox;
                                 model.boundingBox.extend(mesh.boundingBox.minimum);
@@ -385,41 +385,41 @@ namespace Gek
                                         indexBufferDescription.format = Video::Format::R16_UINT;
                                         indexBufferDescription.count = levelHeader.indexCount;
                                         indexBufferDescription.type = Video::Buffer::Type::Index;
-                                        level.indexBuffer = resources->createBuffer(String::Format("model:%v:%v:indices:%v", name, fileName, materialIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
+                                        level.indexBuffer = resources->createBuffer(String::Format("model:%v.%v.%v:indices", materialIndex, fileName, name), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
                                         bufferData += (sizeof(uint16_t) * levelHeader.indexCount);
 
                                         Video::Buffer::Description vertexBufferDescription;
                                         vertexBufferDescription.stride = sizeof(Math::Float3);
                                         vertexBufferDescription.count = levelHeader.vertexCount;
                                         vertexBufferDescription.type = Video::Buffer::Type::Vertex;
-                                        level.vertexBufferList[0] = resources->createBuffer(String::Format("model:%v:%v:positions:%v", name, fileName, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                        level.vertexBufferList[0] = resources->createBuffer(String::Format("model:%v.%v.%v:positions", materialIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                         bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
 
                                         vertexBufferDescription.stride = sizeof(Math::Float2);
-                                        level.vertexBufferList[1] = resources->createBuffer(String::Format("model:%v:%v:texcoords:%v", name, fileName, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
+                                        level.vertexBufferList[1] = resources->createBuffer(String::Format("model:%v.%v.%v:texcoords", materialIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
                                         bufferData += (sizeof(Math::Float2) * levelHeader.vertexCount);
 
                                         vertexBufferDescription.stride = sizeof(Math::Float3);
-                                        level.vertexBufferList[2] = resources->createBuffer(String::Format("model:%v:%v:tangents:%v", name, fileName, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                        level.vertexBufferList[2] = resources->createBuffer(String::Format("model:%v.%v.%v:tangents", materialIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                         bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
 
                                         vertexBufferDescription.stride = sizeof(Math::Float3);
-                                        level.vertexBufferList[3] = resources->createBuffer(String::Format("model:%v:%v:bitangents:%v", name, fileName, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                        level.vertexBufferList[3] = resources->createBuffer(String::Format("model:%v.%v.%v:bitangents", materialIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                         bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
 
                                         vertexBufferDescription.stride = sizeof(Math::Float3);
-                                        level.vertexBufferList[4] = resources->createBuffer(String::Format("model:%v:%v:normals:%v", name, fileName, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                        level.vertexBufferList[4] = resources->createBuffer(String::Format("model:%v.%v.%v:normals", materialIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                         bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
 
                                         level.indexCount = levelHeader.indexCount;
                                     }
                                 }
 
-                                LockedWrite{ std::cout } << String::Format("Model %v, mesh successfully loaded: %v", name, fileName);
+                                LockedWrite{ std::cout } << String::Format("Model %v, mesh %v successfully loaded", name, fileName);
                             });
                         }
 
-                        LockedWrite{ std::cout } << String::Format("Model successfully loaded: %v", name);
+                        LockedWrite{ std::cout } << String::Format("Model %v successfully queued", name);
                     });
                 }
 
@@ -558,7 +558,7 @@ namespace Gek
                         concurrency::parallel_for_each(std::begin(mesh.materialList), std::end(mesh.materialList), [&](const Model::Material &material) -> void
                         {
                             auto &materialMap = renderList[material.handle];
-                            auto &instanceList = materialMap[&material];
+                            auto &instanceList = materialMap[&material.levelList[0]];
                             instanceList.push_back(modelViewMatrix);
                         });
                     });
@@ -581,15 +581,15 @@ namespace Gek
 
                 std::vector<DrawData> drawDataList(materialMap.size());
                 std::vector<Math::Float4x4> instanceList(materialInstanceCount);
-                for (auto &materialPair : materialMap)
+                for (auto &levelPair : materialMap)
                 {
-                    auto material = materialPair.first;
-                    if (material)
+                    auto level = levelPair.first;
+                    if (level)
                     {
-                        auto &materialInstanceList = materialPair.second;
-                        drawDataList.push_back(DrawData(instanceList.size(), materialInstanceList.size(), &material->levelList[1]));
-                        instanceList.insert(std::end(instanceList), std::begin(materialInstanceList), std::end(materialInstanceList));
-                        materialInstanceList.clear();
+                        auto &levelInstanceList = levelPair.second;
+                        drawDataList.push_back(DrawData(instanceList.size(), levelInstanceList.size(), level));
+                        instanceList.insert(std::end(instanceList), std::begin(levelInstanceList), std::end(levelInstanceList));
+                        levelInstanceList.clear();
                     }
                 }
 
