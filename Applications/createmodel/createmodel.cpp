@@ -83,8 +83,17 @@ struct Mesh
     std::string material;
 };
 
+struct Model
+{
+    std::string name;
+    Shapes::AlignedBox boundingBox;
+    std::vector<Mesh> meshList;
+};
+
+using ModelList = std::vector<Model>;
+
 using Decimater = OpenMesh::Decimater::DecimaterT<Mesh>;
-using QuadraticModule = OpenMesh::Decimater::ModQuadricT<Mesh>::Handle;
+using QuadricModule = OpenMesh::Decimater::ModQuadricT<Mesh>::Handle;
 using HausdorffModule = OpenMesh::Decimater::ModHausdorffT<Mesh>::Handle;
 using AspectModule = OpenMesh::Decimater::ModAspectRatioT<Mesh>::Handle;
 using DeviationModule = OpenMesh::Decimater::ModNormalDeviationT<Mesh>::Handle;
@@ -95,11 +104,11 @@ struct Parameters
     float feetPerUnit = 1.0f;
 };
 
-bool GetNodeMeshes(const Parameters &parameters, const aiScene *inputScene, const aiNode *inputNode, std::vector<std::shared_ptr<Mesh>> &meshList, Shapes::AlignedBox &boundingBox)
+bool GetModels(const Parameters &parameters, const aiScene *inputScene, const aiNode *inputNode, ModelList &modelList)
 {
     if (inputNode == nullptr)
     {
-        LockedWrite{ std::cerr } << String::Format("Invalid inputScene inputNode");
+        LockedWrite{ std::cerr } << String::Format("Invalid scene node");
         return false;
     }
 
@@ -111,6 +120,8 @@ bool GetNodeMeshes(const Parameters &parameters, const aiScene *inputScene, cons
             return false;
         }
 
+        Model model;
+        model.name = inputNode->mName.C_Str();
         for (uint32_t meshIndex = 0; meshIndex < inputNode->mNumMeshes; ++meshIndex)
         {
             uint32_t nodeMeshIndex = inputNode->mMeshes[meshIndex];
@@ -159,40 +170,39 @@ bool GetNodeMeshes(const Parameters &parameters, const aiScene *inputScene, cons
                     return false;
                 }
 
-                auto mesh = std::make_shared<Mesh>();
-                meshList.push_back(mesh);
+                Mesh mesh;
 
                 aiString sceneDiffuseMaterial;
                 const aiMaterial *sceneMaterial = inputScene->mMaterials[inputMesh->mMaterialIndex];
                 sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
-                mesh->diffuse = sceneDiffuseMaterial.C_Str();
+                mesh.diffuse = sceneDiffuseMaterial.C_Str();
 
                 std::vector<OpenMesh::VertexHandle> vertexHandleList;
                 vertexHandleList.reserve(inputMesh->mNumVertices);
                 for (uint32_t vertexIndex = 0; vertexIndex < inputMesh->mNumVertices; ++vertexIndex)
                 {
-                    auto vertexHandle = mesh->add_vertex(OpenMesh::Vec3f(
+                    auto vertexHandle = mesh.add_vertex(OpenMesh::Vec3f(
                         (inputMesh->mVertices[vertexIndex].x * parameters.feetPerUnit),
                         (inputMesh->mVertices[vertexIndex].y * parameters.feetPerUnit),
                         (inputMesh->mVertices[vertexIndex].z * parameters.feetPerUnit)));
-                    boundingBox.extend(Math::Float3(mesh->point(vertexHandle).data()));
+                    model.boundingBox.extend(Math::Float3(mesh.point(vertexHandle).data()));
                     vertexHandleList.push_back(vertexHandle);
 
-                    mesh->set_texcoord2D(vertexHandle, OpenMesh::Vec2f(
+                    mesh.set_texcoord2D(vertexHandle, OpenMesh::Vec2f(
                         inputMesh->mTextureCoords[0][vertexIndex].x,
                         inputMesh->mTextureCoords[0][vertexIndex].y));
 
-                    mesh->data(vertexHandle).tangent = Math::Float3(
+                    mesh.data(vertexHandle).tangent = Math::Float3(
                         inputMesh->mTangents[vertexIndex].x,
                         inputMesh->mTangents[vertexIndex].y,
                         inputMesh->mTangents[vertexIndex].z);
 
-                    mesh->data(vertexHandle).biTangent = Math::Float3(
+                    mesh.data(vertexHandle).biTangent = Math::Float3(
                         inputMesh->mBitangents[vertexIndex].x,
                         inputMesh->mBitangents[vertexIndex].y,
                         inputMesh->mBitangents[vertexIndex].z);
 
-                    mesh->set_normal(vertexHandle, OpenMesh::Vec3f(
+                    mesh.set_normal(vertexHandle, OpenMesh::Vec3f(
                         inputMesh->mNormals[vertexIndex].x,
                         inputMesh->mNormals[vertexIndex].y,
                         inputMesh->mNormals[vertexIndex].z));
@@ -214,11 +224,13 @@ bool GetNodeMeshes(const Parameters &parameters, const aiScene *inputScene, cons
                         faceHandles[edgeIndex] = vertexHandleList[face.mIndices[edgeIndex]];
                     }
 
-                    mesh->add_face(faceHandles);
+                    mesh.add_face(faceHandles);
                 }
 
-                meshList.push_back(mesh);
+                model.meshList.push_back(mesh);
             }
+
+            modelList.push_back(model);
         }
     }
 
@@ -232,7 +244,7 @@ bool GetNodeMeshes(const Parameters &parameters, const aiScene *inputScene, cons
 
         for (uint32_t childIndex = 0; childIndex < inputNode->mNumChildren; ++childIndex)
         {
-            if (!GetNodeMeshes(parameters, inputScene, inputNode->mChildren[childIndex], meshList, boundingBox))
+            if (!GetModels(parameters, inputScene, inputNode->mChildren[childIndex], modelList))
             {
                 return false;
             }
@@ -246,12 +258,17 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 {
     LockedWrite{ std::cout } << String::Format("GEK Model Converter");
 
-    FileSystem::Path fileNameInput;
-    FileSystem::Path fileNameOutput;
+    FileSystem::Path sourceName;
     Parameters parameters;
     bool flipCoords = false;
     bool flipWinding = false;
     float smoothingAngle = 80.0f;
+    bool useQuatricModule = true;
+    float quadricMaximumError = 0.001f;
+    bool useHausdorffModule = false;
+    float hausdorffTolerance = 0.1f;
+    bool useNormalFlippingModule = true;
+    bool useAspectRatioModule = false;
     for (int argumentIndex = 1; argumentIndex < argumentCount; ++argumentIndex)
     {
 		std::string argument(String::Narrow(argumentList[argumentIndex]));
@@ -262,13 +279,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             return -__LINE__;
         }
 
-        if (arguments[0] == "-input" && ++argumentIndex < argumentCount)
+        if (arguments[0] == "-source" && ++argumentIndex < argumentCount)
         {
-			fileNameInput = argumentList[argumentIndex];
-        }
-        else if (arguments[0] == "-output" && ++argumentIndex < argumentCount)
-        {
-			fileNameOutput = argumentList[argumentIndex];
+			sourceName = argumentList[argumentIndex];
         }
         else if (arguments[0] == "-flipcoords")
         {
@@ -298,6 +311,36 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
 			parameters.feetPerUnit = (1.0f / String::Convert(arguments[1], 1.0f));
         }
+        else if (arguments[0] == "-quadricModule")
+        {
+            if (arguments.size() != 2)
+            {
+                LockedWrite{ std::cerr } << String::Format("Missing parameters for quadric");
+                return -__LINE__;
+            }
+
+            useQuatricModule = true;
+            quadricMaximumError = String::Convert(arguments[1], 0.001f);
+        }
+        else if (arguments[0] == "-hausdorffModule")
+        {
+            if (arguments.size() != 2)
+            {
+                LockedWrite{ std::cerr } << String::Format("Missing parameters for quadric");
+                return -__LINE__;
+            }
+
+            useHausdorffModule = true;
+            hausdorffTolerance = String::Convert(arguments[1], 0.1f);
+        }
+        else if (arguments[0] == "-normalFlippingModule")
+        {
+            useNormalFlippingModule = true;
+        }
+        else if (arguments[0] == "-aspectRatioModule")
+        {
+            useAspectRatioModule = true;
+        }
     }
 
     aiLogStream logStream;
@@ -324,7 +367,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     unsigned int importFlags =
         (flipWinding ? aiProcess_FlipWindingOrder : 0) |
         (flipCoords ? aiProcess_FlipUVs : 0) |
-        //aiProcess_OptimizeMeshes |
+        aiProcess_OptimizeMeshes |
         aiProcess_RemoveComponent |
         aiProcess_SplitLargeMeshes |
         aiProcess_PreTransformVertices |
@@ -344,7 +387,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         aiProcess_FindInvalidData |
         aiProcess_GenSmoothNormals |
         aiProcess_CalcTangentSpace |
-        aiProcess_OptimizeGraph |
+        //aiProcess_OptimizeGraph |
         0;
 
     aiPropertyStore *propertyStore = aiCreatePropertyStore();
@@ -353,10 +396,15 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
-    auto inputScene = aiImportFileExWithProperties(fileNameInput.u8string().c_str(), importFlags, nullptr, propertyStore);
+
+    auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
+    auto dataPath(FileSystem::GetFileName(rootPath, "Data"));
+
+    auto sourcePath(FileSystem::GetFileName(dataPath, "models", sourceName.u8string()));
+    auto inputScene = aiImportFileExWithProperties(sourcePath.u8string().c_str(), importFlags, nullptr, propertyStore);
     if (inputScene == nullptr)
     {
-        LockedWrite{ std::cerr } << String::Format("Unable to load inputScene with Assimp");
+        LockedWrite{ std::cerr } << String::Format("Unable to load scene with Assimp");
         return -__LINE__;
     }
 
@@ -382,22 +430,18 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
     if (!inputScene->HasMaterials())
     {
-        LockedWrite{ std::cerr } << String::Format("Exporting to model requires materials in inputScene");
+        LockedWrite{ std::cerr } << String::Format("Exporting to model requires materials in scene");
         return -__LINE__;
     }
 
-    Shapes::AlignedBox boundingBox;
-    std::vector<std::shared_ptr<Mesh>> meshList;
-    if (!GetNodeMeshes(parameters, inputScene, inputScene->mRootNode, meshList, boundingBox))
+    ModelList modelList;
+    if (!GetModels(parameters, inputScene, inputScene->mRootNode, modelList))
     {
         return -__LINE__;
     }
 
     aiReleasePropertyStore(propertyStore);
     aiReleaseImport(inputScene);
-
-    auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
-    auto dataPath(FileSystem::GetFileName(rootPath, "Data"));
 
 	std::string texturesPath(String::GetLower(FileSystem::GetFileName(dataPath, "Textures").u8string()));
     auto materialsPath(FileSystem::GetFileName(dataPath, "Materials").u8string());
@@ -438,22 +482,11 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         return -__LINE__;
     }
 
-	LockedWrite{ std::cout } << String::Format("> Num. Meshes: %v", meshList.size());
-    LockedWrite{ std::cout } << String::Format("< Size: Minimum[%v, %v, %v]", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
-    LockedWrite{ std::cout } << String::Format("< Size: Maximum[%v, %v, %v]", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
+	LockedWrite{ std::cout } << String::Format("> Num. Models: %v", modelList.size());
 
-    FILE *file = nullptr;
-    _wfopen_s(&file, fileNameOutput.c_str(), L"wb");
-    if (file == nullptr)
+    auto findMaterialForDiffuse = [&](std::string const &diffuse) -> std::string
     {
-        LockedWrite{ std::cerr } << String::Format("Unable to create output file");
-        return -__LINE__;
-    }
-
-    std::vector<std::shared_ptr<Mesh>> finalMeshList;
-    for (auto &mesh : meshList)
-    {
-        FileSystem::Path diffusePath(mesh->diffuse);
+        FileSystem::Path diffusePath(diffuse);
         std::string albedoName(String::GetLower(diffusePath.withoutExtension().u8string()));
         if (albedoName.find("textures\\") == 0)
         {
@@ -480,123 +513,167 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         if (materialAlebedoSearch == std::end(diffuseToMaterialMap))
         {
             LockedWrite{ std::cerr } << String::Format("! Unable to find material for albedo: %v", albedoName.c_str());
-            continue;
+            return diffuse;
         }
 
-        mesh->material =  materialAlebedoSearch->second;
-        finalMeshList.push_back(mesh);
-    }
+        return materialAlebedoSearch->second;
+    };
 
-    Header header;
-    header.meshCount = finalMeshList.size();
-    header.boundingBox = boundingBox;
-    fwrite(&header, sizeof(Header), 1, file);
-
-    for (auto &mesh : finalMeshList)
+    for (auto &model : modelList)
     {
-        Header::Material materialHeader;
-        std::strncpy(materialHeader.name, mesh->material.c_str(), 63);
-        fwrite(&materialHeader, sizeof(Header::Material), 1, file);
-    }
-
-    for (auto &mesh : finalMeshList)
-    {
-        Decimater decimater(*mesh);
-
-        QuadraticModule quadraticModule;
-        decimater.add(quadraticModule);
-        decimater.module(quadraticModule).set_binary(true);
-        decimater.module(quadraticModule).set_max_err(0.001);
-
-        HausdorffModule hausdorffModule;
-        //decimater.add(hausdorffModule);
-        //decimater.module(hausdorffModule).set_binary(true);
-        //decimater.module(hausdorffModule).set_tolerance(0.1f);
-
-        FlippingModule flippingModule;
-        decimater.add(flippingModule);
-
-        AspectModule aspectModule;
-        //decimater.add(aspectModule);
-
-        if (!decimater.initialize())
+        auto modelName(model.name);
+        for (auto replacement : {"$", "<", ">"})
         {
-            LockedWrite{ std::cerr } << String::Format("! Failed to initiaize decimator: %v", mesh->material);
+            String::Replace(modelName, replacement, "");
+        }
+
+        auto outputParentPath(FileSystem::GetFileName(dataPath, "models", sourceName.withoutExtension().u8string()));
+        auto outputPath(FileSystem::GetFileName(outputParentPath, modelName).withExtension(".gek"));
+        LockedWrite{ std::cout } << String::Format(">     %v: %v", model.name, outputPath.u8string());
+        LockedWrite{ std::cout } << String::Format("      Num. Meshes: %v", model.meshList.size());
+        LockedWrite{ std::cout } << String::Format("      Size: Minimum[%v, %v, %v]", model.boundingBox.minimum.x, model.boundingBox.minimum.y, model.boundingBox.minimum.z);
+        LockedWrite{ std::cout } << String::Format("      Size: Maximum[%v, %v, %v]", model.boundingBox.maximum.x, model.boundingBox.maximum.y, model.boundingBox.maximum.z);
+        for (auto &mesh : model.meshList)
+        {
+            mesh.material = findMaterialForDiffuse(mesh.diffuse);
+        }
+        
+        FileSystem::MakeDirectoryChain(outputParentPath);
+        auto file = fopen(outputPath.u8string().c_str(), "wb");
+        if (file == nullptr)
+        {
+            LockedWrite{ std::cerr } << String::Format("Unable to create output file");
             return -__LINE__;
         }
 
-        LockedWrite{ std::cout } << String::Format("-    Material: %v", mesh->material);
+        Header header;
+        header.meshCount = model.meshList.size();
+        header.boundingBox = model.boundingBox;
+        fwrite(&header, sizeof(Header), 1, file);
 
-        uint32_t originalFaceCount = mesh->n_faces();
-        uint32_t decimateStepCount = (originalFaceCount / (header.levelCount + 1));
-        uint32_t decimateFaceCount = originalFaceCount;
-        for (uint32_t level = 0; level < header.levelCount; ++level, decimateFaceCount -= decimateStepCount)
+        for (auto &mesh : model.meshList)
         {
-            if (level > 0)
-            {
-                decimater.decimate_to_faces(0, decimateFaceCount);
-                mesh->garbage_collection();
-            }
-
-            LockedWrite{ std::cout } << String::Format("       Level: %v", level);
-            LockedWrite{ std::cout } << String::Format("           Num. Vertices: %v", mesh->n_vertices());
-            LockedWrite{ std::cout } << String::Format("           Num. Faces: %v", mesh->n_faces());
-
-            //mesh->update_normals();
-            std::vector<uint16_t> indexList;
-            indexList.reserve(mesh->n_faces() * 3);
-            for (auto faceIterator = mesh->faces_sbegin(); faceIterator != mesh->faces_end(); ++faceIterator)
-            {
-                std::vector<uint16_t> faceIndexList;
-                for (auto vertexIterator = mesh->fv_iter(*faceIterator); vertexIterator->is_valid(); ++vertexIterator)
-                {
-                    faceIndexList.push_back(vertexIterator->idx());
-                }
-
-                if (faceIndexList.size() == 3)
-                {
-                    indexList.insert(std::end(indexList), std::begin(faceIndexList), std::end(faceIndexList));
-                }
-                else
-                {
-                    LockedWrite{ std::cout } << String::Format("! Non-triangular face encountered");
-                }
-            }
-
-            std::vector<Math::Float3> pointList;
-            std::vector<Math::Float2> texCoordList;
-            std::vector<Math::Float3> tangentList;
-            std::vector<Math::Float3> biTangentList;
-            std::vector<Math::Float3> normalList;
-            pointList.reserve(mesh->n_vertices());
-            texCoordList.reserve(mesh->n_vertices());
-            tangentList.reserve(mesh->n_vertices());
-            biTangentList.reserve(mesh->n_vertices());
-            normalList.reserve(mesh->n_vertices());
-            for (auto vertexIterator = mesh->vertices_sbegin(); vertexIterator != mesh->vertices_end(); ++vertexIterator)
-            {
-                pointList.push_back(Math::Float3(mesh->point(*vertexIterator).data()));
-                texCoordList.push_back(Math::Float2(mesh->texcoord2D(*vertexIterator).data()));
-                auto &meshData = mesh->data(*vertexIterator);
-                tangentList.push_back(meshData.tangent);
-                biTangentList.push_back(meshData.biTangent);
-                normalList.push_back(Math::Float3(mesh->normal(*vertexIterator).data()));
-            }
-
-            Header::Material::Level levelHeader;
-            levelHeader.vertexCount = pointList.size();
-            levelHeader.indexCount = indexList.size();
-            fwrite(&levelHeader, sizeof(Header::Material::Level), 1, file);
-            fwrite(indexList.data(), sizeof(uint16_t), indexList.size(), file);
-            fwrite(pointList.data(), sizeof(Math::Float3), pointList.size(), file);
-            fwrite(texCoordList.data(), sizeof(Math::Float2), texCoordList.size(), file);
-            fwrite(tangentList.data(), sizeof(Math::Float3), tangentList.size(), file);
-            fwrite(biTangentList.data(), sizeof(Math::Float3), biTangentList.size(), file);
-            fwrite(normalList.data(), sizeof(Math::Float3), normalList.size(), file);
+            Header::Material materialHeader;
+            std::strncpy(materialHeader.name, mesh.material.c_str(), 63);
+            fwrite(&materialHeader, sizeof(Header::Material), 1, file);
         }
-    }
 
-    fclose(file);
+        for (auto &mesh : model.meshList)
+        {
+            LockedWrite{ std::cout } << String::Format("-    Material: %v", mesh.material);
+
+            Decimater decimater(mesh);
+
+            if (useQuatricModule)
+            {
+                QuadricModule quadraticModule;
+                decimater.add(quadraticModule);
+                decimater.module(quadraticModule).set_max_err(quadricMaximumError);
+                LockedWrite{ std::cout } << String::Format("         Adding Quatric Decimator module");
+            }
+
+            if (useHausdorffModule)
+            {
+                HausdorffModule hausdorffModule;
+                decimater.add(hausdorffModule);
+                decimater.module(hausdorffModule).set_binary(true);
+                decimater.module(hausdorffModule).set_tolerance(hausdorffTolerance);
+                LockedWrite{ std::cout } << String::Format("         Adding Hausdorff Decimator module");
+            }
+
+            if (useNormalFlippingModule)
+            {
+                FlippingModule flippingModule;
+                decimater.add(flippingModule);
+                LockedWrite{ std::cout } << String::Format("         Adding Normal Flipping Decimator module");
+            }
+
+            if (useAspectRatioModule)
+            {
+                AspectModule aspectModule;
+                decimater.add(aspectModule);
+                LockedWrite{ std::cout } << String::Format("         Adding Aspect Ratio Decimator module");
+            }
+
+            if (!decimater.initialize())
+            {
+                LockedWrite{ std::cerr } << String::Format("! Failed to initiaize decimator: %v", mesh.material);
+                return -__LINE__;
+            }
+
+            uint32_t originalFaceCount = mesh.n_faces();
+            uint32_t decimateStepCount = (originalFaceCount / (header.levelCount + 1));
+            uint32_t decimateFaceCount = originalFaceCount;
+            for (uint32_t level = 0; level < header.levelCount; ++level, decimateFaceCount -= decimateStepCount)
+            {
+                if (level > 0)
+                {
+                    LockedWrite{ std::cout } << String::Format("       Decimating to %v faces", decimateFaceCount);
+                    decimater.decimate_to_faces(0, decimateFaceCount);
+                    LockedWrite{ std::cout } << String::Format("       Collecting garbage from decimater");
+                    mesh.garbage_collection();
+                }
+
+                LockedWrite{ std::cout } << String::Format("       Level: %v", level);
+                LockedWrite{ std::cout } << String::Format("           Num. Vertices: %v", mesh.n_vertices());
+                LockedWrite{ std::cout } << String::Format("           Num. Faces: %v", mesh.n_faces());
+
+                //mesh.update_normals();
+                std::vector<uint16_t> indexList;
+                indexList.reserve(mesh.n_faces() * 3);
+                for (auto faceIterator = mesh.faces_begin(); faceIterator != mesh.faces_end(); ++faceIterator)
+                {
+                    std::vector<uint16_t> faceIndexList;
+                    for (auto vertexIterator = mesh.fv_begin(faceIterator); vertexIterator != mesh.fv_end(faceIterator); ++vertexIterator)
+                    {
+                        faceIndexList.push_back(vertexIterator->idx());
+                    }
+
+                    if (faceIndexList.size() == 3)
+                    {
+                        indexList.insert(std::end(indexList), std::begin(faceIndexList), std::end(faceIndexList));
+                    }
+                    else if (!faceIndexList.empty())
+                    {
+                        LockedWrite{ std::cout } << String::Format("! Non-triangular face encountered");
+                    }
+                }
+
+                std::vector<Math::Float3> pointList;
+                std::vector<Math::Float2> texCoordList;
+                std::vector<Math::Float3> tangentList;
+                std::vector<Math::Float3> biTangentList;
+                std::vector<Math::Float3> normalList;
+                pointList.reserve(mesh.n_vertices());
+                texCoordList.reserve(mesh.n_vertices());
+                tangentList.reserve(mesh.n_vertices());
+                biTangentList.reserve(mesh.n_vertices());
+                normalList.reserve(mesh.n_vertices());
+                for (auto vertexIterator = mesh.vertices_begin(); vertexIterator != mesh.vertices_end(); ++vertexIterator)
+                {
+                    pointList.push_back(Math::Float3(mesh.point(*vertexIterator).data()));
+                    texCoordList.push_back(Math::Float2(mesh.texcoord2D(*vertexIterator).data()));
+                    auto &meshData = mesh.data(*vertexIterator);
+                    tangentList.push_back(meshData.tangent);
+                    biTangentList.push_back(meshData.biTangent);
+                    normalList.push_back(Math::Float3(mesh.normal(*vertexIterator).data()));
+                }
+
+                Header::Material::Level levelHeader;
+                levelHeader.vertexCount = pointList.size();
+                levelHeader.indexCount = indexList.size();
+                fwrite(&levelHeader, sizeof(Header::Material::Level), 1, file);
+                fwrite(indexList.data(), sizeof(uint16_t), indexList.size(), file);
+                fwrite(pointList.data(), sizeof(Math::Float3), pointList.size(), file);
+                fwrite(texCoordList.data(), sizeof(Math::Float2), texCoordList.size(), file);
+                fwrite(tangentList.data(), sizeof(Math::Float3), tangentList.size(), file);
+                fwrite(biTangentList.data(), sizeof(Math::Float3), biTangentList.size(), file);
+                fwrite(normalList.data(), sizeof(Math::Float3), normalList.size(), file);
+            }
+        }
+
+        fclose(file);
+    }
 
     return 0;
 }

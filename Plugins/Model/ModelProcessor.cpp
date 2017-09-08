@@ -73,9 +73,9 @@ namespace Gek
                 {
                     FileSystem::Find(modelsPath, [&](FileSystem::Path const &filePath) -> bool
                     {
-                        if (String::GetLower(filePath.getExtension()) == ".gek")
+                        if (filePath.isDirectory())
                         {
-                            modelList.push_back(filePath.withoutExtension().string().substr(modelsPath.size() + 1));
+                            modelList.push_back(filePath.getFileName());
                         }
 
                         return true;
@@ -192,8 +192,14 @@ namespace Gek
                 std::vector<Level> levelList;
             };
 
+            struct Mesh
+            {
+                Shapes::AlignedBox boundingBox;
+                std::vector<Material> materialList;
+            };
+
+            std::vector<Mesh> meshList;
             Shapes::AlignedBox boundingBox;
-            std::vector<Material> materialList;
         };
 
         struct Data
@@ -211,12 +217,12 @@ namespace Gek
         {
             uint32_t instanceStart = 0;
             uint32_t instanceCount = 0;
-            const Model::Material *material = nullptr;
+            const Model::Material::Level *data = nullptr;
 
-            DrawData(uint32_t instanceStart = 0, uint32_t instanceCount = 0, const Model::Material *material = nullptr)
+            DrawData(uint32_t instanceStart = 0, uint32_t instanceCount = 0, const Model::Material::Level *data = nullptr)
                 : instanceStart(instanceStart)
                 , instanceCount(instanceCount)
-                , material(material)
+                , data(data)
             {
             }
         };
@@ -294,106 +300,126 @@ namespace Gek
                     LockedWrite{ std::cout } << String::Format("Queueing model for load: %v", modelComponent.name);
                     loadPool.enqueue([this, name = modelComponent.name, &model = pair.first->second](void) -> void
                     {
-                        auto fileName(getContext()->getRootFileName("data", "models", name).withExtension(".gek"));
-                        if (!fileName.isFile())
+                        std::vector<FileSystem::Path> meshPathList;
+                        auto modelPath(getContext()->getRootFileName("data", "models", name));
+                        FileSystem::Find(modelPath, [&](FileSystem::Path const &filePath) -> bool
                         {
-							LockedWrite{ std::cerr } << String::Format("Model file not found: %v", fileName);
-                            return;
-                        }
-                        
-                        static const std::vector<uint8_t> EmptyBuffer;
-						std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer, sizeof(Header)));
-						if (buffer.size() < sizeof(Header))
-						{
-							LockedWrite{ std::cerr } << String::Format("Model file too small to contain header: %v", fileName);
-							return;
-						}
-
-                        Header *header = (Header *)buffer.data();
-                        if (header->identifier != *(uint32_t *)"GEKX")
-                        {
-							LockedWrite{ std::cerr } << String::Format("Unknown model file identifier encountered (requires: GEKX, has: %v): %v", header->identifier, fileName);
-							return;
-                        }
-
-                        if (header->type != 0)
-                        {
-							LockedWrite{ std::cerr } << String::Format("Unsupported model type encountered (requires: 0, has: %v): %v", header->type, fileName);
-							return;
-						}
-
-                        if (header->version != 7)
-                        {
-                            LockedWrite{ std::cerr } << String::Format("Unsupported model version encountered (requires: 7, has: %v): %v", header->version, fileName);
-							return;
-						}
-
-                        model.boundingBox = header->boundingBox;
-                        LockedWrite{ std::cout } << String::Format("Model: %v, %v materials", name, header->materialCount);
-                        loadPool.enqueue([this, name = name, fileName, &model](void) -> void
-                        {
-							std::vector<uint8_t> buffer(FileSystem::Load(fileName, EmptyBuffer));
-
-							Header *header = (Header *)buffer.data();
-							if (buffer.size() < (sizeof(Header) + (sizeof(Header::Material) * header->materialCount)))
-							{
-								LockedWrite{ std::cerr } << String::Format("Model file too small to contain material headers: %v", fileName);
-								return;
-							}
-
-                            model.materialList.resize(header->materialCount);
-                            uint8_t *bufferData = (uint8_t *)&header->materialList[header->materialCount];
-                            for (uint32_t materialIndex = 0; materialIndex < header->materialCount; ++materialIndex)
+                            std::string fileName(filePath.u8string());
+                            if (filePath.isFile() && String::GetLower(filePath.getExtension()) == ".gek")
                             {
-                                Header::Material &materialHeader = header->materialList[materialIndex];
-								Model::Material &material = model.materialList[materialIndex];
-
-                                material.handle = resources->loadMaterial(materialHeader.name);
-
-                                material.levelList.resize(header->levelCount);
-                                for (uint8_t levelIndex = 0; levelIndex < header->levelCount; ++levelIndex)
+                                static const std::vector<uint8_t> EmptyBuffer;
+                                std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer, sizeof(Header)));
+                                if (buffer.size() < sizeof(Header))
                                 {
-                                    auto &level = material.levelList[levelIndex];
-
-                                    auto &levelHeader = *(Header::Material::Level *)bufferData;
-                                    bufferData += sizeof(Header::Material::Level);
-
-                                    Video::Buffer::Description indexBufferDescription;
-                                    indexBufferDescription.format = Video::Format::R16_UINT;
-                                    indexBufferDescription.count = levelHeader.indexCount;
-                                    indexBufferDescription.type = Video::Buffer::Type::Index;
-                                    level.indexBuffer = resources->createBuffer(String::Format("model:%v:indices:%v", name, materialIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
-                                    bufferData += (sizeof(uint16_t) * levelHeader.indexCount);
-
-                                    Video::Buffer::Description vertexBufferDescription;
-                                    vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    vertexBufferDescription.count = levelHeader.vertexCount;
-                                    vertexBufferDescription.type = Video::Buffer::Type::Vertex;
-                                    level.vertexBufferList[0] = resources->createBuffer(String::Format("model:%v:positions:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                    bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
-
-                                    vertexBufferDescription.stride = sizeof(Math::Float2);
-                                    level.vertexBufferList[1] = resources->createBuffer(String::Format("model:%v:texcoords:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
-                                    bufferData += (sizeof(Math::Float2) * levelHeader.vertexCount);
-
-                                    vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    level.vertexBufferList[2] = resources->createBuffer(String::Format("model:%v:tangents:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                    bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
-
-                                    vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    level.vertexBufferList[3] = resources->createBuffer(String::Format("model:%v:bitangents:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                    bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
-
-                                    vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    level.vertexBufferList[4] = resources->createBuffer(String::Format("model:%v:normals:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                    bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
-
-                                    level.indexCount = levelHeader.indexCount;
+                                    LockedWrite{ std::cerr } << String::Format("Model file too small to contain header: %v", fileName);
+                                    return true;
                                 }
+
+                                Header *header = (Header *)buffer.data();
+                                if (header->identifier != *(uint32_t *)"GEKX")
+                                {
+                                    LockedWrite{ std::cerr } << String::Format("Unknown model file identifier encountered (requires: GEKX, has: %v): %v", header->identifier, fileName);
+                                    return true;
+                                }
+
+                                if (header->type != 0)
+                                {
+                                    LockedWrite{ std::cerr } << String::Format("Unsupported model type encountered (requires: 0, has: %v): %v", header->type, fileName);
+                                    return true;
+                                }
+
+                                if (header->version != 7)
+                                {
+                                    LockedWrite{ std::cerr } << String::Format("Unsupported model version encountered (requires: 7, has: %v): %v", header->version, fileName);
+                                    return true;
+                                }
+
+                                meshPathList.push_back(filePath);
                             }
-							
-							LockedWrite{ std::cout } << String::Format("Model successfully loaded: %v", name);
-						});
+
+                            return true;
+                        });
+
+                        model.meshList.resize(meshPathList.size());
+                        for (size_t meshIndex = 0; meshIndex < meshPathList.size(); ++meshIndex)
+                        {
+                            auto &mesh = model.meshList[meshIndex];
+                            auto &filePath = meshPathList[meshIndex];
+                            loadPool.enqueue([this, name = name, filePath, &model, &mesh](void) -> void
+                            {
+                                auto fileName(filePath.getFileName());
+
+                                static const std::vector<uint8_t> EmptyBuffer;
+                                std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
+
+                                Header *header = (Header *)buffer.data();
+                                if (buffer.size() < (sizeof(Header) + (sizeof(Header::Material) * header->materialCount)))
+                                {
+                                    LockedWrite{ std::cerr } << String::Format("Model file too small to contain material headers: %v", filePath.u8string());
+                                    return;
+                                }
+
+                                LockedWrite{ std::cout } << String::Format("Model %v, Mesh %v: %v materials", name, fileName, header->materialCount);
+
+                                mesh.boundingBox = header->boundingBox;
+                                model.boundingBox.extend(mesh.boundingBox.minimum);
+                                model.boundingBox.extend(mesh.boundingBox.maximum);
+                                mesh.materialList.resize(header->materialCount);
+                                uint8_t *bufferData = (uint8_t *)&header->materialList[header->materialCount];
+                                for (uint32_t materialIndex = 0; materialIndex < header->materialCount; ++materialIndex)
+                                {
+                                    Header::Material &materialHeader = header->materialList[materialIndex];
+                                    Model::Material &material = mesh.materialList[materialIndex];
+
+                                    material.handle = resources->loadMaterial(materialHeader.name);
+
+                                    material.levelList.resize(header->levelCount);
+                                    for (uint8_t levelIndex = 0; levelIndex < header->levelCount; ++levelIndex)
+                                    {
+                                        auto &level = material.levelList[levelIndex];
+
+                                        auto &levelHeader = *(Header::Material::Level *)bufferData;
+                                        bufferData += sizeof(Header::Material::Level);
+
+                                        Video::Buffer::Description indexBufferDescription;
+                                        indexBufferDescription.format = Video::Format::R16_UINT;
+                                        indexBufferDescription.count = levelHeader.indexCount;
+                                        indexBufferDescription.type = Video::Buffer::Type::Index;
+                                        level.indexBuffer = resources->createBuffer(String::Format("model:%v:%v:indices:%v", name, fileName, materialIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
+                                        bufferData += (sizeof(uint16_t) * levelHeader.indexCount);
+
+                                        Video::Buffer::Description vertexBufferDescription;
+                                        vertexBufferDescription.stride = sizeof(Math::Float3);
+                                        vertexBufferDescription.count = levelHeader.vertexCount;
+                                        vertexBufferDescription.type = Video::Buffer::Type::Vertex;
+                                        level.vertexBufferList[0] = resources->createBuffer(String::Format("model:%v:%v:positions:%v", name, fileName, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                        bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
+
+                                        vertexBufferDescription.stride = sizeof(Math::Float2);
+                                        level.vertexBufferList[1] = resources->createBuffer(String::Format("model:%v:%v:texcoords:%v", name, fileName, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
+                                        bufferData += (sizeof(Math::Float2) * levelHeader.vertexCount);
+
+                                        vertexBufferDescription.stride = sizeof(Math::Float3);
+                                        level.vertexBufferList[2] = resources->createBuffer(String::Format("model:%v:%v:tangents:%v", name, fileName, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                        bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
+
+                                        vertexBufferDescription.stride = sizeof(Math::Float3);
+                                        level.vertexBufferList[3] = resources->createBuffer(String::Format("model:%v:%v:bitangents:%v", name, fileName, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                        bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
+
+                                        vertexBufferDescription.stride = sizeof(Math::Float3);
+                                        level.vertexBufferList[4] = resources->createBuffer(String::Format("model:%v:%v:normals:%v", name, fileName, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                        bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
+
+                                        level.indexCount = levelHeader.indexCount;
+                                    }
+                                }
+
+                                LockedWrite{ std::cout } << String::Format("Model %v, mesh successfully loaded: %v", name, fileName);
+                            });
+                        }
+
+                        LockedWrite{ std::cout } << String::Format("Model successfully loaded: %v", name);
                     });
                 }
 
@@ -527,11 +553,14 @@ namespace Gek
                     ++entitySearch;
 
                     auto modelViewMatrix(transformComponent.getScaledMatrix() * viewMatrix);
-                    concurrency::parallel_for_each(std::begin(model.materialList), std::end(model.materialList), [&](const Model::Material &material) -> void
+                    concurrency::parallel_for_each(std::begin(model.meshList), std::end(model.meshList), [&](const Model::Mesh &mesh) -> void
                     {
-                        auto &materialMap = renderList[material.handle];
-                        auto &instanceList = materialMap[&material];
-                        instanceList.push_back(modelViewMatrix);
+                        concurrency::parallel_for_each(std::begin(mesh.materialList), std::end(mesh.materialList), [&](const Model::Material &material) -> void
+                        {
+                            auto &materialMap = renderList[material.handle];
+                            auto &instanceList = materialMap[&material];
+                            instanceList.push_back(modelViewMatrix);
+                        });
                     });
                 }
             }
@@ -558,7 +587,7 @@ namespace Gek
                     if (material)
                     {
                         auto &materialInstanceList = materialPair.second;
-                        drawDataList.push_back(DrawData(instanceList.size(), materialInstanceList.size(), material));
+                        drawDataList.push_back(DrawData(instanceList.size(), materialInstanceList.size(), &material->levelList[1]));
                         instanceList.insert(std::end(instanceList), std::begin(materialInstanceList), std::end(materialInstanceList));
                         materialInstanceList.clear();
                     }
@@ -575,9 +604,9 @@ namespace Gek
                         videoContext->setVertexBufferList({ instanceBuffer.get() }, 5);
                         for (auto const &drawData : drawDataList)
                         {
-                            if (drawData.material)
+                            if (drawData.data)
                             {
-                                auto &level = drawData.material->levelList[1];
+                                auto &level = *drawData.data;
                                 resources->setVertexBufferList(videoContext, level.vertexBufferList, 0);
                                 resources->setIndexBuffer(videoContext, level.indexBuffer, 0);
                                 resources->drawInstancedIndexedPrimitive(videoContext, drawData.instanceCount, drawData.instanceStart, level.indexCount, 0, 0);
