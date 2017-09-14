@@ -25,6 +25,3 @@
 [submodule "External/Wink-Signals"]
 	path = External/Wink-Signals
 	url = https://github.com/miguelmartin75/Wink-Signals.git
-[submodule "External/OpenMesh"]
-	path = External/OpenMesh
-	url = https://www.graphics.rwth-aachen.de:9000/OpenMesh/OpenMesh.git
