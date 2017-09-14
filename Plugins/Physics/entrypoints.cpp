@@ -4,14 +4,14 @@ namespace Gek
 {
     namespace Newton
     {
-        GEK_DECLARE_CONTEXT_USER(Static);
+        GEK_DECLARE_CONTEXT_USER(Scene);
         GEK_DECLARE_CONTEXT_USER(Physical);
         GEK_DECLARE_CONTEXT_USER(Player);
         GEK_DECLARE_CONTEXT_USER(Processor);
     };
 
     GEK_CONTEXT_BEGIN(Engine);
-        GEK_CONTEXT_ADD_CLASS(Components::Static, Newton::Static);
+        GEK_CONTEXT_ADD_CLASS(Components::Scene, Newton::Scene);
             GEK_CONTEXT_ADD_TYPE(ComponentType)
         GEK_CONTEXT_ADD_CLASS(Components::Physical, Newton::Physical);
             GEK_CONTEXT_ADD_TYPE(ComponentType)

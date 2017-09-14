@@ -17,9 +17,8 @@ namespace Gek
 {
     namespace Components
     {
-        GEK_COMPONENT(Static)
+        GEK_COMPONENT(Scene)
         {
-            std::string group;
         };
 
         GEK_COMPONENT(Physical)

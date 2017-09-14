@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <vector>
 #include <map>
+#include <set>
 
 #include <Newton.h>
 
@@ -33,13 +34,21 @@ struct Header
     uint16_t version = 2;
     uint32_t newtonVersion = NewtonWorldGetVersion();
 
-    uint32_t partCount = 0;
+    uint32_t materialCount = 0;
 };
 
-struct Part
+struct Mesh
 {
+    std::string diffuse;
+    std::string material;
     std::vector<uint16_t> indexList;
     std::vector<Math::Float3> vertexList;
+};
+
+struct Model
+{
+    Shapes::AlignedBox boundingBox;
+    std::vector<Mesh> meshList;
 };
 
 struct Parameters
@@ -47,50 +56,50 @@ struct Parameters
     float feetPerUnit = 1.0f;
 };
 
-void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiNode *node, std::unordered_map<std::string, std::vector<Part>> &scenePartMap, Shapes::AlignedBox &boundingBox)
+void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiNode *inputNode, Model &model)
 {
-    if (node == nullptr)
+    if (inputNode == nullptr)
     {
-        throw std::exception("Invalid scene node");
+        throw std::exception("Invalid scene inputNode");
     }
 
-    if (node->mNumMeshes > 0)
+    if (inputNode->mNumMeshes > 0)
     {
-        if (node->mMeshes == nullptr)
+        if (inputNode->mMeshes == nullptr)
         {
             throw std::exception("Invalid mesh list");
         }
 
-        for (uint32_t meshIndex = 0; meshIndex < node->mNumMeshes; ++meshIndex)
+        for (uint32_t meshIndex = 0; meshIndex < inputNode->mNumMeshes; ++meshIndex)
         {
-            uint32_t nodeMeshIndex = node->mMeshes[meshIndex];
+            uint32_t nodeMeshIndex = inputNode->mMeshes[meshIndex];
             if (nodeMeshIndex >= scene->mNumMeshes)
             {
                 throw std::exception("Invalid mesh index");
             }
 
-            const aiMesh *mesh = scene->mMeshes[nodeMeshIndex];
-            if (mesh->mNumFaces > 0)
+            const aiMesh *inputMesh = scene->mMeshes[nodeMeshIndex];
+            if (inputMesh->mNumFaces > 0)
             {
-                if (mesh->mFaces == nullptr)
+                if (inputMesh->mFaces == nullptr)
                 {
                     throw std::exception("Invalid mesh face list");
                 }
 
-				if (mesh->mVertices == nullptr)
+				if (inputMesh->mVertices == nullptr)
 				{
 					throw std::exception("Invalid mesh vertex list");
 				}
 
-                Part part;
-                for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex)
+                Mesh mesh;
+                for (uint32_t faceIndex = 0; faceIndex < inputMesh->mNumFaces; ++faceIndex)
                 {
-                    const aiFace &face = mesh->mFaces[faceIndex];
+                    const aiFace &face = inputMesh->mFaces[faceIndex];
                     if (face.mNumIndices == 3)
                     {
-						part.indexList.push_back(face.mIndices[0]);
-                        part.indexList.push_back(face.mIndices[1]);
-						part.indexList.push_back(face.mIndices[2]);
+                        mesh.indexList.push_back(face.mIndices[0]);
+                        mesh.indexList.push_back(face.mIndices[1]);
+                        mesh.indexList.push_back(face.mIndices[2]);
                     }
                     else
                     {
@@ -98,37 +107,37 @@ void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
                     }
                 }
 
-                for (uint32_t vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex)
+                for (uint32_t vertexIndex = 0; vertexIndex < inputMesh->mNumVertices; ++vertexIndex)
                 {
                     Math::Float3 position(
-                        mesh->mVertices[vertexIndex].x,
-                        mesh->mVertices[vertexIndex].y,
-                        mesh->mVertices[vertexIndex].z);
+                        inputMesh->mVertices[vertexIndex].x,
+                        inputMesh->mVertices[vertexIndex].y,
+                        inputMesh->mVertices[vertexIndex].z);
                     position *= parameters.feetPerUnit;
-                    boundingBox.extend(position);
+                    model.boundingBox.extend(position);
 
-                    part.vertexList.push_back(position);
+                    mesh.vertexList.push_back(position);
                 }
 
                 aiString sceneDiffuseMaterial;
-                const aiMaterial *sceneMaterial = scene->mMaterials[mesh->mMaterialIndex];
+                const aiMaterial *sceneMaterial = scene->mMaterials[inputMesh->mMaterialIndex];
                 sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
-                std::string materialPath(sceneDiffuseMaterial.C_Str());
-                scenePartMap[materialPath].push_back(part);
+                mesh.diffuse = sceneDiffuseMaterial.C_Str();
+                model.meshList.push_back(mesh);
             }
         }
     }
 
-    if (node->mNumChildren > 0)
+    if (inputNode->mNumChildren > 0)
     {
-        if (node->mChildren == nullptr)
+        if (inputNode->mChildren == nullptr)
         {
             throw std::exception("Invalid child list");
         }
 
-        for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
+        for (uint32_t childIndex = 0; childIndex < inputNode->mNumChildren; ++childIndex)
         {
-            getSceneParts(parameters, scene, node->mChildren[childIndex], scenePartMap, boundingBox);
+            getSceneParts(parameters, scene, inputNode->mChildren[childIndex], model);
         }
     }
 }
@@ -246,10 +255,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             throw std::exception("Exporting to tree requires materials in scene");
         }
 
-		Shapes::AlignedBox boundingBox;
-        std::unordered_map<std::string, std::vector<Part>> scenePartMap;
-        getSceneParts(parameters, scene, scene->mRootNode, scenePartMap, boundingBox);
-
+        Model model;
+        getSceneParts(parameters, scene, scene->mRootNode, model);
         aiReleasePropertyStore(propertyStore);
         aiReleaseImport(scene);
 
@@ -259,7 +266,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		std::string texturesPath(String::GetLower(FileSystem::GetFileName(dataPath, "Textures").u8string()));
         auto materialsPath(FileSystem::GetFileName(dataPath, "Materials").u8string());
 
-        std::map<std::string, std::string> albedoToMaterialMap;
+        std::map<std::string, std::string> diffuseToMaterialMap;
         std::function<bool(FileSystem::Path const &)> findMaterials;
         findMaterials = [&](FileSystem::Path const &filePath) -> bool
         {
@@ -275,7 +282,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                 auto albedoNode = dataNode.get("albedo");
                 std::string albedoPath(albedoNode.get("file").convert(String::Empty));
                 std::string materialName(String::GetLower(filePath.withoutExtension().u8string().substr(materialsPath.size() + 1)));
-                albedoToMaterialMap[albedoPath] = materialName;
+                diffuseToMaterialMap[albedoPath] = materialName;
             }
 
             return true;
@@ -289,15 +296,15 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         }
 
         FileSystem::Find(materialsPath, findMaterials);
-        if (albedoToMaterialMap.empty())
+        if (diffuseToMaterialMap.empty())
         {
             throw std::exception("Unable to locate any materials");
         }
 
-        std::unordered_map<std::string, std::vector<Part>> albedoPartMap;
-        for (auto const &modelAlbedo : scenePartMap)
+        auto findMaterialForDiffuse = [&](std::string const &diffuse) -> std::string
         {
-			std::string albedoName(String::GetLower(FileSystem::Path(modelAlbedo.first).withoutExtension().u8string()));
+            FileSystem::Path diffusePath(diffuse);
+            std::string albedoName(String::GetLower(diffusePath.withoutExtension().u8string()));
             if (albedoName.find("textures\\") == 0)
             {
                 albedoName = albedoName.substr(9);
@@ -319,40 +326,19 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                 }
             }
 
-            auto materialAlebedoSearch = albedoToMaterialMap.find(albedoName);
-            if (materialAlebedoSearch == std::end(albedoToMaterialMap))
+            auto materialAlebedoSearch = diffuseToMaterialMap.find(albedoName);
+            if (materialAlebedoSearch == std::end(diffuseToMaterialMap))
             {
-                LockedWrite{ std::cerr } << String::Format("! Unable to find material for albedo: %v", albedoName);
+                LockedWrite{ std::cerr } << String::Format("! Unable to find material for albedo: %v", albedoName.c_str());
+                return diffuse;
             }
-            else
-            {
-                albedoPartMap[materialAlebedoSearch->second] = modelAlbedo.second;
-            }
-        }
 
-        std::unordered_map<std::string, Part> materialPartMap;
-        for (auto const &multiMaterial : albedoPartMap)
-        {
-            Part &material = materialPartMap[multiMaterial.first];
-            for (auto const &instance : multiMaterial.second)
-            {
-                for (auto const &index : instance.indexList)
-                {
-                    material.indexList.push_back(uint16_t(index + material.vertexList.size()));
-                }
+            return materialAlebedoSearch->second;
+        };
 
-                material.vertexList.insert(std::end(material.vertexList), std::begin(instance.vertexList), std::end(instance.vertexList));
-            }
-        }
-
-		if (materialPartMap.empty())
-		{
-			throw std::exception("No valid material models found");
-		}
-
-		LockedWrite{ std::cout } << String::Format("> Num. Parts: %v", materialPartMap.size());
-        LockedWrite{ std::cout } << String::Format("< Size: Minimum[%v, %v, %v]", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
-        LockedWrite{ std::cout } << String::Format("< Size: Maximum[%v, %v, %v]", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
+		LockedWrite{ std::cout } << String::Format("> Num. Meshes: %v", model.meshList.size());
+        LockedWrite{ std::cout } << String::Format("< Size: Minimum[%v, %v, %v]", model.boundingBox.minimum.x, model.boundingBox.minimum.y, model.boundingBox.minimum.z);
+        LockedWrite{ std::cout } << String::Format("< Size: Maximum[%v, %v, %v]", model.boundingBox.maximum.x, model.boundingBox.maximum.y, model.boundingBox.maximum.z);
 
         NewtonWorld *newtonWorld = NewtonCreate();
         NewtonCollision *newtonCollision = NewtonCreateTreeCollision(newtonWorld, 0);
@@ -361,16 +347,25 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             throw std::exception("Unable to create tree collision object");
         }
 
-        int materialIdentifier = 0;
-        NewtonTreeCollisionBeginBuild(newtonCollision);
-        for (auto const &material : materialPartMap)
+        std::set<std::string> materialList;
+        for (auto &mesh : model.meshList)
         {
-			LockedWrite{ std::cout } << String::Format("-  %v", material.first);
-            LockedWrite{ std::cout } << String::Format("    %v vertices", material.second.vertexList.size());
-            LockedWrite{ std::cout } << String::Format("    %v indices", material.second.indexList.size());
+            mesh.material = findMaterialForDiffuse(mesh.diffuse);
+            materialList.insert(mesh.material);
+        }
 
-            auto &indexList = material.second.indexList;
-            auto &vertexList = material.second.vertexList;
+        NewtonTreeCollisionBeginBuild(newtonCollision);
+        for (auto const &mesh : model.meshList)
+        {
+			LockedWrite{ std::cout } << String::Format("-  %v", mesh.material);
+            LockedWrite{ std::cout } << String::Format("    %v vertices", mesh.vertexList.size());
+            LockedWrite{ std::cout } << String::Format("    %v indices", mesh.indexList.size());
+
+            auto materialSearch = materialList.find(mesh.material);
+            auto materialIndex = std::distance(std::begin(materialList), materialSearch);
+
+            auto &indexList = mesh.indexList;
+            auto &vertexList = mesh.vertexList;
             for (uint32_t index = 0; index < indexList.size(); index += 3)
             {
                 Math::Float3 faceList[3] =
@@ -380,10 +375,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                     vertexList[indexList[index + 2]],
                 };
 
-                NewtonTreeCollisionAddFace(newtonCollision, 3, faceList[0].data, sizeof(Math::Float3), materialIdentifier);
+                NewtonTreeCollisionAddFace(newtonCollision, 3, faceList[0].data, sizeof(Math::Float3), materialIndex);
             }
-
-            ++materialIdentifier;
         }
 
         NewtonTreeCollisionEndBuild(newtonCollision, 1);
@@ -396,12 +389,12 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         }
 
         Header header;
-        header.partCount = materialPartMap.size();
+        header.materialCount = materialList.size();
         fwrite(&header, sizeof(Header), 1, file);
-        for (auto const &material : materialPartMap)
+        for (auto const &material : materialList)
         {
             Header::Material materialHeader;
-            std::strncpy(materialHeader.name, material.first.c_str(), 63);
+            std::strncpy(materialHeader.name, material.c_str(), 63);
             fwrite(&materialHeader, sizeof(Header::Material), 1, file);
         }
 

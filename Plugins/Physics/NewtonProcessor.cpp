@@ -30,6 +30,7 @@ namespace Gek
         GEK_CONTEXT_USER(Processor, Plugin::Core *)
             , public Plugin::Processor
             , public Newton::World
+            , public Newton::Entity
         {
         public:
             struct Header
@@ -77,13 +78,16 @@ namespace Gek
             Plugin::Editor *editor = nullptr;
 
             NewtonWorld *newtonWorld = nullptr;
-            std::unordered_map<uint32_t, uint32_t> staticSurfaceMap;
             void *newtonListener = nullptr;
+
+            NewtonCollision *newtonSceneCollision = nullptr;
+            NewtonBody *newtonSceneBody = nullptr;
 
             concurrency::concurrent_vector<Surface> surfaceList;
             concurrency::concurrent_unordered_map<std::size_t, uint32_t> surfaceIndexMap;
             concurrency::concurrent_unordered_map<std::size_t, NewtonCollision *> collisionMap;
             concurrency::concurrent_unordered_map<Plugin::Entity *, Newton::EntityPtr> entityMap;
+            concurrency::concurrent_unordered_map<Plugin::Entity *, void *> sceneMap;
 
         public:
             Processor(Context *context, Plugin::Core *core)
@@ -96,7 +100,7 @@ namespace Gek
                 assert(core);
                 assert(newtonWorld);
 
-                NewtonSetSolverModel(newtonWorld, 1);
+                NewtonSetSolverModel(newtonWorld, 4);
                 NewtonWorldSetUserData(newtonWorld, static_cast<Newton::World *>(this));
 
                 newtonListener = NewtonWorldAddListener(newtonWorld, "__gek_pre_listener__", this);
@@ -117,19 +121,6 @@ namespace Gek
                 population->onComponentRemoved.connect(this, &Processor::onComponentRemoved);
                 population->onUpdate[50].connect(this, &Processor::onUpdate);
                 renderer->onShowUserInterface.connect(this, &Processor::onShowUserInterface);
-            }
-
-            uint32_t getStaticSceneSurface(Math::Float3 const &position, Math::Float3 const &normal)
-            {
-                dLong surfaceAttribute = 0;
-                Math::Float3 collisionNormal;
-                //NewtonCollisionRayCast(newtonStaticScene, (position - normal).data, (position + normal).data, collisionNormal.data, &surfaceAttribute);
-                if (surfaceAttribute > 0)
-                {
-                    return staticSurfaceMap[uint32_t(surfaceAttribute)];
-                }
-
-                return 0;
             }
 
             NewtonCollision *loadCollision(const Components::Model &modelComponent)
@@ -211,10 +202,12 @@ namespace Gek
 						LockedWrite{ std::cout } << String::Format("Loading tree collision: %v", modelComponent.name);
 						
 						TreeHeader *treeHeader = (TreeHeader *)header;
+
+                        std::unordered_map<uint32_t, uint32_t> surfaceMap;
                         for (uint32_t materialIndex = 0; materialIndex < treeHeader->materialCount; ++materialIndex)
                         {
                             TreeHeader::Material &materialHeader = treeHeader->materialList[materialIndex];
-                            staticSurfaceMap[materialIndex] = loadSurface(materialHeader.name);
+                            surfaceMap[materialIndex] = loadSurface(materialHeader.name);
                         }
 
                         DeSerializationData data(buffer, (uint8_t *)&treeHeader->materialList[treeHeader->materialCount]);
@@ -243,29 +236,23 @@ namespace Gek
                 return newtonCollision;
             }
 
-            NewtonCollision *getStaticGroup(std::string const &name)
+            void createSceneCollision(void)
             {
-                auto hash = GetHash(String::Format("static:%v", name));
-                auto collisionSearch = collisionMap.find(hash);
-                if (collisionSearch != std::end(collisionMap))
+                if (!newtonSceneCollision)
                 {
-                    return collisionSearch->second;
+                    newtonSceneCollision = NewtonCreateSceneCollision(newtonWorld, 1);
+                    assert(newtonSceneCollision && "Unable to create scene collision");
+
+                    NewtonCollisionSetMode(newtonSceneCollision, true);
+                    NewtonCollisionSetScale(newtonSceneCollision, 1.0f, 1.0f, 1.0f);
+                    NewtonCollisionSetMatrix(newtonSceneCollision, Math::Float4x4::Identity.data);
+
+                    newtonSceneBody = NewtonCreateDynamicBody(newtonWorld, newtonSceneCollision, Math::Float4x4::Identity.data);
+                    assert(newtonSceneBody && "Unable to create scene static body");
+
+                    NewtonBodySetCollidable(newtonSceneBody, true);
+                    NewtonBodySetUserData(newtonSceneBody, dynamic_cast<Newton::Entity *>(this));
                 }
-
-                auto newtonStaticGroup = NewtonCreateSceneCollision(newtonWorld, 1);
-				assert(newtonStaticGroup && "Unable to create scene collision");
-
-                NewtonCollisionSetMode(newtonStaticGroup, true);
-                NewtonCollisionSetScale(newtonStaticGroup, 1.0f, 1.0f, 1.0f);
-                NewtonCollisionSetMatrix(newtonStaticGroup, Math::Float4x4::Identity.data);
-
-                auto newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticGroup, Math::Float4x4::Identity.data);
-				assert(newtonStaticBody && "Unable to create scene static body");
-				
-				NewtonBodySetCollidable(newtonStaticBody, true);
-
-                collisionMap[hash] = newtonStaticGroup;
-                return newtonStaticGroup;
             }
 
             concurrency::critical_section criticalSection;
@@ -277,27 +264,25 @@ namespace Gek
                     {
                         concurrency::critical_section::scoped_lock lock(criticalSection);
                         auto &transformComponent = entity->getComponent<Components::Transform>();
-                        if (entity->hasComponents<Components::Model, Components::Static>())
+                        if (entity->hasComponents<Components::Model, Components::Scene>())
                         {
-                            if (entity->hasComponent<Components::Model>())
+                            auto const &modelComponent = entity->getComponent<Components::Model>();
+                            auto newtonCollision = loadCollision(modelComponent);
+                            if (newtonCollision)
                             {
-                                auto const &modelComponent = entity->getComponent<Components::Model>();
-                                auto newtonCollision = loadCollision(modelComponent);
-                                if (newtonCollision)
+                                createSceneCollision();
+                                NewtonSceneCollisionBeginAddRemove(newtonSceneCollision);
+                                NewtonCollision *clonedCollision = NewtonCollisionCreateInstance(newtonCollision);
+                                NewtonCollisionSetMatrix(clonedCollision, transformComponent.getMatrix().data);
+                                NewtonCollisionSetScale(clonedCollision, transformComponent.scale.x, transformComponent.scale.y, transformComponent.scale.z);
+                                auto subCollision = NewtonSceneCollisionAddSubCollision(newtonSceneCollision, clonedCollision);
+                                if (subCollision)
                                 {
-                                    auto const &staticComponent = entity->getComponent<Components::Static>();
-                                    auto newtonStaticGroup = getStaticGroup(staticComponent.group);
-
-                                    NewtonSceneCollisionBeginAddRemove(newtonStaticGroup);
-
-                                    NewtonCollision *clonedCollision = NewtonCollisionCreateInstance(newtonCollision);
-                                    NewtonCollisionSetMatrix(clonedCollision, transformComponent.getMatrix().data);
-                                    NewtonCollisionSetScale(clonedCollision, transformComponent.scale.x, transformComponent.scale.y, transformComponent.scale.z);
-                                    NewtonSceneCollisionAddSubCollision(newtonStaticGroup, clonedCollision);
-                                    NewtonDestroyCollision(clonedCollision);
-
-                                    NewtonSceneCollisionEndAddRemove(newtonStaticGroup);
+                                    sceneMap.insert(std::make_pair(entity, subCollision));
                                 }
+
+                                NewtonDestroyCollision(clonedCollision);
+                                NewtonSceneCollisionEndAddRemove(newtonSceneCollision);
                             }
                         }
                         else if (entity->hasComponents<Components::Physical>())
@@ -343,6 +328,15 @@ namespace Gek
                     auto newtonCollision = NewtonBodyGetCollision(entitySearch->second->getNewtonBody());
                     entityMap.unsafe_erase(entitySearch);
                 }
+
+                auto sceneSearch = sceneMap.find(entity);
+                if (sceneSearch != std::end(sceneMap))
+                {
+                    NewtonSceneCollisionBeginAddRemove(newtonSceneCollision);
+                    NewtonSceneCollisionRemoveSubCollision(newtonSceneCollision, sceneSearch->second);
+                    NewtonSceneCollisionEndAddRemove(newtonSceneCollision);
+                    sceneMap.unsafe_erase(sceneSearch);
+                }
             }
 
             // Plugin::Core
@@ -384,12 +378,24 @@ namespace Gek
             {
                 if (type == typeid(Components::Transform))
                 {
+                    auto &transformComponent = entity->getComponent<Components::Transform>();
+
                     auto entitySearch = entityMap.find(entity);
                     if (entitySearch != std::end(entityMap))
                     {
-                        auto &transformComponent = entity->getComponent<Components::Transform>();
                         NewtonBodySetMatrix(entitySearch->second->getNewtonBody(), transformComponent.getMatrix().data);
                         NewtonBodySetCollisionScale(entitySearch->second->getNewtonBody(), transformComponent.scale.x, transformComponent.scale.y, transformComponent.scale.z);
+                    }
+
+                    auto sceneSearch = sceneMap.find(entity);
+                    if (sceneSearch != std::end(sceneMap))
+                    {
+                        auto collision = NewtonSceneCollisionGetCollisionFromNode(newtonSceneCollision, sceneSearch->second);
+                        if (collision)
+                        {
+                            NewtonCollisionSetMatrix(collision, transformComponent.getMatrix().data);
+                            NewtonCollisionSetScale(collision, transformComponent.scale.x, transformComponent.scale.y, transformComponent.scale.z);
+                        }
                     }
                 }
                 else if (type == typeid(Components::Model))
@@ -415,6 +421,13 @@ namespace Gek
                 }
 
                 collisionMap.clear();
+                if (newtonSceneCollision)
+                {
+                    NewtonDestroyCollision(newtonSceneCollision);
+                    newtonSceneCollision = nullptr;
+                }
+
+                sceneMap.clear();
                 entityMap.clear();
                 surfaceList.clear();
                 surfaceIndexMap.clear();
@@ -462,6 +475,22 @@ namespace Gek
 
                     NewtonWaitForUpdateToFinish(newtonWorld);
                 }
+            }
+
+            // Newton::Entity
+            Plugin::Entity * const getEntity(void) const
+            {
+                return nullptr;
+            }
+
+            NewtonBody * const getNewtonBody(void) const
+            {
+                return newtonSceneBody;
+            }
+
+            uint32_t getSurface(Math::Float3 const &position, Math::Float3 const &normal)
+            {
+                return 0;
             }
 
             // Newton::World
@@ -577,8 +606,9 @@ namespace Gek
 
                     Math::Float3 position, normal;
                     NewtonMaterialGetContactPositionAndNormal(newtonMaterial, body0, position.data, normal.data);
-                    uint32_t surfaceIndex0 = (newtonEntity0 ? newtonEntity0->getSurface(position, normal) : 0);// processor->getStaticSceneSurface(position, normal));
-                    uint32_t surfaceIndex1 = (newtonEntity1 ? newtonEntity1->getSurface(position, normal) : 0);// processor->getStaticSceneSurface(position, normal));
+
+                    uint32_t surfaceIndex0 = (newtonEntity0 ? newtonEntity0->getSurface(position, normal) : 0);
+                    uint32_t surfaceIndex1 = (newtonEntity1 ? newtonEntity1->getSurface(position, normal) : 0);
                     const Surface &surface0 = processor->getSurface(surfaceIndex0);
                     const Surface &surface1 = processor->getSurface(surfaceIndex1);
 
