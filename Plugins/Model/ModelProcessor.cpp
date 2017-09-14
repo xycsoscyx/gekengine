@@ -147,25 +147,21 @@ namespace Gek
     public:
         struct Header
         {
-            struct Material
+            struct Mesh
             {
-                char name[64];
-                struct Level
-                {
-                    uint32_t vertexCount = 0;
-                    uint32_t indexCount = 0;
-                };
+                char material[64];
+                uint32_t vertexCount = 0;
+                uint32_t faceCount = 0;
             };
 
             uint32_t identifier = 0;
             uint16_t type = 0;
             uint16_t version = 0;
-            uint8_t levelCount = 0;
 
             Shapes::AlignedBox boundingBox;
 
-            uint32_t materialCount = 0;
-            Material materialList[1];
+            uint32_t meshCount = 0;
+            Mesh meshList[1];
         };
 
         struct Vertex
@@ -177,34 +173,38 @@ namespace Gek
 			Math::Float3 normal;
         };
 
-        struct Model
+        struct Face
         {
-            struct Material
+            uint16_t data[3];
+            uint16_t &operator [] (size_t index)
             {
-                MaterialHandle handle;
-                struct Level
+                return data[index];
+            }
+        };
+
+        struct Group
+        {
+            struct Model
+            {
+                struct Mesh
                 {
+                    MaterialHandle material;
                     std::vector<ResourceHandle> vertexBufferList = std::vector<ResourceHandle>(5);
                     ResourceHandle indexBuffer;
                     uint32_t indexCount = 0;
                 };
 
-                std::vector<Level> levelList;
-            };
-
-            struct Mesh
-            {
                 Shapes::AlignedBox boundingBox;
-                std::vector<Material> materialList;
+                std::vector<Mesh> meshList;
             };
 
-            std::vector<Mesh> meshList;
+            std::vector<Model> modelList;
             Shapes::AlignedBox boundingBox;
         };
 
         struct Data
         {
-            Model *model = nullptr;
+            Group *group = nullptr;
         };
 
         struct Instance
@@ -217,9 +217,9 @@ namespace Gek
         {
             uint32_t instanceStart = 0;
             uint32_t instanceCount = 0;
-            const Model::Material::Level *data = nullptr;
+            const Group::Model::Mesh *data = nullptr;
 
-            DrawData(uint32_t instanceStart = 0, uint32_t instanceCount = 0, const Model::Material::Level *data = nullptr)
+            DrawData(uint32_t instanceStart = 0, uint32_t instanceCount = 0, const Group::Model::Mesh *data = nullptr)
                 : instanceStart(instanceStart)
                 , instanceCount(instanceCount)
                 , data(data)
@@ -239,7 +239,7 @@ namespace Gek
         Video::BufferPtr instanceBuffer;
         ThreadPool loadPool;
 
-        concurrency::concurrent_unordered_map<std::size_t, Model> modelMap;
+        concurrency::concurrent_unordered_map<std::size_t, Group> groupMap;
 
         std::vector<float, AlignedAllocator<float, 16>> halfSizeXList;
         std::vector<float, AlignedAllocator<float, 16>> halfSizeYList;
@@ -248,9 +248,9 @@ namespace Gek
         std::vector<bool> visibilityList;
 
         using InstanceList = concurrency::concurrent_vector<Math::Float4x4>;
-        using MaterialMap = concurrency::concurrent_unordered_map<const Model::Material::Level *, InstanceList>;
-        using HandleMap = concurrency::concurrent_unordered_map<MaterialHandle, MaterialMap>;
-        HandleMap renderList;
+        using MeshInstanceMap = concurrency::concurrent_unordered_map<const Group::Model::Mesh *, InstanceList>;
+        using MaterialMeshMap = concurrency::concurrent_unordered_map<MaterialHandle, MeshInstanceMap>;
+        MaterialMeshMap renderList;
 
     public:
         ModelProcessor(Context *context, Plugin::Core *core)
@@ -294,15 +294,15 @@ namespace Gek
         {
             ProcessorMixin::addEntity(entity, [&](bool isNewInsert, auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
-                auto pair = modelMap.insert(std::make_pair(GetHash(modelComponent.name), Model()));
+                auto pair = groupMap.insert(std::make_pair(GetHash(modelComponent.name), Group()));
                 if (pair.second)
                 {
-                    LockedWrite{ std::cout } << String::Format("Queueing model for load: %v", modelComponent.name);
-                    loadPool.enqueue([this, name = modelComponent.name, &model = pair.first->second](void) -> void
+                    LockedWrite{ std::cout } << String::Format("Queueing group for load: %v", modelComponent.name);
+                    loadPool.enqueue([this, name = modelComponent.name, &group = pair.first->second](void) -> void
                     {
-                        std::vector<FileSystem::Path> meshPathList;
-                        auto modelPath(getContext()->getRootFileName("data", "models", name));
-                        FileSystem::Find(modelPath, [&](FileSystem::Path const &filePath) -> bool
+                        std::vector<FileSystem::Path> modelPathList;
+                        auto groupPath(getContext()->getRootFileName("data", "models", name));
+                        FileSystem::Find(groupPath, [&](FileSystem::Path const &filePath) -> bool
                         {
                             std::string fileName(filePath.u8string());
                             if (filePath.isFile() && String::GetLower(filePath.getExtension()) == ".gek")
@@ -328,24 +328,24 @@ namespace Gek
                                     return true;
                                 }
 
-                                if (header->version != 7)
+                                if (header->version != 8)
                                 {
-                                    LockedWrite{ std::cerr } << String::Format("Unsupported model version encountered (requires: 7, has: %v): %v", header->version, fileName);
+                                    LockedWrite{ std::cerr } << String::Format("Unsupported model version encountered (requires: 8, has: %v): %v", header->version, fileName);
                                     return true;
                                 }
 
-                                meshPathList.push_back(filePath);
+                                modelPathList.push_back(filePath);
                             }
 
                             return true;
                         });
 
-                        model.meshList.resize(meshPathList.size());
-                        for (size_t meshIndex = 0; meshIndex < meshPathList.size(); ++meshIndex)
+                        group.modelList.resize(modelPathList.size());
+                        for (size_t modelIndex = 0; modelIndex < modelPathList.size(); ++modelIndex)
                         {
-                            auto &mesh = model.meshList[meshIndex];
-                            auto &filePath = meshPathList[meshIndex];
-                            loadPool.enqueue([this, name = name, filePath, &model, &mesh](void) -> void
+                            auto &model = group.modelList[modelIndex];
+                            auto &filePath = modelPathList[modelIndex];
+                            loadPool.enqueue([this, name = name, filePath, &group, &model](void) -> void
                             {
                                 auto fileName(filePath.getFileName());
 
@@ -353,77 +353,68 @@ namespace Gek
                                 std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
 
                                 Header *header = (Header *)buffer.data();
-                                if (buffer.size() < (sizeof(Header) + (sizeof(Header::Material) * header->materialCount)))
+                                if (buffer.size() < (sizeof(Header) + (sizeof(Header::Mesh) * header->meshCount)))
                                 {
-                                    LockedWrite{ std::cerr } << String::Format("Model file too small to contain material headers: %v", filePath.u8string());
+                                    LockedWrite{ std::cerr } << String::Format("Model file too small to contain mesh headers: %v", filePath.u8string());
                                     return;
                                 }
 
-                                LockedWrite{ std::cout } << String::Format("Model %v, loading mesh %v: %v materials", name, fileName, header->materialCount);
+                                LockedWrite{ std::cout } << String::Format("Group %v, loading model %v: %v meshes", name, fileName, header->meshCount);
 
-                                mesh.boundingBox = header->boundingBox;
-                                model.boundingBox.extend(mesh.boundingBox.minimum);
-                                model.boundingBox.extend(mesh.boundingBox.maximum);
-                                mesh.materialList.resize(header->materialCount);
-                                uint8_t *bufferData = (uint8_t *)&header->materialList[header->materialCount];
-                                for (uint32_t materialIndex = 0; materialIndex < header->materialCount; ++materialIndex)
+                                model.boundingBox = header->boundingBox;
+                                group.boundingBox.extend(model.boundingBox.minimum);
+                                group.boundingBox.extend(model.boundingBox.maximum);
+                                model.meshList.resize(header->meshCount);
+                                uint8_t *bufferData = (uint8_t *)&header->meshList[header->meshCount];
+                                for (uint32_t meshIndex = 0; meshIndex < header->meshCount; ++meshIndex)
                                 {
-                                    Header::Material &materialHeader = header->materialList[materialIndex];
-                                    Model::Material &material = mesh.materialList[materialIndex];
+                                    Header::Mesh &meshHeader = header->meshList[meshIndex];
+                                    Group::Model::Mesh &mesh = model.meshList[meshIndex];
 
-                                    material.handle = resources->loadMaterial(materialHeader.name);
+                                    mesh.material = resources->loadMaterial(meshHeader.material);
 
-                                    material.levelList.resize(header->levelCount);
-                                    for (uint8_t levelIndex = 0; levelIndex < header->levelCount; ++levelIndex)
-                                    {
-                                        auto &level = material.levelList[levelIndex];
+                                    Video::Buffer::Description indexBufferDescription;
+                                    indexBufferDescription.format = Video::Format::R16_UINT;
+                                    indexBufferDescription.count = (meshHeader.faceCount * 3);
+                                    indexBufferDescription.type = Video::Buffer::Type::Index;
+                                    mesh.indexBuffer = resources->createBuffer(String::Format("model:%v.%v.%v:indices", meshIndex, fileName, name), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
+                                    bufferData += (sizeof(Face) * meshHeader.faceCount);
 
-                                        auto &levelHeader = *(Header::Material::Level *)bufferData;
-                                        bufferData += sizeof(Header::Material::Level);
+                                    Video::Buffer::Description vertexBufferDescription;
+                                    vertexBufferDescription.stride = sizeof(Math::Float3);
+                                    vertexBufferDescription.count = meshHeader.vertexCount;
+                                    vertexBufferDescription.type = Video::Buffer::Type::Vertex;
+                                    mesh.vertexBufferList[0] = resources->createBuffer(String::Format("model:%v.%v.%v:positions", meshIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float3) * meshHeader.vertexCount);
 
-                                        Video::Buffer::Description indexBufferDescription;
-                                        indexBufferDescription.format = Video::Format::R16_UINT;
-                                        indexBufferDescription.count = levelHeader.indexCount;
-                                        indexBufferDescription.type = Video::Buffer::Type::Index;
-                                        level.indexBuffer = resources->createBuffer(String::Format("model:%v.%v.%v:indices", materialIndex, fileName, name), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
-                                        bufferData += (sizeof(uint16_t) * levelHeader.indexCount);
+                                    vertexBufferDescription.stride = sizeof(Math::Float2);
+                                    mesh.vertexBufferList[1] = resources->createBuffer(String::Format("model:%v.%v.%v:texcoords", meshIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float2) * meshHeader.vertexCount);
 
-                                        Video::Buffer::Description vertexBufferDescription;
-                                        vertexBufferDescription.stride = sizeof(Math::Float3);
-                                        vertexBufferDescription.count = levelHeader.vertexCount;
-                                        vertexBufferDescription.type = Video::Buffer::Type::Vertex;
-                                        level.vertexBufferList[0] = resources->createBuffer(String::Format("model:%v.%v.%v:positions", materialIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                        bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
+                                    vertexBufferDescription.stride = sizeof(Math::Float3);
+                                    mesh.vertexBufferList[2] = resources->createBuffer(String::Format("model:%v.%v.%v:tangents", meshIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float3) * meshHeader.vertexCount);
 
-                                        vertexBufferDescription.stride = sizeof(Math::Float2);
-                                        level.vertexBufferList[1] = resources->createBuffer(String::Format("model:%v.%v.%v:texcoords", materialIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
-                                        bufferData += (sizeof(Math::Float2) * levelHeader.vertexCount);
+                                    vertexBufferDescription.stride = sizeof(Math::Float3);
+                                    mesh.vertexBufferList[3] = resources->createBuffer(String::Format("model:%v.%v.%v:bitangents", meshIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float3) * meshHeader.vertexCount);
 
-                                        vertexBufferDescription.stride = sizeof(Math::Float3);
-                                        level.vertexBufferList[2] = resources->createBuffer(String::Format("model:%v.%v.%v:tangents", materialIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                        bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
+                                    vertexBufferDescription.stride = sizeof(Math::Float3);
+                                    mesh.vertexBufferList[4] = resources->createBuffer(String::Format("model:%v.%v.%v:normals", meshIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float3) * meshHeader.vertexCount);
 
-                                        vertexBufferDescription.stride = sizeof(Math::Float3);
-                                        level.vertexBufferList[3] = resources->createBuffer(String::Format("model:%v.%v.%v:bitangents", materialIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                        bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
-
-                                        vertexBufferDescription.stride = sizeof(Math::Float3);
-                                        level.vertexBufferList[4] = resources->createBuffer(String::Format("model:%v.%v.%v:normals", materialIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                        bufferData += (sizeof(Math::Float3) * levelHeader.vertexCount);
-
-                                        level.indexCount = levelHeader.indexCount;
-                                    }
+                                    mesh.indexCount = indexBufferDescription.count;
                                 }
 
-                                LockedWrite{ std::cout } << String::Format("Model %v, mesh %v successfully loaded", name, fileName);
+                                LockedWrite{ std::cout } << String::Format("Group %v, mesh %v successfully loaded", name, fileName);
                             });
                         }
 
-                        LockedWrite{ std::cout } << String::Format("Model %v successfully queued", name);
+                        LockedWrite{ std::cout } << String::Format("Group %v successfully queued", name);
                     });
                 }
 
-                data.model = &pair.first->second;
+                data.group = &pair.first->second;
             });
         }
 
@@ -459,8 +450,8 @@ namespace Gek
         // Model::Processor
         Shapes::AlignedBox getBoundingBox(std::string const &modelName)
         {
-            auto modelSearch = modelMap.find(GetHash(modelName));
-            if (modelSearch != std::end(modelMap))
+            auto modelSearch = groupMap.find(GetHash(modelName));
+            if (modelSearch != std::end(groupMap))
             {
                 return modelSearch->second.boundingBox;
             }
@@ -523,16 +514,16 @@ namespace Gek
             size_t entityIndex = 0;
             parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
-                Model const &model = *data.model;
+                auto const &group = *data.group;
                 auto currentEntityIndex = InterlockedIncrement(&entityIndex);
 
-                auto halfSize(model.boundingBox.getSize() * 0.5f);
+                auto halfSize(group.boundingBox.getSize() * 0.5f);
                 halfSizeXList[currentEntityIndex] = halfSize.x * transformComponent.scale.x;
                 halfSizeYList[currentEntityIndex] = halfSize.y * transformComponent.scale.y;
                 halfSizeZList[currentEntityIndex] = halfSize.z * transformComponent.scale.z;
 
                 auto matrix(transformComponent.getMatrix());
-                matrix.translation.xyz += model.boundingBox.getCenter();
+                matrix.translation.xyz += group.boundingBox.getCenter();
                 for (size_t element = 0; element < 16; ++element)
                 {
                     transformList[element][currentEntityIndex] = matrix.data[element];
@@ -549,16 +540,16 @@ namespace Gek
                 {
                     auto entity = entitySearch->first;
                     auto &transformComponent = entity->getComponent<Components::Transform>();
-                    auto &model = *entitySearch->second.model;
+                    auto &group = *entitySearch->second.group;
                     ++entitySearch;
 
                     auto modelViewMatrix(transformComponent.getScaledMatrix() * viewMatrix);
-                    concurrency::parallel_for_each(std::begin(model.meshList), std::end(model.meshList), [&](const Model::Mesh &mesh) -> void
+                    concurrency::parallel_for_each(std::begin(group.modelList), std::end(group.modelList), [&](const Group::Model &model) -> void
                     {
-                        concurrency::parallel_for_each(std::begin(mesh.materialList), std::end(mesh.materialList), [&](const Model::Material &material) -> void
+                        concurrency::parallel_for_each(std::begin(model.meshList), std::end(model.meshList), [&](const Group::Model::Mesh &mesh) -> void
                         {
-                            auto &materialMap = renderList[material.handle];
-                            auto &instanceList = materialMap[&material.levelList[0]];
+                            auto &meshMap = renderList[mesh.material];
+                            auto &instanceList = meshMap[&mesh];
                             instanceList.push_back(modelViewMatrix);
                         });
                     });

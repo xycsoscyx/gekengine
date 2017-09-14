@@ -12,75 +12,50 @@
 #include <vector>
 #include <map>
 
-namespace std
-{
-    template <class _Arg, class _Result>
-    struct unary_function
-    {
-        typedef _Arg    argument_type;
-        typedef _Result result_type;
-    };
-}; // namespace std
-
 #include <assimp/config.h>
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-#include <OpenMesh/Core/System/config.h>
-#include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
-#include <OpenMesh/Tools/Decimater/DecimaterT.hh>
-#include <OpenMesh/Tools/Decimater/ModQuadricT.hh>
-#include <OpenMesh/Tools/Decimater/ModHausdorffT.hh>
-#include <OpenMesh/Tools/Decimater/ModAspectRatioT.hh>
-#include <OpenMesh/Tools/Decimater/ModNormalDeviationT.hh>
-#include <OpenMesh/Tools/Decimater/ModNormalFlippingT.hh>
 
 using namespace Gek;
 
 struct Header
 {
-    struct Material
+    struct Mesh
     {
-        char name[64] = "";
-        struct Level
-        {
-            uint32_t vertexCount = 0;
-            uint32_t indexCount = 0;
-        };
+        char material[64] = "";
+        uint32_t vertexCount = 0;
+        uint32_t faceCount = 0;
     };
 
     uint32_t identifier = *(uint32_t *)"GEKX";
     uint16_t type = 0;
-    uint16_t version = 7;
-    uint8_t levelCount = 5;
+    uint16_t version = 8;
 
     Shapes::AlignedBox boundingBox;
 
     uint32_t meshCount;
 };
 
-struct Traits : OpenMesh::DefaultTraits
-{
-    typedef Math::Float3 Tangent;
-    typedef Math::Float3 BiTangent;
-
-    VertexAttributes(OpenMesh::Attributes::Status | OpenMesh::Attributes::Normal | OpenMesh::Attributes::TexCoord2D);
-    HalfedgeAttributes(OpenMesh::Attributes::Status | OpenMesh::Attributes::PrevHalfedge | OpenMesh::Attributes::TexCoord2D);
-    EdgeAttributes(OpenMesh::Attributes::Status);
-    FaceAttributes(OpenMesh::Attributes::Status | OpenMesh::Attributes::Normal);
-
-    VertexTraits
-    {
-        Tangent tangent;
-        BiTangent biTangent;
-    };
-};
-
 struct Mesh
-    : public OpenMesh::TriMesh_ArrayKernelT<Traits>
 {
+    struct Face
+    {
+        uint16_t data[3];
+        uint16_t &operator [] (size_t index)
+        {
+            return data[index];
+        }
+    };
+
     std::string diffuse;
     std::string material;
+    std::vector<Math::Float3> pointList;
+    std::vector<Math::Float2> texCoordList;
+    std::vector<Math::Float3> tangentList;
+    std::vector<Math::Float3> biTangentList;
+    std::vector<Math::Float3> normalList;
+    std::vector<Face> faceList;
 };
 
 struct Model
@@ -91,13 +66,6 @@ struct Model
 };
 
 using ModelList = std::vector<Model>;
-
-using Decimater = OpenMesh::Decimater::DecimaterT<Mesh>;
-using QuadricModule = OpenMesh::Decimater::ModQuadricT<Mesh>::Handle;
-using HausdorffModule = OpenMesh::Decimater::ModHausdorffT<Mesh>::Handle;
-using AspectModule = OpenMesh::Decimater::ModAspectRatioT<Mesh>::Handle;
-using DeviationModule = OpenMesh::Decimater::ModNormalDeviationT<Mesh>::Handle;
-using FlippingModule = OpenMesh::Decimater::ModNormalFlippingT<Mesh>::Handle;
 
 struct Parameters
 {
@@ -177,38 +145,40 @@ bool GetModels(const Parameters &parameters, const aiScene *inputScene, const ai
                 sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
                 mesh.diffuse = sceneDiffuseMaterial.C_Str();
 
-                std::vector<OpenMesh::VertexHandle> vertexHandleList;
-                vertexHandleList.reserve(inputMesh->mNumVertices);
+                mesh.pointList.resize(inputMesh->mNumVertices);
+                mesh.texCoordList.resize(inputMesh->mNumVertices);
+                mesh.tangentList.resize(inputMesh->mNumVertices);
+                mesh.biTangentList.resize(inputMesh->mNumVertices);
+                mesh.normalList.resize(inputMesh->mNumVertices);
                 for (uint32_t vertexIndex = 0; vertexIndex < inputMesh->mNumVertices; ++vertexIndex)
                 {
-                    auto vertexHandle = mesh.add_vertex(OpenMesh::Vec3f(
+                    mesh.pointList[vertexIndex].set(
                         (inputMesh->mVertices[vertexIndex].x * parameters.feetPerUnit),
                         (inputMesh->mVertices[vertexIndex].y * parameters.feetPerUnit),
-                        (inputMesh->mVertices[vertexIndex].z * parameters.feetPerUnit)));
-                    model.boundingBox.extend(Math::Float3(mesh.point(vertexHandle).data()));
-                    vertexHandleList.push_back(vertexHandle);
+                        (inputMesh->mVertices[vertexIndex].z * parameters.feetPerUnit));
+                    model.boundingBox.extend(mesh.pointList[vertexIndex]);
 
-                    mesh.set_texcoord2D(vertexHandle, OpenMesh::Vec2f(
+                    mesh.texCoordList[vertexIndex].set(
                         inputMesh->mTextureCoords[0][vertexIndex].x,
-                        inputMesh->mTextureCoords[0][vertexIndex].y));
+                        inputMesh->mTextureCoords[0][vertexIndex].y);
 
-                    mesh.data(vertexHandle).tangent = Math::Float3(
+                    mesh.tangentList[vertexIndex].set(
                         inputMesh->mTangents[vertexIndex].x,
                         inputMesh->mTangents[vertexIndex].y,
                         inputMesh->mTangents[vertexIndex].z);
 
-                    mesh.data(vertexHandle).biTangent = Math::Float3(
+                    mesh.biTangentList[vertexIndex].set(
                         inputMesh->mBitangents[vertexIndex].x,
                         inputMesh->mBitangents[vertexIndex].y,
                         inputMesh->mBitangents[vertexIndex].z);
 
-                    mesh.set_normal(vertexHandle, OpenMesh::Vec3f(
+                    mesh.normalList[vertexIndex].set(
                         inputMesh->mNormals[vertexIndex].x,
                         inputMesh->mNormals[vertexIndex].y,
-                        inputMesh->mNormals[vertexIndex].z));
+                        inputMesh->mNormals[vertexIndex].z);
                 }
 
-                std::vector<Mesh::VertexHandle> faceHandles(3);
+                mesh.faceList.resize(inputMesh->mNumFaces);
                 for (uint32_t faceIndex = 0; faceIndex < inputMesh->mNumFaces; ++faceIndex)
                 {
                     const aiFace &face = inputMesh->mFaces[faceIndex];
@@ -218,13 +188,10 @@ bool GetModels(const Parameters &parameters, const aiScene *inputScene, const ai
                         return false;
                     }
 
-                    uint32_t edgeStartIndex = (faceIndex * 3);
                     for (uint32_t edgeIndex = 0; edgeIndex < 3; ++edgeIndex)
                     {
-                        faceHandles[edgeIndex] = vertexHandleList[face.mIndices[edgeIndex]];
+                        mesh.faceList[faceIndex][edgeIndex] = face.mIndices[edgeIndex];
                     }
-
-                    mesh.add_face(faceHandles);
                 }
 
                 model.meshList.push_back(mesh);
@@ -263,12 +230,6 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     bool flipCoords = false;
     bool flipWinding = false;
     float smoothingAngle = 80.0f;
-    bool useQuatricModule = true;
-    float quadricMaximumError = 0.001f;
-    bool useHausdorffModule = false;
-    float hausdorffTolerance = 0.1f;
-    bool useNormalFlippingModule = true;
-    bool useAspectRatioModule = false;
     for (int argumentIndex = 1; argumentIndex < argumentCount; ++argumentIndex)
     {
 		std::string argument(String::Narrow(argumentList[argumentIndex]));
@@ -310,36 +271,6 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             }
 
 			parameters.feetPerUnit = (1.0f / String::Convert(arguments[1], 1.0f));
-        }
-        else if (arguments[0] == "-quadricModule")
-        {
-            if (arguments.size() != 2)
-            {
-                LockedWrite{ std::cerr } << String::Format("Missing parameters for quadric");
-                return -__LINE__;
-            }
-
-            useQuatricModule = true;
-            quadricMaximumError = String::Convert(arguments[1], 0.001f);
-        }
-        else if (arguments[0] == "-hausdorffModule")
-        {
-            if (arguments.size() != 2)
-            {
-                LockedWrite{ std::cerr } << String::Format("Missing parameters for quadric");
-                return -__LINE__;
-            }
-
-            useHausdorffModule = true;
-            hausdorffTolerance = String::Convert(arguments[1], 0.1f);
-        }
-        else if (arguments[0] == "-normalFlippingModule")
-        {
-            useNormalFlippingModule = true;
-        }
-        else if (arguments[0] == "-aspectRatioModule")
-        {
-            useAspectRatioModule = true;
         }
     }
 
@@ -553,123 +484,25 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
         for (auto &mesh : model.meshList)
         {
-            Header::Material materialHeader;
-            std::strncpy(materialHeader.name, mesh.material.c_str(), 63);
-            fwrite(&materialHeader, sizeof(Header::Material), 1, file);
+            LockedWrite{ std::cout } << String::Format("-    Mesh: %v", mesh.material);
+            LockedWrite{ std::cout } << String::Format("        Num. Vertices: %v", mesh.pointList.size());
+            LockedWrite{ std::cout } << String::Format("        Num. Faces: %v", mesh.faceList.size());
+
+            Header::Mesh meshHeader;
+            std::strncpy(meshHeader.material, mesh.material.c_str(), 63);
+            meshHeader.vertexCount = mesh.pointList.size();
+            meshHeader.faceCount = mesh.faceList.size();
+            fwrite(&meshHeader, sizeof(Header::Mesh), 1, file);
         }
 
         for (auto &mesh : model.meshList)
         {
-            LockedWrite{ std::cout } << String::Format("-    Material: %v", mesh.material);
-
-            Decimater decimater(mesh);
-
-            if (useQuatricModule)
-            {
-                QuadricModule quadraticModule;
-                decimater.add(quadraticModule);
-                decimater.module(quadraticModule).set_max_err(quadricMaximumError);
-                LockedWrite{ std::cout } << String::Format("         Adding Quatric Decimator module");
-            }
-
-            if (useHausdorffModule)
-            {
-                HausdorffModule hausdorffModule;
-                decimater.add(hausdorffModule);
-                decimater.module(hausdorffModule).set_binary(true);
-                decimater.module(hausdorffModule).set_tolerance(hausdorffTolerance);
-                LockedWrite{ std::cout } << String::Format("         Adding Hausdorff Decimator module");
-            }
-
-            if (useNormalFlippingModule)
-            {
-                FlippingModule flippingModule;
-                decimater.add(flippingModule);
-                LockedWrite{ std::cout } << String::Format("         Adding Normal Flipping Decimator module");
-            }
-
-            if (useAspectRatioModule)
-            {
-                AspectModule aspectModule;
-                decimater.add(aspectModule);
-                LockedWrite{ std::cout } << String::Format("         Adding Aspect Ratio Decimator module");
-            }
-
-            if (!decimater.initialize())
-            {
-                LockedWrite{ std::cerr } << String::Format("! Failed to initiaize decimator: %v", mesh.material);
-                return -__LINE__;
-            }
-
-            uint32_t originalFaceCount = mesh.n_faces();
-            uint32_t decimateStepCount = (originalFaceCount / (header.levelCount + 1));
-            uint32_t decimateFaceCount = originalFaceCount;
-            for (uint32_t level = 0; level < header.levelCount; ++level, decimateFaceCount -= decimateStepCount)
-            {
-                if (level > 0)
-                {
-                    LockedWrite{ std::cout } << String::Format("       Decimating to %v faces", decimateFaceCount);
-                    decimater.decimate_to_faces(0, decimateFaceCount);
-                    LockedWrite{ std::cout } << String::Format("       Collecting garbage from decimater");
-                    mesh.garbage_collection();
-                }
-
-                LockedWrite{ std::cout } << String::Format("       Level: %v", level);
-                LockedWrite{ std::cout } << String::Format("           Num. Vertices: %v", mesh.n_vertices());
-                LockedWrite{ std::cout } << String::Format("           Num. Faces: %v", mesh.n_faces());
-
-                //mesh.update_normals();
-                std::vector<uint16_t> indexList;
-                indexList.reserve(mesh.n_faces() * 3);
-                for (auto faceIterator = mesh.faces_begin(); faceIterator != mesh.faces_end(); ++faceIterator)
-                {
-                    std::vector<uint16_t> faceIndexList;
-                    for (auto vertexIterator = mesh.fv_begin(faceIterator); vertexIterator != mesh.fv_end(faceIterator); ++vertexIterator)
-                    {
-                        faceIndexList.push_back(vertexIterator->idx());
-                    }
-
-                    if (faceIndexList.size() == 3)
-                    {
-                        indexList.insert(std::end(indexList), std::begin(faceIndexList), std::end(faceIndexList));
-                    }
-                    else if (!faceIndexList.empty())
-                    {
-                        LockedWrite{ std::cout } << String::Format("! Non-triangular face encountered");
-                    }
-                }
-
-                std::vector<Math::Float3> pointList;
-                std::vector<Math::Float2> texCoordList;
-                std::vector<Math::Float3> tangentList;
-                std::vector<Math::Float3> biTangentList;
-                std::vector<Math::Float3> normalList;
-                pointList.reserve(mesh.n_vertices());
-                texCoordList.reserve(mesh.n_vertices());
-                tangentList.reserve(mesh.n_vertices());
-                biTangentList.reserve(mesh.n_vertices());
-                normalList.reserve(mesh.n_vertices());
-                for (auto vertexIterator = mesh.vertices_begin(); vertexIterator != mesh.vertices_end(); ++vertexIterator)
-                {
-                    pointList.push_back(Math::Float3(mesh.point(*vertexIterator).data()));
-                    texCoordList.push_back(Math::Float2(mesh.texcoord2D(*vertexIterator).data()));
-                    auto &meshData = mesh.data(*vertexIterator);
-                    tangentList.push_back(meshData.tangent);
-                    biTangentList.push_back(meshData.biTangent);
-                    normalList.push_back(Math::Float3(mesh.normal(*vertexIterator).data()));
-                }
-
-                Header::Material::Level levelHeader;
-                levelHeader.vertexCount = pointList.size();
-                levelHeader.indexCount = indexList.size();
-                fwrite(&levelHeader, sizeof(Header::Material::Level), 1, file);
-                fwrite(indexList.data(), sizeof(uint16_t), indexList.size(), file);
-                fwrite(pointList.data(), sizeof(Math::Float3), pointList.size(), file);
-                fwrite(texCoordList.data(), sizeof(Math::Float2), texCoordList.size(), file);
-                fwrite(tangentList.data(), sizeof(Math::Float3), tangentList.size(), file);
-                fwrite(biTangentList.data(), sizeof(Math::Float3), biTangentList.size(), file);
-                fwrite(normalList.data(), sizeof(Math::Float3), normalList.size(), file);
-            }
+            fwrite(mesh.faceList.data(), sizeof(Mesh::Face), mesh.faceList.size(), file);
+            fwrite(mesh.pointList.data(), sizeof(Math::Float3), mesh.pointList.size(), file);
+            fwrite(mesh.texCoordList.data(), sizeof(Math::Float2), mesh.texCoordList.size(), file);
+            fwrite(mesh.tangentList.data(), sizeof(Math::Float3), mesh.tangentList.size(), file);
+            fwrite(mesh.biTangentList.data(), sizeof(Math::Float3), mesh.biTangentList.size(), file);
+            fwrite(mesh.normalList.data(), sizeof(Math::Float3), mesh.normalList.size(), file);
         }
 
         fclose(file);

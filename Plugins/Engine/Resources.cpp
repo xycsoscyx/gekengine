@@ -676,7 +676,8 @@ namespace Gek
             void onShowUserInterface(ImGuiContext * const guiContext)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                bool mainMenuShowing = (ImGui::FindWindowByName("##MainMenuBar") ? true : false);
+                auto mainMenu = ImGui::FindWindowByName("##MainMenuBar");
+                auto mainMenuShowing = (mainMenu ? mainMenu->Active : false);
                 if (mainMenuShowing)
                 {
                     ImGui::BeginMainMenuBar();
