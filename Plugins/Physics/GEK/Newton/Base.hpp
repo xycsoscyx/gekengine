@@ -71,7 +71,7 @@ namespace Gek
                 float softness = 1.0f;
             };
             
-            wink::signal<wink::slot<void(Plugin::Entity *entity0, Plugin::Entity *entity1, Math::Float3 const &position, Math::Float3 const &normal)>> onCollision;
+            wink::signal<wink::slot<void(Plugin::Entity *entity0, Math::Float3 const &position, Math::Float3 const &normal, Plugin::Entity *entity1)>> onCollision;
 
             virtual ~World(void) = default;
 

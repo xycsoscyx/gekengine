@@ -280,11 +280,11 @@ namespace Gek
                                 auto collisionNode = NewtonSceneCollisionAddSubCollision(newtonSceneCollision, newtonCollision);
                                 if (collisionNode)
                                 {
+                                    NewtonSceneCollisionSetSubCollisionMatrix(newtonSceneCollision, collisionNode, transformComponent.getMatrix().data);
+                                    //NewtonCollisionSetScale(subCollision, transformComponent.scale.x, transformComponent.scale.y, transformComponent.scale.z);
                                     auto subCollision = NewtonSceneCollisionGetCollisionFromNode(newtonSceneCollision, collisionNode);
                                     if (subCollision)
                                     {
-                                        NewtonCollisionSetMatrix(subCollision, transformComponent.getMatrix().data);
-                                        NewtonCollisionSetScale(subCollision, transformComponent.scale.x, transformComponent.scale.y, transformComponent.scale.z);
                                         auto surfaceMapSearch = sceneSurfaceMap.find(newtonCollision);
                                         if (surfaceMapSearch != std::end(sceneSurfaceMap))
                                         {
@@ -434,6 +434,7 @@ namespace Gek
                 }
 
                 collisionMap.clear();
+                newtonSceneBody = nullptr;
                 if (newtonSceneCollision)
                 {
                     NewtonDestroyCollision(newtonSceneCollision);
@@ -617,16 +618,21 @@ namespace Gek
                 for (void* newtonContact = NewtonContactJointGetFirstContact(contactJoint); newtonContact; newtonContact = NewtonContactJointGetNextContact(contactJoint, newtonContact))
                 {
                     NewtonMaterial *newtonMaterial = NewtonContactGetMaterial(newtonContact);
+                    //auto newtonCollision0 = NewtonContactGetCollision0(newtonContact);
+                    //auto newtonCollision1 = NewtonContactGetCollision1(newtonContact);
 
-                    Math::Float3 position, normal;
-                    NewtonMaterialGetContactPositionAndNormal(newtonMaterial, body0, position.data, normal.data);
+                    Math::Float3 position0, normal0;
+                    Math::Float3 position1, normal1;
+                    NewtonMaterialGetContactPositionAndNormal(newtonMaterial, body0, position0.data, normal0.data);
+                    NewtonMaterialGetContactPositionAndNormal(newtonMaterial, body1, position1.data, normal1.data);
 
-                    uint32_t surfaceIndex0 = (newtonEntity0 ? newtonEntity0->getSurface(position, normal) : 0);
-                    uint32_t surfaceIndex1 = (newtonEntity1 ? newtonEntity1->getSurface(position, normal) : 0);
+                    uint32_t surfaceIndex0 = (newtonEntity0 ? newtonEntity0->getSurface(position0, normal0) : 0);
+                    uint32_t surfaceIndex1 = (newtonEntity1 ? newtonEntity1->getSurface(position1, normal1) : 0);
                     const Surface &surface0 = processor->getSurface(surfaceIndex0);
                     const Surface &surface1 = processor->getSurface(surfaceIndex1);
 
-                    processor->onCollision(entity0, entity1, position, normal);
+                    processor->onCollision(entity0, position0, normal0, entity1);
+                    processor->onCollision(entity1, position1, normal1, entity0);
                     if (surface0.ghost || surface1.ghost)
                     {
                         NewtonContactJointRemoveContact(contactJoint, newtonContact);
