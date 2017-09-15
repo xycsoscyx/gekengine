@@ -210,6 +210,7 @@ namespace Gek
 
 			~PlayerBody(void)
 			{
+                population->onAction.disconnect(this, &PlayerBody::onAction);
                 NewtonDestroyCollision(newtonCastingShape);
 			}
 

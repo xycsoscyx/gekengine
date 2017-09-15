@@ -87,7 +87,11 @@ namespace Gek
             concurrency::concurrent_unordered_map<std::size_t, uint32_t> surfaceIndexMap;
             concurrency::concurrent_unordered_map<std::size_t, NewtonCollision *> collisionMap;
             concurrency::concurrent_unordered_map<Plugin::Entity *, Newton::EntityPtr> entityMap;
+
+            using SurfaceMap = std::unordered_map<uint32_t, uint32_t>;
+            concurrency::concurrent_unordered_map<NewtonCollision *, SurfaceMap> sceneSurfaceMap;
             concurrency::concurrent_unordered_map<Plugin::Entity *, void *> sceneMap;
+
 
         public:
             Processor(Context *context, Plugin::Core *core)
@@ -202,16 +206,15 @@ namespace Gek
 						LockedWrite{ std::cout } << String::Format("Loading tree collision: %v", modelComponent.name);
 						
 						TreeHeader *treeHeader = (TreeHeader *)header;
+                        DeSerializationData data(buffer, (uint8_t *)&treeHeader->materialList[treeHeader->materialCount]);
+                        newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &data);
 
-                        std::unordered_map<uint32_t, uint32_t> surfaceMap;
+                        auto &surfaceMap = sceneSurfaceMap[newtonCollision];
                         for (uint32_t materialIndex = 0; materialIndex < treeHeader->materialCount; ++materialIndex)
                         {
                             TreeHeader::Material &materialHeader = treeHeader->materialList[materialIndex];
                             surfaceMap[materialIndex] = loadSurface(materialHeader.name);
                         }
-
-                        DeSerializationData data(buffer, (uint8_t *)&treeHeader->materialList[treeHeader->materialCount]);
-                        newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &data);
                     }
                     else
                     {
@@ -250,8 +253,10 @@ namespace Gek
                     newtonSceneBody = NewtonCreateDynamicBody(newtonWorld, newtonSceneCollision, Math::Float4x4::Identity.data);
                     assert(newtonSceneBody && "Unable to create scene static body");
 
-                    NewtonBodySetCollidable(newtonSceneBody, true);
                     NewtonBodySetUserData(newtonSceneBody, dynamic_cast<Newton::Entity *>(this));
+                    NewtonBodySetMassProperties(newtonSceneBody, 0.0f, newtonSceneCollision);
+                    NewtonBodySetCollidable(newtonSceneBody, true);
+                    NewtonBodySetAutoSleep(newtonSceneBody, true);
                 }
             }
 
@@ -272,16 +277,24 @@ namespace Gek
                             {
                                 createSceneCollision();
                                 NewtonSceneCollisionBeginAddRemove(newtonSceneCollision);
-                                NewtonCollision *clonedCollision = NewtonCollisionCreateInstance(newtonCollision);
-                                NewtonCollisionSetMatrix(clonedCollision, transformComponent.getMatrix().data);
-                                NewtonCollisionSetScale(clonedCollision, transformComponent.scale.x, transformComponent.scale.y, transformComponent.scale.z);
-                                auto subCollision = NewtonSceneCollisionAddSubCollision(newtonSceneCollision, clonedCollision);
-                                if (subCollision)
+                                auto collisionNode = NewtonSceneCollisionAddSubCollision(newtonSceneCollision, newtonCollision);
+                                if (collisionNode)
                                 {
-                                    sceneMap.insert(std::make_pair(entity, subCollision));
+                                    auto subCollision = NewtonSceneCollisionGetCollisionFromNode(newtonSceneCollision, collisionNode);
+                                    if (subCollision)
+                                    {
+                                        NewtonCollisionSetMatrix(subCollision, transformComponent.getMatrix().data);
+                                        NewtonCollisionSetScale(subCollision, transformComponent.scale.x, transformComponent.scale.y, transformComponent.scale.z);
+                                        auto surfaceMapSearch = sceneSurfaceMap.find(newtonCollision);
+                                        if (surfaceMapSearch != std::end(sceneSurfaceMap))
+                                        {
+                                            NewtonCollisionSetUserData(subCollision, &surfaceMapSearch->second);
+                                        }
+                                    }
+
+                                    sceneMap.insert(std::make_pair(entity, collisionNode));
                                 }
 
-                                NewtonDestroyCollision(clonedCollision);
                                 NewtonSceneCollisionEndAddRemove(newtonSceneCollision);
                             }
                         }
@@ -428,6 +441,7 @@ namespace Gek
                 }
 
                 sceneMap.clear();
+                sceneSurfaceMap.clear();
                 entityMap.clear();
                 surfaceList.clear();
                 surfaceIndexMap.clear();
