@@ -296,6 +296,7 @@ namespace Gek
                                 }
 
                                 NewtonSceneCollisionEndAddRemove(newtonSceneCollision);
+                                NewtonBodySetCollision(newtonSceneBody, newtonSceneCollision);
                             }
                         }
                         else if (entity->hasComponents<Components::Physical>())
@@ -348,6 +349,7 @@ namespace Gek
                     NewtonSceneCollisionBeginAddRemove(newtonSceneCollision);
                     NewtonSceneCollisionRemoveSubCollision(newtonSceneCollision, sceneSearch->second);
                     NewtonSceneCollisionEndAddRemove(newtonSceneCollision);
+                    NewtonBodySetCollision(newtonSceneBody, newtonSceneCollision);
                     sceneMap.unsafe_erase(sceneSearch);
                 }
             }
@@ -403,12 +405,7 @@ namespace Gek
                     auto sceneSearch = sceneMap.find(entity);
                     if (sceneSearch != std::end(sceneMap))
                     {
-                        auto collision = NewtonSceneCollisionGetCollisionFromNode(newtonSceneCollision, sceneSearch->second);
-                        if (collision)
-                        {
-                            NewtonCollisionSetMatrix(collision, transformComponent.getMatrix().data);
-                            NewtonCollisionSetScale(collision, transformComponent.scale.x, transformComponent.scale.y, transformComponent.scale.z);
-                        }
+                        NewtonSceneCollisionSetSubCollisionMatrix(newtonSceneCollision, sceneSearch->second, transformComponent.getMatrix().data);
                     }
                 }
                 else if (type == typeid(Components::Model))
