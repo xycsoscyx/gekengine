@@ -247,6 +247,9 @@ namespace Gek
         std::vector<float, AlignedAllocator<float, 16>> transformList[16];
         std::vector<bool> visibilityList;
 
+        concurrency::concurrent_vector<std::tuple<Plugin::Entity * const, Data const *, uint32_t>> entityDataList;
+        concurrency::concurrent_vector<std::tuple<Plugin::Entity * const, Group::Model const *, uint32_t>> entityModelList;
+
         using InstanceList = concurrency::concurrent_vector<Math::Float4x4>;
         using MeshInstanceMap = concurrency::concurrent_unordered_map<const Group::Model::Mesh *, InstanceList>;
         using MaterialMeshMap = concurrency::concurrent_unordered_map<MaterialHandle, MeshInstanceMap>;
@@ -495,16 +498,14 @@ namespace Gek
         }
 
         // Plugin::Renderer Slots
-        concurrency::concurrent_vector<std::pair<Plugin::Entity * const, Data const *>> entityDataList;
-        concurrency::concurrent_vector<std::pair<Plugin::Entity * const, Group::Model const *>> entityModelList;
         void onQueueDrawCalls(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)
         {
             assert(renderer);
 
             // Cull by entity/group
-            const auto entityCount = getEntityCount();
             if (true)
             {
+                const auto entityCount = getEntityCount();
                 auto buffer = (entityCount % 4);
                 buffer = (buffer ? (4 - buffer) : buffer);
                 const auto bufferedEntityCount = (entityCount + buffer);
@@ -520,18 +521,17 @@ namespace Gek
                 entityDataList.reserve(entityCount);
                 parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
                 {
-                    auto entityDataSearch = entityDataList.push_back(std::make_pair(entity, &data));
-                    auto entityIndex = std::distance(std::begin(entityDataList), entityDataSearch);
-
-                    auto const &group = *data.group;
+                    auto group = data.group;
                     auto matrix(transformComponent.getMatrix());
-                    matrix.translation.xyz += group.boundingBox.getCenter();
-                    auto halfSize((group.boundingBox.getSize() * 0.5f) * transformComponent.scale);
+                    matrix.translation.xyz += group->boundingBox.getCenter();
+                    auto halfSize((group->boundingBox.getSize() * 0.5f) * transformComponent.scale);
+
+                    auto entityInsert = entityDataList.push_back(std::make_tuple(entity, &data, 0));
+                    auto entityIndex = std::get<2>(*entityInsert) = std::distance(std::begin(entityDataList), entityInsert);
 
                     halfSizeXList[entityIndex] = halfSize.x;
                     halfSizeYList[entityIndex] = halfSize.y;
                     halfSizeZList[entityIndex] = halfSize.z;
-
                     for (size_t element = 0; element < 16; ++element)
                     {
                         transformList[element][entityIndex] = matrix.data[element];
@@ -545,54 +545,51 @@ namespace Gek
             // Cull by model inside group
             if (true)
             {
-                uint32_t meshCount = 0;
-                auto entityDataSearch = std::begin(entityDataList);
-                for (size_t entityIndex = 0; entityIndex < entityCount; ++entityIndex, ++entityDataSearch)
+                uint32_t modelCount = 0;
+                for (auto &entitySearch : entityDataList)
                 {
-                    if (visibilityList[entityIndex])
+                    if (visibilityList[std::get<2>(entitySearch)])
                     {
-                        auto &group = *entityDataSearch->second->group;
-                        meshCount += std::accumulate(std::begin(group.modelList), std::end(group.modelList), 0U, [&](uint32_t count, auto &data) -> uint32_t
-                        {
-                            return (data.meshList.size() + count);
-                        });
+                        auto data = std::get<1>(entitySearch);
+                        modelCount += data->group->modelList.size();
                     }
                 }
 
-                auto buffer = (meshCount % 4);
+                auto buffer = (modelCount % 4);
                 buffer = (buffer ? (4 - buffer) : buffer);
-                const auto bufferedMeshCount = (meshCount + buffer);
-                halfSizeXList.resize(bufferedMeshCount);
-                halfSizeYList.resize(bufferedMeshCount);
-                halfSizeZList.resize(bufferedMeshCount);
+                const auto bufferedModelCount = (modelCount + buffer);
+                halfSizeXList.resize(bufferedModelCount);
+                halfSizeYList.resize(bufferedModelCount);
+                halfSizeZList.resize(bufferedModelCount);
                 for (auto &elementList : transformList)
                 {
-                    elementList.resize(bufferedMeshCount);
+                    elementList.resize(bufferedModelCount);
                 }
 
                 entityModelList.clear();
-                entityModelList.reserve(entityCount);
-                entityDataSearch = std::begin(entityDataList);
-                for (size_t entityIndex = 0; entityIndex < entityCount; ++entityIndex, ++entityDataSearch)
+                entityModelList.reserve(bufferedModelCount);
+                for (auto &entitySearch : entityDataList)
                 {
-                    if (visibilityList[entityIndex])
+                    if (visibilityList[std::get<2>(entitySearch)])
                     {
-                        auto entity = entityDataSearch->first;
-                        auto &group = *entityDataSearch->second->group;
+                        auto entity = std::get<0>(entitySearch);
+                        auto data = std::get<1>(entitySearch);
+                        auto group = data->group;
+
                         auto &transformComponent = entity->getComponent<Components::Transform>();
                         auto matrix(transformComponent.getMatrix());
 
-                        concurrency::parallel_for_each(std::begin(group.modelList), std::end(group.modelList), [&](Group::Model const &model) -> void
+                        concurrency::parallel_for_each(std::begin(group->modelList), std::end(group->modelList), [&](Group::Model const &model) -> void
                         {
-                            auto entityModelSearch = entityModelList.push_back(std::make_pair(entity, &model));
-                            auto entityIndex = std::distance(std::begin(entityModelList), entityModelSearch);
+                            auto halfSize((group->boundingBox.getSize() * 0.5f) * transformComponent.scale);
+                            auto center = Math::Float4x4::MakeTranslation(model.boundingBox.getCenter());
 
-                            auto halfSize((group.boundingBox.getSize() * 0.5f) * transformComponent.scale);
+                            auto entityInsert = entityModelList.push_back(std::make_tuple(entity, &model, 0));
+                            auto entityIndex = std::get<2>(*entityInsert) = std::distance(std::begin(entityModelList), entityInsert);
+
                             halfSizeXList[entityIndex] = halfSize.x;
                             halfSizeYList[entityIndex] = halfSize.y;
                             halfSizeZList[entityIndex] = halfSize.z;
-
-                            auto center = Math::Float4x4::MakeTranslation(model.boundingBox.getCenter());
                             for (size_t element = 0; element < 16; ++element)
                             {
                                 transformList[element][entityIndex] = (matrix.data[element] + center.data[element]);
@@ -601,25 +598,24 @@ namespace Gek
                     }
                 }
 
-                visibilityList.resize(bufferedMeshCount);
-                Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedMeshCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
+                visibilityList.resize(bufferedModelCount);
+                Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedModelCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
             }
 
             // Collect results
             if (true)
             {
-                auto entityModelCount = entityModelList.size();
-                auto entityModelSearch = std::begin(entityModelList);
-                for (size_t entityIndex = 0; entityIndex < entityModelCount; ++entityIndex, ++entityModelSearch)
+                for (auto &entitySearch : entityModelList)
                 {
-                    if (visibilityList[entityIndex])
+                    if (visibilityList[std::get<2>(entitySearch)])
                     {
-                        auto entity = entityModelSearch->first;
-                        auto &transformComponent = entity->getComponent<Components::Transform>();
-                        auto &model = *entityModelSearch->second;
+                        auto entity = std::get<0>(entitySearch);
+                        auto model = std::get<1>(entitySearch);
 
+                        auto &transformComponent = entity->getComponent<Components::Transform>();
                         auto modelViewMatrix(transformComponent.getScaledMatrix() * viewMatrix);
-                        concurrency::parallel_for_each(std::begin(model.meshList), std::end(model.meshList), [&](Group::Model::Mesh const &mesh) -> void
+
+                        concurrency::parallel_for_each(std::begin(model->meshList), std::end(model->meshList), [&](Group::Model::Mesh const &mesh) -> void
                         {
                             auto &meshMap = renderList[mesh.material];
                             auto &instanceList = meshMap[&mesh];
