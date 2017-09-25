@@ -140,7 +140,7 @@ namespace Gek
                 return entityDataMap.size();
             }
 
-            void listEntities(std::function<void(Plugin::Entity * const entity, Data &data, REQUIRED&... components)> onEntity)
+            void listEntities(std::function<void(Plugin::Entity * const entity, Data &data, REQUIRED&... components)> &&onEntity)
             {
                 assert(onEntity);
 
@@ -150,7 +150,7 @@ namespace Gek
                 });
             }
 
-            void parallelListEntities(std::function<void(Plugin::Entity * const entity, Data &data, REQUIRED&... components)> onEntity)
+            void parallelListEntities(std::function<void(Plugin::Entity * const entity, Data &data, REQUIRED&... components)> &&onEntity)
             {
                 assert(onEntity);
 
