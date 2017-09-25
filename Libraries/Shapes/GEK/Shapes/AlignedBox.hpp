@@ -30,6 +30,7 @@ namespace Gek
             void extend(Math::Float3 &point);
 
             Math::Float3 getSize(void) const;
+            Math::Float3 getHalfSize(void) const;
             Math::Float3 getCenter(void) const;
         };
     }; // namespace Shapes

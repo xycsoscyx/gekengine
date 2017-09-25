@@ -524,7 +524,7 @@ namespace Gek
                     auto group = data.group;
                     auto matrix(transformComponent.getMatrix());
                     matrix.translation.xyz += group->boundingBox.getCenter();
-                    auto halfSize((group->boundingBox.getSize() * 0.5f) * transformComponent.scale);
+                    auto halfSize(group->boundingBox.getHalfSize() * transformComponent.scale);
 
                     auto entityInsert = entityDataList.push_back(std::make_tuple(entity, &data, 0));
                     auto entityIndex = std::get<2>(*entityInsert) = std::distance(std::begin(entityDataList), entityInsert);
@@ -545,15 +545,16 @@ namespace Gek
             // Cull by model inside group
             if (true)
             {
-                uint32_t modelCount = 0;
-                for (auto &entitySearch : entityDataList)
+                uint32_t modelCount = std::accumulate(std::begin(entityDataList), std::end(entityDataList), 0U, [this](auto count, auto const &entitySearch) -> auto
                 {
                     if (visibilityList[std::get<2>(entitySearch)])
                     {
                         auto data = std::get<1>(entitySearch);
-                        modelCount += data->group->modelList.size();
+                        count += data->group->modelList.size();
                     }
-                }
+
+                    return count;
+                });
 
                 auto buffer = (modelCount % 4);
                 buffer = (buffer ? (4 - buffer) : buffer);
@@ -581,7 +582,7 @@ namespace Gek
 
                         concurrency::parallel_for_each(std::begin(group->modelList), std::end(group->modelList), [&](Group::Model const &model) -> void
                         {
-                            auto halfSize((group->boundingBox.getSize() * 0.5f) * transformComponent.scale);
+                            auto halfSize(group->boundingBox.getHalfSize() * transformComponent.scale);
                             auto center = Math::Float4x4::MakeTranslation(model.boundingBox.getCenter());
 
                             auto entityInsert = entityModelList.push_back(std::make_tuple(entity, &model, 0));

@@ -49,9 +49,14 @@ namespace Gek
             return (maximum - minimum);
         }
 
+        Math::Float3 AlignedBox::getHalfSize(void) const
+        {
+            return ((maximum - minimum) * 0.5f);
+        }
+
         Math::Float3 AlignedBox::getCenter(void) const
         {
-            return (minimum + (getSize() * 0.5f));
+            return (minimum + getHalfSize());
         }
     }; // namespace Shapes
 }; // namespace Gek
