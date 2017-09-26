@@ -382,13 +382,7 @@ namespace Gek
                     auto &resource = std::atomic_load(&resourceSearch.second);
                     if (resource)
                     {
-                        try
-                        {
-                            resource->reload();
-                        }
-                        catch (...)
-                        {
-                        };
+                        resource->reload();
                     }
                 }
             }
@@ -415,14 +409,8 @@ namespace Gek
                     requestedLoadSet.insert(hash);
                     HANDLE handle = getNextHandle();
                     resourceHandleMap[hash] = handle;
-                    try
-                    {
-                        setResource(handle, load(handle));
-                        return std::make_pair(true, handle);
-                    }
-                    catch (...)
-                    {
-                    };
+                    setResource(handle, load(handle));
+                    return std::make_pair(true, handle);
                 }
 
                 return std::make_pair(false, HANDLE());
@@ -964,13 +952,7 @@ namespace Gek
             {
                 loadPool.enqueue([this, load = move(load)](void) -> void
                 {
-                    try
-                    {
-                        load();
-                    }
-                    catch (...)
-                    {
-                    };
+                    load();
                 });
             }
 

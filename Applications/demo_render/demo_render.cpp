@@ -820,14 +820,7 @@ namespace Gek
 
 int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstance, _In_ PWSTR commandLine, _In_ int commandShow)
 {
-    try
-    {
-        Gek::Core core;
-        core.run();
-    }
-    catch (std::exception const &)
-    {
-    };
-
+    Gek::Core core;
+    core.run();
     return 0;
 }

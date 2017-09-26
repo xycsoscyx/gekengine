@@ -9,19 +9,12 @@
 
 #include "GEK/Math/Vector4.hpp"
 #include "GEK/Math/Matrix4x4.hpp"
-#include "GEK/Utility/Exceptions.hpp"
 #include "GEK/Utility/Context.hpp"
 
 namespace Gek
 {
     namespace Audio
     {
-        GEK_ADD_EXCEPTION(CreationFailed);
-        GEK_ADD_EXCEPTION(InitailizeDeviceFailed);
-        GEK_ADD_EXCEPTION(LoadFileFailed);
-        GEK_ADD_EXCEPTION(CreateSampleFailed);
-        GEK_ADD_EXCEPTION(WriteSampleFailed);
-
 		GEK_INTERFACE(Buffer)
 		{
             virtual ~Buffer(void) = default;

@@ -135,19 +135,19 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
     switch (outputFormat)
     {
     case DXGI_FORMAT_BC7_UNORM_SRGB:
-        LockedWrite{ std::cout } << String::Format("             Albedo BC7");
+        LockedWrite{ std::cout } << "             Albedo BC7";
         break;
 
     case DXGI_FORMAT_BC1_UNORM_SRGB:
-        LockedWrite{ std::cout } << String::Format("             Albedo BC1");
+        LockedWrite{ std::cout } << "             Albedo BC1";
         break;
 
     case DXGI_FORMAT_BC5_UNORM:
-        LockedWrite{ std::cout } << String::Format("             Normal BC5");
+        LockedWrite{ std::cout } << "             Normal BC5";
         break;
 
     case DXGI_FORMAT_BC4_UNORM:
-        LockedWrite{ std::cout } << String::Format("             Metalness/Roughness BC4");
+        LockedWrite{ std::cout } << "             Metalness/Roughness BC4";
         break;
     };
 
@@ -157,7 +157,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 	resultValue = ::DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), ::DirectX::TEX_FILTER_TRIANGLE, 0, mipMapChain);
 	if (FAILED(resultValue))
 	{
-		LockedWrite{ std::cerr } << String::Format("Unable to create mipmap chain");
+		LockedWrite{ std::cerr } << "Unable to create mipmap chain";
 	}
 
 	image = std::move(mipMapChain);
@@ -175,81 +175,54 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 
 	if (FAILED(resultValue))
 	{
-		LockedWrite{ std::cerr } << String::Format("Unable to compress image");
+		LockedWrite{ std::cerr } << "Unable to compress image";
         return;
     }
 
 	resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, outputFilePath.c_str());
 	if (FAILED(resultValue))
 	{
-		LockedWrite{ std::cerr } << String::Format("Unable to save image");
+        LockedWrite{ std::cerr } << "Unable to save image";
         return;
     }
 }
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    LockedWrite{ std::cout } << String::Format("GEK Texture Compressor");
+    LockedWrite{ std::cout } << "GEK Texture Compressor";
 
-    try
-    {
-        auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
-        std::vector<FileSystem::Path> searchPathList;
-        searchPathList.push_back(pluginPath);
+    auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
+    std::vector<FileSystem::Path> searchPathList;
+    searchPathList.push_back(pluginPath);
 
-        auto rootPath(pluginPath.getParentPath());
-        ContextPtr context(Context::Create(rootPath, searchPathList));
+    auto rootPath(pluginPath.getParentPath());
+    ContextPtr context(Context::Create(rootPath, searchPathList));
 
-        Window::Description description;
-        description.className = "GEK_Engine_Textures";
-        description.windowName = "GEK Engine Textures";
-        WindowPtr window(context->createClass<Window>("Default::System::Window", description));
+    Window::Description description;
+    description.className = "GEK_Engine_Textures";
+    description.windowName = "GEK Engine Textures";
+    WindowPtr window(context->createClass<Window>("Default::System::Window", description));
 
-        Video::Device::Description deviceDescription;
-        Video::DevicePtr device(context->createClass<Video::Device>("Default::Device::Video", window.get(), deviceDescription));
+    Video::Device::Description deviceDescription;
+    Video::DevicePtr device(context->createClass<Video::Device>("Default::Device::Video", window.get(), deviceDescription));
 
-        std::function<bool(FileSystem::Path const &)> searchDirectory;
-		searchDirectory = [&](FileSystem::Path const &filePath) -> bool
+    std::function<bool(FileSystem::Path const &)> searchDirectory;
+	searchDirectory = [&](FileSystem::Path const &filePath) -> bool
+	{
+		if (filePath.isDirectory())
 		{
-			if (filePath.isDirectory())
-			{
-				FileSystem::Find(filePath, searchDirectory);
-			}
-			else if (filePath.isFile() && filePath.getExtension() != ".dds")
-			{
-				try
-				{
-					compressTexture(dynamic_cast<Video::Debug::Device *>(device.get()), String::GetLower(filePath.u8string()));
-				}
-				catch (std::exception const &exception)
-				{
-                    LockedWrite{ std::cerr } << String::Format("[warning] Error trying to compress file: %v", filePath);
-                    LockedWrite{ std::cerr } << String::Format(exception.what());
-				}
-                catch (...)
-                {
-                    LockedWrite{ std::cerr } << String::Format("[warning] Unknown error trying to compress file: %v", filePath);
-                };
-			}
+			FileSystem::Find(filePath, searchDirectory);
+		}
+		else if (filePath.isFile() && filePath.getExtension() != ".dds")
+		{
+			compressTexture(dynamic_cast<Video::Debug::Device *>(device.get()), String::GetLower(filePath.u8string()));
+		}
 
-			return true;
-		};
+		return true;
+	};
 
-        CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
-		FileSystem::Find(FileSystem::GetFileName(rootPath, "Data", "Textures"), searchDirectory);
-		CoUninitialize();
-	}
-    catch (const std::exception &exception)
-    {
-        LockedWrite{ std::cerr } << String::Format("GEK Engine - Error");
-		LockedWrite{ std::cerr } << String::Format("Caught: %v", exception.what());
-		LockedWrite{ std::cerr } << String::Format("Type: %v", typeid(exception).name());
-    }
-    catch (...)
-    {
-        LockedWrite{ std::cerr } << String::Format("GEK Engine - Error");
-        LockedWrite{ std::cerr } << String::Format("Caught: Non-standard exception");
-    };
-
+    CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
+	FileSystem::Find(FileSystem::GetFileName(rootPath, "Data", "Textures"), searchDirectory);
+	CoUninitialize();
     return 0;
 }

@@ -1,4 +1,3 @@
-#include "GEK/Utility/Exceptions.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/Context.hpp"
@@ -94,7 +93,25 @@ namespace Gek
                 return nullptr;
             }
 
-            return (*classSearch).second((Context *)this, typelessArguments, argumentTypes);
+            try
+            {
+                return (*classSearch).second((Context *)this, typelessArguments, argumentTypes);
+            }
+            catch (std::exception const &exception)
+            {
+                LockedWrite{ std::cerr } << String::Format("Exception raised trying to create %v: %v", exception.what(), className);
+                return nullptr;
+            }
+            catch (std::string const &error)
+            {
+                LockedWrite{ std::cerr } << String::Format("Error raised trying to create %v: %v", error, className);
+                return nullptr;
+            }
+            catch (...)
+            {
+                LockedWrite{ std::cerr } << String::Format("Unknown exception occurred trying to create %v", className);
+                return nullptr;
+            };
         }
 
         void listTypes(std::string const &typeName, std::function<void(std::string const &)> onType) const

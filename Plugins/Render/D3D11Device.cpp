@@ -1,6 +1,5 @@
 #pragma warning(disable : 4005)
 
-#include "GEK/Utility/Exceptions.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/FileSystem.hpp"
@@ -1104,19 +1103,19 @@ namespace Gek
                 HRESULT resultValue = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevelList, 1, D3D11_SDK_VERSION, &d3dDevice, &featureLevel, &d3dDeviceContext);
                 if (featureLevel != featureLevelList[0])
                 {
-                    throw Render::FeatureLevelNotSupported("Direct3D 11.0 feature level required");
+                    throw std::exception("Direct3D 11.0 feature level required");
                 }
 
                 if (FAILED(resultValue) || !d3dDevice || !d3dDeviceContext)
                 {
-                    throw Render::InitializationFailed("Unable to create rendering device and context");
+                    throw std::exception("Unable to create rendering device and context");
                 }
 
                 CComPtr<IDXGIFactory2> dxgiFactory;
                 resultValue = CreateDXGIFactory2(0, IID_PPV_ARGS(&dxgiFactory));
                 if (FAILED(resultValue) || !dxgiFactory)
                 {
-                    throw Render::InitializationFailed("Unable to get graphics factory");
+                    throw std::exception("Unable to get graphics factory");
                 }
 
                 DXGI_SWAP_CHAIN_DESC1 swapChainDescription;
@@ -1135,7 +1134,7 @@ namespace Gek
                 resultValue = dxgiFactory->CreateSwapChainForHwnd(d3dDevice, (HWND)window->getBaseWindow(), &swapChainDescription, nullptr, nullptr, &dxgiSwapChain);
                 if (FAILED(resultValue) || !dxgiSwapChain)
                 {
-                    throw Render::InitializationFailed("Unable to create swap chain for window");
+                    throw std::exception("Unable to create swap chain for window");
                 }
 
                 dxgiFactory->MakeWindowAssociation((HWND)window->getBaseWindow(), 0);
@@ -1182,14 +1181,14 @@ namespace Gek
                 HRESULT resultValue = dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&d3dRenderTarget));
                 if (FAILED(resultValue) || !d3dRenderTarget)
                 {
-                    throw Render::OperationFailed("Unable to get swap chain primary buffer");
+                    throw std::exception("Unable to get swap chain primary buffer");
                 }
 
                 CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
                 resultValue = d3dDevice->CreateRenderTargetView(d3dRenderTarget, nullptr, &d3dRenderTargetView);
                 if (FAILED(resultValue) || !d3dRenderTargetView)
                 {
-                    throw Render::OperationFailed("Unable to create render target view for back buffer");
+                    throw std::exception("Unable to create render target view for back buffer");
                 }
 
                 renderTargetViewCache.set(SwapChain, d3dRenderTargetView);
@@ -1224,7 +1223,8 @@ namespace Gek
                 d3dDevice->CreateRasterizerState(&rasterizerDescription, &rasterizerState);
                 if (!rasterizerState)
                 {
-                    throw Render::CreateObjectFailed("Unable to create rasterizer state");
+                    LockedWrite{ std::cerr } << "Unable to create rasterizer state";
+                    return nullptr;
                 }
 
                 return rasterizerState;
@@ -1254,7 +1254,8 @@ namespace Gek
                 d3dDevice->CreateDepthStencilState(&depthStencilDescription, &depthState);
                 if (!depthState)
                 {
-                    throw Render::CreateObjectFailed("Unable to create depth stencil state");
+                    LockedWrite{ std::cerr } << "Unable to create depth stencil state";
+                    return nullptr;
                 }
 
                 return depthState;
@@ -1302,7 +1303,8 @@ namespace Gek
                 d3dDevice->CreateBlendState(&blendDescription, &blendState);
                 if (!blendState)
                 {
-                    throw Render::CreateObjectFailed("Unable to create blend state");
+                    LockedWrite{ std::cerr } << "Unable to create blend state";
+                    return nullptr;
                 }
 
                 return blendState;
@@ -1406,7 +1408,8 @@ namespace Gek
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
 					LockedWrite{ std::cerr } << String::Format("D3DCompile Failed (%v): %v", resultValue, (char const * const)d3dCompilerErrors->GetBufferPointer());
-                    throw Render::ProgramCompilationFailed("Unable to compile shader");
+                    static const std::vector<uint8_t> EmptyBuffer;
+                    return EmptyBuffer;
                 }
 
                 uint8_t *data = (uint8_t *)d3dShaderBlob->GetBufferPointer();
@@ -1515,11 +1518,11 @@ namespace Gek
                 {
                     if (fullScreen)
                     {
-                        throw Render::OperationFailed("Unablet to set fullscreen state");
+                        throw std::exception("Unablet to set fullscreen state");
                     }
                     else
                     {
-                        throw Render::OperationFailed("Unablet to set windowed state");
+                        throw std::exception("Unablet to set windowed state");
                     }
                 }
 
@@ -1544,7 +1547,7 @@ namespace Gek
                 HRESULT resultValue = dxgiSwapChain->ResizeTarget(&description);
                 if (FAILED(resultValue))
                 {
-                    throw Render::OperationFailed("Unable to set display mode");
+                    throw std::exception("Unable to set display mode");
                 }
 
                 updateSwapChain();
@@ -1560,7 +1563,7 @@ namespace Gek
                 HRESULT resultValue = dxgiSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
                 if (FAILED(resultValue))
                 {
-                    throw Render::OperationFailed("Unable to resize swap chain buffers to window size");
+                    throw std::exception("Unable to resize swap chain buffers to window size");
                 }
 
                 updateSwapChain();
@@ -1612,19 +1615,22 @@ namespace Gek
                     d3dDevice->CreateInputLayout(vertexDeclaration.data(), vertexDeclaration.size(), compiledVertexShader.data(), compiledVertexShader.size(), &pipelineState->vertexDeclaration);
                     if (!pipelineState->vertexDeclaration)
                     {
-                        throw Render::CreateObjectFailed("Unable to create pipeline vertex declaration");
+                        LockedWrite{ std::cerr } << "Unable to create pipeline vertex declaration";
+                        return nullptr;
                     }
 
                     d3dDevice->CreateVertexShader(compiledVertexShader.data(), compiledVertexShader.size(), nullptr, &pipelineState->vertexShader);
                     if (!pipelineState->vertexShader)
                     {
-                        throw Render::CreateObjectFailed("Unable to create pipeline vertex shader");
+                        LockedWrite{ std::cerr } << "Unable to create pipeline vertex shader";
+                        return nullptr;
                     }
 
                     d3dDevice->CreatePixelShader(compiledPixelShader.data(), compiledPixelShader.size(), nullptr, &pipelineState->pixelShader);
                     if (!pipelineState->pixelShader)
                     {
-                        throw Render::CreateObjectFailed("Unable to create pipeline pixel shader");
+                        LockedWrite{ std::cerr } << "Unable to create pipeline pixel shader";
+                        return nullptr;
                     }
 
                     setDebugName(pipelineState->rasterizerState, name, "RasterizerState");
@@ -1742,14 +1748,16 @@ namespace Gek
                     {
                         if (description.stride > 0)
                         {
-                            throw Render::InvalidParameter("Buffer requires only a format or an element stride");
+                            LockedWrite{ std::cerr } << "Buffer requires only a format or an element stride";
+                            return nullptr;
                         }
 
                         stride = DirectX::FormatStrideList[static_cast<uint8_t>(description.format)];
                     }
                     else if (description.stride == 0)
                     {
-                        throw Render::InvalidParameter("Buffer requires either a format or an element stride");
+                        LockedWrite{ std::cerr } << "Buffer requires either a format or an element stride";
+                        return nullptr;
                     }
 
                     D3D11_BUFFER_DESC bufferDescription;
@@ -1828,7 +1836,8 @@ namespace Gek
                         HRESULT resultValue = d3dDevice->CreateBuffer(&bufferDescription, nullptr, &d3dBuffer);
                         if (FAILED(resultValue) || !d3dBuffer)
                         {
-                            throw Render::CreateObjectFailed("Unable to dynamic buffer");
+                            LockedWrite{ std::cerr } << "Unable to dynamic buffer";
+                            return nullptr;
                         }
                     }
                     else
@@ -1840,7 +1849,8 @@ namespace Gek
                         HRESULT resultValue = d3dDevice->CreateBuffer(&bufferDescription, &resourceData, &d3dBuffer);
                         if (FAILED(resultValue) || !d3dBuffer)
                         {
-                            throw Render::CreateObjectFailed("Unable to create static buffer");
+                            LockedWrite{ std::cerr } << "Unable to create static buffer";
+                            return nullptr;
                         }
                     }
 
@@ -1858,7 +1868,8 @@ namespace Gek
                         HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dBuffer, &viewDescription, &d3dShaderResourceView);
                         if (FAILED(resultValue) || !d3dShaderResourceView)
                         {
-                            throw Render::CreateObjectFailed("Unable to create buffer shader resource view");
+                            LockedWrite{ std::cerr } << "Unable to create buffer shader resource view";
+                            return nullptr;
                         }
 
                         setDebugName(d3dShaderResourceView, name, "ShaderResourceView");
@@ -1878,7 +1889,8 @@ namespace Gek
                         HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView);
                         if (FAILED(resultValue) || !d3dUnorderedAccessView)
                         {
-                            throw Render::CreateObjectFailed("Unable to create buffer unordered access view");
+                            LockedWrite{ std::cerr } << "Unable to create buffer unordered access view";
+                            return nullptr;
                         }
 
                         setDebugName(d3dUnorderedAccessView, name, "UnorderedAccessView");
@@ -1907,7 +1919,8 @@ namespace Gek
                     {
                         if (description.flags & Render::TextureDescription::Flags::DepthTarget)
                         {
-                            throw Render::InvalidParameter("Cannot create render target when depth target flag also specified");
+                            LockedWrite{ std::cerr } << "Cannot create render target when depth target flag also specified";
+                            return nullptr;
                         }
 
                         bindFlags |= D3D11_BIND_RENDER_TARGET;
@@ -1917,7 +1930,8 @@ namespace Gek
                     {
                         if (description.depth > 1)
                         {
-                            throw Render::InvalidParameter("Depth target must have depth of one");
+                            LockedWrite{ std::cerr } << "Depth target must have depth of one";
+                            return nullptr;
                         }
 
                         bindFlags |= D3D11_BIND_DEPTH_STENCIL;
@@ -1965,7 +1979,8 @@ namespace Gek
                         HRESULT resultValue = d3dDevice->CreateTexture2D(&textureDescription, (data ? &resourceData : nullptr), &texture2D);
                         if (FAILED(resultValue) || !texture2D)
                         {
-                            throw Render::CreateObjectFailed("Unable to create 2D texture");
+                            LockedWrite{ std::cerr } << "Unable to create 2D texture";
+                            return nullptr;
                         }
 
                         d3dResource = texture2D;
@@ -1994,7 +2009,8 @@ namespace Gek
                         HRESULT resultValue = d3dDevice->CreateTexture3D(&textureDescription, (data ? &resourceData : nullptr), &texture3D);
                         if (FAILED(resultValue) || !texture3D)
                         {
-                            throw Render::CreateObjectFailed("Unable to create 3D texture");
+                            LockedWrite{ std::cerr } << "Unable to create 3D texture";
+                            return nullptr;
                         }
 
                         d3dResource = texture3D;
@@ -2002,7 +2018,8 @@ namespace Gek
 
                     if (!d3dResource)
                     {
-                        throw Render::CreateObjectFailed("Unable to get texture resource");
+                        LockedWrite{ std::cerr } << "Unable to get texture resource";
+                        return nullptr;
                     }
 
                     setDebugName(d3dResource, name);
@@ -2027,7 +2044,8 @@ namespace Gek
                         HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dResource, &viewDescription, &d3dShaderResourceView);
                         if (FAILED(resultValue) || !d3dShaderResourceView)
                         {
-                            throw Render::CreateObjectFailed("Unable to create texture shader resource view");
+                            LockedWrite{ std::cerr } << "Unable to create texture shader resource view";
+                            return nullptr;
                         }
 
                         setDebugName(d3dShaderResourceView, name, "ShaderResourceView");
@@ -2055,7 +2073,8 @@ namespace Gek
                         HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dResource, &viewDescription, &d3dUnorderedAccessView);
                         if (FAILED(resultValue) || !d3dUnorderedAccessView)
                         {
-                            throw Render::CreateObjectFailed("Unable to create texture unordered access view");
+                            LockedWrite{ std::cerr } << "Unable to create texture unordered access view";
+                            return nullptr;
                         }
 
                         setDebugName(d3dUnorderedAccessView, name, "UnorderedAccessView");
@@ -2083,7 +2102,8 @@ namespace Gek
                         HRESULT resultValue = d3dDevice->CreateRenderTargetView(d3dResource, &renderViewDescription, &d3dRenderTargetView);
                         if (FAILED(resultValue) || !d3dRenderTargetView)
                         {
-                            throw Render::CreateObjectFailed("Unable to create render target view");
+                            LockedWrite{ std::cerr } << "Unable to create render target view";
+                            return nullptr;
                         }
 
                         setDebugName(d3dRenderTargetView, name, "RenderTargetView");
@@ -2101,7 +2121,8 @@ namespace Gek
                         HRESULT resultValue = d3dDevice->CreateDepthStencilView(d3dResource, &depthStencilDescription, &d3dDepthStencilView);
                         if (FAILED(resultValue) || !d3dDepthStencilView)
                         {
-                            throw Render::CreateObjectFailed("Unable to create depth stencil view");
+                            LockedWrite{ std::cerr } << "Unable to create depth stencil view";
+                            return nullptr;
                         }
 
                         setDebugName(d3dDepthStencilView, name, "DepthStencilView");
@@ -2152,28 +2173,32 @@ namespace Gek
 
                     if (!load)
                     {
-                        throw Render::InvalidFileType("Unknown texture extension encountered");
+                        LockedWrite{ std::cerr } << "Unknown texture extension encountered";
+                        return nullptr;
                     }
 
                     ::DirectX::ScratchImage image;
                     HRESULT resultValue = load(buffer, image);
                     if (FAILED(resultValue))
                     {
-                        throw Render::LoadFileFailed("Unable to load texture from file");
+                        LockedWrite{ std::cerr } << "Unable to load texture from file";
+                        return nullptr;
                     }
 
                     CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
                     resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), image.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, (flags & Render::TextureLoadFlags::sRGB), &d3dShaderResourceView);
                     if (FAILED(resultValue) || !d3dShaderResourceView)
                     {
-                        throw Render::CreateObjectFailed("Unable to create texture shader resource view");
+                        LockedWrite{ std::cerr } << "Unable to create texture shader resource view";
+                        return nullptr;
                     }
 
                     CComPtr<ID3D11Resource> d3dResource;
                     d3dShaderResourceView->GetResource(&d3dResource);
                     if (!d3dResource)
                     {
-                        throw Render::CreateObjectFailed("Unable to get texture resource");
+                        LockedWrite{ std::cerr } << "Unable to get texture resource";
+                        return nullptr;
                     }
 
 					setDebugName(d3dResource, (name.empty() ? filePath.u8string() : name));
@@ -2219,7 +2244,8 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeviceContext);
                 if (!d3dDeviceContext)
                 {
-                    throw Render::CreateObjectFailed("Unable to create bundle render queue");
+                    LockedWrite{ std::cerr } << "Unable to create bundle render queue";
+                    return nullptr;
                 }
 
                 setDebugName(d3dDeviceContext, name);
@@ -2234,14 +2260,16 @@ namespace Gek
                 Queue *queue = dynamic_cast<Queue *>(baseQueue);
                 if (!queue)
                 {
-                    throw Render::CreateObjectFailed("Unable to get internal render queue");
+                    LockedWrite{ std::cerr } << "Unable to get internal render queue";
+                    return Render::QueueHandle();
                 }
 
                 CComPtr<ID3D11CommandList> d3dCommandList;
                 HRESULT resultValue = queue->d3dDeviceContext->FinishCommandList(false, &d3dCommandList);
                 if (FAILED(resultValue) || !d3dCommandList)
                 {
-                    throw Render::CreateObjectFailed("Unable to create render list");
+                    LockedWrite{ std::cerr } << "Unable to create render list";
+                    return Render::QueueHandle();
                 }
 
                 setDebugName(d3dCommandList, name);
@@ -2255,19 +2283,23 @@ namespace Gek
                 assert(baseQueue);
 
                 Queue *queue = dynamic_cast<Queue *>(baseQueue);
-                if (!queue)
+                if (queue)
                 {
-                    throw Render::CreateObjectFailed("Unable to get internal render queue");
+                    CComPtr<ID3D11CommandList> commandList;
+                    HRESULT resultValue = queue->d3dDeviceContext->FinishCommandList(false, &commandList);
+                    if (SUCCEEDED(resultValue) && commandList)
+                    {
+                        d3dDeviceContext->ExecuteCommandList(commandList, false);
+                    }
+                    else
+                    {
+                        LockedWrite{ std::cerr } << "Unable to create render list";
+                    }
                 }
-
-                CComPtr<ID3D11CommandList> commandList;
-                HRESULT resultValue = queue->d3dDeviceContext->FinishCommandList(false, &commandList);
-                if (FAILED(resultValue) || !commandList)
+                else
                 {
-                    throw Render::CreateObjectFailed("Unable to create render list");
+                    LockedWrite{ std::cerr } << "Unable to get internal render queue";
                 }
-
-                d3dDeviceContext->ExecuteCommandList(commandList, false);
             }
 
             void runQueue(Render::QueueHandle queue)

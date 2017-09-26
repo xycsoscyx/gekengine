@@ -20,11 +20,6 @@ namespace Gek
     {
         GEK_INTERFACE(Filter)
         {
-            GEK_ADD_EXCEPTION(InvalidParameter);
-            GEK_ADD_EXCEPTION(MissingParameter);
-            GEK_ADD_EXCEPTION(ResourceAlreadyListed);
-            GEK_ADD_EXCEPTION(UnlistedRenderTarget);
-
             GEK_INTERFACE(Pass)
             {
                 enum class Mode : uint8_t

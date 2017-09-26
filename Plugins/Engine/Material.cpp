@@ -32,44 +32,47 @@ namespace Gek
 
                 JSON::Instance materialNode = JSON::Load(getContext()->getRootFileName("data", "materials", materialName).withExtension(".json"));
                 auto &shaderNode = materialNode.get("shader");
-                ShaderHandle shaderHandle = resources->getShader(shaderNode.get("default").convert(String::Empty), materialHandle);
+                auto shaderName = shaderNode.get("default").convert(String::Empty);
+                ShaderHandle shaderHandle = resources->getShader(shaderName, materialHandle);
                 Engine::Shader *shader = resources->getShader(shaderHandle);
-                if (!shader)
+                if (shader)
                 {
-                    throw MissingParameter("Missing shader encountered");
-                }
+                    Video::RenderState::Description renderStateInformation;
+                    renderStateInformation.load(shaderNode.get("renderState"));
+                    renderState = resources->createRenderState(renderStateInformation);
 
-                Video::RenderState::Description renderStateInformation;
-                renderStateInformation.load(shaderNode.get("renderState"));
-                renderState = resources->createRenderState(renderStateInformation);
-
-                auto &dataNode = shaderNode.get("data");
-                for (auto material = shader->begin(); material; material = material->next())
-                {
-                    auto materialName = material->getName();
-                    auto &data = dataMap[GetHash(materialName)];
-                    for (auto &initializer : material->getInitializerList())
+                    auto &dataNode = shaderNode.get("data");
+                    for (auto material = shader->begin(); material; material = material->next())
                     {
-                        ResourceHandle resourceHandle;
-                        auto &resourceNode = dataNode.get(initializer.name);
-                        if (resourceNode.has("file"))
+                        auto materialName = material->getName();
+                        auto &data = dataMap[GetHash(materialName)];
+                        for (auto &initializer : material->getInitializerList())
                         {
-                            auto fileName = resourceNode.get("file").convert(String::Empty);
-                            uint32_t flags = getTextureLoadFlags(resourceNode.get("flags").convert(String::Empty));
-                            resourceHandle = resources->loadTexture(fileName, flags);
-                        }
-                        else if (resourceNode.has("source"))
-                        {
-                            resourceHandle = resources->getResourceHandle(resourceNode.get("source").convert(String::Empty));
-                        }
+                            ResourceHandle resourceHandle;
+                            auto &resourceNode = dataNode.get(initializer.name);
+                            if (resourceNode.has("file"))
+                            {
+                                auto fileName = resourceNode.get("file").convert(String::Empty);
+                                uint32_t flags = getTextureLoadFlags(resourceNode.get("flags").convert(String::Empty));
+                                resourceHandle = resources->loadTexture(fileName, flags);
+                            }
+                            else if (resourceNode.has("source"))
+                            {
+                                resourceHandle = resources->getResourceHandle(resourceNode.get("source").convert(String::Empty));
+                            }
 
-                        if (!resourceHandle)
-                        {
-                            resourceHandle = initializer.fallback;
-                        }
+                            if (!resourceHandle)
+                            {
+                                resourceHandle = initializer.fallback;
+                            }
 
-                        data.resourceList.push_back(resourceHandle);
+                            data.resourceList.push_back(resourceHandle);
+                        }
                     }
+                }
+                else
+                {
+                    LockedWrite{ std::cerr } << String::Format("Shader %v missing for material %v", shaderName, materialName);
                 }
             }
 

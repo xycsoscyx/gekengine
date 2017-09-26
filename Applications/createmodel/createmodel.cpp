@@ -76,7 +76,7 @@ bool GetModels(const Parameters &parameters, const aiScene *inputScene, const ai
 {
     if (inputNode == nullptr)
     {
-        LockedWrite{ std::cerr } << String::Format("Invalid scene node");
+        LockedWrite{ std::cerr } << "Invalid scene node";
         return false;
     }
 
@@ -84,7 +84,7 @@ bool GetModels(const Parameters &parameters, const aiScene *inputScene, const ai
     {
         if (inputNode->mMeshes == nullptr)
         {
-            LockedWrite{ std::cerr } << String::Format("Invalid mesh list");
+            LockedWrite{ std::cerr } << "Invalid mesh list";
             return false;
         }
 
@@ -95,7 +95,7 @@ bool GetModels(const Parameters &parameters, const aiScene *inputScene, const ai
             uint32_t nodeMeshIndex = inputNode->mMeshes[meshIndex];
             if (nodeMeshIndex >= inputScene->mNumMeshes)
             {
-                LockedWrite{ std::cerr } << String::Format("Invalid mesh index");
+                LockedWrite{ std::cerr } << "Invalid mesh index";
                 return false;
             }
 
@@ -104,37 +104,37 @@ bool GetModels(const Parameters &parameters, const aiScene *inputScene, const ai
             {
                 if (inputMesh->mFaces == nullptr)
                 {
-                    LockedWrite{ std::cerr } << String::Format("Invalid inputMesh face list");
+                    LockedWrite{ std::cerr } << "Invalid inputMesh face list";
                     return false;
                 }
 
                 if (inputMesh->mVertices == nullptr)
                 {
-                    LockedWrite{ std::cerr } << String::Format("Invalid inputMesh vertex list");
+                    LockedWrite{ std::cerr } << "Invalid inputMesh vertex list";
                     return false;
                 }
 
                 if (inputMesh->mTextureCoords[0] == nullptr)
                 {
-                    LockedWrite{ std::cerr } << String::Format("Invalid inputMesh texture coordinate list");
+                    LockedWrite{ std::cerr } << "Invalid inputMesh texture coordinate list";
                     return false;
                 }
 
                 if (inputMesh->mTangents == nullptr)
                 {
-                    LockedWrite{ std::cerr } << String::Format("Invalid inputMesh tangent list");
+                    LockedWrite{ std::cerr } << "Invalid inputMesh tangent list";
                     return false;
                 }
 
                 if (inputMesh->mBitangents == nullptr)
                 {
-                    LockedWrite{ std::cerr } << String::Format("Invalid inputMesh bitangent list");
+                    LockedWrite{ std::cerr } << "Invalid inputMesh bitangent list";
                     return false;
                 }
 
                 if (inputMesh->mNormals == nullptr)
                 {
-                    LockedWrite{ std::cerr } << String::Format("Invalid inputMesh normal list");
+                    LockedWrite{ std::cerr } << "Invalid inputMesh normal list";
                     return false;
                 }
 
@@ -184,7 +184,7 @@ bool GetModels(const Parameters &parameters, const aiScene *inputScene, const ai
                     const aiFace &face = inputMesh->mFaces[faceIndex];
                     if (face.mNumIndices != 3)
                     {
-                        LockedWrite{ std::cerr } << String::Format("Non-triangular face encountered");
+                        LockedWrite{ std::cerr } << "Non-triangular face encountered";
                         return false;
                     }
 
@@ -205,7 +205,7 @@ bool GetModels(const Parameters &parameters, const aiScene *inputScene, const ai
     {
         if (inputNode->mChildren == nullptr)
         {
-            LockedWrite{ std::cerr } << String::Format("Invalid child list");
+            LockedWrite{ std::cerr } << "Invalid child list";
             return false;
         }
 
@@ -223,7 +223,7 @@ bool GetModels(const Parameters &parameters, const aiScene *inputScene, const ai
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    LockedWrite{ std::cout } << String::Format("GEK Model Converter");
+    LockedWrite{ std::cout } << "GEK Model Converter";
 
     FileSystem::Path sourceName;
     Parameters parameters;
@@ -236,7 +236,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		std::vector<std::string> arguments(String::Split(String::GetLower(argument), ':'));
         if (arguments.empty())
         {
-            LockedWrite{ std::cerr } << String::Format("No arguments specified for command line parameter");
+            LockedWrite{ std::cerr } << "No arguments specified for command line parameter";
             return -__LINE__;
         }
 
@@ -256,7 +256,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         {
             if (arguments.size() != 2)
             {
-                LockedWrite{ std::cerr } << String::Format("Missing parameters for smoothAngle");
+                LockedWrite{ std::cerr } << "Missing parameters for smoothAngle";
                 return -__LINE__;
             }
 
@@ -266,7 +266,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         {
             if (arguments.size() != 2)
             {
-                LockedWrite{ std::cerr } << String::Format("Missing parameters for unitsInFoot");
+                LockedWrite{ std::cerr } << "Missing parameters for unitsInFoot";
                 return -__LINE__;
             }
 
@@ -335,33 +335,33 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     auto inputScene = aiImportFileExWithProperties(sourcePath.u8string().c_str(), importFlags, nullptr, propertyStore);
     if (inputScene == nullptr)
     {
-        LockedWrite{ std::cerr } << String::Format("Unable to load scene with Assimp");
+        LockedWrite{ std::cerr } << "Unable to load scene with Assimp";
         return -__LINE__;
     }
 
     inputScene = aiApplyPostProcessing(inputScene, textureProcessFlags);
     if (inputScene == nullptr)
     {
-        LockedWrite{ std::cerr } << String::Format("Unable to apply texture post processing with Assimp");
+        LockedWrite{ std::cerr } << "Unable to apply texture post processing with Assimp";
         return -__LINE__;
     }
 
     inputScene = aiApplyPostProcessing(inputScene, tangentProcessFlags);
     if (inputScene == nullptr)
     {
-        LockedWrite{ std::cerr } << String::Format("Unable to apply tangent post processing with Assimp");
+        LockedWrite{ std::cerr } << "Unable to apply tangent post processing with Assimp";
         return -__LINE__;
     }
 
     if (!inputScene->HasMeshes())
     {
-        LockedWrite{ std::cerr } << String::Format("Scene has no meshes");
+        LockedWrite{ std::cerr } << "Scene has no meshes";
         return -__LINE__;
     }
 
     if (!inputScene->HasMaterials())
     {
-        LockedWrite{ std::cerr } << String::Format("Exporting to model requires materials in scene");
+        LockedWrite{ std::cerr } << "Exporting to model requires materials in scene";
         return -__LINE__;
     }
 
@@ -409,7 +409,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     FileSystem::Find(materialsPath, findMaterials);
     if (diffuseToMaterialMap.empty())
     {
-        LockedWrite{ std::cerr } << String::Format("Unable to locate any materials");
+        LockedWrite{ std::cerr } << "Unable to locate any materials";
         return -__LINE__;
     }
 
@@ -473,7 +473,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         auto file = fopen(outputPath.u8string().c_str(), "wb");
         if (file == nullptr)
         {
-            LockedWrite{ std::cerr } << String::Format("Unable to create output file");
+            LockedWrite{ std::cerr } << "Unable to create output file";
             return -__LINE__;
         }
 

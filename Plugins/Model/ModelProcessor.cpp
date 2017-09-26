@@ -271,7 +271,7 @@ namespace Gek
             assert(resources);
             assert(renderer);
 
-            LockedWrite{ std::cout } << String::Format("Initializing model system");
+            LockedWrite{ std::cout } << "Initializing model system";
 
             core->onInitialized.connect(this, &ModelProcessor::onInitialized);
             core->onShutdown.connect(this, &ModelProcessor::onShutdown);
@@ -342,6 +342,11 @@ namespace Gek
 
                             return true;
                         });
+
+                        if (modelPathList.empty())
+                        {
+                            LockedWrite{ std::cerr } << String::Format("No models found for group: %v", name);
+                        }
 
                         group.modelList.resize(modelPathList.size());
                         for (size_t modelIndex = 0; modelIndex < modelPathList.size(); ++modelIndex)

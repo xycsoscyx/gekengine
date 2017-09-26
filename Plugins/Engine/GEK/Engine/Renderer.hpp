@@ -22,8 +22,6 @@ namespace Gek
 
         GEK_INTERFACE(Renderer)
         {
-            GEK_ADD_EXCEPTION(InvalidIndexBufferFormat);
-
             wink::signal<wink::slot<void(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)>> onQueueDrawCalls;
             wink::signal<wink::slot<void(ImGuiContext * const guiContext)>> onShowUserInterface;
 

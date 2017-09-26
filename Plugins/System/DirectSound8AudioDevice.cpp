@@ -1,4 +1,3 @@
-#include "GEK/Utility/Exceptions.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/System/AudioDevice.hpp"
@@ -160,13 +159,13 @@ namespace Gek
 				HRESULT resultValue = DirectSoundCreate8(&deviceGUID, &directSound, nullptr);
 				if (FAILED(resultValue))
 				{
-					throw Audio::CreationFailed("Unable to create sound controller");
+					throw std::exception("Unable to create sound controller");
 				}
 
 				resultValue = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY);
 				if (FAILED(resultValue))
 				{
-					throw Audio::InitailizeDeviceFailed("Unable to set cooperative level");
+					throw std::exception("Unable to set cooperative level");
 				}
 
 				DSBUFFERDESC primaryBufferDescription = { 0 };
@@ -175,7 +174,7 @@ namespace Gek
 				resultValue = directSound->CreateSoundBuffer(&primaryBufferDescription, &primarySoundBuffer, nullptr);
 				if (FAILED(resultValue))
 				{
-					throw Audio::InitailizeDeviceFailed("Unable to create primary sound buffer");
+					throw std::exception("Unable to create primary sound buffer");
 				}
 
 				WAVEFORMATEX primaryBufferFormat;
@@ -189,13 +188,13 @@ namespace Gek
 				resultValue = primarySoundBuffer->SetFormat(&primaryBufferFormat);
 				if (FAILED(resultValue))
 				{
-					throw Audio::InitailizeDeviceFailed("Unable to set primary buffer format");
+					throw std::exception("Unable to set primary buffer format");
 				}
 
 				directSoundListener = primarySoundBuffer;
 				if (!directSoundListener)
 				{
-					throw Audio::InitailizeDeviceFailed("Unable to create primary 3D listener");
+					throw std::exception("Unable to create primary 3D listener");
 				}
 
 				setVolume(1.0f);

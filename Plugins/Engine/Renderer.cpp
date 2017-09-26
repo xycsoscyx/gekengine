@@ -415,7 +415,7 @@ namespace Gek
 
             void initializeSystem(void)
             {
-                LockedWrite{ std::cout } << String::Format("Initializing rendering system components");
+                LockedWrite{ std::cout } << "Initializing rendering system components";
 
                 Video::SamplerState::Description bufferSamplerStateData;
                 bufferSamplerStateData.filterMode = Video::SamplerState::FilterMode::MinificationMagnificationMipMapPoint;
@@ -532,7 +532,7 @@ namespace Gek
 
             void initializeUI(void)
             {
-                LockedWrite{ std::cout } << String::Format("Initializing user interface data");
+                LockedWrite{ std::cout } << "Initializing user interface data";
 
                 static char const vertexShader[] =
                     "cbuffer vertexBuffer : register(b0)" \
@@ -744,9 +744,6 @@ namespace Gek
                     case 4:
                         vertexBufferDescription.format = Video::Format::R32_UINT;
                         break;
-
-                    default:
-                        throw InvalidIndexBufferFormat("Index buffer can only be 16bit or 32bit");
                     };
 
                     gui.indexBuffer = videoDevice->createBuffer(vertexBufferDescription);

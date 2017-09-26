@@ -34,7 +34,7 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
 {
     if (node == nullptr)
     {
-        LockedWrite{ std::cerr } << String::Format("Invalid model node");
+        LockedWrite{ std::cerr } << "Invalid model node";
         return false;
     }
 
@@ -42,7 +42,7 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
     {
         if (node->mMeshes == nullptr)
         {
-            LockedWrite{ std::cerr } << String::Format("Invalid mesh list");
+            LockedWrite{ std::cerr } << "Invalid mesh list";
             return false;
         }
 
@@ -51,7 +51,7 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
             uint32_t nodeMeshIndex = node->mMeshes[meshIndex];
             if (nodeMeshIndex >= scene->mNumMeshes)
             {
-                LockedWrite{ std::cerr } << String::Format("Invalid mesh index");
+                LockedWrite{ std::cerr } << "Invalid mesh index";
                 return false;
             }
 
@@ -60,13 +60,13 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
             {
                 if (mesh->mFaces == nullptr)
                 {
-                    LockedWrite{ std::cerr } << String::Format("Invalid mesh face list");
+                    LockedWrite{ std::cerr } << "Invalid mesh face list";
                     return false;
                 }
 
 				if (mesh->mVertices == nullptr)
 				{
-					LockedWrite{ std::cerr } << String::Format("Invalid mesh vertex list");
+					LockedWrite{ std::cerr } << "Invalid mesh vertex list";
                     return false;
                 }
 
@@ -89,7 +89,7 @@ bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
     {
         if (node->mChildren == nullptr)
         {
-            LockedWrite{ std::cerr } << String::Format("Invalid child list");
+            LockedWrite{ std::cerr } << "Invalid child list";
             return false;
         }
 
@@ -113,7 +113,7 @@ void serializeCollision(void* const serializeHandle, const void* const buffer, i
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    LockedWrite{ std::cout } << String::Format("GEK Model Converter");
+    LockedWrite{ std::cout } << "GEK Model Converter";
 
     FileSystem::Path fileNameInput;
     FileSystem::Path fileNameOutput;
@@ -124,7 +124,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		std::vector<std::string> arguments(String::Split(String::GetLower(argument), ':'));
         if (arguments.empty())
         {
-            LockedWrite{ std::cerr } << String::Format("No arguments specified for command line parameter");
+            LockedWrite{ std::cerr } << "No arguments specified for command line parameter";
             return -__LINE__;
         }
 
@@ -140,7 +140,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		{
 			if (arguments.size() != 2)
 			{
-				LockedWrite{ std::cerr } << String::Format("Missing parameters for unitsInFoot");
+				LockedWrite{ std::cerr } << "Missing parameters for unitsInFoot";
                 return -__LINE__;
             }
 
@@ -189,20 +189,20 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     auto scene = aiImportFileExWithProperties(fileNameInput.u8string().c_str(), importFlags, nullptr, propertyStore);
     if (scene == nullptr)
     {
-        LockedWrite{ std::cerr } << String::Format("Unable to load scene with Assimp");
+        LockedWrite{ std::cerr } << "Unable to load scene with Assimp";
         return -__LINE__;
     }
 
     scene = aiApplyPostProcessing(scene, postProcessFlags);
     if (scene == nullptr)
 	{
-		LockedWrite{ std::cerr } << String::Format("Unable to apply post processing with Assimp");
+		LockedWrite{ std::cerr } << "Unable to apply post processing with Assimp";
         return -__LINE__;
     }
 
     if (!scene->HasMeshes())
     {
-        LockedWrite{ std::cerr } << String::Format("Scene has no meshes");
+        LockedWrite{ std::cerr } << "Scene has no meshes";
         return -__LINE__;
     }
 
@@ -218,7 +218,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
 	if (pointList.empty())
 	{
-        LockedWrite{ std::cerr } << String::Format("No vertex data found in scene");
+        LockedWrite{ std::cerr } << "No vertex data found in scene";
         return -__LINE__;
     }
 
@@ -230,7 +230,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointList.size(), pointList.data()->data, sizeof(Math::Float3), 0.025f, 0, Math::Float4x4::Identity.data);
     if (newtonCollision == nullptr)
     {
-        LockedWrite{ std::cerr } << String::Format("Unable to create convex hull collision object");
+        LockedWrite{ std::cerr } << "Unable to create convex hull collision object";
         return -__LINE__;
     }
 
@@ -238,7 +238,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     _wfopen_s(&file, fileNameOutput.c_str(), L"wb");
     if (file == nullptr)
     {
-        LockedWrite{ std::cerr } << String::Format("Unable to create output file");
+        LockedWrite{ std::cerr } << "Unable to create output file";
         return -__LINE__;
     }
 

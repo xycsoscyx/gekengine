@@ -22,9 +22,6 @@ namespace Gek
                 std::vector<ResourceHandle> resourceList;
             };
 
-            GEK_ADD_EXCEPTION(InvalidParameter);
-            GEK_ADD_EXCEPTION(MissingParameter);
-
             virtual ~Material(void) = default;
 
             virtual Data const *getData(size_t materialHash) = 0;

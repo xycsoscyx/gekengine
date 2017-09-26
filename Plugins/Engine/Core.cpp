@@ -1,5 +1,4 @@
-﻿#include "GEK/Utility/Exceptions.hpp"
-#include "GEK/Utility/String.hpp"
+﻿#include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/Timer.hpp"
 #include "GEK/Utility/ContextUser.hpp"
@@ -63,7 +62,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(_window)
             {
-                LockedWrite{ std::cout } << String::Format("Starting GEK Engine");
+                LockedWrite{ std::cout } << "Starting GEK Engine";
 
                 if (!window)
                 {
@@ -138,7 +137,7 @@ namespace Gek
                 renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Plugin::Core *)this);
                 renderer->onShowUserInterface.connect(this, &Core::onShowUserInterface);
 
-                LockedWrite{ std::cout } << String::Format("Loading processor plugins");
+                LockedWrite{ std::cout } << "Loading processor plugins";
 
                 std::vector<std::string> processorNameList;
                 getContext()->listTypes("ProcessorType", [&](std::string const &className) -> void
@@ -183,7 +182,7 @@ namespace Gek
 
                 window->setVisibility(true);
                 setFullScreen(JSON::Reference(configuration).get("display").get("fullScreen").convert(false));
-				LockedWrite{ std::cout } << String::Format("Starting engine");
+				LockedWrite{ std::cout } << "Starting engine";
                 window->readEvents();
             }
 

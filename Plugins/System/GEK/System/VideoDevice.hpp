@@ -11,7 +11,6 @@
 #include "GEK/Math/Vector2.hpp"
 #include "GEK/Math/Vector4.hpp"
 #include "GEK/Math/Vector4.hpp"
-#include "GEK/Utility/Exceptions.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/Context.hpp"
@@ -23,17 +22,6 @@ namespace Gek
 {
     namespace Video
     {
-        GEK_ADD_EXCEPTION(CreationFailed);
-        GEK_ADD_EXCEPTION(InitializationFailed);
-        GEK_ADD_EXCEPTION(FeatureLevelNotSupported);
-        GEK_ADD_EXCEPTION(UnsupportedOperation);
-        GEK_ADD_EXCEPTION(OperationFailed);
-        GEK_ADD_EXCEPTION(CreateObjectFailed);
-        GEK_ADD_EXCEPTION(ProgramCompilationFailed);
-        GEK_ADD_EXCEPTION(InvalidParameter);
-        GEK_ADD_EXCEPTION(InvalidFileType);
-        GEK_ADD_EXCEPTION(LoadFileFailed);
-
         enum class Format : uint8_t
         {
             Unknown = 0,
