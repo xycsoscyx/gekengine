@@ -37,11 +37,15 @@ namespace Gek
 
                 virtual Mode prepare(void) = 0;
                 virtual void clear(void) = 0;
+
+                virtual std::string const &getName(void) const = 0;
             };
 
             virtual ~Filter(void) = default;
 
             virtual void reload(void) = 0;
+
+            virtual std::string const &getName(void) const = 0;
 
             virtual Pass::Iterator begin(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle output) = 0;
         };

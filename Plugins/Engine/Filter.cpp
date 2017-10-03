@@ -27,6 +27,7 @@ namespace Gek
         public:
             struct PassData
             {
+                std::string name;
                 bool enabled = true;
                 Pass::Mode mode = Pass::Mode::Deferred;
                 Math::Float4 blendFactor = Math::Float4::Zero;
@@ -599,6 +600,7 @@ namespace Gek
 
                     std::string entryPoint(passNode.get("entry").convert(String::Empty));
                     auto programName = passNode.get("program").convert(String::Empty);
+                    pass.name = String::Format("%v: %v", programName, entryPoint);
                     std::string fileName(FileSystem::GetFileName(filterName, programName).withExtension(".hlsl").u8string());
                     Video::PipelineType pipelineType = (pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel);
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
@@ -612,6 +614,11 @@ namespace Gek
             }
 
             // Filter
+            std::string const &getName(void) const
+            {
+                return filterName;
+            }
+
             Pass::Mode preparePass(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle output, PassData const &pass)
             {
                 if (!pass.enabled)
@@ -768,6 +775,11 @@ namespace Gek
                 void clear(void)
                 {
                     filterNode->clearPass(videoContext, (*current));
+                }
+
+                std::string const &getName(void) const
+                {
+                    return current->name;
                 }
             };
 

@@ -39,6 +39,8 @@ namespace Gek
                 virtual Mode prepare(void) = 0;
                 virtual void clear(void) = 0;
 
+                virtual std::string const &getName(void) const = 0;
+
                 virtual size_t getMaterialHash(void) const = 0;
                 virtual uint32_t getFirstResourceStage(void) const = 0;
                 virtual bool isLightingRequired(void) const = 0;
@@ -66,6 +68,8 @@ namespace Gek
             virtual ~Shader(void) = default;
 
             virtual void reload(void) = 0;
+
+            virtual std::string const &getName(void) const = 0;
 
             virtual uint32_t getDrawOrder(void) const = 0;
             virtual bool isLightingRequired(void) const = 0;

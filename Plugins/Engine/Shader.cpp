@@ -35,6 +35,7 @@ namespace Gek
 
             struct PassData
             {
+                std::string name;
                 bool enabled = true;
                 size_t materialHash = 0;
                 uint32_t firstResourceStage = 0;
@@ -789,6 +790,7 @@ namespace Gek
 
                     std::string entryPoint(passNode.get("entry").convert(String::Empty));
                     auto programName = passNode.get("program").convert(String::Empty);
+                    pass.name = String::Format("%v: %v", programName, entryPoint);
                     std::string fileName(FileSystem::GetFileName(shaderName, programName).withExtension(".hlsl").u8string());
                     Video::PipelineType pipelineType = (pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel);
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
@@ -798,6 +800,11 @@ namespace Gek
 			}
 
             // Shader
+            std::string const &getName(void) const
+            {
+                return shaderName;
+            }
+
             uint32_t getDrawOrder(void) const
             {
                 return drawOrder;
@@ -1013,6 +1020,11 @@ namespace Gek
                 bool isLightingRequired(void) const
                 {
                     return (*current).lighting;
+                }
+
+                std::string const &getName(void) const
+                {
+                    return current->name;
                 }
             };
 
