@@ -347,14 +347,13 @@ namespace Gek
                 virtual void waitAndUpdate(void) { };
             };
 
-            template <size_t BufferCount>
             class GPUProfiler
                 : public Profiler
             {
             public:
                 struct EventData
                 {
-                    std::array<Video::QueryPtr, BufferCount> eventList;
+                    std::array<Video::QueryPtr, 2> eventList;
                     float previousFrameTime = 0.0f;
                     float averageFrameTime = 0.0f;
                     float totalAverageTime = 0.0f;
@@ -363,16 +362,16 @@ namespace Gek
             private:
                 Video::Device *videoDevice = nullptr;
                 Video::Device::Context *videoContext = nullptr;
-                std::array<Video::QueryPtr, BufferCount> disjointList;
-                std::array<Video::QueryPtr, BufferCount> beginEventList;
-                std::array<Video::QueryPtr, BufferCount> endEventList;
+                std::array<Video::QueryPtr, 2> disjointList;
+                std::array<Video::QueryPtr, 2> beginEventList;
+                std::array<Video::QueryPtr, 2> endEventList;
                 using EventMap = std::unordered_map<std::string, EventData>;
                 EventMap eventMap;
 
                 int frameQuery = 0;
                 int frameCollect = -1;
                 int frameCountAverage = 0;
-                std::vector<typename EventMap::value_type *> eventTimeline;
+                std::array<std::vector<typename EventMap::value_type *>, 2> eventTimeline;
                 std::chrono::time_point<std::chrono::steady_clock> nextFrameTime;
                 float previousFrameTime = 0.0f;
                 float averageFrameTime = 0.0f;
@@ -383,7 +382,7 @@ namespace Gek
                     : videoDevice(videoDevice)
                     , videoContext(videoDevice->getDefaultContext())
                 {
-                    for (size_t buffer = 0; buffer < BufferCount; ++buffer)
+                    for (size_t buffer = 0; buffer < 2; ++buffer)
                     {
                         disjointList[buffer] = videoDevice->createQuery(Video::Query::Type::DisjointTimestamp);
                         beginEventList[buffer] = videoDevice->createQuery(Video::Query::Type::Timestamp);
@@ -393,48 +392,6 @@ namespace Gek
 
                 void getEventData(std::function<void(std::string const &, float)> &&onEventData)
                 {
-                    float totalTime = 0.0f;
-                    for (auto &eventSearch : eventTimeline)
-                    {
-                        onEventData(eventSearch->first, eventSearch->second.averageFrameTime);
-                    }
-
-                    onEventData("Average Frame Time", averageFrameTime);
-                }
-
-                void beginFrame(void)
-                {
-                    videoContext->begin(disjointList[frameQuery].get());
-                    videoContext->end(beginEventList[frameQuery].get());
-                    eventTimeline.clear();
-                }
-
-                void timeStamp(std::string const &name)
-                {
-                    auto eventSearch = eventMap.insert(std::make_pair(name, EventData()));
-                    auto &eventPair = *eventSearch.first;
-                    auto &eventData = eventPair.second;
-                    if (eventSearch.second)
-                    {
-                        for (size_t buffer = 0; buffer < BufferCount; ++buffer)
-                        {
-                            eventData.eventList[buffer] = videoDevice->createQuery(Video::Query::Type::Timestamp);
-                        }
-                    }
-
-                    eventTimeline.push_back(&eventPair);
-                    videoContext->end(eventData.eventList[frameQuery].get());
-                }
-
-                void endFrame(void)
-                {
-                    videoContext->end(endEventList[frameQuery].get());
-                    videoContext->end(disjointList[frameQuery].get());
-                    ++frameQuery %= BufferCount;
-                }
-
-                void waitAndUpdate(void)
-                {
                     if (frameCollect < 0)
                     {
                         // Haven't run enough frames yet to have data
@@ -442,61 +399,64 @@ namespace Gek
                         return;
                     }
 
+                    int currentFrame = frameCollect;
+                    ++frameCollect &= 1;
+
                     // Wait for data
-                    while (videoContext->getData(disjointList[frameCollect].get(), nullptr, 0) != Video::Query::Status::Ready)
+                    while (videoContext->getData(disjointList[currentFrame].get(), nullptr, 0) != Video::Query::Status::Ready)
                     {
                         Sleep(1);
                     };
 
-                    int currentFrame = frameCollect;
-                    ++frameCollect %= BufferCount;
-
                     Video::Query::DisjointTimestamp timestampDisjoint;
-                    if (videoContext->getData(disjointList[currentFrame].get(), &timestampDisjoint, sizeof(timestampDisjoint)) != Video::Query::Status::Ready)
+                    if (videoContext->getData(disjointList[currentFrame].get(), &timestampDisjoint, sizeof(timestampDisjoint)) == Video::Query::Status::Ready)
                     {
-                        LockedWrite{ std::cerr } << "Couldn't retrieve timestamp disjoint query data";
-                        return;
-                    }
-
-                    if (timestampDisjoint.disjoint)
-                    {
-                        // Throw out this frame's data
-                        LockedWrite{ std::cerr } << "Timestamps disjoint, skipping";
-                        return;
-                    }
-
-                    UINT64 beginTimeStamp = 0;
-                    if (videoContext->getData(beginEventList[currentFrame].get(), &beginTimeStamp, sizeof(UINT64)) == Video::Query::Status::Ready)
-                    {
-                        UINT64 previousTimeStamp = beginTimeStamp;
-                        for (auto &eventSearch : eventTimeline)
+                        if (!timestampDisjoint.disjoint)
                         {
-                            UINT64 currentTimeStamp = 0;
-                            auto &eventData = eventSearch->second;
-                            if (videoContext->getData(eventData.eventList[currentFrame].get(), &currentTimeStamp, sizeof(UINT64)) == Video::Query::Status::Ready)
+                            UINT64 beginTimeStamp = 0;
+                            if (videoContext->getData(beginEventList[currentFrame].get(), &beginTimeStamp, sizeof(UINT64)) == Video::Query::Status::Ready)
                             {
-                                eventData.previousFrameTime = float(currentTimeStamp - previousTimeStamp) / float(timestampDisjoint.frequency);
-                                eventData.totalAverageTime += eventData.previousFrameTime;
-                                previousTimeStamp = currentTimeStamp;
-                            }
-                        }
+                                UINT64 previousTimeStamp = beginTimeStamp;
+                                for (auto &eventSearch : eventTimeline[currentFrame])
+                                {
+                                    UINT64 currentTimeStamp = 0;
+                                    auto &eventData = eventSearch->second;
+                                    if (videoContext->getData(eventData.eventList[currentFrame].get(), &currentTimeStamp, sizeof(UINT64)) == Video::Query::Status::Ready)
+                                    {
+                                        eventData.previousFrameTime = float(currentTimeStamp - previousTimeStamp) / float(timestampDisjoint.frequency);
+                                        eventData.totalAverageTime += eventData.previousFrameTime;
+                                        previousTimeStamp = currentTimeStamp;
+                                    }
+                                    else
+                                    {
+                                        eventData.previousFrameTime = 0.0f;
+                                    }
+                                }
 
-                        UINT64 endTimeStamp = 0;
-                        if (videoContext->getData(endEventList[currentFrame].get(), &endTimeStamp, sizeof(UINT64)) == Video::Query::Status::Ready)
-                        {
-                            previousFrameTime = float(endTimeStamp - beginTimeStamp) / float(timestampDisjoint.frequency);
-                            totalAverageTime += previousFrameTime;
+                                UINT64 endTimeStamp = 0;
+                                if (videoContext->getData(endEventList[currentFrame].get(), &endTimeStamp, sizeof(UINT64)) == Video::Query::Status::Ready)
+                                {
+                                    previousFrameTime = float(endTimeStamp - beginTimeStamp) / float(timestampDisjoint.frequency);
+                                    totalAverageTime += previousFrameTime;
+                                }
+                                else
+                                {
+                                    LockedWrite{ std::cerr } << "Couldn't retrieve timestamp query data for end frame";
+                                }
+                            }
+                            else
+                            {
+                                LockedWrite{ std::cerr } << "Couldn't retrieve timestamp query data for begin frame";
+                            }
                         }
                         else
                         {
-                            LockedWrite{ std::cerr } << "Couldn't retrieve timestamp query data for end frame";
-                            return;
+                            LockedWrite{ std::cerr } << "Timestamps disjoint, skipping";
                         }
                     }
                     else
                     {
-                        LockedWrite{ std::cerr } << "Couldn't retrieve timestamp query data for begin frame";
-                        return;
+                        LockedWrite{ std::cerr } << "Couldn't retrieve timestamp disjoint query data";
                     }
 
                     ++frameCountAverage;
@@ -514,6 +474,45 @@ namespace Gek
                         frameCountAverage = 0;
                         nextFrameTime = (std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(500));
                     }
+
+                    float totalTime = 0.0f;
+                    for (auto &eventSearch : eventTimeline[currentFrame])
+                    {
+                        onEventData(eventSearch->first, eventSearch->second.averageFrameTime);
+                    }
+
+                    onEventData("Average Frame Time", averageFrameTime);
+                }
+
+                void beginFrame(void)
+                {
+                    videoContext->begin(disjointList[frameQuery].get());
+                    videoContext->end(beginEventList[frameQuery].get());
+                    eventTimeline[frameQuery].clear();
+                }
+
+                void timeStamp(std::string const &name)
+                {
+                    auto eventSearch = eventMap.insert(std::make_pair(name, EventData()));
+                    auto &eventPair = *eventSearch.first;
+                    auto &eventData = eventPair.second;
+                    if (eventSearch.second)
+                    {
+                        for (size_t buffer = 0; buffer < 2; ++buffer)
+                        {
+                            eventData.eventList[buffer] = videoDevice->createQuery(Video::Query::Type::Timestamp);
+                        }
+                    }
+
+                    eventTimeline[frameQuery].push_back(&eventPair);
+                    videoContext->end(eventData.eventList[frameQuery].get());
+                }
+
+                void endFrame(void)
+                {
+                    videoContext->end(endEventList[frameQuery].get());
+                    videoContext->end(disjointList[frameQuery].get());
+                    ++frameQuery &= 1;
                 }
             };
 
@@ -590,7 +589,7 @@ namespace Gek
                 , directionalLightData(10, core->getVideoDevice())
                 , pointLightData(200, core->getVideoDevice())
                 , spotLightData(200, core->getVideoDevice())
-                , mainProfiler(std::make_unique<GPUProfiler<2>>(videoDevice))
+                , mainProfiler(std::make_unique<GPUProfiler>(videoDevice))
             {
                 population->onReset.connect(this, &Renderer::onReset);
                 population->onEntityCreated.connect(this, &Renderer::onEntityCreated);
@@ -1291,7 +1290,7 @@ namespace Gek
                     auto &profiler = profilerMap[&currentCamera];
                     if (!profiler)
                     {
-                        profiler = std::make_unique<GPUProfiler<2>>(videoDevice);
+                        profiler = std::make_unique<GPUProfiler>(videoDevice);
                     }
 
                     profiler->beginFrame();
@@ -1563,7 +1562,6 @@ namespace Gek
                         }
                     }
 
-                    profiler->waitAndUpdate();
                     profiler->endFrame();
                 };
 
@@ -1682,7 +1680,6 @@ namespace Gek
 
                 ImGui::Render();
                 mainProfiler->timeStamp("User Interface");
-                mainProfiler->waitAndUpdate();
 
                 videoDevice->present(true);
                 mainProfiler->endFrame();
