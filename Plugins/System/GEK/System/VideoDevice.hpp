@@ -640,7 +640,7 @@ namespace Gek
 
                 virtual void begin(Query *query) = 0;
                 virtual void end(Query *query) = 0;
-                virtual Query::Status getData(Query *query, void *data, size_t dataSize) = 0;
+                virtual Query::Status getData(Query *query, void *data, size_t dataSize, bool waitUntilReady = false) = 0;
 
                 virtual void generateMipMaps(Texture *texture) = 0;
                 virtual void resolveSamples(Texture *destination, Texture *source) = 0;

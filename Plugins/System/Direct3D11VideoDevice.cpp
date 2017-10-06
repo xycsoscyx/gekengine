@@ -1476,12 +1476,21 @@ namespace Gek
                     d3dDeviceContext->End(getObject<Query>(query));
                 }
 
-                Video::Query::Status getData(Video::Query *query, void *data, size_t dataSize)
+                Video::Query::Status getData(Video::Query *query, void *data, size_t dataSize, bool waitUntilReady = false)
                 {
                     assert(d3dDeviceContext);
                     assert(query);
 
-                    switch (d3dDeviceContext->GetData(getObject<Query>(query), data, UINT(dataSize), 0))
+                    auto queryObject = getObject<Query>(query);
+                    if (waitUntilReady)
+                    {
+                        while (d3dDeviceContext->GetData(queryObject, nullptr, 0, 0) == S_FALSE)
+                        {
+                            Sleep(1);
+                        };
+                    }
+
+                    switch (d3dDeviceContext->GetData(queryObject, data, UINT(dataSize), 0))
                     {
                     case S_OK:
                         return Video::Query::Status::Ready;
