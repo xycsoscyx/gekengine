@@ -154,6 +154,7 @@ namespace Gek
 
             struct Camera
             {
+                std::string name;
                 Shapes::Frustum viewFrustum;
                 Math::Float4x4 viewMatrix;
                 Math::Float4x4 projectionMatrix;
@@ -1258,7 +1259,7 @@ namespace Gek
             }
 
             // Renderer
-            void queueCamera(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget, std::string const &forceShader)
+            void queueCamera(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, float nearClip, float farClip, std::string const *name, ResourceHandle cameraTarget, std::string const &forceShader)
             {
                 Camera renderCall;
                 renderCall.viewMatrix = viewMatrix;
@@ -1267,6 +1268,7 @@ namespace Gek
                 renderCall.nearClip = nearClip;
                 renderCall.farClip = farClip;
                 renderCall.cameraTarget = cameraTarget;
+                renderCall.name = (name ? *name : String::Format("camera_%v", cameraQueue.unsafe_size()));
                 if (!forceShader.empty())
                 {
                     renderCall.forceShader = resources->getShader(forceShader);
@@ -1301,7 +1303,7 @@ namespace Gek
                 Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                 while (cameraQueue.try_pop(currentCamera))
                 {
-                    profiler->timeStamp(String::Format("Begin Camera: %v", int(&currentCamera)), Profiler::Flags::PostIndent);
+                    profiler->timeStamp(String::Format("Begin Camera: %v", currentCamera.name), Profiler::Flags::PostIndent);
 
                     drawCallList.clear();
                     onQueueDrawCalls(currentCamera.viewFrustum, currentCamera.viewMatrix, currentCamera.projectionMatrix);
@@ -1550,7 +1552,7 @@ namespace Gek
                                     };
 
                                     pass->clear();
-                                    profiler->timeStamp(pass->getName());
+                                    profiler->timeStamp(String::Format("%v##%v", pass->getName(), shader->getName()));
                                 }
 
                                 profiler->timeStamp(String::Format("End Shader: %v", shader->getName()), Profiler::Flags::Hide | Profiler::Flags::PreUnindent);
@@ -1573,7 +1575,7 @@ namespace Gek
                         }
                     }
 
-                    profiler->timeStamp(String::Format("End Camera: %v", int(&currentCamera)), Profiler::Flags::Hide | Profiler::Flags::PreUnindent);
+                    profiler->timeStamp(String::Format("End Camera: %v", currentCamera.name), Profiler::Flags::Hide | Profiler::Flags::PreUnindent);
                 };
 
                 auto screenHandle = resources->getResourceHandle(screenOutput);
@@ -1610,7 +1612,7 @@ namespace Gek
                                 };
 
                                 pass->clear();
-                                profiler->timeStamp(pass->getName());
+                                profiler->timeStamp(String::Format("%v##%v", pass->getName(), filter->getName()));
                             }
 
                             profiler->timeStamp(String::Format("End Filter: %v", filter->getName()), Profiler::Flags::Hide | Profiler::Flags::PreUnindent);
@@ -1663,8 +1665,10 @@ namespace Gek
                     {
                         auto showFloat = [](char const *label, float value)
                         {
+                            auto labelEnd = strstr(label, "##");
                             ImGui::AlignFirstTextHeightToWidgets();
-                            ImGui::Text(label);
+                            ImGui::TextUnformatted(label, labelEnd);
+
                             ImGui::SameLine();
                             ImGui::PushItemWidth(-1.0f);
                             ImGui::InputFloat("##", &value, 0.0f, 0.0f, -1.0f, ImGuiInputTextFlags_ReadOnly);

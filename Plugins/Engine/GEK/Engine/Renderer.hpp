@@ -27,7 +27,7 @@ namespace Gek
 
             virtual ~Renderer(void) = default;
 
-            virtual void queueCamera(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget = ResourceHandle(), std::string const &forceShader = String::Empty) = 0;
+            virtual void queueCamera(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, float nearClip, float farClip, std::string const *name = nullptr, ResourceHandle cameraTarget = ResourceHandle(), std::string const &forceShader = String::Empty) = 0;
             virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *)> &&draw) = 0;
 
             virtual void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle target) = 0;

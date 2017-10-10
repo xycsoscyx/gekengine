@@ -6,6 +6,7 @@
 #include "GEK/Engine/Entity.hpp"
 #include "GEK/Engine/ComponentMixin.hpp"
 #include "GEK/Components/Transform.hpp"
+#include "GEK/Components/Name.hpp"
 #include "GEK/Math/Common.hpp"
 #include "GEK/Math/Matrix4x4.hpp"
 #include <unordered_map>
@@ -181,6 +182,12 @@ namespace Gek
             {
                 parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void
                 {
+                    std::string *name = nullptr;
+                    if (entity->hasComponent<Components::Name>())
+                    {
+                        name = &entity->getComponent<Components::Name>().name;
+                    }
+
                     auto viewMatrix(transformComponent.getMatrix().getInverse());
 
                     const auto backBuffer = core->getVideoDevice()->getBackBuffer();
@@ -188,7 +195,7 @@ namespace Gek
                     const float height = float(backBuffer->getDescription().height);
                     Math::Float4x4 projectionMatrix(Math::Float4x4::MakePerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
 
-                    renderer->queueCamera(viewMatrix, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, data.target);
+                    renderer->queueCamera(viewMatrix, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, name, data.target);
                 });
             }
         }
