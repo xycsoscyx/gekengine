@@ -27,8 +27,6 @@
 #include <algorithm>
 #include <ppl.h>
 
-using namespace std::string_literals; // enables s-suffix for std::string literals  
-
 namespace Gek
 {
     namespace Implementation

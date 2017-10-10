@@ -17,6 +17,8 @@
 #include <vector>
 #include <ppl.h>
 
+using namespace std::string_literals; // enables s-suffix for std::string literals  
+
 namespace std
 {
     inline std::string const &to_string(std::string const &string)

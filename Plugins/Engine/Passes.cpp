@@ -1,8 +1,6 @@
 #include "GEK/Engine/Renderer.hpp"
 #include "Passes.hpp"
 
-using namespace std::string_literals; // enables s-suffix for std::string literals  
-
 namespace Gek
 {
     ClearData::ClearData(ClearType type, std::string const &data)

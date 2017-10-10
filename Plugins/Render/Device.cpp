@@ -1,8 +1,6 @@
 #include "GEK/Render/Device.hpp"
 #include "GEK/Utility/Hash.hpp"
 
-using namespace std::string_literals; // enables s-suffix for std::string literals  
-
 namespace Gek
 {
     namespace Render

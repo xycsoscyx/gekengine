@@ -1,8 +1,6 @@
 #include "GEK/System/VideoDevice.hpp"
 #include "GEK/Utility/Hash.hpp"
 
-using namespace std::string_literals; // enables s-suffix for std::string literals  
-
 template<typename A, typename B>
 std::pair<B, A> flip_pair(const std::pair<A, B> &p)
 {

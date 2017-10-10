@@ -77,10 +77,10 @@ namespace Gek
                 load(static_cast<COMPONENT * const>(component), componentData);
             }
 
-            bool editorElement(char const *text, std::function<bool(void)> &&element)
+            bool editorElement(std::string_view const &text, std::function<bool(void)> &&element)
             {
                 ImGui::AlignFirstTextHeightToWidgets();
-                ImGui::Text(text);
+                ImGui::TextUnformatted(&text.front(), &text.back());
                 ImGui::SameLine();
                 ImGui::PushItemWidth(-1.0f);
                 bool changed = element();

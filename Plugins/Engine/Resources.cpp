@@ -27,8 +27,6 @@
 #include <concurrent_vector.h>
 #include <ppl.h>
 
-using namespace std::string_literals; // enables s-suffix for std::string literals  
-
 class Float16Compressor
 {
     union Bits

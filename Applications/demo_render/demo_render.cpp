@@ -169,7 +169,7 @@ namespace Gek
             imGuiIo.KeyMap[ImGuiKey_Y] = 'Y';
             imGuiIo.KeyMap[ImGuiKey_Z] = 'Z';
 
-            static char const * const guiProgram =
+            static const std::string_view guiProgram =
                 "DeclareConstantBuffer(Constants, 0)\r\n" \
                 "{\r\n" \
                 "    float4x4 ProjectionMatrix;\r\n" \
@@ -196,9 +196,9 @@ namespace Gek
 
             Render::PipelineStateInformation pipelineStateInformation;
             pipelineStateInformation.vertexShader = guiProgram;
-            pipelineStateInformation.vertexShaderEntryFunction = "mainVertexProgram";
+            pipelineStateInformation.vertexShaderEntryFunction = "mainVertexProgram"s;
             pipelineStateInformation.pixelShader = guiProgram;
-            pipelineStateInformation.pixelShaderEntryFunction = "mainPixelProgram";
+            pipelineStateInformation.pixelShaderEntryFunction = "mainPixelProgram"s;
 
             Render::VertexDeclaration vertexDeclaration;
             vertexDeclaration.name = "position";
