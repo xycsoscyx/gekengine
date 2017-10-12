@@ -579,8 +579,8 @@ namespace Gek
             enum class Type : uint8_t
             {
                 Event = 0,
-                Timestamp,
-                DisjointTimestamp,
+                TimeStamp,
+                DisjointTimeStamp,
                 Count,
             };
 
@@ -591,11 +591,13 @@ namespace Gek
                 Error,
             };
 
-            struct DisjointTimestamp
+            struct DisjointTimeStamp
             {
                 uint64_t frequency = 0;
                 uint32_t disjoint = false;
             };
+
+            using TimeStamp = uint64_t;
 
             virtual ~Query(void) = default;
         };

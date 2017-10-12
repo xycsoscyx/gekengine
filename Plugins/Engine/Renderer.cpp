@@ -348,7 +348,8 @@ namespace Gek
             public:
                 virtual ~Profiler(void) = default;
 
-                virtual void getEventData(std::function<void(std::string const &, float)> &&onEventData = nullptr) { };
+                virtual int updateEventData(void) { return -1; };
+                virtual void showEventData(int currentFrame) { };
 
                 virtual void beginFrame(void) { };
                 virtual void timeStamp(std::string const &name, uint32_t flags = 0) { };
@@ -363,13 +364,16 @@ namespace Gek
                 struct EventData
                 {
                     std::array<Video::QueryPtr, 3> eventList;
+                    std::list<std::pair<Video::Query::TimeStamp, float>> frameList;
                     float previousFrameTime = 0.0f;
                     float averageFrameTime = 0.0f;
                     float totalAverageTime = 0.0f;
                     uint32_t flags = 0;
+                    ImColor color;
 
                     EventData(uint32_t flags = 0)
                         : flags(flags)
+                        , color(rand() % 255, rand() % 255, rand() % 255)
                     {
                     }
                 };
@@ -392,38 +396,44 @@ namespace Gek
                     : videoDevice(videoDevice)
                     , videoContext(videoDevice->getDefaultContext())
                 {
-                    disjointList[0] = videoDevice->createQuery(Video::Query::Type::DisjointTimestamp);
-                    disjointList[1] = videoDevice->createQuery(Video::Query::Type::DisjointTimestamp);
-                    disjointList[2] = videoDevice->createQuery(Video::Query::Type::DisjointTimestamp);
+                    disjointList[0] = videoDevice->createQuery(Video::Query::Type::DisjointTimeStamp);
+                    disjointList[1] = videoDevice->createQuery(Video::Query::Type::DisjointTimeStamp);
+                    disjointList[2] = videoDevice->createQuery(Video::Query::Type::DisjointTimeStamp);
                 }
 
-                void getEventData(std::function<void(std::string const &, float)> &&onEventData)
+                int updateEventData(void)
                 {
                     if (frameUpdate < 0)
                     {
                         frameUpdate = 0;
-                        return;
+                        return -1;
                     }
 
                     int currentFrame = frameUpdate;
                     ++frameUpdate %= 3;
 
-                    Video::Query::DisjointTimestamp timestampDisjoint;
-                    if (videoContext->getData(disjointList[currentFrame].get(), &timestampDisjoint, sizeof(timestampDisjoint), true) == Video::Query::Status::Ready)
+                    Video::Query::DisjointTimeStamp timestampDisjoint;
+                    if (videoContext->getData(disjointList[currentFrame].get(), &timestampDisjoint, sizeof(Video::Query::DisjointTimeStamp), true) == Video::Query::Status::Ready)
                     {
                         if (!timestampDisjoint.disjoint)
                         {
-                            UINT64 previousTimeStamp = 0;
+                            Video::Query::TimeStamp previousTimeStamp = 0;
                             for (auto &eventSearch : eventTimeline[currentFrame])
                             {
-                                UINT64 currentTimeStamp = 0;
+                                Video::Query::TimeStamp currentTimeStamp = 0;
                                 auto &eventData = eventSearch->second;
-                                if (videoContext->getData(eventData.eventList[currentFrame].get(), &currentTimeStamp, sizeof(UINT64), true) == Video::Query::Status::Ready)
+                                if (videoContext->getData(eventData.eventList[currentFrame].get(), &currentTimeStamp, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready)
                                 {
-                                    UINT64 deltaTime = currentTimeStamp;
+                                    Video::Query::TimeStamp deltaTime = currentTimeStamp;
                                     deltaTime -= (previousTimeStamp == 0 ? currentTimeStamp : previousTimeStamp);
                                     eventData.previousFrameTime = float(deltaTime) / float(timestampDisjoint.frequency);
                                     eventData.totalAverageTime += eventData.previousFrameTime;
+                                    eventData.frameList.push_back(std::make_pair(currentTimeStamp, eventData.previousFrameTime));
+                                    if (eventData.frameList.size() > 100)
+                                    {
+                                        eventData.frameList.pop_front();
+                                    }
+
                                     previousTimeStamp = currentTimeStamp;
                                 }
                                 else
@@ -455,49 +465,82 @@ namespace Gek
                         nextFrameTime = (std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(500));
                     }
 
-                    if (onEventData)
+                    return currentFrame;
+                }
+
+                void showEventData(int currentFrame)
+                {
+                    float maximumTime = 0.0f;
+                    for (auto &eventSearch : eventTimeline[currentFrame])
                     {
-                        std::list<float> indentTime;
-                        indentTime.push_back(0.0f);
-                        for (auto &eventSearch : eventTimeline[currentFrame])
+                        for (auto &eventFrame : eventSearch->second.frameList)
                         {
-                            for (auto &time : indentTime)
-                            {
-                                time += eventSearch->second.averageFrameTime;
-                            }
+                            maximumTime = std::max(maximumTime, eventFrame.second);
+                        }
+                    }
 
-                            if (eventSearch->second.flags & Flags::PreIndent)
-                            {
-                                indentTime.push_back(0.0f);
-                                ImGui::Indent();
-                            }
-                            else if (eventSearch->second.flags & Flags::PreUnindent)
-                            {
-                                ImGui::Unindent();
-                                onEventData(eventSearch->first, indentTime.back());
-                                indentTime.pop_back();
-                            }
+                    for (auto &eventSearch : eventTimeline[currentFrame])
+                    {
+                        ImGui::PlotHistogram("##", [](void *data, int index) -> float
+                        {
+                            auto &frameList = *(std::list<std::pair<Video::Query::TimeStamp, float>> *)data;
+                            return std::next(std::begin(frameList), index)->second;
+                        }, &eventSearch->second.frameList, 100, 0, eventSearch->first.c_str(), 0.0f, 0.1f, ImVec2(ImGui::GetContentRegionAvailWidth(), 30.0f));
+                    } 
 
-                            if (!(eventSearch->second.flags & Flags::Hide))
-                            {
-                                onEventData(eventSearch->first, eventSearch->second.averageFrameTime);
-                            }
+                    auto showFloat = [](std::string const &label, float value)
+                    {
+                        auto labelEndPosition = label.find("##");
+                        auto labelEnd = (labelEndPosition == std::string::npos ? nullptr : label.c_str() + labelEndPosition);
+                        ImGui::AlignFirstTextHeightToWidgets();
+                        ImGui::TextUnformatted(label.c_str(), labelEnd);
 
-                            if (eventSearch->second.flags & Flags::PostIndent)
-                            {
-                                indentTime.push_back(0.0f);
-                                ImGui::Indent();
-                            }
-                            else if (eventSearch->second.flags & Flags::PostUnindent)
-                            {
-                                onEventData(eventSearch->first, indentTime.back());
-                                indentTime.pop_back();
-                                ImGui::Unindent();
-                            }
+                        ImGui::SameLine();
+                        ImGui::PushItemWidth(-1.0f);
+                        ImGui::InputFloat("##", &value, 0.0f, 0.0f, -1.0f, ImGuiInputTextFlags_ReadOnly);
+                        ImGui::PopItemWidth();
+                    };
+
+                    std::list<float> indentTime;
+                    indentTime.push_back(0.0f);
+                    for (auto &eventSearch : eventTimeline[currentFrame])
+                    {
+                        for (auto &time : indentTime)
+                        {
+                            time += eventSearch->second.averageFrameTime;
                         }
 
-                        onEventData("Frame Time", indentTime.front());
+                        if (eventSearch->second.flags & Flags::PreIndent)
+                        {
+                            indentTime.push_back(0.0f);
+                            ImGui::Indent();
+                        }
+                        else if (eventSearch->second.flags & Flags::PreUnindent)
+                        {
+                            ImGui::Unindent();
+                            showFloat(eventSearch->first, indentTime.back());
+                            indentTime.pop_back();
+                        }
+
+                        if (!(eventSearch->second.flags & Flags::Hide))
+                        {
+                            showFloat(eventSearch->first, eventSearch->second.averageFrameTime);
+                        }
+
+                        if (eventSearch->second.flags & Flags::PostIndent)
+                        {
+                            indentTime.push_back(0.0f);
+                            ImGui::Indent();
+                        }
+                        else if (eventSearch->second.flags & Flags::PostUnindent)
+                        {
+                            showFloat(eventSearch->first, indentTime.back());
+                            indentTime.pop_back();
+                            ImGui::Unindent();
+                        }
                     }
+
+                    showFloat("Frame Time", indentTime.front());
                 }
 
                 void beginFrame(void)
@@ -514,9 +557,10 @@ namespace Gek
                     auto &eventData = eventPair.second;
                     if (eventSearch.second)
                     {
-                        eventData.eventList[0] = videoDevice->createQuery(Video::Query::Type::Timestamp);
-                        eventData.eventList[1] = videoDevice->createQuery(Video::Query::Type::Timestamp);
-                        eventData.eventList[2] = videoDevice->createQuery(Video::Query::Type::Timestamp);
+                        eventData.eventList[0] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
+                        eventData.eventList[1] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
+                        eventData.eventList[2] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
+                        eventData.frameList.resize(100);
                     }
 
                     eventTimeline[frameQuery].push_back(&eventPair);
@@ -1657,34 +1701,16 @@ namespace Gek
                     ImGui::EndMainMenuBar();
                 }
 
+                int currentEventFrame = profiler->updateEventData();
                 if (showDebugInformation)
                 {
                     if (ImGui::Begin("Debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
                     {
-                        auto showFloat = [](char const *label, float value)
-                        {
-                            auto labelEnd = strstr(label, "##");
-                            ImGui::AlignFirstTextHeightToWidgets();
-                            ImGui::TextUnformatted(label, labelEnd);
-
-                            ImGui::SameLine();
-                            ImGui::PushItemWidth(-1.0f);
-                            ImGui::InputFloat("##", &value, 0.0f, 0.0f, -1.0f, ImGuiInputTextFlags_ReadOnly);
-                            ImGui::PopItemWidth();
-                        };
-
                         UI::TextFrame("Post Process", ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f));
-                        profiler->getEventData([&](std::string const &name, float value) -> void
-                        {
-                            showFloat(name.c_str(), value);
-                        });
+                        profiler->showEventData(currentEventFrame);
 
                         ImGui::End();
                     }
-                }
-                else
-                {
-                    profiler->getEventData();
                 }
 
                 ImGui::Render();
