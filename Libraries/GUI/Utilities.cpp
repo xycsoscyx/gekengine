@@ -104,7 +104,7 @@ namespace Gek
             return isClicked;
         }
 
-        void TextFrame(char const *label, ImVec2 const &requestedSize, ImGuiButtonFlags flags)
+        void TextFrame(char const *label, ImVec2 const &requestedSize, ImGuiButtonFlags flags, ImU32 *frameColor)
         {
             ImGuiWindow *window = ImGui::GetCurrentWindow();
             if (window->SkipItems)
@@ -129,7 +129,7 @@ namespace Gek
             ImGui::ItemSize(boundingBox, style.FramePadding.y);
             if (ImGui::ItemAdd(boundingBox, &labelIdentity))
             {
-                const ImU32 color = ImGui::GetColorU32(ImGuiCol_Button);
+                const ImU32 color = (frameColor ? *frameColor : ImGui::GetColorU32(ImGuiCol_Button));
                 ImGui::RenderFrame(boundingBox.Min, boundingBox.Max, color, true, style.FrameRounding);
                 ImGui::RenderTextClipped(boundingBox.Min + style.FramePadding, boundingBox.Max - style.FramePadding, label, nullptr, &labelSize, style.ButtonTextAlign, &boundingBox);
             }

@@ -38,6 +38,303 @@ namespace Gek
         static const Math::Float4 Negate(Math::Float2(-1.0f), Math::Float2(1.0f));
         static const Math::Float4 GridDimensions(GridWidth, GridWidth, GridHeight, GridHeight);
 
+        class Profiler
+        {
+        public:
+            virtual ~Profiler(void) = default;
+
+            virtual int updateEventData(void) { return -1; };
+            virtual void showEventData(int currentFrame) { };
+
+            virtual void beginFrame(void) { };
+            virtual void timeStamp(std::string const &name) { };
+            virtual void endFrame(void) { };
+            virtual void waitAndUpdate(void) { };
+        };
+
+        class GPUProfiler
+            : public Profiler
+        {
+        public:
+            struct History
+            {
+                float duration = 0.0f;
+                float percent = 0.0f;
+
+                History(void) = default;
+
+                History(float duration, float percent)
+                    : duration(duration)
+                    , percent(percent)
+                {
+                }
+            };
+
+            struct Data
+            {
+                std::array<Video::QueryPtr, 3> eventList;
+                std::array<History, 100> eventHistory;
+                ImColor color;
+                ImU32 color32;
+
+                Data(void)
+                    : color(rand() % 255, rand() % 255, rand() % 255)
+                    , color32(color)
+                {
+                }
+            };
+
+        private:
+            Video::Device *videoDevice = nullptr;
+            Video::Device::Context *videoContext = nullptr;
+            std::array<Video::QueryPtr, 3> disjointList;
+            std::array<Video::QueryPtr, 3> beginEventList;
+            std::array<Video::QueryPtr, 3> endEventList;
+            using EventMap = std::unordered_map<std::string, Data>;
+            EventMap eventMap;
+
+            int frameQuery = 0;
+            int frameUpdate = -1;
+            std::chrono::time_point<std::chrono::steady_clock> nextFrameTime;
+            std::array<std::vector<typename EventMap::value_type *>, 3> eventTimeline;
+            int historyIndex = 0;
+
+        public:
+            GPUProfiler(Video::Device *videoDevice)
+                : videoDevice(videoDevice)
+                , videoContext(videoDevice->getDefaultContext())
+            {
+                for (size_t index = 0; index < 3; ++index)
+                {
+                    disjointList[index] = videoDevice->createQuery(Video::Query::Type::DisjointTimeStamp);
+                    beginEventList[index] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
+                    endEventList[index] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
+                }
+            }
+
+            int updateEventData(void)
+            {
+                if (frameUpdate < 0)
+                {
+                    frameUpdate = 0;
+                    return -1;
+                }
+
+                int currentFrame = frameUpdate;
+                ++frameUpdate %= 3;
+
+                Video::Query::DisjointTimeStamp timestampDisjoint;
+                if (videoContext->getData(disjointList[currentFrame].get(), &timestampDisjoint, sizeof(Video::Query::DisjointTimeStamp), true) == Video::Query::Status::Ready)
+                {
+                    if (!timestampDisjoint.disjoint)
+                    {
+                        Video::Query::TimeStamp startTime = 0;
+                        if (videoContext->getData(beginEventList[currentFrame].get(), &startTime, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready)
+                        {
+                            Video::Query::TimeStamp endTime = 0;
+                            if (videoContext->getData(endEventList[currentFrame].get(), &endTime, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready)
+                            {
+                                Video::Query::TimeStamp frameTime = (endTime - startTime);
+                                Video::Query::TimeStamp previousTimeStamp = startTime;
+                                for (auto &eventSearch : eventTimeline[currentFrame])
+                                {
+                                    auto &eventData = eventSearch->second;
+                                    Video::Query::TimeStamp currentTimeStamp = 0;
+                                    if (videoContext->getData(eventData.eventList[currentFrame].get(), &currentTimeStamp, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready)
+                                    {
+                                        Video::Query::TimeStamp eventTime = (currentTimeStamp - previousTimeStamp);
+                                        float eventDuration = float(eventTime) / float(timestampDisjoint.frequency);
+                                        float eventPercent = (float(eventTime) / float(frameTime));
+                                        eventData.eventHistory[historyIndex].duration = (float(eventTime) / float(timestampDisjoint.frequency));
+                                        eventData.eventHistory[historyIndex].percent = (float(eventTime) / float(frameTime));
+                                        previousTimeStamp = currentTimeStamp;
+                                    }
+                                    else
+                                    {
+                                        LockedWrite{ std::cerr } << "Couldn't retrieve timestamp query data";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        LockedWrite{ std::cerr } << "Disjoint timestamps encountered, skipping";
+                    }
+                }
+                else
+                {
+                    LockedWrite{ std::cerr } << "Couldn't retrieve disjoint query data";
+                }
+
+                ++historyIndex %= 100;
+                return currentFrame;
+            }
+
+            void showEvent(EventMap::value_type *eventSearch)
+            {
+                auto &eventName = eventSearch->first;
+                auto &eventData = eventSearch->second;
+
+                auto labelEndPosition = eventName.find("##");
+                auto labelStart = eventName.c_str();
+                auto labelEnd = labelStart + (labelEndPosition == std::string::npos ? eventName.size() : labelEndPosition);
+                auto overlayText = String::Format("%v: %v", std::string(labelStart, labelEnd), eventData.eventHistory.back().percent);
+
+                auto valuesCount = eventData.eventHistory.size();
+                auto graphSize = ImVec2(ImGui::GetContentRegionAvailWidth(), 30.0f);
+                ImU32 colorBase = eventData.color;
+
+                ImGuiWindow* window = ImGui::GetCurrentWindow();
+                if (window->SkipItems)
+                {
+                    return;
+                }
+
+                ImGuiContext& guiContext = *GImGui;
+                const ImGuiStyle& style = guiContext.Style;
+                if (graphSize.x == 0.0f)
+                {
+                    graphSize.x = ImGui::CalcItemWidth();
+                }
+
+                if (graphSize.y == 0.0f)
+                {
+                    graphSize.y = (style.FramePadding.y * 2);
+                }
+
+                const ImRect frameBoundingBox(window->DC.CursorPos, window->DC.CursorPos + ImVec2(graphSize.x, graphSize.y));
+                const ImRect innerBoundingBox(frameBoundingBox.Min + style.FramePadding, frameBoundingBox.Max - style.FramePadding);
+                const ImRect totalBoundingBox(frameBoundingBox.Min, frameBoundingBox.Max + ImVec2(0.0f, 0.0f));
+                ImGui::ItemSize(totalBoundingBox, style.FramePadding.y);
+                if (!ImGui::ItemAdd(totalBoundingBox, nullptr))
+                {
+                    return;
+                }
+
+                float minimumScale = FLT_MAX;
+                float maximumScale = -FLT_MAX;
+                for (auto &eventHistory : eventData.eventHistory)
+                {
+                    minimumScale = ImMin(minimumScale, eventHistory.duration);
+                    maximumScale = ImMax(maximumScale, eventHistory.duration);
+                }
+
+                ImGui::RenderFrame(frameBoundingBox.Min, frameBoundingBox.Max, ImGui::GetColorU32(ImGuiCol_FrameBg), true, style.FrameRounding);
+                int stepCount = ImMin((int)graphSize.x, valuesCount);
+                int itemCount = valuesCount;
+
+                const float stepFactor = 1.0f / (float)stepCount;
+                auto value0 = eventData.eventHistory.front().duration;
+                float step0 = 0.0f;
+                // Point in the normalized space of our target rectangle
+                ImVec2 factor0 = ImVec2(step0, 1.0f - ImSaturate((value0 - minimumScale) / (maximumScale - minimumScale)));
+                for (auto &eventHistory : eventData.eventHistory)
+                {
+                    const float step1 = step0 + stepFactor;
+                    const int itemIndex = (int)(step0 * itemCount + 0.5f);
+                    IM_ASSERT(itemIndex >= 0 && itemIndex < valuesCount);
+                    const float value1 = eventHistory.duration;
+                    const ImVec2 factor1 = ImVec2(step1, 1.0f - ImSaturate((value1 - minimumScale) / (maximumScale - minimumScale)));
+
+                    // NB: Draw calls are merged together by the DrawList system. Still, we should render our batch are lower level to save a bit of CPU.
+                    ImVec2 point0 = ImLerp(innerBoundingBox.Min, innerBoundingBox.Max, factor0);
+                    ImVec2 point1 = ImLerp(innerBoundingBox.Min, innerBoundingBox.Max, ImVec2(factor1.x, 1.0f));
+                    if (point1.x >= point0.x + 2.0f)
+                    {
+                        point1.x -= 1.0f;
+                    }
+
+                    window->DrawList->AddRectFilled(point0, point1, colorBase);
+
+                    step0 = step1;
+                    factor0 = factor1;
+                }
+
+                ImGui::RenderTextClipped(ImVec2(frameBoundingBox.Min.x, frameBoundingBox.Min.y + style.FramePadding.y), frameBoundingBox.Max, overlayText.c_str(), nullptr, nullptr, ImVec2(0.5f, 0.0f));
+            }
+
+            void showEventData(int currentFrame)
+            {
+                auto graphSize = ImVec2(ImGui::GetContentRegionAvailWidth(), 100.0f);
+
+                ImGuiWindow* window = ImGui::GetCurrentWindow();
+                if (window->SkipItems)
+                {
+                    return;
+                }
+
+                ImGuiContext& guiContext = *GImGui;
+                const ImGuiStyle& style = guiContext.Style;
+                const ImRect frameBoundingBox(window->DC.CursorPos, (window->DC.CursorPos + graphSize));
+                const ImRect innerBoundingBox((frameBoundingBox.Min + style.FramePadding), (frameBoundingBox.Max - style.FramePadding));
+                ImGui::ItemSize(frameBoundingBox, style.FramePadding.y);
+                if (!ImGui::ItemAdd(frameBoundingBox, nullptr))
+                {
+                    return;
+                }
+
+                ImGui::RenderFrame(frameBoundingBox.Min, frameBoundingBox.Max, ImGui::GetColorU32(ImGuiCol_FrameBg), true, style.FrameRounding);
+
+                float step0 = 0.0f;
+                const float stepFactor = (1.0f / 100.0f);
+                for (size_t index = 0; index < 100; index++)
+                {
+                    ImVec2 factor0(step0, 1.0f);
+                    auto currentIndex = ((historyIndex + index + 1) % 100);
+                    for (auto &eventSearch : eventTimeline[currentFrame])
+                    {
+                        auto &eventHistory = eventSearch->second.eventHistory[currentIndex];
+                        const float step1 = step0 + stepFactor;
+                        const ImVec2 factor1 = ImVec2(step1, (factor0.y - eventHistory.percent));
+
+                        // NB: Draw calls are merged together by the DrawList system. Still, we should render our batch are lower level to save a bit of CPU.
+                        ImVec2 point0 = ImLerp(innerBoundingBox.Min, innerBoundingBox.Max, factor0);
+                        ImVec2 point1 = ImLerp(innerBoundingBox.Min, innerBoundingBox.Max, factor1);
+                        window->DrawList->AddRectFilled(point0, point1, eventSearch->second.color);
+                        factor0.y = factor1.y;
+                    }
+
+                    step0 += stepFactor;
+                }
+
+                for (auto &eventSearch : eventTimeline[currentFrame])
+                {
+                    UI::TextFrame(eventSearch->first.c_str(), ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f), 0, &eventSearch->second.color32);
+                }
+            }
+
+            void beginFrame(void)
+            {
+                eventTimeline[frameQuery].clear();
+                videoContext->begin(disjointList[frameQuery].get());
+                videoContext->end(beginEventList[frameQuery].get());
+            }
+
+            void timeStamp(std::string const &name)
+            {
+                auto eventSearch = eventMap.insert(std::make_pair(name, Data()));
+                auto &eventPair = *eventSearch.first;
+                auto &eventData = eventPair.second;
+                if (eventSearch.second)
+                {
+                    eventData.eventList[0] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
+                    eventData.eventList[1] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
+                    eventData.eventList[2] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
+                }
+
+                eventTimeline[frameQuery].push_back(&eventPair);
+                videoContext->end(eventData.eventList[frameQuery].get());
+            }
+
+            void endFrame(void)
+            {
+                videoContext->end(endEventList[frameQuery].get());
+                videoContext->end(disjointList[frameQuery].get());
+                ++frameQuery %= 3;
+            }
+        };
+
         GEK_CONTEXT_USER(Renderer, Plugin::Core *)
             , public Plugin::Renderer
         {
@@ -333,248 +630,6 @@ namespace Gek
                 }
             };
 
-            class Profiler
-            {
-            public:
-                enum Flags
-                {
-                    Hide = 1 << 0,
-                    PreIndent = 1 << 1,
-                    PostIndent = 1 << 2,
-                    PreUnindent = 1 << 3,
-                    PostUnindent = 1 << 4,
-                };
-
-            public:
-                virtual ~Profiler(void) = default;
-
-                virtual int updateEventData(void) { return -1; };
-                virtual void showEventData(int currentFrame) { };
-
-                virtual void beginFrame(void) { };
-                virtual void timeStamp(std::string const &name, uint32_t flags = 0) { };
-                virtual void endFrame(void) { };
-                virtual void waitAndUpdate(void) { };
-            };
-
-            class GPUProfiler
-                : public Profiler
-            {
-            public:
-                struct EventData
-                {
-                    std::array<Video::QueryPtr, 3> eventList;
-                    std::list<std::pair<Video::Query::TimeStamp, float>> frameList;
-                    float previousFrameTime = 0.0f;
-                    float averageFrameTime = 0.0f;
-                    float totalAverageTime = 0.0f;
-                    uint32_t flags = 0;
-                    ImColor color;
-
-                    EventData(uint32_t flags = 0)
-                        : flags(flags)
-                        , color(rand() % 255, rand() % 255, rand() % 255)
-                    {
-                    }
-                };
-
-            private:
-                Video::Device *videoDevice = nullptr;
-                Video::Device::Context *videoContext = nullptr;
-                std::array<Video::QueryPtr, 3> disjointList;
-                using EventMap = std::unordered_map<std::string, EventData>;
-                EventMap eventMap;
-
-                int frameQuery = 0;
-                int frameUpdate = -1;
-                int frameCountAverage = 0;
-                std::chrono::time_point<std::chrono::steady_clock> nextFrameTime;
-                std::array<std::vector<typename EventMap::value_type *>, 3> eventTimeline;
-
-            public:
-                GPUProfiler(Video::Device *videoDevice)
-                    : videoDevice(videoDevice)
-                    , videoContext(videoDevice->getDefaultContext())
-                {
-                    disjointList[0] = videoDevice->createQuery(Video::Query::Type::DisjointTimeStamp);
-                    disjointList[1] = videoDevice->createQuery(Video::Query::Type::DisjointTimeStamp);
-                    disjointList[2] = videoDevice->createQuery(Video::Query::Type::DisjointTimeStamp);
-                }
-
-                int updateEventData(void)
-                {
-                    if (frameUpdate < 0)
-                    {
-                        frameUpdate = 0;
-                        return -1;
-                    }
-
-                    int currentFrame = frameUpdate;
-                    ++frameUpdate %= 3;
-
-                    Video::Query::DisjointTimeStamp timestampDisjoint;
-                    if (videoContext->getData(disjointList[currentFrame].get(), &timestampDisjoint, sizeof(Video::Query::DisjointTimeStamp), true) == Video::Query::Status::Ready)
-                    {
-                        if (!timestampDisjoint.disjoint)
-                        {
-                            Video::Query::TimeStamp previousTimeStamp = 0;
-                            for (auto &eventSearch : eventTimeline[currentFrame])
-                            {
-                                Video::Query::TimeStamp currentTimeStamp = 0;
-                                auto &eventData = eventSearch->second;
-                                if (videoContext->getData(eventData.eventList[currentFrame].get(), &currentTimeStamp, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready)
-                                {
-                                    Video::Query::TimeStamp deltaTime = currentTimeStamp;
-                                    deltaTime -= (previousTimeStamp == 0 ? currentTimeStamp : previousTimeStamp);
-                                    eventData.previousFrameTime = float(deltaTime) / float(timestampDisjoint.frequency);
-                                    eventData.totalAverageTime += eventData.previousFrameTime;
-                                    eventData.frameList.push_back(std::make_pair(currentTimeStamp, eventData.previousFrameTime));
-                                    if (eventData.frameList.size() > 100)
-                                    {
-                                        eventData.frameList.pop_front();
-                                    }
-
-                                    previousTimeStamp = currentTimeStamp;
-                                }
-                                else
-                                {
-                                    LockedWrite{ std::cerr } << "Couldn't retrieve timestamp query data";
-                                }
-                            }
-                        }
-                        else
-                        {
-                            LockedWrite{ std::cerr } << "Disjoint timestamps encountered, skipping";
-                        }
-                    }
-                    else
-                    {
-                        LockedWrite{ std::cerr } << "Couldn't retrieve disjoint query data";
-                    }
-
-                    ++frameCountAverage;
-                    if (std::chrono::high_resolution_clock::now() > nextFrameTime)
-                    {
-                        for (auto &eventSearch : eventMap)
-                        {
-                            eventSearch.second.averageFrameTime = eventSearch.second.totalAverageTime / frameCountAverage;
-                            eventSearch.second.totalAverageTime = 0.0f;
-                        }
-
-                        frameCountAverage = 0;
-                        nextFrameTime = (std::chrono::high_resolution_clock::now() + std::chrono::milliseconds(500));
-                    }
-
-                    return currentFrame;
-                }
-
-                void showEventData(int currentFrame)
-                {
-                    float maximumTime = 0.0f;
-                    for (auto &eventSearch : eventTimeline[currentFrame])
-                    {
-                        for (auto &eventFrame : eventSearch->second.frameList)
-                        {
-                            maximumTime = std::max(maximumTime, eventFrame.second);
-                        }
-                    }
-
-                    for (auto &eventSearch : eventTimeline[currentFrame])
-                    {
-                        ImGui::PlotHistogram("##", [](void *data, int index) -> float
-                        {
-                            auto &frameList = *(std::list<std::pair<Video::Query::TimeStamp, float>> *)data;
-                            return std::next(std::begin(frameList), index)->second;
-                        }, &eventSearch->second.frameList, 100, 0, eventSearch->first.c_str(), 0.0f, 0.1f, ImVec2(ImGui::GetContentRegionAvailWidth(), 30.0f));
-                    } 
-
-                    auto showFloat = [](std::string const &label, float value)
-                    {
-                        auto labelEndPosition = label.find("##");
-                        auto labelEnd = (labelEndPosition == std::string::npos ? nullptr : label.c_str() + labelEndPosition);
-                        ImGui::AlignFirstTextHeightToWidgets();
-                        ImGui::TextUnformatted(label.c_str(), labelEnd);
-
-                        ImGui::SameLine();
-                        ImGui::PushItemWidth(-1.0f);
-                        ImGui::InputFloat("##", &value, 0.0f, 0.0f, -1.0f, ImGuiInputTextFlags_ReadOnly);
-                        ImGui::PopItemWidth();
-                    };
-
-                    std::list<float> indentTime;
-                    indentTime.push_back(0.0f);
-                    for (auto &eventSearch : eventTimeline[currentFrame])
-                    {
-                        for (auto &time : indentTime)
-                        {
-                            time += eventSearch->second.averageFrameTime;
-                        }
-
-                        if (eventSearch->second.flags & Flags::PreIndent)
-                        {
-                            indentTime.push_back(0.0f);
-                            ImGui::Indent();
-                        }
-                        else if (eventSearch->second.flags & Flags::PreUnindent)
-                        {
-                            ImGui::Unindent();
-                            showFloat(eventSearch->first, indentTime.back());
-                            indentTime.pop_back();
-                        }
-
-                        if (!(eventSearch->second.flags & Flags::Hide))
-                        {
-                            showFloat(eventSearch->first, eventSearch->second.averageFrameTime);
-                        }
-
-                        if (eventSearch->second.flags & Flags::PostIndent)
-                        {
-                            indentTime.push_back(0.0f);
-                            ImGui::Indent();
-                        }
-                        else if (eventSearch->second.flags & Flags::PostUnindent)
-                        {
-                            showFloat(eventSearch->first, indentTime.back());
-                            indentTime.pop_back();
-                            ImGui::Unindent();
-                        }
-                    }
-
-                    showFloat("Frame Time", indentTime.front());
-                }
-
-                void beginFrame(void)
-                {
-                    eventTimeline[frameQuery].clear();
-                    videoContext->begin(disjointList[frameQuery].get());
-                    timeStamp("**beginFrame", Flags::Hide);
-                }
-
-                void timeStamp(std::string const &name, uint32_t flags)
-                {
-                    auto eventSearch = eventMap.insert(std::make_pair(name, EventData(flags)));
-                    auto &eventPair = *eventSearch.first;
-                    auto &eventData = eventPair.second;
-                    if (eventSearch.second)
-                    {
-                        eventData.eventList[0] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
-                        eventData.eventList[1] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
-                        eventData.eventList[2] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
-                        eventData.frameList.resize(100);
-                    }
-
-                    eventTimeline[frameQuery].push_back(&eventPair);
-                    videoContext->end(eventData.eventList[frameQuery].get());
-                }
-
-                void endFrame(void)
-                {
-                    timeStamp("**endFrame", Flags::Hide);
-                    videoContext->end(disjointList[frameQuery].get());
-                    ++frameQuery %= 3;
-                }
-            };
-
         private:
             Plugin::Core *core = nullptr;
             Video::Device *videoDevice = nullptr;
@@ -622,8 +677,13 @@ namespace Gek
 
             std::string screenOutput;
 
-            struct
+            struct GUI
             {
+                struct DataBuffer
+                {
+                    Math::Float4x4 projectionMatrix;
+                };
+
                 Video::ObjectPtr vertexProgram;
                 Video::ObjectPtr inputLayout;
                 Video::BufferPtr constantBuffer;
@@ -782,9 +842,11 @@ namespace Gek
                 LockedWrite{ std::cout } << "Initializing user interface data";
 
                 static char const vertexShader[] =
-                    "cbuffer vertexBuffer : register(b0)" \
+                    "cbuffer DataBuffer : register(b0)" \
                     "{" \
                     "    float4x4 ProjectionMatrix;" \
+                    "    bool TextureHasAlpha;" \
+                    "    bool buffer[3];" \
                     "};" \
                     "" \
                     "struct VertexInput" \
@@ -833,13 +895,20 @@ namespace Gek
                 gui.inputLayout->setName("core:inputLayout");
 
                 Video::Buffer::Description constantBufferDescription;
-                constantBufferDescription.stride = sizeof(Math::Float4x4);
+                constantBufferDescription.stride = sizeof(GUI::DataBuffer);
                 constantBufferDescription.count = 1;
                 constantBufferDescription.type = Video::Buffer::Type::Constant;
                 gui.constantBuffer = videoDevice->createBuffer(constantBufferDescription);
                 gui.constantBuffer->setName("core:constantBuffer");
 
                 static char const pixelShader[] =
+                    "cbuffer DataBuffer : register(b0)" \
+                    "{" \
+                    "    float4x4 ProjectionMatrix;" \
+                    "    bool TextureHasAlpha;" \
+                    "    bool buffer[3];" \
+                    "};" \
+                    "" \
                     "struct PixelInput" \
                     "{" \
                     "    float4 position : SV_POSITION;" \
@@ -911,8 +980,7 @@ namespace Gek
                 fontDescription.height = fontHeight;
                 fontDescription.flags = Video::Texture::Flags::Resource;
                 gui.fontTexture = videoDevice->createTexture(fontDescription, pixels);
-
-                imGuiIo.Fonts->TexID = static_cast<Video::Object *>(gui.fontTexture.get());
+                imGuiIo.Fonts->TexID = static_cast<ImTextureID>(gui.fontTexture.get());
 
                 imGuiIo.UserData = this;
                 imGuiIo.RenderDrawListsFn = [](ImDrawData *drawData)
@@ -1025,8 +1093,10 @@ namespace Gek
                     auto backBuffer = videoDevice->getBackBuffer();
                     uint32_t width = backBuffer->getDescription().width;
                     uint32_t height = backBuffer->getDescription().height;
-                    auto orthographic = Math::Float4x4::MakeOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
-                    videoDevice->updateResource(gui.constantBuffer.get(), &orthographic);
+
+                    GUI::DataBuffer dataBuffer;
+                    dataBuffer.projectionMatrix = Math::Float4x4::MakeOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
+                    videoDevice->updateResource(gui.constantBuffer.get(), &dataBuffer);
 
                     auto videoContext = videoDevice->getDefaultContext();
                     videoContext->setRenderTargetList({ videoDevice->getBackBuffer() }, nullptr);
@@ -1065,7 +1135,7 @@ namespace Gek
                                 scissorBoxList[0].maximum.y = uint32_t(command->ClipRect.w);
                                 videoContext->setScissorList(scissorBoxList);
 
-                                textureList[0] = reinterpret_cast<Video::Object *>(command->TextureId);
+                                textureList[0] = reinterpret_cast<Video::Texture *>(command->TextureId);
                                 videoContext->pixelPipeline()->setResourceList(textureList, 0);
 
                                 videoContext->drawIndexedPrimitive(command->ElemCount, indexOffset, vertexOffset);
@@ -1345,7 +1415,7 @@ namespace Gek
                 Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                 while (cameraQueue.try_pop(currentCamera))
                 {
-                    profiler->timeStamp(String::Format("Begin Camera: %v", currentCamera.name), Profiler::Flags::PostIndent);
+                    profiler->timeStamp(String::Format("Begin Camera: %v", currentCamera.name));
 
                     drawCallList.clear();
                     onQueueDrawCalls(currentCamera.viewFrustum, currentCamera.viewMatrix, currentCamera.projectionMatrix);
@@ -1550,7 +1620,7 @@ namespace Gek
                             for (auto const &shaderDrawCall : shaderDrawCallList.second)
                             {
                                 auto &shader = shaderDrawCall.shader;
-                                profiler->timeStamp(String::Format("Begin Shader: %v", shader->getName()), Profiler::Flags::PostIndent);
+                                profiler->timeStamp(String::Format("Begin Shader: %v", shader->getName()));
 
                                 finalOutput = shader->getOutput();
 
@@ -1596,8 +1666,6 @@ namespace Gek
                                     pass->clear();
                                     profiler->timeStamp(String::Format("%v##%v", pass->getName(), shader->getName()));
                                 }
-
-                                profiler->timeStamp(String::Format("End Shader: %v", shader->getName()), Profiler::Flags::Hide | Profiler::Flags::PreUnindent);
                             }
                         }
 
@@ -1616,8 +1684,6 @@ namespace Gek
                             screenOutput = finalOutput;
                         }
                     }
-
-                    profiler->timeStamp(String::Format("End Camera: %v", currentCamera.name), Profiler::Flags::Hide | Profiler::Flags::PreUnindent);
                 };
 
                 auto screenHandle = resources->getResourceHandle(screenOutput);
@@ -1640,7 +1706,7 @@ namespace Gek
                         auto const filter = resources->getFilter(filterName);
                         if (filter)
                         {
-                            profiler->timeStamp(String::Format("Begin Filter: %v", filter->getName()), Profiler::Flags::PostIndent);
+                            profiler->timeStamp(String::Format("Begin Filter: %v", filter->getName()));
                             for (auto pass = filter->begin(videoContext, screenHandle, ResourceHandle()); pass; pass = pass->next())
                             {
                                 switch (pass->prepare())
@@ -1656,8 +1722,6 @@ namespace Gek
                                 pass->clear();
                                 profiler->timeStamp(String::Format("%v##%v", pass->getName(), filter->getName()));
                             }
-
-                            profiler->timeStamp(String::Format("End Filter: %v", filter->getName()), Profiler::Flags::Hide | Profiler::Flags::PreUnindent);
                         }
                     }
 

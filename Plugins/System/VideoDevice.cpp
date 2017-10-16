@@ -19,6 +19,72 @@ namespace Gek
 {
     namespace Video
     {
+        bool HasAlpha(Format format)
+        {
+            static const bool HasAlphaList[] =
+            {
+                false, // Unknown = 0,
+
+                true, //R32G32B32A32_FLOAT,
+                true, //R16G16B16A16_FLOAT,
+                false, //R32G32B32_FLOAT,
+                false, //R11G11B10_FLOAT,
+                false, //R32G32_FLOAT,
+                false, //R16G16_FLOAT,
+                false, //R32_FLOAT,
+                false, //R16_FLOAT,
+
+                true, //R32G32B32A32_UINT,
+                true, //R16G16B16A16_UINT,
+                true, //R10G10B10A2_UINT,
+                true, //R8G8B8A8_UINT,
+                false, //R32G32B32_UINT,
+                false, //R32G32_UINT,
+                false, //R16G16_UINT,
+                false, //R8G8_UINT,
+                false, //R32_UINT,
+                false, //R16_UINT,
+                false, //R8_UINT,
+
+                true, //R32G32B32A32_INT,
+                true, //R16G16B16A16_INT,
+                true, //R8G8B8A8_INT,
+                false, //R32G32B32_INT,
+                false, //R32G32_INT,
+                false, //R16G16_INT,
+                false, //R8G8_INT,
+                false, //R32_INT,
+                false, //R16_INT,
+                false, //R8_INT,
+
+                true, //R16G16B16A16_UNORM,
+                true, //R10G10B10A2_UNORM,
+                true, //R8G8B8A8_UNORM,
+                true, //R8G8B8A8_UNORM_SRGB,
+                false, //R16G16_UNORM,
+                false, //R8G8_UNORM,
+                false, //R16_UNORM,
+                false, //R8_UNORM,
+
+                true, //R16G16B16A16_NORM,
+                true, //R8G8B8A8_NORM,
+                false, //R16G16_NORM,
+                false, //R8G8_NORM,
+                false, //R16_NORM,
+                false, //R8_NORM,
+
+                false, //D32_FLOAT_S8X24_UINT,
+                false, //D24_UNORM_S8_UINT,
+
+                false, //D32_FLOAT,
+                false, //D16_UNORM,
+
+                false, //Count,
+            };
+
+            return HasAlphaList[static_cast<uint8_t>(format)];
+        }
+
         std::string Buffer::GetType(Type type)
         {
             static const std::unordered_map<Type, std::string> data =

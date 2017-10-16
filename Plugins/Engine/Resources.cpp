@@ -820,9 +820,11 @@ namespace Gek
                     if (object->getTypeInfo() == typeid(Video::Texture) || object->getTypeInfo() == typeid(Video::Target))
                     {
                         auto texture = dynamic_cast<Video::Texture *>(object.get());
-                        Video::Object *object = texture;
-
                         auto const &description = texture->getDescription();
+                        float width = ImGui::GetContentRegionAvailWidth();
+                        float ratio = (width / float(description.width));
+                        float height = (float(description.height) * ratio);
+                        ImGui::Image(reinterpret_cast<ImTextureID>(texture), ImVec2(width, height));
                         showResourceValue("Format", "##format", Video::GetFormat(description.format));
                         showResourceValue("Width", "##width", std::to_string(description.width));
                         showResourceValue("Height", "##height", std::to_string(description.height));
@@ -831,7 +833,6 @@ namespace Gek
                         showResourceValue("MultiSample Count", "##sampleCount", std::to_string(description.sampleCount));
                         showResourceValue("MultiSample Quality", "##sampleQuality", std::to_string(description.sampleQuality));
                         showResourceValue("Flags", "##flags", std::to_string(description.flags));
-                        ImGui::Image(reinterpret_cast<ImTextureID>(object), ImVec2(ImGui::GetContentRegionAvailWidth(), ImGui::GetContentRegionAvailWidth()));
                     }
                     else if (object->getTypeInfo() == typeid(Video::Buffer))
                     {

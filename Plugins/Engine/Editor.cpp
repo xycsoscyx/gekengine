@@ -78,7 +78,7 @@ namespace Gek
                     int iconSize = 0;
                     void const *iconBuffer = ImGui::TabWindow::GetDockPanelIconImagePng(&iconSize);
                     dockPanelIcon = core->getVideoDevice()->loadTexture(iconBuffer, iconSize, 0);
-                    ImGui::TabWindow::DockPanelIconTextureID = dynamic_cast<Video::Object *>(dockPanelIcon.get());
+                    ImGui::TabWindow::DockPanelIconTextureID = dynamic_cast<ImTextureID>(dockPanelIcon.get());
                 }
 
                 dock = std::make_unique<UI::Dock::WorkSpace>();
@@ -145,9 +145,10 @@ namespace Gek
                     cameraTarget = core->getResources()->createTexture("editorTarget", description, Plugin::Resources::Flags::LoadImmediately);
 
                     auto cameraBuffer = dynamic_cast<Engine::Resources *>(core->getResources())->getResource(cameraTarget);
-                    if (cameraBuffer)
+                    auto cameraTexture = (cameraBuffer ? dynamic_cast<Video::Texture *>(cameraBuffer) : nullptr);
+                    if (cameraTexture)
                     {
-                        ImGui::Image(reinterpret_cast<ImTextureID>(cameraBuffer), cameraSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+                        ImGui::Image(reinterpret_cast<ImTextureID>(cameraTexture), cameraSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
                         if (selectedEntity)
                         {
                             if (selectedEntity->hasComponent<Components::Transform>())

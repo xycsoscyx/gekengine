@@ -83,6 +83,7 @@ namespace Gek
             Count,
         };
 
+        bool HasAlpha(Format format);
         Format GetFormat(std::string const &format);
         std::string GetFormat(Format format);
 
