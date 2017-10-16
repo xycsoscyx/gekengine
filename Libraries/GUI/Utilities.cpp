@@ -104,7 +104,7 @@ namespace Gek
             return isClicked;
         }
 
-        void TextFrame(char const *label, ImVec2 const &requestedSize, ImGuiButtonFlags flags, ImU32 *frameColor)
+        void TextFrame(char const *label, ImVec2 const &requestedSize, ImGuiButtonFlags flags, const ImU32 *frameColor, const ImColor *textColor)
         {
             ImGuiWindow *window = ImGui::GetCurrentWindow();
             if (window->SkipItems)
@@ -131,7 +131,16 @@ namespace Gek
             {
                 const ImU32 color = (frameColor ? *frameColor : ImGui::GetColorU32(ImGuiCol_Button));
                 ImGui::RenderFrame(boundingBox.Min, boundingBox.Max, color, true, style.FrameRounding);
+                if (textColor)
+                {
+                    ImGui::PushStyleColor(ImGuiCol_Text, *textColor);
+                }
+
                 ImGui::RenderTextClipped(boundingBox.Min + style.FramePadding, boundingBox.Max - style.FramePadding, label, nullptr, &labelSize, style.ButtonTextAlign, &boundingBox);
+                if (textColor)
+                {
+                    ImGui::PopStyleColor();
+                }
             }
         }
 

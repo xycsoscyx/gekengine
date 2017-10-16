@@ -78,9 +78,13 @@ namespace Gek
                 ImU32 color32;
 
                 Data(void)
-                    : color(rand() % 255, rand() % 255, rand() % 255)
-                    , color32(color)
+                    : color(
+                        rand() % 255,
+                        rand() % 255,
+                        rand() % 255)
                 {
+                    *((Math::Float4 *)&color) = ((Math::Float4 *)&color)->getNormal();
+                    color32 = color;
                 }
             };
 
@@ -171,92 +175,10 @@ namespace Gek
                 return currentFrame;
             }
 
-            void showEvent(EventMap::value_type *eventSearch)
-            {
-                auto &eventName = eventSearch->first;
-                auto &eventData = eventSearch->second;
-
-                auto labelEndPosition = eventName.find("##");
-                auto labelStart = eventName.c_str();
-                auto labelEnd = labelStart + (labelEndPosition == std::string::npos ? eventName.size() : labelEndPosition);
-                auto overlayText = String::Format("%v: %v", std::string(labelStart, labelEnd), eventData.eventHistory.back().percent);
-
-                auto valuesCount = eventData.eventHistory.size();
-                auto graphSize = ImVec2(ImGui::GetContentRegionAvailWidth(), 30.0f);
-                ImU32 colorBase = eventData.color;
-
-                ImGuiWindow* window = ImGui::GetCurrentWindow();
-                if (window->SkipItems)
-                {
-                    return;
-                }
-
-                ImGuiContext& guiContext = *GImGui;
-                const ImGuiStyle& style = guiContext.Style;
-                if (graphSize.x == 0.0f)
-                {
-                    graphSize.x = ImGui::CalcItemWidth();
-                }
-
-                if (graphSize.y == 0.0f)
-                {
-                    graphSize.y = (style.FramePadding.y * 2);
-                }
-
-                const ImRect frameBoundingBox(window->DC.CursorPos, window->DC.CursorPos + ImVec2(graphSize.x, graphSize.y));
-                const ImRect innerBoundingBox(frameBoundingBox.Min + style.FramePadding, frameBoundingBox.Max - style.FramePadding);
-                const ImRect totalBoundingBox(frameBoundingBox.Min, frameBoundingBox.Max + ImVec2(0.0f, 0.0f));
-                ImGui::ItemSize(totalBoundingBox, style.FramePadding.y);
-                if (!ImGui::ItemAdd(totalBoundingBox, nullptr))
-                {
-                    return;
-                }
-
-                float minimumScale = FLT_MAX;
-                float maximumScale = -FLT_MAX;
-                for (auto &eventHistory : eventData.eventHistory)
-                {
-                    minimumScale = ImMin(minimumScale, eventHistory.duration);
-                    maximumScale = ImMax(maximumScale, eventHistory.duration);
-                }
-
-                ImGui::RenderFrame(frameBoundingBox.Min, frameBoundingBox.Max, ImGui::GetColorU32(ImGuiCol_FrameBg), true, style.FrameRounding);
-                int stepCount = ImMin((int)graphSize.x, valuesCount);
-                int itemCount = valuesCount;
-
-                const float stepFactor = 1.0f / (float)stepCount;
-                auto value0 = eventData.eventHistory.front().duration;
-                float step0 = 0.0f;
-                // Point in the normalized space of our target rectangle
-                ImVec2 factor0 = ImVec2(step0, 1.0f - ImSaturate((value0 - minimumScale) / (maximumScale - minimumScale)));
-                for (auto &eventHistory : eventData.eventHistory)
-                {
-                    const float step1 = step0 + stepFactor;
-                    const int itemIndex = (int)(step0 * itemCount + 0.5f);
-                    IM_ASSERT(itemIndex >= 0 && itemIndex < valuesCount);
-                    const float value1 = eventHistory.duration;
-                    const ImVec2 factor1 = ImVec2(step1, 1.0f - ImSaturate((value1 - minimumScale) / (maximumScale - minimumScale)));
-
-                    // NB: Draw calls are merged together by the DrawList system. Still, we should render our batch are lower level to save a bit of CPU.
-                    ImVec2 point0 = ImLerp(innerBoundingBox.Min, innerBoundingBox.Max, factor0);
-                    ImVec2 point1 = ImLerp(innerBoundingBox.Min, innerBoundingBox.Max, ImVec2(factor1.x, 1.0f));
-                    if (point1.x >= point0.x + 2.0f)
-                    {
-                        point1.x -= 1.0f;
-                    }
-
-                    window->DrawList->AddRectFilled(point0, point1, colorBase);
-
-                    step0 = step1;
-                    factor0 = factor1;
-                }
-
-                ImGui::RenderTextClipped(ImVec2(frameBoundingBox.Min.x, frameBoundingBox.Min.y + style.FramePadding.y), frameBoundingBox.Max, overlayText.c_str(), nullptr, nullptr, ImVec2(0.5f, 0.0f));
-            }
-
             void showEventData(int currentFrame)
             {
-                auto graphSize = ImVec2(ImGui::GetContentRegionAvailWidth(), 100.0f);
+                float contentWidth = ImGui::GetContentRegionAvailWidth();
+                auto graphSize = ImVec2(contentWidth, 100.0f);
 
                 ImGuiWindow* window = ImGui::GetCurrentWindow();
                 if (window->SkipItems)
@@ -277,30 +199,77 @@ namespace Gek
                 ImGui::RenderFrame(frameBoundingBox.Min, frameBoundingBox.Max, ImGui::GetColorU32(ImGuiCol_FrameBg), true, style.FrameRounding);
 
                 float step0 = 0.0f;
-                const float stepFactor = (1.0f / 100.0f);
-                for (size_t index = 0; index < 100; index++)
+                const float stepFactor = (1.0f / 101.0f);
+                for (size_t index = 0; index < 100; ++index)
                 {
                     ImVec2 factor0(step0, 1.0f);
+                    const float step1 = step0 + stepFactor;
                     auto currentIndex = ((historyIndex + index + 1) % 100);
                     for (auto &eventSearch : eventTimeline[currentFrame])
                     {
                         auto &eventHistory = eventSearch->second.eventHistory[currentIndex];
-                        const float step1 = step0 + stepFactor;
                         const ImVec2 factor1 = ImVec2(step1, (factor0.y - eventHistory.percent));
-
-                        // NB: Draw calls are merged together by the DrawList system. Still, we should render our batch are lower level to save a bit of CPU.
                         ImVec2 point0 = ImLerp(innerBoundingBox.Min, innerBoundingBox.Max, factor0);
                         ImVec2 point1 = ImLerp(innerBoundingBox.Min, innerBoundingBox.Max, factor1);
                         window->DrawList->AddRectFilled(point0, point1, eventSearch->second.color);
                         factor0.y = factor1.y;
                     }
 
-                    step0 += stepFactor;
+                    step0 = step1;
                 }
 
-                for (auto &eventSearch : eventTimeline[currentFrame])
+                auto &eventFrame = eventTimeline[currentFrame];
+                auto eventCount = eventFrame.size();
+
+                std::vector<float> lineList;
+                std::vector<float> widthList;
+                auto getLineWidths = [&](void) -> void
                 {
-                    UI::TextFrame(eventSearch->first.c_str(), ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f), 0, &eventSearch->second.color32);
+                    widthList.push_back(-1.0f);
+                    float lineWidth = std::accumulate(std::begin(lineList), std::end(lineList), 0.0f);
+                    float itemContentWidth = (contentWidth - (lineList.empty() ? 0.0f : ((lineList.size() - 1) * style.ItemSpacing.x)));
+                    float extraWidth = ((itemContentWidth - lineWidth) / float(lineList.size()));
+                    for (auto &itemWidth : lineList)
+                    {
+                        widthList.push_back(itemWidth + extraWidth);
+                    }
+
+                    lineList.clear();
+                };
+
+                float cursorPosition = 0.0f;
+                for (auto &eventSearch : eventFrame)
+                {
+                    float itemWidth = (ImGui::CalcTextSize(eventSearch->first.c_str()).x + (style.FramePadding.x * 2.0f));
+                    float itemSpacing = (lineList.empty() ? 0.0f : ((lineList.size() - 1) * style.ItemSpacing.x));
+                    if ((cursorPosition + itemSpacing + itemWidth) > contentWidth)
+                    {
+                        getLineWidths();
+                        cursorPosition = 0.0f;
+                    }
+
+                    lineList.push_back(itemWidth);
+                    cursorPosition += itemWidth;
+                }
+
+                getLineWidths();
+                auto widths = widthList.data();
+                for(auto &eventSearch : eventFrame)
+                {
+                    auto &eventName = eventSearch->first;
+                    auto &eventData = eventSearch->second;
+                    float itemWidth = *widths++;
+                    if (itemWidth == -1.0f)
+                    {
+                        itemWidth = *widths++;
+                    }
+                    else
+                    {
+                        ImGui::SameLine();
+                    }
+
+                    static const ImColor Black(0.0f, 0.0f, 0.0f, 1.0f);
+                    UI::TextFrame(eventName.c_str(), ImVec2(itemWidth, 0.0f), 0, &eventData.color32, &Black);
                 }
             }
 
