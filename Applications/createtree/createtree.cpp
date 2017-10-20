@@ -55,12 +55,12 @@ struct Parameters
     float feetPerUnit = 1.0f;
 };
 
-bool GetNodeMeshes(const Parameters &parameters, const aiScene *scene, const aiNode *inputNode, Model &model)
+void GetNodeMeshes(const Parameters &parameters, const aiScene *scene, const aiNode *inputNode, Model &model)
 {
     if (inputNode == nullptr)
     {
         LockedWrite{ std::cerr } << "Invalid scene inputNode";
-        return false;
+        return;
     }
 
     if (inputNode->mNumMeshes > 0)
@@ -68,63 +68,64 @@ bool GetNodeMeshes(const Parameters &parameters, const aiScene *scene, const aiN
         if (inputNode->mMeshes == nullptr)
         {
             LockedWrite{ std::cerr } << "Invalid mesh list";
-            return false;
         }
-
-        for (uint32_t meshIndex = 0; meshIndex < inputNode->mNumMeshes; ++meshIndex)
+        else
         {
-            uint32_t nodeMeshIndex = inputNode->mMeshes[meshIndex];
-            if (nodeMeshIndex >= scene->mNumMeshes)
+            for (uint32_t meshIndex = 0; meshIndex < inputNode->mNumMeshes; ++meshIndex)
             {
-                LockedWrite{ std::cerr } << "Invalid mesh index";
-            }
-
-            const aiMesh *inputMesh = scene->mMeshes[nodeMeshIndex];
-            if (inputMesh->mNumFaces > 0)
-            {
-                if (inputMesh->mFaces == nullptr)
+                uint32_t nodeMeshIndex = inputNode->mMeshes[meshIndex];
+                if (nodeMeshIndex >= scene->mNumMeshes)
                 {
-                    LockedWrite{ std::cerr } << "Invalid mesh face list";
+                    LockedWrite{ std::cerr } << "Invalid mesh index";
                 }
 
-				if (inputMesh->mVertices == nullptr)
-				{
-					LockedWrite{ std::cerr } << "Invalid mesh vertex list";
-				}
-
-                Mesh mesh;
-                for (uint32_t faceIndex = 0; faceIndex < inputMesh->mNumFaces; ++faceIndex)
+                const aiMesh *inputMesh = scene->mMeshes[nodeMeshIndex];
+                if (inputMesh->mNumFaces > 0)
                 {
-                    const aiFace &face = inputMesh->mFaces[faceIndex];
-                    if (face.mNumIndices == 3)
+                    if (inputMesh->mFaces == nullptr)
                     {
-                        mesh.indexList.push_back(face.mIndices[0]);
-                        mesh.indexList.push_back(face.mIndices[1]);
-                        mesh.indexList.push_back(face.mIndices[2]);
+                        LockedWrite{ std::cerr } << "Invalid mesh face list";
                     }
-                    else
+
+                    if (inputMesh->mVertices == nullptr)
                     {
-						LockedWrite{ std::cerr } << String::Format("! (Mesh %v) Invalid Face Found: %v (%v vertices)", meshIndex, faceIndex, face.mNumIndices);
+                        LockedWrite{ std::cerr } << "Invalid mesh vertex list";
                     }
+
+                    Mesh mesh;
+                    for (uint32_t faceIndex = 0; faceIndex < inputMesh->mNumFaces; ++faceIndex)
+                    {
+                        const aiFace &face = inputMesh->mFaces[faceIndex];
+                        if (face.mNumIndices == 3)
+                        {
+                            mesh.indexList.push_back(face.mIndices[0]);
+                            mesh.indexList.push_back(face.mIndices[1]);
+                            mesh.indexList.push_back(face.mIndices[2]);
+                        }
+                        else
+                        {
+                            LockedWrite{ std::cerr } << String::Format("! (Mesh %v) Invalid Face Found: %v (%v vertices)", meshIndex, faceIndex, face.mNumIndices);
+                        }
+                    }
+
+                    for (uint32_t vertexIndex = 0; vertexIndex < inputMesh->mNumVertices; ++vertexIndex)
+                    {
+                        Math::Float3 position(
+                            inputMesh->mVertices[vertexIndex].x,
+                            inputMesh->mVertices[vertexIndex].y,
+                            inputMesh->mVertices[vertexIndex].z);
+                        position *= parameters.feetPerUnit;
+                        model.boundingBox.extend(position);
+
+                        mesh.vertexList.push_back(position);
+                    }
+
+                    aiString sceneDiffuseMaterial;
+                    const aiMaterial *sceneMaterial = scene->mMaterials[inputMesh->mMaterialIndex];
+                    sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
+                    mesh.diffuse = sceneDiffuseMaterial.C_Str();
+                    model.meshList.push_back(mesh);
                 }
-
-                for (uint32_t vertexIndex = 0; vertexIndex < inputMesh->mNumVertices; ++vertexIndex)
-                {
-                    Math::Float3 position(
-                        inputMesh->mVertices[vertexIndex].x,
-                        inputMesh->mVertices[vertexIndex].y,
-                        inputMesh->mVertices[vertexIndex].z);
-                    position *= parameters.feetPerUnit;
-                    model.boundingBox.extend(position);
-
-                    mesh.vertexList.push_back(position);
-                }
-
-                aiString sceneDiffuseMaterial;
-                const aiMaterial *sceneMaterial = scene->mMaterials[inputMesh->mMaterialIndex];
-                sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
-                mesh.diffuse = sceneDiffuseMaterial.C_Str();
-                model.meshList.push_back(mesh);
             }
         }
     }
@@ -134,6 +135,7 @@ bool GetNodeMeshes(const Parameters &parameters, const aiScene *scene, const aiN
         if (inputNode->mChildren == nullptr)
         {
             LockedWrite{ std::cerr } << "Invalid child list";
+            return;
         }
 
         for (uint32_t childIndex = 0; childIndex < inputNode->mNumChildren; ++childIndex)
