@@ -1373,6 +1373,7 @@ namespace Gek
             // Plugin::Core Slots
             void onUpdate(float frameTime)
             {
+                GEK_PROFILE_FUNCTION();
                 assert(videoDevice);
                 assert(population);
 
@@ -1384,6 +1385,7 @@ namespace Gek
                 Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                 while (cameraQueue.try_pop(currentCamera))
                 {
+                    GEK_PROFILE_EVENT(__FUNCTION__);
                     profiler->timeStamp(String::Format("Begin Camera: %v", currentCamera.name));
 
                     drawCallList.clear();

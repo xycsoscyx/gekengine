@@ -18,7 +18,6 @@ namespace Gek
 
     Profiler::Profiler()
     {
-        file = nullptr;
         firstRecord = 0;
         numberOfFrames = 0;
         processIdentifier = GetCurrentProcessId();
@@ -30,6 +29,10 @@ namespace Gek
         outQueueBufferindex = 0;
         outQueueBufferSize = 1024 * 512;
         outQueueBuffer.reserve(outQueueBufferSize);
+
+        file = fopen(String::Format("profile_%v.json", processIdentifier).c_str(), "wb");
+        fprintf(file, "{\n");
+        fprintf(file, "\t\"traceEvents\": [");
     }
 
     Profiler::~Profiler()
@@ -67,7 +70,7 @@ namespace Gek
         fprintf(file, "\t\"displayTimeUnit\": \"ns\",\n");
         fprintf(file, "\t\"systemTraceEvents\": \"SystemTraceData\",\n");
         fprintf(file, "\t\"otherData\": {\n");
-        fprintf(file, "\t\t\"version\": \"My Application v1.0\"\n");
+        fprintf(file, "\t\t\"version\": \"GEK Profile Data v1.0\"\n");
         fprintf(file, "\t}\n");
         fprintf(file, "}\n");
 
@@ -144,8 +147,8 @@ namespace Gek
             fprintf(file, ", \"ph\": \"X\"");
             fprintf(file, ", \"pid\": \"%d\"", processIdentifier);
             fprintf(file, ", \"tid\": \"%d\"", event.threadIdentifier);
-            fprintf(file, ", \"ts\": %f", std::chrono::duration<double>(event.startTime.time_since_epoch()).count());
-            fprintf(file, ", \"dur\": %f", std::chrono::duration<double>(event.endTime - event.startTime).count());
+            fprintf(file, ", \"ts\": %lld", (event.startTime.time_since_epoch()).count());
+            fprintf(file, ", \"dur\": %lld", (event.endTime - event.startTime).count());
             fprintf(file, "}");
         }
 

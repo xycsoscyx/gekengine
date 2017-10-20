@@ -65,18 +65,21 @@ namespace Gek
         std::vector<TrackEntry> outQueueBuffer;
     };
 
-    #define GEK_PROFILE_START_SECTION(frames)                                                   \
-            Profiler::GetInstance()->StartSection (frames);
+    #define GEK_PROFILE_START_SECTION(frames)                                                       \
+            Gek::Profiler::GetInstance()->StartSection (frames);
 
-    #define GEK_PROFILE_UPDATE()                                                                \
-            Profiler::GetInstance()->Update ();
+    #define GEK_PROFILE_UPDATE()                                                                    \
+            Gek::Profiler::GetInstance()->Update ();
 
-    #define GEK_PROFILE_THREAD(name)                                                            \
-            Profiler::GetInstance()->RegisterThreadName (name);
+    #define GEK_PROFILE_THREAD(name)                                                                \
+            Gek::Profiler::GetInstance()->RegisterThreadName (name);
 
-    #define GEK_PROFILE_EVENT(name)                                                             \
-            static auto __crcEventName__ = Profiler::GetInstance()->RegisterName (name);    \
-            Profiler::TrackEntry ___trackerEntry___(__crcEventName__);    
+    #define GEK_PROFILE_EVENT(name)                                                                 \
+            static auto __hash##name__ = Gek::Profiler::GetInstance()->RegisterName (name);   \
+            Gek::Profiler::TrackEntry __token##name__(__hash##name__);    
+
+    #define GEK_PROFILE_FUNCTION()                                                                  \
+            GEK_PROFILE_EVENT(__FUNCTION__)
 #else 
     #define GEK_PROFILE_START_SECTION(frames)
     #define GEK_PROFILE_UPDATE()

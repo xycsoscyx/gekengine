@@ -63,6 +63,8 @@ namespace Gek
                 , window(_window)
             {
                 GEK_PROFILE_THREAD("mainThread");
+                GEK_PROFILE_START_SECTION(50);
+
                 LockedWrite{ std::cout } << "Starting GEK Engine";
 
                 if (!window)
@@ -967,7 +969,8 @@ namespace Gek
 
             bool update(void)
             {
-                GEK_PROFILE_EVENT(__FUNCTION__);
+                GEK_PROFILE_UPDATE();
+                GEK_PROFILE_FUNCTION();
                 window->readEvents();
 
                 timer.update();
@@ -1001,7 +1004,6 @@ namespace Gek
                     }
                 }
 
-                GEK_PROFILE_UPDATE();
                 return engineRunning;
             }
         };
