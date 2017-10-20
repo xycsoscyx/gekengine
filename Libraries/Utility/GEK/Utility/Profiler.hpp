@@ -18,10 +18,11 @@ namespace Gek
     class Profiler final
     {
     public:
-        static Profiler* GetInstance();
+        static Profiler* GetInstance(void);
 
-        void Update();
-        void StartSection(int numberOfFrames);
+        void Start(void);
+        void End(void);
+        void Update(void);
         size_t RegisterName(const char* const name);
         void RegisterThreadName(const char* const name);
 
@@ -42,10 +43,6 @@ namespace Gek
         };
 
     private:
-        Profiler();
-        ~Profiler();
-
-        void EndSection();
         void FlushQueue();
         void QueueEvents();
 

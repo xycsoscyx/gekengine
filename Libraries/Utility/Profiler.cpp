@@ -16,7 +16,7 @@ namespace Gek
         return &instance;
     }
 
-    Profiler::Profiler()
+    void Profiler::Start(void)
     {
         firstRecord = 0;
         numberOfFrames = 0;
@@ -35,8 +35,24 @@ namespace Gek
         fprintf(file, "\t\"traceEvents\": [");
     }
 
-    Profiler::~Profiler()
+    void Profiler::EndProfiler()
     {
+        concurrency::critical_section::scoped_lock lock(criticalSection);
+        FlushQueue();
+
+        fprintf(file, "\n");
+        fprintf(file, "\t],\n");
+
+        fprintf(file, "\t\"displayTimeUnit\": \"ns\",\n");
+        fprintf(file, "\t\"systemTraceEvents\": \"SystemTraceData\",\n");
+        fprintf(file, "\t\"otherData\": {\n");
+        fprintf(file, "\t\t\"version\": \"GEK Profile Data v1.0\"\n");
+        fprintf(file, "\t}\n");
+        fprintf(file, "}\n");
+
+        fclose(file);
+        file = nullptr;
+        firstRecord = 0;
     }
 
     void Profiler::StartSection(int numberOfFrames)
