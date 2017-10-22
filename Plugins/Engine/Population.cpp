@@ -93,7 +93,7 @@ namespace Gek
             std::unordered_map<std::type_index, std::string> componentNameTypeMap;
             ComponentMap componentMap;
 
-            ThreadPool workerPool;
+            ThreadPool<1> workerPool;
             concurrency::concurrent_queue<std::function<void(void)>> entityQueue;
             EntityList entityList;
 
@@ -103,7 +103,6 @@ namespace Gek
             Population(Context *context, Plugin::Core *core)
                 : ContextRegistration(context)
                 , core(core)
-                , workerPool(1)
             {
                 assert(core);
 

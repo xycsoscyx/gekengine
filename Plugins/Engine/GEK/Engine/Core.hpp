@@ -9,6 +9,7 @@
 
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/JSON.hpp"
+#include "GEK/Utility/Profiler.hpp"
 #include "GEK/System/Window.hpp"
 #include "GEK/System/VideoDevice.hpp"
 #include <wink/signal.hpp>
@@ -24,6 +25,7 @@ namespace Gek
         GEK_PREDECLARE(Processor);
 
         GEK_INTERFACE(Core)
+            : public Profiler
         {
             using ListenerHandle = uint64_t;
 

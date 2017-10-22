@@ -62,9 +62,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(_window)
             {
-                GEK_PROFILE_THREAD("mainThread");
-                GEK_PROFILE_START_SECTION(50);
-
+                registerThreadName("MainThread");
                 LockedWrite{ std::cout } << "Starting GEK Engine";
 
                 if (!window)
@@ -969,8 +967,7 @@ namespace Gek
 
             bool update(void)
             {
-                GEK_PROFILE_UPDATE();
-                GEK_PROFILE_FUNCTION();
+                Profiler::Event profilerEvent(this, registerName(__FUNCTION__));
                 window->readEvents();
 
                 timer.update();

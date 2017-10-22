@@ -9,36 +9,58 @@
 
 namespace Gek
 {
-#ifdef GEK_ENABLE_PROFILER
-    Profiler* Profiler::GetInstance()
+    void Profiler::flushQueue()
     {
-        static Profiler instance;
-        return &instance;
+        writePool.enqueue([this, buffer = move(buffer)](void) -> void
+        {
+            for (auto &event : buffer)
+            {
+                if (!firstRecord)
+                {
+                    fprintf(file, "\n");
+                    firstRecord = true;
+                }
+                else
+                {
+                    fprintf(file, ",\n");
+                }
+
+                auto threadNodeSearch = nameMap.find(event.threadIdentifier);
+                if (threadNodeSearch == std::end(nameMap))
+                {
+                    auto threadInsert = nameMap.insert(std::make_pair(event.threadIdentifier, String::Format("thread_%v", event.threadIdentifier)));
+                    threadNodeSearch = threadInsert.first;
+                }
+
+                fprintf(file, "\t\t {");
+                fprintf(file, "\"name\": \"%s\"", nameMap.find(event.nameHash)->second.c_str());
+                fprintf(file, ", \"cat\": \"%s\"", threadNodeSearch->second.c_str());
+                fprintf(file, ", \"ph\": \"X\"");
+                fprintf(file, ", \"pid\": \"%d\"", processIdentifier);
+                fprintf(file, ", \"tid\": \"%d\"", event.threadIdentifier);
+                fprintf(file, ", \"ts\": %lld", (event.startTime.time_since_epoch()).count());
+                fprintf(file, ", \"dur\": %lld", (event.endTime - event.startTime).count());
+                fprintf(file, "}");
+            }
+        });
+
+        buffer.reserve(100);
     }
 
-    void Profiler::Start(void)
+    Profiler::Profiler(void)
+        : firstRecord(false)
+        , processIdentifier(GetCurrentProcessId())
     {
-        firstRecord = 0;
-        numberOfFrames = 0;
-        processIdentifier = GetCurrentProcessId();
-
-        bufferIndex = 0;
-        bufferSize = 1024;
-        buffer.reserve(bufferSize);
-
-        outQueueBufferindex = 0;
-        outQueueBufferSize = 1024 * 512;
-        outQueueBuffer.reserve(outQueueBufferSize);
-
+        buffer.reserve(100);
         file = fopen(String::Format("profile_%v.json", processIdentifier).c_str(), "wb");
         fprintf(file, "{\n");
         fprintf(file, "\t\"traceEvents\": [");
     }
 
-    void Profiler::EndProfiler()
+    Profiler::~Profiler()
     {
         concurrency::critical_section::scoped_lock lock(criticalSection);
-        FlushQueue();
+        flushQueue();
 
         fprintf(file, "\n");
         fprintf(file, "\t],\n");
@@ -51,157 +73,43 @@ namespace Gek
         fprintf(file, "}\n");
 
         fclose(file);
-        file = nullptr;
-        firstRecord = 0;
     }
 
-    void Profiler::StartSection(int numberOfFrames)
-    {
-        if (file)
-        {
-            fclose(file);
-        }
-
-        time_t rawtime;
-        time(&rawtime);
-        struct tm * timeinfo = localtime(&rawtime);
-
-        char fileName[80];
-        strftime(fileName, sizeof(fileName), "profile_%H%M%S%m%d%Y.json", timeinfo);
-
-        file = fopen(fileName, "wb");
-        fprintf(file, "{\n");
-        fprintf(file, "\t\"traceEvents\": [");
-        this->numberOfFrames = numberOfFrames;
-    }
-
-    void Profiler::EndSection()
-    {
-        concurrency::critical_section::scoped_lock lock(criticalSection);
-        FlushQueue();
-
-        fprintf(file, "\n");
-        fprintf(file, "\t],\n");
-
-        fprintf(file, "\t\"displayTimeUnit\": \"ns\",\n");
-        fprintf(file, "\t\"systemTraceEvents\": \"SystemTraceData\",\n");
-        fprintf(file, "\t\"otherData\": {\n");
-        fprintf(file, "\t\t\"version\": \"GEK Profile Data v1.0\"\n");
-        fprintf(file, "\t}\n");
-        fprintf(file, "}\n");
-
-        fclose(file);
-        file = nullptr;
-        firstRecord = 0;
-    }
-
-    void Profiler::Update()
-    {
-        if (file)
-        {
-            QueueEvents();
-            if (--numberOfFrames == 0)
-            {
-                EndSection();
-            }
-        }
-    }
-    
-    size_t Profiler::RegisterName(const char* const name)
+    size_t Profiler::registerName(const char* const name)
     {
         size_t hash = std::hash<std::string>()(name);
-        eventMap.insert(std::make_pair(hash, name));
+        nameMap.insert(std::make_pair(hash, name));
         return hash;
     }
 
-    void Profiler::RegisterThreadName(const char* const threadName)
+    void Profiler::registerThreadName(const char* const threadName)
     {
         size_t hash = std::hash<std::string>()(threadName);
-        eventMap.insert(std::make_pair(hash, threadName));
+        nameMap.insert(std::make_pair(hash, threadName));
     }
 
-    void Profiler::QueueEvents()
+    Profiler::Event::Event(Profiler *profiler, size_t nameHash)
+        : profiler(profiler)
+        , nameHash(nameHash)
+        , startTime(std::chrono::high_resolution_clock::now())
+        , endTime(startTime)
+        , threadIdentifier(GetCurrentThreadId())
+    {
+    }
+
+    void Profiler::addEvent(Event const &event)
     {
         concurrency::critical_section::scoped_lock lock(criticalSection);
-        if ((outQueueBufferindex + bufferIndex) > outQueueBufferSize)
+        buffer.push_back(event);
+        if (buffer.size() > 100)
         {
-            FlushQueue();
-            outQueueBufferindex = 0;
-        }
-
-        memcpy(&outQueueBuffer[outQueueBufferindex], buffer.data(), bufferIndex * sizeof(TrackEntry));
-        outQueueBufferindex += bufferIndex;
-        bufferIndex = 0;
-    }
-
-
-    void Profiler::FlushQueue()
-    {
-        for (int index = 0; index < outQueueBufferindex; index++)
-        {
-            const TrackEntry& event = outQueueBuffer[index];
-            if (!firstRecord)
-            {
-                fprintf(file, "\n");
-                firstRecord = true;
-            }
-            else
-            {
-                fprintf(file, ",\n");
-            }
-
-            auto threadNodeSearch = eventMap.find(event.threadIdentifier);
-            if (threadNodeSearch == std::end(eventMap))
-            {
-                auto threadInsert = eventMap.insert(std::make_pair(event.threadIdentifier, String::Format("thread_%v", event.threadIdentifier)));
-                threadNodeSearch = threadInsert.first;
-            }
-
-            fprintf(file, "\t\t {");
-            fprintf(file, "\"name\": \"%s\"", eventMap.find(event.nameHash)->second.c_str());
-            fprintf(file, ", \"cat\": \"%s\"", threadNodeSearch->second.c_str());
-            fprintf(file, ", \"ph\": \"X\"");
-            fprintf(file, ", \"pid\": \"%d\"", processIdentifier);
-            fprintf(file, ", \"tid\": \"%d\"", event.threadIdentifier);
-            fprintf(file, ", \"ts\": %lld", (event.startTime.time_since_epoch()).count());
-            fprintf(file, ", \"dur\": %lld", (event.endTime - event.startTime).count());
-            fprintf(file, "}");
-        }
-
-        outQueueBufferindex = 0;
-    }
-
-
-
-    Profiler::TrackEntry::TrackEntry(size_t nameCRC)
-    {
-        Profiler* const instance = Profiler::GetInstance();
-        if (instance->file)
-        {
-            nameHash = nameCRC;
-            startTime = endTime = std::chrono::high_resolution_clock::now();
-            threadIdentifier = GetCurrentThreadId();
+            flushQueue();
         }
     }
 
-    Profiler::TrackEntry::~TrackEntry()
+    Profiler::Event::~Event()
     {
-        Profiler* const instance = Profiler::GetInstance();
         endTime = std::chrono::high_resolution_clock::now();
-        if (instance->file)
-        {
-            concurrency::critical_section::scoped_lock lock(instance->criticalSection);
-            if (instance->bufferIndex >= instance->bufferSize)
-            {
-                std::vector<TrackEntry> buffer(2 * instance->bufferSize);
-                memcpy(buffer.data(), instance->buffer.data(), instance->bufferIndex * sizeof(TrackEntry));
-                instance->bufferSize = instance->bufferSize * 2;
-                instance->buffer = buffer;
-            }
-
-            instance->buffer[instance->bufferIndex] = *this;
-            instance->bufferIndex++;
-        }
+        profiler->addEvent(*this);
     }
-#endif
 }; // namespace Gek

@@ -237,7 +237,7 @@ namespace Gek
 
         VisualHandle visual;
         Video::BufferPtr instanceBuffer;
-        ThreadPool loadPool;
+        ThreadPool<5> loadPool;
 
         concurrency::concurrent_unordered_map<std::size_t, Group> groupMap;
 
@@ -265,7 +265,6 @@ namespace Gek
             , population(core->getPopulation())
             , resources(core->getResources())
             , renderer(core->getRenderer())
-            , loadPool(1)
         {
             assert(core);
             assert(videoDevice);

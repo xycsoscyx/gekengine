@@ -3,7 +3,6 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/FileSystem.hpp"
-#include "GEK/Utility/ThreadPool.hpp"
 #include "GEK/Utility/Hash.hpp"
 #include "GEK/Render/Device.hpp"
 #include "GEK/Render/Window.hpp"

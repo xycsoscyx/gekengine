@@ -9,7 +9,6 @@
 
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
-#include "GEK/Utility/Profiler.hpp"
 #include <functional>
 #include <typeindex>
 #include <iostream>

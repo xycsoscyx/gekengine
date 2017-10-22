@@ -508,7 +508,7 @@ namespace Gek
             Video::Device *videoDevice = nullptr;
             Plugin::Renderer *renderer = nullptr;
 
-            ThreadPool loadPool;
+            ThreadPool<5> loadPool;
             std::recursive_mutex shaderMutex;
 
             ProgramResourceCache<ProgramHandle, Video::Object> programCache;
@@ -562,7 +562,6 @@ namespace Gek
                 , renderStateCache(this)
                 , depthStateCache(this)
                 , blendStateCache(this)
-                , loadPool(2)
             {
                 assert(core);
                 assert(videoDevice);

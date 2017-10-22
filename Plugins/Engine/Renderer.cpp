@@ -626,7 +626,7 @@ namespace Gek
             Video::RenderStatePtr renderState;
             Video::DepthStatePtr depthState;
 
-            ThreadPool workerPool;
+            ThreadPool<3> workerPool;
             LightData<Components::DirectionalLight, DirectionalLightData> directionalLightData;
             LightVisibilityData<Components::PointLight, PointLightData> pointLightData;
             LightVisibilityData<Components::SpotLight, SpotLightData> spotLightData;
@@ -672,7 +672,6 @@ namespace Gek
                 , videoDevice(core->getVideoDevice())
                 , population(core->getPopulation())
                 , resources(dynamic_cast<Engine::Resources *>(core->getResources()))
-                , workerPool(3)
                 , directionalLightData(10, core->getVideoDevice())
                 , pointLightData(200, core->getVideoDevice())
                 , spotLightData(200, core->getVideoDevice())
@@ -1373,7 +1372,6 @@ namespace Gek
             // Plugin::Core Slots
             void onUpdate(float frameTime)
             {
-                GEK_PROFILE_FUNCTION();
                 assert(videoDevice);
                 assert(population);
 
@@ -1385,7 +1383,6 @@ namespace Gek
                 Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                 while (cameraQueue.try_pop(currentCamera))
                 {
-                    GEK_PROFILE_EVENT(__FUNCTION__);
                     profiler->timeStamp(String::Format("Begin Camera: %v", currentCamera.name));
 
                     drawCallList.clear();

@@ -10,9 +10,14 @@
 #include <future>
 #include <queue>
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 namespace Gek
 {
     // https://github.com/progschj/ThreadPool
+    template <size_t threadCount = 1>
     class ThreadPool final
     {
         using Lock = std::unique_lock<std::mutex>;
@@ -26,11 +31,67 @@ namespace Gek
 		std::atomic<bool> stop = false;
 
 	private:
-		void create(size_t threadCount);
+        void create(void)
+        {
+            stop = false;
+            workerList.clear();
+            workerList.reserve(threadCount);
+            for (size_t count = 0; count < threadCount; ++count)
+            {
+                // Worker execution loop
+                workerList.emplace_back([this](void) -> void
+                {
+#ifdef _WIN32
+                    CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
+#endif
+                    for (;;)
+                    {
+                        // Task to execute
+                        std::function<void()> task;
+
+                        // Wait for additional work signal
+                        if (true)
+                        {
+                            // Wait to be notified of work
+                            Lock lock(queueMutex);
+                            condition.wait(lock, [this](void) -> bool
+                            {
+                                return stop || !taskQueue.empty();
+                            });
+
+                            // If stopping and no work remains, exit the work loop and thread
+                            if (stop && taskQueue.empty())
+                            {
+                                break;
+                            }
+
+                            // Dequeue the next task
+                            task = std::move(taskQueue.front());
+                            taskQueue.pop();
+                        }
+
+                        // Execute
+                        task();
+                    }
+
+#ifdef _WIN32
+                    CoUninitialize();
+#endif
+                });
+            }
+        }
 
     public:
-        ThreadPool(size_t threadCount = 1);
-        ~ThreadPool(void);
+        ThreadPool(void)
+        {
+            create();
+        }
+
+        // Destructor joins all worker threads
+        ~ThreadPool(void)
+        {
+            drain();
+        }
 
         ThreadPool(const ThreadPool &) = delete;
 		ThreadPool(ThreadPool &&) = delete;
@@ -38,8 +99,37 @@ namespace Gek
 		ThreadPool& operator= (const ThreadPool &) = delete;
         ThreadPool& operator= (const ThreadPool &&) = delete;
 
-		void drain(void);
-		void reset(size_t *threadCount = nullptr);
+        void drain(void)
+        {
+            [this](void)
+            {
+                Lock lock(queueMutex);
+                while (!taskQueue.empty())
+                {
+                    taskQueue.pop();
+                };
+            } ();
+
+            if (!workerList.empty())
+            {
+                stop = true;
+                condition.notify_all();
+
+                // Wait for threads to complete work
+                for (std::thread &worker : workerList)
+                {
+                    worker.join();
+                }
+
+                workerList.clear();
+            }
+        }
+        
+        void ThreadPool::reset(void)
+        {
+            drain();
+            create();
+        }
 
         template<typename FUNCTION, typename... PARAMETERS>
         auto enqueue(FUNCTION&& function, PARAMETERS&&... arguments) -> std::future<typename std::result_of<FUNCTION(PARAMETERS...)>::type>
