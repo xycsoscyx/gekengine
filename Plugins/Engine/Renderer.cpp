@@ -76,6 +76,7 @@ namespace Gek
                 std::array<History, 100> eventHistory;
                 ImColor color;
                 ImU32 color32;
+                size_t nameHash;
 
                 Data(void)
                     : color(
@@ -89,6 +90,8 @@ namespace Gek
             };
 
         private:
+            size_t threadIdentifier = 0;
+            Plugin::Core *core = nullptr;
             Video::Device *videoDevice = nullptr;
             Video::Device::Context *videoContext = nullptr;
             std::array<Video::QueryPtr, 3> disjointList;
@@ -104,9 +107,11 @@ namespace Gek
             int historyIndex = 0;
 
         public:
-            GPUProfiler(Video::Device *videoDevice)
-                : videoDevice(videoDevice)
+            GPUProfiler(Plugin::Core *core)
+                : core(core)
+                , videoDevice(core->getVideoDevice())
                 , videoContext(videoDevice->getDefaultContext())
+                , threadIdentifier(core->registerName("GPU Thread"))
             {
                 for (size_t index = 0; index < 3; ++index)
                 {
@@ -132,25 +137,31 @@ namespace Gek
                 {
                     if (!timestampDisjoint.disjoint)
                     {
-                        Video::Query::TimeStamp startTime = 0;
-                        if (videoContext->getData(beginEventList[currentFrame].get(), &startTime, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready)
+                        Video::Query::TimeStamp startTimeStamp = 0;
+                        if (videoContext->getData(beginEventList[currentFrame].get(), &startTimeStamp, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready)
                         {
-                            Video::Query::TimeStamp endTime = 0;
-                            if (videoContext->getData(endEventList[currentFrame].get(), &endTime, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready)
+                            Video::Query::TimeStamp endTimeStamp = 0;
+                            if (videoContext->getData(endEventList[currentFrame].get(), &endTimeStamp, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready)
                             {
-                                Video::Query::TimeStamp frameTime = (endTime - startTime);
-                                Video::Query::TimeStamp previousTimeStamp = startTime;
+                                auto now = std::chrono::high_resolution_clock::now().time_since_epoch();
+                                auto frequency = double(timestampDisjoint.frequency);
+                                auto frameTime = (double(endTimeStamp - startTimeStamp) / frequency);
+                                Video::Query::TimeStamp previousTimeStamp = startTimeStamp;
                                 for (auto &eventSearch : eventTimeline[currentFrame])
                                 {
                                     auto &eventData = eventSearch->second;
                                     Video::Query::TimeStamp currentTimeStamp = 0;
                                     if (videoContext->getData(eventData.eventList[currentFrame].get(), &currentTimeStamp, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready)
                                     {
-                                        Video::Query::TimeStamp eventTime = (currentTimeStamp - previousTimeStamp);
-                                        float eventDuration = float(eventTime) / float(timestampDisjoint.frequency);
-                                        float eventPercent = (float(eventTime) / float(frameTime));
-                                        eventData.eventHistory[historyIndex].duration = (float(eventTime) / float(timestampDisjoint.frequency));
-                                        eventData.eventHistory[historyIndex].percent = (float(eventTime) / float(frameTime));
+                                        auto eventTime = (double(currentTimeStamp - previousTimeStamp) / frequency);
+                                        auto eventPercent = (eventTime / frameTime);
+                                        eventData.eventHistory[historyIndex].duration = float(eventTime);
+                                        eventData.eventHistory[historyIndex].percent = float(eventPercent);
+
+                                        auto startTimePoint = now + std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(double(previousTimeStamp - startTimeStamp) / frequency));
+                                        auto endTimePoint = now + std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(double(currentTimeStamp - startTimeStamp) / frequency));
+                                        core->addEvent(Gek::Profiler::Data(eventData.nameHash, threadIdentifier, startTimePoint, endTimePoint));
+
                                         previousTimeStamp = currentTimeStamp;
                                     }
                                     else
@@ -287,6 +298,7 @@ namespace Gek
                 auto &eventData = eventPair.second;
                 if (eventSearch.second)
                 {
+                    eventData.nameHash = core->registerName(name.c_str());
                     eventData.eventList[0] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
                     eventData.eventList[1] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
                     eventData.eventList[2] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
@@ -675,7 +687,7 @@ namespace Gek
                 , directionalLightData(10, core->getVideoDevice())
                 , pointLightData(200, core->getVideoDevice())
                 , spotLightData(200, core->getVideoDevice())
-                , profiler(std::make_unique<GPUProfiler>(videoDevice))
+                , profiler(std::make_unique<GPUProfiler>(core))
             {
                 population->onReset.connect(this, &Renderer::onReset);
                 population->onEntityCreated.connect(this, &Renderer::onEntityCreated);
@@ -1339,7 +1351,7 @@ namespace Gek
             }
 
             // Renderer
-            void queueCamera(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, float nearClip, float farClip, std::string const *name, ResourceHandle cameraTarget, std::string const &forceShader)
+            void queueCamera(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget, std::string const &forceShader)
             {
                 Camera renderCall;
                 renderCall.viewMatrix = viewMatrix;
@@ -1348,7 +1360,7 @@ namespace Gek
                 renderCall.nearClip = nearClip;
                 renderCall.farClip = farClip;
                 renderCall.cameraTarget = cameraTarget;
-                renderCall.name = (name ? *name : String::Format("camera_%v", cameraQueue.unsafe_size()));
+                renderCall.name = name;
                 if (!forceShader.empty())
                 {
                     renderCall.forceShader = resources->getShader(forceShader);
@@ -1375,7 +1387,9 @@ namespace Gek
                 assert(videoDevice);
                 assert(population);
 
+                GEK_PROFILE_FUNCTION(core);
                 profiler->beginFrame();
+
                 EngineConstantData engineConstantData;
                 engineConstantData.frameTime = frameTime;
                 engineConstantData.worldTime = 0.0f;
@@ -1384,6 +1398,7 @@ namespace Gek
                 while (cameraQueue.try_pop(currentCamera))
                 {
                     profiler->timeStamp(String::Format("Begin Camera: %v", currentCamera.name));
+                    GEK_PROFILE_SCOPE(core, "Render Camera");
 
                     drawCallList.clear();
                     onQueueDrawCalls(currentCamera.viewFrustum, currentCamera.viewMatrix, currentCamera.projectionMatrix);
@@ -1393,41 +1408,52 @@ namespace Gek
                         const auto width = backBuffer->getDescription().width;
                         const auto height = backBuffer->getDescription().height;
 
-                        concurrency::parallel_sort(std::begin(drawCallList), std::end(drawCallList), [](const DrawCallValue &leftValue, const DrawCallValue &rightValue) -> bool
+                        if (true)
                         {
-                            return (leftValue.value < rightValue.value);
-                        });
+                            GEK_PROFILE_SCOPE(core, "Sort Draw Calls");
+                            concurrency::parallel_sort(std::begin(drawCallList), std::end(drawCallList), [](const DrawCallValue &leftValue, const DrawCallValue &rightValue) -> bool
+                            {
+                                return (leftValue.value < rightValue.value);
+                            });
+                        }
 
                         bool isLightingRequired = false;
 
                         ShaderHandle currentShader;
                         std::map<uint32_t, std::vector<DrawCallSet>> drawCallSetMap;
-                        for (auto &drawCall = std::begin(drawCallList); drawCall != std::end(drawCallList); )
+                        if (true)
                         {
-                            currentShader = drawCall->shader;
-
-                            auto beginShaderList = drawCall;
-                            while (drawCall != std::end(drawCallList) && drawCall->shader == currentShader)
+                            GEK_PROFILE_SCOPE(core, "Organize Draw Calls");
+                            for (auto &drawCall = std::begin(drawCallList); drawCall != std::end(drawCallList); )
                             {
-                                ++drawCall;
-                            };
+                                currentShader = drawCall->shader;
 
-                            auto endShaderList = drawCall;
-                            Engine::Shader *shader = resources->getShader(currentShader);
-                            if (!shader)
-                            {
-                                continue;
+                                auto beginShaderList = drawCall;
+                                while (drawCall != std::end(drawCallList) && drawCall->shader == currentShader)
+                                {
+                                    ++drawCall;
+                                };
+
+                                auto endShaderList = drawCall;
+                                Engine::Shader *shader = resources->getShader(currentShader);
+                                if (!shader)
+                                {
+                                    continue;
+                                }
+
+                                isLightingRequired |= shader->isLightingRequired();
+                                auto &shaderList = drawCallSetMap[shader->getDrawOrder()];
+                                shaderList.push_back(DrawCallSet(shader, beginShaderList, endShaderList));
                             }
-
-                            isLightingRequired |= shader->isLightingRequired();
-                            auto &shaderList = drawCallSetMap[shader->getDrawOrder()];
-                            shaderList.push_back(DrawCallSet(shader, beginShaderList, endShaderList));
                         }
 
                         if (isLightingRequired)
                         {
                             auto directionalLightsDone = workerPool.enqueue([&](void) -> void
                             {
+                                core->registerThreadName("Directional Lights Worker");
+                                GEK_PROFILE_SCOPE(core, "Get Directional Lights");
+
                                 directionalLightData.lightList.clear();
                                 directionalLightData.lightList.reserve(directionalLightData.entityList.size());
                                 std::for_each(std::begin(directionalLightData.entityList), std::end(directionalLightData.entityList), [&](Plugin::Entity * const entity) -> void
@@ -1456,6 +1482,9 @@ namespace Gek
 
                             auto pointLightsDone = workerPool.enqueue([&](void) -> void
                             {
+                                core->registerThreadName("Point Lights Worker");
+                                GEK_PROFILE_SCOPE(core, "Cull Point Lights");
+
                                 pointLightData.update(videoDevice, frustum, [this](Plugin::Entity * const entity, const Components::PointLight &lightComponent) -> void
                                 {
                                     addLight(entity, lightComponent);
@@ -1464,6 +1493,9 @@ namespace Gek
 
                             auto spotLightsDone = workerPool.enqueue([&](void) -> void
                             {
+                                core->registerThreadName("Spot Lights Worker");
+                                GEK_PROFILE_SCOPE(core, "Cull Spot Lights");
+
                                 spotLightData.update(videoDevice, frustum, [this](Plugin::Entity * const entity, const Components::SpotLight &lightComponent) -> void
                                 {
                                     addLight(entity, lightComponent);
@@ -1473,6 +1505,8 @@ namespace Gek
                             directionalLightsDone.get();
                             pointLightsDone.get();
                             spotLightsDone.get();
+
+                            GEK_PROFILE_SCOPE(core, "Update Light Buffers");
 
                             lightIndexList.clear();
                             lightIndexList.reserve(lightIndexCount);
@@ -1545,37 +1579,42 @@ namespace Gek
                         }
 
                         CameraConstantData cameraConstantData;
-                        cameraConstantData.fieldOfView.x = (1.0f / currentCamera.projectionMatrix._11);
-                        cameraConstantData.fieldOfView.y = (1.0f / currentCamera.projectionMatrix._22);
-                        cameraConstantData.nearClip = currentCamera.nearClip;
-                        cameraConstantData.farClip = currentCamera.farClip;
-                        cameraConstantData.viewMatrix = currentCamera.viewMatrix;
-                        cameraConstantData.projectionMatrix = currentCamera.projectionMatrix;
-                        videoDevice->updateResource(cameraConstantBuffer.get(), &cameraConstantData);
-
-                        videoContext->clearState();
-                        videoContext->geometryPipeline()->setConstantBufferList(shaderBufferList, 0);
-                        videoContext->vertexPipeline()->setConstantBufferList(shaderBufferList, 0);
-                        videoContext->pixelPipeline()->setConstantBufferList(shaderBufferList, 0);
-                        videoContext->computePipeline()->setConstantBufferList(shaderBufferList, 0);
-
-                        videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
-
-                        videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
-
-                        if (isLightingRequired)
+                        if (true)
                         {
-                            lightResoruceList =
-                            {
-                                directionalLightData.lightDataBuffer.get(),
-                                pointLightData.lightDataBuffer.get(),
-                                spotLightData.lightDataBuffer.get(),
-                                tileOffsetCountBuffer.get(),
-                                lightIndexBuffer.get()
-                            };
+                            GEK_PROFILE_SCOPE(core, "Set Engine Buffers");
 
-                            videoContext->pixelPipeline()->setConstantBufferList(lightBufferList, 3);
-                            videoContext->pixelPipeline()->setResourceList(lightResoruceList, 0);
+                            cameraConstantData.fieldOfView.x = (1.0f / currentCamera.projectionMatrix._11);
+                            cameraConstantData.fieldOfView.y = (1.0f / currentCamera.projectionMatrix._22);
+                            cameraConstantData.nearClip = currentCamera.nearClip;
+                            cameraConstantData.farClip = currentCamera.farClip;
+                            cameraConstantData.viewMatrix = currentCamera.viewMatrix;
+                            cameraConstantData.projectionMatrix = currentCamera.projectionMatrix;
+                            videoDevice->updateResource(cameraConstantBuffer.get(), &cameraConstantData);
+
+                            videoContext->clearState();
+                            videoContext->geometryPipeline()->setConstantBufferList(shaderBufferList, 0);
+                            videoContext->vertexPipeline()->setConstantBufferList(shaderBufferList, 0);
+                            videoContext->pixelPipeline()->setConstantBufferList(shaderBufferList, 0);
+                            videoContext->computePipeline()->setConstantBufferList(shaderBufferList, 0);
+
+                            videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
+
+                            videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+
+                            if (isLightingRequired)
+                            {
+                                lightResoruceList =
+                                {
+                                    directionalLightData.lightDataBuffer.get(),
+                                    pointLightData.lightDataBuffer.get(),
+                                    spotLightData.lightDataBuffer.get(),
+                                    tileOffsetCountBuffer.get(),
+                                    lightIndexBuffer.get()
+                                };
+
+                                videoContext->pixelPipeline()->setConstantBufferList(lightBufferList, 3);
+                                videoContext->pixelPipeline()->setResourceList(lightResoruceList, 0);
+                            }
                         }
 
                         profiler->timeStamp("Buffer Management");
@@ -1588,12 +1627,14 @@ namespace Gek
                             for (auto const &shaderDrawCall : shaderDrawCallList.second)
                             {
                                 auto &shader = shaderDrawCall.shader;
+                                GEK_PROFILE_SCOPE(core, "Render Shader");
                                 profiler->timeStamp(String::Format("Begin Shader: %v", shader->getName()));
 
                                 finalOutput = shader->getOutput();
 
                                 for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentCamera.viewFrustum); pass; pass = pass->next())
                                 {
+                                    GEK_PROFILE_SCOPE(core, "Render Pass");
                                     resources->startResourceBlock();
                                     switch (pass->prepare())
                                     {
@@ -1602,6 +1643,7 @@ namespace Gek
                                         {
                                             VisualHandle currentVisual;
                                             MaterialHandle currentMaterial;
+                                            GEK_PROFILE_SCOPE(core, "Redner Forward Draw Calls");
                                             for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
                                             {
                                                 if (currentVisual != drawCall->plugin)
@@ -1671,12 +1713,14 @@ namespace Gek
                     videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
                     for (auto const &filterName : { "tonemap" })
                     {
+                        GEK_PROFILE_SCOPE(core, "Render Filter");
                         auto const filter = resources->getFilter(filterName);
                         if (filter)
                         {
                             profiler->timeStamp(String::Format("Begin Filter: %v", filter->getName()));
                             for (auto pass = filter->begin(videoContext, screenHandle, ResourceHandle()); pass; pass = pass->next())
                             {
+                                GEK_PROFILE_SCOPE(core, "Render Pass");
                                 switch (pass->prepare())
                                 {
                                 case Engine::Filter::Pass::Mode::Deferred:
@@ -1705,48 +1749,56 @@ namespace Gek
                     renderOverlay(videoContext, blackPattern, ResourceHandle());
                 }
 
-                ImGuiIO &imGuiIo = ImGui::GetIO();
-                imGuiIo.DeltaTime = frameTime;
-
-                auto backBuffer = videoDevice->getBackBuffer();
-                uint32_t width = backBuffer->getDescription().width;
-                uint32_t height = backBuffer->getDescription().height;
-                imGuiIo.DisplaySize = ImVec2(float(width), float(height));
-
-                ImGui::NewFrame();
-                onShowUserInterface(ImGui::GetCurrentContext());
-
-                auto mainMenu = ImGui::FindWindowByName("##MainMenuBar");
-                auto mainMenuShowing = (mainMenu ? mainMenu->Active : false);
-                if (mainMenuShowing)
+                if (true)
                 {
-                    ImGui::BeginMainMenuBar();
-                    ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5.0f, 10.0f));
-                    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5.0f, 10.0f));
-                    if (ImGui::BeginMenu("Debug"))
+                    GEK_PROFILE_SCOPE(core, "Prepare User Interface");
+                    ImGuiIO &imGuiIo = ImGui::GetIO();
+                    imGuiIo.DeltaTime = frameTime;
+
+                    auto backBuffer = videoDevice->getBackBuffer();
+                    uint32_t width = backBuffer->getDescription().width;
+                    uint32_t height = backBuffer->getDescription().height;
+                    imGuiIo.DisplaySize = ImVec2(float(width), float(height));
+
+                    ImGui::NewFrame();
+                    onShowUserInterface(ImGui::GetCurrentContext());
+
+                    auto mainMenu = ImGui::FindWindowByName("##MainMenuBar");
+                    auto mainMenuShowing = (mainMenu ? mainMenu->Active : false);
+                    if (mainMenuShowing)
                     {
-                        ImGui::MenuItem("Information", "CTRL+I", &showDebugInformation);
-                        ImGui::EndMenu();
+                        ImGui::BeginMainMenuBar();
+                        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5.0f, 10.0f));
+                        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5.0f, 10.0f));
+                        if (ImGui::BeginMenu("Debug"))
+                        {
+                            ImGui::MenuItem("Information", "CTRL+I", &showDebugInformation);
+                            ImGui::EndMenu();
+                        }
+
+                        ImGui::PopStyleVar(2);
+                        ImGui::EndMainMenuBar();
                     }
 
-                    ImGui::PopStyleVar(2);
-                    ImGui::EndMainMenuBar();
-                }
-
-                int currentEventFrame = profiler->updateEventData();
-                if (showDebugInformation)
-                {
-                    if (ImGui::Begin("Debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+                    int currentEventFrame = profiler->updateEventData();
+                    if (showDebugInformation)
                     {
-                        UI::TextFrame("Post Process", ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f));
-                        profiler->showEventData(currentEventFrame);
+                        if (ImGui::Begin("Debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+                        {
+                            UI::TextFrame("Post Process", ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f));
+                            profiler->showEventData(currentEventFrame);
 
-                        ImGui::End();
+                            ImGui::End();
+                        }
                     }
                 }
 
-                ImGui::Render();
-                profiler->timeStamp("User Interface");
+                if (true)
+                {
+                    GEK_PROFILE_SCOPE(core, "Show User Interface");
+                    ImGui::Render();
+                    profiler->timeStamp("User Interface");
+                }
 
                 videoDevice->present(true);
                 profiler->endFrame();

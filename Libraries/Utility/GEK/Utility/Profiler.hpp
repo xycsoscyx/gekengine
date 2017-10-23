@@ -9,44 +9,56 @@
 
 #include "GEK/Utility/ThreadPool.hpp"
 #include <concurrent_unordered_map.h>
-#include <vector>
+#include <concurrent_vector.h>
 #include <chrono>
+
+#define GEK_PROFILE_SCOPE(PROFILER, NAME) \
+    static const auto __hash##NAME__ = PROFILER->registerName(NAME); \
+    Gek::Profiler::Event __event##NAME__(PROFILER, __hash##NAME__);
+
+#define GEK_PROFILE_FUNCTION(PROFILER) GEK_PROFILE_SCOPE(PROFILER, __FUNCTION__)
 
 namespace Gek
 {
     class Profiler
     {
     public:
-        class Event
+        struct Data
         {
-        public:
-            Event()
-            {
-            }
+            size_t nameHash = 0;
+            size_t threadIdentifier;
+            std::chrono::nanoseconds startTime;
+            std::chrono::nanoseconds endTime;
 
+            Data(void) = default;
+            Data(size_t nameHash);
+            Data(size_t nameHash, size_t threadIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime);
+        };
+
+        struct Event
+            : public Data
+        {
+            Event(void) = default;
             Event(Profiler *profiler, size_t nameHash);
-            ~Event();
+            ~Event(void);
 
-            Profiler *profiler;
-            std::chrono::time_point<std::chrono::steady_clock> startTime;
-            std::chrono::time_point<std::chrono::steady_clock> endTime;
-            size_t nameHash;
-            DWORD threadIdentifier;
+            Profiler *profiler = nullptr;
         };
 
     private:
-        ThreadPool<1> writePool;
-        concurrency::concurrent_unordered_map<size_t, std::string> nameMap;
+        size_t processIdentifier = 0;
         std::chrono::high_resolution_clock clock;
         concurrency::critical_section criticalSection;
-        DWORD processIdentifier;
-        FILE* file;
+
+        ThreadPool<1> writePool;
         std::atomic<bool> firstRecord;
-        std::vector<Event> buffer;
+        FILE *file = nullptr;
+
+        concurrency::concurrent_unordered_map<size_t, std::string> nameMap;
+        concurrency::concurrent_vector<Data> buffer;
 
     private:
         void flushQueue(void);
-        void addEvent(Event const &event);
 
     public:
         Profiler(void);
@@ -54,5 +66,6 @@ namespace Gek
 
         size_t registerName(const char* const name);
         void registerThreadName(const char* const name);
+        void addEvent(Data const &data);
     };
 }; // namespace Gek

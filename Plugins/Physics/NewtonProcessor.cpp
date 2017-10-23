@@ -469,6 +469,8 @@ namespace Gek
                 assert(population);
                 assert(newtonWorld);
 
+                GEK_PROFILE_FUNCTION(core);
+
                 bool editorActive = core->getOption("editor", "active").convert(false);
                 if (frameTime > 0.0f && !editorActive)
                 {

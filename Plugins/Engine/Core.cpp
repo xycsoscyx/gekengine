@@ -967,7 +967,7 @@ namespace Gek
 
             bool update(void)
             {
-                Profiler::Event profilerEvent(this, registerName(__FUNCTION__));
+                GEK_PROFILE_FUNCTION(this);
                 window->readEvents();
 
                 timer.update();

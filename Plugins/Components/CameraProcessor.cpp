@@ -182,10 +182,14 @@ namespace Gek
             {
                 parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void
                 {
-                    std::string *name = nullptr;
+                    std::string name;
                     if (entity->hasComponent<Components::Name>())
                     {
-                        name = &entity->getComponent<Components::Name>().name;
+                        name = entity->getComponent<Components::Name>().name;
+                    }
+                    else
+                    {
+                        name = String::Format("camera_%v", *reinterpret_cast<int *>(entity));
                     }
 
                     auto viewMatrix(transformComponent.getMatrix().getInverse());
