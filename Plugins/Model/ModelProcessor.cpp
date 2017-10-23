@@ -527,7 +527,7 @@ namespace Gek
             entityDataList.reserve(entityCount);
             if (true)
             {
-                GEK_PROFILE_SCOPE(core, "Collect Entities");
+                GEK_PROFILE_AUTO_SCOPE(core, "Collect Entities");
                 parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
                 {
                     auto group = data.group;
@@ -551,7 +551,7 @@ namespace Gek
             visibilityList.resize(bufferedEntityCount);
             if (true)
             {
-                GEK_PROFILE_SCOPE(core, "Cull Entities");
+                GEK_PROFILE_AUTO_SCOPE(core, "Cull Entities");
                 Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedEntityCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
             }
 
@@ -582,7 +582,7 @@ namespace Gek
             entityModelList.reserve(bufferedModelCount);
             if (true)
             {
-                GEK_PROFILE_SCOPE(core, "Collect Models");
+                GEK_PROFILE_AUTO_SCOPE(core, "Collect Models");
                 concurrency::parallel_for_each(std::begin(entityDataList), std::end(entityDataList), [&](auto &entitySearch) -> void
                 {
                     auto entityDataIndex = std::get<2>(entitySearch);
@@ -618,13 +618,13 @@ namespace Gek
             visibilityList.resize(bufferedModelCount);
             if (true)
             {
-                GEK_PROFILE_SCOPE(core, "Cull Models");
+                GEK_PROFILE_AUTO_SCOPE(core, "Cull Models");
                 Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedModelCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
             }
 
             if (true)
             {
-                GEK_PROFILE_SCOPE(core, "Collect Models");
+                GEK_PROFILE_AUTO_SCOPE(core, "Collect Models");
                 concurrency::parallel_for_each(std::begin(entityModelList), std::end(entityModelList), [&](auto &entitySearch) -> void
                 {
                     if (visibilityList[std::get<2>(entitySearch)])
@@ -648,7 +648,7 @@ namespace Gek
             size_t maximumInstanceCount = 0;
             if (true)
             {
-                GEK_PROFILE_SCOPE(core, "Queue Models");
+                GEK_PROFILE_AUTO_SCOPE(core, "Queue Models");
                 concurrency::parallel_for_each(std::begin(renderList), std::end(renderList), [&](auto &materialPair) -> void
                 {
                     const auto material = materialPair.first;

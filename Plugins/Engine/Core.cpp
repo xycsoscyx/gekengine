@@ -616,7 +616,7 @@ namespace Gek
                                             switch (optionValue.size())
                                             {
                                             case 1:
-                                                if (true)
+                                                [&](void) -> void
                                                 {
                                                     float data = JSON::Reference(optionValue[0]).convert(0.0f);
                                                     if (ImGui::InputFloat(label.c_str(), &data))
@@ -624,12 +624,11 @@ namespace Gek
                                                         optionValue = data;
                                                         changedVisualOptions = true;
                                                     }
-
-                                                    break;
-                                                }
+                                                }();
+                                                break;
 
                                             case 2:
-                                                if (true)
+                                                [&](void) -> void
                                                 {
                                                     Math::Float2 data(
                                                         JSON::Reference(optionValue[0]).convert(0.0f),
@@ -639,12 +638,11 @@ namespace Gek
                                                         optionValue = JSON::Array({ data.x, data.y });
                                                         changedVisualOptions = true;
                                                     }
-
-                                                    break;
-                                                }
+                                                }();
+                                                break;
 
                                             case 3:
-                                                if (true)
+                                                [&](void) -> void
                                                 {
                                                     Math::Float3 data(
                                                         JSON::Reference(optionValue[0]).convert(0.0f),
@@ -655,12 +653,11 @@ namespace Gek
                                                         optionValue = JSON::Array({ data.x, data.y, data.z });
                                                         changedVisualOptions = true;
                                                     }
-
-                                                    break;
-                                                }
+                                                }();
+                                                break;
 
                                             case 4:
-                                                if (true)
+                                                [&](void) -> void
                                                 {
                                                     Math::Float4 data(
                                                         JSON::Reference(optionValue[0]).convert(0.0f),
@@ -672,9 +669,8 @@ namespace Gek
                                                         optionValue = JSON::Array({ data.x, data.y, data.z, data.w });
                                                         changedVisualOptions = true;
                                                     }
-
-                                                    break;
-                                                }
+                                                }();
+                                                break;
                                             };
                                         }
                                         else

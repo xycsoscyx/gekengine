@@ -3,6 +3,7 @@
 
 namespace Gek
 {
+#ifdef GEK_ENABLE_PROFILER
     std::size_t getThreadIdentifier(void)
     {
         return std::hash<std::thread::id>()(std::this_thread::get_id());;
@@ -143,4 +144,5 @@ namespace Gek
             buffer.reserve(100);
         }
     }
+#endif
 }; // namespace Gek

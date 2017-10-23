@@ -13,14 +13,29 @@
 #include <fstream>
 #include <chrono>
 
-#define GEK_PROFILE_SCOPE(PROFILER, NAME) \
-    static const auto __hash##NAME__ = PROFILER->registerName(NAME); \
-    Gek::Profiler::Event __event##NAME__(PROFILER, __hash##NAME__);
-
-#define GEK_PROFILE_FUNCTION(PROFILER) GEK_PROFILE_SCOPE(PROFILER, __FUNCTION__)
+#define GEK_ENABLE_PROFILER
 
 namespace Gek
 {
+#ifdef GEK_ENABLE_PROFILER
+    #define GEK_PROFILE_REGISTER_NAME(PROFILER, NAME) PROFILER->registerName(NAME)
+    #define GEK_PROFILE_REGISTER_THREAD(PROFILER, NAME) PROFILER->registerThreadName(NAME)
+    #define GEK_PROFILE_EVENT(PROFILER, NAME, THREAD, START, END) PROFILER->addEvent(Gek::Profiler::Data(NAME, THREAD, START, END))
+
+    #define GEK_PROFILE_AUTO_SCOPE(PROFILER, NAME) \
+        static const auto __hash##NAME__ = PROFILER->registerName(NAME); \
+        Gek::Profiler::Event __event##NAME__(PROFILER, __hash##NAME__);
+
+    #define GEK_PROFILE_FUNCTION(PROFILER) GEK_PROFILE_AUTO_SCOPE(PROFILER, __FUNCTION__)
+
+    #define GEK_PROFILE_BEGIN_SCOPE(PROFILER, NAME) \
+        [&](void) -> void \
+        { \
+            GEK_PROFILE_AUTO_SCOPE(PROFILER, NAME)
+
+    #define GEK_PROFILE_END_SCOPE() \
+        }()
+
     class Profiler
     {
     public:
@@ -68,4 +83,22 @@ namespace Gek
         void registerThreadName(const char* const name);
         void addEvent(Data const &data);
     };
+#else
+    #define GEK_PROFILE_REGISTER_NAME(PROFILER, NAME) 0
+    #define GEK_PROFILE_REGISTER_THREAD(PROFILER, NAME)
+    #define GEK_PROFILE_EVENT(PROFILER, NAME, THREAD, START, END)
+    #define GEK_PROFILE_AUTO_SCOPE(PROFILER, NAME)
+    #define GEK_PROFILE_FUNCTION(PROFILER)
+    #define GEK_PROFILE_BEGIN_SCOPE(PROFILER, NAME) \
+        [&](void) -> void \
+        { \
+
+    #define GEK_PROFILE_END_SCOPE() \
+        }()
+
+    struct Profiler
+    {
+        virtual ~Profiler(void) = default;
+    };
+#endif
 }; // namespace Gek
