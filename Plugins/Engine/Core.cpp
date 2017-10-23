@@ -62,7 +62,6 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(_window)
             {
-                registerThreadName("MainThread");
                 LockedWrite{ std::cout } << "Starting GEK Engine";
 
                 if (!window)

@@ -1,23 +1,26 @@
 #include "GEK/Utility/Profiler.hpp"
 #include "GEK/Utility/String.hpp"
 
-#ifdef _WIN32
-#include <Windows.h>
-#endif
-
-#include <time.h>
-
 namespace Gek
 {
-    Profiler::Data::Data(size_t nameHash)
+    std::size_t getThreadIdentifier(void)
+    {
+        return std::hash<std::thread::id>()(std::this_thread::get_id());;
+
+        std::stringstream thread;
+        thread << std::this_thread::get_id();
+        return std::stoull(thread.str());
+    }
+
+    Profiler::Data::Data(std::size_t nameHash)
         : nameHash(nameHash)
-        , threadIdentifier(std::hash<std::thread::id>()(std::this_thread::get_id()))
+        , threadIdentifier(getThreadIdentifier())
         , startTime(std::chrono::high_resolution_clock::now().time_since_epoch())
         , endTime(startTime)
     {
     }
 
-    Profiler::Data::Data(size_t nameHash, size_t threadIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime)
+    Profiler::Data::Data(std::size_t nameHash, std::size_t threadIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime)
         : nameHash(nameHash)
         , threadIdentifier(threadIdentifier)
         , startTime(startTime)
@@ -25,7 +28,7 @@ namespace Gek
     {
     }
 
-    Profiler::Event::Event(Profiler *profiler, size_t nameHash)
+    Profiler::Event::Event(Profiler *profiler, uint64_t nameHash)
         : Data(nameHash)
         , profiler(profiler)
     {
@@ -43,50 +46,50 @@ namespace Gek
         {
             for (auto &data : buffer)
             {
-                if (!firstRecord)
-                {
-                    fprintf(file, "\n");
-                    firstRecord = true;
-                }
-                else
-                {
-                    fprintf(file, ",\n");
-                }
-
-                auto threadSearch = nameMap.find(data.threadIdentifier);
-                if (threadSearch == std::end(nameMap))
-                {
-                    auto threadInsert = nameMap.insert(std::make_pair(data.threadIdentifier, String::Format("thread_%v", data.threadIdentifier)));
-                    threadSearch = threadInsert.first;
-                }
-                
                 auto eventSearch = nameMap.find(data.nameHash);
-                if (eventSearch == std::end(nameMap))
+                if (eventSearch != std::end(nameMap))
                 {
-                    throw std::exception("unknown event name");
-                }
+                    auto threadSearch = nameMap.find(data.threadIdentifier);
+                    if (threadSearch == std::end(nameMap))
+                    {
+                        auto threadInsert = nameMap.insert(std::make_pair(data.threadIdentifier, String::Format("thread_%v", data.threadIdentifier)));
+                        threadSearch = threadInsert.first;
+                    }
 
-                fprintf(file, "\t\t {");
-                fprintf(file, "\"name\": \"%s\"", eventSearch->second.c_str());
-                fprintf(file, ", \"cat\": \"%s\"", threadSearch->second.c_str());
-                fprintf(file, ", \"ph\": \"X\"");
-                fprintf(file, ", \"pid\": \"%zd\"", processIdentifier);
-                fprintf(file, ", \"tid\": \"%zd\"", data.threadIdentifier);
-                fprintf(file, ", \"ts\": %lld", data.startTime.count());
-                fprintf(file, ", \"dur\": %lld", (data.endTime - data.startTime).count());
-                fprintf(file, "}");
+                    fileOutput <<
+                        ",\n" \
+                        "\t\t {" \
+                        "\"name\": \"" << eventSearch->second << "\"" \
+                        ", \"ph\": \"X\"" \
+                        ", \"pid\": \"%" << processIdentifier << "\"" \
+                        ", \"tid\": \"" << threadSearch->second << "\"" \
+                        ", \"ts\": " << data.startTime.count() <<
+                        ", \"dur\": " << (data.endTime - data.startTime).count() <<
+                        "}";
+                }
             }
         });
     }
 
     Profiler::Profiler(void)
-        : firstRecord(false)
-        , processIdentifier(GetCurrentProcessId())
+        : processIdentifier(GetCurrentProcessId())
     {
+        registerThreadName("MainThread");
+
         buffer.reserve(100);
-        file = fopen(String::Format("profile_%v.json", processIdentifier).c_str(), "wb");
-        fprintf(file, "{\n");
-        fprintf(file, "\t\"traceEvents\": [");
+        fileOutput.open(String::Format("profile_%v.json", processIdentifier));
+        fileOutput <<
+            "{\n" \
+            "\t\"traceEvents\": [";
+        fileOutput <<
+            "\n" \
+            "\t\t {" \
+            "\"name\": \"" << "Profiler" << "\"" \
+            ", \"ph\": \"B\"" \
+            ", \"pid\": \"%" << processIdentifier << "\"" \
+            ", \"tid\": \"" << "MainThread" << "\"" \
+            ", \"ts\": " << std::chrono::high_resolution_clock::now().time_since_epoch().count() <<
+            "}";
     }
 
     Profiler::~Profiler()
@@ -95,29 +98,37 @@ namespace Gek
 
         writePool.drain();
 
-        fprintf(file, "\n");
-        fprintf(file, "\t],\n");
-
-        fprintf(file, "\t\"displayTimeUnit\": \"ns\",\n");
-        fprintf(file, "\t\"systemTraceEvents\": \"SystemTraceData\",\n");
-        fprintf(file, "\t\"otherData\": {\n");
-        fprintf(file, "\t\t\"version\": \"GEK Profile Data v1.0\"\n");
-        fprintf(file, "\t}\n");
-        fprintf(file, "}\n");
-
-        fclose(file);
+        fileOutput <<
+            ",\n" \
+            "\t\t {" \
+            "\"name\": \"" << "Profiler" << "\"" \
+            ", \"ph\": \"E\"" \
+            ", \"pid\": \"%" << processIdentifier << "\"" \
+            ", \"tid\": \"" << "MainThread" << "\"" \
+            ", \"ts\": " << std::chrono::high_resolution_clock::now().time_since_epoch().count() <<
+            "}";
+        fileOutput <<
+            "\n" \
+            "\t],\n" \
+            "\t\"displayTimeUnit\": \"ns\",\n" \
+            "\t\"systemTraceEvents\": \"SystemTraceData\",\n" \
+            "\t\"otherData\": {\n" \
+            "\t\t\"version\": \"GEK Profile Data v1.0\"\n" \
+            "\t}\n" \
+            "}\n";
+        fileOutput.close();
     }
 
-    size_t Profiler::registerName(const char* const name)
+    std::size_t Profiler::registerName(const char* const name)
     {
-        size_t hash = std::hash<std::string>()(name);
+        auto hash = std::hash<std::string>()(name);
         nameMap.insert(std::make_pair(hash, name));
         return hash;
     }
 
     void Profiler::registerThreadName(const char* const threadName)
     {
-        auto threadIdentifier = std::hash<std::thread::id>()(std::this_thread::get_id());
+        auto threadIdentifier = getThreadIdentifier();
         nameMap.insert(std::make_pair(threadIdentifier, threadName));
     }
 

@@ -10,6 +10,7 @@
 #include "GEK/Utility/ThreadPool.hpp"
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
+#include <fstream>
 #include <chrono>
 
 #define GEK_PROFILE_SCOPE(PROFILER, NAME) \
@@ -25,36 +26,35 @@ namespace Gek
     public:
         struct Data
         {
-            size_t nameHash = 0;
-            size_t threadIdentifier;
+            std::size_t nameHash = 0;
+            std::size_t threadIdentifier;
             std::chrono::nanoseconds startTime;
             std::chrono::nanoseconds endTime;
 
             Data(void) = default;
-            Data(size_t nameHash);
-            Data(size_t nameHash, size_t threadIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime);
+            Data(std::size_t nameHash);
+            Data(std::size_t nameHash, std::size_t threadIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime);
         };
 
         struct Event
             : public Data
         {
             Event(void) = default;
-            Event(Profiler *profiler, size_t nameHash);
+            Event(Profiler *profiler, uint64_t nameHash);
             ~Event(void);
 
             Profiler *profiler = nullptr;
         };
 
     private:
-        size_t processIdentifier = 0;
+        uint64_t processIdentifier = 0;
         std::chrono::high_resolution_clock clock;
         concurrency::critical_section criticalSection;
 
         ThreadPool<1> writePool;
-        std::atomic<bool> firstRecord;
-        FILE *file = nullptr;
+        std::ofstream fileOutput;
 
-        concurrency::concurrent_unordered_map<size_t, std::string> nameMap;
+        concurrency::concurrent_unordered_map<std::size_t, std::string> nameMap;
         concurrency::concurrent_vector<Data> buffer;
 
     private:
@@ -64,7 +64,7 @@ namespace Gek
         Profiler(void);
         virtual ~Profiler(void);
 
-        size_t registerName(const char* const name);
+        std::size_t registerName(const char* const name);
         void registerThreadName(const char* const name);
         void addEvent(Data const &data);
     };
