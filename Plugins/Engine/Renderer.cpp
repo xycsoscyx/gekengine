@@ -44,7 +44,7 @@ namespace Gek
         #define GEK_GPU_PROFILE_SHOW(FRAME) show(FRAME)
         #define GEK_GPU_PROFILE_BEGIN() begin()
         #define GEK_GPU_PROFILE_END() end()
-        #define GEK_GPU_PROFILE_TIMESTAMP(NAME)
+        #define GEK_GPU_PROFILE_TIMESTAMP(NAME) timeStamp(NAME)
 
         class GPUProfiler
         {
@@ -63,7 +63,7 @@ namespace Gek
                 }
             };
 
-            struct Data
+            struct TimeStamp
             {
                 std::array<Video::QueryPtr, 3> eventList;
                 std::array<History, 100> eventHistory;
@@ -71,7 +71,7 @@ namespace Gek
                 ImU32 color32;
                 size_t nameHash;
 
-                Data(void)
+                TimeStamp(void)
                     : color(
                         rand() % 255,
                         rand() % 255,
@@ -90,7 +90,7 @@ namespace Gek
             std::array<Video::QueryPtr, 3> disjointList;
             std::array<Video::QueryPtr, 3> beginEventList;
             std::array<Video::QueryPtr, 3> endEventList;
-            using EventMap = std::unordered_map<std::string, Data>;
+            using EventMap = std::unordered_map<std::string, TimeStamp>;
             EventMap eventMap;
 
             int frameQuery = 0;
@@ -284,9 +284,9 @@ namespace Gek
                 videoContext->end(beginEventList[frameQuery].get());
             }
 
-            void addEvent(std::string const &name)
+            void timeStamp(std::string const &name)
             {
-                auto eventSearch = eventMap.insert(std::make_pair(name, Data()));
+                auto eventSearch = eventMap.insert(std::make_pair(name, TimeStamp()));
                 auto &eventPair = *eventSearch.first;
                 auto &eventData = eventPair.second;
                 if (eventSearch.second)
