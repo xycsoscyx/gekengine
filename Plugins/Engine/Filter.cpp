@@ -111,9 +111,9 @@ namespace Gek
 
                 core->setOption("filters", filterName, globalOptions);
 
-                for (auto &required : filterNode.get("required").getArray())
+                for (auto &requires : filterNode.get("requires").getArray())
                 {
-                    resources->getShader(JSON::Reference(required).convert(String::Empty), MaterialHandle());
+                    resources->getShader(JSON::Reference(requires).convert(String::Empty), MaterialHandle());
                 }
 
                 for (auto &baseTextureNode : filterNode.get("textures").getMembers())

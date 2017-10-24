@@ -130,10 +130,10 @@ namespace Gek
 
                 core->setOption("shaders", shaderName, globalOptions);
 
-                drawOrder = shaderNode.get("required").getArray().size();
-                for (auto &required : shaderNode.get("required").getArray())
+                drawOrder = shaderNode.get("requires").getArray().size();
+                for (auto &requires : shaderNode.get("requires").getArray())
                 {
-                    auto shaderHandle = resources->getShader(JSON::Reference(required).convert(String::Empty));
+                    auto shaderHandle = resources->getShader(JSON::Reference(requires).convert(String::Empty));
                     auto shader = resources->getShader(shaderHandle);
                     if (shader)
                     {
