@@ -4,7 +4,7 @@
 namespace Gek
 {
 #ifdef GEK_ENABLE_PROFILER
-    std::size_t getThreadIdentifier(void)
+    Hash getThreadIdentifier(void)
     {
         return std::hash<std::thread::id>()(std::this_thread::get_id());;
 
@@ -13,7 +13,7 @@ namespace Gek
         return std::stoull(thread.str());
     }
 
-    Profiler::Data::Data(std::size_t nameHash)
+    Profiler::Data::Data(Hash nameHash)
         : nameHash(nameHash)
         , threadIdentifier(getThreadIdentifier())
         , startTime(std::chrono::high_resolution_clock::now().time_since_epoch())
@@ -21,7 +21,7 @@ namespace Gek
     {
     }
 
-    Profiler::Data::Data(std::size_t nameHash, std::size_t threadIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime)
+    Profiler::Data::Data(Hash nameHash, Hash threadIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime)
         : nameHash(nameHash)
         , threadIdentifier(threadIdentifier)
         , startTime(startTime)
@@ -120,7 +120,7 @@ namespace Gek
         fileOutput.close();
     }
 
-    std::size_t Profiler::registerName(const char* const name)
+    Hash Profiler::registerName(const char* const name)
     {
         auto hash = std::hash<std::string>()(name);
         nameMap.insert(std::make_pair(hash, name));

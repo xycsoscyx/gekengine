@@ -116,7 +116,8 @@ namespace Gek
 
                 if (entity->hasComponents<REQUIRED...>())
                 {
-                    auto insertSearch = entityDataMap.insert(std::make_pair(entity, Data()));
+                    static const Data BlankData;
+                    auto insertSearch = entityDataMap.insert(std::make_pair(entity, BlankData));
                     if (onAdded)
                     {
                         onAdded(insertSearch.second, insertSearch.first->second, entity->getComponent<REQUIRED>()...);

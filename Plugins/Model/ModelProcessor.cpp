@@ -298,7 +298,8 @@ namespace Gek
         {
             ProcessorMixin::addEntity(entity, [&](bool isNewInsert, auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
-                auto pair = groupMap.insert(std::make_pair(GetHash(modelComponent.name), Group()));
+                static const Group BlankGroup;
+                auto pair = groupMap.insert(std::make_pair(GetHash(modelComponent.name), BlankGroup));
                 if (pair.second)
                 {
                     LockedWrite{ std::cout } << String::Format("Queueing group for load: %v", modelComponent.name);

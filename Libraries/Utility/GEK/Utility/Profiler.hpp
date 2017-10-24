@@ -7,6 +7,7 @@
 /// Last Changed: $Date: 2016-10-13 13:29:45 -0700 (Thu, 13 Oct 2016) $
 #pragma once
 
+#include "GEK/Utility/Hash.hpp"
 #include "GEK/Utility/ThreadPool.hpp"
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
@@ -41,14 +42,14 @@ namespace Gek
     public:
         struct Data
         {
-            std::size_t nameHash = 0;
-            std::size_t threadIdentifier;
+            Hash nameHash = 0;
+            Hash threadIdentifier;
             std::chrono::nanoseconds startTime;
             std::chrono::nanoseconds endTime;
 
             Data(void) = default;
-            Data(std::size_t nameHash);
-            Data(std::size_t nameHash, std::size_t threadIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime);
+            Data(Hash nameHash);
+            Data(Hash nameHash, Hash threadIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime);
         };
 
         struct Event
@@ -69,7 +70,7 @@ namespace Gek
         ThreadPool<1> writePool;
         std::ofstream fileOutput;
 
-        concurrency::concurrent_unordered_map<std::size_t, std::string> nameMap;
+        concurrency::concurrent_unordered_map<Hash, std::string> nameMap;
         concurrency::concurrent_vector<Data> buffer;
 
     private:
@@ -79,7 +80,7 @@ namespace Gek
         Profiler(void);
         virtual ~Profiler(void);
 
-        std::size_t registerName(const char* const name);
+        Hash registerName(const char* const name);
         void registerThreadName(const char* const name);
         void addEvent(Data const &data);
     };

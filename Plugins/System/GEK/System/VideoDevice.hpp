@@ -13,6 +13,7 @@
 #include "GEK/Math/Vector4.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/JSON.hpp"
+#include "GEK/Utility/Hash.hpp"
 #include "GEK/Utility/Context.hpp"
 #include <unordered_map>
 #include <functional>
@@ -601,6 +602,17 @@ namespace Gek
             using TimeStamp = uint64_t;
 
             virtual ~Query(void) = default;
+        };
+
+        GEK_INTERFACE(Profiler)
+        {
+            virtual ~Profiler(void) = default;
+
+            virtual Hash registerName(const char* const name) = 0;
+
+            virtual void beginFrame(void) = 0;
+            virtual void timeStamp(Hash nameHash) = 0;
+            virtual void endFrame(void) = 0;
         };
 
         GEK_INTERFACE(Device)
