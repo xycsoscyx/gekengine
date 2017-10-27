@@ -962,6 +962,7 @@ namespace Gek
 
             bool update(void)
             {
+                GEK_PROFILE_BEGIN_FRAME(this);
                 GEK_PROFILE_FUNCTION(this);
                 window->readEvents();
 
@@ -996,6 +997,7 @@ namespace Gek
                     }
                 }
 
+                GEK_PROFILE_END_FRAME(this);
                 return engineRunning;
             }
         };

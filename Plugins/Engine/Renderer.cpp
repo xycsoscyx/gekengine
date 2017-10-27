@@ -1615,6 +1615,25 @@ namespace Gek
 
                     ImGui::NewFrame();
                     onShowUserInterface(ImGui::GetCurrentContext());
+                    UI::Performance("stuff", [&](uint32_t index, std::chrono::nanoseconds &startTime, std::chrono::nanoseconds &endTime, ImU32 &frameColor, ImColor &textColor) -> void
+                    {
+                        static const std::tuple<std::chrono::nanoseconds, std::chrono::nanoseconds, ImU32, ImColor> data[] = 
+                        {
+                            std::make_tuple(std::chrono::nanoseconds(0), std::chrono::nanoseconds(100), 0xFF0000FF, ImColor(0.0f, 0.0f, 0.0f, 1.0f)),
+                            std::make_tuple(std::chrono::nanoseconds(0), std::chrono::nanoseconds(10), 0x00FF00FF, ImColor(0.0f, 0.0f, 0.0f, 1.0f)),
+                            std::make_tuple(std::chrono::nanoseconds(20), std::chrono::nanoseconds(30), 0x0000FFFF, ImColor(0.0f, 0.0f, 0.0f, 1.0f)),
+                            std::make_tuple(std::chrono::nanoseconds(40), std::chrono::nanoseconds(50), 0xFF00FFFF, ImColor(0.0f, 0.0f, 0.0f, 1.0f)),
+                            std::make_tuple(std::chrono::nanoseconds(60), std::chrono::nanoseconds(100), 0xFFFF00FF, ImColor(0.0f, 0.0f, 0.0f, 1.0f)),
+                            std::make_tuple(std::chrono::nanoseconds(65), std::chrono::nanoseconds(70), 0x00FFFFFF, ImColor(0.0f, 0.0f, 0.0f, 1.0f)),
+                            std::make_tuple(std::chrono::nanoseconds(75), std::chrono::nanoseconds(80), 0x88FFFFFF, ImColor(0.0f, 0.0f, 0.0f, 1.0f)),
+                            std::make_tuple(std::chrono::nanoseconds(85), std::chrono::nanoseconds(90), 0xFFFF88FF, ImColor(0.0f, 0.0f, 0.0f, 1.0f)),
+                        };
+
+                        startTime = std::get<0>(data[index]);
+                        endTime = std::get<1>(data[index]);
+                        frameColor = std::get<2>(data[index]);
+                        textColor = std::get<3>(data[index]);
+                    }, 8);
                 GEK_PROFILE_END_SCOPE();
 
                 GEK_PROFILE_BEGIN_SCOPE(core, "Show User Interface")

@@ -133,8 +133,14 @@ namespace Gek
         nameMap.insert(std::make_pair(threadIdentifier, threadName));
     }
 
+    void Profiler::beginFrame(void)
+    {
+        frame.clear();
+    }
+
     void Profiler::addEvent(Data const &data)
     {
+        frame.push_back(data);
         buffer.push_back(data);
         concurrency::critical_section::scoped_lock lock(criticalSection);
         if (buffer.size() > 100)
@@ -142,6 +148,15 @@ namespace Gek
             flushQueue();
             buffer.clear();
             buffer.reserve(100);
+        }
+    }
+
+    void Profiler::endFrame(void)
+    {
+        history.emplace_back(std::begin(frame), std::end(frame));
+        if (history.size() > 100)
+        {
+            history.pop_front();
         }
     }
 #endif

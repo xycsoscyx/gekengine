@@ -21,6 +21,8 @@ namespace Gek
 #ifdef GEK_ENABLE_PROFILER
     #define GEK_PROFILE_REGISTER_NAME(PROFILER, NAME) PROFILER->registerName(NAME)
     #define GEK_PROFILE_REGISTER_THREAD(PROFILER, NAME) PROFILER->registerThreadName(NAME)
+    #define GEK_PROFILE_BEGIN_FRAME(PROFILER) PROFILER->beginFrame()
+    #define GEK_PROFILE_END_FRAME(PROFILER) PROFILER->endFrame()
     #define GEK_PROFILE_EVENT(PROFILER, NAME, THREAD, START, END) PROFILER->addEvent(Gek::Profiler::Data(NAME, THREAD, START, END))
 
     #define GEK_PROFILE_AUTO_SCOPE(PROFILER, NAME) \
@@ -71,7 +73,11 @@ namespace Gek
         std::ofstream fileOutput;
 
         concurrency::concurrent_unordered_map<Hash, std::string> nameMap;
+
         concurrency::concurrent_vector<Data> buffer;
+
+        concurrency::concurrent_vector<Data> frame;
+        std::list<std::vector<Data>> history;
 
     private:
         void flushQueue(void);
@@ -82,11 +88,16 @@ namespace Gek
 
         Hash registerName(const char* const name);
         void registerThreadName(const char* const name);
+
+        void beginFrame(void);
         void addEvent(Data const &data);
+        void endFrame(void);
     };
 #else
     #define GEK_PROFILE_REGISTER_NAME(PROFILER, NAME) 0
     #define GEK_PROFILE_REGISTER_THREAD(PROFILER, NAME)
+    #define GEK_PROFILE_BEGIN_FRAME(PROFILER)
+    #define GEK_PROFILE_END_FRAME(PROFILER)
     #define GEK_PROFILE_EVENT(PROFILER, NAME, THREAD, START, END)
     #define GEK_PROFILE_AUTO_SCOPE(PROFILER, NAME)
     #define GEK_PROFILE_FUNCTION(PROFILER)
