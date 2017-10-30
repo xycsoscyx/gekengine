@@ -1,5 +1,6 @@
 #include "GEK/Utility/Profiler.hpp"
 #include "GEK/Utility/String.hpp"
+#include <iostream>
 
 namespace Gek
 {
@@ -13,32 +14,34 @@ namespace Gek
         return std::stoull(thread.str());
     }
 
-    Profiler::Data::Data(Hash nameHash)
-        : nameHash(nameHash)
+    Profiler::Data::Data(Hash nameIdentifier)
+        : nameIdentifier(nameIdentifier)
         , threadIdentifier(getThreadIdentifier())
         , startTime(std::chrono::high_resolution_clock::now().time_since_epoch())
         , endTime(startTime)
     {
     }
 
-    Profiler::Data::Data(Hash nameHash, Hash threadIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime)
-        : nameHash(nameHash)
+    Profiler::Data::Data(Hash nameIdentifier, Hash threadIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime)
+        : nameIdentifier(nameIdentifier)
         , threadIdentifier(threadIdentifier)
         , startTime(startTime)
         , endTime(endTime)
     {
     }
 
-    Profiler::Event::Event(Profiler *profiler, uint64_t nameHash)
-        : Data(nameHash)
+    Profiler::Event::Event(Profiler *profiler, uint64_t nameIdentifier)
+        : Data(nameIdentifier)
         , profiler(profiler)
     {
+        profiler->beginEvent(nameIdentifier);
     }
 
     Profiler::Event::~Event()
     {
-        endTime = std::chrono::high_resolution_clock::now().time_since_epoch();
-        profiler->addEvent(*this);
+        profiler->endEvent();
+        //endTime = std::chrono::high_resolution_clock::now().time_since_epoch();
+        //profiler->addEvent(*this);
     }
 
     void Profiler::flushQueue()
@@ -47,7 +50,7 @@ namespace Gek
         {
             for (auto &data : buffer)
             {
-                auto eventSearch = nameMap.find(data.nameHash);
+                auto eventSearch = nameMap.find(data.nameIdentifier);
                 if (eventSearch != std::end(nameMap))
                 {
                     auto threadSearch = nameMap.find(data.threadIdentifier);
@@ -138,10 +141,48 @@ namespace Gek
         frame.clear();
     }
 
-    void Profiler::addEvent(Data const &data)
+    void Profiler::beginEvent(Hash nameIdentifier, std::chrono::nanoseconds *timeStamp, Hash *threadIdentifier)
     {
+        auto startTime = (timeStamp ? *timeStamp : std::chrono::high_resolution_clock::now().time_since_epoch());
+        Data data(nameIdentifier, (threadIdentifier ? *threadIdentifier : getThreadIdentifier()), startTime, startTime);
+        auto insertIterator = frame.push_back(data);
+        frameStack.push_back(&(*insertIterator));
+        buffer.push_back(data);
+
+        concurrency::critical_section::scoped_lock lock(criticalSection);
+        if (buffer.size() > 100)
+        {
+            flushQueue();
+            buffer.clear();
+            buffer.reserve(100);
+        }
+    }
+
+    void Profiler::endEvent(Hash nameIdentifier)
+    {
+        if (!frameStack.empty())
+        {
+            auto &data = *frameStack.back();
+            frameStack.pop_back();
+            if (data.nameIdentifier != nameIdentifier)
+            {
+                LockedWrite{ std::cerr } << "End event identifier doesn't match data identifier: " << nameIdentifier << " != " << data.nameIdentifier;
+            }
+
+            data.endTime = std::chrono::high_resolution_clock::now().time_since_epoch();
+        }
+        else
+        {
+            LockedWrite{ std::cerr } << "End event encountered without a starting frame event: " << nameIdentifier;
+        }
+    }
+
+    void Profiler::addEvent(Hash nameIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime, Hash *threadIdentifier)
+    {
+        Data data(nameIdentifier, (threadIdentifier ? *threadIdentifier : getThreadIdentifier()), startTime, endTime);
         frame.push_back(data);
         buffer.push_back(data);
+
         concurrency::critical_section::scoped_lock lock(criticalSection);
         if (buffer.size() > 100)
         {

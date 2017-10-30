@@ -47,7 +47,5 @@ namespace Gek
         bool SliderAngle2(char const *label, float v_rad[2], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
         bool SliderAngle3(char const *label, float v_rad[3], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
         bool SliderAngle4(char const *label, float v_rad[4], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
-
-        void Performance(char const *label, std::function<void(uint32_t index, std::chrono::nanoseconds &startTime, std::chrono::nanoseconds &endTime, ImU32 &frameColor, ImColor &textColor)> &&onEvent, size_t eventCount, ImVec2 const &requestedSize = ImVec2(0.0f, 0.0f));
     }; // namespace UI
 }; // namespace Gek

@@ -44,21 +44,21 @@ namespace Gek
     public:
         struct Data
         {
-            Hash nameHash = 0;
+            Hash nameIdentifier = 0;
             Hash threadIdentifier;
             std::chrono::nanoseconds startTime;
             std::chrono::nanoseconds endTime;
 
             Data(void) = default;
-            Data(Hash nameHash);
-            Data(Hash nameHash, Hash threadIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime);
+            Data(Hash nameIdentifier);
+            Data(Hash nameIdentifier, Hash threadIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime);
         };
 
         struct Event
             : public Data
         {
             Event(void) = default;
-            Event(Profiler *profiler, uint64_t nameHash);
+            Event(Profiler *profiler, uint64_t nameIdentifier);
             ~Event(void);
 
             Profiler *profiler = nullptr;
@@ -76,6 +76,7 @@ namespace Gek
 
         concurrency::concurrent_vector<Data> buffer;
 
+        std::list<Data *> frameStack;
         concurrency::concurrent_vector<Data> frame;
         std::list<std::vector<Data>> history;
 
@@ -90,7 +91,9 @@ namespace Gek
         void registerThreadName(const char* const name);
 
         void beginFrame(void);
-        void addEvent(Data const &data);
+        void beginEvent(Hash nameIdentifier, std::chrono::nanoseconds *timeStamp = nullptr, Hash *threadIdentifier = nullptr);
+        void endEvent(Hash nameIdentifier);
+        void addEvent(Hash nameIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime, Hash *threadIdentifier = nullptr);
         void endFrame(void);
     };
 #else

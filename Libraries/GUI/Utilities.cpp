@@ -191,47 +191,5 @@ namespace Gek
             radians[3] = degrees[3] * (2 * IM_PI) / 360.0f;
             return isChanged;
         }
-
-        void Performance(char const *label, std::function<void(uint32_t index, std::chrono::nanoseconds &startTime, std::chrono::nanoseconds &endTime, ImU32 &frameColor, ImColor &textColor)> &&onEvent, size_t eventCount, ImVec2 const &requestedSize)
-        {
-            auto size = ImGui::GetContentRegionAvail();
-            size.x = (requestedSize.x == 0.0f ? size.x : requestedSize.x);
-            size.y = (requestedSize.y == 0.0f ? size.x : requestedSize.y);
-            if (ImGui::BeginChild(label, size))
-            {
-                float childPositionY = ImGui::GetCursorPosY();
-                float frameMinimumX = ImGui::GetCursorPosX();
-                float frameMaximumX = frameMinimumX;
-
-                ImU32 frameColor;
-                ImColor textColor;
-                std::chrono::nanoseconds startTime, endTime, previousEndTime, frameStartTime;
-                for (size_t eventIndex = 0; eventIndex < eventCount; ++eventIndex)
-                {
-                    onEvent(eventIndex, startTime, endTime, frameColor, textColor);
-                    if (eventIndex == 0 || startTime >= previousEndTime)
-                    {
-                        ImGui::SetCursorPosY(childPositionY);
-                        frameMinimumX = frameMaximumX;
-                        frameStartTime = startTime;
-                    }
-                    else
-                    {
-                        float startDelta = std::chrono::duration<float>(startTime - frameStartTime).count() * 100.0f;
-                        ImGui::SetCursorPosX(frameMinimumX + startDelta);
-                    }
-                    
-                    float frameDelta = std::chrono::duration<float>(endTime - startTime).count() * 100.0f;
-                    TextFrame("##", ImVec2(frameDelta, 5.0f), 0, &frameColor, &textColor);
-                    previousEndTime = endTime;
-                    if (eventIndex == 0 || startTime >= previousEndTime)
-                    {
-                        frameMaximumX = ImGui::GetCursorPosX();
-                    }
-                }
-
-                ImGui::EndChild();
-            }
-        }
     }; // namespace UI
 }; // namespace Gek
