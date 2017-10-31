@@ -43,7 +43,7 @@ namespace Gek
 									}
 									else
 									{
-                                        LockedWrite{ std::cerr } << String::Format("Skipping duplicate class from plugin: %v, from: %v", className, filePath);
+                                        LockedWrite{ std::cerr } << "Skipping duplicate class from plugin: " << className << ", from: " << filePath;
 									}
 								}, [this](std::string const &typeName, std::string const &className) -> void
 								{
@@ -59,7 +59,7 @@ namespace Gek
 						}
 						else
 						{
-                            LockedWrite{ std::cerr } << String::Format("Unable to load plugin: %v", filePath.u8string());
+                            LockedWrite{ std::cerr } << "Unable to load plugin: " << filePath.u8string();
 						}
 					}
 
@@ -89,7 +89,7 @@ namespace Gek
             auto classSearch = classMap.find(className);
             if (classSearch == std::end(classMap))
             {
-                LockedWrite{ std::cerr } << String::Format("Requested class doesn't exist: %v", className);
+                LockedWrite{ std::cerr } << "Requested class doesn't exist: " << className;
                 return nullptr;
             }
 
@@ -99,17 +99,17 @@ namespace Gek
             }
             catch (std::exception const &exception)
             {
-                LockedWrite{ std::cerr } << String::Format("Exception raised trying to create %v: %v", exception.what(), className);
+                LockedWrite{ std::cerr } << "Exception raised trying to create " << exception.what() << ": " << className;
                 return nullptr;
             }
             catch (std::string const &error)
             {
-                LockedWrite{ std::cerr } << String::Format("Error raised trying to create %v: %v", error, className);
+                LockedWrite{ std::cerr } << "Error raised trying to create " << error << ": " << className;
                 return nullptr;
             }
             catch (...)
             {
-                LockedWrite{ std::cerr } << String::Format("Unknown exception occurred trying to create %v", className);
+                LockedWrite{ std::cerr } << "Unknown exception occurred trying to create " << className;
                 return nullptr;
             };
         }

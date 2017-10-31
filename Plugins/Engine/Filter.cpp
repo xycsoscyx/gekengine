@@ -76,7 +76,7 @@ namespace Gek
 
             void reload(void)
             {
-                LockedWrite{ std::cout } << String::Format("Loading filter: %v", filterName);
+                LockedWrite{ std::cout } << "Loading filter: " << filterName;
 				
                 ShuntingYard shuntingYard(population->getShuntingYard());
                 auto options = core->getOption("filters", filterName);
@@ -121,7 +121,7 @@ namespace Gek
                     std::string textureName(baseTextureNode.name());
                     if (resourceMap.count(textureName) > 0)
                     {
-                        LockedWrite{ std::cout } << String::Format("Texture name same as already listed resource: %v", textureName);
+                        LockedWrite{ std::cout } << "Texture name same as already listed resource: " << textureName;
                         continue;
                     }
 
@@ -189,7 +189,7 @@ namespace Gek
                     std::string bufferName(baseBufferNode.name());
                     if (resourceMap.count(bufferName) > 0)
                     {
-                        LockedWrite{ std::cout } << String::Format("Texture name same as already listed resource: %v", bufferName);
+                        LockedWrite{ std::cout } << "Texture name same as already listed resource: " << bufferName;
                         continue;
                     }
 
@@ -413,7 +413,7 @@ namespace Gek
                                     auto resourceSearch = resourceMap.find(renderTarget.first);
                                     if (resourceSearch == std::end(resourceMap))
                                     {
-                                        LockedWrite{ std::cerr } << String::Format("Unable to find render target for pass: %v", renderTarget.first);
+                                        LockedWrite{ std::cerr } << "Unable to find render target for pass: " << renderTarget.first;
                                     }
                                     else
                                     {
@@ -425,7 +425,7 @@ namespace Gek
                                         }
                                         else
                                         {
-                                            LockedWrite{ std::cerr } << String::Format("Unable to get description for render target: %v", renderTarget.first);
+                                            LockedWrite{ std::cerr } << "Unable to get description for render target: " << renderTarget.first;
                                         }
                                     }
                                 }
@@ -460,7 +460,7 @@ namespace Gek
                         }
                         else
                         {
-                            LockedWrite{ std::cerr } << String::Format("Missing clear target encountered: %v", resourceName);
+                            LockedWrite{ std::cerr } << "Missing clear target encountered: " << resourceName;
                         }
                     }
 
@@ -475,7 +475,7 @@ namespace Gek
                         }
                         else
                         {
-                            LockedWrite{ std::cerr } << String::Format("Missing mipmap generation target encountered: %v", resourceName);
+                            LockedWrite{ std::cerr } << "Missing mipmap generation target encountered: " << resourceName;
                         }
                     }
 
@@ -494,12 +494,12 @@ namespace Gek
                             }
                             else
                             {
-                                LockedWrite{ std::cerr } << String::Format("Missing copy source encountered: %v", sourceResourceName);
+                                LockedWrite{ std::cerr } << "Missing copy source encountered: " << sourceResourceName;
                             }
                         }
                         else
                         {
-                            LockedWrite{ std::cerr } << String::Format("Missing copy target encountered: %v", targetResourceName);
+                            LockedWrite{ std::cerr } << "Missing copy target encountered: " << targetResourceName;
                         }
                     }
 
@@ -518,12 +518,12 @@ namespace Gek
                             }
                             else
                             {
-                                LockedWrite{ std::cerr } << String::Format("Missing resolve source encountered: %v", sourceResourceName);
+                                LockedWrite{ std::cerr } << "Missing resolve source encountered: " << sourceResourceName;
                             }
                         }
                         else
                         {
-                            LockedWrite{ std::cerr } << String::Format("Missing resolve target encountered: %v", targetResourceName);
+                            LockedWrite{ std::cerr } << "Missing resolve target encountered: " << targetResourceName;
                         }
                     }
 
@@ -606,7 +606,7 @@ namespace Gek
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
                 }
 
-				LockedWrite{ std::cout } << String::Format("Filter loaded successfully: %v", filterName);
+				LockedWrite{ std::cout } << "Filter loaded successfully: " << filterName;
 			}
 
             ~Filter(void)

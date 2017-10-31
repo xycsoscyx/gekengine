@@ -302,7 +302,7 @@ namespace Gek
                 auto pair = groupMap.insert(std::make_pair(GetHash(modelComponent.name), BlankGroup));
                 if (pair.second)
                 {
-                    LockedWrite{ std::cout } << String::Format("Queueing group for load: %v", modelComponent.name);
+                    LockedWrite{ std::cout } << "Queueing group for load: %v" << modelComponent.name;
                     loadPool.enqueue([this, name = modelComponent.name, &group = pair.first->second](void) -> void
                     {
                         std::vector<FileSystem::Path> modelPathList;
@@ -316,26 +316,26 @@ namespace Gek
                                 std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer, sizeof(Header)));
                                 if (buffer.size() < sizeof(Header))
                                 {
-                                    LockedWrite{ std::cerr } << String::Format("Model file too small to contain header: %v", fileName);
+                                    LockedWrite{ std::cerr } << "Model file too small to contain header: " << fileName;
                                     return true;
                                 }
 
                                 Header *header = (Header *)buffer.data();
                                 if (header->identifier != *(uint32_t *)"GEKX")
                                 {
-                                    LockedWrite{ std::cerr } << String::Format("Unknown model file identifier encountered (requires: GEKX, has: %v): %v", header->identifier, fileName);
+                                    LockedWrite{ std::cerr } << "Unknown model file identifier encountered (requires: GEKX, has: " << header->identifier << "): " << fileName;
                                     return true;
                                 }
 
                                 if (header->type != 0)
                                 {
-                                    LockedWrite{ std::cerr } << String::Format("Unsupported model type encountered (requires: 0, has: %v): %v", header->type, fileName);
+                                    LockedWrite{ std::cerr } << "Unsupported model type encountered (requires: 0, has: " << header->type << "): " << fileName;
                                     return true;
                                 }
 
                                 if (header->version != 8)
                                 {
-                                    LockedWrite{ std::cerr } << String::Format("Unsupported model version encountered (requires: 8, has: %v): %v", header->version, fileName);
+                                    LockedWrite{ std::cerr } << "Unsupported model version encountered (requires: 8, has: " << header->version << "): " << fileName;
                                     return true;
                                 }
 
@@ -347,7 +347,7 @@ namespace Gek
 
                         if (modelPathList.empty())
                         {
-                            LockedWrite{ std::cerr } << String::Format("No models found for group: %v", name);
+                            LockedWrite{ std::cerr } << "No models found for group: " << name;
                         }
 
                         group.modelList.resize(modelPathList.size());
@@ -365,11 +365,11 @@ namespace Gek
                                 Header *header = (Header *)buffer.data();
                                 if (buffer.size() < (sizeof(Header) + (sizeof(Header::Mesh) * header->meshCount)))
                                 {
-                                    LockedWrite{ std::cerr } << String::Format("Model file too small to contain mesh headers: %v", filePath.u8string());
+                                    LockedWrite{ std::cerr } << "Model file too small to contain mesh headers: " << filePath.u8string();
                                     return;
                                 }
 
-                                LockedWrite{ std::cout } << String::Format("Group %v, loading model %v: %v meshes", name, fileName, header->meshCount);
+                                LockedWrite{ std::cout } << "Group " << name << ", loading model " << fileName << ": " << header->meshCount << " meshes";
 
                                 model.boundingBox = header->boundingBox;
                                 group.boundingBox.extend(model.boundingBox.minimum);
@@ -416,11 +416,11 @@ namespace Gek
                                     mesh.indexCount = indexBufferDescription.count;
                                 }
 
-                                LockedWrite{ std::cout } << String::Format("Group %v, mesh %v successfully loaded", name, fileName);
+                                LockedWrite{ std::cout } << "Group " << name << ", mesh " << fileName << "successfully loaded";
                             });
                         }
 
-                        LockedWrite{ std::cout } << String::Format("Group %v successfully queued", name);
+                        LockedWrite{ std::cout } << "Group " << name << " successfully queued";
                     });
                 }
 

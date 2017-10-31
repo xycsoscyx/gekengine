@@ -5,14 +5,14 @@
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/System/VideoDevice.hpp"
 #include "GEK/System/Window.hpp"
-#include <atlbase.h>
-#include <d3d11.h>
-#include <dxgi1_3.h>
 #include <d3dcompiler.h>
 #include <DirectXTex.h>
 #include <wincodec.h>
+#include <atlbase.h>
+#include <dxgi1_3.h>
 #include <algorithm>
 #include <comdef.h>
+#include <d3d11.h>
 #include <memory>
 #include <ppl.h>
 
@@ -2522,7 +2522,7 @@ namespace Gek
                 {
                     _com_error error(resultValue);
                     std::string compilerError((char const *)d3dCompilerErrors->GetBufferPointer());
-                    LockedWrite{ std::cerr } << String::Format("D3DCompile Failed (%v): %v", error.ErrorMessage(), compilerError);
+                    LockedWrite{ std::cerr } << "D3DCompile Failed (" << error.ErrorMessage() << ") " << compilerError;
                     static const std::vector<uint8_t> EmptyBuffer;
                     return EmptyBuffer;
                 }

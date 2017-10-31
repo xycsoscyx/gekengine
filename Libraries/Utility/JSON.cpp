@@ -444,7 +444,7 @@ namespace Gek
             reader.read(errorCode);
             if (errorCode)
             {
-                LockedWrite{std::cerr} << String::Format("%v, at line %v, and column %v", errorCode.message(), reader.line_number(), reader.column_number());
+                LockedWrite{std::cerr} << errorCode.message() << " at line " << reader.line_number() << ", and column " << reader.column_number();
                 return EmptyObject;
             }
             else

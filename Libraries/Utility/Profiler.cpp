@@ -14,24 +14,16 @@ namespace Gek
         return std::stoull(thread.str());
     }
 
-    Profiler::Data::Data(Hash nameIdentifier)
+    Profiler::Data::Data(Hash nameIdentifier, std::chrono::nanoseconds startTime, Hash *threadIdentifier, std::chrono::nanoseconds *endTime)
         : nameIdentifier(nameIdentifier)
-        , threadIdentifier(getThreadIdentifier())
-        , startTime(std::chrono::high_resolution_clock::now().time_since_epoch())
-        , endTime(startTime)
-    {
-    }
-
-    Profiler::Data::Data(Hash nameIdentifier, Hash threadIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime)
-        : nameIdentifier(nameIdentifier)
-        , threadIdentifier(threadIdentifier)
+        , threadIdentifier(threadIdentifier ? *threadIdentifier : getThreadIdentifier())
         , startTime(startTime)
-        , endTime(endTime)
+        , endTime(endTime ? *endTime : startTime)
     {
     }
 
     Profiler::Event::Event(Profiler *profiler, uint64_t nameIdentifier)
-        : Data(nameIdentifier)
+        : Data(nameIdentifier, std::chrono::high_resolution_clock::now().time_since_epoch())
         , profiler(profiler)
     {
         profiler->beginEvent(nameIdentifier);
@@ -39,39 +31,52 @@ namespace Gek
 
     Profiler::Event::~Event()
     {
-        profiler->endEvent();
+        profiler->endEvent(nameIdentifier);
         //endTime = std::chrono::high_resolution_clock::now().time_since_epoch();
         //profiler->addEvent(*this);
     }
 
-    void Profiler::flushQueue()
+    Profiler::Frame::Frame(Frame *parent, Hash nameIdentifier, std::chrono::nanoseconds startTime, Hash *threadIdentifier, std::chrono::nanoseconds *endTime)
+        : Data(nameIdentifier, startTime, threadIdentifier, endTime)
+        , parent(parent)
     {
-        writePool.enqueue([this, buffer = move(buffer)](void) -> void
-        {
-            for (auto &data : buffer)
-            {
-                auto eventSearch = nameMap.find(data.nameIdentifier);
-                if (eventSearch != std::end(nameMap))
-                {
-                    auto threadSearch = nameMap.find(data.threadIdentifier);
-                    if (threadSearch == std::end(nameMap))
-                    {
-                        auto threadInsert = nameMap.insert(std::make_pair(data.threadIdentifier, String::Format("thread_%v", data.threadIdentifier)));
-                        threadSearch = threadInsert.first;
-                    }
+    }
 
-                    fileOutput <<
-                        ",\n" \
-                        "\t\t {" \
-                        "\"name\": \"" << eventSearch->second << "\"" \
-                        ", \"ph\": \"X\"" \
-                        ", \"pid\": \"%" << processIdentifier << "\"" \
-                        ", \"tid\": \"" << threadSearch->second << "\"" \
-                        ", \"ts\": " << data.startTime.count() <<
-                        ", \"dur\": " << (data.endTime - data.startTime).count() <<
-                        "}";
-                }
+    void Profiler::writeFrame(Frame *frame)
+    {
+        auto eventSearch = nameMap.find(frame->nameIdentifier);
+        if (eventSearch != std::end(nameMap))
+        {
+            auto threadSearch = nameMap.find(frame->threadIdentifier);
+            if (threadSearch == std::end(nameMap))
+            {
+                auto threadInsert = nameMap.insert(std::make_pair(frame->threadIdentifier, String::Format("thread_%v", frame->threadIdentifier)));
+                threadSearch = threadInsert.first;
             }
+
+            fileOutput <<
+                ",\n" \
+                "\t\t {" \
+                "\"name\": \"" << eventSearch->second << "\"" \
+                ", \"ph\": \"X\"" \
+                ", \"pid\": \"" << processIdentifier << "\"" \
+                ", \"tid\": \"" << threadSearch->second << "\"" \
+                ", \"ts\": " << frame->startTime.count() <<
+                ", \"dur\": " << (frame->endTime - frame->startTime).count() <<
+                "}";
+
+            for (auto &child : frame->children)
+            {
+                writeFrame(&child);
+            }
+        }
+    }
+
+    void Profiler::flushFrame(std::shared_ptr<Frame> &&frame)
+    {
+        writePool.enqueue([this, frame = move(frame)](void) mutable -> void
+        {
+            writeFrame(frame.get());
         });
     }
 
@@ -79,8 +84,9 @@ namespace Gek
         : processIdentifier(GetCurrentProcessId())
     {
         registerThreadName("MainThread");
+        mainThread = getThreadIdentifier();
+        profilerName = registerName("Profiler Frame");
 
-        buffer.reserve(100);
         fileOutput.open(String::Format("profile_%v.json", processIdentifier));
         fileOutput <<
             "{\n" \
@@ -90,7 +96,7 @@ namespace Gek
             "\t\t {" \
             "\"name\": \"" << "Profiler" << "\"" \
             ", \"ph\": \"B\"" \
-            ", \"pid\": \"%" << processIdentifier << "\"" \
+            ", \"pid\": \"" << processIdentifier << "\"" \
             ", \"tid\": \"" << "MainThread" << "\"" \
             ", \"ts\": " << std::chrono::high_resolution_clock::now().time_since_epoch().count() <<
             "}";
@@ -98,16 +104,18 @@ namespace Gek
 
     Profiler::~Profiler()
     {
-        flushQueue();
-
         writePool.drain();
+        for (auto &frame : history)
+        {
+            writeFrame(frame.get());
+        }
 
         fileOutput <<
             ",\n" \
             "\t\t {" \
             "\"name\": \"" << "Profiler" << "\"" \
             ", \"ph\": \"E\"" \
-            ", \"pid\": \"%" << processIdentifier << "\"" \
+            ", \"pid\": \"" << processIdentifier << "\"" \
             ", \"tid\": \"" << "MainThread" << "\"" \
             ", \"ts\": " << std::chrono::high_resolution_clock::now().time_since_epoch().count() <<
             "}";
@@ -138,38 +146,27 @@ namespace Gek
 
     void Profiler::beginFrame(void)
     {
-        frame.clear();
+        frame = std::make_shared<Frame>(nullptr, profilerName, std::chrono::high_resolution_clock::now().time_since_epoch(), &mainThread);
+        currentFrame = frame.get();
     }
 
     void Profiler::beginEvent(Hash nameIdentifier, std::chrono::nanoseconds *timeStamp, Hash *threadIdentifier)
     {
-        auto startTime = (timeStamp ? *timeStamp : std::chrono::high_resolution_clock::now().time_since_epoch());
-        Data data(nameIdentifier, (threadIdentifier ? *threadIdentifier : getThreadIdentifier()), startTime, startTime);
-        auto insertIterator = frame.push_back(data);
-        frameStack.push_back(&(*insertIterator));
-        buffer.push_back(data);
-
-        concurrency::critical_section::scoped_lock lock(criticalSection);
-        if (buffer.size() > 100)
-        {
-            flushQueue();
-            buffer.clear();
-            buffer.reserve(100);
-        }
+        auto insertIterator = currentFrame->children.push_back(Frame(currentFrame, nameIdentifier, (timeStamp ? *timeStamp : std::chrono::high_resolution_clock::now().time_since_epoch())));
+        currentFrame = &(*insertIterator);
     }
 
     void Profiler::endEvent(Hash nameIdentifier)
     {
-        if (!frameStack.empty())
+        if (currentFrame)
         {
-            auto &data = *frameStack.back();
-            frameStack.pop_back();
-            if (data.nameIdentifier != nameIdentifier)
+            if (currentFrame->nameIdentifier != nameIdentifier)
             {
-                LockedWrite{ std::cerr } << "End event identifier doesn't match data identifier: " << nameIdentifier << " != " << data.nameIdentifier;
+                LockedWrite{ std::cerr } << "End event identifier doesn't match data identifier: " << nameIdentifier << " != " << currentFrame->nameIdentifier;
             }
 
-            data.endTime = std::chrono::high_resolution_clock::now().time_since_epoch();
+            currentFrame->endTime = std::chrono::high_resolution_clock::now().time_since_epoch();
+            currentFrame = currentFrame->parent;
         }
         else
         {
@@ -179,24 +176,17 @@ namespace Gek
 
     void Profiler::addEvent(Hash nameIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime, Hash *threadIdentifier)
     {
-        Data data(nameIdentifier, (threadIdentifier ? *threadIdentifier : getThreadIdentifier()), startTime, endTime);
-        frame.push_back(data);
-        buffer.push_back(data);
-
-        concurrency::critical_section::scoped_lock lock(criticalSection);
-        if (buffer.size() > 100)
-        {
-            flushQueue();
-            buffer.clear();
-            buffer.reserve(100);
-        }
+        currentFrame->children.push_back(Frame(currentFrame, nameIdentifier, startTime, threadIdentifier, &endTime));
     }
 
     void Profiler::endFrame(void)
     {
-        history.emplace_back(std::begin(frame), std::end(frame));
+        history.emplace_back(std::move(frame));
+        currentFrame = nullptr;
+
         if (history.size() > 100)
         {
+            flushFrame(std::move(history.front()));
             history.pop_front();
         }
     }

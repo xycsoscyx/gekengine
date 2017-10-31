@@ -72,7 +72,7 @@ namespace Gek
                 }
                 else
                 {
-                    LockedWrite{ std::cerr } << String::Format("Shader %v missing for material %v", shaderName, materialName);
+                    LockedWrite{ std::cerr } << "Shader " << shaderName << " missing for material " << materialName;
                 }
             }
 

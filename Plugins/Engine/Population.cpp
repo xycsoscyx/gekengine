@@ -106,20 +106,20 @@ namespace Gek
             {
                 assert(core);
 
-                LockedWrite{ std::cout } << String::Format("Loading component plugins");
+                LockedWrite{ std::cout } << "Loading component plugins";
                 getContext()->listTypes("ComponentType", [&](std::string const &className) -> void
                 {
-                    LockedWrite{ std::cout } << String::Format("Component found: %v", className);
+                    LockedWrite{ std::cout } << "Component found: " << className;
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className, static_cast<Plugin::Population *>(this)));
                     if (componentMap.count(component->getIdentifier()) > 0)
                     {
-                        LockedWrite{ std::cerr } << String::Format("Duplicate component identifier found: Class(%v), Identifier(%v)", className, component->getIdentifier().name());
+                        LockedWrite{ std::cerr } << "Duplicate component identifier found: Class(" << className << "), Identifier(" << component->getIdentifier().name() << ")";
                         return;
                     }
 
                     if (componentNameTypeMap.count(component->getIdentifier()) > 0)
                     {
-                        LockedWrite{ std::cerr } << String::Format("Duplicate component name found: Class(%v), Name(%v)", className, component->getName());
+                        LockedWrite{ std::cerr } << "Duplicate component name found: Class(" << className << "), Name(" << component->getName() << ")";
                         return;
                     }
 
@@ -230,15 +230,16 @@ namespace Gek
                 reset();
                 workerPool.enqueue([this, populationName](void) -> void
                 {
-                    LockedWrite{ std::cout } << String::Format("Loading population: %v", populationName);
+                    LockedWrite{ std::cout } << "Loading population: " << populationName;
 
                     JSON::Instance worldNode = JSON::Load(getContext()->getRootFileName("data", "scenes", populationName).withExtension(".json"));
                     shuntingYard.setRandomSeed(worldNode.get("Seed").convert(uint32_t(std::time(nullptr) & 0xFFFFFFFF)));
 
                     auto templatesNode = worldNode.get("Templates");
                     auto &populationNode = worldNode.get("Population");
-                    LockedWrite{ std::cout } << String::Format("Found %v Entity Definitions", populationNode.getArray().size());
-                    for (auto const &entityNode : populationNode.getArray())
+                    auto &populationArray = populationNode.getArray();
+                    LockedWrite{ std::cout } << "Found " << populationArray.size() << " Entity Definitions";
+                    for (auto const &entityNode : populationArray)
                     {
                         std::vector<Component> entityComponentList;
                         if (entityNode.has_member("Template"))
@@ -299,14 +300,14 @@ namespace Gek
                         auto componentName = componentNameTypeMap.find(type);
                         if (componentName == std::end(componentNameTypeMap))
                         {
-                            LockedWrite{ std::cerr } << String::Format("Unknown component name found when trying to save population: %v", type.name());
+                            LockedWrite{ std::cerr } << "Unknown component name found when trying to save population: " << type.name();
                         }
                         else
                         {
                             auto component = componentMap.find(type);
                             if (component == std::end(componentMap))
                             {
-                                LockedWrite{ std::cerr } << String::Format("Unknown component type found when trying to save population: %v", type.name());
+                                LockedWrite{ std::cerr } << "Unknown component type found when trying to save population: " << type.name();
                             }
                             else
                             {
@@ -375,12 +376,12 @@ namespace Gek
                     }
                     else
                     {
-                        LockedWrite{ std::cerr } << String::Format("Entity contains unknown component identifier: %v", componentNameSearch->second.name());
+                        LockedWrite{ std::cerr } << "Entity contains unknown component identifier: " << componentNameSearch->second.name();
                     }
                 }
                 else
                 {
-                    LockedWrite{ std::cerr } << String::Format("Entity contains unknown component: %v", componentData.first);
+                    LockedWrite{ std::cerr } << "Entity contains unknown component: " << componentData.first;
                 }
 
                 return false;

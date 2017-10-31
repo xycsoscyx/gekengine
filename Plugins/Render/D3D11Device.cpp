@@ -6,13 +6,14 @@
 #include "GEK/Utility/Hash.hpp"
 #include "GEK/Render/Device.hpp"
 #include "GEK/Render/Window.hpp"
-#include <atlbase.h>
-#include <d3d11.h>
-#include <dxgi1_3.h>
 #include <d3dcompiler.h>
 #include <DirectXTex.h>
 #include <wincodec.h>
+#include <atlbase.h>
+#include <dxgi1_3.h>
 #include <algorithm>
+#include <comdef.h>
+#include <d3d11.h>
 #include <memory>
 #include <ppl.h>
 
@@ -1406,7 +1407,9 @@ namespace Gek
                 HRESULT resultValue = D3DCompile(fullShader.c_str(), (fullShader.size() + 1), name.c_str(), nullptr, nullptr, entryFunction.c_str(), type.c_str(), flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
-					LockedWrite{ std::cerr } << String::Format("D3DCompile Failed (%v): %v", resultValue, (char const * const)d3dCompilerErrors->GetBufferPointer());
+                    _com_error error(resultValue);
+                    std::string compilerError((char const *)d3dCompilerErrors->GetBufferPointer());
+                    LockedWrite{ std::cerr } << "D3DCompile Failed (" << error.ErrorMessage() << ") " << compilerError;
                     static const std::vector<uint8_t> EmptyBuffer;
                     return EmptyBuffer;
                 }

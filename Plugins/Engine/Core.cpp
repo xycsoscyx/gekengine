@@ -89,7 +89,7 @@ namespace Gek
                 HRESULT resultValue = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
                 if (FAILED(resultValue))
                 {
-                    LockedWrite{ std::cerr } << String::Format("Call to CoInitialize failed: %v", resultValue);
+                    LockedWrite{ std::cerr } << "Call to CoInitialize failed: " << resultValue;
                     return;
                 }
 
@@ -148,7 +148,7 @@ namespace Gek
                 processorList.reserve(processorNameList.size());
                 for (auto const &processorName : processorNameList)
                 {
-                    LockedWrite{ std::cout } << String::Format("Processor found: %v", processorName);
+                    LockedWrite{ std::cout } << "Processor found: " << processorName;
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(processorName, (Plugin::Core *)this));
                 }
 
@@ -228,7 +228,7 @@ namespace Gek
                 if (current.mode != requestDisplayMode)
                 {
                     auto &displayModeData = displayModeList[requestDisplayMode];
-                    LockedWrite{ std::cout } << String::Format("Setting display mode: %vx%v", displayModeData.width, displayModeData.height);
+                    LockedWrite{ std::cout } << "Setting display mode: " << displayModeData.width << "x" << displayModeData.height;
                     if (requestDisplayMode < displayModeList.size())
                     {
                         current.mode = requestDisplayMode;
@@ -963,7 +963,6 @@ namespace Gek
             bool update(void)
             {
                 GEK_PROFILE_BEGIN_FRAME(this);
-                GEK_PROFILE_FUNCTION(this);
                 window->readEvents();
 
                 timer.update();

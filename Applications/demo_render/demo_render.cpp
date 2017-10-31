@@ -360,7 +360,7 @@ namespace Gek
             if (current.mode != requestDisplayMode)
             {
                 auto &displayModeData = displayModeList[requestDisplayMode];
-                LockedWrite{ std::cout } << String::Format("Setting display mode: %vx%v", displayModeData.width, displayModeData.height);
+                LockedWrite{ std::cout } << "Setting display mode: " << displayModeData.width << "x" << displayModeData.height;
                 if (requestDisplayMode < displayModeList.size())
                 {
                     current.mode = requestDisplayMode;

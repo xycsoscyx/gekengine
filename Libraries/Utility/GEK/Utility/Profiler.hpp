@@ -23,7 +23,7 @@ namespace Gek
     #define GEK_PROFILE_REGISTER_THREAD(PROFILER, NAME) PROFILER->registerThreadName(NAME)
     #define GEK_PROFILE_BEGIN_FRAME(PROFILER) PROFILER->beginFrame()
     #define GEK_PROFILE_END_FRAME(PROFILER) PROFILER->endFrame()
-    #define GEK_PROFILE_EVENT(PROFILER, NAME, THREAD, START, END) PROFILER->addEvent(Gek::Profiler::Data(NAME, THREAD, START, END))
+    #define GEK_PROFILE_EVENT(PROFILER, NAME, THREAD, START, END) PROFILER->addEvent(NAME, START, END, &THREAD)
 
     #define GEK_PROFILE_AUTO_SCOPE(PROFILER, NAME) \
         static const auto __hash##NAME__ = PROFILER->registerName(NAME); \
@@ -50,8 +50,7 @@ namespace Gek
             std::chrono::nanoseconds endTime;
 
             Data(void) = default;
-            Data(Hash nameIdentifier);
-            Data(Hash nameIdentifier, Hash threadIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime);
+            Data(Hash nameIdentifier, std::chrono::nanoseconds startTime, Hash *threadIdentifier = nullptr, std::chrono::nanoseconds *endTime = nullptr);
         };
 
         struct Event
@@ -64,24 +63,36 @@ namespace Gek
             Profiler *profiler = nullptr;
         };
 
+        struct Frame
+            : public Data
+        {
+            Frame *parent = nullptr;
+            concurrency::concurrent_vector<Frame> children;
+
+            Frame(void) = default;
+            Frame(Frame *parent, Hash nameIdentifier, std::chrono::nanoseconds startTime, Hash *threadIdentifier = nullptr, std::chrono::nanoseconds *endTime = nullptr);
+            ~Frame(void) = default;
+        };
+
     private:
         uint64_t processIdentifier = 0;
         std::chrono::high_resolution_clock clock;
         concurrency::critical_section criticalSection;
+        Hash profilerName;
+        Hash mainThread;
 
         ThreadPool<1> writePool;
         std::ofstream fileOutput;
 
         concurrency::concurrent_unordered_map<Hash, std::string> nameMap;
 
-        concurrency::concurrent_vector<Data> buffer;
-
-        std::list<Data *> frameStack;
-        concurrency::concurrent_vector<Data> frame;
-        std::list<std::vector<Data>> history;
+        std::shared_ptr<Frame> frame;
+        Frame *currentFrame = nullptr;
+        std::list<std::shared_ptr<Frame>> history;
 
     private:
-        void flushQueue(void);
+        void writeFrame(Frame *frame);
+        void flushFrame(std::shared_ptr<Frame> &&frame);
 
     public:
         Profiler(void);
