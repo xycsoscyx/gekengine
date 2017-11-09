@@ -1211,12 +1211,12 @@ namespace Gek
             }
 
             // Renderer
-            void queueCamera(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget, std::string const &forceShader)
+            void queueCamera(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &perspectiveMatrix, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget, std::string const &forceShader)
             {
                 Camera renderCall;
                 renderCall.viewMatrix = viewMatrix;
-                renderCall.projectionMatrix = projectionMatrix;
-                renderCall.viewFrustum.create(viewMatrix * projectionMatrix);
+                renderCall.projectionMatrix = perspectiveMatrix;
+                renderCall.viewFrustum.create(renderCall.viewMatrix * renderCall.projectionMatrix);
                 renderCall.nearClip = nearClip;
                 renderCall.farClip = farClip;
                 renderCall.cameraTarget = cameraTarget;
@@ -1227,6 +1227,16 @@ namespace Gek
                 }
 
                 cameraQueue.push(renderCall);
+            }
+
+            void queueCamera(Math::Float4x4 const &viewMatrix, float fieldOfView, float aspectRatio, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget, std::string const &forceShader)
+            {
+                queueCamera(viewMatrix, Math::Float4x4::MakePerspective(fieldOfView, aspectRatio, farClip, nearClip), nearClip, farClip, name, cameraTarget, forceShader);
+            }
+
+            void queueCamera(Math::Float4x4 const &viewMatrix, float left, float top, float right, float bottom, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget, std::string const &forceShader)
+            {
+                queueCamera(viewMatrix, Math::Float4x4::MakeOrthographic(left, top, right, bottom, nearClip, farClip), nearClip, farClip, name, cameraTarget, forceShader);
             }
 
             void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *videoContext)> &&draw)
