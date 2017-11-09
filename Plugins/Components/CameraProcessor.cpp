@@ -197,7 +197,7 @@ namespace Gek
                     const auto backBuffer = core->getVideoDevice()->getBackBuffer();
                     const float width = float(backBuffer->getDescription().width);
                     const float height = float(backBuffer->getDescription().height);
-                    Math::Float4x4 projectionMatrix(Math::Float4x4::MakePerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
+                    Math::Float4x4 projectionMatrix(Math::Float4x4::MakePerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.farClip, cameraComponent.nearClip));
 
                     renderer->queueCamera(viewMatrix, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, name, data.target);
                 });

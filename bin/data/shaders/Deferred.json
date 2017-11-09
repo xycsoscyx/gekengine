@@ -126,9 +126,9 @@
             "depthBuffer": "depthBuffer",
             "depthState": {
                 "enable": true,
-                "comparisonFunction": "LessEqual",
+                "comparisonFunction": "GreaterEqual",
                 "writeMask": "All",
-                "clear": 1
+                "clear": 0
             },
             "targets": [
                 "albedoBuffer",

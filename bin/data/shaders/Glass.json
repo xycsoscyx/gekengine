@@ -134,7 +134,7 @@
             "depthBuffer": "depthBuffer",
             "depthState": {
                 "enable": true,
-                "comparisonFunction": "LessEqual",
+                "comparisonFunction": "GreaterEqual",
                 "writeMask": "All"
             },
             "copy": {
