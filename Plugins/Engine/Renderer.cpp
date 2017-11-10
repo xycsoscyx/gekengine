@@ -217,7 +217,8 @@ namespace Gek
             {
                 float worldTime;
                 float frameTime;
-                float buffer[2];
+                uint32_t invertedDepthBuffer;
+                uint32_t buffer;
             };
 
             struct CameraConstantData
@@ -479,6 +480,7 @@ namespace Gek
             Video::Device *videoDevice = nullptr;
             Plugin::Population *population = nullptr;
             Engine::Resources *resources = nullptr;
+            bool invertedDepthBuffer = true;
 
             Video::SamplerStatePtr bufferSamplerState;
             Video::SamplerStatePtr textureSamplerState;
@@ -1231,7 +1233,14 @@ namespace Gek
 
             void queueCamera(Math::Float4x4 const &viewMatrix, float fieldOfView, float aspectRatio, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget, std::string const &forceShader)
             {
-                queueCamera(viewMatrix, Math::Float4x4::MakePerspective(fieldOfView, aspectRatio, farClip, nearClip), nearClip, farClip, name, cameraTarget, forceShader);
+                if (invertedDepthBuffer)
+                {
+                    queueCamera(viewMatrix, Math::Float4x4::MakePerspective(fieldOfView, aspectRatio, farClip, nearClip), nearClip, farClip, name, cameraTarget, forceShader);
+                }
+                else
+                {
+                    queueCamera(viewMatrix, Math::Float4x4::MakePerspective(fieldOfView, aspectRatio, nearClip, farClip), nearClip, farClip, name, cameraTarget, forceShader);
+                }
             }
 
             void queueCamera(Math::Float4x4 const &viewMatrix, float left, float top, float right, float bottom, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget, std::string const &forceShader)
@@ -1263,6 +1272,7 @@ namespace Gek
                 EngineConstantData engineConstantData;
                 engineConstantData.frameTime = frameTime;
                 engineConstantData.worldTime = 0.0f;
+                engineConstantData.invertedDepthBuffer = (invertedDepthBuffer ? 1 : 0);
                 videoDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
                 Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                 while (cameraQueue.try_pop(currentCamera))

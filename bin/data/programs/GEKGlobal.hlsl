@@ -19,7 +19,8 @@ namespace Engine
     {
         float WorldTime;
         float FrameTime;
-        float buffer[2];
+        bool invertedDepthBuffer;
+        int buffer;
     };
 };
 
