@@ -124,11 +124,9 @@
             "mode": "forward",
             "material": "solid",
             "depthBuffer": "depthBuffer",
-            "depthState": {
-                "enable": true,
-                "comparisonFunction": "GreaterEqual",
-                "writeMask": "All",
-                "clear": 0
+            "depthStyle": {
+                "camera": "perspective",
+                "clear":  true
             },
             "targets": [
                 "albedoBuffer",

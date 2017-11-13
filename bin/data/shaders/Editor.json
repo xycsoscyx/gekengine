@@ -93,11 +93,9 @@
             "material": "solid",
             "lighting": true,
             "depthBuffer": "depthBuffer",
-            "depthState": {
-                "enable": true,
-                "comparisonFunction": "GreaterEqual",
-                "writeMask": "All",
-                "clear": 0
+            "depthStyle": {
+                "camera": "perspective",
+                "clear": true
             },
             "renderState": {
                 "fillMode": "options.fillMode",

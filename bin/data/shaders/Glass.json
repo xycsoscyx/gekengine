@@ -132,10 +132,9 @@
             "material": "solid",
             "lighting": true,
             "depthBuffer": "depthBuffer",
-            "depthState": {
-                "enable": true,
-                "comparisonFunction": "GreaterEqual",
-                "writeMask": "All"
+            "depthStyle": {
+                "camera": "perspective",
+                "clear": false
             },
             "copy": {
                 "glassBuffer": "finalBuffer"

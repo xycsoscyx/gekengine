@@ -480,7 +480,6 @@ namespace Gek
             Video::Device *videoDevice = nullptr;
             Plugin::Population *population = nullptr;
             Engine::Resources *resources = nullptr;
-            bool invertedDepthBuffer = true;
 
             Video::SamplerStatePtr bufferSamplerState;
             Video::SamplerStatePtr textureSamplerState;
@@ -557,6 +556,8 @@ namespace Gek
                 population->onComponentAdded.connect(this, &Renderer::onComponentAdded);
                 population->onComponentRemoved.connect(this, &Renderer::onComponentRemoved);
                 population->onUpdate[1000].connect(this, &Renderer::onUpdate);
+
+                core->setOption("render"s, "invertedDepthBuffer"s, true);
 
                 initializeSystem();
                 initializeUI();
@@ -1233,7 +1234,7 @@ namespace Gek
 
             void queueCamera(Math::Float4x4 const &viewMatrix, float fieldOfView, float aspectRatio, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget, std::string const &forceShader)
             {
-                if (invertedDepthBuffer)
+                if (core->getOption("render"s, "invertedDepthBuffer"s).convert(true))
                 {
                     queueCamera(viewMatrix, Math::Float4x4::MakePerspective(fieldOfView, aspectRatio, farClip, nearClip), nearClip, farClip, name, cameraTarget, forceShader);
                 }
@@ -1272,7 +1273,7 @@ namespace Gek
                 EngineConstantData engineConstantData;
                 engineConstantData.frameTime = frameTime;
                 engineConstantData.worldTime = 0.0f;
-                engineConstantData.invertedDepthBuffer = (invertedDepthBuffer ? 1 : 0);
+                engineConstantData.invertedDepthBuffer = (core->getOption("render"s, "invertedDepthBuffer"s).convert(true) ? 1 : 0);
                 videoDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
                 Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                 while (cameraQueue.try_pop(currentCamera))
@@ -1624,6 +1625,7 @@ namespace Gek
                     renderOverlay(videoContext, blackPattern, ResourceHandle());
                 }
 
+                bool reloadRequired = false;
                 GEK_PROFILE_BEGIN_SCOPE(core, "Prepare User Interface");
                     ImGuiIO &imGuiIo = ImGui::GetIO();
                     imGuiIo.DeltaTime = frameTime;
@@ -1635,6 +1637,28 @@ namespace Gek
 
                     ImGui::NewFrame();
                     onShowUserInterface(ImGui::GetCurrentContext());
+                    auto mainMenu = ImGui::FindWindowByName("##MainMenuBar");
+                    auto mainMenuShowing = (mainMenu ? mainMenu->Active : false);
+                    if (mainMenuShowing)
+                    {
+                        ImGui::BeginMainMenuBar();
+                        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5.0f, 10.0f));
+                        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5.0f, 10.0f));
+                        if (ImGui::BeginMenu("Render"))
+                        {
+                            auto invertedDepthBuffer = core->getOption("render"s, "invertedDepthBuffer"s).convert(true);
+                            if (ImGui::MenuItem("Inverted Depth Buffer", "CTRL+I", &invertedDepthBuffer))
+                            {
+                                core->setOption("render"s, "invertedDepthBuffer"s, invertedDepthBuffer);
+                                reloadRequired = true;
+                            }
+
+                            ImGui::EndMenu();
+                        }
+
+                        ImGui::PopStyleVar(2);
+                        ImGui::EndMainMenuBar();
+                    }
                 GEK_PROFILE_END_SCOPE();
 
                 GEK_PROFILE_BEGIN_SCOPE(core, "Show User Interface")
@@ -1644,6 +1668,11 @@ namespace Gek
 
                 videoDevice->present(true);
                 GEK_GPU_PROFILE_END();
+
+                if (reloadRequired)
+                {
+                    resources->reload();
+                }
             }
 
             void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle target)

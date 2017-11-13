@@ -575,12 +575,42 @@ namespace Gek
                         }
 
                         Video::DepthState::Description depthStateInformation;
-                        auto &depthStateNode = passNode.get("depthState");
-                        depthStateInformation.load(depthStateNode, passOptions);
-                        pass.clearDepthValue = depthStateNode.get("clear").convert(Math::Infinity);
-                        if (pass.clearDepthValue != Math::Infinity)
+                        if (passNode.has("depthStyle"s))
                         {
-                            pass.clearDepthFlags |= Video::ClearFlags::Depth;
+                            auto &depthStyleNode = passNode.get("depthStyle"s);
+                            auto camera = String::GetLower(depthStyleNode.get("camera"s).convert("perspective"s));
+                            if (camera == "perspective"s)
+                            {
+                                auto invertedDepthBuffer = core->getOption("render"s, "invertedDepthBuffer"s).convert(true);
+
+                                depthStateInformation.enable = true;
+                                depthStateInformation.writeMask = Video::DepthState::Write::All;
+                                if (invertedDepthBuffer)
+                                {
+                                    depthStateInformation.comparisonFunction = Video::ComparisonFunction::GreaterEqual;
+                                }
+                                else
+                                {
+                                    depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
+                                }
+
+                                auto clear = depthStyleNode.get("clear"s).convert(false);
+                                if (clear)
+                                {
+                                    pass.clearDepthValue = (invertedDepthBuffer ? 0.0f : 1.0f);
+                                    pass.clearDepthFlags |= Video::ClearFlags::Depth;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            auto &depthStateNode = passNode.get("depthState"s);
+                            depthStateInformation.load(depthStateNode, passOptions);
+                            pass.clearDepthValue = depthStateNode.get("clear"s).convert(Math::Infinity);
+                            if (pass.clearDepthValue != Math::Infinity)
+                            {
+                                pass.clearDepthFlags |= Video::ClearFlags::Depth;
+                            }
                         }
 
 						if (depthStateInformation.enable)

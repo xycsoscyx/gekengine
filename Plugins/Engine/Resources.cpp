@@ -1385,6 +1385,11 @@ namespace Gek
                 blendStateCache.clear();
             }
 
+            void reload(void)
+            {
+                onReload();
+            }
+
             ShaderHandle getMaterialShader(MaterialHandle material) const
             {
                 auto shaderSearch = materialShaderMap.find(material);
