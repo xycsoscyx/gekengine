@@ -432,41 +432,49 @@ namespace Gek
                     visibilityList.clear();
                 }
 
-                void update(Video::Device *videoDevice, Math::SIMD::Frustum const &frustum, const std::function<void(Plugin::Entity * const, const COMPONENT &)> &addLight)
+                void update(Profiler *profiler, Video::Device *videoDevice, Math::SIMD::Frustum const &frustum, const std::function<void(Plugin::Entity * const, const COMPONENT &)> &addLight)
                 {
                     const auto entityCount = entityList.size();
                     auto buffer = (entityCount % 4);
                     buffer = (buffer ? (4 - buffer) : buffer);
                     auto bufferedEntityCount = (entityCount + buffer);
-                    shapeXPositionList.resize(bufferedEntityCount);
-                    shapeYPositionList.resize(bufferedEntityCount);
-                    shapeZPositionList.resize(bufferedEntityCount);
-                    shapeRadiusList.resize(bufferedEntityCount);
-                    for (size_t entityIndex = 0; entityIndex < entityCount; ++entityIndex)
-                    {
-                        auto entity = entityList[entityIndex];
-                        auto &transformComponent = entity->getComponent<Components::Transform>();
-                        auto &lightComponent = entity->getComponent<COMPONENT>();
+                    GEK_PROFILE_BEGIN_SCOPE(profiler, "SIMD Buffer Organization");
+                        shapeXPositionList.resize(bufferedEntityCount);
+                        shapeYPositionList.resize(bufferedEntityCount);
+                        shapeZPositionList.resize(bufferedEntityCount);
+                        shapeRadiusList.resize(bufferedEntityCount);
 
-                        shapeXPositionList[entityIndex] = transformComponent.position.x;
-                        shapeYPositionList[entityIndex] = transformComponent.position.y;
-                        shapeZPositionList[entityIndex] = transformComponent.position.z;
-                        shapeRadiusList[entityIndex] = (lightComponent.range + lightComponent.radius);
-                    }
+                        for (size_t entityIndex = 0; entityIndex < entityCount; ++entityIndex)
+                        {
+                            auto entity = entityList[entityIndex];
+                            auto &transformComponent = entity->getComponent<Components::Transform>();
+                            auto &lightComponent = entity->getComponent<COMPONENT>();
 
-                    visibilityList.resize(bufferedEntityCount);
-                    Math::SIMD::cullSpheres(frustum, bufferedEntityCount, shapeXPositionList, shapeYPositionList, shapeZPositionList, shapeRadiusList, visibilityList);
+                            shapeXPositionList[entityIndex] = transformComponent.position.x;
+                            shapeYPositionList[entityIndex] = transformComponent.position.y;
+                            shapeZPositionList[entityIndex] = transformComponent.position.z;
+                            shapeRadiusList[entityIndex] = (lightComponent.range + lightComponent.radius);
+                        }
+
+                        visibilityList.resize(bufferedEntityCount);
+                    GEK_PROFILE_END_SCOPE();
+
+                    GEK_PROFILE_BEGIN_SCOPE(profiler, "SIMD Box Culling");
+                        Math::SIMD::cullSpheres(frustum, bufferedEntityCount, shapeXPositionList, shapeYPositionList, shapeZPositionList, shapeRadiusList, visibilityList);
+                    GEK_PROFILE_END_SCOPE();
 
                     lightList.clear();
-                    concurrency::parallel_for(size_t(0), entityList.size(), [&](size_t index) -> void
-                    {
-                        if (visibilityList[index])
+                    GEK_PROFILE_BEGIN_SCOPE(profiler, "Light Cell Culling");
+                        concurrency::parallel_for(size_t(0), entityList.size(), [&](size_t index) -> void
                         {
-                            auto entity = entityList[index];
-                            auto &lightComponent = entity->getComponent<COMPONENT>();
-                            addLight(entity, lightComponent);
-                        }
-                    });
+                            if (visibilityList[index])
+                            {
+                                auto entity = entityList[index];
+                                auto &lightComponent = entity->getComponent<COMPONENT>();
+                                addLight(entity, lightComponent);
+                            }
+                        });
+                    GEK_PROFILE_END_SCOPE();
 
                     if (!lightList.empty())
                     {
@@ -1328,8 +1336,8 @@ namespace Gek
                         {
                             auto directionalLightsDone = workerPool.enqueue([&](void) -> void
                             {
-                                GEK_PROFILE_REGISTER_THREAD(core, "Directional Lights Worker");
-                                GEK_PROFILE_AUTO_SCOPE(core, "Get Directional Lights");
+                                GEK_PROFILE_REGISTER_THREAD(core, "Directional Light Worker");
+                                GEK_PROFILE_AUTO_SCOPE(core, "Directional Light Culling");
 
                                 directionalLightData.lightList.clear();
                                 directionalLightData.lightList.reserve(directionalLightData.entityList.size());
@@ -1359,10 +1367,10 @@ namespace Gek
 
                             auto pointLightsDone = workerPool.enqueue([&](void) -> void
                             {
-                                GEK_PROFILE_REGISTER_THREAD(core, "Point Lights Worker");
-                                GEK_PROFILE_AUTO_SCOPE(core, "Cull Point Lights");
+                                GEK_PROFILE_REGISTER_THREAD(core, "Point Light Worker");
+                                GEK_PROFILE_AUTO_SCOPE(core, "Point Light Culling");
 
-                                pointLightData.update(videoDevice, frustum, [this](Plugin::Entity * const entity, const Components::PointLight &lightComponent) -> void
+                                pointLightData.update(core, videoDevice, frustum, [this](Plugin::Entity * const entity, const Components::PointLight &lightComponent) -> void
                                 {
                                     addLight(entity, lightComponent);
                                 });
@@ -1370,10 +1378,10 @@ namespace Gek
 
                             auto spotLightsDone = workerPool.enqueue([&](void) -> void
                             {
-                                GEK_PROFILE_REGISTER_THREAD(core, "Spot Lights Worker");
-                                GEK_PROFILE_AUTO_SCOPE(core, "Cull Spot Lights");
+                                GEK_PROFILE_REGISTER_THREAD(core, "Spot Light Worker");
+                                GEK_PROFILE_AUTO_SCOPE(core, "Spot Light Culling");
 
-                                spotLightData.update(videoDevice, frustum, [this](Plugin::Entity * const entity, const Components::SpotLight &lightComponent) -> void
+                                spotLightData.update(core, videoDevice, frustum, [this](Plugin::Entity * const entity, const Components::SpotLight &lightComponent) -> void
                                 {
                                     addLight(entity, lightComponent);
                                 });

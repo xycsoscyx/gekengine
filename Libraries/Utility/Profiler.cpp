@@ -14,7 +14,7 @@ namespace Gek
         return std::stoull(thread.str());
     }
 
-    Profiler::Data::Data(Hash nameIdentifier, std::chrono::nanoseconds startTime, Hash *threadIdentifier, std::chrono::nanoseconds *endTime)
+    Profiler::Data::Data(Hash nameIdentifier, std::chrono::nanoseconds startTime, Hash const *threadIdentifier, std::chrono::nanoseconds const *endTime)
         : nameIdentifier(nameIdentifier)
         , threadIdentifier(threadIdentifier ? *threadIdentifier : getThreadIdentifier())
         , startTime(startTime)
@@ -36,7 +36,7 @@ namespace Gek
         //profiler->addEvent(*this);
     }
 
-    Profiler::Frame::Frame(Frame *parent, Hash nameIdentifier, std::chrono::nanoseconds startTime, Hash *threadIdentifier, std::chrono::nanoseconds *endTime)
+    Profiler::Frame::Frame(Frame *parent, Hash nameIdentifier, std::chrono::nanoseconds startTime, Hash const *threadIdentifier, std::chrono::nanoseconds const *endTime)
         : Data(nameIdentifier, startTime, threadIdentifier, endTime)
         , parent(parent)
     {
@@ -78,6 +78,21 @@ namespace Gek
         {
             writeFrame(frame.get());
         });
+    }
+
+    Profiler::Thread *Profiler::getThreadData(Hash *threadIdentifier)
+    {
+        concurrency::critical_section::scoped_lock lock(criticalSection);
+        auto currentThreadIdenrtifier = (threadIdentifier ? *threadIdentifier : getThreadIdentifier());
+        auto threadInsert = threadMap.insert(std::make_pair(currentThreadIdenrtifier, Thread(currentThreadIdenrtifier)));
+        if (threadInsert.second)
+        {
+            auto threadData = &threadInsert.first->second;
+            threadData->frame = std::make_shared<Frame>(nullptr, profilerName, std::chrono::high_resolution_clock::now().time_since_epoch(), &threadInsert.first->first);
+            threadData->currentFrame = threadData->frame.get();
+        }
+
+        return &threadInsert.first->second;
     }
 
     Profiler::Profiler(void)
@@ -146,27 +161,28 @@ namespace Gek
 
     void Profiler::beginFrame(void)
     {
-        frame = std::make_shared<Frame>(nullptr, profilerName, std::chrono::high_resolution_clock::now().time_since_epoch(), &mainThread);
-        currentFrame = frame.get();
+        getThreadData(&mainThread);
     }
 
     void Profiler::beginEvent(Hash nameIdentifier, std::chrono::nanoseconds *timeStamp, Hash *threadIdentifier)
     {
-        auto insertIterator = currentFrame->children.push_back(Frame(currentFrame, nameIdentifier, (timeStamp ? *timeStamp : std::chrono::high_resolution_clock::now().time_since_epoch())));
-        currentFrame = &(*insertIterator);
+        auto threadData = getThreadData(threadIdentifier);
+        auto insertIterator = threadData->currentFrame->children.push_back(Frame(threadData->currentFrame, nameIdentifier, (timeStamp ? *timeStamp : std::chrono::high_resolution_clock::now().time_since_epoch()), &threadData->threadIdentifier));
+        threadData->currentFrame = &(*insertIterator);
     }
 
     void Profiler::endEvent(Hash nameIdentifier)
     {
-        if (currentFrame)
+        auto threadData = getThreadData();
+        if (threadData->currentFrame)
         {
-            if (currentFrame->nameIdentifier != nameIdentifier)
+            if (threadData->currentFrame->nameIdentifier != nameIdentifier)
             {
-                LockedWrite{ std::cerr } << "End event identifier doesn't match data identifier: " << nameIdentifier << " != " << currentFrame->nameIdentifier;
+                LockedWrite{ std::cerr } << "End event identifier doesn't match data identifier: " << nameIdentifier << " != " << threadData->currentFrame->nameIdentifier;
             }
 
-            currentFrame->endTime = std::chrono::high_resolution_clock::now().time_since_epoch();
-            currentFrame = currentFrame->parent;
+            threadData->currentFrame->endTime = std::chrono::high_resolution_clock::now().time_since_epoch();
+            threadData->currentFrame = threadData->currentFrame->parent;
         }
         else
         {
@@ -176,14 +192,18 @@ namespace Gek
 
     void Profiler::addEvent(Hash nameIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime, Hash *threadIdentifier)
     {
-        currentFrame->children.push_back(Frame(currentFrame, nameIdentifier, startTime, threadIdentifier, &endTime));
+        auto threadData = getThreadData();
+        threadData->currentFrame->children.push_back(Frame(threadData->currentFrame, nameIdentifier, startTime, threadIdentifier, &endTime));
     }
 
     void Profiler::endFrame(void)
     {
-        history.emplace_back(std::move(frame));
-        currentFrame = nullptr;
+        for (auto &threadData : threadMap)
+        {
+            history.emplace_back(std::move(threadData.second.frame));
+        }
 
+        threadMap.clear();
         if (history.size() > 100)
         {
             flushFrame(std::move(history.front()));

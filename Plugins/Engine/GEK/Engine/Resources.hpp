@@ -83,6 +83,7 @@ namespace Gek
             virtual ~Resources(void) = default;
         
             virtual void clear(void) = 0;
+            virtual void reload(void) = 0;
 
             virtual ShaderHandle getMaterialShader(MaterialHandle material) const = 0;
             virtual ResourceHandle getResourceHandle(std::string const &resourceName) const = 0;

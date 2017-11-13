@@ -45,12 +45,12 @@ namespace Gek
         struct Data
         {
             Hash nameIdentifier = 0;
-            Hash threadIdentifier;
+            Hash threadIdentifier = 0;
             std::chrono::nanoseconds startTime;
             std::chrono::nanoseconds endTime;
 
             Data(void) = default;
-            Data(Hash nameIdentifier, std::chrono::nanoseconds startTime, Hash *threadIdentifier = nullptr, std::chrono::nanoseconds *endTime = nullptr);
+            Data(Hash nameIdentifier, std::chrono::nanoseconds startTime, Hash const *threadIdentifier = nullptr, std::chrono::nanoseconds const *endTime = nullptr);
         };
 
         struct Event
@@ -70,29 +70,40 @@ namespace Gek
             concurrency::concurrent_vector<Frame> children;
 
             Frame(void) = default;
-            Frame(Frame *parent, Hash nameIdentifier, std::chrono::nanoseconds startTime, Hash *threadIdentifier = nullptr, std::chrono::nanoseconds *endTime = nullptr);
+            Frame(Frame *parent, Hash nameIdentifier, std::chrono::nanoseconds startTime, Hash const *threadIdentifier = nullptr, std::chrono::nanoseconds const *endTime = nullptr);
             ~Frame(void) = default;
+        };
+
+        struct Thread
+        {
+            Hash threadIdentifier = 0;
+            std::shared_ptr<Frame> frame;
+            Frame *currentFrame = nullptr;
+
+            Thread(Hash threadIdentifier)
+                : threadIdentifier(threadIdentifier)
+            {
+            }
         };
 
     private:
         uint64_t processIdentifier = 0;
         std::chrono::high_resolution_clock clock;
         concurrency::critical_section criticalSection;
-        Hash profilerName;
-        Hash mainThread;
+        Hash profilerName = 0;
+        Hash mainThread = 0;
 
         ThreadPool<1> writePool;
         std::ofstream fileOutput;
 
         concurrency::concurrent_unordered_map<Hash, std::string> nameMap;
-
-        std::shared_ptr<Frame> frame;
-        Frame *currentFrame = nullptr;
+        concurrency::concurrent_unordered_map<Hash, Thread> threadMap;
         std::list<std::shared_ptr<Frame>> history;
 
     private:
         void writeFrame(Frame *frame);
         void flushFrame(std::shared_ptr<Frame> &&frame);
+        Thread *getThreadData(Hash *threadIdentifier = nullptr);
 
     public:
         Profiler(void);
