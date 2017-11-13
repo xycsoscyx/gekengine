@@ -411,14 +411,16 @@ namespace Gek
             struct LightVisibilityData
                 : public LightData<COMPONENT, DATA>
             {
+                Profiler *profiler = nullptr;
                 std::vector<float, AlignedAllocator<float, 16>> shapeXPositionList;
                 std::vector<float, AlignedAllocator<float, 16>> shapeYPositionList;
                 std::vector<float, AlignedAllocator<float, 16>> shapeZPositionList;
                 std::vector<float, AlignedAllocator<float, 16>> shapeRadiusList;
                 std::vector<bool> visibilityList;
 
-                LightVisibilityData(size_t reserve, Video::Device *videoDevice)
+                LightVisibilityData(Profiler *profiler, Video::Device *videoDevice, size_t reserve)
                     : LightData(reserve, videoDevice)
+                    , profiler(profiler)
                 {
                 }
 
@@ -432,7 +434,7 @@ namespace Gek
                     visibilityList.clear();
                 }
 
-                void update(Profiler *profiler, Video::Device *videoDevice, Math::SIMD::Frustum const &frustum, const std::function<void(Plugin::Entity * const, const COMPONENT &)> &addLight)
+                void update(Math::SIMD::Frustum const &frustum, const std::function<void(Plugin::Entity * const, const COMPONENT &)> &addLight)
                 {
                     const auto entityCount = entityList.size();
                     auto buffer = (entityCount % 4);
@@ -555,8 +557,8 @@ namespace Gek
                 , population(core->getPopulation())
                 , resources(dynamic_cast<Engine::Resources *>(core->getResources()))
                 , directionalLightData(10, core->getVideoDevice())
-                , pointLightData(200, core->getVideoDevice())
-                , spotLightData(200, core->getVideoDevice())
+                , pointLightData(core, core->getVideoDevice(), 200)
+                , spotLightData(core, core->getVideoDevice(), 200)
             {
                 population->onReset.connect(this, &Renderer::onReset);
                 population->onEntityCreated.connect(this, &Renderer::onEntityCreated);
@@ -1370,10 +1372,12 @@ namespace Gek
                                 GEK_PROFILE_REGISTER_THREAD(core, "Point Light Worker");
                                 GEK_PROFILE_AUTO_SCOPE(core, "Point Light Culling");
 
-                                pointLightData.update(core, videoDevice, frustum, [this](Plugin::Entity * const entity, const Components::PointLight &lightComponent) -> void
+                                static const auto addPointLight = [this](Plugin::Entity * const entity, const Components::PointLight &lightComponent) -> void
                                 {
                                     addLight(entity, lightComponent);
-                                });
+                                };
+
+                                pointLightData.update(frustum, addPointLight);
                             });
 
                             auto spotLightsDone = workerPool.enqueue([&](void) -> void
@@ -1381,10 +1385,12 @@ namespace Gek
                                 GEK_PROFILE_REGISTER_THREAD(core, "Spot Light Worker");
                                 GEK_PROFILE_AUTO_SCOPE(core, "Spot Light Culling");
 
-                                spotLightData.update(core, videoDevice, frustum, [this](Plugin::Entity * const entity, const Components::SpotLight &lightComponent) -> void
+                                static const auto addSpotLight = [this](Plugin::Entity * const entity, const Components::SpotLight &lightComponent) -> void
                                 {
                                     addLight(entity, lightComponent);
-                                });
+                                };
+
+                                spotLightData.update(frustum, addSpotLight);
                             });
 
                             directionalLightsDone.get();
