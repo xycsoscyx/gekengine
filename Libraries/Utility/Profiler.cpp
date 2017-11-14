@@ -22,16 +22,25 @@ namespace Gek
     {
     }
 
+    Profiler::TimeStamp::TimeStamp(Hash nameIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime, Hash const *threadIdentifier)
+        : type(Type::Duration)
+        , nameIdentifier(nameIdentifier)
+        , threadIdentifier(threadIdentifier ? *threadIdentifier : getThreadIdentifier())
+        , timeStamp(startTime)
+        , duration(endTime - startTime)
+    {
+    }
+
     Profiler::ScopedEvent::ScopedEvent(Profiler *profiler, uint64_t nameIdentifier)
         : nameIdentifier(nameIdentifier)
         , profiler(profiler)
+        , timeStamp(std::chrono::high_resolution_clock::now().time_since_epoch())
     {
-        profiler->addTimeStamp(TimeStamp(TimeStamp::Type::Begin, nameIdentifier, &std::chrono::high_resolution_clock::now().time_since_epoch()));
     }
 
     Profiler::ScopedEvent::~ScopedEvent()
     {
-        profiler->addTimeStamp(TimeStamp(TimeStamp::Type::End, nameIdentifier, &std::chrono::high_resolution_clock::now().time_since_epoch()));
+        profiler->addTimeStamp(TimeStamp(nameIdentifier, timeStamp, std::chrono::high_resolution_clock::now().time_since_epoch()));
     }
 
     void Profiler::writeTimeStamp(TimeStamp *timeStamp)
@@ -69,6 +78,19 @@ namespace Gek
                     ", \"pid\": \"" << processIdentifier << "\"" \
                     ", \"tid\": \"" << threadSearch->second << "\"" \
                     ", \"ts\": " << timeStamp->timeStamp.count() <<
+                    "}";
+                break;
+
+            case TimeStamp::Type::Duration:
+                fileOutput <<
+                    ",\n" \
+                    "\t\t {" \
+                    "\"name\": \"" << eventSearch->second << "\"" \
+                    ", \"ph\": \"E\"" \
+                    ", \"pid\": \"" << processIdentifier << "\"" \
+                    ", \"tid\": \"" << threadSearch->second << "\"" \
+                    ", \"ts\": " << timeStamp->timeStamp.count() <<
+                    ", \"dur\": " << timeStamp->duration.count() <<
                     "}";
                 break;
             };
@@ -152,7 +174,7 @@ namespace Gek
 
     void Profiler::beginFrame(void)
     {
-        addTimeStamp(TimeStamp(TimeStamp::Type::Begin, profilerName, nullptr, &mainThread));
+        frameTimeStamp = std::chrono::high_resolution_clock::now().time_since_epoch();
     }
 
     void Profiler::addTimeStamp(TimeStamp const &timeStamp)
@@ -162,7 +184,7 @@ namespace Gek
 
     void Profiler::endFrame(void)
     {
-        addTimeStamp(TimeStamp(TimeStamp::Type::End, profilerName, nullptr, &mainThread));
+        addTimeStamp(TimeStamp(profilerName, frameTimeStamp, std::chrono::high_resolution_clock::now().time_since_epoch(), &mainThread));
         concurrency::critical_section::scoped_lock lock(criticalSection);
         flushTimeStampList(std::move(timeStampList));
         timeStampList.clear();

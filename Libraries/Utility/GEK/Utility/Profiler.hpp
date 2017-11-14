@@ -23,7 +23,7 @@ namespace Gek
     #define GEK_PROFILE_REGISTER_THREAD(PROFILER, NAME) PROFILER->registerThreadName(NAME)
     #define GEK_PROFILE_BEGIN_FRAME(PROFILER) PROFILER->beginFrame()
     #define GEK_PROFILE_END_FRAME(PROFILER) PROFILER->endFrame()
-    #define GEK_PROFILE_EVENT(PROFILER, TYPE, NAME, THREAD, TIME) PROFILER->addTimeStamp(Gek::Profiler::TimeStamp(Gek::Profiler::TimeStamp::Type::TYPE, NAME, &TIME, &THREAD))
+    #define GEK_PROFILE_EVENT(PROFILER, NAME, THREAD, START_TIME, END_TIME) PROFILER->addTimeStamp(Gek::Profiler::TimeStamp(NAME, START_TIME, END_TIME, &THREAD))
 
     #define GEK_PROFILE_AUTO_SCOPE(PROFILER, NAME) \
         static const auto __hash##NAME__ = PROFILER->registerName(NAME); \
@@ -48,21 +48,24 @@ namespace Gek
             {
                 Begin = 0,
                 End,
+                Duration,
             };
 
             Type type = Type::Begin;
             Hash nameIdentifier = 0;
             Hash threadIdentifier = 0;
-            std::chrono::nanoseconds timeStamp;
+            std::chrono::nanoseconds timeStamp, duration;
 
             TimeStamp(void) = default;
             TimeStamp(Type type, Hash nameIdentifier, std::chrono::nanoseconds const *timeStamp = nullptr, Hash const *threadIdentifier = nullptr);
+            TimeStamp(Hash nameIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime, Hash const *threadIdentifier = nullptr);
         };
 
         struct ScopedEvent
         {
             Hash nameIdentifier = 0;
             Profiler *profiler = nullptr;
+            std::chrono::nanoseconds timeStamp;
 
             ScopedEvent(void) = default;
             ScopedEvent(Profiler *profiler, uint64_t nameIdentifier);
@@ -79,6 +82,7 @@ namespace Gek
         ThreadPool<1> writePool;
         std::ofstream fileOutput;
 
+        std::chrono::nanoseconds frameTimeStamp;
         concurrency::concurrent_unordered_map<Hash, std::string> nameMap;
         concurrency::concurrent_vector<TimeStamp> timeStampList;
 
@@ -102,7 +106,7 @@ namespace Gek
     #define GEK_PROFILE_REGISTER_THREAD(PROFILER, NAME)
     #define GEK_PROFILE_BEGIN_FRAME(PROFILER)
     #define GEK_PROFILE_END_FRAME(PROFILER)
-    #define GEK_PROFILE_EVENT(PROFILER, NAME, THREAD, START, END)
+    #define GEK_PROFILE_EVENT(PROFILER, NAME, THREAD, START_TIME, END_TIME)
     #define GEK_PROFILE_AUTO_SCOPE(PROFILER, NAME)
     #define GEK_PROFILE_FUNCTION(PROFILER)
     #define GEK_PROFILE_BEGIN_SCOPE(PROFILER, NAME) \
