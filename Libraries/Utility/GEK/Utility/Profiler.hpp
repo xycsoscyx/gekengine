@@ -23,11 +23,11 @@ namespace Gek
     #define GEK_PROFILE_REGISTER_THREAD(PROFILER, NAME) PROFILER->registerThreadName(NAME)
     #define GEK_PROFILE_BEGIN_FRAME(PROFILER) PROFILER->beginFrame()
     #define GEK_PROFILE_END_FRAME(PROFILER) PROFILER->endFrame()
-    #define GEK_PROFILE_EVENT(PROFILER, NAME, THREAD, START, END) PROFILER->addEvent(NAME, START, END, &THREAD)
+    #define GEK_PROFILE_EVENT(PROFILER, TYPE, NAME, THREAD, TIME) PROFILER->addTimeStamp(Gek::Profiler::TimeStamp(Gek::Profiler::TimeStamp::Type::TYPE, NAME, &TIME, &THREAD))
 
     #define GEK_PROFILE_AUTO_SCOPE(PROFILER, NAME) \
         static const auto __hash##NAME__ = PROFILER->registerName(NAME); \
-        Gek::Profiler::Event __event##NAME__(PROFILER, __hash##NAME__);
+        Gek::Profiler::ScopedEvent __event##NAME__(PROFILER, __hash##NAME__);
 
     #define GEK_PROFILE_FUNCTION(PROFILER) GEK_PROFILE_AUTO_SCOPE(PROFILER, __FUNCTION__)
 
@@ -42,48 +42,31 @@ namespace Gek
     class Profiler
     {
     public:
-        struct Data
+        struct TimeStamp
         {
+            enum class Type
+            {
+                Begin = 0,
+                End,
+            };
+
+            Type type = Type::Begin;
             Hash nameIdentifier = 0;
             Hash threadIdentifier = 0;
-            std::chrono::nanoseconds startTime;
-            std::chrono::nanoseconds endTime;
+            std::chrono::nanoseconds timeStamp;
 
-            Data(void) = default;
-            Data(Hash nameIdentifier, std::chrono::nanoseconds startTime, Hash const *threadIdentifier = nullptr, std::chrono::nanoseconds const *endTime = nullptr);
+            TimeStamp(void) = default;
+            TimeStamp(Type type, Hash nameIdentifier, std::chrono::nanoseconds const *timeStamp = nullptr, Hash const *threadIdentifier = nullptr);
         };
 
-        struct Event
-            : public Data
+        struct ScopedEvent
         {
-            Event(void) = default;
-            Event(Profiler *profiler, uint64_t nameIdentifier);
-            ~Event(void);
-
+            Hash nameIdentifier = 0;
             Profiler *profiler = nullptr;
-        };
 
-        struct Frame
-            : public Data
-        {
-            Frame *parent = nullptr;
-            concurrency::concurrent_vector<Frame> children;
-
-            Frame(void) = default;
-            Frame(Frame *parent, Hash nameIdentifier, std::chrono::nanoseconds startTime, Hash const *threadIdentifier = nullptr, std::chrono::nanoseconds const *endTime = nullptr);
-            ~Frame(void) = default;
-        };
-
-        struct Thread
-        {
-            Hash threadIdentifier = 0;
-            std::shared_ptr<Frame> frame;
-            Frame *currentFrame = nullptr;
-
-            Thread(Hash threadIdentifier)
-                : threadIdentifier(threadIdentifier)
-            {
-            }
+            ScopedEvent(void) = default;
+            ScopedEvent(Profiler *profiler, uint64_t nameIdentifier);
+            ~ScopedEvent(void);
         };
 
     private:
@@ -97,13 +80,11 @@ namespace Gek
         std::ofstream fileOutput;
 
         concurrency::concurrent_unordered_map<Hash, std::string> nameMap;
-        concurrency::concurrent_unordered_map<Hash, Thread> threadMap;
-        std::list<std::shared_ptr<Frame>> history;
+        concurrency::concurrent_vector<TimeStamp> timeStampList;
 
     private:
-        void writeFrame(Frame *frame);
-        void flushFrame(std::shared_ptr<Frame> &&frame);
-        Thread *getThreadData(Hash *threadIdentifier = nullptr);
+        void writeTimeStamp(TimeStamp *timeStamp);
+        void flushTimeStampList(concurrency::concurrent_vector<TimeStamp> &&timeStampList);
 
     public:
         Profiler(void);
@@ -113,9 +94,7 @@ namespace Gek
         void registerThreadName(const char* const name);
 
         void beginFrame(void);
-        void beginEvent(Hash nameIdentifier, std::chrono::nanoseconds *timeStamp = nullptr, Hash *threadIdentifier = nullptr);
-        void endEvent(Hash nameIdentifier);
-        void addEvent(Hash nameIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime, Hash *threadIdentifier = nullptr);
+        void addTimeStamp(TimeStamp const &flushList);
         void endFrame(void);
     };
 #else

@@ -58,8 +58,8 @@ namespace Gek
             };
 
         private:
-            Hash frameIdentifier = 0;
             Hash threadIdentifier = 0;
+            Hash frameIdentifier = 0;
             Gek::Profiler *profiler = nullptr;
             Video::Device *videoDevice = nullptr;
             Video::Device::Context *defaultVideoContext = nullptr;
@@ -77,8 +77,8 @@ namespace Gek
                 , videoDevice(core->getVideoDevice())
                 , defaultVideoContext(core->getVideoDevice()->getDefaultContext())
             {
-                frameIdentifier = GEK_PROFILE_REGISTER_NAME(profiler, "GPU Frame");
                 threadIdentifier = GEK_PROFILE_REGISTER_NAME(profiler, "GPU Thread");
+                frameIdentifier = GEK_PROFILE_REGISTER_NAME(profiler, "GPU Frame");
                 for (auto &query : disjointList)
                 {
                     query = videoDevice->createQuery(Video::Query::Type::DisjointTimeStamp);
@@ -146,7 +146,8 @@ namespace Gek
                                 auto frequency = double(disjointData.frequency);
                                 auto frameTime = std::chrono::high_resolution_clock::now().time_since_epoch();
                                 auto endTime = (frameTime + std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(double(endStamp - startStamp) / frequency)));
-                                GEK_PROFILE_EVENT(profiler, frameIdentifier, threadIdentifier, frameTime, endTime);
+                                GEK_PROFILE_EVENT(profiler, Begin, frameIdentifier, threadIdentifier, frameTime);
+                                GEK_PROFILE_EVENT(profiler, End, frameIdentifier, threadIdentifier, endTime);
 
                                 Video::Query::TimeStamp previousStamp = startStamp;
                                 for (auto &timeStamp : queryFrame)
@@ -156,7 +157,8 @@ namespace Gek
                                     {
                                         auto startTime = (frameTime + std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(double(previousStamp - startStamp) / frequency)));
                                         auto endTime = (frameTime + std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(double(eventStamp - startStamp) / frequency)));
-                                        GEK_PROFILE_EVENT(profiler, timeStamp.first, threadIdentifier, startTime, endTime);
+                                        GEK_PROFILE_EVENT(profiler, Begin, timeStamp.first, threadIdentifier, startTime);
+                                        GEK_PROFILE_EVENT(profiler, End, timeStamp.first, threadIdentifier, endTime);
                                         previousStamp = eventStamp;
                                     }
                                 }
@@ -1322,7 +1324,7 @@ namespace Gek
                         {
                             auto directionalLightsDone = workerPool.enqueue([&](void) -> void
                             {
-                                GEK_PROFILE_REGISTER_THREAD(core, "Directional Light Worker");
+                                GEK_PROFILE_REGISTER_THREAD(core, "CPU Directional Lights");
                                 GEK_PROFILE_AUTO_SCOPE(core, "Directional Light Culling");
 
                                 directionalLightData.lightList.clear();
@@ -1353,7 +1355,7 @@ namespace Gek
 
                             auto pointLightsDone = workerPool.enqueue([&](void) -> void
                             {
-                                GEK_PROFILE_REGISTER_THREAD(core, "Point Lights");
+                                GEK_PROFILE_REGISTER_THREAD(core, "CPU Point Lights");
                                 GEK_PROFILE_AUTO_SCOPE(core, "Entity Culling");
 
                                 pointLightData.cull(frustum);
@@ -1373,7 +1375,7 @@ namespace Gek
 
                             auto spotLightsDone = workerPool.enqueue([&](void) -> void
                             {
-                                GEK_PROFILE_REGISTER_THREAD(core, "Spot Lights");
+                                GEK_PROFILE_REGISTER_THREAD(core, "CPU Spot Lights");
                                 GEK_PROFILE_AUTO_SCOPE(core, "Light Culling");
 
                                 spotLightData.cull(frustum);
