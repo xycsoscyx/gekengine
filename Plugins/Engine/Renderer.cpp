@@ -31,13 +31,6 @@ namespace Gek
 {
     namespace Implementation
     {
-        static const int32_t GridWidth = 16;
-        static const int32_t GridHeight = 8;
-        static const int32_t GridDepth = 24;
-        static const int32_t GridSize = (GridWidth * GridHeight * GridDepth);
-        static const Math::Float4 Negate(Math::Float2(-1.0f), Math::Float2(1.0f));
-        static const Math::Float4 GridDimensions(GridWidth, GridWidth, GridHeight, GridHeight);
-
 #define GEK_ENABLE_GPU_PROFILER
 #ifdef GEK_ENABLE_GPU_PROFILER
         #define GEK_GPU_PROFILE_BEGIN() begin()
@@ -177,6 +170,13 @@ namespace Gek
             virtual ~GPUProfiler(void) = default;
         };
 #endif
+
+        static const int32_t GridWidth = 16;
+        static const int32_t GridHeight = 8;
+        static const int32_t GridDepth = 24;
+        static const float ReciprocalGridDepth = (1.0f / float(GridDepth));
+        static const int32_t GridSize = (GridWidth * GridHeight * GridDepth);
+        static const Math::Float4 GridDimensions(GridWidth, GridWidth, GridHeight, GridHeight);
 
         GEK_CONTEXT_USER(Renderer, Plugin::Core *)
             , public Plugin::Renderer
@@ -504,6 +504,9 @@ namespace Gek
             DrawCallList drawCallList;
             concurrency::concurrent_queue<Camera> cameraQueue;
             Camera currentCamera;
+            float clipDistance;
+            float reciprocalClipDistance;
+            float depthScale;
 
             std::string screenOutput;
 
@@ -1023,10 +1026,8 @@ namespace Gek
                 }
             }
 
-            inline void updateClipRegion(float lightCoordinate, float lightDepth, float radius, float cameraScale, float& minimum, float& maximum) const
+            inline void updateClipRegion(float lightCoordinate, float lightDepth, float lightDepthSquared, float radius, float radiusSquared, float cameraScale, float& minimum, float& maximum) const
             {
-                const float radiusSquared = (radius * radius);
-                const float lightDepthSquared = (lightDepth * lightDepth);
                 const float lightCoordinateSquared = (lightCoordinate * lightCoordinate);
                 const float lightRangeSquared = (lightCoordinateSquared + lightDepthSquared);
                 const float distanceSquared = ((radiusSquared * lightCoordinateSquared) - (lightRangeSquared * (radiusSquared - lightDepthSquared)));
@@ -1042,38 +1043,46 @@ namespace Gek
             }
 
             // Returns bounding box [min.xy, max.xy] in clip [-1, 1] space.
-            inline Math::Float4 getClipBounds(Math::Float3 const &position, float range) const
+            inline Math::Float4 getClipBounds(Math::Float3 const &position, float radius) const
             {
                 // Early out with empty rectangle if the light is too far behind the view frustum
                 Math::Float4 clipRegion(1.0f, 1.0f, 0.0f, 0.0f);
-                if ((position.z + range) >= currentCamera.nearClip)
+                if ((position.z + radius) >= currentCamera.nearClip)
                 {
                     clipRegion.set(-1.0f, -1.0f, 1.0f, 1.0f);
-                    updateClipRegion(position.x, position.z, range, currentCamera.projectionMatrix.rx.x, clipRegion.minimum.x, clipRegion.maximum.x);
-                    updateClipRegion(position.y, position.z, range, currentCamera.projectionMatrix.ry.y, clipRegion.minimum.y, clipRegion.maximum.y);
+                    const float radiusSquared = (radius * radius);
+                    const float lightDepthSquared = (position.z * position.z);
+                    updateClipRegion(position.x, position.z, lightDepthSquared, radius, radiusSquared, currentCamera.projectionMatrix.rx.x, clipRegion.minimum.x, clipRegion.maximum.x);
+                    updateClipRegion(position.y, position.z, lightDepthSquared, radius, radiusSquared, currentCamera.projectionMatrix.ry.y, clipRegion.minimum.y, clipRegion.maximum.y);
                 }
 
                 return clipRegion;
             }
 
-            inline Math::Float4 getScreenBounds(Math::Float3 const &position, float range) const
+            inline Math::Float4 getScreenBounds(Math::Float3 const &position, float radius) const
             {
-                const auto clipBounds((getClipBounds(position, range) + 1.0f) * 0.5f);
+                const auto clipBounds((getClipBounds(position, radius) + 1.0f) * 0.5f);
                 return Math::Float4(clipBounds.x, (1.0f - clipBounds.w), clipBounds.z, (1.0f - clipBounds.y));
             }
 
-            bool isSeparated(float x, float y, float z, Math::Float3 const &position, float range) const
+            bool isSeparated(uint32_t x, uint32_t y, uint32_t z, Math::Float3 const &position, float radius) const
             {
-                // sub-frustrum bounds in view space       
-                const float depthScale = (1.0f / GridDepth * (currentCamera.farClip - currentCamera.nearClip) + currentCamera.nearClip);
-                const float minimumZ = (z * depthScale);
-                const float maximumZ = ((z + 1.0f) * depthScale);
+                static const Math::Float4 GridScaleNegator(Math::Float2(-1.0f), Math::Float2(1.0f));
+                static const Math::Float4 GridScaleOne(1.0f);
+                static const Math::Float4 GridScaleTwo(2.0f);
+                static const Math::Float4 TileBoundsOffset(-0.1f, 1.1f, 0.1f, 1.1f);
 
-                const Math::Float4 tileBounds(x, (x + 1.0f), y, (y + 1.0f));
-                const Math::Float4 projectionScale(Math::Float2(currentCamera.projectionMatrix.rx.x), Math::Float2(currentCamera.projectionMatrix.ry.y));
-                const auto gridScale = (Negate * (1.0f - 2.0f / GridDimensions * tileBounds));
-                const auto minimum = (gridScale * minimumZ / projectionScale);
-                const auto maximum = (gridScale * maximumZ / projectionScale);
+                // sub-frustrum bounds in view space       
+                const float minimumZ = ((z - 0.1f) * depthScale);
+                const float maximumZ = ((z + 1.1f) * depthScale);
+
+                const Math::Float4 tileBounds(Math::Float4(x, x, y, y) + TileBoundsOffset);
+                const Math::Float4 projectionScale(GridScaleOne / Math::Float4(
+                    currentCamera.projectionMatrix.rx.x, currentCamera.projectionMatrix.rx.x, 
+                    currentCamera.projectionMatrix.ry.y, currentCamera.projectionMatrix.ry.y));
+                const auto gridScale = (GridScaleNegator * (GridScaleOne - GridScaleTwo / GridDimensions * tileBounds));
+                const auto minimum = (gridScale * minimumZ * projectionScale);
+                const auto maximum = (gridScale * maximumZ * projectionScale);
 
                 // heuristic plane separation test - works pretty well in practice
                 const Math::Float3 minimumZcenter(((minimum.x + minimum.y) * 0.5f), ((minimum.z + minimum.w) * 0.5f), minimumZ);
@@ -1089,24 +1098,31 @@ namespace Gek
                 tileCorners.maximum += std::min((normal.x * maximum.x), (normal.x * maximum.y));
                 tileCorners.maximum += std::min((normal.y * maximum.z), (normal.y * maximum.w));
                 tileCorners.maximum += (normal.z * maximumZ);
-                return (std::min(tileCorners.minimum, tileCorners.maximum) >= range);
+                return (std::min(tileCorners.minimum, tileCorners.maximum) >= radius);
             }
 
-            void addLightCluster(Math::Float3 const &position, float range, uint32_t lightIndex, concurrency::concurrent_vector<uint16_t> *gridLightList)
+            void addLightCluster(Math::Float3 const &position, float radius, uint32_t lightIndex, concurrency::concurrent_vector<uint16_t> *gridLightList)
             {
-                const Math::Float4 screenBounds(getScreenBounds(position, range));
+                const Math::Float4 screenBounds(getScreenBounds(position, radius));
                 const Math::Int4 gridBounds(
                     std::max(0, int32_t(std::floor(screenBounds.x * GridWidth))),
                     std::max(0, int32_t(std::floor(screenBounds.y * GridHeight))),
                     std::min(int32_t(std::ceil(screenBounds.z * GridWidth)), GridWidth),
                     std::min(int32_t(std::ceil(screenBounds.w * GridHeight)), GridHeight)
                 );
-
-                const float centerDepth = ((position.z - currentCamera.nearClip) / (currentCamera.farClip - currentCamera.nearClip));
-                const float rangeDepth = (range / (currentCamera.farClip - currentCamera.nearClip));
+                
+                /*const float centerDepth = ((position.z - currentCamera.nearClip) * reciprocalClipDistance);
+                const float radiusDepth = (radius * reciprocalClipDistance);
                 const Math::Int2 depthBounds(
-                    std::max(0, int32_t(std::floor((centerDepth - rangeDepth) * GridDepth))),
-                    std::min(int32_t(std::ceil((centerDepth + rangeDepth) * GridDepth)), GridDepth)
+                    std::max(0, int32_t(std::floor((centerDepth - radiusDepth) * GridDepth))),
+                    std::min(int32_t(std::ceil((centerDepth + radiusDepth) * GridDepth)), GridDepth)
+                );*/
+
+                const float minimumDepth = (((position.z - radius) - currentCamera.nearClip) * reciprocalClipDistance);
+                const float maximumDepth = (((position.z + radius) - currentCamera.nearClip) * reciprocalClipDistance);
+                const Math::Int2 depthBounds(
+                    std::max(0, int32_t(std::floor(minimumDepth * GridDepth))),
+                    std::min(int32_t(std::ceil(maximumDepth * GridDepth)), GridDepth)
                 );
 
                 concurrency::parallel_for(depthBounds.minimum, depthBounds.maximum, [&](auto z) -> void
@@ -1117,7 +1133,7 @@ namespace Gek
                         const uint32_t ySlize = ((zSlice + y) * GridWidth);
                         for (auto x = gridBounds.minimum.x; x < gridBounds.maximum.x; ++x)
                         {
-                            if (!isSeparated(float(x), float(y), float(z), position, range))
+                            if (!isSeparated(x, y, z, position, radius))
                             {
                                 const uint32_t gridIndex = (ySlize + x);
                                 auto &gridData = gridLightList[gridIndex];
@@ -1259,6 +1275,10 @@ namespace Gek
                 {
                     GEK_GPU_PROFILE_TIMESTAMP(String::Format("Begin Camera: %v", currentCamera.name));
                     GEK_PROFILE_AUTO_SCOPE(core, "Render Camera");
+
+                    clipDistance = (currentCamera.farClip - currentCamera.nearClip);
+                    reciprocalClipDistance = (1.0f / clipDistance);
+                    depthScale = ((ReciprocalGridDepth * clipDistance) + currentCamera.nearClip);
 
                     drawCallList.clear();
                     onQueueDrawCalls(currentCamera.viewFrustum, currentCamera.viewMatrix, currentCamera.projectionMatrix);
