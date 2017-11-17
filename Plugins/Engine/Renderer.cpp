@@ -239,12 +239,6 @@ namespace Gek
                 uint32_t spotLightCount;
             };
 
-            struct TileLightIndex
-            {
-                concurrency::concurrent_vector<uint16_t> pointLightList;
-                concurrency::concurrent_vector<uint16_t> spotLightList;
-            };
-
             struct TileOffsetCount
             {
                 uint32_t indexOffset;
@@ -498,10 +492,10 @@ namespace Gek
             LightVisibilityData<Components::PointLight, PointLightData> pointLightData;
             LightVisibilityData<Components::SpotLight, SpotLightData> spotLightData;
 
-            TileLightIndex tileLightIndexList[GridSize];
+            concurrency::concurrent_vector<uint16_t> tilePointLightIndexList[GridSize];
+            concurrency::concurrent_vector<uint16_t> tileSpotLightIndexList[GridSize];
             TileOffsetCount tileOffsetCountList[GridSize];
             std::vector<uint16_t> lightIndexList;
-            uint32_t lightIndexCount = 0;
 
             Video::BufferPtr lightConstantBuffer;
             Video::BufferPtr tileOffsetCountBuffer;
@@ -1013,10 +1007,10 @@ namespace Gek
             {
                 const float nz = ((radius - tangentCoordinate * lightCoordinate) / lightDepth);
                 const float pz = ((lightRangeSquared - radiusSquared) / (lightDepth - (nz / tangentCoordinate) * lightCoordinate));
-                if (pz > 0.0f)
+                if (pz >= 0.0f)
                 {
                     const float clip = (-nz * cameraScale / tangentCoordinate);
-                    if (tangentCoordinate > 0.0f)
+                    if (tangentCoordinate >= 0.0f)
                     {
                         // Left side boundary
                         minimum = std::max(minimum, clip);
@@ -1095,10 +1089,10 @@ namespace Gek
                 tileCorners.maximum += std::min((normal.x * maximum.x), (normal.x * maximum.y));
                 tileCorners.maximum += std::min((normal.y * maximum.z), (normal.y * maximum.w));
                 tileCorners.maximum += (normal.z * maximumZ);
-                return (std::min(tileCorners.minimum, tileCorners.maximum) > range);
+                return (std::min(tileCorners.minimum, tileCorners.maximum) >= range);
             }
 
-            void addLightCluster(Math::Float3 const &position, float range, uint32_t lightIndex, bool pointLight)
+            void addLightCluster(Math::Float3 const &position, float range, uint32_t lightIndex, concurrency::concurrent_vector<uint16_t> *gridLightList)
             {
                 const Math::Float4 screenBounds(getScreenBounds(position, range));
                 const Math::Int4 gridBounds(
@@ -1126,17 +1120,8 @@ namespace Gek
                             if (!isSeparated(float(x), float(y), float(z), position, range))
                             {
                                 const uint32_t gridIndex = (ySlize + x);
-                                auto &gridData = tileLightIndexList[gridIndex];
-                                if (pointLight)
-                                {
-                                    gridData.pointLightList.push_back(lightIndex);
-                                }
-                                else
-                                {
-                                    gridData.spotLightList.push_back(lightIndex);
-                                }
-
-                                InterlockedIncrement(&lightIndexCount);
+                                auto &gridData = gridLightList[gridIndex];
+                                gridData.push_back(lightIndex);
                             }
                         }
                     }
@@ -1156,7 +1141,7 @@ namespace Gek
                 lightData.range = lightComponent.range;
 
                 const auto lightIndex = std::distance(std::begin(pointLightData.lightList), lightIterator);
-                addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, true);
+                addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, tilePointLightIndexList);
             }
 
             void addSpotLight(Plugin::Entity * const entity, const Components::SpotLight &lightComponent)
@@ -1176,7 +1161,7 @@ namespace Gek
                 lightData.coneFalloff = lightComponent.coneFalloff;
 
                 const auto lightIndex = std::distance(std::begin(spotLightData.lightList), lightIterator);
-                addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, false);
+                addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, tileSpotLightIndexList);
             }
 
             // Plugin::Population Slots
@@ -1343,12 +1328,14 @@ namespace Gek
                             });
 
                             auto frustum = Math::SIMD::loadFrustum((Math::Float4 *)currentCamera.viewFrustum.planeList);
-
-                            lightIndexCount = 0;
-                            concurrency::parallel_for_each(std::begin(tileLightIndexList), std::end(tileLightIndexList), [&](auto &gridData) -> void
+                            concurrency::parallel_for_each(std::begin(tilePointLightIndexList), std::end(tilePointLightIndexList), [&](auto &gridData) -> void
                             {
-                                gridData.pointLightList.clear();
-                                gridData.spotLightList.clear();
+                                gridData.clear();
+                            });
+
+                            concurrency::parallel_for_each(std::begin(tileSpotLightIndexList), std::end(tileSpotLightIndexList), [&](auto &gridData) -> void
+                            {
+                                gridData.clear();
                             });
 
                             auto pointLightsDone = workerPool.enqueue([&](void) -> void
@@ -1396,17 +1383,29 @@ namespace Gek
                             spotLightsDone.get();
 
                             GEK_PROFILE_BEGIN_SCOPE(core, "Update Light Buffers");
+                                concurrency::combinable<size_t> lightIndexCount;
+                                concurrency::parallel_for_each(std::begin(tilePointLightIndexList), std::end(tilePointLightIndexList), [&](auto &gridData) -> void
+                                {
+                                    lightIndexCount.local() += gridData.size();
+                                });
+
+                                concurrency::parallel_for_each(std::begin(tileSpotLightIndexList), std::end(tileSpotLightIndexList), [&](auto &gridData) -> void
+                                {
+                                    lightIndexCount.local() += gridData.size();
+                                });
+
                                 lightIndexList.clear();
-                                lightIndexList.reserve(lightIndexCount);
+                                lightIndexList.reserve(lightIndexCount.combine(std::plus<size_t>()));
                                 for (uint32_t tileIndex = 0; tileIndex < GridSize; ++tileIndex)
                                 {
                                     auto &tileOffsetCount = tileOffsetCountList[tileIndex];
-                                    auto const &tileLightIndex = tileLightIndexList[tileIndex];
+                                    auto const &tilePointLightIndex = tilePointLightIndexList[tileIndex];
+                                    auto const &tileSpotightIndex = tileSpotLightIndexList[tileIndex];
                                     tileOffsetCount.indexOffset = lightIndexList.size();
-                                    tileOffsetCount.pointLightCount = uint16_t(tileLightIndex.pointLightList.size() & 0xFFFF);
-                                    tileOffsetCount.spotLightCount = uint16_t(tileLightIndex.spotLightList.size() & 0xFFFF);
-                                    lightIndexList.insert(std::end(lightIndexList), std::begin(tileLightIndex.pointLightList), std::end(tileLightIndex.pointLightList));
-                                    lightIndexList.insert(std::end(lightIndexList), std::begin(tileLightIndex.spotLightList), std::end(tileLightIndex.spotLightList));
+                                    tileOffsetCount.pointLightCount = uint16_t(tilePointLightIndex.size() & 0xFFFF);
+                                    tileOffsetCount.spotLightCount = uint16_t(tileSpotightIndex.size() & 0xFFFF);
+                                    lightIndexList.insert(std::end(lightIndexList), std::begin(tilePointLightIndex), std::end(tilePointLightIndex));
+                                    lightIndexList.insert(std::end(lightIndexList), std::begin(tileSpotightIndex), std::end(tileSpotightIndex));
                                 }
 
                                 if (!directionalLightData.updateBuffer() ||

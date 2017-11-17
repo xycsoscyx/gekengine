@@ -34,4 +34,6 @@ namespace Camera
         float4x4 ViewMatrix;
         float4x4 ProjectionMatrix;
     };
+
+    static const float ClipDistance = (FarClip - NearClip);
 };

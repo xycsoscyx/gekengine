@@ -151,10 +151,18 @@ uint getClusterOffset(float2 screenPosition, float surfaceDepth)
 {
     uint2 gridLocation = floor(screenPosition / Lights::tileSize.xy);
 
-    float depth = (surfaceDepth - Camera::NearClip) / (Camera::FarClip - Camera::NearClip);
+    float depth = ((surfaceDepth - Camera::NearClip) / Camera::ClipDistance);
     uint gridSlice = floor(depth * Lights::gridSize.z);
 
     return ((((gridSlice * Lights::gridSize.y) + gridLocation.y) * Lights::gridSize.x) + gridLocation.x);
+}
+
+float3 HUEtoRGB(in float H)
+{
+    float R = abs(H * 6 - 3) - 1;
+    float G = 2 - abs(H * 6 - 2);
+    float B = 2 - abs(H * 6 - 4);
+    return saturate(float3(R, G, B));
 }
 
 float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 surfaceNormal, float3 materialAlbedo, float materialRoughness, float materialMetallic)
@@ -191,7 +199,7 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
     uint indexOffset = clusterData.x;
     uint pointLightCount = clusterData.y & 0x0000FFFF;
     uint spotLightCount = clusterData.y >> 16;
-
+    return HUEtoRGB((pointLightCount + spotLightCount) * 0.01);
     while (pointLightCount-- > 0)
     {
         uint lightIndex = Lights::clusterIndexList[indexOffset++];

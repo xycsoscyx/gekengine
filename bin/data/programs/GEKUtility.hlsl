@@ -84,8 +84,8 @@ float3x3 GetCoTangentFrame(float3 position, float3 normal, float2 texCoord)
     // solve the linear system
     const float3 perpendicularDX = cross(normal, positionDDX);
     const float3 perpendicularDY = cross(positionDDY, normal);
-    const float3 tangent =   perpendicularDY * texCoordDDX.x + perpendicularDX * texCoordDDY.x;
-    const float3 biTangent = perpendicularDY * texCoordDDX.y + perpendicularDX * texCoordDDY.y;
+    const float3 tangent =   ((perpendicularDY * texCoordDDX.x) + (perpendicularDX * texCoordDDY.x));
+    const float3 biTangent = ((perpendicularDY * texCoordDDX.y) + (perpendicularDX * texCoordDDY.y));
 
     // construct a scale-invariant frame 
     const float reciprocal = rsqrt(max(dot(tangent, tangent), dot(biTangent, biTangent)));
@@ -94,8 +94,8 @@ float3x3 GetCoTangentFrame(float3 position, float3 normal, float2 texCoord)
 
 float GetLinearDepthFromSampleDepth(float depthSample)
 {
-    depthSample = 2.0 * depthSample - 1.0;
-    depthSample = 2.0 * Camera::NearClip * Camera::FarClip / (Camera::FarClip + Camera::NearClip - depthSample * (Camera::FarClip - Camera::NearClip));
+    depthSample = ((2.0 * depthSample) - 1.0);
+    depthSample = (2.0 * Camera::NearClip * Camera::FarClip / (Camera::FarClip + Camera::NearClip - (depthSample * Camera::ClipDistance)));
     return depthSample;
 }
 
