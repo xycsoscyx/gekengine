@@ -1,4 +1,3 @@
-
 float getFalloff(float distance, float range)
 {
     float denominator = (pow(distance, 2.0) + 1.0);
@@ -134,7 +133,7 @@ float3 getSurfaceIrradiance(
     float3 specularIrradiance = saturate(D * G * (F * (specularRadiance * lambert)));
 
     // see http://seblagarde.wordpress.com/2012/01/08/pi-or-not-to-pi-in-game-lighting-equation/
-    float3 diffuseLambert = (lambert / Math::Pi);
+    float3 diffuseLambert = (lambert * Math::ReciprocalPi);
     float3 diffuseRadiance = lerp(materialAlbedo, 0.0, materialMetallic);
     float3 diffuseIrradiance = saturate(diffuseRadiance * lightRadiance * diffuseLambert);
     /*
@@ -149,9 +148,9 @@ float3 getSurfaceIrradiance(
 
 uint getClusterOffset(float2 screenPosition, float surfaceDepth)
 {
-    uint2 gridLocation = floor(screenPosition / Lights::tileSize.xy);
+    uint2 gridLocation = floor(screenPosition * Lights::ReciprocalTileSize.xy);
 
-    float depth = ((surfaceDepth - Camera::NearClip) / Camera::ClipDistance);
+    float depth = ((surfaceDepth - Camera::NearClip) * Camera::ReciprocalClipDistance);
     uint gridSlice = floor(depth * Lights::gridSize.z);
 
     return ((((gridSlice * Lights::gridSize.y) + gridLocation.y) * Lights::gridSize.x) + gridLocation.x);
@@ -199,7 +198,7 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
     uint indexOffset = clusterData.x;
     uint pointLightCount = clusterData.y & 0x0000FFFF;
     uint spotLightCount = clusterData.y >> 16;
-    return HUEtoRGB((pointLightCount + spotLightCount) * 0.01);
+    //return HUEtoRGB((pointLightCount + spotLightCount) * 0.01);
     while (pointLightCount-- > 0)
     {
         uint lightIndex = Lights::clusterIndexList[indexOffset++];

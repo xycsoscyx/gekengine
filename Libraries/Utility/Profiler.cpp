@@ -86,7 +86,7 @@ namespace Gek
                     ",\n" \
                     "\t\t {" \
                     "\"name\": \"" << eventSearch->second << "\"" \
-                    ", \"ph\": \"E\"" \
+                    ", \"ph\": \"X\"" \
                     ", \"pid\": \"" << processIdentifier << "\"" \
                     ", \"tid\": \"" << threadSearch->second << "\"" \
                     ", \"ts\": " << timeStamp->timeStamp.count() <<

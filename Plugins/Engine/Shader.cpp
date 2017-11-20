@@ -180,6 +180,8 @@ namespace Gek
                     "        uint spotCount;\r\n" \
                     "    };\r\n" \
                     "\r\n" \
+                    "    static const float2 ReciprocalTileSize = (1.0 / tileSize);" \
+                    "\r\n" \
                     "    struct DirectionalData\r\n" \
                     "    {\r\n" \
                     "        float3 radiance;\r\n" \
