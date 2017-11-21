@@ -143,7 +143,7 @@ namespace Gek
                         intersectionResult = _mm_or_ps(intersectionResult, planeTest);
                     }
 
-                    __declspec(align(16)) uint32_t resultValues[4];
+                    alignas(16) uint32_t resultValues[4];
                     _mm_store_ps((float *)resultValues, intersectionResult);
                     for (uint32_t sectionIndex = 0; sectionIndex < 4; ++sectionIndex)
                     {
@@ -378,7 +378,7 @@ namespace Gek
 
                     const auto isInside = _mm_xor_ps(isOutside, AllTrue);
 
-                    __declspec(align(16)) uint32_t insideValues[4];
+                    alignas(16) uint32_t insideValues[4];
                     _mm_store_ps((float *)insideValues, isInside);
                     for (size_t sectionIndex = 0; sectionIndex < 4; ++sectionIndex)
                     {
