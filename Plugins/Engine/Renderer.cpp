@@ -31,146 +31,6 @@ namespace Gek
 {
     namespace Implementation
     {
-#define GEK_ENABLE_GPU_PROFILER
-#ifdef GEK_ENABLE_GPU_PROFILER
-        #define GEK_GPU_PROFILE_BEGIN() begin()
-        #define GEK_GPU_PROFILE_TIMESTAMP(NAME) timeStamp(NAME)
-        #define GEK_GPU_PROFILE_END() end()
-
-        class GPUProfiler
-        {
-        public:
-            using TimeStampEvent = std::array<Video::QueryPtr, 3>;
-            using TimeStamp = std::pair<Hash, Video::Query *>;
-            struct Frame
-                : public concurrency::concurrent_vector<TimeStamp>
-            {
-                Video::Query *disjointEvent = nullptr;
-                Video::Query *beginEvent = nullptr;
-                Video::Query *endEvent = nullptr;
-            };
-
-        private:
-            Hash threadIdentifier = 0;
-            Hash frameIdentifier = 0;
-            Gek::Profiler *profiler = nullptr;
-            Video::Device *videoDevice = nullptr;
-            Video::Device::Context *defaultVideoContext = nullptr;
-            std::array<Video::QueryPtr, 3> disjointList;
-            std::array<Video::QueryPtr, 3> beginFrameList;
-            std::array<Video::QueryPtr, 3> endFrameList;
-            concurrency::concurrent_unordered_map<Hash, TimeStampEvent> eventMap;
-            concurrency::concurrent_queue<Frame> historyQueue;
-            Frame currentFrame;
-            int writeIndex = 0;
-
-        public:
-            GPUProfiler(Plugin::Core *core)
-                : profiler(core)
-                , videoDevice(core->getVideoDevice())
-                , defaultVideoContext(core->getVideoDevice()->getDefaultContext())
-            {
-                threadIdentifier = GEK_PROFILE_REGISTER_NAME(profiler, "GPU Thread");
-                frameIdentifier = GEK_PROFILE_REGISTER_NAME(profiler, "GPU Frame");
-                for (auto &query : disjointList)
-                {
-                    query = videoDevice->createQuery(Video::Query::Type::DisjointTimeStamp);
-                }
-                
-                for (auto &query : beginFrameList)
-                {
-                    query = videoDevice->createQuery(Video::Query::Type::TimeStamp);
-                }
-
-                for (auto &query : endFrameList)
-                {
-                    query = videoDevice->createQuery(Video::Query::Type::TimeStamp);
-                }
-            }
-
-            void begin(void)
-            {
-                currentFrame.disjointEvent = disjointList[writeIndex].get();
-                currentFrame.beginEvent = beginFrameList[writeIndex].get();
-                currentFrame.endEvent = endFrameList[writeIndex].get();
-                defaultVideoContext->begin(currentFrame.disjointEvent);
-                defaultVideoContext->end(currentFrame.beginEvent);
-            }
-
-            void timeStamp(std::string const &name)
-            {
-                auto nameHash = profiler->registerName(name.c_str());
-                auto timeStampInsert = eventMap.insert(std::make_pair(nameHash, TimeStampEvent()));
-                auto &timeStampSearch = *timeStampInsert.first;
-                auto &timeStamp = timeStampSearch.second;
-                if (timeStampInsert.second)
-                {
-                    timeStamp[0] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
-                    timeStamp[1] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
-                    timeStamp[2] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
-                }
-
-                auto query = timeStamp[writeIndex].get();
-                currentFrame.push_back(std::make_pair(nameHash, query));
-                defaultVideoContext->end(query);
-            }
-
-            void end(void)
-            {
-                defaultVideoContext->end(currentFrame.endEvent);
-                defaultVideoContext->end(currentFrame.disjointEvent);
-                historyQueue.push(std::move(currentFrame));
-                currentFrame.clear();
-                ++writeIndex %= 3;
-
-                if (historyQueue.unsafe_size() > 1)
-                {
-                    Video::Query::DisjointTimeStamp disjointData;
-                    if (defaultVideoContext->getData(historyQueue.unsafe_begin()->disjointEvent, &disjointData, sizeof(Video::Query::DisjointTimeStamp), false) == Video::Query::Status::Ready)
-                    {
-                        Frame queryFrame;
-                        if (historyQueue.try_pop(queryFrame) && !disjointData.disjoint)
-                        {
-                            Video::Query::TimeStamp startStamp = 0;
-                            Video::Query::TimeStamp endStamp = 0;
-                            if (defaultVideoContext->getData(queryFrame.beginEvent, &startStamp, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready &&
-                                defaultVideoContext->getData(queryFrame.endEvent, &endStamp, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready)
-                            {
-                                auto frequency = double(disjointData.frequency);
-                                auto frameTime = std::chrono::high_resolution_clock::now().time_since_epoch();
-                                auto endTime = (frameTime + std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(double(endStamp - startStamp) / frequency)));
-                                GEK_PROFILE_EVENT(profiler, frameIdentifier, threadIdentifier, frameTime, endTime);
-
-                                Video::Query::TimeStamp previousStamp = startStamp;
-                                for (auto &timeStamp : queryFrame)
-                                {
-                                    Video::Query::TimeStamp eventStamp = 0;
-                                    if (defaultVideoContext->getData(timeStamp.second, &eventStamp, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready)
-                                    {
-                                        auto startTime = (frameTime + std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(double(previousStamp - startStamp) / frequency)));
-                                        auto endTime = (frameTime + std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(double(eventStamp - startStamp) / frequency)));
-                                        GEK_PROFILE_EVENT(profiler, timeStamp.first, threadIdentifier, startTime, endTime);
-                                        previousStamp = eventStamp;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        };
-#else
-    #define GEK_GPU_PROFILE_BEGIN()
-    #define GEK_GPU_PROFILE_TIMESTAMP(NAME)
-    #define GEK_GPU_PROFILE_END()
-        class GPUProfiler
-        {
-        public:
-            GPUProfiler(Plugin::Core *core) { };
-            virtual ~GPUProfiler(void) = default;
-        };
-#endif
-
         static const int32_t GridWidth = 16;
         static const int32_t GridHeight = 8;
         static const int32_t GridDepth = 24;
@@ -180,7 +40,7 @@ namespace Gek
 
         GEK_CONTEXT_USER(Renderer, Plugin::Core *)
             , public Plugin::Renderer
-            , public GPUProfiler
+            , public Video::Device::Profiler
         {
         public:
             struct DirectionalLightData
@@ -406,16 +266,16 @@ namespace Gek
             struct LightVisibilityData
                 : public LightData<COMPONENT, DATA, RESERVE>
             {
-                Profiler *profiler = nullptr;
+                Gek::Profiler *profiler = nullptr;
                 std::vector<float, AlignedAllocator<float, 16>> shapeXPositionList;
                 std::vector<float, AlignedAllocator<float, 16>> shapeYPositionList;
                 std::vector<float, AlignedAllocator<float, 16>> shapeZPositionList;
                 std::vector<float, AlignedAllocator<float, 16>> shapeRadiusList;
                 std::vector<bool> visibilityList;
 
-                LightVisibilityData(Profiler *profiler, Video::Device *videoDevice)
-                    : LightData(videoDevice)
-                    , profiler(profiler)
+                LightVisibilityData(Plugin::Core *core)
+                    : LightData(core->getVideoDevice())
+                    , profiler(core)
                 {
                 }
 
@@ -532,14 +392,14 @@ namespace Gek
         public:
             Renderer(Context *context, Plugin::Core *core)
                 : ContextRegistration(context)
-                , GPUProfiler(core)
+                , Profiler(core, core->getVideoDevice())
                 , core(core)
                 , videoDevice(core->getVideoDevice())
                 , population(core->getPopulation())
                 , resources(dynamic_cast<Engine::Resources *>(core->getResources()))
                 , directionalLightData(core->getVideoDevice())
-                , pointLightData(core, core->getVideoDevice())
-                , spotLightData(core, core->getVideoDevice())
+                , pointLightData(core)
+                , spotLightData(core)
             {
                 population->onReset.connect(this, &Renderer::onReset);
                 population->onEntityCreated.connect(this, &Renderer::onEntityCreated);
@@ -1263,7 +1123,7 @@ namespace Gek
                 assert(population);
 
                 GEK_PROFILE_FUNCTION(core);
-                GEK_GPU_PROFILE_BEGIN();
+                GEK_GPU_PROFILE_BEGIN(this);
 
                 EngineConstantData engineConstantData;
                 engineConstantData.frameTime = frameTime;
@@ -1273,7 +1133,7 @@ namespace Gek
                 Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                 while (cameraQueue.try_pop(currentCamera))
                 {
-                    GEK_GPU_PROFILE_TIMESTAMP(String::Format("Begin Camera: %v", currentCamera.name));
+                    GEK_GPU_PROFILE_TIMESTAMP(this, String::Format("Begin Camera: %v", currentCamera.name));
                     GEK_PROFILE_AUTO_SCOPE(core, "Render Camera");
 
                     clipDistance = (currentCamera.farClip - currentCamera.nearClip);
@@ -1525,7 +1385,7 @@ namespace Gek
                             }
                         }();
 
-                        GEK_GPU_PROFILE_TIMESTAMP("Buffer Management");
+                        GEK_GPU_PROFILE_TIMESTAMP(this, "Buffer Management");
 
                         uint8_t shaderIndex = 0;
                         std::string finalOutput;
@@ -1536,7 +1396,7 @@ namespace Gek
                             {
                                 auto &shader = shaderDrawCall.shader;
                                 GEK_PROFILE_AUTO_SCOPE(core, "Render Shader");
-                                GEK_GPU_PROFILE_TIMESTAMP(String::Format("Begin Shader: %v", shader->getName()));
+                                GEK_GPU_PROFILE_TIMESTAMP(this, String::Format("Begin Shader: %v", shader->getName()));
 
                                 finalOutput = shader->getOutput();
 
@@ -1581,7 +1441,7 @@ namespace Gek
                                     };
 
                                     pass->clear();
-                                    GEK_GPU_PROFILE_TIMESTAMP(String::Format("%v##%v", pass->getName(), shader->getName()));
+                                    GEK_GPU_PROFILE_TIMESTAMP(this, String::Format("%v##%v", pass->getName(), shader->getName()));
                                 }
                             }
                         }
@@ -1624,7 +1484,7 @@ namespace Gek
                         auto const filter = resources->getFilter(filterName);
                         if (filter)
                         {
-                            GEK_GPU_PROFILE_TIMESTAMP(String::Format("Begin Filter: %v", filter->getName()));
+                            GEK_GPU_PROFILE_TIMESTAMP(this, String::Format("Begin Filter: %v", filter->getName()));
                             for (auto pass = filter->begin(videoContext, screenHandle, ResourceHandle()); pass; pass = pass->next())
                             {
                                 GEK_PROFILE_AUTO_SCOPE(core, "Render Pass");
@@ -1639,7 +1499,7 @@ namespace Gek
                                 };
 
                                 pass->clear();
-                                GEK_GPU_PROFILE_TIMESTAMP(String::Format("%v##%v", pass->getName(), filter->getName()));
+                                GEK_GPU_PROFILE_TIMESTAMP(this, String::Format("%v##%v", pass->getName(), filter->getName()));
                             }
                         }
                     }
@@ -1694,11 +1554,11 @@ namespace Gek
 
                 GEK_PROFILE_BEGIN_SCOPE(core, "Show User Interface")
                     ImGui::Render();
-                    GEK_GPU_PROFILE_TIMESTAMP("User Interface");
+                    GEK_GPU_PROFILE_TIMESTAMP(this, "User Interface");
                 GEK_PROFILE_END_SCOPE();
 
                 videoDevice->present(true);
-                GEK_GPU_PROFILE_END();
+                GEK_GPU_PROFILE_END(this);
 
                 if (reloadRequired)
                 {

@@ -15,9 +15,20 @@
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/Hash.hpp"
 #include "GEK/Utility/Context.hpp"
+#include "GEK/Utility/Profiler.hpp"
 #include <unordered_map>
 #include <functional>
 #include <memory>
+
+#ifdef GEK_ENABLE_GPU_PROFILER
+    #define GEK_GPU_PROFILE_BEGIN(PROFILER) PROFILER->beginFrame()
+    #define GEK_GPU_PROFILE_TIMESTAMP(PROFILER, NAME) PROFILER->timeStamp(NAME)
+    #define GEK_GPU_PROFILE_END(PROFILER) PROFILER->endFrame()
+#else
+    #define GEK_GPU_PROFILE_BEGIN(PROFILER)
+    #define GEK_GPU_PROFILE_TIMESTAMP(PROFILER, NAME)
+    #define GEK_GPU_PROFILE_END(PROFILER)
+#endif
 
 namespace Gek
 {
@@ -604,19 +615,23 @@ namespace Gek
             virtual ~Query(void) = default;
         };
 
-        GEK_INTERFACE(Profiler)
-        {
-            virtual ~Profiler(void) = default;
-
-            virtual Hash registerName(const char* const name) = 0;
-
-            virtual void beginFrame(void) = 0;
-            virtual void timeStamp(Hash nameHash) = 0;
-            virtual void endFrame(void) = 0;
-        };
-
         GEK_INTERFACE(Device)
         {
+            struct Profiler
+            {
+                struct Data;
+                Data *data = nullptr;
+
+                Profiler(Gek::Profiler *profiler, Video::Device *videoDevice);
+                ~Profiler(void) = default;
+
+                Hash registerName(const char* const name);
+
+                void beginFrame(void);
+                void timeStamp(Hash nameHash);
+                void endFrame(void);
+            };
+
             struct Description
             {
                 std::string device;
