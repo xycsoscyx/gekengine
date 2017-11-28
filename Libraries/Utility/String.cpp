@@ -18,6 +18,41 @@ namespace Gek
         const std::string Empty;
         const std::locale Locale = std::locale::classic();
 
+        void TrimLeft(std::string &string, std::function<bool(char)> checkElement)
+        {
+            string.erase(std::begin(string), std::find_if(std::begin(string), std::end(string), checkElement));
+        }
+
+        void TrimRight(std::string &string, std::function<bool(char)> checkElement)
+        {
+            string.erase(std::find_if(std::rbegin(string), std::rend(string), checkElement).base(), std::end(string));
+        }
+
+        void Trim(std::string &string, std::function<bool(char)> checkElement)
+        {
+            TrimLeft(string, checkElement);
+            TrimRight(string, checkElement);
+        }
+
+        std::string GetLower(std::string_view string)
+        {
+            std::string transformed;
+            std::transform(std::begin(string), std::end(string), std::back_inserter(transformed), ::tolower);
+            return transformed;
+        }
+
+        std::string GetUpper(std::string_view string)
+        {
+            std::string transformed;
+            std::transform(std::begin(string), std::end(string), std::back_inserter(transformed), ::toupper);
+            return transformed;
+        }
+
+        bool EndsWith(std::string_view value, std::string_view ending)
+        {
+            return ((ending.size() > value.size()) ? false : std::equal(std::rbegin(ending), std::rend(ending), std::rbegin(value)));
+        }
+
         std::string Join(std::vector<std::string> const &list, char delimiter, bool initialDelimiter)
         {
             if (list.empty())
@@ -49,11 +84,11 @@ namespace Gek
             return result;
         }
 
-        std::vector<std::string> Split(const std::string &string, char delimiter, bool clearSpaces)
+        std::vector<std::string> Split(std::string_view string, char delimiter, bool clearSpaces)
         {
             std::string current;
             std::vector<std::string> tokens;
-            std::stringstream stream(string);
+            std::stringstream stream(std::move(std::string(string)));
             while (std::getline(stream, current, delimiter))
             {
                 if (clearSpaces)
@@ -67,7 +102,7 @@ namespace Gek
             return tokens;
         }
 
-        bool Replace(std::string &string, std::string_view const &searchFor, std::string_view const &replaceWith)
+        bool Replace(std::string &string, std::string_view searchFor, std::string_view replaceWith)
         {
             bool did_replace = false;
 
@@ -82,29 +117,22 @@ namespace Gek
             return did_replace;
         }
 
-        std::wstring Widen(std::string_view const &string)
+        std::wstring Widen(std::string_view string)
         {
             return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>{}.from_bytes(string.data());
         }
 
-        std::string Narrow(std::wstring_view const &string)
+        std::string Narrow(std::wstring_view string)
         {
             return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>{}.to_bytes(string.data());
         }
 
-        bool Convert(std::string const &string, bool defaultValue)
+        bool Convert(std::string_view string, bool defaultValue)
         {
-            bool value;
-            std::stringstream stream(string);
-            stream >> std::boolalpha >> value;
-            return (stream.fail() ? defaultValue : value);
-        }
+            std::stringstream stream(std::move(std::string(string)));
 
-        float Convert(std::string const &string, float defaultValue)
-        {
-            float value;
-            std::stringstream stream(string);
-            stream >> value;
+            bool value;
+            stream >> std::boolalpha >> value;
             return (stream.fail() ? defaultValue : value);
         }
     }; // namespace String

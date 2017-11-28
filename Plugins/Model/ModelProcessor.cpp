@@ -38,13 +38,13 @@ namespace Gek
     private:
         int selectedModel = 0;
         std::vector<std::string> modelList;
-        std::string const modelsPath;
+        FileSystem::Path modelsPath;
 
     public:
         Model(Context *context, Plugin::Population *population)
             : ContextRegistration(context)
             , ComponentMixin(population)
-            , modelsPath(context->getRootFileName("data", "models").string())
+            , modelsPath(context->getRootFileName("data", "models"))
         {
         }
 
@@ -71,7 +71,7 @@ namespace Gek
             {
                 if (modelList.empty())
                 {
-                    FileSystem::Find(modelsPath, [&](FileSystem::Path const &filePath) -> bool
+                    modelsPath.findFiles([&](FileSystem::Path const &filePath) -> bool
                     {
                         if (filePath.isDirectory())
                         {
@@ -309,7 +309,7 @@ namespace Gek
                         auto groupPath(getContext()->getRootFileName("data", "models", name));
                         FileSystem::Find(groupPath, [&](FileSystem::Path const &filePath) -> bool
                         {
-                            std::string fileName(filePath.u8string());
+                            std::string fileName(filePath.getString());
                             if (filePath.isFile() && String::GetLower(filePath.getExtension()) == ".gek")
                             {
                                 static const std::vector<uint8_t> EmptyBuffer;
@@ -365,7 +365,7 @@ namespace Gek
                                 Header *header = (Header *)buffer.data();
                                 if (buffer.size() < (sizeof(Header) + (sizeof(Header::Mesh) * header->meshCount)))
                                 {
-                                    LockedWrite{ std::cerr } << "Model file too small to contain mesh headers: " << filePath.u8string();
+                                    LockedWrite{ std::cerr } << "Model file too small to contain mesh headers: " << filePath.getString();
                                     return;
                                 }
 

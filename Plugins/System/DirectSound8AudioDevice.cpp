@@ -140,13 +140,17 @@ namespace Gek
 				{
 					struct EnumData
 					{
-						std::wstring device;
+						std::string device;
 						GUID *deviceGUID;
-					} enumerationData = { String::Widen(String::GetLower(device)), &deviceGUID };
+					} enumerationData =
+                    {
+                        String::GetLower(device), &deviceGUID
+                    };
+
 					DirectSoundEnumerateW([](LPGUID deviceGUID, LPCWSTR description, LPCWSTR module, void *context) -> BOOL
 					{
 						EnumData *enumerationData = static_cast<EnumData *>(context);
-						if (enumerationData->device == String::GetLower(std::wstring(description)))
+						if (enumerationData->device == String::GetLower(String::Narrow(description)))
 						{
 							enumerationData->deviceGUID = deviceGUID;
 							return FALSE;

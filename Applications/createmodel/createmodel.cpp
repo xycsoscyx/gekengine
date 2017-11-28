@@ -242,7 +242,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
         if (arguments[0] == "-source" && ++argumentIndex < argumentCount)
         {
-			sourceName = argumentList[argumentIndex];
+            sourceName = String::Narrow(argumentList[argumentIndex]);
         }
         else if (arguments[0] == "-flipcoords")
         {
@@ -331,8 +331,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
     auto dataPath(FileSystem::GetFileName(rootPath, "Data"));
 
-    auto sourcePath(FileSystem::GetFileName(dataPath, "models", sourceName.u8string()));
-    auto inputScene = aiImportFileExWithProperties(sourcePath.u8string().c_str(), importFlags, nullptr, propertyStore);
+    auto sourcePath(FileSystem::GetFileName(dataPath, "models", sourceName.getString()));
+    auto inputScene = aiImportFileExWithProperties(sourcePath.getString().data(), importFlags, nullptr, propertyStore);
     if (inputScene == nullptr)
     {
         LockedWrite{ std::cerr } << "Unable to load scene with Assimp";
@@ -374,8 +374,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     aiReleasePropertyStore(propertyStore);
     aiReleaseImport(inputScene);
 
-	std::string texturesPath(String::GetLower(FileSystem::GetFileName(dataPath, "Textures").u8string()));
-    auto materialsPath(FileSystem::GetFileName(dataPath, "Materials").u8string());
+	std::string texturesPath(String::GetLower(FileSystem::GetFileName(dataPath, "Textures").getString()));
+    auto materialsPath(FileSystem::GetFileName(dataPath, "Materials").getString());
 
 	std::map<std::string, std::string> diffuseToMaterialMap;
     std::function<bool(FileSystem::Path const &)> findMaterials;
@@ -383,7 +383,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     {
         if (filePath.isDirectory())
         {
-            FileSystem::Find(filePath, findMaterials);
+            filePath.findFiles(findMaterials);
         }
         else if (filePath.isFile())
         {
@@ -392,7 +392,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             auto dataNode = shaderNode.get("data");
             auto albedoNode = dataNode.get("albedo");
             std::string albedoPath(albedoNode.get("file").convert(String::Empty));
-            std::string materialName(String::GetLower(filePath.withoutExtension().u8string().substr(materialsPath.size() + 1)));
+            std::string materialName(String::GetLower(filePath.withoutExtension().getString().substr(materialsPath.size() + 1)));
             diffuseToMaterialMap[albedoPath] = materialName;
         }
 
@@ -406,7 +406,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         texturesPath = texturesPath.substr(engineIndex);
     }
 
-    FileSystem::Find(materialsPath, findMaterials);
+    FileSystem::Path(materialsPath).findFiles(findMaterials);
     if (diffuseToMaterialMap.empty())
     {
         LockedWrite{ std::cerr } << "Unable to locate any materials";
@@ -418,7 +418,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     auto findMaterialForDiffuse = [&](std::string const &diffuse) -> std::string
     {
         FileSystem::Path diffusePath(diffuse);
-        std::string albedoName(String::GetLower(diffusePath.withoutExtension().u8string()));
+        std::string albedoName(String::GetLower(diffusePath.withoutExtension().getString()));
         if (albedoName.find("textures\\") == 0)
         {
             albedoName = albedoName.substr(9);
@@ -458,9 +458,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             String::Replace(modelName, replacement, "");
         }
 
-        auto outputParentPath(FileSystem::GetFileName(dataPath, "models", sourceName.withoutExtension().u8string()));
+        auto outputParentPath(FileSystem::GetFileName(dataPath, "models", sourceName.withoutExtension().getString()));
         auto outputPath(FileSystem::GetFileName(outputParentPath, modelName).withExtension(".gek"));
-        LockedWrite{ std::cout } << String::Format(">     %v: %v", model.name, outputPath.u8string());
+        LockedWrite{ std::cout } << String::Format(">     %v: %v", model.name, outputPath.getString());
         LockedWrite{ std::cout } << String::Format("      Num. Meshes: %v", model.meshList.size());
         LockedWrite{ std::cout } << String::Format("      Size: Minimum[%v, %v, %v]", model.boundingBox.minimum.x, model.boundingBox.minimum.y, model.boundingBox.minimum.z);
         LockedWrite{ std::cout } << String::Format("      Size: Maximum[%v, %v, %v]", model.boundingBox.maximum.x, model.boundingBox.maximum.y, model.boundingBox.maximum.z);
@@ -469,8 +469,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             mesh.material = findMaterialForDiffuse(mesh.diffuse);
         }
         
-        FileSystem::MakeDirectoryChain(outputParentPath);
-        auto file = fopen(outputPath.u8string().c_str(), "wb");
+        outputParentPath.createChain();
+        auto file = fopen(outputPath.getString().data(), "wb");
         if (file == nullptr)
         {
             LockedWrite{ std::cerr } << "Unable to create output file";

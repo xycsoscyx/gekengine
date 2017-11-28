@@ -21,39 +21,13 @@ namespace Gek
 {
     namespace Video
     {
-        struct Video::Device::Profiler::Data
-        {
-            using TimeStampEvent = std::array<Video::QueryPtr, 3>;
-            using TimeStamp = std::pair<Hash, Video::Query *>;
-            struct Frame
-                : public concurrency::concurrent_vector<TimeStamp>
-            {
-                Video::Query *disjointEvent = nullptr;
-                Video::Query *beginEvent = nullptr;
-                Video::Query *endEvent = nullptr;
-            };
-
-            Hash frameIdentifier = 0;
-            Hash threadIdentifier = 0;
-            Gek::Profiler *profiler = nullptr;
-            Video::Device *videoDevice = nullptr;
-            Video::Device::Context *defaultVideoContext = nullptr;
-            std::array<Video::QueryPtr, 3> disjointList;
-            std::array<Video::QueryPtr, 3> beginFrameList;
-            std::array<Video::QueryPtr, 3> endFrameList;
-            concurrency::concurrent_unordered_map<Hash, TimeStampEvent> eventMap;
-            concurrency::concurrent_queue<Frame> historyQueue;
-            Frame currentFrame;
-            int writeIndex = 0;
-        };
-
-        Device::Profiler(Gek::Profiler *profiler, Video::Device *videoDevice)
+        Profiler::Profiler(System::Profiler *profiler, Device *videoDevice)
             : profiler(profiler)
             , videoDevice(videoDevice)
             , defaultVideoContext(videoDevice->getDefaultContext())
+            , frameIdentifier(GEK_PROFILE_REGISTER_NAME(profiler, "GPU Frame"))
+            , threadIdentifier(GEK_PROFILE_REGISTER_NAME(profiler, "GPU Thread"))
         {
-            frameIdentifier = GEK_PROFILE_REGISTER_NAME(profiler, "GPU Frame");
-            threadIdentifier = GEK_PROFILE_REGISTER_NAME(profiler, "GPU Thread");
             for (size_t index = 0; index < 3; ++index)
             {
                 disjointList[index] = videoDevice->createQuery(Video::Query::Type::DisjointTimeStamp);
@@ -62,65 +36,72 @@ namespace Gek
             }
         }
 
-        void Device::Profiler::beginFrame(void)
+        Hash Profiler::registerName(std::string_view name)
         {
-            data->defaultVideoContext->begin(data->disjointList[data->writeIndex].get());
-            data->defaultVideoContext->end(data->beginFrameList[data->writeIndex].get());
-            data->currentFrame.disjointEvent = data->disjointList[data->writeIndex].get();
-            data->currentFrame.beginEvent = data->beginFrameList[data->writeIndex].get();
-            data->currentFrame.endEvent = data->endFrameList[data->writeIndex].get();
+            auto hash = std::hash<std::string_view>()(name);
+            nameMap.insert(std::make_pair(hash, name));
+            return hash;
         }
 
-        void Device::Profiler::timeStamp(Hash nameHash)
+        void Profiler::beginFrame(void)
         {
-            auto timeStampInsert = data->eventMap.insert(std::make_pair(nameHash, Data::TimeStampEvent()));
+            defaultVideoContext->begin(disjointList[writeIndex].get());
+            defaultVideoContext->end(beginFrameList[writeIndex].get());
+            currentFrame.disjointEvent = disjointList[writeIndex].get();
+            currentFrame.beginEvent = beginFrameList[writeIndex].get();
+            currentFrame.endEvent = endFrameList[writeIndex].get();
+        }
+
+        void Profiler::timeStamp(Hash nameHash)
+        {
+            auto timeStampInsert = eventMap.insert(std::make_pair(nameHash, TimeStampEvent()));
             auto &timeStampSearch = *timeStampInsert.first;
             auto &timeStamp = timeStampSearch.second;
             if (timeStampInsert.second)
             {
-                timeStamp[0] = data->videoDevice->createQuery(Video::Query::Type::TimeStamp);
-                timeStamp[1] = data->videoDevice->createQuery(Video::Query::Type::TimeStamp);
-                timeStamp[2] = data->videoDevice->createQuery(Video::Query::Type::TimeStamp);
+                timeStamp[0] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
+                timeStamp[1] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
+                timeStamp[2] = videoDevice->createQuery(Video::Query::Type::TimeStamp);
             }
 
-            data->defaultVideoContext->end(timeStamp[data->writeIndex].get());
-            data->currentFrame.push_back(std::make_pair(nameHash, timeStamp[data->writeIndex].get()));
+            defaultVideoContext->end(timeStamp[writeIndex].get());
+            currentFrame.push_back(std::make_pair(nameHash, timeStamp[writeIndex].get()));
         }
 
-        void Device::Profiler::endFrame(void)
+        void Profiler::endFrame(void)
         {
-            data->defaultVideoContext->end(data->endFrameList[data->writeIndex].get());
-            data->defaultVideoContext->end(data->disjointList[data->writeIndex].get());
-            ++data->writeIndex %= 3;
+            defaultVideoContext->end(endFrameList[writeIndex].get());
+            defaultVideoContext->end(disjointList[writeIndex].get());
+            ++writeIndex %= 3;
 
-            data->historyQueue.push(std::move(data->currentFrame));
-            data->currentFrame.clear();
+            historyQueue.push(std::move(currentFrame));
+            currentFrame.clear();
 
             Video::Query::DisjointTimeStamp disjointData;
-            if (data->defaultVideoContext->getData(data->historyQueue.unsafe_begin()->disjointEvent, &disjointData, sizeof(Video::Query::DisjointTimeStamp), false) == Video::Query::Status::Ready)
+            if (defaultVideoContext->getData(historyQueue.unsafe_begin()->disjointEvent, &disjointData, sizeof(Video::Query::DisjointTimeStamp), false) == Video::Query::Status::Ready)
             {
-                Data::Frame queryFrame;
-                if (data->historyQueue.try_pop(queryFrame) && !disjointData.disjoint)
+                Frame queryFrame;
+                if (historyQueue.try_pop(queryFrame) && !disjointData.disjoint)
                 {
                     Video::Query::TimeStamp startStamp = 0;
                     Video::Query::TimeStamp endStamp = 0;
-                    if (data->defaultVideoContext->getData(queryFrame.beginEvent, &startStamp, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready &&
-                        data->defaultVideoContext->getData(queryFrame.endEvent, &endStamp, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready)
+                    if (defaultVideoContext->getData(queryFrame.beginEvent, &startStamp, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready &&
+                        defaultVideoContext->getData(queryFrame.endEvent, &endStamp, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready)
                     {
                         auto frequency = double(disjointData.frequency);
                         auto frameTime = std::chrono::high_resolution_clock::now().time_since_epoch();
                         auto endTime = (frameTime + std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(double(endStamp - startStamp) / frequency)));
-                        GEK_PROFILE_EVENT(data->profiler, data->frameIdentifier, data->threadIdentifier, frameTime, endTime);
+                        GEK_PROFILE_EVENT(profiler, frameIdentifier, threadIdentifier, frameTime, endTime);
 
                         Video::Query::TimeStamp previousStamp = startStamp;
                         for (auto &timeStamp : queryFrame)
                         {
                             Video::Query::TimeStamp eventStamp = 0;
-                            if (data->defaultVideoContext->getData(timeStamp.second, &eventStamp, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready)
+                            if (defaultVideoContext->getData(timeStamp.second, &eventStamp, sizeof(Video::Query::TimeStamp), true) == Video::Query::Status::Ready)
                             {
                                 auto startTime = (frameTime + std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(double(previousStamp - startStamp) / frequency)));
                                 auto endTime = (frameTime + std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(double(eventStamp - startStamp) / frequency)));
-                                GEK_PROFILE_EVENT(data->profiler, timeStamp.first, data->threadIdentifier, startTime, endTime);
+                                GEK_PROFILE_EVENT(profiler, timeStamp.first, threadIdentifier, startTime, endTime);
                                 previousStamp = eventStamp;
                             }
                         }
@@ -360,7 +341,7 @@ namespace Gek
             return GetHash(format, width, height, depth, mipMapCount, sampleCount, sampleQuality, flags);
         }
 
-        InputElement::Source InputElement::GetSource(std::string const &string)
+        InputElement::Source InputElement::GetSource(std::string_view string)
         {
 			static const std::unordered_map<std::string, Source> data =
 			{
@@ -383,7 +364,7 @@ namespace Gek
             return (result == std::end(data) ? "Vertex"s : result->second);
         }
 
-        InputElement::Semantic InputElement::GetSemantic(std::string const &string)
+        InputElement::Semantic InputElement::GetSemantic(std::string_view string)
         {
 			static const std::unordered_map<std::string, Semantic> data =
 			{

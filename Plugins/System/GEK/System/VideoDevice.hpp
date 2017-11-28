@@ -16,10 +16,13 @@
 #include "GEK/Utility/Hash.hpp"
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/Profiler.hpp"
+#include <concurrent_unordered_map.h>
+#include <concurrent_queue.h>
 #include <unordered_map>
 #include <functional>
 #include <memory>
 
+#define GEK_ENABLE_GPU_PROFILER
 #ifdef GEK_ENABLE_GPU_PROFILER
     #define GEK_GPU_PROFILE_BEGIN(PROFILER) PROFILER->beginFrame()
     #define GEK_GPU_PROFILE_TIMESTAMP(PROFILER, NAME) PROFILER->timeStamp(NAME)
@@ -96,7 +99,7 @@ namespace Gek
         };
 
         bool HasAlpha(Format format);
-        Format GetFormat(std::string const &format);
+        Format GetFormat(std::string_view format);
         std::string GetFormat(Format format);
 
         struct DisplayMode
@@ -220,9 +223,9 @@ namespace Gek
 
             static const uint32_t AppendAligned = 0xFFFFFFFF;
 
-            static Source GetSource(std::string const &elementSource);
+            static Source GetSource(std::string_view elementSource);
             static std::string GetSource(Source elementSource);
-            static Semantic GetSemantic(std::string const &semantic);
+            static Semantic GetSemantic(std::string_view semantic);
             static std::string GetSemantic(Semantic semantic);
 
             Video::Format format = Format::Unknown;
@@ -238,8 +241,8 @@ namespace Gek
 
             virtual std::type_index getTypeInfo(void) const = 0;
 
-            virtual void setName(std::string const &name) = 0;
-            virtual std::string const &getName(void) const = 0;
+            virtual void setName(std::string_view name) = 0;
+            virtual std::string_view const getName(void) const = 0;
         };
 
         GEK_INTERFACE(RenderState)
@@ -617,21 +620,6 @@ namespace Gek
 
         GEK_INTERFACE(Device)
         {
-            struct Profiler
-            {
-                struct Data;
-                Data *data = nullptr;
-
-                Profiler(Gek::Profiler *profiler, Video::Device *videoDevice);
-                ~Profiler(void) = default;
-
-                Hash registerName(const char* const name);
-
-                void beginFrame(void);
-                void timeStamp(Hash nameHash);
-                void endFrame(void);
-            };
-
             struct Description
             {
                 std::string device;
@@ -715,7 +703,7 @@ namespace Gek
             virtual void setDisplayMode(const DisplayMode &displayMode) = 0;
             virtual void handleResize(void) = 0;
 
-			virtual char const * const getSemanticMoniker(InputElement::Semantic semantic) = 0;
+			virtual std::string_view const getSemanticMoniker(InputElement::Semantic semantic) = 0;
 
             virtual Target * const getBackBuffer(void) = 0;
             virtual Context * const getDefaultContext(void) = 0;
@@ -749,12 +737,48 @@ namespace Gek
 
 			virtual ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, const void *compiledData, uint32_t compiledSize) = 0;
 
-            virtual std::vector<uint8_t> compileProgram(PipelineType pipelineType, std::string const &name, std::string const &uncompiledProgram, std::string const &entryFunction) = 0;
+            virtual std::vector<uint8_t> compileProgram(PipelineType pipelineType, std::string_view name, std::string_view uncompiledProgram, std::string_view entryFunction) = 0;
             virtual ObjectPtr createProgram(PipelineType pipelineType, const void *compiledData, uint32_t compiledSize) = 0;
 
             virtual void executeCommandList(Object *commandList) = 0;
 
             virtual void present(bool waitForVerticalSync) = 0;
+        };
+
+        struct Profiler
+        {
+            using TimeStampEvent = std::array<Video::QueryPtr, 3>;
+            using TimeStamp = std::pair<Hash, Video::Query *>;
+            struct Frame
+                : public concurrency::concurrent_vector<TimeStamp>
+            {
+                Video::Query *disjointEvent = nullptr;
+                Video::Query *beginEvent = nullptr;
+                Video::Query *endEvent = nullptr;
+            };
+
+            Hash frameIdentifier = 0;
+            Hash threadIdentifier = 0;
+            System::Profiler *profiler = nullptr;
+            Device *videoDevice = nullptr;
+            Device::Context *defaultVideoContext = nullptr;
+            std::array<Video::QueryPtr, 3> disjointList;
+            std::array<Video::QueryPtr, 3> beginFrameList;
+            std::array<Video::QueryPtr, 3> endFrameList;
+            concurrency::concurrent_unordered_map<Hash, std::string> nameMap;
+            concurrency::concurrent_unordered_map<Hash, TimeStampEvent> eventMap;
+            concurrency::concurrent_queue<Frame> historyQueue;
+            Frame currentFrame;
+            int writeIndex = 0;
+
+            Profiler(System::Profiler *profiler, Device *videoDevice);
+            virtual ~Profiler(void) = default;
+
+            Hash registerName(std::string_view name);
+
+            void beginFrame(void);
+            void timeStamp(Hash nameHash);
+            void endFrame(void);
         };
 
         namespace Debug

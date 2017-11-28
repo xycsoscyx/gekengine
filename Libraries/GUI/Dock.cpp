@@ -223,11 +223,9 @@ namespace Gek
                     tabList.clear();
                 }
 
-                Tab &getTab(char const *label, bool opened, ImVec2 const &defaultSize, ImGuiWindowFlags extraFlags)
+                Tab &getTab(std::string_view label, bool opened, ImVec2 const &defaultSize, ImGuiWindowFlags extraFlags)
                 {
-                    IM_ASSERT(label);
-
-                    ImU32 identifier = ImHash(label, 0);
+                    ImU32 identifier = ImHash(label.data(), 0);
                     for (int index = 0; index < tabList.size(); ++index)
                     {
                         if (tabList[index]->identifier == identifier)
@@ -1103,7 +1101,7 @@ namespace Gek
                     handleTab(tab, temporary ? temporary : previous, temporary && !temporary->children[0] ? Location::Tab : getLocationFromCode(*location));
                 }
 
-                bool begin(char const *label, bool* opened, ImGuiWindowFlags extraFlags, ImVec2 const &defaultSize)
+                bool begin(std::string_view label, bool* opened, ImGuiWindowFlags extraFlags, ImVec2 const &defaultSize)
                 {
                     Location nextLocation = nextTabLocation;
                     nextTabLocation = Location::Tab;
@@ -1167,7 +1165,7 @@ namespace Gek
                     {
                         ImGui::SetNextWindowPos(tab.position);
                         ImGui::SetNextWindowSize(tab.size);
-                        bool ret = ImGui::Begin(label, opened, tab.size, -1.0f, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_ShowBorders | extraFlags);
+                        bool ret = ImGui::Begin(label.data(), opened, tab.size, -1.0f, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_ShowBorders | extraFlags);
                         endAction = EndAction::End;
                         tab.position = ImGui::GetWindowPos();
                         tab.size = ImGui::GetWindowSize();
@@ -1214,7 +1212,7 @@ namespace Gek
                         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
                         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus |
                         extraFlags;
-                    bool isOpened = ImGui::BeginChild(label, size, true, flags);
+                    bool isOpened = ImGui::BeginChild(label.data(), size, true, flags);
                     ImGui::PopStyleColor();
                     return isOpened;
                 }
@@ -1249,10 +1247,10 @@ namespace Gek
                 ImGui::MemFree(context);
             }
 
-            void WorkSpace::Begin(char const *label, ImVec2 const &workspace, bool showBorder, ImVec2 const &splitSize)
+            void WorkSpace::Begin(std::string_view label, ImVec2 const &workspace, bool showBorder, ImVec2 const &splitSize)
             {
                 ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar;
-                ImGui::BeginChild(label ? label : "##workspace", workspace, showBorder, flags);
+                ImGui::BeginChild(label.data(), workspace, showBorder, flags);
                 context->position = ImGui::GetWindowPos();
                 context->size = ImGui::GetWindowSize();
                 context->splitterSize = splitSize;
@@ -1273,7 +1271,7 @@ namespace Gek
                 context->nextTabLocation = location;
             }
 
-            bool WorkSpace::BeginTab(char const *label, bool *opened, ImGuiWindowFlags extraFlags, ImVec2 const &defaultSize)
+            bool WorkSpace::BeginTab(std::string_view label, bool *opened, ImGuiWindowFlags extraFlags, ImVec2 const &defaultSize)
             {
                 return context->begin(label, opened, extraFlags, defaultSize);
             }

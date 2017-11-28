@@ -21,19 +21,19 @@ using namespace std::string_literals; // enables s-suffix for std::string litera
 
 namespace std
 {
-    inline std::string const &to_string(std::string const &string)
+    inline std::string to_string(std::string const &string)
     {
-        return string;
+        return std::string(string);
+    }
+
+    inline std::string to_string(std::string_view string)
+    {
+        return std::string(string);
     }
 
     inline std::string to_string(void const *pointer)
     {
         return std::to_string(reinterpret_cast<size_t>(pointer));
-    }
-
-    inline std::string to_string(char const *data)
-    {
-        return std::string(data);
     }
 };
 
@@ -71,49 +71,18 @@ namespace Gek
         extern const std::string Empty;
         extern const std::locale Locale;
 
-        template <typename CONTAINER>
-        void TrimLeft(CONTAINER &string, std::function<bool(typename CONTAINER::value_type)> checkElement = [](typename CONTAINER::value_type ch) { return !std::isspace(ch, Locale); })
-        {
-            string.erase(std::begin(string), std::find_if(std::begin(string), std::end(string), checkElement));
-        }
+        void TrimLeft(std::string &string, std::function<bool(char)> checkElement = [](char ch) { return !std::isspace(ch, Locale); });
+        void TrimRight(std::string &string, std::function<bool(char)> checkElement = [](char ch) { return !std::isspace(ch, Locale); });
+        void Trim(std::string &string, std::function<bool(char)> checkElement = [](char ch) { return !std::isspace(ch, Locale); });
 
-        template <typename CONTAINER>
-        void TrimRight(CONTAINER &string, std::function<bool(typename CONTAINER::value_type)> checkElement = [](typename CONTAINER::value_type ch) { return !std::isspace(ch, Locale); })
-        {
-            string.erase(std::find_if(std::rbegin(string), std::rend(string), checkElement).base(), std::end(string));
-        }
+        std::string GetLower(std::string_view string);
+        std::string GetUpper(std::string_view string);
 
-        template <typename CONTAINER>
-        void Trim(CONTAINER &string, std::function<bool(typename CONTAINER::value_type)> checkElement = [](typename CONTAINER::value_type ch) { return !std::isspace(ch, Locale); })
-        {
-            TrimLeft(string, checkElement);
-            TrimRight(string, checkElement);
-        }
-
-        template <typename CONTAINER>
-        CONTAINER GetLower(CONTAINER const &string)
-        {
-            CONTAINER transformed;
-            std::transform(std::begin(string), std::end(string), std::back_inserter(transformed), ::tolower);
-            return transformed;
-        }
-
-        template <typename CONTAINER>
-        CONTAINER GetUpper(CONTAINER const &string)
-        {
-            CONTAINER transformed;
-            std::transform(std::begin(string), std::end(string), std::back_inserter(transformed), ::toupper);
-            return transformed;
-        }
-
-		inline bool EndsWith(std::string_view const & value, std::string_view const & ending)
-		{
-			return ((ending.size() > value.size()) ? false : std::equal(std::rbegin(ending), std::rend(ending), std::rbegin(value)));
-		}
+        bool EndsWith(std::string_view value, std::string_view ending);
 
 		std::string Join(std::vector<std::string> const &list, char delimiter, bool initialDelimiter = false);
 
-        std::vector<std::string> Split(const std::string &string, char delimiter, bool clearSpaces = true);
+        std::vector<std::string> Split(std::string_view string, char delimiter, bool clearSpaces = true);
 
 		inline char const *Format(char const *string)
         {
@@ -156,19 +125,19 @@ namespace Gek
             return result;
         }
 
-        bool Replace(std::string &string, std::string_view const &searchFor, std::string_view const &replaceWith);
+        bool Replace(std::string &string, std::string_view searchFor, std::string_view replaceWith);
 
-        std::wstring Widen(std::string_view const &string);
-        std::string Narrow(std::wstring_view const &string);
+        std::wstring Widen(std::string_view string);
+        std::string Narrow(std::wstring_view string);
 
-        bool Convert(std::string const &string, bool defaultValue);
-        float Convert(std::string const &string, float defaultValue);
+        bool Convert(std::string_view string, bool defaultValue);
 
         template <typename TYPE>
-        TYPE Convert(std::string const &string, TYPE const &defaultValue)
+        TYPE Convert(std::string_view string, TYPE const &defaultValue)
         {
+            std::stringstream stream(std::move(std::string(string)));
+
             TYPE value;
-            std::stringstream stream(string);
             stream >> value;
             return (stream.fail() ? defaultValue : value);
         }

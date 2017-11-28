@@ -130,11 +130,11 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
         if (arguments[0] == "-input" && ++argumentIndex < argumentCount)
         {
-            fileNameInput = argumentList[argumentIndex];
+            fileNameInput = String::Narrow(argumentList[argumentIndex]);
         }
         else if (arguments[0] == "-output" && ++argumentIndex < argumentCount)
         {
-            fileNameOutput = argumentList[argumentIndex];
+            fileNameOutput = String::Narrow(argumentList[argumentIndex]);
         }
 		else if (arguments[0] == "-unitsinfoot")
 		{
@@ -186,7 +186,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
-    auto scene = aiImportFileExWithProperties(fileNameInput.u8string().c_str(), importFlags, nullptr, propertyStore);
+    auto scene = aiImportFileExWithProperties(fileNameInput.getString().data(), importFlags, nullptr, propertyStore);
     if (scene == nullptr)
     {
         LockedWrite{ std::cerr } << "Unable to load scene with Assimp";
@@ -235,7 +235,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
 
     FILE *file = nullptr;
-    _wfopen_s(&file, fileNameOutput.c_str(), L"wb");
+    _wfopen_s(&file, fileNameOutput.getWindowsString().c_str(), L"wb");
     if (file == nullptr)
     {
         LockedWrite{ std::cerr } << "Unable to create output file";

@@ -33,18 +33,18 @@ namespace Gek
 
             virtual ~Resources(void) = default;
 
-            virtual VisualHandle loadVisual(std::string const &pluginName) = 0;
-            virtual MaterialHandle loadMaterial(std::string const &materialName) = 0;
+            virtual VisualHandle loadVisual(std::string_view pluginName) = 0;
+            virtual MaterialHandle loadMaterial(std::string_view materialName) = 0;
 
-            virtual ResourceHandle loadTexture(std::string const &textureName, uint32_t flags) = 0;
-            virtual ResourceHandle createPattern(std::string const &pattern, JSON::Reference parameters) = 0;
+            virtual ResourceHandle loadTexture(std::string_view textureName, uint32_t flags) = 0;
+            virtual ResourceHandle createPattern(std::string_view pattern, JSON::Reference parameters) = 0;
 
-            virtual ResourceHandle createTexture(std::string const &textureName, const Video::Texture::Description &description, uint32_t flags = 0) = 0;
-            virtual ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, uint32_t flags = 0) = 0;
-            virtual ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData, uint32_t flags = 0) = 0;
+            virtual ResourceHandle createTexture(std::string_view textureName, const Video::Texture::Description &description, uint32_t flags = 0) = 0;
+            virtual ResourceHandle createBuffer(std::string_view bufferName, const Video::Buffer::Description &description, uint32_t flags = 0) = 0;
+            virtual ResourceHandle createBuffer(std::string_view bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData, uint32_t flags = 0) = 0;
 
             template <typename TYPE>
-            ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, const TYPE *staticData)
+            ResourceHandle createBuffer(std::string_view bufferName, const Video::Buffer::Description &description, const TYPE *staticData)
             {
                 auto rawData = reinterpret_cast<const uint8_t *>(staticData);
                 std::vector<uint8_t> rawBuffer(rawData, (rawData + (sizeof(TYPE) * description.count)));
@@ -86,18 +86,18 @@ namespace Gek
             virtual void reload(void) = 0;
 
             virtual ShaderHandle getMaterialShader(MaterialHandle material) const = 0;
-            virtual ResourceHandle getResourceHandle(std::string const &resourceName) const = 0;
+            virtual ResourceHandle getResourceHandle(std::string_view resourceName) const = 0;
 
-            virtual ShaderHandle const getShader(std::string const &shaderName, MaterialHandle materialHandle = MaterialHandle()) = 0;
+            virtual ShaderHandle const getShader(std::string_view shaderName, MaterialHandle materialHandle = MaterialHandle()) = 0;
             virtual Shader * const getShader(ShaderHandle handle) const = 0;
-            virtual Filter * const getFilter(std::string const &filterName) = 0;
+            virtual Filter * const getFilter(std::string_view filterName) = 0;
 
             virtual Video::Texture::Description const * const getTextureDescription(ResourceHandle resourceHandle) const = 0;
             virtual Video::Buffer::Description const * const getBufferDescription(ResourceHandle resourceHandle) const = 0;
             virtual Video::Object * const getResource(ResourceHandle resourceHandle) const = 0;
 
-            virtual std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, std::string const &name, std::string const &entryFunction, std::string const &engineData = std::string()) = 0;
-            virtual ProgramHandle loadProgram(Video::PipelineType pipelineType, std::string const &name, std::string const &entryFunction, std::string const &engineData = std::string()) = 0;
+            virtual std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, std::string_view name, std::string_view entryFunction, std::string_view engineData = std::string()) = 0;
+            virtual ProgramHandle loadProgram(Video::PipelineType pipelineType, std::string_view name, std::string_view entryFunction, std::string_view engineData = std::string()) = 0;
 
             virtual RenderStateHandle createRenderState(Video::RenderState::Description const &renderState) = 0;
             virtual DepthStateHandle createDepthState(Video::DepthState::Description const &depthState) = 0;

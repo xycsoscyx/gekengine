@@ -25,7 +25,7 @@ namespace Gek
         GEK_PREDECLARE(Processor);
 
         GEK_INTERFACE(Core)
-            : public Gek::Profiler
+            : public Gek::System::Profiler
         {
             using ListenerHandle = uint64_t;
 

@@ -33,11 +33,11 @@ namespace Gek
                 WorkSpace(void);
                 ~WorkSpace(void);
 
-                void Begin(char const *label = nullptr, ImVec2 const &workspace = ImVec2(0, 0), bool showBorder = false, ImVec2 const &splitterSize = ImVec2(3.0f, 3.0f));
+                void Begin(std::string_view label = "##workspace", ImVec2 const &workspace = ImVec2(0, 0), bool showBorder = false, ImVec2 const &splitterSize = ImVec2(3.0f, 3.0f));
                 void End(void);
 
                 void SetNextLocation(Location location);
-                bool BeginTab(char const *label, bool *opened = NULL, ImGuiWindowFlags extraFlags = 0, ImVec2 const &defaultSize = ImVec2(-1, -1));
+                bool BeginTab(std::string_view label, bool *opened = NULL, ImGuiWindowFlags extraFlags = 0, ImVec2 const &defaultSize = ImVec2(-1, -1));
                 void EndTab(void);
 
                 void SetActive(void);

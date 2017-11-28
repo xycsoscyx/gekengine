@@ -20,22 +20,22 @@ namespace Gek
         ContextImplementation(FileSystem::Path const &rootPath, std::vector<FileSystem::Path> searchPathList)
             : rootPath(rootPath)
         {
-            SetCurrentDirectoryW(rootPath.native().c_str());
+            SetCurrentDirectoryW(rootPath.getWindowsString().data());
             
             searchPathList.push_back(rootPath);
             for (auto const &searchPath : searchPathList)
             {
-                FileSystem::Find(searchPath, [&](FileSystem::Path const &filePath) -> bool
+                searchPath.findFiles([&](FileSystem::Path const &filePath) -> bool
                 {
 					if (filePath.isFile() && String::GetLower(filePath.getExtension()) == ".dll")
 					{
-						HMODULE module = LoadLibrary(filePath.native().c_str());
+                        HMODULE module = LoadLibrary(filePath.getWindowsString().data());
 						if (module)
 						{
 							InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "initializePlugin");
 							if (initializePlugin)
 							{
-								initializePlugin([this, filePath = filePath.u8string()](std::string const &className, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)> creator) -> void
+								initializePlugin([this, filePath = filePath.getString()](std::string const &className, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)> creator) -> void
 								{
 									if (classMap.count(className) == 0)
 									{
@@ -59,7 +59,7 @@ namespace Gek
 						}
 						else
 						{
-                            LockedWrite{ std::cerr } << "Unable to load plugin: " << filePath.u8string();
+                            LockedWrite{ std::cerr } << "Unable to load plugin: " << filePath.getString();
 						}
 					}
 

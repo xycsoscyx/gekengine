@@ -108,7 +108,7 @@ namespace Gek
                 auto vertexNode = visualNode.get("vertex");
                 std::string vertexEntry(vertexNode.get("entry").convert(String::Empty));
                 std::string vertexProgram(vertexNode.get("program").convert(String::Empty));
-                std::string vertexFileName(FileSystem::GetFileName(visualName, vertexProgram).withExtension(".hlsl").u8string());
+                std::string vertexFileName(FileSystem::GetFileName(visualName, vertexProgram).withExtension(".hlsl").getString());
                 auto compiledVertexProgram = resources->compileProgram(Video::PipelineType::Vertex, vertexFileName, vertexEntry, engineData);
 				this->vertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiledVertexProgram.data(), compiledVertexProgram.size());
                 this->vertexProgram->setName(String::Format("%v:%v", vertexProgram, vertexEntry));
@@ -122,7 +122,7 @@ namespace Gek
                 std::string geometryProgram(geometryNode.get("program").convert(String::Empty));
                 if (!geometryEntry.empty() && !geometryProgram.empty())
                 {
-                    std::string geometryFileName(FileSystem::GetFileName(visualName, geometryProgram).withExtension(".hlsl").u8string());
+                    std::string geometryFileName(FileSystem::GetFileName(visualName, geometryProgram).withExtension(".hlsl").getString());
                     auto compiledGeometryProgram = resources->compileProgram(Video::PipelineType::Geometry, geometryFileName, geometryEntry);
                     this->geometryProgram = videoDevice->createProgram(Video::PipelineType::Geometry, compiledGeometryProgram.data(), compiledGeometryProgram.size());
                     this->geometryProgram->setName(String::Format("%v:%v", geometryProgram, geometryEntry));

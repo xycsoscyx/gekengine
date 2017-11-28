@@ -40,7 +40,7 @@ namespace Gek
 
         GEK_CONTEXT_USER(Renderer, Plugin::Core *)
             , public Plugin::Renderer
-            , public Video::Device::Profiler
+            , public Video::Profiler
         {
         public:
             struct DirectionalLightData
@@ -266,7 +266,7 @@ namespace Gek
             struct LightVisibilityData
                 : public LightData<COMPONENT, DATA, RESERVE>
             {
-                Gek::Profiler *profiler = nullptr;
+                System::Profiler *profiler = nullptr;
                 std::vector<float, AlignedAllocator<float, 16>> shapeXPositionList;
                 std::vector<float, AlignedAllocator<float, 16>> shapeYPositionList;
                 std::vector<float, AlignedAllocator<float, 16>> shapeZPositionList;
@@ -535,7 +535,7 @@ namespace Gek
             {
                 LockedWrite{ std::cout } << "Initializing user interface data";
 
-                static char const vertexShader[] =
+                static const std::string_view vertexShader =
                     "cbuffer DataBuffer : register(b0)" \
                     "{" \
                     "    float4x4 ProjectionMatrix;" \
@@ -595,7 +595,7 @@ namespace Gek
                 gui.constantBuffer = videoDevice->createBuffer(constantBufferDescription);
                 gui.constantBuffer->setName("core:constantBuffer");
 
-                static char const pixelShader[] =
+                static const std::string_view pixelShader =
                     "cbuffer DataBuffer : register(b0)" \
                     "{" \
                     "    float4x4 ProjectionMatrix;" \
@@ -649,18 +649,18 @@ namespace Gek
                 gui.depthState->setName("core:depthState");
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "Ruda-Bold.ttf").u8string().c_str(), 14.0f);
+                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "Ruda-Bold.ttf").getString().data(), 14.0f);
 
                 ImFontConfig fontConfig;
                 fontConfig.MergeMode = true;
 
                 fontConfig.GlyphOffset.y = 1.0f;
                 const ImWchar fontAwesomeRanges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "fontawesome-webfont.ttf").u8string().c_str(), 16.0f, &fontConfig, fontAwesomeRanges);
+                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "fontawesome-webfont.ttf").getString().data(), 16.0f, &fontConfig, fontAwesomeRanges);
 
                 fontConfig.GlyphOffset.y = 3.0f;
                 const ImWchar googleIconRanges[] = { ICON_MIN_MD, ICON_MAX_MD, 0 };
-                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "MaterialIcons-Regular.ttf").u8string().c_str(), 16.0f, &fontConfig, googleIconRanges);
+                imGuiIo.Fonts->AddFontFromFileTTF(getContext()->getRootFileName("data", "fonts", "MaterialIcons-Regular.ttf").getString().data(), 16.0f, &fontConfig, googleIconRanges);
 
                 imGuiIo.Fonts->Build();
 
@@ -1133,7 +1133,7 @@ namespace Gek
                 Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                 while (cameraQueue.try_pop(currentCamera))
                 {
-                    GEK_GPU_PROFILE_TIMESTAMP(this, String::Format("Begin Camera: %v", currentCamera.name));
+                    GEK_GPU_PROFILE_TIMESTAMP(this, this->registerName(String::Format("Begin Camera: %v", currentCamera.name)));
                     GEK_PROFILE_AUTO_SCOPE(core, "Render Camera");
 
                     clipDistance = (currentCamera.farClip - currentCamera.nearClip);
@@ -1385,7 +1385,8 @@ namespace Gek
                             }
                         }();
 
-                        GEK_GPU_PROFILE_TIMESTAMP(this, "Buffer Management");
+                        static const auto bufferManagement = this->registerName("Buffer Management");
+                        GEK_GPU_PROFILE_TIMESTAMP(this, bufferManagement);
 
                         uint8_t shaderIndex = 0;
                         std::string finalOutput;
@@ -1396,7 +1397,7 @@ namespace Gek
                             {
                                 auto &shader = shaderDrawCall.shader;
                                 GEK_PROFILE_AUTO_SCOPE(core, "Render Shader");
-                                GEK_GPU_PROFILE_TIMESTAMP(this, String::Format("Begin Shader: %v", shader->getName()));
+                                GEK_GPU_PROFILE_TIMESTAMP(this, this->registerName(String::Format("Begin Shader: %v", shader->getName())));
 
                                 finalOutput = shader->getOutput();
 
@@ -1441,7 +1442,7 @@ namespace Gek
                                     };
 
                                     pass->clear();
-                                    GEK_GPU_PROFILE_TIMESTAMP(this, String::Format("%v##%v", pass->getName(), shader->getName()));
+                                    GEK_GPU_PROFILE_TIMESTAMP(this, this->registerName(String::Format("%v##%v", pass->getName(), shader->getName())));
                                 }
                             }
                         }
@@ -1484,7 +1485,7 @@ namespace Gek
                         auto const filter = resources->getFilter(filterName);
                         if (filter)
                         {
-                            GEK_GPU_PROFILE_TIMESTAMP(this, String::Format("Begin Filter: %v", filter->getName()));
+                            GEK_GPU_PROFILE_TIMESTAMP(this, this->registerName(String::Format("Begin Filter: %v", filter->getName())));
                             for (auto pass = filter->begin(videoContext, screenHandle, ResourceHandle()); pass; pass = pass->next())
                             {
                                 GEK_PROFILE_AUTO_SCOPE(core, "Render Pass");
@@ -1499,7 +1500,7 @@ namespace Gek
                                 };
 
                                 pass->clear();
-                                GEK_GPU_PROFILE_TIMESTAMP(this, String::Format("%v##%v", pass->getName(), filter->getName()));
+                                GEK_GPU_PROFILE_TIMESTAMP(this, this->registerName(String::Format("%v##%v", pass->getName(), filter->getName())));
                             }
                         }
                     }
@@ -1554,7 +1555,8 @@ namespace Gek
 
                 GEK_PROFILE_BEGIN_SCOPE(core, "Show User Interface")
                     ImGui::Render();
-                    GEK_GPU_PROFILE_TIMESTAMP(this, "User Interface");
+                    const auto userInterface = this->registerName("User Interface");
+                    GEK_GPU_PROFILE_TIMESTAMP(this, userInterface);
                 GEK_PROFILE_END_SCOPE();
 
                 videoDevice->present(true);

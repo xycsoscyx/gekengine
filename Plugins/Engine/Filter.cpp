@@ -601,7 +601,7 @@ namespace Gek
                     std::string entryPoint(passNode.get("entry").convert(String::Empty));
                     auto programName = passNode.get("program").convert(String::Empty);
                     pass.name = String::Format("%v: %v", programName, entryPoint);
-                    std::string fileName(FileSystem::GetFileName(filterName, programName).withExtension(".hlsl").u8string());
+                    std::string fileName(FileSystem::GetFileName(filterName, programName).withExtension(".hlsl").getString());
                     Video::PipelineType pipelineType = (pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel);
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
                 }

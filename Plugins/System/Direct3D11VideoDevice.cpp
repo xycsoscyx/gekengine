@@ -480,7 +480,7 @@ namespace Gek
             D3D11_MAP_WRITE_NO_OVERWRITE,
         };
 
-        static char const * const SemanticNameList[] =
+        static const std::string_view SemanticNameList[] =
         {
             "POSITION",
             "TEXCOORD",
@@ -640,12 +640,12 @@ namespace Gek
                 return typeid(BASE);
             }
 
-            virtual void setName(std::string const &name)
+            virtual void setName(std::string_view name)
             {
                 this->name = name;
             }
 
-            std::string const &getName(void) const
+            std::string_view const getName(void) const
             {
                 return name;
             }
@@ -1983,7 +1983,7 @@ namespace Gek
                 }
             }
 
-            char const * const getSemanticMoniker(Video::InputElement::Semantic semantic)
+            std::string_view const getSemanticMoniker(Video::InputElement::Semantic semantic)
             {
                 return DirectX::SemanticNameList[static_cast<uint8_t>(semantic)];
             }
@@ -2428,7 +2428,7 @@ namespace Gek
                     D3D11_INPUT_ELEMENT_DESC elementDesc;
                     elementDesc.Format = DirectX::BufferFormatList[static_cast<uint8_t>(element.format)];
                     elementDesc.AlignedByteOffset = (element.alignedByteOffset == Video::InputElement::AppendAligned ? D3D11_APPEND_ALIGNED_ELEMENT : element.alignedByteOffset);
-                    elementDesc.SemanticName = DirectX::SemanticNameList[static_cast<uint8_t>(element.semantic)];
+                    elementDesc.SemanticName = DirectX::SemanticNameList[static_cast<uint8_t>(element.semantic)].data();
                     elementDesc.SemanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)]++;
                     elementDesc.InputSlot = element.sourceIndex;
                     switch (element.source)
@@ -2501,7 +2501,7 @@ namespace Gek
                 return nullptr;
             }
 
-            std::vector<uint8_t> compileProgram(std::string const &name, std::string const &type, std::string const &uncompiledProgram, std::string const &entryFunction)
+            std::vector<uint8_t> compileProgram(std::string_view name, std::string_view type, std::string_view uncompiledProgram, std::string_view entryFunction)
             {
                 assert(d3dDevice);
 
@@ -2517,11 +2517,11 @@ namespace Gek
 
                 CComPtr<ID3DBlob> d3dShaderBlob;
                 CComPtr<ID3DBlob> d3dCompilerErrors;
-                HRESULT resultValue = D3DCompile(uncompiledProgram.c_str(), (uncompiledProgram.size() + 1), name.c_str(), nullptr, nullptr, entryFunction.c_str(), type.c_str(), flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+                HRESULT resultValue = D3DCompile(uncompiledProgram.data(), (uncompiledProgram.size() + 1), name.data(), nullptr, nullptr, entryFunction.data(), type.data(), flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
                     _com_error error(resultValue);
-                    std::string compilerError((char const *)d3dCompilerErrors->GetBufferPointer());
+                    std::string_view compilerError = (char const *)d3dCompilerErrors->GetBufferPointer();
                     LockedWrite{ std::cerr } << "D3DCompile Failed (" << error.ErrorMessage() << ") " << compilerError;
                     static const std::vector<uint8_t> EmptyBuffer;
                     return EmptyBuffer;
@@ -2531,7 +2531,7 @@ namespace Gek
                 return std::vector<uint8_t>(data, (data + d3dShaderBlob->GetBufferSize()));
             }
 
-            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, std::string const &name, std::string const &uncompiledProgram, std::string const &entryFunction)
+            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, std::string_view name, std::string_view uncompiledProgram, std::string_view entryFunction)
             {
                 assert(!name.empty());
                 assert(!uncompiledProgram.empty());

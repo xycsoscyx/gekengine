@@ -473,7 +473,7 @@ namespace Gek
             D3D11_MAP_WRITE_NO_OVERWRITE,
         };
 
-        static char const * const VertexSemanticList[] =
+        static const std::string_view VertexSemanticList[] =
         {
             "POSITION",
             "TEXCOORD",
@@ -483,7 +483,7 @@ namespace Gek
             "COLOR",
         };
 
-        static char const * const PixelSemanticList[] =
+        static const std::string_view PixelSemanticList[] =
         {
             "SV_POSITION",
             "TEXCOORD",
@@ -1319,7 +1319,7 @@ namespace Gek
                     D3D11_INPUT_ELEMENT_DESC elementDescription;
                     elementDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(vertexElement.format)];
                     elementDescription.AlignedByteOffset = (vertexElement.alignedByteOffset == Render::VertexDeclaration::AppendAligned ? D3D11_APPEND_ALIGNED_ELEMENT : vertexElement.alignedByteOffset);
-                    elementDescription.SemanticName = DirectX::VertexSemanticList[static_cast<uint8_t>(vertexElement.semantic)];
+                    elementDescription.SemanticName = DirectX::VertexSemanticList[static_cast<uint8_t>(vertexElement.semantic)].data();
                     elementDescription.SemanticIndex = semanticIndexList[static_cast<uint8_t>(vertexElement.semantic)]++;
                     elementDescription.InputSlot = vertexElement.sourceIndex;
                     switch (vertexElement.source)
@@ -1361,7 +1361,7 @@ namespace Gek
                 uint32_t vertexSemanticIndexList[static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count)] = { 0 };
                 for (auto const &vertexElement : pipelineStateInformation.vertexDeclaration)
                 {
-                    std::string semantic = DirectX::VertexSemanticList[static_cast<uint8_t>(vertexElement.semantic)];
+                    std::string semantic = DirectX::VertexSemanticList[static_cast<uint8_t>(vertexElement.semantic)].data();
                     std::string format = DirectX::getFormatSemantic(vertexElement.format);
                     shader += String::Format("    %v %v : %v%v;\r\n", format, vertexElement.name, semantic, vertexSemanticIndexList[static_cast<uint8_t>(vertexElement.semantic)]++);
                 }
@@ -1370,7 +1370,7 @@ namespace Gek
                 uint32_t pixelSemanticIndexList[static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count)] = { 0 };
                 for (auto const &pixelElement : pipelineStateInformation.pixelDeclaration)
                 {
-                    std::string semantic = DirectX::PixelSemanticList[static_cast<uint8_t>(pixelElement.semantic)];
+                    std::string semantic = DirectX::PixelSemanticList[static_cast<uint8_t>(pixelElement.semantic)].data();
                     std::string format = DirectX::getFormatSemantic(pixelElement.format);
                     shader += String::Format("    %v %v : %v%v;\r\n", format, pixelElement.name, semantic, pixelSemanticIndexList[static_cast<uint8_t>(pixelElement.semantic)]++);
                 }
@@ -1408,7 +1408,7 @@ namespace Gek
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
                     _com_error error(resultValue);
-                    std::string compilerError((char const *)d3dCompilerErrors->GetBufferPointer());
+                    std::string_view compilerError = (char const *)d3dCompilerErrors->GetBufferPointer();
                     LockedWrite{ std::cerr } << "D3DCompile Failed (" << error.ErrorMessage() << ") " << compilerError;
                     static const std::vector<uint8_t> EmptyBuffer;
                     return EmptyBuffer;
@@ -2140,7 +2140,7 @@ namespace Gek
             {
                 assert(d3dDevice);
 
-                auto hash = GetHash(0xFFFFFFFF, filePath.u8string(), flags);
+                auto hash = GetHash(0xFFFFFFFF, filePath.getString(), flags);
                 return resourceCache.insert(hash, [this, filePath, flags, name = std::string(name)](Render::ResourceHandle handle)->CComPtr<ID3D11Resource>
                 {
 					static const std::vector<uint8_t> EmptyBuffer;
@@ -2203,8 +2203,8 @@ namespace Gek
                         return nullptr;
                     }
 
-					setDebugName(d3dResource, (name.empty() ? filePath.u8string() : name));
-                    setDebugName(d3dShaderResourceView, (name.empty() ? filePath.u8string() : name), "ShaderResourceView");
+					setDebugName(d3dResource, (name.empty() ? filePath.getString() : name));
+                    setDebugName(d3dShaderResourceView, (name.empty() ? filePath.getString() : name), "ShaderResourceView");
                     shaderResourceViewCache.set(handle, d3dShaderResourceView);
 
                     Render::TextureDescription description;

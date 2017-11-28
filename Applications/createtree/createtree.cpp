@@ -170,11 +170,11 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
         if (arguments[0] == "-input" && ++argumentIndex < argumentCount)
         {
-            fileNameInput = argumentList[argumentIndex];
+            fileNameInput = String::Narrow(argumentList[argumentIndex]);
         }
         else if (arguments[0] == "-output" && ++argumentIndex < argumentCount)
         {
-            fileNameOutput = argumentList[argumentIndex];
+            fileNameOutput = String::Narrow(argumentList[argumentIndex]);
         }
         else if (arguments[0] == "-flipwinding")
         {
@@ -234,7 +234,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
-    auto scene = aiImportFileExWithProperties(fileNameInput.u8string().c_str(), importFlags, nullptr, propertyStore);
+    auto scene = aiImportFileExWithProperties(fileNameInput.getString().data(), importFlags, nullptr, propertyStore);
     if (scene == nullptr)
     {
         LockedWrite{ std::cerr } << "Unable to load scene with Assimp";
@@ -264,8 +264,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
     auto dataPath(FileSystem::GetFileName(rootPath, "Data"));
 
-	std::string texturesPath(String::GetLower(FileSystem::GetFileName(dataPath, "Textures").u8string()));
-    auto materialsPath(FileSystem::GetFileName(dataPath, "Materials").u8string());
+	std::string texturesPath(String::GetLower(FileSystem::GetFileName(dataPath, "Textures").getString()));
+    auto materialsPath(FileSystem::GetFileName(dataPath, "Materials").getString());
 
     std::map<std::string, std::string> diffuseToMaterialMap;
     std::function<bool(FileSystem::Path const &)> findMaterials;
@@ -273,7 +273,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     {
         if (filePath.isDirectory())
         {
-            FileSystem::Find(filePath, findMaterials);
+            filePath.findFiles(findMaterials);
         }
         else if (filePath.isFile())
         {
@@ -282,7 +282,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             auto dataNode = shaderNode.get("data");
             auto albedoNode = dataNode.get("albedo");
             std::string albedoPath(albedoNode.get("file").convert(String::Empty));
-            std::string materialName(String::GetLower(filePath.withoutExtension().u8string().substr(materialsPath.size() + 1)));
+            std::string materialName(String::GetLower(filePath.withoutExtension().getString().substr(materialsPath.size() + 1)));
             diffuseToMaterialMap[albedoPath] = materialName;
         }
 
@@ -296,7 +296,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         texturesPath = texturesPath.substr(engineIndex);
     }
 
-    FileSystem::Find(materialsPath, findMaterials);
+    FileSystem::Path(materialsPath).findFiles(findMaterials);
     if (diffuseToMaterialMap.empty())
     {
         LockedWrite{ std::cerr } << "Unable to locate any materials";
@@ -305,7 +305,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     auto findMaterialForDiffuse = [&](std::string const &diffuse) -> std::string
     {
         FileSystem::Path diffusePath(diffuse);
-        std::string albedoName(String::GetLower(diffusePath.withoutExtension().u8string()));
+        std::string albedoName(String::GetLower(diffusePath.withoutExtension().getString()));
         if (albedoName.find("textures\\") == 0)
         {
             albedoName = albedoName.substr(9);
@@ -383,7 +383,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     NewtonTreeCollisionEndBuild(newtonCollision, 1);
 
     FILE *file = nullptr;
-    _wfopen_s(&file, fileNameOutput.c_str(), L"wb");
+    _wfopen_s(&file, fileNameOutput.getWindowsString().data(), L"wb");
     if (file == nullptr)
     {
         LockedWrite{ std::cerr } << "Unable to create output file";

@@ -25,13 +25,13 @@ namespace Gek
         float PushStyleVar(ImGuiStyleVar idx, float val);
         ImVec2 PushStyleVar(ImGuiStyleVar idx, const ImVec2& val);
 
-        bool InputString(char const *label, std::string &string, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = nullptr, void* user_data = nullptr);
+        bool InputString(std::string_view label, std::string &string, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = nullptr, void* user_data = nullptr);
 
-        bool CheckButton(char const *label, bool *storedState = nullptr, ImVec2 const &size = ImVec2(0.0f, 0.0f));
-        bool CheckButton(char const *label, bool state, ImVec2 const &size = ImVec2(0.0f, 0.0f));
+        bool CheckButton(std::string_view label, bool *storedState = nullptr, ImVec2 const &size = ImVec2(0.0f, 0.0f));
+        bool CheckButton(std::string_view label, bool state, ImVec2 const &size = ImVec2(0.0f, 0.0f));
 
         template <typename TYPE>
-        bool RadioButton(char const *label, TYPE *storedState, TYPE buttonState, ImVec2 const &size)
+        bool RadioButton(std::string_view label, TYPE *storedState, TYPE buttonState, ImVec2 const &size)
         {
             bool isClicked = CheckButton(label, *storedState == buttonState, size);
             if (isClicked)
@@ -42,10 +42,10 @@ namespace Gek
             return isClicked;
         }
 
-        void TextFrame(char const *label, ImVec2 const &requestedSize = ImVec2(0.0f, 0.0f), ImGuiButtonFlags flags = 0, const ImU32 *frameColor = nullptr, const ImColor *textColor = nullptr);
+        void TextFrame(std::string_view label, ImVec2 const &requestedSize = ImVec2(0.0f, 0.0f), ImGuiButtonFlags flags = 0, const ImU32 *frameColor = nullptr, const ImColor *textColor = nullptr);
 
-        bool SliderAngle2(char const *label, float v_rad[2], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
-        bool SliderAngle3(char const *label, float v_rad[3], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
-        bool SliderAngle4(char const *label, float v_rad[4], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
+        bool SliderAngle2(std::string_view label, float v_rad[2], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
+        bool SliderAngle3(std::string_view label, float v_rad[3], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
+        bool SliderAngle4(std::string_view label, float v_rad[4], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
     }; // namespace UI
 }; // namespace Gek

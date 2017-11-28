@@ -532,14 +532,14 @@ namespace Gek
             {
                 if (dock->BeginTab("Visual", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
                 {
-                    auto showOptions = [&](char const *group, JSON::Object &settings) -> void
+                    auto showOptions = [&](std::string_view group, JSON::Object &settings) -> void
                     {
                         if (!settings.is_object())
                         {
                             return;
                         }
 
-                        if (ImGui::TreeNodeEx(group, ImGuiTreeNodeFlags_Framed))
+                        if (ImGui::TreeNodeEx(group.data(), ImGuiTreeNodeFlags_Framed))
                         {
                             for (auto &groupPair : settings.members())
                             {
@@ -819,7 +819,7 @@ namespace Gek
                     {
                         auto &style = ImGui::GetStyle();
                         std::vector<std::string> scenes;
-                        FileSystem::Find(getContext()->getRootFileName("data", "scenes"), [&scenes](FileSystem::Path const &filePath) -> bool
+                        getContext()->getRootFileName("data", "scenes").findFiles([&scenes](FileSystem::Path const &filePath) -> bool
                         {
                             if (filePath.isFile())
                             {

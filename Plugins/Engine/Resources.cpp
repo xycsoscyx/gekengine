@@ -579,14 +579,14 @@ namespace Gek
                 return (videoPipeline->getType() == Video::PipelineType::Compute ? dispatchValid : drawPrimitiveValid);
             }
 
-            Video::TexturePtr loadTextureData(FileSystem::Path const &filePath, std::string const &textureName, uint32_t flags)
+            Video::TexturePtr loadTextureData(FileSystem::Path const &filePath, std::string_view textureName, uint32_t flags)
             {
                 auto texture = videoDevice->loadTexture(filePath, flags);
                 texture->setName(textureName);
                 return texture;
             }
 
-            std::string getFullProgram(std::string const &name, std::string const &engineData)
+            std::string getFullProgram(std::string_view name, std::string_view engineData)
             {
                 auto programsPath(getContext()->getRootFileName("data", "programs"));
                 auto filePath(FileSystem::GetFileName(programsPath, name));
@@ -652,7 +652,7 @@ namespace Gek
                 }
                 else
                 {
-                    return engineData;
+                    return std::string(engineData);
                 }
             }
 
@@ -703,7 +703,7 @@ namespace Gek
             }
 
             template <typename CACHE>
-            void showVideoObjectMap(CACHE &cache, std::string const &name, std::function<void(typename CACHE::TypePtr &)> onObject)
+            void showVideoObjectMap(CACHE &cache, std::string_view name, std::function<void(typename CACHE::TypePtr &)> onObject)
             {
                 auto lowerName = String::GetLower(name);
                 if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_Framed))
@@ -731,7 +731,7 @@ namespace Gek
             }
 
             template <typename CACHE>
-            void showVideoResourceMap(CACHE &cache, std::string const &name, std::function<void(typename CACHE::TypePtr &)> onObject)
+            void showVideoResourceMap(CACHE &cache, std::string_view name, std::function<void(typename CACHE::TypePtr &)> onObject)
             {
                 if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_Framed))
                 {
@@ -801,13 +801,13 @@ namespace Gek
                 //showResourceMap(visualCache, "Materials"s);
             }
 
-            bool showResourceValue(char const *text, const char *label, std::string &value)
+            bool showResourceValue(std::string_view text, std::string_view label, std::string &value)
             {
                 ImGui::AlignFirstTextHeightToWidgets();
-                ImGui::Text(text);
+                ImGui::Text(text.data());
                 ImGui::SameLine();
                 ImGui::PushItemWidth(-1.0f);
-                bool changed = UI::InputString(label, value, ImGuiInputTextFlags_ReadOnly);
+                bool changed = UI::InputString(label.data(), value, ImGuiInputTextFlags_ReadOnly);
                 ImGui::PopItemWidth();
                 return changed;
             }
@@ -864,9 +864,9 @@ namespace Gek
                 });
             }
 
-            void showStencilState(char const *text, Video::DepthState::Description::StencilState const &stencilState)
+            void showStencilState(std::string_view text, Video::DepthState::Description::StencilState const &stencilState)
             {
-                if (ImGui::TreeNodeEx(text, ImGuiTreeNodeFlags_Framed))
+                if (ImGui::TreeNodeEx(text.data(), ImGuiTreeNodeFlags_Framed))
                 {
                     showResourceValue("failOperation", "##failOperation", Video::DepthState::GetOperation(stencilState.failOperation));
                     showResourceValue("depthFailOperation", "##depthFailOperation", Video::DepthState::GetOperation(stencilState.depthFailOperation));
@@ -955,7 +955,7 @@ namespace Gek
             }
 
             // Plugin::Resources
-            VisualHandle loadVisual(std::string const &visualName)
+            VisualHandle loadVisual(std::string_view visualName)
             {
                 auto load = [this, visualName](VisualHandle)->Plugin::VisualPtr
                 {
@@ -966,7 +966,7 @@ namespace Gek
                 return visualCache.getHandle(hash, std::move(load)).second;
             }
 
-            MaterialHandle loadMaterial(std::string const &materialName)
+            MaterialHandle loadMaterial(std::string_view materialName)
             {
                 auto load = [this, materialName](MaterialHandle handle)->Engine::MaterialPtr
                 {
@@ -977,7 +977,7 @@ namespace Gek
                 return materialCache.getHandle(hash, std::move(load)).second;
             }
 
-            ResourceHandle loadTexture(std::string const &textureName, uint32_t flags)
+            ResourceHandle loadTexture(std::string_view textureName, uint32_t flags)
             {
                 // iterate over formats in case the texture name has no extension
                 static const std::string formatList[] =
@@ -1019,7 +1019,7 @@ namespace Gek
                 return ResourceHandle();
             }
 
-            ResourceHandle createPattern(std::string const &pattern, JSON::Reference parameters)
+            ResourceHandle createPattern(std::string_view pattern, JSON::Reference parameters)
             {
                 auto lowerPattern = String::GetLower(pattern);
 
@@ -1144,7 +1144,7 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createTexture(std::string const &textureName, const Video::Texture::Description &description, uint32_t flags)
+            ResourceHandle createTexture(std::string_view textureName, const Video::Texture::Description &description, uint32_t flags)
             {
                 auto load = [this, textureName, description](ResourceHandle)->Video::TexturePtr
                 {
@@ -1169,7 +1169,7 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, uint32_t flags)
+            ResourceHandle createBuffer(std::string_view bufferName, const Video::Buffer::Description &description, uint32_t flags)
             {
                 assert(description.count > 0);
 
@@ -1196,7 +1196,7 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createBuffer(std::string const &bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData, uint32_t flags)
+            ResourceHandle createBuffer(std::string_view bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData, uint32_t flags)
             {
                 assert(description.count > 0);
                 assert(!staticData.empty());
@@ -1401,7 +1401,7 @@ namespace Gek
                 return ShaderHandle();
             }
 
-            ResourceHandle getResourceHandle(std::string const &resourceName) const
+            ResourceHandle getResourceHandle(std::string_view resourceName) const
             {
                 return dynamicCache.getHandle(GetHash(resourceName));
             }
@@ -1411,7 +1411,7 @@ namespace Gek
                 return shaderCache.getResource(handle);
             }
 
-            ShaderHandle const getShader(std::string const &shaderName, MaterialHandle material)
+            ShaderHandle const getShader(std::string_view shaderName, MaterialHandle material)
             {
                 std::unique_lock<std::recursive_mutex> lock(shaderMutex);
                 auto load = [this, shaderName](ShaderHandle) -> Engine::ShaderPtr
@@ -1429,7 +1429,7 @@ namespace Gek
                 return resource.second;
             }
 
-            Engine::Filter * const getFilter(std::string const &filterName)
+            Engine::Filter * const getFilter(std::string_view filterName)
             {
                 auto load = [this, filterName](ResourceHandle)->Engine::FilterPtr
                 {
@@ -1482,7 +1482,7 @@ namespace Gek
                 return dynamicCache.getResource(resourceHandle);
             }
 
-            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, std::string const &name, std::string const &entryFunction, std::string const &engineData)
+            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, std::string_view name, std::string_view entryFunction, std::string_view engineData)
             {
                 auto uncompiledProgram = getFullProgram(name, engineData);
 
@@ -1511,7 +1511,7 @@ namespace Gek
                 return compiledProgram;
             }
 
-            ProgramHandle loadProgram(Video::PipelineType pipelineType, std::string const &name, std::string const &entryFunction, std::string const &engineData)
+            ProgramHandle loadProgram(Video::PipelineType pipelineType, std::string_view name, std::string_view entryFunction, std::string_view engineData)
             {
                 auto load = [this, pipelineType, name, entryFunction, engineData](ProgramHandle)->Video::ObjectPtr
                 {

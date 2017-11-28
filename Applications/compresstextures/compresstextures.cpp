@@ -80,7 +80,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
     bool useDevice = false;
 	uint32_t flags = ::DirectX::TEX_COMPRESS_PARALLEL;
 	DXGI_FORMAT outputFormat = DXGI_FORMAT_UNKNOWN;
-	std::string textureName(String::GetLower(inputFilePath.withoutExtension().u8string()));
+	std::string textureName(String::GetLower(inputFilePath.withoutExtension().getString()));
     if (String::EndsWith(textureName, "basecolor") ||
         String::EndsWith(textureName, "base_color") ||
         String::EndsWith(textureName, "diffuse") ||
@@ -179,7 +179,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
         return;
     }
 
-	resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, outputFilePath.c_str());
+    resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, outputFilePath.getWindowsString().data());
 	if (FAILED(resultValue))
 	{
         LockedWrite{ std::cerr } << "Unable to save image";
@@ -211,18 +211,18 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	{
 		if (filePath.isDirectory())
 		{
-			FileSystem::Find(filePath, searchDirectory);
+			filePath.findFiles(searchDirectory);
 		}
 		else if (filePath.isFile() && filePath.getExtension() != ".dds")
 		{
-			compressTexture(dynamic_cast<Video::Debug::Device *>(device.get()), String::GetLower(filePath.u8string()));
+			compressTexture(dynamic_cast<Video::Debug::Device *>(device.get()), String::GetLower(filePath.getString()));
 		}
 
 		return true;
 	};
 
     CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
-	FileSystem::Find(FileSystem::GetFileName(rootPath, "Data", "Textures"), searchDirectory);
+	FileSystem::GetFileName(rootPath, "Data", "Textures").findFiles(searchDirectory);
 	CoUninitialize();
     return 0;
 }

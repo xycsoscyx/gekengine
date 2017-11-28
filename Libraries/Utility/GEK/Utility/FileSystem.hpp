@@ -17,86 +17,94 @@ namespace Gek
 {
 	namespace FileSystem
 	{
-		struct Path :
-			public std::experimental::filesystem::path
+		struct Path
 		{
-			Path(void);
-            Path(std::string const &path);
-            Path(std::wstring const &path);
+        private:
+            std::experimental::filesystem::path data;
+
+        private:
             Path(std::experimental::filesystem::path const &path);
+
+        public:
+			Path(void);
+            Path(std::string_view path);
+            Path(std::string const &path);
 			Path(Path const &path);
 
+            void operator = (std::string_view path);
             void operator = (std::string const &path);
-            void operator = (std::wstring const &path);
 			void operator = (Path const &path);
 
             Path &removeFileName(void);
             Path &removeExtension(void);
 
-			Path &replaceFileName(std::string const &fileName);
-            Path &replaceExtension(std::string const &extension);
+			Path &replaceFileName(std::string_view fileName);
+            Path &replaceExtension(std::string_view extension);
 
-			Path withExtension(std::string const &extension) const;
+			Path withExtension(std::string_view extension) const;
 			Path withoutExtension() const;
 
 			Path getParentPath(void) const;
 			std::string getFileName(void) const;
 			std::string getExtension(void) const;
+            std::string getString(void) const;
+            std::wstring getWindowsString(void) const;
+
+            void rename(Path const &name) const;
+            bool isNewerThan(Path const &path) const;
 
 			bool isFile(void) const;
+            size_t getFileSize(void) const;
+
 			bool isDirectory(void) const;
-			bool isNewerThan(Path const &path) const;
-		};
+            void createChain(void) const;
+            void findFiles(std::function<bool(Path const &filePath)> onFileFound) const;
+        };
+
+        struct File
+            : public Path
+        {
+        };
 
 		Path GetModuleFilePath(void);
 
-		inline std::string CombineFileName(std::string const &name)
+		inline std::string CombineFileName(std::string_view name)
 		{
-			return (char(std::experimental::filesystem::path::preferred_separator) + name);
+            return String::Format("%v%v", std::experimental::filesystem::path::preferred_separator, name);
 		}
 
 		template <typename... PARAMETERS>
-		std::string CombineFileName(std::string const &name, const PARAMETERS&... nameList)
+		std::string CombineFileName(std::string_view name, const PARAMETERS&... nameList)
 		{
 			return (CombineFileName(name) + CombineFileName(nameList...));
 		}
 
 		template <typename... PARAMETERS>
-		Path GetFileName(std::string const &rootDirectory, const PARAMETERS&... nameList)
-		{
-			return (rootDirectory + CombineFileName(nameList...));
-		}
-
-		template <typename... PARAMETERS>
 		Path GetFileName(Path const &rootDirectory, const PARAMETERS&... nameList)
 		{
-			return (rootDirectory.u8string() + CombineFileName(nameList...));
+			return (rootDirectory.getString() + CombineFileName(nameList...));
 		}
-
-		void MakeDirectoryChain(Path const &filePath);
-
-		void Find(Path const &rootDirectory, std::function<bool(Path const &filePath)> onFileFound);
 
 		template <typename CONTAINER>
 		CONTAINER Load(Path const &filePath, CONTAINER const &defaultValue = CONTAINER(), std::uintmax_t limitReadSize = 0)
 		{
-			if (std::experimental::filesystem::is_regular_file(filePath))
+			if (filePath.isFile())
 			{
 				CONTAINER buffer;
-                std::error_code errorCode;
-				auto size = std::experimental::filesystem::file_size(filePath, errorCode);
-                size = (errorCode ? 0 : (limitReadSize == 0 ? size : std::min(size, limitReadSize)));
+                auto fileSize = filePath.getFileSize();
+                auto size = (limitReadSize == 0 ? fileSize : std::min(fileSize, limitReadSize));
 				if (size > 0)
 				{
 					// Need to use fopen since STL methods break up the reads to multiple small calls
-					FILE *file = fopen(filePath.u8string().c_str(), "rb");
+                    FILE *file = nullptr;
+                    _wfopen_s(&file, filePath.getWindowsString().c_str(), L"rb");
 					if (file != nullptr)
 					{
 						buffer.resize(size);
-						auto read = fread(static_cast<void *>(&buffer.front()), size, 1, file);
+						auto numberOfSegmentsRead = fread(static_cast<void *>(&buffer.front()), size, 1, file);
 						fclose(file);
 
-						if (read == 1)
+						if (numberOfSegmentsRead == 1)
 						{
 							return buffer;
 						}
@@ -110,11 +118,13 @@ namespace Gek
 		template <typename CONTAINER>
 		void Save(Path const &filePath, CONTAINER const &buffer)
 		{
-			MakeDirectoryChain(filePath.getParentPath());
-			FILE *file = fopen(filePath.u8string().c_str(), "w+b");
-			if (file != nullptr)
+            filePath.getParentPath().createChain();
+            
+            FILE *file = nullptr;
+            _wfopen_s(&file, filePath.getWindowsString().c_str(), L"wb");
+            if (file != nullptr)
 			{
-				auto wrote = fwrite(buffer.data(), buffer.size(), 1, file);
+				auto numberOfSegmentsWritten = fwrite(buffer.data(), buffer.size(), 1, file);
 				fclose(file);
 			}
 		}
@@ -125,6 +135,6 @@ namespace std
 {
     inline std::string to_string(Gek::FileSystem::Path const &path)
     {
-        return path.u8string();
+        return path.getString();
     }
 };
