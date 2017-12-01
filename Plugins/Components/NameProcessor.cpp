@@ -91,7 +91,7 @@ namespace Gek
                 auto nameSearch = nameMap.find(nameComponent.name);
                 if (nameSearch != std::end(nameMap) && nameSearch->second != entity)
                 {
-                    nameComponent.name += String::Format("%v", ++uniqueIdentifier);
+                    nameComponent.name += String::Format("{}", ++uniqueIdentifier);
                 }
 
                 nameMap.insert(std::make_pair(nameComponent.name, entity));

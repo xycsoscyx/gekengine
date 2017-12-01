@@ -68,21 +68,10 @@ namespace Gek
 
 		Path GetModuleFilePath(void);
 
-		inline std::string CombineFileName(std::string_view name)
-		{
-            return String::Format("%v%v", std::experimental::filesystem::path::preferred_separator, name);
-		}
-
-		template <typename... PARAMETERS>
-		std::string CombineFileName(std::string_view name, const PARAMETERS&... nameList)
-		{
-			return (CombineFileName(name) + CombineFileName(nameList...));
-		}
-
 		template <typename... PARAMETERS>
 		Path GetFileName(Path const &rootDirectory, const PARAMETERS&... nameList)
 		{
-			return (rootDirectory.getString() + CombineFileName(nameList...));
+            return String::Join({ rootDirectory.getString(), nameList... }, static_cast<char>(std::experimental::filesystem::path::preferred_separator));
 		}
 
 		template <typename CONTAINER>
@@ -97,7 +86,7 @@ namespace Gek
 				{
 					// Need to use fopen since STL methods break up the reads to multiple small calls
                     FILE *file = nullptr;
-                    _wfopen_s(&file, filePath.getWindowsString().c_str(), L"rb");
+                    _wfopen_s(&file, filePath.getWindowsString().data(), L"rb");
 					if (file != nullptr)
 					{
 						buffer.resize(size);
@@ -121,7 +110,7 @@ namespace Gek
             filePath.getParentPath().createChain();
             
             FILE *file = nullptr;
-            _wfopen_s(&file, filePath.getWindowsString().c_str(), L"wb");
+            _wfopen_s(&file, filePath.getWindowsString().data(), L"wb");
             if (file != nullptr)
 			{
 				auto numberOfSegmentsWritten = fwrite(buffer.data(), buffer.size(), 1, file);

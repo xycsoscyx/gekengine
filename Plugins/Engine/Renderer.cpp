@@ -241,7 +241,7 @@ namespace Gek
                         lightBufferDescription.stride = sizeof(DATA);
                         lightBufferDescription.count = createSize;
                         lightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
-                        lightDataBuffer->setName(String::Format("render:%v", typeid(COMPONENT).name()));
+                        lightDataBuffer->setName(String::Format("render:{}", typeid(COMPONENT).name()));
                     }
                 }
 
@@ -735,7 +735,7 @@ namespace Gek
                     vertexBufferDescription.type = Video::Buffer::Type::Vertex;
                     vertexBufferDescription.flags = Video::Buffer::Flags::Mappable;
                     gui.vertexBuffer = videoDevice->createBuffer(vertexBufferDescription);
-                    gui.vertexBuffer->setName(String::Format("core:vertexBuffer:%v", gui.vertexBuffer.get()));
+                    gui.vertexBuffer->setName(String::Format("core:vertexBuffer:{}", gui.vertexBuffer.get()));
                 }
 
                 if (!gui.indexBuffer || gui.indexBuffer->getDescription().count < uint32_t(drawData->TotalIdxCount))
@@ -756,7 +756,7 @@ namespace Gek
                     };
 
                     gui.indexBuffer = videoDevice->createBuffer(vertexBufferDescription);
-                    gui.indexBuffer->setName(String::Format("core:vertexBuffer:%v", gui.indexBuffer.get()));
+                    gui.indexBuffer->setName(String::Format("core:vertexBuffer:{}", gui.indexBuffer.get()));
                 }
 
                 bool dataUploaded = false;
@@ -1133,7 +1133,7 @@ namespace Gek
                 Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                 while (cameraQueue.try_pop(currentCamera))
                 {
-                    GEK_GPU_PROFILE_TIMESTAMP(this, this->registerName(String::Format("Begin Camera: %v", currentCamera.name)));
+                    GEK_GPU_PROFILE_TIMESTAMP(this, this->registerName(String::Format("Begin Camera: {}", currentCamera.name)));
                     GEK_PROFILE_AUTO_SCOPE(core, "Render Camera");
 
                     clipDistance = (currentCamera.farClip - currentCamera.nearClip);
@@ -1318,7 +1318,7 @@ namespace Gek
                                         tileBufferDescription.format = Video::Format::R16_UINT;
                                         tileBufferDescription.count = lightIndexList.size();
                                         lightIndexBuffer = videoDevice->createBuffer(tileBufferDescription);
-                                        lightIndexBuffer->setName(String::Format("renderer:lightIndexBuffer:%v", lightIndexBuffer.get()));
+                                        lightIndexBuffer->setName(String::Format("renderer:lightIndexBuffer:{}", lightIndexBuffer.get()));
                                     }
 
                                     uint16_t *lightIndexData = nullptr;
@@ -1397,7 +1397,7 @@ namespace Gek
                             {
                                 auto &shader = shaderDrawCall.shader;
                                 GEK_PROFILE_AUTO_SCOPE(core, "Render Shader");
-                                GEK_GPU_PROFILE_TIMESTAMP(this, this->registerName(String::Format("Begin Shader: %v", shader->getName())));
+                                GEK_GPU_PROFILE_TIMESTAMP(this, this->registerName(String::Format("Begin Shader: {}", shader->getName())));
 
                                 finalOutput = shader->getOutput();
 
@@ -1442,7 +1442,7 @@ namespace Gek
                                     };
 
                                     pass->clear();
-                                    GEK_GPU_PROFILE_TIMESTAMP(this, this->registerName(String::Format("%v##%v", pass->getName(), shader->getName())));
+                                    GEK_GPU_PROFILE_TIMESTAMP(this, this->registerName(String::Format("{}##{}", pass->getName(), shader->getName())));
                                 }
                             }
                         }
@@ -1485,7 +1485,7 @@ namespace Gek
                         auto const filter = resources->getFilter(filterName);
                         if (filter)
                         {
-                            GEK_GPU_PROFILE_TIMESTAMP(this, this->registerName(String::Format("Begin Filter: %v", filter->getName())));
+                            GEK_GPU_PROFILE_TIMESTAMP(this, this->registerName(String::Format("Begin Filter: {}", filter->getName())));
                             for (auto pass = filter->begin(videoContext, screenHandle, ResourceHandle()); pass; pass = pass->next())
                             {
                                 GEK_PROFILE_AUTO_SCOPE(core, "Render Pass");
@@ -1500,7 +1500,7 @@ namespace Gek
                                 };
 
                                 pass->clear();
-                                GEK_GPU_PROFILE_TIMESTAMP(this, this->registerName(String::Format("%v##%v", pass->getName(), filter->getName())));
+                                GEK_GPU_PROFILE_TIMESTAMP(this, this->registerName(String::Format("{}##{}", pass->getName(), filter->getName())));
                             }
                         }
                     }

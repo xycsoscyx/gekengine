@@ -109,7 +109,7 @@ namespace Gek
                 for (auto const &displayMode : displayModeList)
                 {
                     auto currentDisplayMode = displayModeStringList.size();
-                    std::string displayModeString(String::Format("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
+                    std::string displayModeString(String::Format("{}x{}, {}hz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
                     switch (displayMode.aspectRatio)
                     {
                     case Video::DisplayMode::AspectRatio::_4x3:
@@ -516,7 +516,7 @@ namespace Gek
                     {
                         Core *core = static_cast<Core *>(data);
                         auto &mode = core->displayModeStringList[index];
-                        (*text) = mode.c_str();
+                        (*text) = mode.data();
                         return true;
                     }, this, displayModeStringList.size(), 10);
 
@@ -550,7 +550,7 @@ namespace Gek
                                     continue;
                                 }
 
-                                if (ImGui::TreeNodeEx(groupName.c_str(), ImGuiTreeNodeFlags_Framed))
+                                if (ImGui::TreeNodeEx(groupName.data(), ImGuiTreeNodeFlags_Framed))
                                 {
                                     for (auto &optionPair : groupValues.members())
                                     {
@@ -558,9 +558,9 @@ namespace Gek
                                         auto &optionValue = optionPair.value();
                                         JSON::Reference option(optionValue);
 
-                                        auto label(String::Format("##%v%v", groupName, optionName));
+                                        auto label(String::Format("##{}{}", groupName, optionName));
 
-                                        ImGui::Text(optionName.c_str());
+                                        ImGui::Text(optionName.data());
                                         ImGui::SameLine();
                                         ImGui::PushItemWidth(-1.0f);
                                         if (optionValue.is_object())
@@ -594,12 +594,12 @@ namespace Gek
                                                     selection = selectionNode.convert(0);
                                                 }
 
-                                                if (ImGui::Combo(label.c_str(), &selection, [](void *userData, int index, char const **outputText) -> bool
+                                                if (ImGui::Combo(label.data(), &selection, [](void *userData, int index, char const **outputText) -> bool
                                                 {
                                                     auto &optionList = *(std::vector<std::string> *)userData;
                                                     if (index >= 0 && index < optionList.size())
                                                     {
-                                                        *outputText = optionList[index].c_str();
+                                                        *outputText = optionList[index].data();
                                                         return true;
                                                     }
 
@@ -619,7 +619,7 @@ namespace Gek
                                                 [&](void) -> void
                                                 {
                                                     float data = JSON::Reference(optionValue[0]).convert(0.0f);
-                                                    if (ImGui::InputFloat(label.c_str(), &data))
+                                                    if (ImGui::InputFloat(label.data(), &data))
                                                     {
                                                         optionValue = data;
                                                         changedVisualOptions = true;
@@ -633,7 +633,7 @@ namespace Gek
                                                     Math::Float2 data(
                                                         JSON::Reference(optionValue[0]).convert(0.0f),
                                                         JSON::Reference(optionValue[1]).convert(0.0f));
-                                                    if (ImGui::InputFloat2(label.c_str(), data.data))
+                                                    if (ImGui::InputFloat2(label.data(), data.data))
                                                     {
                                                         optionValue = JSON::Array({ data.x, data.y });
                                                         changedVisualOptions = true;
@@ -648,7 +648,7 @@ namespace Gek
                                                         JSON::Reference(optionValue[0]).convert(0.0f),
                                                         JSON::Reference(optionValue[1]).convert(0.0f),
                                                         JSON::Reference(optionValue[2]).convert(0.0f));
-                                                    if (ImGui::InputFloat3(label.c_str(), data.data))
+                                                    if (ImGui::InputFloat3(label.data(), data.data))
                                                     {
                                                         optionValue = JSON::Array({ data.x, data.y, data.z });
                                                         changedVisualOptions = true;
@@ -664,7 +664,7 @@ namespace Gek
                                                         JSON::Reference(optionValue[1]).convert(0.0f),
                                                         JSON::Reference(optionValue[2]).convert(0.0f),
                                                         JSON::Reference(optionValue[3]).convert(0.0f));
-                                                    if (ImGui::InputFloat4(label.c_str(), data.data))
+                                                    if (ImGui::InputFloat4(label.data(), data.data))
                                                     {
                                                         optionValue = JSON::Array({ data.x, data.y, data.z, data.w });
                                                         changedVisualOptions = true;
@@ -678,7 +678,7 @@ namespace Gek
                                             if (optionValue.is_bool())
                                             {
                                                 bool data = option.convert(false);
-                                                if (ImGui::Checkbox(label.c_str(), &data))
+                                                if (ImGui::Checkbox(label.data(), &data))
                                                 {
                                                     optionValue = data;
                                                     changedVisualOptions = true;
@@ -687,7 +687,7 @@ namespace Gek
                                             else if (optionValue.is_integer())
                                             {
                                                 int data = option.convert(0);
-                                                if (ImGui::InputInt(label.c_str(), &data))
+                                                if (ImGui::InputInt(label.data(), &data))
                                                 {
                                                     optionValue = data;
                                                     changedVisualOptions = true;
@@ -696,7 +696,7 @@ namespace Gek
                                             else
                                             {
                                                 float data = option.convert(0.0f);
-                                                if (ImGui::InputFloat(label.c_str(), &data))
+                                                if (ImGui::InputFloat(label.data(), &data))
                                                 {
                                                     optionValue = data;
                                                     changedVisualOptions = true;
@@ -803,7 +803,7 @@ namespace Gek
                             setFullScreen(previous.fullScreen);
                         }
 
-                        ImGui::Text(String::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)).c_str());
+                        ImGui::Text(String::Format("(Revert in {} seconds)", uint32_t(modeChangeTimer)).data());
                     }
 
                     ImGui::End();
@@ -839,7 +839,7 @@ namespace Gek
                             ImGui::ListBox("##scenes", &currentSelectedScene, [](void *data, int index, const char **output) -> bool
                             {
                                 auto scenes = (std::vector<std::string> *)data;
-                                (*output) = scenes->at(index).c_str();
+                                (*output) = scenes->at(index).data();
                                 return true;
                             }, (void *)&scenes, scenes.size(), 10);
                         }

@@ -103,7 +103,7 @@ namespace Gek
         std::string semantic(getFormatSemantic(format));
         if (count > 1)
         {
-            semantic += String::Format("x%v", count);
+            semantic += String::Format("x{}", count);
         }
 
         return semantic;

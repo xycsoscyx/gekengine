@@ -461,7 +461,7 @@ namespace Gek
 
         static const auto FormatNameMap = flip_map(FormatTypeMap);
 
-        Format GetFormat(std::string const &string)
+        Format GetFormat(std::string_view string)
         {
             auto result = FormatTypeMap.find(String::GetUpper(string));
             return (result == std::end(FormatTypeMap) ? Format::Unknown : result->second);

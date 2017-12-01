@@ -104,7 +104,7 @@ void GetNodeMeshes(const Parameters &parameters, const aiScene *scene, const aiN
                         }
                         else
                         {
-                            LockedWrite{ std::cerr } << String::Format("! (Mesh %v) Invalid Face Found: %v (%v vertices)", meshIndex, faceIndex, face.mNumIndices);
+                            LockedWrite{ std::cerr } << "! (Mesh " << meshIndex << ") Invalid Face Found: " << faceIndex << " (" << face.mNumIndices << " vertices)";
                         }
                     }
 
@@ -194,7 +194,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	aiLogStream logStream;
 	logStream.callback = [](char const *message, char *user) -> void
 	{
-		LockedWrite{ std::cerr } << String::Format("Assimp: %v", message);
+		LockedWrite{ std::cerr } << "Assimp: " << message;
 	};
 
 	logStream.user = nullptr;
@@ -330,16 +330,16 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         auto materialAlebedoSearch = diffuseToMaterialMap.find(albedoName);
         if (materialAlebedoSearch == std::end(diffuseToMaterialMap))
         {
-            LockedWrite{ std::cerr } << String::Format("! Unable to find material for albedo: %v", albedoName.c_str());
+            LockedWrite{ std::cerr } << "! Unable to find material for albedo: " << albedoName;
             return diffuse;
         }
 
         return materialAlebedoSearch->second;
     };
 
-	LockedWrite{ std::cout } << String::Format("> Num. Meshes: %v", model.meshList.size());
-    LockedWrite{ std::cout } << String::Format("< Size: Minimum[%v, %v, %v]", model.boundingBox.minimum.x, model.boundingBox.minimum.y, model.boundingBox.minimum.z);
-    LockedWrite{ std::cout } << String::Format("< Size: Maximum[%v, %v, %v]", model.boundingBox.maximum.x, model.boundingBox.maximum.y, model.boundingBox.maximum.z);
+	LockedWrite{ std::cout } << "> Num. Meshes: " << model.meshList.size();
+    LockedWrite{ std::cout } << "< Size: Minimum[" << model.boundingBox.minimum.x << ", " << model.boundingBox.minimum.y << ", " << model.boundingBox.minimum.z << "]";
+    LockedWrite{ std::cout } << "< Size: Maximum[" << model.boundingBox.maximum.x << ", " << model.boundingBox.maximum.y << ", " << model.boundingBox.maximum.z << "]";
 
     NewtonWorld *newtonWorld = NewtonCreate();
     NewtonCollision *newtonCollision = NewtonCreateTreeCollision(newtonWorld, 0);
@@ -358,9 +358,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     NewtonTreeCollisionBeginBuild(newtonCollision);
     for (auto const &mesh : model.meshList)
     {
-		LockedWrite{ std::cout } << String::Format("-  %v", mesh.material);
-        LockedWrite{ std::cout } << String::Format("    %v vertices", mesh.vertexList.size());
-        LockedWrite{ std::cout } << String::Format("    %v indices", mesh.indexList.size());
+		LockedWrite{ std::cout } << "-   " << mesh.material;
+        LockedWrite{ std::cout } << "    " << mesh.vertexList.size() << "  vertices";
+        LockedWrite{ std::cout } << "    " << mesh.indexList.size() << " indices";
 
         auto materialSearch = materialList.find(mesh.material);
         auto materialIndex = std::distance(std::begin(materialList), materialSearch);
@@ -395,7 +395,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     for (auto const &material : materialList)
     {
         Header::Material materialHeader;
-        std::strncpy(materialHeader.name, material.c_str(), 63);
+        std::strncpy(materialHeader.name, material.data(), 63);
         fwrite(&materialHeader, sizeof(Header::Material), 1, file);
     }
 

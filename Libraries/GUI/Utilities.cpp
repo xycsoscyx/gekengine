@@ -52,7 +52,7 @@ namespace Gek
         bool InputString(std::string_view label, std::string &string, ImGuiInputTextFlags flags, ImGuiTextEditCallback callback, void *userData)
         {
             char text[256];
-            strcpy(text, string.c_str());
+            strcpy(text, string.data());
             bool isChanged = ImGui::InputText(label.data(), text, 255, flags, callback, userData);
             if (isChanged)
             {

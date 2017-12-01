@@ -15,21 +15,21 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 {
 	if (!inputFilePath.isFile())
 	{
-        LockedWrite{ std::cerr } << String::Format("Input file not found: %v", inputFilePath);
+        LockedWrite{ std::cerr } << "Input file not found: " << inputFilePath.getString();
         return;
 	}
 
     auto outputFilePath(inputFilePath.withExtension(".dds"));
 	if (outputFilePath.isFile() && outputFilePath.isNewerThan(inputFilePath))
 	{
-		LockedWrite{ std::cerr } << String::Format("Input file hasn't changed since last compression: %v", inputFilePath);
+		LockedWrite{ std::cerr } << "Input file hasn't changed since last compression: " << inputFilePath.getString();
         return;
     }
 
     std::string extension(String::GetLower(inputFilePath.getExtension()));
     if (extension == ".dds")
     {
-        LockedWrite{ std::cerr } << String::Format("Input file is alrady compressed: %v", inputFilePath);
+        LockedWrite{ std::cerr } << "Input file is alrady compressed: " << inputFilePath.getString();
         return;
     }
 
@@ -62,7 +62,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 */
 	if (!load)
 	{
-        LockedWrite{ std::cerr } << String::Format("Unknown file type of %v for input: %v", extension, inputFilePath);
+        LockedWrite{ std::cerr } << "Unknown file type of " << extension << " for input: " << inputFilePath.getString();
         return;
     }
 
@@ -73,7 +73,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
     HRESULT resultValue = load(buffer, image);
     if (FAILED(resultValue))
     {
-        LockedWrite{ std::cerr } << String::Format("Unable to load input file: %v", inputFilePath);
+        LockedWrite{ std::cerr } << "Unable to load input file: " << inputFilePath.getString();
         return;
     }
 
@@ -126,12 +126,12 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 	}
 	else
 	{
-		LockedWrite{ std::cerr } << String::Format("Unable to determine texture material type: %v", textureName);
+		LockedWrite{ std::cerr } << "Unable to determine texture material type: " << textureName;
         return;
     }
 
-    LockedWrite{ std::cout } << String::Format("Compressing: -> %v", inputFilePath);
-    LockedWrite{ std::cout } << String::Format("             <- %v", outputFilePath);
+    LockedWrite{ std::cout } << "Compressing: -> " << inputFilePath.getString();
+    LockedWrite{ std::cout } << "             <- " << outputFilePath.getString();
     switch (outputFormat)
     {
     case DXGI_FORMAT_BC7_UNORM_SRGB:
@@ -151,7 +151,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
         break;
     };
 
-    LockedWrite{ std::cout } << String::Format("             %vx%v", image.GetMetadata().width, image.GetMetadata().height);
+    LockedWrite{ std::cout } << "             " << image.GetMetadata().width << "x" << image.GetMetadata().height;
 
 	::DirectX::ScratchImage mipMapChain;
 	resultValue = ::DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), ::DirectX::TEX_FILTER_TRIANGLE, 0, mipMapChain);

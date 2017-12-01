@@ -151,7 +151,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	aiLogStream logStream;
 	logStream.callback = [](char const *message, char *user) -> void
 	{
-		LockedWrite{ std::cerr } << String::Format("Assimp: %v", message);
+		LockedWrite{ std::cerr } << "Assimp: " << message;
 	};
 
 	logStream.user = nullptr;
@@ -222,9 +222,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         return -__LINE__;
     }
 
-	LockedWrite{ std::cout } << String::Format("> Num. Points: %v", pointList.size());
-    LockedWrite{ std::cout } << String::Format("< Size: Minimum[%v, %v, %v]", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
-    LockedWrite{ std::cout } << String::Format("< Size: Maximum[%v, %v, %v]", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
+	LockedWrite{ std::cout } << "> Num. Points: " << pointList.size();
+    LockedWrite{ std::cout } << "< Size: Minimum[" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << "]";
+    LockedWrite{ std::cout } << "< Size: Maximum[" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << "]";
 
     NewtonWorld *newtonWorld = NewtonCreate();
     NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointList.size(), pointList.data()->data, sizeof(Math::Float3), 0.025f, 0, Math::Float4x4::Identity.data);
@@ -235,7 +235,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
 
     FILE *file = nullptr;
-    _wfopen_s(&file, fileNameOutput.getWindowsString().c_str(), L"wb");
+    _wfopen_s(&file, fileNameOutput.getWindowsString().data(), L"wb");
     if (file == nullptr)
     {
         LockedWrite{ std::cerr } << "Unable to create output file";

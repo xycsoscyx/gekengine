@@ -279,7 +279,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     {
         std::string trimmedMessage(message);
         trimmedMessage = trimmedMessage.substr(0, trimmedMessage.size() - 1);
-        LockedWrite{ std::cerr } << String::Format("Assimp: %v", trimmedMessage);
+        LockedWrite{ std::cerr } << "Assimp: " << trimmedMessage;
     };
 
     logStream.user = nullptr;
@@ -413,7 +413,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         return -__LINE__;
     }
 
-	LockedWrite{ std::cout } << String::Format("> Num. Models: %v", modelList.size());
+	LockedWrite{ std::cout } << "> Num. Models: " << modelList.size();
 
     auto findMaterialForDiffuse = [&](std::string const &diffuse) -> std::string
     {
@@ -443,7 +443,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         auto materialAlebedoSearch = diffuseToMaterialMap.find(albedoName);
         if (materialAlebedoSearch == std::end(diffuseToMaterialMap))
         {
-            LockedWrite{ std::cerr } << String::Format("! Unable to find material for albedo: %v", albedoName.c_str());
+            LockedWrite{ std::cerr } << "! Unable to find material for albedo: " << albedoName;
             return diffuse;
         }
 
@@ -460,10 +460,10 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
         auto outputParentPath(FileSystem::GetFileName(dataPath, "models", sourceName.withoutExtension().getString()));
         auto outputPath(FileSystem::GetFileName(outputParentPath, modelName).withExtension(".gek"));
-        LockedWrite{ std::cout } << String::Format(">     %v: %v", model.name, outputPath.getString());
-        LockedWrite{ std::cout } << String::Format("      Num. Meshes: %v", model.meshList.size());
-        LockedWrite{ std::cout } << String::Format("      Size: Minimum[%v, %v, %v]", model.boundingBox.minimum.x, model.boundingBox.minimum.y, model.boundingBox.minimum.z);
-        LockedWrite{ std::cout } << String::Format("      Size: Maximum[%v, %v, %v]", model.boundingBox.maximum.x, model.boundingBox.maximum.y, model.boundingBox.maximum.z);
+        LockedWrite{ std::cout } << ">     " << model.name << ": " << outputPath.getString();
+        LockedWrite{ std::cout } << "      Num. Meshes: " << model.meshList.size();
+        LockedWrite{ std::cout } << "      Size: Minimum[" << model.boundingBox.minimum.x << ", " << model.boundingBox.minimum.y << ", " << model.boundingBox.minimum.z << "]";
+        LockedWrite{ std::cout } << "      Size: Maximum[" << model.boundingBox.maximum.x << ", " << model.boundingBox.maximum.y << ", " << model.boundingBox.maximum.z << "]";
         for (auto &mesh : model.meshList)
         {
             mesh.material = findMaterialForDiffuse(mesh.diffuse);
@@ -484,12 +484,12 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
         for (auto &mesh : model.meshList)
         {
-            LockedWrite{ std::cout } << String::Format("-    Mesh: %v", mesh.material);
-            LockedWrite{ std::cout } << String::Format("        Num. Vertices: %v", mesh.pointList.size());
-            LockedWrite{ std::cout } << String::Format("        Num. Faces: %v", mesh.faceList.size());
+            LockedWrite{ std::cout } << "-    Mesh: " << mesh.material;
+            LockedWrite{ std::cout } << "        Num. Vertices: " << mesh.pointList.size();
+            LockedWrite{ std::cout } << "        Num. Faces: " << mesh.faceList.size();
 
             Header::Mesh meshHeader;
-            std::strncpy(meshHeader.material, mesh.material.c_str(), 63);
+            std::strncpy(meshHeader.material, mesh.material.data(), 63);
             meshHeader.vertexCount = mesh.pointList.size();
             meshHeader.faceCount = mesh.faceList.size();
             fwrite(&meshHeader, sizeof(Header::Mesh), 1, file);

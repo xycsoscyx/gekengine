@@ -23,7 +23,7 @@ namespace std
 {
     inline std::string to_string(std::string const &string)
     {
-        return std::string(string);
+        return string;
     }
 
     inline std::string to_string(std::string_view string)
@@ -57,7 +57,7 @@ namespace Gek
             (*this) << std::endl;
             if (IsDebuggerPresent())
             {
-                OutputDebugStringA(str().c_str());
+                OutputDebugStringA(str().data());
             }
             else
             {
@@ -80,7 +80,7 @@ namespace Gek
 
         bool EndsWith(std::string_view value, std::string_view ending);
 
-		std::string Join(std::vector<std::string> const &list, char delimiter, bool initialDelimiter = false);
+        std::string Join(std::initializer_list<std::string_view> list, char delimiter, bool initialDelimiter = false);
 
         std::vector<std::string> Split(std::string_view string, char delimiter, bool clearSpaces = true);
 
@@ -96,22 +96,22 @@ namespace Gek
             while (formatting && *formatting)
             {
                 char currentCharacter = *formatting++;
-                if (currentCharacter == '%' && formatting && *formatting)
+                if (currentCharacter == '{' && formatting && *formatting)
                 {
                     char nextCharacter = *formatting++;
-                    if (nextCharacter == '%')
+                    if (nextCharacter == '{')
                     {
-                        // %%
+                        // {{ escapes to {
                         result.append(1U, nextCharacter);
                     }
-                    else if (nextCharacter == 'v')
+                    else if (nextCharacter == '}')
                     {
-                        // %v
+                        // {}, print next argument
                         return (result + std::to_string(value) + Format(formatting, arguments...));
                     }
                     else
                     {
-                        // %(other)
+                        // {X, just print both
 						result.append(1U, currentCharacter);
 						result.append(1U, nextCharacter);
                     }

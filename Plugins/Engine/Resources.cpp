@@ -706,7 +706,7 @@ namespace Gek
             void showVideoObjectMap(CACHE &cache, std::string_view name, std::function<void(typename CACHE::TypePtr &)> onObject)
             {
                 auto lowerName = String::GetLower(name);
-                if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_Framed))
+                if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_Framed))
                 {
                     auto &resourceMap = cache.getResourceMap();
                     for (auto &resourcePair : resourceMap)
@@ -716,10 +716,10 @@ namespace Gek
                         std::string nodeName(object->getName());
                         if (nodeName.empty())
                         {
-                            nodeName = String::Format("%v_%v", lowerName, static_cast<uint64_t>(handle.identifier));
+                            nodeName = String::Format("{}_{}", lowerName, static_cast<uint64_t>(handle.identifier));
                         }
 
-                        if (ImGui::TreeNodeEx(nodeName.c_str(), ImGuiTreeNodeFlags_Framed))
+                        if (ImGui::TreeNodeEx(nodeName.data(), ImGuiTreeNodeFlags_Framed))
                         {
                             onObject(object);
                             ImGui::TreePop();
@@ -733,7 +733,7 @@ namespace Gek
             template <typename CACHE>
             void showVideoResourceMap(CACHE &cache, std::string_view name, std::function<void(typename CACHE::TypePtr &)> onObject)
             {
-                if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_Framed))
+                if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_Framed))
                 {
                     auto lowerName = String::GetLower(name);
                     std::unordered_map<std::type_index, std::vector<CACHE::ResourceMap::value_type>> typeDataMap;
@@ -756,10 +756,10 @@ namespace Gek
                                 std::string nodeName(object->getName());
                                 if (nodeName.empty())
                                 {
-                                    nodeName = String::Format("%v_%v", lowerName, static_cast<uint64_t>(handle.identifier));
+                                    nodeName = String::Format("{}_{}", lowerName, static_cast<uint64_t>(handle.identifier));
                                 }
 
-                                if (ImGui::TreeNodeEx(nodeName.c_str(), ImGuiTreeNodeFlags_Framed))
+                                if (ImGui::TreeNodeEx(nodeName.data(), ImGuiTreeNodeFlags_Framed))
                                 {
                                     onObject(object);
                                     ImGui::TreePop();
@@ -1126,7 +1126,7 @@ namespace Gek
                 }
 
                 description.flags = Video::Texture::Flags::Resource;
-                std::string name(String::Format("%v:%v", pattern, parameters.convert(String::Empty)));
+                std::string name(String::Format("{}:{}", pattern, parameters.convert(String::Empty)));
                 auto load = [this, name, description, data = move(data)](ResourceHandle) mutable -> Video::TexturePtr
                 {
                     auto texture = videoDevice->createTexture(description, data.data());
@@ -1487,7 +1487,7 @@ namespace Gek
                 auto uncompiledProgram = getFullProgram(name, engineData);
 
                 auto hash = GetHash(uncompiledProgram);
-                auto cacheExtension = String::Format(".%v.bin", hash);
+                auto cacheExtension = String::Format(".{}.bin", hash);
                 auto cachePath(getContext()->getRootFileName("data", "cache", name).withExtension(cacheExtension));
 
 				std::vector<uint8_t> compiledProgram;
@@ -1500,7 +1500,7 @@ namespace Gek
                 if (compiledProgram.empty())
                 {
 #ifdef _DEBUG
-					auto debugExtension = String::Format(".%v.hlsl", hash);
+					auto debugExtension = String::Format(".{}.hlsl", hash);
 					auto debugPath(getContext()->getRootFileName("data", "cache", name).withExtension(debugExtension));
 					FileSystem::Save(debugPath, uncompiledProgram);
 #endif
@@ -1517,7 +1517,7 @@ namespace Gek
                 {
                     auto compiledProgram = compileProgram(pipelineType, name, entryFunction, engineData);
                     auto program = videoDevice->createProgram(pipelineType, compiledProgram.data(), compiledProgram.size());
-                    program->setName(String::Format("%v:%v", name, entryFunction));
+                    program->setName(String::Format("{}:{}", name, entryFunction));
                     return program;
                 };
 

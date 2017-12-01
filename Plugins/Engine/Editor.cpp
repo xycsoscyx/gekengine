@@ -358,7 +358,7 @@ namespace Gek
 
                     ImGui::PopStyleVar();
                     ImGui::SameLine();
-                    UI::TextFrame(String::Format("Population: %v", entityCount).c_str(), ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f));
+                    UI::TextFrame(String::Format("Population: {}", entityCount), ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f));
                     if (ImGui::BeginChildFrame(665, ImVec2(-1.0f, -1.0f)))
                     {
                         ImGuiListClipper clipper(entityCount);
@@ -377,7 +377,7 @@ namespace Gek
                                 }
                                 else
                                 {
-                                    name = String::Format("entity_%v", entityIndex);
+                                    name = String::Format("entity_{}", entityIndex);
                                 }
 
                                 ImGui::PushID(entityIndex);
@@ -460,7 +460,7 @@ namespace Gek
                                 ImGui::PopID();
                                 ImGui::SameLine();
                                 ImGui::SetNextTreeNodeOpen(selectedEntity == entity);
-                                if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_Framed))
+                                if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_Framed))
                                 {
                                     selectedEntity = entity;
                                     auto editorEntity = dynamic_cast<Edit::Entity *>(entity);
@@ -507,7 +507,7 @@ namespace Gek
                                                 ImGui::PopStyleVar();
                                                 ImGui::PopID();
                                                 ImGui::SameLine();
-                                                if (ImGui::TreeNodeEx(component->getName().c_str(), ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
+                                                if (ImGui::TreeNodeEx(component->getName().data(), ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
                                                 {
                                                     if (component->onUserInterface(ImGui::GetCurrentContext(), entity, componentData))
                                                     {

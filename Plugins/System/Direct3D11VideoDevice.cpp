@@ -631,7 +631,7 @@ namespace Gek
             {
                 if (object)
                 {
-                    object->SetPrivateData(WKPDID_D3DDebugObjectName, UINT(name.size()), name.c_str());
+                    object->SetPrivateData(WKPDID_D3DDebugObjectName, UINT(name.size()), name.data());
                 }
             }
 

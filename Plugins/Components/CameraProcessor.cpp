@@ -129,7 +129,7 @@ namespace Gek
                     description.width = backBuffer->getDescription().width;
                     description.height = backBuffer->getDescription().height;
                     description.flags = Video::Texture::Flags::RenderTarget | Video::Texture::Flags::Resource;
-                    data.target = resources->createTexture(String::Format("camera:%v", cameraComponent.target), description);
+                    data.target = resources->createTexture(String::Format("camera:{}", cameraComponent.target), description);
                 }
             });
         }
@@ -189,7 +189,7 @@ namespace Gek
                     }
                     else
                     {
-                        name = String::Format("camera_%v", *reinterpret_cast<int *>(entity));
+                        name = String::Format("camera_{}", *reinterpret_cast<int *>(entity));
                     }
 
                     auto viewMatrix(transformComponent.getMatrix().getInverse());

@@ -42,15 +42,15 @@ namespace Gek
                     std::string systemType(String::GetLower(elementNode.get("system").convert(String::Empty)));
                     if (systemType == "instanceindex")
                     {
-                        inputVertexData += String::Format("    uint %v : SV_InstanceId;\r\n", elementName);
+                        inputVertexData += String::Format("    uint {} : SV_InstanceId;\r\n", elementName);
                     }
                     else if (systemType == "vertexindex")
                     {
-                        inputVertexData += String::Format("    uint %v : SV_VertexId;\r\n", elementName);
+                        inputVertexData += String::Format("    uint {} : SV_VertexId;\r\n", elementName);
                     }
                     else if (systemType == "isfrontfacing")
                     {
-                        inputVertexData += String::Format("    uint %v : SV_IsFrontFace;\r\n", elementName);
+                        inputVertexData += String::Format("    uint {} : SV_IsFrontFace;\r\n", elementName);
                     }
                     else
                     {
@@ -64,7 +64,7 @@ namespace Gek
                         auto semanticIndex = inputIndexList[static_cast<uint8_t>(element.semantic)];
                         inputIndexList[static_cast<uint8_t>(element.semantic)] += count;
 
-                        inputVertexData += String::Format("    %v %v : %v%v;\r\n", getFormatSemantic(element.format, count), elementName, videoDevice->getSemanticMoniker(element.semantic), semanticIndex);
+                        inputVertexData += String::Format("    {} {} : {}{};\r\n", getFormatSemantic(element.format, count), elementName, videoDevice->getSemanticMoniker(element.semantic), semanticIndex);
                         while (count-- > 0)
                         {
                             elementList.push_back(element);
@@ -83,20 +83,20 @@ namespace Gek
                     uint32_t count = elementNode.get("count").convert(1);
                     auto semanticIndex = outputIndexList[static_cast<uint8_t>(semantic)];
                     outputIndexList[static_cast<uint8_t>(semantic)] += count;
-                    outputVertexData += String::Format("    %v %v : %v%v;\r\n", getFormatSemantic(format, count), elementName, videoDevice->getSemanticMoniker(semantic), semanticIndex);
+                    outputVertexData += String::Format("    {} {} : {}{};\r\n", getFormatSemantic(format, count), elementName, videoDevice->getSemanticMoniker(semantic), semanticIndex);
 				}
 
 				std::string engineData;
 				engineData += String::Format(
 					"struct InputVertex\r\n" \
 					"{\r\n" \
-					"%v" \
+					"{}" \
 					"};\r\n" \
 					"\r\n" \
 					"struct OutputVertex\r\n" \
 					"{\r\n" \
 					"    float4 projected : SV_POSITION;\r\n" \
-					"%v" \
+					"{}" \
 					"};\r\n" \
 					"\r\n" \
 					"OutputVertex getProjection(OutputVertex outputVertex)\r\n" \
@@ -111,7 +111,7 @@ namespace Gek
                 std::string vertexFileName(FileSystem::GetFileName(visualName, vertexProgram).withExtension(".hlsl").getString());
                 auto compiledVertexProgram = resources->compileProgram(Video::PipelineType::Vertex, vertexFileName, vertexEntry, engineData);
 				this->vertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiledVertexProgram.data(), compiledVertexProgram.size());
-                this->vertexProgram->setName(String::Format("%v:%v", vertexProgram, vertexEntry));
+                this->vertexProgram->setName(String::Format("{}:{}", vertexProgram, vertexEntry));
                 if (!elementList.empty())
 				{
 					inputLayout = videoDevice->createInputLayout(elementList, compiledVertexProgram.data(), compiledVertexProgram.size());
@@ -125,7 +125,7 @@ namespace Gek
                     std::string geometryFileName(FileSystem::GetFileName(visualName, geometryProgram).withExtension(".hlsl").getString());
                     auto compiledGeometryProgram = resources->compileProgram(Video::PipelineType::Geometry, geometryFileName, geometryEntry);
                     this->geometryProgram = videoDevice->createProgram(Video::PipelineType::Geometry, compiledGeometryProgram.data(), compiledGeometryProgram.size());
-                    this->geometryProgram->setName(String::Format("%v:%v", geometryProgram, geometryEntry));
+                    this->geometryProgram->setName(String::Format("{}:{}", geometryProgram, geometryEntry));
                 }
 			}
 

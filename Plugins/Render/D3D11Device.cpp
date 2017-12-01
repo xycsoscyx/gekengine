@@ -638,7 +638,7 @@ namespace Gek
         void setDebugName(CComPtr<CLASS> &object, std::string const &name, std::string const &member = std::string())
         {
 			auto finalName(name + (member.empty() ? "::" : String::Empty) + (member.empty() ? member : String::Empty));
-            object->SetPrivateData(WKPDID_D3DDebugObjectName, UINT(finalName.size()), finalName.c_str());
+            object->SetPrivateData(WKPDID_D3DDebugObjectName, UINT(finalName.size()), finalName.data());
         }
 
         template <typename HANDLE, typename TYPE>
@@ -1363,7 +1363,7 @@ namespace Gek
                 {
                     std::string semantic = DirectX::VertexSemanticList[static_cast<uint8_t>(vertexElement.semantic)].data();
                     std::string format = DirectX::getFormatSemantic(vertexElement.format);
-                    shader += String::Format("    %v %v : %v%v;\r\n", format, vertexElement.name, semantic, vertexSemanticIndexList[static_cast<uint8_t>(vertexElement.semantic)]++);
+                    shader += String::Format("    {} {} : {}{};\r\n", format, vertexElement.name, semantic, vertexSemanticIndexList[static_cast<uint8_t>(vertexElement.semantic)]++);
                 }
 
                 shader.append("};\r\n\r\nstruct Pixel\r\n{\r\n");
@@ -1372,7 +1372,7 @@ namespace Gek
                 {
                     std::string semantic = DirectX::PixelSemanticList[static_cast<uint8_t>(pixelElement.semantic)].data();
                     std::string format = DirectX::getFormatSemantic(pixelElement.format);
-                    shader += String::Format("    %v %v : %v%v;\r\n", format, pixelElement.name, semantic, pixelSemanticIndexList[static_cast<uint8_t>(pixelElement.semantic)]++);
+                    shader += String::Format("    {} {} : {}{};\r\n", format, pixelElement.name, semantic, pixelSemanticIndexList[static_cast<uint8_t>(pixelElement.semantic)]++);
                 }
 
                 shader.append("};\r\n\r\nstruct Output\r\n{\r\n");
@@ -1380,7 +1380,7 @@ namespace Gek
                 for (auto const &renderTarget : pipelineStateInformation.renderTargetList)
                 {
                     std::string format = DirectX::getFormatSemantic(renderTarget.format);
-                    shader += String::Format("    %v %v : SV_TARGET%v;\r\n", format, renderTarget.name, renderTargetIndex++);
+                    shader += String::Format("    {} {} : SV_TARGET{};\r\n", format, renderTarget.name, renderTargetIndex++);
                 }
 
                 shader.append("};\r\n\r\n");
@@ -1400,11 +1400,11 @@ namespace Gek
                 flags |= D3DCOMPILE_SKIP_VALIDATION;
                 flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif
-                auto fullShader(String::Format("%v%v", header, shader));
+                auto fullShader(String::Format("{}{}", header, shader));
 
                 CComPtr<ID3DBlob> d3dShaderBlob;
                 CComPtr<ID3DBlob> d3dCompilerErrors;
-                HRESULT resultValue = D3DCompile(fullShader.c_str(), (fullShader.size() + 1), name.c_str(), nullptr, nullptr, entryFunction.c_str(), type.c_str(), flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+                HRESULT resultValue = D3DCompile(fullShader.data(), (fullShader.size() + 1), name.data(), nullptr, nullptr, entryFunction.data(), type.data(), flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
                     _com_error error(resultValue);

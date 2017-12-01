@@ -168,9 +168,9 @@ namespace Gek
             GetModuleFileName(nullptr, &relativeName.at(0), MAX_PATH);
 
             std::wstring absoluteName((MAX_PATH + 1), L'\0');
-            GetFullPathName(relativeName.c_str(), MAX_PATH, &absoluteName.at(0), nullptr);
+            GetFullPathName(relativeName.data(), MAX_PATH, &absoluteName.at(0), nullptr);
 #else
-            CString processName(CString::Format("/proc/%v/exe", getpid()));
+            CString processName(CString::Format("/proc/{}/exe", getpid()));
             std::string absoluteName((MAX_PATH + 1), L'\0');
             readlink(processName, &absoluteName.at(0), MAX_PATH);
             String::TrimRight(absoluteName);

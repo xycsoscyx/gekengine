@@ -171,15 +171,15 @@ namespace Gek
                         resourceMap[textureName] = resource;
                         if (description->depth > 1)
                         {
-                            resourceSemanticsMap[textureName] = String::Format("Texture3D<%v>", getFormatSemantic(description->format));
+                            resourceSemanticsMap[textureName] = String::Format("Texture3D<{}>", getFormatSemantic(description->format));
                         }
                         else if (description->height > 1 || description->width == 1)
                         {
-                            resourceSemanticsMap[textureName] = String::Format("Texture2D<%v>", getFormatSemantic(description->format));
+                            resourceSemanticsMap[textureName] = String::Format("Texture2D<{}>", getFormatSemantic(description->format));
                         }
                         else
                         {
-                            resourceSemanticsMap[textureName] = String::Format("Texture1D<%v>", getFormatSemantic(description->format));
+                            resourceSemanticsMap[textureName] = String::Format("Texture1D<{}>", getFormatSemantic(description->format));
                         }
                     }
                 }
@@ -223,7 +223,7 @@ namespace Gek
                             if (description != nullptr)
                             {
                                 auto structure = bufferValue.get("structure").convert(String::Empty);
-                                resourceSemanticsMap[bufferName] += String::Format("Buffer<%v>", structure.empty() ? getFormatSemantic(description->format) : structure);
+                                resourceSemanticsMap[bufferName] += String::Format("Buffer<{}>", structure.empty() ? getFormatSemantic(description->format) : structure);
                             }
                         }
                     }
@@ -262,7 +262,7 @@ namespace Gek
                         {
                             if (option.has("options"))
                             {
-                                optionsData += String::Format("    namespace %v\r\n", optionName);
+                                optionsData += String::Format("    namespace {}\r\n", optionName);
                                 optionsData += String::Format("    {\r\n");
 
                                 uint32_t optionValue = 0;
@@ -270,7 +270,7 @@ namespace Gek
                                 for (JSON::Reference choice : option.get("options").getArray())
                                 {
                                     auto optionName = choice.convert(String::Empty);
-                                    optionsData += String::Format("        static const int %v = %v;\r\n", optionName, optionValue++);
+                                    optionsData += String::Format("        static const int {} = {};\r\n", optionName, optionValue++);
                                     optionList.push_back(optionName);
                                 }
 
@@ -294,7 +294,7 @@ namespace Gek
                                     selection = selectionNode.convert(0);
                                 }
 
-                                optionsData += String::Format("        static const int Selection = %v;\r\n", selection);
+                                optionsData += String::Format("        static const int Selection = {};\r\n", selection);
                                 optionsData += String::Format("    };\r\n");
                             }
                         }
@@ -303,25 +303,25 @@ namespace Gek
                             switch (optionValue.size())
                             {
                             case 1:
-                                optionsData += String::Format("    static const float %v = %v;\r\n", optionName,
+                                optionsData += String::Format("    static const float {} = {};\r\n", optionName,
                                     JSON::Reference(optionValue[0]).convert(0.0f));
                                 break;
 
                             case 2:
-                                optionsData += String::Format("    static const float2 %v = float2(%v, %v);\r\n", optionName,
+                                optionsData += String::Format("    static const float2 {} = float2({}, {});\r\n", optionName,
                                     JSON::Reference(optionValue[0]).convert(0.0f),
                                     JSON::Reference(optionValue[1]).convert(0.0f));
                                 break;
 
                             case 3:
-                                optionsData += String::Format("    static const float3 %v = float3(%v, %v, %v);\r\n", optionName,
+                                optionsData += String::Format("    static const float3 {} = float3({}, {}, {});\r\n", optionName,
                                     JSON::Reference(optionValue[0]).convert(0.0f),
                                     JSON::Reference(optionValue[1]).convert(0.0f),
                                     JSON::Reference(optionValue[2]).convert(0.0f));
                                 break;
 
                             case 4:
-                                optionsData += String::Format("    static const float4 %v = float4(%v, %v, %v, %v)\r\n", optionName,
+                                optionsData += String::Format("    static const float4 {} = float4({}, {}, {}, {})\r\n", optionName,
                                     JSON::Reference(optionValue[0]).convert(0.0f),
                                     JSON::Reference(optionValue[1]).convert(0.0f),
                                     JSON::Reference(optionValue[2]).convert(0.0f),
@@ -333,15 +333,15 @@ namespace Gek
                         {
                             if (optionValue.is_bool())
                             {
-                                optionsData += String::Format("    static const bool %v = %v;\r\n", optionName, option.convert(false));
+                                optionsData += String::Format("    static const bool {} = {};\r\n", optionName, option.convert(false));
                             }
                             else if (optionValue.is_integer())
                             {
-                                optionsData += String::Format("    static const int %v = %v;\r\n", optionName, option.convert(0));
+                                optionsData += String::Format("    static const int {} = {};\r\n", optionName, option.convert(0));
                             }
                             else
                             {
-                                optionsData += String::Format("    static const float %v = %v;\r\n", optionName, option.convert(0.0f));
+                                optionsData += String::Format("    static const float {} = {};\r\n", optionName, option.convert(0.0f));
                             }
                         }
                     }
@@ -352,7 +352,7 @@ namespace Gek
                         engineData += String::Format(
                             "namespace Options\r\n" \
                             "{\r\n" \
-                            "%v" \
+                            "{}" \
                             "};\r\n" \
                             "\r\n", optionsData);
                     }
@@ -406,7 +406,7 @@ namespace Gek
                                 if (renderTarget.first == "outputBuffer")
                                 {
                                     pass.renderTargetList.push_back(ResourceHandle());
-                                    outputData += String::Format("    Texture2D<float3> %v : SV_TARGET%v;\r\n", renderTarget.second, currentStage);
+                                    outputData += String::Format("    Texture2D<float3> {} : SV_TARGET{};\r\n", renderTarget.second, currentStage);
                                 }
                                 else
                                 {
@@ -421,7 +421,7 @@ namespace Gek
                                         if (description)
                                         {
                                             pass.renderTargetList.push_back(resourceSearch->second);
-                                            outputData += String::Format("    %v %v : SV_TARGET%v;\r\n", getFormatSemantic(description->format), renderTarget.second, currentStage);
+                                            outputData += String::Format("    {} {} : SV_TARGET{};\r\n", getFormatSemantic(description->format), renderTarget.second, currentStage);
                                         }
                                         else
                                         {
@@ -437,7 +437,7 @@ namespace Gek
                             engineData += String::Format(
                                 "struct OutputPixel\r\n" \
                                 "{\r\n" \
-                                "%v" \
+                                "{}" \
                                 "};\r\n" \
                                 "\r\n", outputData);
                         }
@@ -536,7 +536,7 @@ namespace Gek
                         if (resourcePair.first == "inputBuffer")
                         {
                             pass.resourceList.push_back(ResourceHandle());
-                            resourceData += String::Format("    Texture2D<float3> %v : register(t%v);\r\n", resourcePair.second, currentStage);
+                            resourceData += String::Format("    Texture2D<float3> {} : register(t{});\r\n", resourcePair.second, currentStage);
                         }
                         else
                         {
@@ -549,7 +549,7 @@ namespace Gek
                             auto semanticsSearch = resourceSemanticsMap.find(resourcePair.first);
                             if (semanticsSearch != std::end(resourceSemanticsMap))
                             {
-                                resourceData += String::Format("    %v %v : register(t%v);\r\n", semanticsSearch->second, resourcePair.second, currentStage);
+                                resourceData += String::Format("    {} {} : register(t{});\r\n", semanticsSearch->second, resourcePair.second, currentStage);
                             }
                         }
                     }
@@ -559,7 +559,7 @@ namespace Gek
                         engineData += String::Format(
                             "namespace Resources\r\n" \
                             "{\r\n" \
-                            "%v" \
+                            "{}" \
                             "};\r\n" \
                             "\r\n", resourceData);
                     }
@@ -584,7 +584,7 @@ namespace Gek
                         auto semanticsSearch = resourceSemanticsMap.find(resourcePair.first);
                         if (semanticsSearch != std::end(resourceSemanticsMap))
                         {
-                            unorderedAccessData += String::Format("    RW%v %v : register(u%v);\r\n", semanticsSearch->second, resourcePair.second, currentStage);
+                            unorderedAccessData += String::Format("    RW{} {} : register(u{});\r\n", semanticsSearch->second, resourcePair.second, currentStage);
                         }
                     }
 
@@ -593,14 +593,14 @@ namespace Gek
                         engineData += String::Format(
                             "namespace UnorderedAccess\r\n" \
                             "{\r\n" \
-                            "%v" \
+                            "{}" \
                             "};\r\n" \
                             "\r\n", unorderedAccessData);
                     }
 
                     std::string entryPoint(passNode.get("entry").convert(String::Empty));
                     auto programName = passNode.get("program").convert(String::Empty);
-                    pass.name = String::Format("%v: %v", programName, entryPoint);
+                    pass.name = String::Format("{}: {}", programName, entryPoint);
                     std::string fileName(FileSystem::GetFileName(filterName, programName).withExtension(".hlsl").getString());
                     Video::PipelineType pipelineType = (pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel);
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);

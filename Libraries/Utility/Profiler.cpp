@@ -52,7 +52,7 @@ namespace Gek
                 auto threadSearch = nameMap.find(timeStamp->threadIdentifier);
                 if (threadSearch == std::end(nameMap))
                 {
-                    auto threadInsert = nameMap.insert(std::make_pair(timeStamp->threadIdentifier, String::Format("thread_%v", timeStamp->threadIdentifier)));
+                    auto threadInsert = nameMap.insert(std::make_pair(timeStamp->threadIdentifier, String::Format("thread_{}", timeStamp->threadIdentifier)));
                     threadSearch = threadInsert.first;
                 }
 
@@ -116,7 +116,7 @@ namespace Gek
             registerThreadName("CPU Main Thread");
             profilerName = registerName("Profiler Frame");
 
-            fileOutput.open(String::Format("profile_%v.json", processIdentifier));
+            fileOutput.open(String::Format("profile_{}.json", processIdentifier));
             fileOutput <<
                 "{\n" \
                 "\t\"traceEvents\": [";
