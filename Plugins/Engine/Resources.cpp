@@ -957,7 +957,7 @@ namespace Gek
             // Plugin::Resources
             VisualHandle loadVisual(std::string_view visualName)
             {
-                auto load = [this, visualName](VisualHandle)->Plugin::VisualPtr
+                auto load = [this, visualName = std::string(visualName)](VisualHandle)->Plugin::VisualPtr
                 {
                     return getContext()->createClass<Plugin::Visual>("Engine::Visual", videoDevice, (Engine::Resources *)this, visualName);
                 };
@@ -968,7 +968,7 @@ namespace Gek
 
             MaterialHandle loadMaterial(std::string_view materialName)
             {
-                auto load = [this, materialName](MaterialHandle handle)->Engine::MaterialPtr
+                auto load = [this, materialName = std::string(materialName)](MaterialHandle handle)->Engine::MaterialPtr
                 {
                     return getContext()->createClass<Engine::Material>("Engine::Material", (Engine::Resources *)this, materialName, handle);
                 };
@@ -1146,7 +1146,7 @@ namespace Gek
 
             ResourceHandle createTexture(std::string_view textureName, const Video::Texture::Description &description, uint32_t flags)
             {
-                auto load = [this, textureName, description](ResourceHandle)->Video::TexturePtr
+                auto load = [this, textureName = std::string(textureName), description](ResourceHandle)->Video::TexturePtr
                 {
                     auto texture = videoDevice->createTexture(description);
                     texture->setName(textureName);
@@ -1173,7 +1173,7 @@ namespace Gek
             {
                 assert(description.count > 0);
 
-                auto load = [this, bufferName, description](ResourceHandle)->Video::BufferPtr
+                auto load = [this, bufferName = std::string(bufferName), description](ResourceHandle)->Video::BufferPtr
                 {
                     auto buffer = videoDevice->createBuffer(description);
                     buffer->setName(bufferName);
@@ -1201,7 +1201,7 @@ namespace Gek
                 assert(description.count > 0);
                 assert(!staticData.empty());
 
-                auto load = [this, bufferName, description, staticData = move(staticData)](ResourceHandle)->Video::BufferPtr
+                auto load = [this, bufferName = std::string(bufferName), description, staticData = move(staticData)](ResourceHandle)->Video::BufferPtr
                 {
                     auto buffer = videoDevice->createBuffer(description, (void *)staticData.data());
                     buffer->setName(bufferName);
@@ -1414,7 +1414,7 @@ namespace Gek
             ShaderHandle const getShader(std::string_view shaderName, MaterialHandle material)
             {
                 std::unique_lock<std::recursive_mutex> lock(shaderMutex);
-                auto load = [this, shaderName](ShaderHandle) -> Engine::ShaderPtr
+                auto load = [this, shaderName = std::string(shaderName)](ShaderHandle) -> Engine::ShaderPtr
                 {
                     return getContext()->createClass<Engine::Shader>("Engine::Shader", core, shaderName);
                 };
@@ -1431,7 +1431,7 @@ namespace Gek
 
             Engine::Filter * const getFilter(std::string_view filterName)
             {
-                auto load = [this, filterName](ResourceHandle)->Engine::FilterPtr
+                auto load = [this, filterName = std::string(filterName)](ResourceHandle)->Engine::FilterPtr
                 {
                     return getContext()->createClass<Engine::Filter>("Engine::Filter", core, filterName);
                 };
@@ -1513,7 +1513,7 @@ namespace Gek
 
             ProgramHandle loadProgram(Video::PipelineType pipelineType, std::string_view name, std::string_view entryFunction, std::string_view engineData)
             {
-                auto load = [this, pipelineType, name, entryFunction, engineData](ProgramHandle)->Video::ObjectPtr
+                auto load = [this, pipelineType, name = std::string(name), entryFunction = std::string(entryFunction), engineData = std::string(engineData)](ProgramHandle)->Video::ObjectPtr
                 {
                     auto compiledProgram = compileProgram(pipelineType, name, entryFunction, engineData);
                     auto program = videoDevice->createProgram(pipelineType, compiledProgram.data(), compiledProgram.size());

@@ -23,7 +23,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Shader, Plugin::Core *, std::string_view)
+        GEK_CONTEXT_USER(Shader, Plugin::Core *, std::string)
             , public Engine::Shader
         {
         public:
@@ -88,7 +88,7 @@ namespace Gek
             bool lightingRequired = false;
 
         public:
-            Shader(Context *context, Plugin::Core *core, std::string_view shaderName)
+            Shader(Context *context, Plugin::Core *core, std::string shaderName)
                 : ContextRegistration(context)
                 , core(core)
                 , videoDevice(core->getVideoDevice())

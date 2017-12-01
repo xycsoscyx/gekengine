@@ -12,7 +12,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Visual, Video::Device *, Engine::Resources *, std::string_view)
+        GEK_CONTEXT_USER(Visual, Video::Device *, Engine::Resources *, std::string)
             , public Plugin::Visual
         {
         private:
@@ -22,7 +22,7 @@ namespace Gek
 			Video::ObjectPtr geometryProgram;
 
         public:
-            Visual(Context *context, Video::Device *videoDevice, Engine::Resources *resources, std::string_view visualName)
+            Visual(Context *context, Video::Device *videoDevice, Engine::Resources *resources, std::string visualName)
                 : ContextRegistration(context)
                 , videoDevice(videoDevice)
             {

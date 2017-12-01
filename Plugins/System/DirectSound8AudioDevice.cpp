@@ -121,7 +121,7 @@ namespace Gek
 			}
 		};
 */
-		GEK_CONTEXT_USER(Device, HWND, std::string_view)
+		GEK_CONTEXT_USER(Device, HWND, std::string)
 			, public Audio::Device
 		{
 		private:
@@ -130,7 +130,7 @@ namespace Gek
 			CComQIPtr<IDirectSoundBuffer, &IID_IDirectSoundBuffer> primarySoundBuffer;
 
 		public:
-			Device(Context *context, HWND window, std::string_view device)
+			Device(Context *context, HWND window, std::string device)
 				: ContextRegistration(context)
 			{
 				assert(window);

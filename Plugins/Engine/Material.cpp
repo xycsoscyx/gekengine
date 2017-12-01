@@ -14,7 +14,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Material, Engine::Resources *, std::string_view, MaterialHandle)
+        GEK_CONTEXT_USER(Material, Engine::Resources *, std::string, MaterialHandle)
             , public Engine::Material
         {
         private:
@@ -24,7 +24,7 @@ namespace Gek
 
 
         public:
-            Material(Context *context, Engine::Resources *resources, std::string_view materialName, MaterialHandle materialHandle)
+            Material(Context *context, Engine::Resources *resources, std::string materialName, MaterialHandle materialHandle)
                 : ContextRegistration(context)
                 , resources(resources)
             {
