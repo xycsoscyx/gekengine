@@ -21,7 +21,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Filter, Plugin::Core *, std::string)
+        GEK_CONTEXT_USER(Filter, Plugin::Core *, std::string_view)
             , public Engine::Filter
         {
         public:
@@ -59,7 +59,7 @@ namespace Gek
             std::vector<PassData> passList;
 
         public:
-            Filter(Context *context, Plugin::Core *core, std::string filterName)
+            Filter(Context *context, Plugin::Core *core, std::string_view filterName)
                 : ContextRegistration(context)
                 , core(core)
                 , videoDevice(core->getVideoDevice())

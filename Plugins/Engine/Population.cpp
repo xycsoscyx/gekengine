@@ -107,7 +107,7 @@ namespace Gek
                 assert(core);
 
                 LockedWrite{ std::cout } << "Loading component plugins";
-                getContext()->listTypes("ComponentType", [&](std::string const &className) -> void
+                getContext()->listTypes("ComponentType", [&](std::string_view className) -> void
                 {
                     LockedWrite{ std::cout } << "Component found: " << className;
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className, static_cast<Plugin::Population *>(this)));

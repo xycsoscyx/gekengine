@@ -139,8 +139,8 @@ namespace Gek
 
                 LockedWrite{ std::cout } << "Loading processor plugins";
 
-                std::vector<std::string> processorNameList;
-                getContext()->listTypes("ProcessorType", [&](std::string const &className) -> void
+                std::vector<std::string_view> processorNameList;
+                getContext()->listTypes("ProcessorType", [&](std::string_view className) -> void
                 {
                     processorNameList.push_back(className);
                 });
@@ -578,7 +578,7 @@ namespace Gek
                                                 if (selectionNode.isString())
                                                 {
                                                     auto selectedName = selectionNode.convert(String::Empty);
-                                                    auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string const &choice) -> bool
+                                                    auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string_view choice) -> bool
                                                     {
                                                         return (selectedName == choice);
                                                     });
@@ -908,22 +908,21 @@ namespace Gek
             }
 
             // Plugin::Core
-            JSON::Reference getOption(std::string const &system, std::string const &name)
+            JSON::Reference getOption(std::string_view system, std::string_view name)
             {
-                return JSON::Reference(configuration).get(system).get(name);
+                return configuration.insert_or_assign(system.data(), JSON::EmptyObject).first->value().get(name.data());
             }
 
-            void setOption(std::string const &system, std::string const &name, JSON::Object const &value)
+            void setOption(std::string_view system, std::string_view name, JSON::Object const &value)
             {
-                auto &systemNode = configuration[system];
-                systemNode[name] = value;
+                configuration.insert_or_assign(system.data(), JSON::EmptyObject).first->value().insert_or_assign(name.data(), value);
             }
 
-            void deleteOption(std::string const &system, std::string const &name)
+            void deleteOption(std::string_view system, std::string_view name)
             {
-                if (configuration.has_member(system))
+                if (configuration.has_member(system.data()))
                 {
-                    configuration[system].erase(name);
+                    configuration[system.data()].erase(name.data());
                 }
             }
 

@@ -9,14 +9,14 @@ namespace Gek
         const Object EmptyObject = Object::make_object({});
         const Object EmptyArray = Object::make_array();
 
-        std::string Parse(ShuntingYard &shuntingYard, Object const &object, std::string const &defaultValue)
+        std::string Parse(ShuntingYard &shuntingYard, Object const &object, std::string_view defaultValue)
         {
             switch (object.type_id())
             {
             case jsoncons::value_type::null_t:
             case jsoncons::value_type::array_t:
             case jsoncons::value_type::object_t:
-                return defaultValue;
+                return std::string(defaultValue);
 
             default:
                 return object.as_string();
@@ -242,7 +242,7 @@ namespace Gek
             return defaultValue;
         }
 
-        std::string Convert(Object const &object, std::string const &defaultValue)
+        std::string Convert(Object const &object, std::string_view defaultValue)
         {
             switch (object.type_id())
             {
@@ -451,6 +451,11 @@ namespace Gek
             {
                 return decoder.get_result();
             }
+        }
+
+        Object Make(std::string_view value)
+        {
+            return value;
         }
 
         Object Make(std::string const &value)

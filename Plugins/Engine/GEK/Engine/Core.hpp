@@ -37,9 +37,9 @@ namespace Gek
 
             virtual ~Core(void) = default;
 
-            virtual JSON::Reference getOption(std::string const &system, std::string const &name) = 0;
-            virtual void setOption(std::string const &system, std::string const &name, JSON::Object const &value) = 0;
-            virtual void deleteOption(std::string const &system, std::string const &name) = 0;
+            virtual JSON::Reference getOption(std::string_view system, std::string_view name) = 0;
+            virtual void setOption(std::string_view system, std::string_view name, JSON::Object const &value) = 0;
+            virtual void deleteOption(std::string_view system, std::string_view name) = 0;
 
             virtual Window * getWindow(void) const = 0;
             virtual Video::Device * getVideoDevice(void) const = 0;

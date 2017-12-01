@@ -25,7 +25,7 @@ namespace Gek
         extern const Object EmptyObject;
         extern const Object EmptyArray;
 
-        std::string Parse(ShuntingYard &shuntingYard, Object const &object, std::string const &defaultValue);
+        std::string Parse(ShuntingYard &shuntingYard, Object const &object, std::string_view defaultValue);
         bool Parse(ShuntingYard &shuntingYard, Object const &object, bool defaultValue);
         int32_t Parse(ShuntingYard &shuntingYard, Object const &object, int32_t defaultValue);
         uint32_t Parse(ShuntingYard &shuntingYard, Object const &object, uint32_t defaultValue);
@@ -35,7 +35,7 @@ namespace Gek
         Math::Float4 Parse(ShuntingYard &shuntingYard, Object const &object, Math::Float4 const &defaultValue);
         Math::Quaternion Parse(ShuntingYard &shuntingYard, Object const &object, Math::Quaternion const &defaultValue);
 
-        std::string Convert(Object const &object, std::string const &defaultValue);
+        std::string Convert(Object const &object, std::string_view defaultValue);
         bool Convert(Object const &object, bool defaultValue);
         int32_t Convert(Object const &object, int32_t defaultValue);
         uint32_t Convert(Object const &object, uint32_t defaultValue);
@@ -107,16 +107,16 @@ namespace Gek
                 return (object.is_object() ? ((Object const &)object).object_range() : EmptyObject.object_range());
             }
 
-            bool has(std::string const &name) const
+            bool has(std::string_view name) const
             {
-                return (object.is_object() ? object.has_key(name) : false);
+                return (object.is_object() ? object.has_key(name.data()) : false);
             }
 
-            Typeless<Object const &> get(std::string const &name) const
+            Typeless<Object const &> get(std::string_view name) const
             {
                 if (object.is_object())
                 {
-                    auto objectSearch = object.find(name);
+                    auto objectSearch = object.find(name.data());
                     if (objectSearch != object.end_members())
                     {
                         return objectSearch->value();
@@ -136,7 +136,7 @@ namespace Gek
                 return EmptyObject;
             }
 
-            std::string convert(std::string const &defaultValue)
+            std::string convert(std::string_view defaultValue)
             {
                 return Convert(object, defaultValue);
             }
@@ -181,7 +181,7 @@ namespace Gek
                 return Convert(object, defaultValue);
             }
 
-            std::string parse(ShuntingYard &shuntingYard, std::string const &defaultValue)
+            std::string parse(ShuntingYard &shuntingYard, std::string_view defaultValue)
             {
                 return Parse(shuntingYard, object, defaultValue);
             }
@@ -232,6 +232,7 @@ namespace Gek
 
         Object Load(FileSystem::Path const &filePath);
 
+        Object Make(std::string_view value);
         Object Make(std::string const &value);
         Object Make(bool value);
         Object Make(int32_t value);

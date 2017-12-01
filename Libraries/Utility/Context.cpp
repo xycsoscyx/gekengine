@@ -13,8 +13,8 @@ namespace Gek
     private:
         FileSystem::Path rootPath;
         std::vector<HMODULE> moduleList;
-        std::unordered_map<std::string, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)>> classMap;
-        std::unordered_multimap<std::string, std::string> typeMap;
+        std::unordered_map<std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)>> classMap;
+        std::unordered_multimap<std::string_view, std::string_view> typeMap;
 
     public:
         ContextImplementation(FileSystem::Path const &rootPath, std::vector<FileSystem::Path> searchPathList)
@@ -35,7 +35,7 @@ namespace Gek
 							InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "initializePlugin");
 							if (initializePlugin)
 							{
-								initializePlugin([this, filePath = filePath.getString()](std::string const &className, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)> creator) -> void
+								initializePlugin([this, filePath = filePath.getString()](std::string_view className, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)> creator) -> void
 								{
 									if (classMap.count(className) == 0)
 									{
@@ -45,7 +45,7 @@ namespace Gek
 									{
                                         LockedWrite{ std::cerr } << "Skipping duplicate class from plugin: " << className << ", from: " << filePath;
 									}
-								}, [this](std::string const &typeName, std::string const &className) -> void
+								}, [this](std::string_view typeName, std::string_view className) -> void
 								{
 									typeMap.insert(std::make_pair(typeName, className));
 								});
@@ -84,7 +84,7 @@ namespace Gek
             return rootPath;
         }
 
-        ContextUserPtr createBaseClass(std::string const &className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const
+        ContextUserPtr createBaseClass(std::string_view className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const
         {
             auto classSearch = classMap.find(className);
             if (classSearch == std::end(classMap))
@@ -102,7 +102,7 @@ namespace Gek
                 LockedWrite{ std::cerr } << "Exception raised trying to create " << exception.what() << ": " << className;
                 return nullptr;
             }
-            catch (std::string const &error)
+            catch (std::string_view error)
             {
                 LockedWrite{ std::cerr } << "Error raised trying to create " << error << ": " << className;
                 return nullptr;
@@ -114,7 +114,7 @@ namespace Gek
             };
         }
 
-        void listTypes(std::string const &typeName, std::function<void(std::string const &)> onType) const
+        void listTypes(std::string_view typeName, std::function<void(std::string_view )> onType) const
         {
             assert(onType);
 
