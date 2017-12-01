@@ -66,6 +66,7 @@ project(jsoncons)
 add_library(jsoncons INTERFACE)
 target_include_directories(jsoncons INTERFACE "${CMAKE_CURRENT_LIST_DIR}/jsoncons/src")
 
+find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
 add_subdirectory("easy_profiler")
 
 set_property(TARGET pack PROPERTY FOLDER "External/GLBinding")
