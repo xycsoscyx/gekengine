@@ -28,6 +28,3 @@
 [submodule "External/easy_profiler"]
 	path = External/easy_profiler
 	url = https://github.com/yse/easy_profiler.git
-[submodule "External/qt5"]
-	path = External/qt5
-	url = https://github.com/qt/qt5.git
