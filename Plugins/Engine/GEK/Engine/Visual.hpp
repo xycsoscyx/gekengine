@@ -12,7 +12,7 @@
 
 namespace Gek
 {
-    namespace Plugin
+    namespace Engine
     {
         GEK_INTERFACE(Visual)
         {

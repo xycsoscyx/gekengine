@@ -1,7 +1,8 @@
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/Engine/ComponentMixin.hpp"
-#include "GEK/Engine/Population.hpp"
+#include "GEK/API/ComponentMixin.hpp"
+#include "GEK/API/Population.hpp"
+#include "GEK/API/Editor.hpp"
 #include "GEK/Utility/String.hpp"
 
 namespace Gek

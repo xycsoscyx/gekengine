@@ -1,6 +1,7 @@
 #include "GEK/Newton/Base.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/Engine/ComponentMixin.hpp"
+#include "GEK/API/ComponentMixin.hpp"
+#include "GEK/API/Editor.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Math/Common.hpp"
 

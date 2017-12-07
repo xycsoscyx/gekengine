@@ -15,23 +15,15 @@
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/Hash.hpp"
 #include "GEK/Utility/Context.hpp"
-#include "GEK/Utility/Profiler.hpp"
 #include <concurrent_unordered_map.h>
 #include <concurrent_queue.h>
 #include <unordered_map>
 #include <functional>
 #include <memory>
 
-#define GEK_ENABLE_GPU_PROFILER
-#ifdef GEK_ENABLE_GPU_PROFILER
-    #define GEK_GPU_PROFILE_BEGIN(PROFILER) PROFILER->beginFrame()
-    #define GEK_GPU_PROFILE_TIMESTAMP(PROFILER, NAME) PROFILER->timeStamp(NAME)
-    #define GEK_GPU_PROFILE_END(PROFILER) PROFILER->endFrame()
-#else
-    #define GEK_GPU_PROFILE_BEGIN(PROFILER)
-    #define GEK_GPU_PROFILE_TIMESTAMP(PROFILER, NAME)
-    #define GEK_GPU_PROFILE_END(PROFILER)
-#endif
+#define GEK_GPU_PROFILE_BEGIN(PROFILER)
+#define GEK_GPU_PROFILE_TIMESTAMP(PROFILER, NAME)
+#define GEK_GPU_PROFILE_END(PROFILER)
 
 namespace Gek
 {
@@ -743,42 +735,6 @@ namespace Gek
             virtual void executeCommandList(Object *commandList) = 0;
 
             virtual void present(bool waitForVerticalSync) = 0;
-        };
-
-        struct Profiler
-        {
-            using TimeStampEvent = std::array<Video::QueryPtr, 3>;
-            using TimeStamp = std::pair<Hash, Video::Query *>;
-            struct Frame
-                : public concurrency::concurrent_vector<TimeStamp>
-            {
-                Video::Query *disjointEvent = nullptr;
-                Video::Query *beginEvent = nullptr;
-                Video::Query *endEvent = nullptr;
-            };
-
-            Hash frameIdentifier = 0;
-            Hash threadIdentifier = 0;
-            System::Profiler *profiler = nullptr;
-            Device *videoDevice = nullptr;
-            Device::Context *defaultVideoContext = nullptr;
-            std::array<Video::QueryPtr, 3> disjointList;
-            std::array<Video::QueryPtr, 3> beginFrameList;
-            std::array<Video::QueryPtr, 3> endFrameList;
-            concurrency::concurrent_unordered_map<Hash, std::string> nameMap;
-            concurrency::concurrent_unordered_map<Hash, TimeStampEvent> eventMap;
-            concurrency::concurrent_queue<Frame> historyQueue;
-            Frame currentFrame;
-            int writeIndex = 0;
-
-            Profiler(System::Profiler *profiler, Device *videoDevice);
-            virtual ~Profiler(void) = default;
-
-            Hash registerName(std::string_view name);
-
-            void beginFrame(void);
-            void timeStamp(Hash nameHash);
-            void endFrame(void);
         };
 
         namespace Debug

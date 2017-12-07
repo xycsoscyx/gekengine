@@ -1,9 +1,10 @@
-#include "GEK/Components/Color.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/GUI/Utilities.hpp"
-#include "GEK/Engine/ComponentMixin.hpp"
-#include "GEK/Engine/Population.hpp"
+#include "GEK/API/ComponentMixin.hpp"
+#include "GEK/API/Population.hpp"
+#include "GEK/API/Editor.hpp"
+#include "GEK/Components/Color.hpp"
 
 namespace Gek
 {

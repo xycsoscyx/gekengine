@@ -7,8 +7,8 @@
 /// Last Changed: $Date:   Wed Oct 19 17:38:40 2016 +0000 $
 #pragma once
 
-#include "GEK/Engine/Component.hpp"
-#include "GEK/Engine/Population.hpp"
+#include "GEK/API/Component.hpp"
+#include "GEK/API/Population.hpp"
 #include <concurrent_unordered_map.h>
 #include <new>
 

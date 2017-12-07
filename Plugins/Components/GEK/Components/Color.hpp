@@ -8,7 +8,7 @@
 #pragma once
 
 #include "GEK/Math/Vector4.hpp"
-#include "GEK/Engine/Component.hpp"
+#include "GEK/API/Component.hpp"
 
 namespace Gek
 {

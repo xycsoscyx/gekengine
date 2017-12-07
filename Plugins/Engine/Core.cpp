@@ -4,10 +4,10 @@
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/GUI/Utilities.hpp"
 #include "GEK/GUI/Dock.hpp"
+#include "GEK/API/Renderer.hpp"
 #include "GEK/Engine/Core.hpp"
-#include "GEK/Engine/Population.hpp"
 #include "GEK/Engine/Resources.hpp"
-#include "GEK/Engine/Renderer.hpp"
+#include "GEK/Engine/Population.hpp"
 #include <concurrent_unordered_map.h>
 #include <algorithm>
 #include <queue>
@@ -18,7 +18,7 @@ namespace Gek
     namespace Implementation
     {
         GEK_CONTEXT_USER(Core, Window *)
-            , public Plugin::Core
+            , public Engine::Core
         {
         private:
             WindowPtr window;
@@ -53,7 +53,7 @@ namespace Gek
             Plugin::RendererPtr renderer;
             Engine::ResourcesPtr resources;
             std::vector<Plugin::ProcessorPtr> processorList;
-            Plugin::PopulationPtr population;
+            Engine::PopulationPtr population;
 
             std::unique_ptr<UI::Dock::WorkSpace> dock;
 
@@ -132,7 +132,7 @@ namespace Gek
 
                 setDisplayMode(JSON::Reference(configuration).get("display").get("mode").convert(preferredDisplayMode));
 
-                population = getContext()->createClass<Plugin::Population>("Engine::Population", (Plugin::Core *)this);
+                population = getContext()->createClass<Engine::Population>("Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Plugin::Core *)this);
                 renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Plugin::Core *)this);
                 renderer->onShowUserInterface.connect(this, &Core::onShowUserInterface);

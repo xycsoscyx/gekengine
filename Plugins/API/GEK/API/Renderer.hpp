@@ -7,10 +7,11 @@
 /// Last Changed: $Date:   Tue Oct 25 14:51:24 2016 +0000 $
 #pragma once
 
-#include "GEK/Utility/Context.hpp"
-#include "GEK/Engine/Resources.hpp"
-#include "GEK/System/VideoDevice.hpp"
 #include "GEK/Shapes/Frustum.hpp"
+#include "GEK/Utility/Context.hpp"
+#include "GEK/System/VideoDevice.hpp"
+#include "GEK/API/Handles.hpp"
+#include "GEK/API/Entity.hpp"
 #include <wink/signal.hpp>
 #include <imgui.h>
 
@@ -18,14 +19,14 @@ namespace Gek
 {
 	namespace Plugin
     {
-        GEK_PREDECLARE(Entity);
-
         GEK_INTERFACE(Renderer)
         {
             wink::signal<wink::slot<void(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)>> onQueueDrawCalls;
             wink::signal<wink::slot<void(ImGuiContext * const guiContext)>> onShowUserInterface;
 
             virtual ~Renderer(void) = default;
+
+            virtual Video::Device * getVideoDevice(void) const = 0;
 
             virtual void queueCamera(Math::Float4x4 const &viewMatrix, float fieldOfView, float aspectRatio, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget = ResourceHandle(), std::string const &forceShader = String::Empty) = 0;
             virtual void queueCamera(Math::Float4x4 const &viewMatrix, float left, float top, float right, float bottom, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget = ResourceHandle(), std::string const &forceShader = String::Empty) = 0;

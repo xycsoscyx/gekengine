@@ -2,9 +2,9 @@
 #include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/Engine/Core.hpp"
-#include "GEK/Engine/ComponentMixin.hpp"
-#include "GEK/Engine/Population.hpp"
+#include "GEK/API/Core.hpp"
+#include "GEK/API/ComponentMixin.hpp"
+#include "GEK/API/Population.hpp"
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Newton/Base.hpp"
 #include <algorithm>

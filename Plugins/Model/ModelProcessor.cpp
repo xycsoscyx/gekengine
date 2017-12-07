@@ -7,15 +7,16 @@
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/Allocator.hpp"
 #include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/Profiler.hpp"
 #include "GEK/System/VideoDevice.hpp"
-#include "GEK/Engine/Core.hpp"
-#include "GEK/Engine/Processor.hpp"
-#include "GEK/Engine/ComponentMixin.hpp"
-#include "GEK/Engine/Population.hpp"
-#include "GEK/Engine/Entity.hpp"
-#include "GEK/Engine/Renderer.hpp"
-#include "GEK/Engine/Resources.hpp"
-#include "GEK/Engine/Editor.hpp"
+#include "GEK/API/Core.hpp"
+#include "GEK/API/Processor.hpp"
+#include "GEK/API/ComponentMixin.hpp"
+#include "GEK/API/Population.hpp"
+#include "GEK/API/Entity.hpp"
+#include "GEK/API/Renderer.hpp"
+#include "GEK/API/Resources.hpp"
+#include "GEK/API/Editor.hpp"
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Components/Color.hpp"
 #include "GEK/Model/Base.hpp"
@@ -233,7 +234,7 @@ namespace Gek
         Plugin::Population *population = nullptr;
         Plugin::Resources *resources = nullptr;
         Plugin::Renderer *renderer = nullptr;
-        Plugin::Editor *editor = nullptr;
+        Edit::Events *events = nullptr;
 
         VisualHandle visual;
         Video::BufferPtr instanceBuffer;
@@ -261,7 +262,7 @@ namespace Gek
         ModelProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
             , core(core)
-            , videoDevice(core->getVideoDevice())
+            , videoDevice(core->getRenderer()->getVideoDevice())
             , population(core->getPopulation())
             , resources(core->getResources())
             , renderer(core->getRenderer())
@@ -433,10 +434,10 @@ namespace Gek
         {
             core->listProcessors([&](Plugin::Processor *processor) -> void
             {
-                auto castCheck = dynamic_cast<Plugin::Editor *>(processor);
+                auto castCheck = dynamic_cast<Edit::Events *>(processor);
                 if (castCheck)
                 {
-                    (editor = castCheck)->onModified.connect(this, &ModelProcessor::onModified);
+                    (events = castCheck)->onModified.connect(this, &ModelProcessor::onModified);
                 }
             });
         }
@@ -444,9 +445,9 @@ namespace Gek
         void onShutdown(void)
         {
             loadPool.drain();
-            if (editor)
+            if (events)
             {
-                editor->onModified.disconnect(this, &ModelProcessor::onModified);
+                events->onModified.disconnect(this, &ModelProcessor::onModified);
             }
 
             population->onReset.disconnect(this, &ModelProcessor::onReset);
@@ -470,7 +471,7 @@ namespace Gek
         }
 
         // Plugin::Editor Slots
-        void onModified(Plugin::Entity * const entity, const std::type_index &type)
+        void onModified(Edit::Entity * const entity, const std::type_index &type)
         {
             if (type == typeid(Components::Model))
             {

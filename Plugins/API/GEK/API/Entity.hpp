@@ -8,8 +8,7 @@
 #pragma once
 
 #include "GEK/Utility/Context.hpp"
-#include "GEK/Engine/Component.hpp"
-#include <unordered_map>
+#include "GEK/API/Component.hpp"
 #include <typeindex>
 #include <algorithm>
 #include <numeric>
@@ -53,16 +52,4 @@ namespace Gek
 			}
 		};
     }; // namespace Plugin
-
-    namespace Edit
-    {
-        GEK_INTERFACE(Entity)
-            : public Plugin::Entity
-        {
-            virtual ~Entity(void) = default;
-
-            using ComponentMap = std::unordered_map<std::type_index, std::unique_ptr<Plugin::Component::Data>>;
-            virtual ComponentMap &getComponentMap(void) = 0;
-        };
-    }; // namespace Edit
 }; // namespace Gek

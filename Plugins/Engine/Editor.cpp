@@ -8,7 +8,7 @@
 #include "GEK/GUI/Dock.hpp"
 #include "GEK/GUI/Gizmo.hpp"
 #include "GEK/Engine/Core.hpp"
-#include "GEK/Engine/Renderer.hpp"
+#include "GEK/API/Renderer.hpp"
 #include "GEK/Engine/Population.hpp"
 #include "GEK/Engine/Entity.hpp"
 #include "GEK/Engine/Component.hpp"

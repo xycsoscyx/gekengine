@@ -7,10 +7,8 @@
 /// Last Changed: $Date:   Fri Oct 21 04:24:02 2016 +0000 $
 #pragma once
 
-#include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include "GEK/GUI/Utilities.hpp"
 #include <typeindex>
 
 #pragma warning(disable:4503)
@@ -40,15 +38,4 @@ namespace Gek
             virtual void load(Data * const data, JSON::Reference componentData) = 0;
         };
     }; // namespace Plugin
-
-    namespace Edit
-    {
-        GEK_INTERFACE(Component)
-            : public Plugin::Component
-        {
-            virtual ~Component(void) = default;
-            
-            virtual bool onUserInterface(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data) = 0;
-        };
-    }; // namespace Edit
 }; // namespace Gek

@@ -1,5 +1,6 @@
 project (Plugins)
 
+add_subdirectory("API")
 add_subdirectory("Components")
 add_subdirectory("Engine")
 add_subdirectory("Model")

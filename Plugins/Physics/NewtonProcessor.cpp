@@ -6,12 +6,13 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/Hash.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include "GEK/Engine/Core.hpp"
-#include "GEK/Engine/Processor.hpp"
-#include "GEK/Engine/Population.hpp"
-#include "GEK/Engine/Renderer.hpp"
-#include "GEK/Engine/Entity.hpp"
-#include "GEK/Engine/Editor.hpp"
+#include "GEK/Utility/Profiler.hpp"
+#include "GEK/API/Core.hpp"
+#include "GEK/API/Processor.hpp"
+#include "GEK/API/Population.hpp"
+#include "GEK/API/Renderer.hpp"
+#include "GEK/API/Entity.hpp"
+#include "GEK/API/Editor.hpp"
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Newton/Base.hpp"
 #include "GEK/Model/Base.hpp"
@@ -75,7 +76,7 @@ namespace Gek
             Plugin::Core *core = nullptr;
             Plugin::Population *population = nullptr;
             Plugin::Renderer *renderer = nullptr;
-            Plugin::Editor *editor = nullptr;
+            Edit::Events *events = nullptr;
 
             NewtonWorld *newtonWorld = nullptr;
             void *newtonListener = nullptr;
@@ -353,19 +354,19 @@ namespace Gek
             {
                 core->listProcessors([&](Plugin::Processor *processor) -> void
                 {
-                    auto castCheck = dynamic_cast<Plugin::Editor *>(processor);
+                    auto castCheck = dynamic_cast<Edit::Events *>(processor);
                     if (castCheck)
                     {
-                        (editor = castCheck)->onModified.connect(this, &Processor::onModified);
+                        (events = castCheck)->onModified.connect(this, &Processor::onModified);
                     }                    
                 });
             }
 
             void onShutdown(void)
             {
-                if (editor)
+                if (events)
                 {
-                    editor->onModified.disconnect(this, &Processor::onModified);
+                    events->onModified.disconnect(this, &Processor::onModified);
                 }
 
                 renderer->onShowUserInterface.disconnect(this, &Processor::onShowUserInterface);
@@ -383,7 +384,7 @@ namespace Gek
             }
 
             // Plugin::Editor Slots
-            void onModified(Plugin::Entity * const entity, const std::type_index &type)
+            void onModified(Edit::Entity * const entity, const std::type_index &type)
             {
                 if (type == typeid(Components::Transform))
                 {

@@ -1,11 +1,10 @@
 ﻿#include "GEK/Utility/ContextUser.hpp"
-#include "GEK/Engine/ComponentMixin.hpp"
-#include "GEK/Engine/Core.hpp"
-#include "GEK/Engine/Entity.hpp"
-#include "GEK/Engine/Editor.hpp"
+#include "GEK/API/ComponentMixin.hpp"
+#include "GEK/API/Core.hpp"
+#include "GEK/API/Entity.hpp"
+#include "GEK/API/Editor.hpp"
+#include "GEK/API/Processor.hpp"
 #include "GEK/Components/Name.hpp"
-#include <concurrent_unordered_map.h>
-#include <random>
 
 namespace Gek
 {
@@ -61,7 +60,7 @@ namespace Gek
     private:
         Plugin::Core *core = nullptr;
         Plugin::Population *population = nullptr;
-        Plugin::Editor *editor = nullptr;
+        Edit::Events *events = nullptr;
 
         using NameMap = std::unordered_map<std::string, Plugin::Entity *>;
         NameMap nameMap;
@@ -133,19 +132,19 @@ namespace Gek
         {
             core->listProcessors([&](Plugin::Processor *processor) -> void
             {
-                auto castCheck = dynamic_cast<Plugin::Editor *>(processor);
+                auto castCheck = dynamic_cast<Edit::Events *>(processor);
                 if (castCheck)
                 {
-                    (editor = castCheck)->onModified.connect(this, &NameProcessor::onModified);
+                    (events = castCheck)->onModified.connect(this, &NameProcessor::onModified);
                 }
             });
         }
 
         void onShutdown(void)
         {
-            if (editor)
+            if (events)
             {
-                editor->onModified.disconnect(this, &NameProcessor::onModified);
+                events->onModified.disconnect(this, &NameProcessor::onModified);
             }
 
             population->onReset.disconnect(this, &NameProcessor::onReset);
@@ -162,7 +161,7 @@ namespace Gek
         }
 
         // Plugin::Editor Slots
-        void onModified(Plugin::Entity * const entity, const std::type_index &type)
+        void onModified(Edit::Entity * const entity, const std::type_index &type)
         {
             if (type == typeid(Components::Name))
             {

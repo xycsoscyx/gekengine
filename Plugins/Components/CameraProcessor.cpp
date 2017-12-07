@@ -1,10 +1,11 @@
 ﻿#include "GEK/Utility/ContextUser.hpp"
-#include "GEK/Engine/Core.hpp"
-#include "GEK/Engine/Processor.hpp"
-#include "GEK/Engine/Population.hpp"
-#include "GEK/Engine/Renderer.hpp"
-#include "GEK/Engine/Entity.hpp"
-#include "GEK/Engine/ComponentMixin.hpp"
+#include "GEK/API/ComponentMixin.hpp"
+#include "GEK/API/Core.hpp"
+#include "GEK/API/Processor.hpp"
+#include "GEK/API/Population.hpp"
+#include "GEK/API/Renderer.hpp"
+#include "GEK/API/Editor.hpp"
+#include "GEK/API/Resources.hpp"
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Components/Name.hpp"
 #include "GEK/Math/Common.hpp"
@@ -123,7 +124,7 @@ namespace Gek
             {
                 if (!cameraComponent.target.empty())
                 {
-                    auto backBuffer = core->getVideoDevice()->getBackBuffer();
+                    auto backBuffer = core->getRenderer()->getVideoDevice()->getBackBuffer();
                     Video::Texture::Description description;
                     description.format = Video::Format::R11G11B10_FLOAT;
                     description.width = backBuffer->getDescription().width;
@@ -194,7 +195,7 @@ namespace Gek
 
                     auto viewMatrix(transformComponent.getMatrix().getInverse());
 
-                    const auto backBuffer = core->getVideoDevice()->getBackBuffer();
+                    const auto backBuffer = core->getRenderer()->getVideoDevice()->getBackBuffer();
                     const float width = float(backBuffer->getDescription().width);
                     const float height = float(backBuffer->getDescription().height);
                     renderer->queueCamera(viewMatrix, cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip, name, data.target);

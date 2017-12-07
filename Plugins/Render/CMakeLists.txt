@@ -9,9 +9,9 @@ add_library(${ProjectID} SHARED ${SOURCES} ${HEADERS})
 
 set_property(TARGET ${ProjectID} PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS True)
 
-target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
-target_link_libraries(${ProjectID} Math Utility Resources signals DirectXTex glbinding)
+target_link_libraries(${ProjectID} signals DirectXTex glbinding Math Utility Resources)
 
 set_target_properties(${ProjectID}
     PROPERTIES

@@ -10,7 +10,7 @@
 #include "GEK/Math/Vector3.hpp"
 #include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Math/Quaternion.hpp"
-#include "GEK/Engine/Component.hpp"
+#include "GEK/API/Component.hpp"
 
 namespace Gek
 {

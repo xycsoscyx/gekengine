@@ -10,9 +10,8 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/ShuntingYard.hpp"
-#include "GEK/Engine/Processor.hpp"
+#include "GEK/API/Entity.hpp"
 #include <wink/signal.hpp>
-#include <unordered_map>
 #include <functional>
 #include <typeindex>
 #include <vector>
@@ -27,6 +26,8 @@ namespace Gek
 
         GEK_INTERFACE(Population)
         {
+            using Component = std::pair<std::string, JSON::Object>;
+
             struct Action
             {
                 std::string name;
@@ -68,11 +69,9 @@ namespace Gek
 
             virtual ShuntingYard &getShuntingYard(void) = 0;
 
-            virtual void reset(void) = 0;
             virtual void load(std::string const &populationName) = 0;
             virtual void save(std::string const &populationName) = 0;
 
-            using Component = std::pair<std::string, JSON::Object>;
             virtual Plugin::Entity *createEntity(const std::vector<Component> &componentList = std::vector<Component>()) = 0;
             virtual void killEntity(Plugin::Entity * const entity) = 0;
             virtual void addComponent(Plugin::Entity * const entity, Component const &componentData) = 0;
@@ -92,27 +91,7 @@ namespace Gek
                 });
             }
 
-            virtual void update(float frameTime = 0.0f) = 0;
             virtual void action(Action const &action) = 0;
         };
     }; // namespace Plugin
-
-    namespace Edit
-    {
-        GEK_PREDECLARE(Component);
-
-        GEK_INTERFACE(Population)
-            : public Plugin::Population
-        {
-            virtual ~Population(void) = default;
-
-            using ComponentMap = std::unordered_map<std::type_index, Plugin::ComponentPtr>;
-            virtual ComponentMap &getComponentMap(void) = 0;
-
-            using EntityList = std::list<Plugin::EntityPtr>;
-            virtual EntityList &getEntityList(void) = 0;
-
-            virtual Edit::Component *getComponent(const std::type_index &type) = 0;
-        };
-    }; // namespace Edit
 }; // namespace Gek
