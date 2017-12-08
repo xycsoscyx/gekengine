@@ -23,12 +23,12 @@ namespace Gek
             Math::Float4x4 matrix;
 
         public:
-            OrientedBox(void);
-            OrientedBox(const OrientedBox &box);
-            OrientedBox(Math::Quaternion const &rotation, Math::Float3 const &translation, const AlignedBox &box);
-            OrientedBox(Math::Float4x4 const &matrix, const AlignedBox &box);
+            OrientedBox(void) noexcept;
+            OrientedBox(const OrientedBox &box) noexcept;
+            OrientedBox(Math::Quaternion const &rotation, Math::Float3 const &translation, const AlignedBox &box) noexcept;
+            OrientedBox(Math::Float4x4 const &matrix, const AlignedBox &box) noexcept;
 
-            OrientedBox &operator = (const OrientedBox &box);
+            OrientedBox &operator = (const OrientedBox &box) noexcept;
         };
     }; // namespace Shapes
 }; // namespace Gek

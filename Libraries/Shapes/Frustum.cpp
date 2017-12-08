@@ -4,11 +4,11 @@ namespace Gek
 {
     namespace Shapes
     {
-        Frustum::Frustum(void)
+        Frustum::Frustum(void) noexcept
         {
         }
 
-        Frustum::Frustum(const Frustum &frustum)
+        Frustum::Frustum(const Frustum &frustum) noexcept
         {
             for (uint32_t index = 0; index < 6; ++index)
             {
@@ -16,12 +16,12 @@ namespace Gek
             }
         }
 
-        Frustum::Frustum(Math::Float4x4 const &perspectiveTransform)
+        Frustum::Frustum(Math::Float4x4 const &perspectiveTransform) noexcept
         {
             create(perspectiveTransform);
         }
 
-        void Frustum::create(Math::Float4x4 const &perspectiveTransform)
+        void Frustum::create(Math::Float4x4 const &perspectiveTransform) noexcept
         {
             // Near clipping plane
             planeList[0].a = perspectiveTransform._13;

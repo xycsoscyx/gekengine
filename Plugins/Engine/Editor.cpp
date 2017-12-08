@@ -8,12 +8,14 @@
 #include "GEK/GUI/Dock.hpp"
 #include "GEK/GUI/Gizmo.hpp"
 #include "GEK/Engine/Core.hpp"
+#include "GEK/API/Component.hpp"
+#include "GEK/API/ComponentMixin.hpp"
+#include "GEK/API/Entity.hpp"
+#include "GEK/API/Processor.hpp"
+#include "GEK/API/Editor.hpp"
 #include "GEK/API/Renderer.hpp"
+#include "GEK/Engine/Resources.hpp"
 #include "GEK/Engine/Population.hpp"
-#include "GEK/Engine/Entity.hpp"
-#include "GEK/Engine/Component.hpp"
-#include "GEK/Engine/ComponentMixin.hpp"
-#include "GEK/Engine/Editor.hpp"
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Components/Name.hpp"
 #include "GEK/Model/Base.hpp"
@@ -25,12 +27,12 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Editor, Plugin::Core *)
+        GEK_CONTEXT_USER(Editor, Engine::Core *)
             , public Plugin::Processor
-            , public Plugin::Editor
+            , public Edit::Events
         {
         private:
-            Plugin::Core *core = nullptr;
+            Engine::Core *core = nullptr;
             Edit::Population *population = nullptr;
             Plugin::Renderer *renderer = nullptr;
             Gek::Processor::Model *modelProcessor = nullptr;
@@ -61,11 +63,16 @@ namespace Gek
             ResourceHandle cameraTarget;
             ImVec2 cameraSize;
 
+            bool createNamedEntity = true;
+            std::string entityName;
+            Plugin::Entity *selectedEntity = nullptr;
+            bool showPopulationDock = true;
+
         public:
-            Editor(Context *context, Plugin::Core *core)
+            Editor(Context *context, Engine::Core *core)
                 : ContextRegistration(context)
                 , core(core)
-                , population(dynamic_cast<Edit::Population *>(core->getPopulation()))
+                , population(core->getFullPopulation())
                 , renderer(core->getRenderer())
             {
                 assert(population);
@@ -77,7 +84,7 @@ namespace Gek
                 {
                     int iconSize = 0;
                     void const *iconBuffer = ImGui::TabWindow::GetDockPanelIconImagePng(&iconSize);
-                    dockPanelIcon = core->getVideoDevice()->loadTexture(iconBuffer, iconSize, 0);
+                    dockPanelIcon = renderer->getVideoDevice()->loadTexture(iconBuffer, iconSize, 0);
                     ImGui::TabWindow::DockPanelIconTextureID = dynamic_cast<ImTextureID>(dockPanelIcon.get());
                 }
 
@@ -144,7 +151,7 @@ namespace Gek
                     description.format = Video::Format::R11G11B10_FLOAT;
                     cameraTarget = core->getResources()->createTexture("editorTarget", description, Plugin::Resources::Flags::LoadImmediately);
 
-                    auto cameraBuffer = dynamic_cast<Engine::Resources *>(core->getResources())->getResource(cameraTarget);
+                    auto cameraBuffer = core->getFullResources()->getResource(cameraTarget);
                     auto cameraTexture = (cameraBuffer ? dynamic_cast<Video::Texture *>(cameraBuffer) : nullptr);
                     if (cameraTexture)
                     {
@@ -230,10 +237,6 @@ namespace Gek
                 dock->EndTab();
             }
 
-            bool createNamedEntity = true;
-            std::string entityName;
-            Plugin::Entity *selectedEntity = nullptr;
-            bool showPopulationDock = true;
             void showPopulation(void)
             {
                 auto &imGuiIo = ImGui::GetIO();
@@ -462,12 +465,12 @@ namespace Gek
                                 ImGui::SetNextTreeNodeOpen(selectedEntity == entity);
                                 if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_Framed))
                                 {
-                                    selectedEntity = entity;
-                                    auto editorEntity = dynamic_cast<Edit::Entity *>(entity);
-                                    if (editorEntity)
+                                    selectedEntity = dynamic_cast<Edit::Entity *>(entity);
+                                    auto editEntity = dynamic_cast<Edit::Entity *>(selectedEntity);
+                                    if (editEntity)
                                     {
                                         std::set<std::type_index> deleteComponentSet;
-                                        auto const &entityComponentMap = editorEntity->getComponentMap();
+                                        auto const &entityComponentMap = editEntity->getComponentMap();
                                         for (auto &componentSearch : entityComponentMap)
                                         {
                                             Edit::Component *component = population->getComponent(componentSearch.first);

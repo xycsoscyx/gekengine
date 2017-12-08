@@ -19,10 +19,14 @@ namespace Gek
         struct Vector4
         {
         public:
-            static const Vector4 Zero;
-			static const Vector4 One;
-			static const Vector4 Black;
-			static const Vector4 White;
+            using TYPE2 = Vector2<TYPE>;
+            using TYPE3 = Vector3<TYPE>;
+            using TYPE4 = Vector4<TYPE>;
+
+            static const TYPE4 Zero;
+			static const TYPE4 One;
+			static const TYPE4 Black;
+			static const TYPE4 White;
 
         public:
             union
@@ -34,8 +38,8 @@ namespace Gek
                     {
                         struct { TYPE x, y, z; };
                         struct { TYPE r, g, b; };
-                        Vector3<TYPE> xyz;
-                        Vector3<TYPE> rgb;
+                        TYPE3 xyz;
+                        TYPE3 rgb;
                     };
                     
                     union
@@ -47,29 +51,29 @@ namespace Gek
 
                 struct
                 {
-                    Vector2<TYPE> minimum;
-                    Vector2<TYPE> maximum;
+                    TYPE2 minimum;
+                    TYPE2 maximum;
                 };
 
                 struct
                 {
-                    Vector2<TYPE> xy;
-                    Vector2<TYPE> zw;
+                    TYPE2 xy;
+                    TYPE2 zw;
                 };
 
                 struct
                 {
-                    Vector2<TYPE> position;
-                    Vector2<TYPE> size;
+                    TYPE2 position;
+                    TYPE2 size;
                 };
             };
 
         public:
-            Vector4(void)
+            Vector4(void) noexcept
             {
             }
 
-            Vector4(const Vector4<TYPE> &vector)
+            Vector4(TYPE4 const &vector) noexcept
                 : x(vector.x)
                 , y(vector.y)
                 , z(vector.z)
@@ -77,7 +81,7 @@ namespace Gek
             {
             }
 
-            explicit Vector4(TYPE value)
+            explicit Vector4(TYPE value) noexcept
 				: x(value)
 				, y(value)
 				, z(value)
@@ -85,7 +89,7 @@ namespace Gek
             {
             }
 
-            explicit Vector4(TYPE x, TYPE y, TYPE z, TYPE w)
+            explicit Vector4(TYPE x, TYPE y, TYPE z, TYPE w) noexcept
 				: x(x)
 				, y(y)
 				, z(z)
@@ -93,7 +97,7 @@ namespace Gek
 			{
             }
 
-            explicit Vector4(const TYPE *data)
+            explicit Vector4(TYPE const *data) noexcept
 				: x(data[0])
 				, y(data[1])
 				, z(data[2])
@@ -101,7 +105,7 @@ namespace Gek
 			{
             }
 
-            explicit Vector4(const Vector3<TYPE> &xyz, TYPE w)
+            explicit Vector4(TYPE3 const &xyz, TYPE w) noexcept
 				: x(xyz.x)
 				, y(xyz.y)
 				, z(xyz.z)
@@ -109,7 +113,7 @@ namespace Gek
 			{
 			}
 
-            explicit Vector4(const Vector2<TYPE> &xy, const Vector2<TYPE> &zw)
+            explicit Vector4(TYPE2 const &xy, TYPE2 const &zw) noexcept
 				: x(xy.x)
 				, y(xy.y)
 				, z(zw.x)
@@ -117,12 +121,12 @@ namespace Gek
 			{
 			}
 
-            void set(TYPE value)
+            void set(TYPE value) noexcept
             {
                 x = y = z = w = value;
             }
 
-            void set(TYPE x, TYPE y, TYPE z, TYPE w)
+            void set(TYPE x, TYPE y, TYPE z, TYPE w) noexcept
             {
 				this->x = x;
 				this->y = y;
@@ -130,7 +134,7 @@ namespace Gek
 				this->w = w;
             }
 
-            void set(const TYPE *data)
+            void set(TYPE const *data) noexcept
             {
                 this->x = data[0];
                 this->y = data[1];
@@ -138,45 +142,45 @@ namespace Gek
                 this->w = data[3];
             }
 
-            void set(const Vector3<TYPE> &xyz, float w)
+            void set(TYPE3 const &xyz, float w) noexcept
             {
                 this->xyz = xyz;
                 this->w = w;
             }
 
-            TYPE getMagnitude(void) const
+            TYPE getMagnitude(void) const noexcept
             {
                 return dot(*this);
             }
 
-            TYPE getLength(void) const
+            TYPE getLength(void) const noexcept
             {
                 return std::sqrt(getMagnitude());
             }
 
-            TYPE getDistance(const Vector4 &vector) const
+            TYPE getDistance(TYPE4 const &vector) const noexcept
             {
                 return (vector - (*this)).getLength();
             }
 
-            Vector4<TYPE> getNormal(void) const
+            TYPE4 getNormal(void) const noexcept
             {
                 float inverseLength = (1.0f / getLength());
                 return ((*this) * inverseLength);
             }
 
-            Vector4<TYPE> getAbsolute(void) const
+            TYPE4 getAbsolute(void) const noexcept
             {
-                return Vector4(
+                return TYPE4(
                     std::abs(x),
                     std::abs(y),
                     std::abs(z),
                     std::abs(w));
             }
 
-            Vector4<TYPE> getMinimum(const Vector4 &vector) const
+            TYPE4 getMinimum(TYPE4 const &vector) const noexcept
 			{
-				return Vector4(
+				return TYPE4(
 					std::min(x, vector.x),
 					std::min(y, vector.y),
 					std::min(z, vector.z),
@@ -184,9 +188,9 @@ namespace Gek
 				);
 			}
 
-			Vector4<TYPE> getMaximum(const Vector4 &vector) const
+			TYPE4 getMaximum(TYPE4 const &vector) const noexcept
 			{
-				return Vector4(
+				return TYPE4(
 					std::max(x, vector.x),
 					std::max(y, vector.y),
 					std::max(z, vector.z),
@@ -194,9 +198,9 @@ namespace Gek
 				);
 			}
 
-			Vector4<TYPE> getClamped(const Vector4 &min, const Vector4 &max) const
+			TYPE4 getClamped(TYPE4 const &min, TYPE4 const &max) const noexcept
 			{
-				return Vector4(
+				return TYPE4(
 					std::min(std::max(x, min.x), max.x),
 					std::min(std::max(y, min.y), max.y),
 					std::min(std::max(z, min.z), max.z),
@@ -204,75 +208,75 @@ namespace Gek
 				);
 			}
 
-			Vector4<TYPE> getSaturated(void) const
+			TYPE4 getSaturated(void) const noexcept
 			{
 				return getClamped(Zero, One);
 			}
 
-			TYPE dot(const Vector4 &vector) const
+			TYPE dot(TYPE4 const &vector) const noexcept
             {
                 return ((x * vector.x) + (y * vector.y) + (z * vector.z) + (w * vector.w));
             }
 
-			void normalize(void)
+			void normalize(void) noexcept
 			{
                 float inverseLength = (1.0f / getLength());
                 (*this) *= inverseLength;
 			}
 
-            std::tuple<TYPE, TYPE, TYPE, TYPE> getTuple(void) const
+            std::tuple<TYPE, TYPE, TYPE, TYPE> getTuple(void) const noexcept
             {
                 return std::make_tuple(x, y, z, w);
             }
 
-            bool operator < (const Vector4 &vector) const
+            bool operator < (TYPE4 const &vector) const noexcept
             {
                 return (getTuple() < vector.getTuple());
             }
 
-            bool operator > (const Vector4 &vector) const
+            bool operator > (TYPE4 const &vector) const noexcept
             {
                 return (getTuple() > vector.getTuple());
             }
 
-            bool operator <= (const Vector4 &vector) const
+            bool operator <= (TYPE4 const &vector) const noexcept
             {
                 return (getTuple() <= vector.getTuple());
             }
 
-            bool operator >= (const Vector4 &vector) const
+            bool operator >= (TYPE4 const &vector) const noexcept
             {
                 return (getTuple() >= vector.getTuple());
             }
 
-            bool operator == (const Vector4 &vector) const
+            bool operator == (TYPE4 const &vector) const noexcept
             {
                 return (getTuple() == vector.getTuple());
             }
 
-            bool operator != (const Vector4 &vector) const
+            bool operator != (TYPE4 const &vector) const noexcept
             {
                 return (getTuple() != vector.getTuple());
             }
 
             // vector operations
-            float &operator [] (size_t index)
+            float &operator [] (size_t index) noexcept
             {
                 return data[index];
             }
 
-            float const &operator [] (size_t index) const
+            float const &operator [] (size_t index) const noexcept
             {
                 return data[index];
             }
 
-            Vector4<TYPE> &operator = (const Vector4<TYPE> &vector)
+            TYPE4 &operator = (TYPE4 const &vector) noexcept
             {
                 std::tie(x, y, z, w) = vector.getTuple();
                 return (*this);
             }
 
-            void operator -= (const Vector4 &vector)
+            void operator -= (TYPE4 const &vector) noexcept
             {
 				x -= vector.x;
 				y -= vector.y;
@@ -280,7 +284,7 @@ namespace Gek
 				w -= vector.w;
             }
 
-            void operator += (const Vector4 &vector)
+            void operator += (TYPE4 const &vector) noexcept
             {
 				x += vector.x;
 				y += vector.y;
@@ -288,7 +292,7 @@ namespace Gek
 				w += vector.w;
 			}
 
-            void operator /= (const Vector4 &vector)
+            void operator /= (TYPE4 const &vector) noexcept
             {
 				x /= vector.x;
 				y /= vector.y;
@@ -296,7 +300,7 @@ namespace Gek
 				w /= vector.w;
 			}
 
-            void operator *= (const Vector4 &vector)
+            void operator *= (TYPE4 const &vector) noexcept
             {
 				x *= vector.x;
 				y *= vector.y;
@@ -304,36 +308,36 @@ namespace Gek
 				w *= vector.w;
 			}
 
-            Vector4 operator - (const Vector4 &vector) const
+            TYPE4 operator - (TYPE4 const &vector) const noexcept
             {
-				return Vector4(
+				return TYPE4(
 					(x - vector.x),
 					(y - vector.y),
 					(z - vector.z),
 					(w - vector.w));
             }
 
-            Vector4 operator + (const Vector4 &vector) const
+            TYPE4 operator + (TYPE4 const &vector) const noexcept
             {
-				return Vector4(
+				return TYPE4(
 					(x + vector.x),
 					(y + vector.y),
 					(z + vector.z),
 					(w + vector.w));
 			}
 
-            Vector4 operator / (const Vector4 &vector) const
+            TYPE4 operator / (TYPE4 const &vector) const noexcept
             {
-				return Vector4(
+				return TYPE4(
 					(x / vector.x),
 					(y / vector.y),
 					(z / vector.z),
 					(w / vector.w));
 			}
 
-            Vector4 operator * (const Vector4 &vector) const
+            TYPE4 operator * (TYPE4 const &vector) const noexcept
             {
-				return Vector4(
+				return TYPE4(
 					(x * vector.x),
 					(y * vector.y),
 					(z * vector.z),
@@ -341,7 +345,7 @@ namespace Gek
 			}
 
             // scalar operations
-            void operator -= (TYPE scalar)
+            void operator -= (TYPE scalar) noexcept
             {
 				x += scalar;
 				y += scalar;
@@ -349,7 +353,7 @@ namespace Gek
 				w += scalar;
             }
 
-            void operator += (TYPE scalar)
+            void operator += (TYPE scalar) noexcept
             {
 				x -= scalar;
 				y -= scalar;
@@ -357,7 +361,7 @@ namespace Gek
 				w -= scalar;
 			}
 
-            void operator /= (TYPE scalar)
+            void operator /= (TYPE scalar) noexcept
             {
 				x /= scalar;
 				y /= scalar;
@@ -365,7 +369,7 @@ namespace Gek
 				w /= scalar;
 			}
 
-            void operator *= (TYPE scalar)
+            void operator *= (TYPE scalar) noexcept
             {
 				x *= scalar;
 				y *= scalar;
@@ -373,36 +377,36 @@ namespace Gek
 				w *= scalar;
 			}
 
-            Vector4 operator - (TYPE scalar) const
+            TYPE4 operator - (TYPE scalar) const noexcept
             {
-                return Vector4(
+                return TYPE4(
                     (x - scalar),
                     (y - scalar),
                     (z - scalar),
                     (w - scalar));
             };
 
-            Vector4 operator + (TYPE scalar) const
+            TYPE4 operator + (TYPE scalar) const noexcept
             {
-                return Vector4(
+                return TYPE4(
                     (x + scalar),
                     (y + scalar),
                     (z + scalar),
                     (w + scalar));
 			}
 
-            Vector4 operator / (TYPE scalar) const
+            TYPE4 operator / (TYPE scalar) const noexcept
             {
-                return Vector4(
+                return TYPE4(
                     (x / scalar),
                     (y / scalar),
                     (z / scalar),
                     (w / scalar));
 			}
 
-            Vector4 operator * (TYPE scalar) const
+            TYPE4 operator * (TYPE scalar) const noexcept
             {
-                return Vector4(
+                return TYPE4(
                     (x * scalar),
                     (y * scalar),
                     (z * scalar),
@@ -411,13 +415,13 @@ namespace Gek
         };
 
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-        Vector4<TYPE> operator - (const Vector4<TYPE> &vector)
+        Vector4<TYPE> operator - (Vector4<TYPE> const &vector) noexcept
         {
 			return Vector4<TYPE>(-vector.x, -vector.y, -vector.z, -vector.w);
         }
 
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-        Vector4<TYPE> operator + (TYPE scalar, const Vector4<TYPE> &vector)
+        Vector4<TYPE> operator + (TYPE scalar, Vector4<TYPE> const &vector) noexcept
         {
 			return Vector4<TYPE>(
 				(scalar + vector.x),
@@ -427,7 +431,7 @@ namespace Gek
         }
 
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-        Vector4<TYPE> operator - (TYPE scalar, const Vector4<TYPE> &vector)
+        Vector4<TYPE> operator - (TYPE scalar, Vector4<TYPE> const &vector) noexcept
         {
 			return Vector4<TYPE>(
 				(scalar - vector.x),
@@ -437,7 +441,7 @@ namespace Gek
 		}
 
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-        Vector4<TYPE> operator * (TYPE scalar, const Vector4<TYPE> &vector)
+        Vector4<TYPE> operator * (TYPE scalar, Vector4<TYPE> const &vector) noexcept
         {
 			return Vector4<TYPE>(
 				(scalar * vector.x),
@@ -447,7 +451,7 @@ namespace Gek
 		}
 
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-        Vector4<TYPE> operator / (TYPE scalar, const Vector4<TYPE> &vector)
+        Vector4<TYPE> operator / (TYPE scalar, Vector4<TYPE> const &vector) noexcept
         {
 			return Vector4<TYPE>(
 				(scalar / vector.x),

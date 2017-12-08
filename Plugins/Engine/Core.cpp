@@ -1,10 +1,12 @@
-﻿#include "GEK/Utility/String.hpp"
-#include "GEK/Utility/FileSystem.hpp"
+﻿#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/String.hpp"
 #include "GEK/Utility/Timer.hpp"
-#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/Profiler.hpp"
+#include "GEK/Utility/FileSystem.hpp"
 #include "GEK/GUI/Utilities.hpp"
 #include "GEK/GUI/Dock.hpp"
 #include "GEK/API/Renderer.hpp"
+#include "GEK/API/Processor.hpp"
 #include "GEK/Engine/Core.hpp"
 #include "GEK/Engine/Resources.hpp"
 #include "GEK/Engine/Population.hpp"
@@ -934,6 +936,16 @@ namespace Gek
             Video::Device * getVideoDevice(void) const
             {
                 return videoDevice.get();
+            }
+
+            Engine::Population * getFullPopulation(void) const
+            {
+                return population.get();
+            }
+
+            Engine::Resources * getFullResources(void) const
+            {
+                return resources.get();
             }
 
             Plugin::Population * getPopulation(void) const

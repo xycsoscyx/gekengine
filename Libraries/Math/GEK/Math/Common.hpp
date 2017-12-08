@@ -25,37 +25,37 @@ namespace Gek
         const float E = 2.71828182845904523536f;
 
 		template <typename TYPE>
-		TYPE DegreesToRadians(TYPE degrees)
+		TYPE DegreesToRadians(TYPE degrees) noexcept
 		{
 			return TYPE(degrees * (Pi / 180.0f));
 		}
 
 		template <typename TYPE>
-		TYPE RadiansToDegrees(TYPE radians)
+		TYPE RadiansToDegrees(TYPE radians) noexcept
 		{
 			return TYPE(radians * (180.0f / Pi));
 		}
 
 		template <typename DATA, typename TYPE>
-		DATA Interpolate(const DATA &valueA, const DATA &valueB, TYPE factor)
+		DATA Interpolate(const DATA &valueA, const DATA &valueB, TYPE factor) noexcept
 		{
 			return (((valueB - valueA) * factor) + valueA);
 		}
 
 		template <typename DATA, typename TYPE>
-		DATA Blend(const DATA &valueA, const DATA &valueB, TYPE factor)
+		DATA Blend(const DATA &valueA, const DATA &valueB, TYPE factor) noexcept
 		{
 			return ((valueA * (1.0f - factor)) + (valueB * factor));
 		}
 
 		template <typename DATA, typename TYPE>
-		DATA Blend(const DATA &valueA, TYPE factorX, const DATA &valueB, TYPE factorY)
+		DATA Blend(const DATA &valueA, TYPE factorX, const DATA &valueB, TYPE factorY) noexcept
 		{
 			return ((valueA * factorX) + (valueB * factorY));
 		}
 
         template <typename TYPE>
-        TYPE Clamp(TYPE value, TYPE min, TYPE max)
+        TYPE Clamp(TYPE value, TYPE min, TYPE max) noexcept
         {
             return std::min(std::max(value, min), max);
         }

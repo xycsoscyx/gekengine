@@ -5,22 +5,22 @@
 #include "GEK/Utility/ShuntingYard.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include "GEK/Shapes/Sphere.hpp"
 #include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Shapes/Sphere.hpp"
+#include "GEK/GUI/Utilities.hpp"
+#include "GEK/API/Renderer.hpp"
+#include "GEK/API/Population.hpp"
+#include "GEK/API/Entity.hpp"
+#include "GEK/API/Component.hpp"
+#include "GEK/Components/Transform.hpp"
+#include "GEK/Components/Light.hpp"
+#include "GEK/Components/Color.hpp"
 #include "GEK/Engine/Core.hpp"
-#include "GEK/Engine/Visual.hpp"
-#include "GEK/Engine/Renderer.hpp"
 #include "GEK/Engine/Resources.hpp"
 #include "GEK/Engine/Shader.hpp"
 #include "GEK/Engine/Filter.hpp"
 #include "GEK/Engine/Material.hpp"
-#include "GEK/Engine/Population.hpp"
-#include "GEK/Engine/Entity.hpp"
-#include "GEK/Engine/Component.hpp"
-#include "GEK/Components/Transform.hpp"
-#include "GEK/Components/Light.hpp"
-#include "GEK/Components/Color.hpp"
-#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Engine/Visual.hpp"
 #include <concurrent_unordered_map.h>
 #include <concurrent_unordered_set.h>
 #include <concurrent_queue.h>
@@ -499,7 +499,7 @@ namespace Gek
             }
         };
 
-        GEK_CONTEXT_USER(Resources, Plugin::Core *)
+        GEK_CONTEXT_USER(Resources, Engine::Core *)
             , public Engine::Resources
             , public ResourceRequester
         {
@@ -512,7 +512,7 @@ namespace Gek
             std::recursive_mutex shaderMutex;
 
             ProgramResourceCache<ProgramHandle, Video::Object> programCache;
-            GeneralResourceCache<VisualHandle, Plugin::Visual> visualCache;
+            GeneralResourceCache<VisualHandle, Engine::Visual> visualCache;
             GeneralResourceCache<MaterialHandle, Engine::Material> materialCache;
             ReloadResourceCache<ShaderHandle, Engine::Shader> shaderCache;
             ReloadResourceCache<ResourceHandle, Engine::Filter> filterCache;
@@ -549,7 +549,7 @@ namespace Gek
             Validate dispatchValid;
 
         public:
-            Resources(Context *context, Plugin::Core *core)
+            Resources(Context *context, Engine::Core *core)
                 : ContextRegistration(context)
                 , core(core)
                 , videoDevice(core->getVideoDevice())
@@ -957,9 +957,9 @@ namespace Gek
             // Plugin::Resources
             VisualHandle loadVisual(std::string_view visualName)
             {
-                auto load = [this, visualName = std::string(visualName)](VisualHandle)->Plugin::VisualPtr
+                auto load = [this, visualName = std::string(visualName)](VisualHandle) -> Engine::VisualPtr
                 {
-                    return getContext()->createClass<Plugin::Visual>("Engine::Visual", videoDevice, (Engine::Resources *)this, visualName);
+                    return getContext()->createClass<Engine::Visual>("Engine::Visual", videoDevice, this, visualName);
                 };
 
                 auto hash = GetHash(visualName);
@@ -968,9 +968,9 @@ namespace Gek
 
             MaterialHandle loadMaterial(std::string_view materialName)
             {
-                auto load = [this, materialName = std::string(materialName)](MaterialHandle handle)->Engine::MaterialPtr
+                auto load = [this, materialName = std::string(materialName)](MaterialHandle handle) -> Engine::MaterialPtr
                 {
-                    return getContext()->createClass<Engine::Material>("Engine::Material", (Engine::Resources *)this, materialName, handle);
+                    return getContext()->createClass<Engine::Material>("Engine::Material", this, materialName, handle);
                 };
 
                 auto hash = GetHash(materialName);

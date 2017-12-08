@@ -31,7 +31,7 @@ namespace Gek
                 Vector planeList[6];
             };
 
-            Vector multiply(Vector const &vector, Matrix const &matrix)
+            Vector multiply(Vector const &vector, Matrix const &matrix) noexcept
             {
                 __m128 x = _mm_mul_ps(vector.x, matrix.x.x);
                 x = _mm_add_ps(_mm_mul_ps(vector.y, matrix.y.x), x);
@@ -59,7 +59,7 @@ namespace Gek
                 };
             }
 
-            Matrix multiply(Matrix const &leftMatrix, Matrix const &rightMatrix)
+            Matrix multiply(Matrix const &leftMatrix, Matrix const &rightMatrix) noexcept
             {
                 Vector x = multiply(leftMatrix.x, rightMatrix);
                 Vector y = multiply(leftMatrix.y, rightMatrix);
@@ -71,7 +71,7 @@ namespace Gek
                 };
             }
 
-            Frustum loadFrustum(Float4 const planeList[])
+            Frustum loadFrustum(Float4 const planeList[]) noexcept
             {
                 return
                 {
@@ -114,7 +114,7 @@ namespace Gek
                 FLOATS const &shapeYPositionList,
                 FLOATS const &shapeZPositionList,
                 FLOATS const &shapeRadiusList,
-                BOOLEANS &visibilityList)
+                BOOLEANS &visibilityList) noexcept
             {
                 static const auto AllZero = _mm_setzero_ps();
                 for (size_t objectBase = 0; objectBase < objectCount; objectBase += 4)
@@ -152,7 +152,7 @@ namespace Gek
                 }
             }
 
-            void getViewSpaceRect(Matrix const &workdViewProjectionMatrix, Vector const &minimum, Vector const &maximum, Vector result[])
+            void getViewSpaceRect(Matrix const &workdViewProjectionMatrix, Vector const &minimum, Vector const &maximum, Vector result[]) noexcept
             {
                 auto m_xx_x = _mm_mul_ps(workdViewProjectionMatrix.x.x, minimum.x);    m_xx_x = _mm_add_ps(m_xx_x, workdViewProjectionMatrix.w.x);
                 auto m_xy_x = _mm_mul_ps(workdViewProjectionMatrix.x.y, minimum.x);    m_xy_x = _mm_add_ps(m_xy_x, workdViewProjectionMatrix.w.y);
@@ -266,7 +266,7 @@ namespace Gek
                 FLOATS const &halfSizeYList,
                 FLOATS const &halfSizeZList,
                 FLOATS const * const transformList,
-                BOOLEANS &visibilityList)
+                BOOLEANS &visibilityList) noexcept
             {
                 auto combinedMatrix(viewMatrix * projectionMatrix);
                 const Matrix viewProjectionMatrix =

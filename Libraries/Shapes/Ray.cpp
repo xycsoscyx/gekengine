@@ -7,23 +7,23 @@ namespace Gek
 {
     namespace Shapes
     {
-        Ray::Ray(void)
+        Ray::Ray(void) noexcept
         {
         }
 
-        Ray::Ray(Math::Float3 const &origin, Math::Float3 const &normal)
+        Ray::Ray(Math::Float3 const &origin, Math::Float3 const &normal) noexcept
             : origin(origin)
             , normal(normal)
         {
         }
 
-        Ray::Ray(const Ray &ray)
+        Ray::Ray(const Ray &ray) noexcept
             : origin(ray.origin)
             , normal(ray.normal)
         {
         }
 
-        Ray &Ray::operator = (const Ray &ray)
+        Ray &Ray::operator = (const Ray &ray) noexcept
         {
             origin = ray.origin;
             normal = ray.normal;

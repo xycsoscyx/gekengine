@@ -51,7 +51,7 @@ namespace Gek
             };
 
         public:
-            inline static Float4x4 MakeScaling(Float3 const &scale, Float3 const &translation = Math::Float3::Zero)
+            inline static Float4x4 MakeScaling(Float3 const &scale, Float3 const &translation = Math::Float3::Zero) noexcept
             {
                 return Float4x4(
                     scale.x, 0.0f, 0.0f, 0.0f,
@@ -60,7 +60,7 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
-            inline static Float4x4 MakeQuaternionRotation(Quaternion const &rotation, Float3 const &translation = Math::Float3::Zero)
+            inline static Float4x4 MakeQuaternionRotation(Quaternion const &rotation, Float3 const &translation = Math::Float3::Zero) noexcept
             {
                 Float4x4 matrix;
                 matrix.setRotation(rotation);
@@ -68,7 +68,7 @@ namespace Gek
                 return matrix;
             }
 
-            inline static Float4x4 MakeAngularRotation(Float3 const &axis, float radians, Float3 const &translation = Math::Float3::Zero)
+            inline static Float4x4 MakeAngularRotation(Float3 const &axis, float radians, Float3 const &translation = Math::Float3::Zero) noexcept
             {
                 // do the trig
                 float cosAngle = cos(radians);
@@ -83,7 +83,7 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
-            inline static Float4x4 MakeEulerRotation(float pitch, float yaw, float roll, Float3 const &translation = Math::Float3::Zero)
+            inline static Float4x4 MakeEulerRotation(float pitch, float yaw, float roll, Float3 const &translation = Math::Float3::Zero) noexcept
             {
                 float cosPitch(std::cos(pitch));
                 float sinPitch(std::sin(pitch));
@@ -99,7 +99,7 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
-            inline static Float4x4 MakePitchRotation(float radians, Float3 const &translation = Math::Float3::Zero)
+            inline static Float4x4 MakePitchRotation(float radians, Float3 const &translation = Math::Float3::Zero) noexcept
             {
                 float cosAngle(std::cos(radians));
                 float sinAngle(std::sin(radians));
@@ -111,7 +111,7 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
-            inline static Float4x4 MakeYawRotation(float radians, Float3 const &translation = Math::Float3::Zero)
+            inline static Float4x4 MakeYawRotation(float radians, Float3 const &translation = Math::Float3::Zero) noexcept
             {
                 float cosAngle(std::cos(radians));
                 float sinAngle(std::sin(radians));
@@ -123,7 +123,7 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
-            inline static Float4x4 MakeRollRotation(float radians, Float3 const &translation = Math::Float3::Zero)
+            inline static Float4x4 MakeRollRotation(float radians, Float3 const &translation = Math::Float3::Zero) noexcept
             {
                 float cosAngle(std::cos(radians));
                 float sinAngle(std::sin(radians));
@@ -135,7 +135,7 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
-            inline static Float4x4 MakeTranslation(Float3 const &translation)
+            inline static Float4x4 MakeTranslation(Float3 const &translation) noexcept
             {
                 return Float4x4(
                     1.0f, 0.0f, 0.0f, 0.0f,
@@ -145,7 +145,7 @@ namespace Gek
             }
 
             // https://msdn.microsoft.com/en-us/library/windows/desktop/bb205347(v=vs.85).aspx
-            inline static Float4x4 MakeOrthographic(float left, float top, float right, float bottom, float nearClip, float farClip)
+            inline static Float4x4 MakeOrthographic(float left, float top, float right, float bottom, float nearClip, float farClip) noexcept
             {
                 return Float4x4(
                     (2.0f / (right - left)), 0.0f, 0.0f, 0.0f,
@@ -155,7 +155,7 @@ namespace Gek
             }
 
             // https://msdn.microsoft.com/en-us/library/windows/desktop/bb205350(v=vs.85).aspx
-            inline static Float4x4 MakePerspective(float fieldOfView, float aspectRatio, float nearClip, float farClip)
+            inline static Float4x4 MakePerspective(float fieldOfView, float aspectRatio, float nearClip, float farClip) noexcept
             {
                 float yScale(1.0f / std::tan(fieldOfView * 0.5f));
                 float xScale(yScale / aspectRatio);
@@ -169,11 +169,11 @@ namespace Gek
             }
 
         public:
-            inline Float4x4(void)
+            inline Float4x4(void) noexcept
             {
             }
 
-            inline Float4x4(Float4x4 const &matrix)
+            inline Float4x4(Float4x4 const &matrix) noexcept
                 : rx(matrix.rx)
                 , ry(matrix.ry)
                 , rz(matrix.rz)
@@ -185,7 +185,7 @@ namespace Gek
                 float _11, float _12, float _13, float _14,
                 float _21, float _22, float _23, float _24,
                 float _31, float _32, float _33, float _34,
-                float _41, float _42, float _43, float _44)
+                float _41, float _42, float _43, float _44) noexcept
                 : _11(_11), _12(_12), _13(_13), _14(_14)
                 , _21(_21), _22(_22), _23(_23), _24(_24)
                 , _31(_31), _32(_32), _33(_33), _34(_34)
@@ -193,7 +193,7 @@ namespace Gek
             {
             }
 
-            explicit inline Float4x4(float const *data)
+            explicit inline Float4x4(float const *data) noexcept
                 : rx(data + 0)
                 , ry(data + 4)
                 , rz(data + 8)
@@ -201,7 +201,7 @@ namespace Gek
             {
             }
 
-            inline void setRotation(Quaternion const &rotation)
+            inline void setRotation(Quaternion const &rotation) noexcept
             {
                 float xx(rotation.x * rotation.x);
                 float yy(rotation.y * rotation.y);
@@ -229,7 +229,7 @@ namespace Gek
                 }
             }
 
-            inline float getDeterminant(void) const
+            inline float getDeterminant(void) const noexcept
             {
                 return (
                     (table[0][0] * table[1][1] - table[1][0] * table[0][1]) *
@@ -246,7 +246,7 @@ namespace Gek
                     (table[0][2] * table[1][3] - table[1][2] * table[0][3]));
             }
 
-            inline Float4x4 getTranspose(void) const
+            inline Float4x4 getTranspose(void) const noexcept
             {
                 return Float4x4(
                     _11, _21, _31, _41,
@@ -255,7 +255,7 @@ namespace Gek
                     _14, _24, _34, _44);
             }
 
-            inline Float4x4 getInverse(void) const
+            inline Float4x4 getInverse(void) const noexcept
             {
                 float determinant(getDeterminant());
                 if (std::abs(determinant) < Epsilon)
@@ -286,7 +286,7 @@ namespace Gek
                 }
             }
 
-            inline Quaternion getRotation(void) const
+            inline Quaternion getRotation(void) const noexcept
             {
                 Math::Float3 normalized[3] =
                 {
@@ -348,7 +348,7 @@ namespace Gek
                 return result;
             }
 
-            inline Float3 getScaling(void) const
+            inline Float3 getScaling(void) const noexcept
             {
                 return Math::Float3(
                     rx.xyz.getLength(),
@@ -356,19 +356,19 @@ namespace Gek
                     rz.xyz.getLength());
             }
 
-            inline Float4x4 &transpose(void)
+            inline Float4x4 &transpose(void) noexcept
             {
                 (*this) = getTranspose();
                 return (*this);
             }
 
-            inline Float4x4 &invert(void)
+            inline Float4x4 &invert(void) noexcept
             {
                 (*this) = getInverse();
                 return (*this);
             }
 
-            inline Float4x4 &orthonormalize(void)
+            inline Float4x4 &orthonormalize(void) noexcept
             {
                 rx = Float4(rx.xyz.getNormal(), 0.0f);
                 ry = Float4(ry.xyz.getNormal(), 0.0f);
@@ -376,7 +376,7 @@ namespace Gek
                 return (*this);
             }
 
-            inline void operator *= (Float4x4 const &matrix)
+            inline void operator *= (Float4x4 const &matrix) noexcept
             {
                 __m128 simd[2][4] =
                 {
@@ -400,7 +400,7 @@ namespace Gek
                 _mm_storeu_ps(rw.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
             }
 
-            inline Float4x4 operator * (Float4x4 const &matrix) const
+            inline Float4x4 operator * (Float4x4 const &matrix) const noexcept
             {
                 __m128 simd[2][4] =
                 {
@@ -426,7 +426,7 @@ namespace Gek
                 return result;
             }
 
-            inline Float3 rotate(Float3 const &vector) const
+            inline Float3 rotate(Float3 const &vector) const noexcept
             {
                 return Float3(
                     ((vector.x * _11) + (vector.y * _21) + (vector.z * _31)),
@@ -434,7 +434,7 @@ namespace Gek
                     ((vector.x * _13) + (vector.y * _23) + (vector.z * _33)));
             }
 
-            inline Float3 transform(Float3 const &vector) const
+            inline Float3 transform(Float3 const &vector) const noexcept
             {
                 return Float3(
                     ((vector.x * _11) + (vector.y * _21) + (vector.z * _31) + _41),
@@ -442,7 +442,7 @@ namespace Gek
                     ((vector.x * _13) + (vector.y * _23) + (vector.z * _33) + _43));
             }
 
-            inline Float4 transform(Float4 const &vector) const
+            inline Float4 transform(Float4 const &vector) const noexcept
             {
                 return Float4(
                     ((vector.x * _11) + (vector.y * _21) + (vector.z * _31) + (vector.w * _41)),
@@ -451,32 +451,32 @@ namespace Gek
                     ((vector.x * _14) + (vector.y * _24) + (vector.z * _34) + (vector.w * _44)));
             }
 
-            std::tuple<Float4, Float4, Float4, Float4> getTuple(void) const
+            std::tuple<Float4, Float4, Float4, Float4> getTuple(void) const noexcept
             {
                 return std::make_tuple(rx, ry, rz, rw);
             }
 
-            bool operator == (Float4x4 const &matrix) const
+            bool operator == (Float4x4 const &matrix) const noexcept
             {
                 return (getTuple() == matrix.getTuple());
             }
 
-            bool operator != (Float4x4 const &matrix) const
+            bool operator != (Float4x4 const &matrix) const noexcept
             {
                 return (getTuple() != matrix.getTuple());
             }
 
-            Float4 &operator [] (size_t index)
+            Float4 &operator [] (size_t index) noexcept
             {
                 return rows[index];
             }
 
-            Float4 const &operator [] (size_t index) const
+            Float4 const &operator [] (size_t index) const noexcept
             {
                 return rows[index];
             }
 
-            inline Float4x4 &operator = (Float4x4 const &matrix)
+            inline Float4x4 &operator = (Float4x4 const &matrix) noexcept
             {
                 std::tie(rx, ry, rz, rw) = matrix.getTuple();
                 return (*this);

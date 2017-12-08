@@ -26,18 +26,18 @@ namespace Gek
             };
 
         public:
-            Plane(void);
-            Plane(float a, float b, float c, float d);
-            Plane(Math::Float3 const &normal, float distance);
-            Plane(Math::Float3 const &pointA, Math::Float3 const &pointB, Math::Float3 const &pointC);
-            Plane(Math::Float3 const &normal, Math::Float3 const &pointOnPlane);
+            Plane(void) noexcept;
+            Plane(float a, float b, float c, float d) noexcept;
+            Plane(Math::Float3 const &normal, float distance) noexcept;
+            Plane(Math::Float3 const &pointA, Math::Float3 const &pointB, Math::Float3 const &pointC) noexcept;
+            Plane(Math::Float3 const &normal, Math::Float3 const &pointOnPlane) noexcept;
 
-            Plane &operator = (Plane const &plane);
+            Plane &operator = (Plane const &plane) noexcept;
 
-            void normalize(void);
+            void normalize(void) noexcept;
 
-            float getDistance(Math::Float3 const &point) const;
-            Math::Float3 getIntersection(Math::Float3 const &a, Math::Float3 const &b) const;
+            float getDistance(Math::Float3 const &point) const noexcept;
+            Math::Float3 getIntersection(Math::Float3 const &a, Math::Float3 const &b) const noexcept;
         };
     }; // namespace Shapes
 }; // namespace Gek

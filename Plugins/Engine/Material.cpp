@@ -3,9 +3,9 @@
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/System/VideoDevice.hpp"
+#include "GEK/API/Resources.hpp"
+#include "GEK/API/Renderer.hpp"
 #include "GEK/Engine/Shader.hpp"
-#include "GEK/Engine/Resources.hpp"
-#include "GEK/Engine/Renderer.hpp"
 #include "GEK/Engine/Material.hpp"
 #include "Passes.hpp"
 #include <ppl.h>

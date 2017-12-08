@@ -19,6 +19,9 @@ namespace Gek
 {
     namespace Engine
     {
+        GEK_PREDECLARE(Population);
+        GEK_PREDECLARE(Resources);
+
         GEK_INTERFACE(Core)
             : public Plugin::Core
         {
@@ -26,6 +29,10 @@ namespace Gek
             wink::signal<wink::slot<void(void)>> onChangedSettings;
 
             virtual Window * getWindow(void) const = 0;
+            virtual Video::Device * getVideoDevice(void) const = 0;
+
+            virtual Engine::Population * getFullPopulation(void) const = 0;
+            virtual Engine::Resources * getFullResources(void) const = 0;
 
             virtual bool update(void) = 0;
         };

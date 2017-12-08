@@ -17,7 +17,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
     ContextPtr context(Context::Create(rootPath, searchPathList));
     if (true)
     {
-        Plugin::CorePtr core(context->createClass<Plugin::Core>("Engine::Core", (Window *)nullptr));
+        Engine::CorePtr core(context->createClass<Engine::Core>("Engine::Core", (Window *)nullptr));
         while (core->update())
         {
         };

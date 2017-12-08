@@ -38,11 +38,11 @@ namespace Gek
             Plane planeList[6];
 
         public:
-            Frustum(void);
-            Frustum(const Frustum &frustum);
-            Frustum(Math::Float4x4 const &perspectiveTransform);
+            Frustum(void) noexcept;
+            Frustum(const Frustum &frustum) noexcept;
+            Frustum(Math::Float4x4 const &perspectiveTransform) noexcept;
 
-            void create(Math::Float4x4 const &perspectiveTransform);
+            void create(Math::Float4x4 const &perspectiveTransform) noexcept;
         };
     }; // namespace Shapes
 }; // namespace Gek

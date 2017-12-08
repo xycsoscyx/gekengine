@@ -20,18 +20,18 @@ namespace Gek
             Math::Float3 maximum;
 
         public:
-            AlignedBox(void);
-            AlignedBox(const AlignedBox &box);
-            AlignedBox(float size);
-            AlignedBox(Math::Float3 const &minimum, Math::Float3 const &maximum);
+            AlignedBox(void) noexcept;
+            AlignedBox(const AlignedBox &box) noexcept;
+            AlignedBox(float size) noexcept;
+            AlignedBox(Math::Float3 const &minimum, Math::Float3 const &maximum) noexcept;
 
-            AlignedBox &operator = (const AlignedBox &box);
+            AlignedBox &operator = (const AlignedBox &box) noexcept;
 
-            void extend(Math::Float3 &point);
+            void extend(Math::Float3 &point) noexcept;
 
-            Math::Float3 getSize(void) const;
-            Math::Float3 getHalfSize(void) const;
-            Math::Float3 getCenter(void) const;
+            Math::Float3 getSize(void) const noexcept;
+            Math::Float3 getHalfSize(void) const noexcept;
+            Math::Float3 getCenter(void) const noexcept;
         };
     }; // namespace Shapes
 }; // namespace Gek

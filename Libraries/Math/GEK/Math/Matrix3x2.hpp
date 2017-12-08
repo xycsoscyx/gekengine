@@ -45,7 +45,7 @@ namespace Gek
             };
 
         public:
-            static Float3x2 MakeScaling(Float2 const &scale, Float2 const &translation = Float2::Zero)
+            static Float3x2 MakeScaling(Float2 const &scale, Float2 const &translation = Float2::Zero) noexcept
             {
                 return Float3x2(
                 {
@@ -55,7 +55,7 @@ namespace Gek
                 });
             }
 
-            static Float3x2 MakeAngularRotation(float radians, Float2 const &translation = Float2::Zero)
+            static Float3x2 MakeAngularRotation(float radians, Float2 const &translation = Float2::Zero) noexcept
             {
                 return Float3x2(
                 {
@@ -66,11 +66,11 @@ namespace Gek
             }
 
         public:
-            inline Float3x2(void)
+            inline Float3x2(void) noexcept
             {
             }
 
-            inline Float3x2(Float3x2 const &matrix)
+            inline Float3x2(Float3x2 const &matrix) noexcept
                 : rows{
                 matrix.rows[0],
                 matrix.rows[1],
@@ -78,7 +78,7 @@ namespace Gek
             {
             }
 
-            inline Float3x2(float _11, float _12, float _21, float _22, float _31, float _32)
+            inline Float3x2(float _11, float _12, float _21, float _22, float _31, float _32) noexcept
                 : data{
                     _11, _12,
                     _21, _22,
@@ -86,7 +86,7 @@ namespace Gek
             {
             }
 
-            inline Float3x2(const float *data)
+            inline Float3x2(const float *data) noexcept
                 : data {
                 data[0], data[1],
                 data[2], data[3],
@@ -94,17 +94,17 @@ namespace Gek
             {
             }
 
-            inline Float2 getScaling(void) const
+            inline Float2 getScaling(void) const noexcept
             {
                 return Float2(rx.getLength(), ry.getLength());
             }
 
-            inline void operator *= (Float3x2 const &matrix)
+            inline void operator *= (Float3x2 const &matrix) noexcept
             {
                 (*this) = ((*this) * matrix);
             }
 
-            inline Float3x2 operator * (Float3x2 const &matrix) const
+            inline Float3x2 operator * (Float3x2 const &matrix) const noexcept
             {
                 return Float3x2({ _11 * matrix._11 + _12 * matrix._21,
                     _11 * matrix._12 + _12 * matrix._22,
@@ -114,22 +114,22 @@ namespace Gek
                     _31 * matrix._12 + _32 * matrix._22 + matrix._32 });
             }
 
-            inline std::tuple<Float2, Float2, Float2> getTuple(void) const
+            inline std::tuple<Float2, Float2, Float2> getTuple(void) const noexcept
             {
                 return std::make_tuple(rx, ry, rz);
             }
 
-            inline bool operator == (Float3x2 const &matrix) const
+            inline bool operator == (Float3x2 const &matrix) const noexcept
             {
                 return (getTuple() == matrix.getTuple());
             }
 
-            inline bool operator != (Float3x2 const &matrix) const
+            inline bool operator != (Float3x2 const &matrix) const noexcept
             {
                 return (getTuple() != matrix.getTuple());
             }
 
-            inline Float3x2 &operator = (Float3x2 const &matrix)
+            inline Float3x2 &operator = (Float3x2 const &matrix) noexcept
             {
                 std::tie(rx, ry, rz) = matrix.getTuple();
                 return (*this);

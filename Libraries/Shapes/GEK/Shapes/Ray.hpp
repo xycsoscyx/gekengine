@@ -20,11 +20,11 @@ namespace Gek
             Math::Float3 normal;
 
         public:
-            Ray(void);
-            Ray(Math::Float3 const &origin, Math::Float3 const &normal);
-            Ray(const Ray &ray);
+            Ray(void) noexcept;
+            Ray(Math::Float3 const &origin, Math::Float3 const &normal) noexcept;
+            Ray(const Ray &ray) noexcept;
 
-            Ray &operator = (const Ray &ray);
+            Ray &operator = (const Ray &ray) noexcept;
         };
     }; // namespace Shapes
 }; // namespace Gek

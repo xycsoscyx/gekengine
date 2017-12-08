@@ -20,11 +20,11 @@ namespace Gek
             float radius;
 
         public:
-            Sphere(void);
-            Sphere(const Sphere &sphere);
-            Sphere(Math::Float3 const &position, float radius);
+            Sphere(void) noexcept;
+            Sphere(const Sphere &sphere) noexcept;
+            Sphere(Math::Float3 const &position, float radius) noexcept;
 
-            Sphere &operator = (const Sphere &sphere);
+            Sphere &operator = (const Sphere &sphere) noexcept;
         };
     }; // namespace Shapes
 }; // namespace Gek

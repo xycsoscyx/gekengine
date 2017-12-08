@@ -1,25 +1,27 @@
 ﻿#include "GEK/Math/SIMD.hpp"
+#include "GEK/Shapes/Sphere.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/ThreadPool.hpp"
 #include "GEK/Utility/Allocator.hpp"
+#include "GEK/Utility/Profiler.hpp"
+#include "GEK/GUI/Utilities.hpp"
+#include "GEK/API/Renderer.hpp"
+#include "GEK/API/Population.hpp"
+#include "GEK/API/Entity.hpp"
+#include "GEK/API/Component.hpp"
+#include "GEK/API/ComponentMixin.hpp"
+#include "GEK/Components/Transform.hpp"
+#include "GEK/Components/Color.hpp"
+#include "GEK/Components/Light.hpp"
 #include "GEK/Engine/Core.hpp"
-#include "GEK/Engine/Renderer.hpp"
-#include "GEK/Engine/Resources.hpp"
 #include "GEK/Engine/Visual.hpp"
 #include "GEK/Engine/Shader.hpp"
 #include "GEK/Engine/Filter.hpp"
 #include "GEK/Engine/Material.hpp"
-#include "GEK/Engine/Population.hpp"
-#include "GEK/Engine/Entity.hpp"
-#include "GEK/Engine/Component.hpp"
-#include "GEK/Engine/ComponentMixin.hpp"
-#include "GEK/Components/Transform.hpp"
-#include "GEK/Components/Color.hpp"
-#include "GEK/Components/Light.hpp"
-#include "GEK/Shapes/Sphere.hpp"
+#include "GEK/Engine/Resources.hpp"
 #include <concurrent_unordered_set.h>
 #include <concurrent_vector.h>
 #include <concurrent_queue.h>
@@ -38,7 +40,7 @@ namespace Gek
         static const int32_t GridSize = (GridWidth * GridHeight * GridDepth);
         static const Math::Float4 GridDimensions(GridWidth, GridWidth, GridHeight, GridHeight);
 
-        GEK_CONTEXT_USER(Renderer, Plugin::Core *)
+        GEK_CONTEXT_USER(Renderer, Engine::Core *)
             , public Plugin::Renderer
         {
         public:
@@ -265,16 +267,14 @@ namespace Gek
             struct LightVisibilityData
                 : public LightData<COMPONENT, DATA, RESERVE>
             {
-                System::Profiler *profiler = nullptr;
                 std::vector<float, AlignedAllocator<float, 16>> shapeXPositionList;
                 std::vector<float, AlignedAllocator<float, 16>> shapeYPositionList;
                 std::vector<float, AlignedAllocator<float, 16>> shapeZPositionList;
                 std::vector<float, AlignedAllocator<float, 16>> shapeRadiusList;
                 std::vector<bool> visibilityList;
 
-                LightVisibilityData(Plugin::Core *core)
+                LightVisibilityData(Engine::Core *core)
                     : LightData(core->getVideoDevice())
-                    , profiler(core)
                 {
                 }
 
@@ -294,7 +294,7 @@ namespace Gek
                     auto buffer = (entityCount % 4);
                     buffer = (buffer ? (4 - buffer) : buffer);
                     auto bufferedEntityCount = (entityCount + buffer);
-                    GEK_PROFILE_BEGIN_SCOPE(profiler, "SIMD Buffer Organization");
+                    GEK_PROFILE_BEGIN_SCOPE(nullptr, "SIMD Buffer Organization");
                         shapeXPositionList.resize(bufferedEntityCount);
                         shapeYPositionList.resize(bufferedEntityCount);
                         shapeZPositionList.resize(bufferedEntityCount);
@@ -316,14 +316,14 @@ namespace Gek
                         lightList.clear();
                     GEK_PROFILE_END_SCOPE();
 
-                    GEK_PROFILE_BEGIN_SCOPE(profiler, "SIMD Box Culling");
+                    GEK_PROFILE_BEGIN_SCOPE(nullptr, "SIMD Box Culling");
                         Math::SIMD::cullSpheres(frustum, bufferedEntityCount, shapeXPositionList, shapeYPositionList, shapeZPositionList, shapeRadiusList, visibilityList);
                     GEK_PROFILE_END_SCOPE();
                 }
             };
 
         private:
-            Plugin::Core *core = nullptr;
+            Engine::Core *core = nullptr;
             Video::Device *videoDevice = nullptr;
             Plugin::Population *population = nullptr;
             Engine::Resources *resources = nullptr;
@@ -389,13 +389,12 @@ namespace Gek
             } gui;
 
         public:
-            Renderer(Context *context, Plugin::Core *core)
+            Renderer(Context *context, Engine::Core *core)
                 : ContextRegistration(context)
-                , Profiler(core, core->getVideoDevice())
                 , core(core)
                 , videoDevice(core->getVideoDevice())
                 , population(core->getPopulation())
-                , resources(dynamic_cast<Engine::Resources *>(core->getResources()))
+                , resources(core->getFullResources())
                 , directionalLightData(core->getVideoDevice())
                 , pointLightData(core)
                 , spotLightData(core)
@@ -1068,6 +1067,11 @@ namespace Gek
             }
 
             // Renderer
+            Video::Device * getVideoDevice(void) const
+            {
+                return videoDevice;
+            }
+
             void queueCamera(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &perspectiveMatrix, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget, std::string const &forceShader)
             {
                 Camera renderCall;
@@ -1384,8 +1388,8 @@ namespace Gek
                             }
                         }();
 
-                        static const auto bufferManagement = this->registerName("Buffer Management");
-                        GEK_GPU_PROFILE_TIMESTAMP(this, bufferManagement);
+                        //static const auto bufferManagement = this->registerName("Buffer Management");
+                        GEK_GPU_PROFILE_TIMESTAMP(this, nullptr);
 
                         uint8_t shaderIndex = 0;
                         std::string finalOutput;
@@ -1554,8 +1558,8 @@ namespace Gek
 
                 GEK_PROFILE_BEGIN_SCOPE(core, "Show User Interface")
                     ImGui::Render();
-                    const auto userInterface = this->registerName("User Interface");
-                    GEK_GPU_PROFILE_TIMESTAMP(this, userInterface);
+                    //const auto userInterface = this->registerName("User Interface");
+                    GEK_GPU_PROFILE_TIMESTAMP(this, nullptr);
                 GEK_PROFILE_END_SCOPE();
 
                 videoDevice->present(true);

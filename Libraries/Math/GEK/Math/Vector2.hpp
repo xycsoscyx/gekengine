@@ -18,8 +18,10 @@ namespace Gek
         struct Vector2
         {
         public:
-            static const Vector2 Zero;
-            static const Vector2 One;
+            using TYPE2 = Vector2<TYPE>;
+
+            static const TYPE2 Zero;
+            static const TYPE2 One;
 
         public:
             union
@@ -32,287 +34,287 @@ namespace Gek
             };
 
         public:
-            Vector2(void)
+            Vector2(void) noexcept
             {
             }
 
             template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector2(const Vector2<OTHER> &vector)
+            Vector2(const Vector2<OTHER> &vector) noexcept
                 : x(TYPE(vector.x))
                 , y(TYPE(vector.y))
             {
             }
 
-            explicit Vector2(TYPE scalar)
+            explicit Vector2(TYPE scalar) noexcept
                 : data{ TYPE(scalar), TYPE(scalar) }
             {
             }
 
-            explicit Vector2(TYPE x, TYPE y)
+            explicit Vector2(TYPE x, TYPE y) noexcept
                 : data{ TYPE(x), TYPE(y) }
             {
             }
 
-            explicit Vector2(const TYPE *data)
+            explicit Vector2(const TYPE *data) noexcept
                 : data{ TYPE(data[0]), TYPE(data[1]) }
             {
             }
 
-            void set(TYPE value)
+            void set(TYPE value) noexcept
             {
                 this->x = this->y = TYPE(value);
             }
 
-            void set(TYPE x, TYPE y)
+            void set(TYPE x, TYPE y) noexcept
             {
                 this->x = TYPE(x);
                 this->y = TYPE(y);
             }
 
-            void set(const TYPE *data)
+            void set(const TYPE *data) noexcept
             {
                 this->x = TYPE(data[0]);
                 this->y = TYPE(data[1]);
             }
 
-            TYPE getMagnitude(void) const
+            TYPE getMagnitude(void) const noexcept
             {
                 return dot(*this);
             }
 
-            TYPE getLength(void) const
+            TYPE getLength(void) const noexcept
             {
                 return std::sqrt(getMagnitude());
             }
 
-            TYPE getDistance(const Vector2 &vector) const
+            TYPE getDistance(TYPE2 const &vector) const noexcept
             {
                 return (vector - (*this)).getLength();
             }
 
-            Vector2<TYPE> getNormal(void) const
+            TYPE2 getNormal(void) const noexcept
             {
                 float inverseLength = (1.0f / getLength());
                 return ((*this) * inverseLength);
             }
 
-            Vector2<TYPE> getAbsolute(void) const
+            TYPE2 getAbsolute(void) const noexcept
             {
-                return Vector2(
+                return TYPE2(
                     std::abs(x),
                     std::abs(y));
             }
 
-            Vector2<TYPE> getMinimum(const Vector2 &vector) const
+            TYPE2 getMinimum(TYPE2 const &vector) const noexcept
 			{
-				return Vector2<TYPE>(
+				return TYPE2(
 					std::min(x, vector.x),
 					std::min(y, vector.y)
 				);
 			}
 
-			Vector2 getMaximum(const Vector2<TYPE> &vector) const
+			TYPE2 getMaximum(TYPE2 const &vector) const noexcept
 			{
-				return Vector2(
+				return TYPE2(
 					std::max(x, vector.x),
 					std::max(y, vector.y)
 				);
 			}
 
-			Vector2<TYPE> getClamped(const Vector2 &min, const Vector2 &max) const
+			TYPE2 getClamped(TYPE2 const &min, TYPE2 const &max) const noexcept
 			{
-				return Vector2(
+				return TYPE2(
 					std::min(std::max(x, min.x), max.x),
 					std::min(std::max(y, min.y), max.y)
 				);
 			}
 
-			Vector2<TYPE> getSaturated(void) const
+			TYPE2 getSaturated(void) const noexcept
 			{
 				return getClamped(Zero, One);
 			}
 
-            TYPE dot(const Vector2 &vector) const
+            TYPE dot(TYPE2 const &vector) const noexcept
             {
                 return ((x * vector.x) + (y * vector.y));
             }
 
-			void normalize(void)
+			void normalize(void) noexcept
 			{
                 float inverseLength = (1.0f / getLength());
                 (*this) *= inverseLength;
             }
 
-            std::tuple<TYPE, TYPE> getTuple(void) const
+            std::tuple<TYPE, TYPE> getTuple(void) const noexcept
             {
                 return std::make_tuple(x, y);
             }
 
-			bool operator < (const Vector2 &vector) const
+			bool operator < (TYPE2 const &vector) const noexcept
             {
                 return (getTuple() < vector.getTuple());
             }
 
-            bool operator > (const Vector2 &vector) const
+            bool operator > (TYPE2 const &vector) const noexcept
             {
                 return (getTuple() > vector.getTuple());
             }
 
-            bool operator <= (const Vector2 &vector) const
+            bool operator <= (TYPE2 const &vector) const noexcept
             {
                 return (getTuple() <= vector.getTuple());
             }
 
-            bool operator >= (const Vector2 &vector) const
+            bool operator >= (TYPE2 const &vector) const noexcept
             {
                 return (getTuple() >= vector.getTuple());
             }
 
-            bool operator == (const Vector2 &vector) const
+            bool operator == (TYPE2 const &vector) const noexcept
             {
                 return (getTuple() == vector.getTuple());
             }
 
-            bool operator != (const Vector2 &vector) const
+            bool operator != (TYPE2 const &vector) const noexcept
             {
                 return (getTuple() != vector.getTuple());
             }
 
             // vector operations
-            float &operator [] (size_t index)
+            float &operator [] (size_t index) noexcept
             {
                 return data[index];
             }
 
-            float const &operator [] (size_t index) const
+            float const &operator [] (size_t index) const noexcept
             {
                 return data[index];
             }
 
             template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector2 &operator = (const Vector2<OTHER> &vector)
+            TYPE2 &operator = (const Vector2<OTHER> &vector) noexcept
             {
                 x = TYPE(vector.x);
                 y = TYPE(vector.y);
                 return (*this);
             }
 
-            void operator -= (const Vector2 &vector)
+            void operator -= (TYPE2 const &vector) noexcept
             {
                 x -= vector.x;
                 y -= vector.y;
             }
 
-            void operator += (const Vector2 &vector)
+            void operator += (TYPE2 const &vector) noexcept
             {
                 x += vector.x;
                 y += vector.y;
             }
 
-            void operator /= (const Vector2 &vector)
+            void operator /= (TYPE2 const &vector) noexcept
             {
                 x /= vector.x;
                 y /= vector.y;
             }
 
-            void operator *= (const Vector2 &vector)
+            void operator *= (TYPE2 const &vector) noexcept
             {
                 x *= vector.x;
                 y *= vector.y;
             }
 
-            Vector2 operator - (const Vector2 &vector) const
+            TYPE2 operator - (TYPE2 const &vector) const noexcept
             {
-                return Vector2((x - vector.x), (y - vector.y));
+                return TYPE2((x - vector.x), (y - vector.y));
             }
 
-            Vector2 operator + (const Vector2 &vector) const
+            TYPE2 operator + (TYPE2 const &vector) const noexcept
             {
-                return Vector2((x + vector.x), (y + vector.y));
+                return TYPE2((x + vector.x), (y + vector.y));
             }
 
-            Vector2 operator / (const Vector2 &vector) const
+            TYPE2 operator / (TYPE2 const &vector) const noexcept
             {
-                return Vector2((x / vector.x), (y / vector.y));
+                return TYPE2((x / vector.x), (y / vector.y));
             }
 
-            Vector2 operator * (const Vector2 &vector) const
+            TYPE2 operator * (TYPE2 const &vector) const noexcept
             {
-                return Vector2((x * vector.x), (y * vector.y));
+                return TYPE2((x * vector.x), (y * vector.y));
             }
 
             // scalar operations
-            void operator -= (TYPE scalar)
+            void operator -= (TYPE scalar) noexcept
             {
                 x -= scalar;
                 y -= scalar;
             }
 
-            void operator += (TYPE scalar)
+            void operator += (TYPE scalar) noexcept
             {
                 x += scalar;
                 y += scalar;
             }
 
-            void operator /= (TYPE scalar)
+            void operator /= (TYPE scalar) noexcept
             {
                 x /= scalar;
                 y /= scalar;
             }
 
-            void operator *= (TYPE scalar)
+            void operator *= (TYPE scalar) noexcept
             {
                 x *= scalar;
                 y *= scalar;
             }
 
-            Vector2 operator - (TYPE scalar) const
+            TYPE2 operator - (TYPE scalar) const noexcept
             {
-                return Vector2((x - scalar), (y - scalar));
+                return TYPE2((x - scalar), (y - scalar));
             }
 
-            Vector2 operator + (TYPE scalar) const
+            TYPE2 operator + (TYPE scalar) const noexcept
             {
-                return Vector2((x + scalar), (y + scalar));
+                return TYPE2((x + scalar), (y + scalar));
             }
 
-            Vector2 operator / (TYPE scalar) const
+            TYPE2 operator / (TYPE scalar) const noexcept
             {
-                return Vector2((x / scalar), (y / scalar));
+                return TYPE2((x / scalar), (y / scalar));
             }
 
-            Vector2 operator * (TYPE scalar) const
+            TYPE2 operator * (TYPE scalar) const noexcept
             {
-                return Vector2((x * scalar), (y * scalar));
+                return TYPE2((x * scalar), (y * scalar));
             }
         };
 
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-        Vector2<TYPE> operator - (const Vector2<TYPE> &vector)
+        Vector2<TYPE> operator - (Vector2<TYPE> const &vector) noexcept
         {
             return Vector2<TYPE>(-vector.x, -vector.y);
         }
 
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-        Vector2<TYPE> operator + (TYPE scalar, const Vector2<TYPE> &vector)
+        Vector2<TYPE> operator + (TYPE scalar, Vector2<TYPE> const &vector) noexcept
         {
             return Vector2<TYPE>(scalar + vector.x, scalar + vector.y);
         }
 
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-        Vector2<TYPE> operator - (TYPE scalar, const Vector2<TYPE> &vector)
+        Vector2<TYPE> operator - (TYPE scalar, Vector2<TYPE> const &vector) noexcept
         {
             return Vector2<TYPE>(scalar - vector.x, scalar - vector.y);
         }
 
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-        Vector2<TYPE> operator * (TYPE scalar, const Vector2<TYPE> &vector)
+        Vector2<TYPE> operator * (TYPE scalar, Vector2<TYPE> const &vector) noexcept
         {
             return Vector2<TYPE>(scalar * vector.x, scalar * vector.y);
         }
 
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-        Vector2<TYPE> operator / (TYPE scalar, const Vector2<TYPE> &vector)
+        Vector2<TYPE> operator / (TYPE scalar, Vector2<TYPE> const &vector) noexcept
         {
             return Vector2<TYPE>(scalar / vector.x, scalar / vector.y);
         }

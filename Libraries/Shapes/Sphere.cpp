@@ -5,24 +5,24 @@ namespace Gek
 {
     namespace Shapes
     {
-        Sphere::Sphere(void)
+        Sphere::Sphere(void) noexcept
             : radius(0.0f)
         {
         }
 
-        Sphere::Sphere(const Sphere &sphere)
+        Sphere::Sphere(const Sphere &sphere) noexcept
             : position(sphere.position)
             , radius(sphere.radius)
         {
         }
 
-        Sphere::Sphere(Math::Float3 const &position, float radius)
+        Sphere::Sphere(Math::Float3 const &position, float radius) noexcept
             : position(position)
             , radius(radius)
         {
         }
 
-        Sphere &Sphere::operator = (const Sphere &sphere)
+        Sphere &Sphere::operator = (const Sphere &sphere) noexcept
         {
             position = sphere.position;
             radius = sphere.radius;

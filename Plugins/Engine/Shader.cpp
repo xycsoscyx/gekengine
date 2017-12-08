@@ -6,14 +6,14 @@
 #include "GEK/Shapes/Sphere.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/System/VideoDevice.hpp"
-#include "GEK/Engine/Resources.hpp"
-#include "GEK/Engine/Renderer.hpp"
-#include "GEK/Engine/Material.hpp"
-#include "GEK/Engine/Population.hpp"
-#include "GEK/Engine/Entity.hpp"
+#include "GEK/API/Resources.hpp"
+#include "GEK/API/Renderer.hpp"
+#include "GEK/API/Population.hpp"
+#include "GEK/API/Entity.hpp"
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Components/Light.hpp"
 #include "GEK/Components/Color.hpp"
+#include "GEK/Engine/Material.hpp"
 #include "Passes.hpp"
 #include <concurrent_vector.h>
 #include <unordered_set>
@@ -23,7 +23,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Shader, Plugin::Core *, std::string)
+        GEK_CONTEXT_USER(Shader, Engine::Core *, std::string)
             , public Engine::Shader
         {
         public:
@@ -88,11 +88,11 @@ namespace Gek
             bool lightingRequired = false;
 
         public:
-            Shader(Context *context, Plugin::Core *core, std::string shaderName)
+            Shader(Context *context, Engine::Core *core, std::string shaderName)
                 : ContextRegistration(context)
                 , core(core)
                 , videoDevice(core->getVideoDevice())
-                , resources(dynamic_cast<Engine::Resources *>(core->getResources()))
+                , resources(core->getFullResources())
                 , population(core->getPopulation())
                 , shaderName(shaderName)
             {

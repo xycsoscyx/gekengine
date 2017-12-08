@@ -6,14 +6,15 @@
 #include "GEK/Shapes/Sphere.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/System/VideoDevice.hpp"
-#include "GEK/Engine/Resources.hpp"
-#include "GEK/Engine/Renderer.hpp"
-#include "GEK/Engine/Material.hpp"
-#include "GEK/Engine/Population.hpp"
-#include "GEK/Engine/Entity.hpp"
+#include "GEK/API/Resources.hpp"
+#include "GEK/API/Renderer.hpp"
+#include "GEK/API/Population.hpp"
+#include "GEK/API/Entity.hpp"
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Components/Light.hpp"
 #include "GEK/Components/Color.hpp"
+#include "GEK/Engine/Core.hpp"
+#include "GEK/Engine/Material.hpp"
 #include "Passes.hpp"
 #include <ppl.h>
 
@@ -21,7 +22,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Filter, Plugin::Core *, std::string)
+        GEK_CONTEXT_USER(Filter, Engine::Core *, std::string)
             , public Engine::Filter
         {
         public:
@@ -47,7 +48,7 @@ namespace Gek
             };
 
         private:
-            Plugin::Core *core = nullptr;
+            Engine::Core *core = nullptr;
             Video::Device *videoDevice = nullptr;
             Engine::Resources *resources = nullptr;
             Plugin::Population *population = nullptr;
@@ -59,11 +60,11 @@ namespace Gek
             std::vector<PassData> passList;
 
         public:
-            Filter(Context *context, Plugin::Core *core, std::string filterName)
+            Filter(Context *context, Engine::Core *core, std::string filterName)
                 : ContextRegistration(context)
                 , core(core)
                 , videoDevice(core->getVideoDevice())
-                , resources(dynamic_cast<Engine::Resources *>(core->getResources()))
+                , resources(core->getFullResources())
                 , population(core->getPopulation())
                 , filterName(filterName)
             {

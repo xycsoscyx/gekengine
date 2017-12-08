@@ -8,7 +8,7 @@
 #pragma once
 
 #include "GEK/Utility/Context.hpp"
-#include "GEK/Engine/Handles.hpp"
+#include "GEK/API/Handles.hpp"
 #include <unordered_map>
 
 namespace Gek

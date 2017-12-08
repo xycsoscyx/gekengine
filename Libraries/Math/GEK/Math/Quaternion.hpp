@@ -42,7 +42,7 @@ namespace Gek
             };
 
         public:
-            inline static Quaternion MakeEulerRotation(float pitch, float yaw, float roll)
+            inline static Quaternion MakeEulerRotation(float pitch, float yaw, float roll) noexcept
             {
                 float sinPitch(std::sin(pitch * 0.5f));
                 float sinYaw(std::sin(yaw * 0.5f));
@@ -57,7 +57,7 @@ namespace Gek
                     ((cosPitch * cosYaw * cosRoll) + (sinPitch * sinYaw * sinRoll)));
             }
 
-            inline static Quaternion MakeAngularRotation(const Float3 &axis, float radians)
+            inline static Quaternion MakeAngularRotation(const Float3 &axis, float radians) noexcept
             {
                 float halfRadians = (radians * 0.5f);
                 Float3 normal(axis.getNormal());
@@ -69,7 +69,7 @@ namespace Gek
                     std::cos(halfRadians));
             }
 
-            inline static Quaternion MakePitchRotation(float radians)
+            inline static Quaternion MakePitchRotation(float radians) noexcept
             {
                 float halfRadians = (radians * 0.5f);
                 float sinAngle(std::sin(halfRadians));
@@ -80,7 +80,7 @@ namespace Gek
                     std::cos(halfRadians));
             }
 
-            inline static Quaternion MakeYawRotation(float radians)
+            inline static Quaternion MakeYawRotation(float radians) noexcept
             {
                 float halfRadians = (radians * 0.5f);
                 float sinAngle(std::sin(halfRadians));
@@ -91,7 +91,7 @@ namespace Gek
                     std::cos(halfRadians));
             }
 
-            inline static Quaternion MakeRollRotation(float radians)
+            inline static Quaternion MakeRollRotation(float radians) noexcept
             {
                 float halfRadians = (radians * 0.5f);
                 float sinAngle(std::sin(halfRadians));
@@ -103,17 +103,17 @@ namespace Gek
             }
 
         public:
-            inline Quaternion(void)
+            inline Quaternion(void) noexcept
             {
             }
 
-            inline Quaternion(const Quaternion &rotation)
+            inline Quaternion(const Quaternion &rotation) noexcept
                 : axis(rotation.axis)
                 , angle(rotation.angle)
             {
             }
 
-            explicit inline Quaternion(float x, float y, float z, float w)
+            explicit inline Quaternion(float x, float y, float z, float w) noexcept
                 : x(x)
                 , y(y)
                 , z(z)
@@ -121,7 +121,7 @@ namespace Gek
             {
             }
 
-            explicit inline Quaternion(const float *data)
+            explicit inline Quaternion(const float *data) noexcept
                 : x(data[0])
                 , y(data[1])
                 , z(data[2])
@@ -129,13 +129,13 @@ namespace Gek
             {
             }
 
-            explicit inline Quaternion(Math::Float3 const &axis, float angle)
+            explicit inline Quaternion(Math::Float3 const &axis, float angle) noexcept
                 : axis(axis)
                 , angle(angle)
             {
             }
 
-            inline void set(float x, float y, float z, float w)
+            inline void set(float x, float y, float z, float w) noexcept
             {
                 this->x = x;
                 this->y = y;
@@ -143,7 +143,7 @@ namespace Gek
                 this->w = w;
             }
 
-            inline void set(const float *data)
+            inline void set(const float *data) noexcept
             {
                 this->x = data[0];
                 this->y = data[1];
@@ -151,7 +151,7 @@ namespace Gek
                 this->w = data[3];
             }
 
-            inline Float3 getEuler(void) const
+            inline Float3 getEuler(void) const noexcept
             {
                 float pitch;
                 float yaw;
@@ -179,44 +179,44 @@ namespace Gek
                 return Float3(pitch, yaw, roll);
             }
 
-            inline float getMagnitude(void) const
+            inline float getMagnitude(void) const noexcept
             {
                 return dot(*this);
             }
 
-            inline float getLength(void) const
+            inline float getLength(void) const noexcept
             {
                 return std::sqrt(getMagnitude());
             }
 
-            inline Quaternion getNormal(void) const
+            inline Quaternion getNormal(void) const noexcept
             {
                 float inverseLength = (1.0f / getLength());
                 return ((*this) * inverseLength);
             }
 
-            inline Quaternion getInverse(void) const
+            inline Quaternion getInverse(void) const noexcept
             {
                 return Quaternion(-axis, angle);
             }
 
-            inline void invert(void)
+            inline void invert(void) noexcept
             {
                 axis *= -1.0f;
             }
 
-            inline void normalize(void)
+            inline void normalize(void) noexcept
             {
                 float inverseLength = (1.0f / getLength());
                 (*this) *= inverseLength;
             }
 
-            inline float dot(const Quaternion &rotation) const
+            inline float dot(const Quaternion &rotation) const noexcept
             {
                 return ((x * rotation.x) + (y * rotation.y) + (z * rotation.z) + (w * rotation.w));
             }
 
-            inline Quaternion slerp(const Quaternion &rotation, float factor) const
+            inline Quaternion slerp(const Quaternion &rotation, float factor) const noexcept
             {
                 Quaternion result;
                 float deltaAngle = dot(rotation);
@@ -261,7 +261,7 @@ namespace Gek
                 return result;
             }
 
-            inline bool operator == (const Quaternion &rotation) const
+            inline bool operator == (const Quaternion &rotation) const noexcept
             {
                 if (x != rotation.x) return false;
                 if (y != rotation.y) return false;
@@ -270,7 +270,7 @@ namespace Gek
                 return true;
             }
 
-            inline bool operator != (const Quaternion &rotation) const
+            inline bool operator != (const Quaternion &rotation) const noexcept
             {
                 if (x != rotation.x) return true;
                 if (y != rotation.y) return true;
@@ -279,18 +279,18 @@ namespace Gek
                 return false;
             }
 
-            inline operator const float *() const
+            inline operator const float *() const noexcept
             {
                 return data;
             }
 
-            inline Float3 rotate(const Float3 &vector) const
+            inline Float3 rotate(const Float3 &vector) const noexcept
             {
                 Float3 twoCross(2.0f * axis.cross(vector));
                 return (vector + (angle * twoCross) + axis.cross(twoCross));
             }
 
-            inline Quaternion operator * (const Quaternion &rotation) const
+            inline Quaternion operator * (const Quaternion &rotation) const noexcept
             {
                 return Quaternion(
                     (rotation.w * x) + (rotation.x * w) + (rotation.y * z) - (rotation.z * y),
@@ -299,46 +299,46 @@ namespace Gek
                     (rotation.w * w) - (rotation.x * x) - (rotation.y * y) - (rotation.z * z));
             }
 
-            inline void operator *= (const Quaternion &rotation)
+            inline void operator *= (const Quaternion &rotation) noexcept
             {
                 (*this) = ((*this) * rotation);
             }
 
-            inline Quaternion &operator = (const Quaternion &rotation)
+            inline Quaternion &operator = (const Quaternion &rotation) noexcept
             {
                 axis = rotation.axis;
                 angle = rotation.angle;
                 return (*this);
             }
 
-            inline void operator /= (float scalar)
+            inline void operator /= (float scalar) noexcept
             {
                 axis /= scalar;
                 angle /= scalar;
             }
 
-            inline void operator *= (float scalar)
+            inline void operator *= (float scalar) noexcept
             {
                 axis *= scalar;
                 angle *= scalar;
             }
 
-            inline Quaternion operator / (float scalar) const
+            inline Quaternion operator / (float scalar) const noexcept
             {
                 return Quaternion((axis / scalar), (angle / scalar));
             }
 
-            inline Quaternion operator + (float scalar) const
+            inline Quaternion operator + (float scalar) const noexcept
             {
                 return Quaternion((axis + scalar), (angle + scalar));
             }
 
-            inline Quaternion operator * (float scalar) const
+            inline Quaternion operator * (float scalar) const noexcept
             {
                 return Quaternion((axis * scalar), (angle *scalar));
             }
 
-            inline Quaternion operator + (const Quaternion &rotation) const
+            inline Quaternion operator + (const Quaternion &rotation) const noexcept
             {
                 return Quaternion((axis + rotation.axis), (angle + rotation.angle));
             }

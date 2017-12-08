@@ -3,7 +3,7 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/System/VideoDevice.hpp"
-#include "GEK/Engine/Renderer.hpp"
+#include "GEK/API/Renderer.hpp"
 #include "GEK/Engine/Visual.hpp"
 #include "Passes.hpp"
 #include <ppl.h>
@@ -13,7 +13,7 @@ namespace Gek
     namespace Implementation
     {
         GEK_CONTEXT_USER(Visual, Video::Device *, Engine::Resources *, std::string)
-            , public Plugin::Visual
+            , public Engine::Visual
         {
         private:
             Video::Device *videoDevice;
