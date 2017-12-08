@@ -21,10 +21,6 @@
 #include <functional>
 #include <memory>
 
-#define GEK_GPU_PROFILE_BEGIN(PROFILER)
-#define GEK_GPU_PROFILE_TIMESTAMP(PROFILER, NAME)
-#define GEK_GPU_PROFILE_END(PROFILER)
-
 namespace Gek
 {
     namespace Video

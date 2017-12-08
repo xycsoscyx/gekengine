@@ -186,7 +186,7 @@ namespace Gek
 
             void update(float frameTime)
             {
-                GEK_PROFILE_FUNCTION(core);
+                GEK_PROFILE_FUNCTION();
                 if (frameTime == 0.0f)
                 {
                     actionQueue.clear();
