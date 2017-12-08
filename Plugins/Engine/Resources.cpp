@@ -504,7 +504,7 @@ namespace Gek
             , public ResourceRequester
         {
         private:
-            Plugin::Core *core = nullptr;
+            Engine::Core *core = nullptr;
             Video::Device *videoDevice = nullptr;
             Plugin::Renderer *renderer = nullptr;
 
@@ -959,7 +959,7 @@ namespace Gek
             {
                 auto load = [this, visualName = std::string(visualName)](VisualHandle) -> Engine::VisualPtr
                 {
-                    return getContext()->createClass<Engine::Visual>("Engine::Visual", videoDevice, this, visualName);
+                    return getContext()->createClass<Engine::Visual>("Engine::Visual", videoDevice, (Engine::Resources *)this, visualName);
                 };
 
                 auto hash = GetHash(visualName);
@@ -970,7 +970,7 @@ namespace Gek
             {
                 auto load = [this, materialName = std::string(materialName)](MaterialHandle handle) -> Engine::MaterialPtr
                 {
-                    return getContext()->createClass<Engine::Material>("Engine::Material", this, materialName, handle);
+                    return getContext()->createClass<Engine::Material>("Engine::Material", (Engine::Resources *)this, materialName, handle);
                 };
 
                 auto hash = GetHash(materialName);

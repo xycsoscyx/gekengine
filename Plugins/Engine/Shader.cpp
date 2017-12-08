@@ -71,7 +71,7 @@ namespace Gek
             };
 
         private:
-            Plugin::Core *core = nullptr;
+            Engine::Core *core = nullptr;
             Video::Device *videoDevice = nullptr;
             Engine::Resources *resources = nullptr;
             Plugin::Population *population = nullptr;

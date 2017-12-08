@@ -44,10 +44,15 @@ namespace Gek
             std::tuple<PARAMETERS...> packedArguments(arguments...);
             std::vector<std::type_index> argumentTypes = { typeid(PARAMETERS)... };
             ContextUserPtr baseClass = createBaseClass(className, static_cast<void *>(&packedArguments), argumentTypes);
+            if (!baseClass)
+            {
+                return nullptr;
+            }
+
             auto derivedClass = dynamic_cast<TYPE *>(baseClass.get());
             if (!derivedClass)
             {
-                LockedWrite{ std::cerr } << "Unable to cast from base context user to requested class";
+                LockedWrite{ std::cerr } << "Unable to cast " << className << " from base context user to requested class of " << typeid(TYPE).name();
                 return nullptr;
             }
 

@@ -4,12 +4,12 @@
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/Profiler.hpp"
-#include "GEK/API/Core.hpp"
-#include "GEK/API/Population.hpp"
 #include "GEK/API/Processor.hpp"
 #include "GEK/API/Entity.hpp"
 #include "GEK/API/Component.hpp"
 #include "GEK/API/Editor.hpp"
+#include "GEK/Engine/Core.hpp"
+#include "GEK/Engine/Population.hpp"
 #include <concurrent_queue.h>
 #include <ppl.h>
 #include <map>
@@ -82,11 +82,11 @@ namespace Gek
 			}
 		};
 
-        GEK_CONTEXT_USER(Population, Plugin::Core *)
-            , public Edit::Population
+        GEK_CONTEXT_USER(Population, Engine::Core *)
+            , public Engine::Population
         {
         private:
-            Plugin::Core *core = nullptr;
+            Engine::Core *core = nullptr;
 
             ShuntingYard shuntingYard;
             concurrency::concurrent_queue<Action> actionQueue;
@@ -102,7 +102,7 @@ namespace Gek
             uint32_t uniqueEntityIdentifier = 0;
 
         public:
-            Population(Context *context, Plugin::Core *core)
+            Population(Context *context, Engine::Core *core)
                 : ContextRegistration(context)
                 , core(core)
             {

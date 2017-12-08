@@ -3,7 +3,7 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/System/VideoDevice.hpp"
-#include "GEK/API/Renderer.hpp"
+#include "GEK/Engine/Resources.hpp"
 #include "GEK/Engine/Visual.hpp"
 #include "Passes.hpp"
 #include <ppl.h>

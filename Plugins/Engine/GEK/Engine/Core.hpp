@@ -28,6 +28,8 @@ namespace Gek
             wink::signal<wink::slot<void(void)>> onChangedDisplay;
             wink::signal<wink::slot<void(void)>> onChangedSettings;
 
+            virtual ~Core(void) = default;
+
             virtual Window * getWindow(void) const = 0;
             virtual Video::Device * getVideoDevice(void) const = 0;
 

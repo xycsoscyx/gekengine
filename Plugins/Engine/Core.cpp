@@ -134,9 +134,9 @@ namespace Gek
 
                 setDisplayMode(JSON::Reference(configuration).get("display").get("mode").convert(preferredDisplayMode));
 
-                population = getContext()->createClass<Engine::Population>("Engine::Population", (Plugin::Core *)this);
-                resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Plugin::Core *)this);
-                renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Plugin::Core *)this);
+                population = getContext()->createClass<Engine::Population>("Engine::Population", (Engine::Core *)this);
+                resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Engine::Core *)this);
+                renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Engine::Core *)this);
                 renderer->onShowUserInterface.connect(this, &Core::onShowUserInterface);
 
                 LockedWrite{ std::cout } << "Loading processor plugins";

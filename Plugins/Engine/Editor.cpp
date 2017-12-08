@@ -27,13 +27,14 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Editor, Engine::Core *)
-            , public Plugin::Processor
-            , public Edit::Events
+        GEK_CONTEXT_USER(Editor, Plugin::Core *)
+            , virtual public Plugin::Processor
+            , virtual public Edit::Events
         {
         private:
-            Engine::Core *core = nullptr;
+            Plugin::Core *core = nullptr;
             Edit::Population *population = nullptr;
+            Engine::Resources *resources = nullptr;
             Plugin::Renderer *renderer = nullptr;
             Gek::Processor::Model *modelProcessor = nullptr;
 
@@ -69,10 +70,11 @@ namespace Gek
             bool showPopulationDock = true;
 
         public:
-            Editor(Context *context, Engine::Core *core)
+            Editor(Context *context, Plugin::Core *core)
                 : ContextRegistration(context)
                 , core(core)
-                , population(core->getFullPopulation())
+                , population(dynamic_cast<Engine::Core *>(core)->getFullPopulation())
+                , resources(dynamic_cast<Engine::Core *>(core)->getFullResources())
                 , renderer(core->getRenderer())
             {
                 assert(population);
@@ -151,7 +153,7 @@ namespace Gek
                     description.format = Video::Format::R11G11B10_FLOAT;
                     cameraTarget = core->getResources()->createTexture("editorTarget", description, Plugin::Resources::Flags::LoadImmediately);
 
-                    auto cameraBuffer = core->getFullResources()->getResource(cameraTarget);
+                    auto cameraBuffer = resources->getResource(cameraTarget);
                     auto cameraTexture = (cameraBuffer ? dynamic_cast<Video::Texture *>(cameraBuffer) : nullptr);
                     if (cameraTexture)
                     {
