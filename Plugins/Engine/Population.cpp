@@ -234,7 +234,7 @@ namespace Gek
                 {
                     LockedWrite{ std::cout } << "Loading population: " << populationName;
 
-                    JSON::Instance worldNode = JSON::Load(getContext()->getRootFileName("data", "scenes", populationName).withExtension(".json"));
+                    JSON::Instance worldNode = JSON::Load(getContext()->findDataPath(FileSystem::CombinePaths("scenes", populationName).withExtension(".json")));
                     shuntingYard.setRandomSeed(worldNode.get("Seed").convert(uint32_t(std::time(nullptr) & 0xFFFFFFFF)));
 
                     auto templatesNode = worldNode.get("Templates");
@@ -326,7 +326,7 @@ namespace Gek
                 JSON::Object scene;
                 scene["Population"] = population;
                 scene["Seed"] = shuntingYard.getRandomSeed();
-                JSON::Reference(scene).save(getContext()->getRootFileName("data", "scenes", populationName).withExtension(".json"));
+                JSON::Reference(scene).save(getContext()->findDataPath(FileSystem::CombinePaths("scenes", populationName).withExtension(".json")));
             }
 
             Plugin::Entity *createEntity(const std::vector<Component> &componentList)

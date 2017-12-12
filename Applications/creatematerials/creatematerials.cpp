@@ -11,10 +11,10 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     LockedWrite{ std::cout } << "GEK Material Creator";
 
     auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
-    auto dataPath(FileSystem::GetFileName(rootPath, "Data"));
+    auto dataPath(FileSystem::CombinePaths(rootPath, "Data"));
 
-	auto texturesPath(FileSystem::GetFileName(dataPath, "textures").getString());
-	auto materialsPath(FileSystem::GetFileName(dataPath, "materials"));
+	auto texturesPath(FileSystem::CombinePaths(dataPath, "textures").getString());
+	auto materialsPath(FileSystem::CombinePaths(dataPath, "materials"));
 
 	std::function<bool(FileSystem::Path const &)> findMaterials;
 	findMaterials = [&](FileSystem::Path const &materialCollectionPath) -> bool
@@ -176,7 +176,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                             dataNode.set(mapType, node);
                         }
 
-                        auto materialPath(FileSystem::GetFileName(materialsPath, materialName).withExtension(".json"));
+                        auto materialPath(FileSystem::CombinePaths(materialsPath, materialName + ".json"));
                         materialPath.getParentPath().createChain();
 
                         JSON::Object shaderNode;

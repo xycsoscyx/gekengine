@@ -588,8 +588,8 @@ namespace Gek
 
             std::string getFullProgram(std::string_view name, std::string_view engineData)
             {
-                auto programsPath(getContext()->getRootFileName("data", "programs"));
-                auto filePath(FileSystem::GetFileName(programsPath, name));
+                auto programsPath(getContext()->findDataPath("programs"s));
+                auto filePath(FileSystem::CombinePaths(programsPath, name));
                 if (filePath.isFile())
                 {
                     auto programDirectory(filePath.getParentPath());
@@ -622,7 +622,7 @@ namespace Gek
                                 includeName = includeName.substr(1, includeName.length() - 2);
                                 if (includeType == '\"')
                                 {
-                                    auto localPath(FileSystem::GetFileName(programDirectory, includeName));
+                                    auto localPath(FileSystem::CombinePaths(programDirectory, includeName));
                                     if (localPath.isFile())
                                     {
 										includeData = FileSystem::Load(localPath, String::Empty);
@@ -630,7 +630,7 @@ namespace Gek
                                 }
                                 else if (includeType == '<')
                                 {
-                                    auto rootPath(FileSystem::GetFileName(programsPath, includeName));
+                                    auto rootPath(FileSystem::CombinePaths(programsPath, includeName));
                                     if (rootPath.isFile())
                                     {
 										includeData = FileSystem::Load(rootPath, String::Empty);
@@ -993,7 +993,7 @@ namespace Gek
                     ".bmp",
                 };
 
-                auto texturePath(getContext()->getRootFileName("data", "textures", textureName));
+                auto texturePath(getContext()->findDataPath(FileSystem::CombinePaths("textures", textureName)));
                 for (auto const &format : formatList)
                 {
                     auto filePath(texturePath.withExtension(format));
@@ -1488,7 +1488,7 @@ namespace Gek
 
                 auto hash = GetHash(uncompiledProgram);
                 auto cacheExtension = String::Format(".{}.bin", hash);
-                auto cachePath(getContext()->getRootFileName("data", "cache", name).withExtension(cacheExtension));
+                auto cachePath(getContext()->findDataPath(FileSystem::CombinePaths("cache", name).withExtension(cacheExtension)));
 
 				std::vector<uint8_t> compiledProgram;
                 if (cachePath.isFile())

@@ -196,7 +196,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     searchPathList.push_back(pluginPath);
 
     auto rootPath(pluginPath.getParentPath());
-    ContextPtr context(Context::Create(rootPath, searchPathList));
+    ContextPtr context(Context::Create(searchPathList));
+    context->addDataPath(FileSystem::CombinePaths(rootPath.getString(), "data"));
+    context->addDataPath(rootPath.getString());
 
     Window::Description description;
     description.className = "GEK_Engine_Textures";
@@ -222,7 +224,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	};
 
     CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
-	FileSystem::GetFileName(rootPath, "Data", "Textures").findFiles(searchDirectory);
+    context->findDataPath("textures"s).findFiles(searchDirectory);
 	CoUninitialize();
     return 0;
 }

@@ -24,17 +24,13 @@ namespace Gek
 
     GEK_INTERFACE(Context)
     {
-        static ContextPtr Create(FileSystem::Path const &rootPath, const std::vector<FileSystem::Path> &searchPathList);
+        static ContextPtr Create(const std::vector<FileSystem::Path> &pluginSearchList);
 
         virtual ~Context(void) = default;
 
-        virtual FileSystem::Path const &getRootPath(void) const = 0;
+        virtual void addDataPath(FileSystem::Path const &path) = 0;
 
-        template <typename... PARAMETERS>
-        FileSystem::Path getRootFileName(PARAMETERS&&... nameList)
-        {
-            return FileSystem::GetFileName(getRootPath(), nameList...);
-        }
+        virtual FileSystem::Path findDataPath(FileSystem::Path const &path) const = 0;
 
         virtual ContextUserPtr createBaseClass(std::string_view className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const = 0;
 

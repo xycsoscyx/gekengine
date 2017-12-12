@@ -119,7 +119,7 @@ namespace Gek
                 auto backBuffer = videoDevice->getBackBuffer();
                 auto &backBufferDescription = backBuffer->getDescription();
 
-                const JSON::Instance shaderNode = JSON::Load(getContext()->getRootFileName("data", "shaders", shaderName).withExtension(".json"));
+                const JSON::Instance shaderNode = JSON::Load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", shaderName).withExtension(".json")));
                 outputResource = shaderNode.get("output").convert(String::Empty);
                 auto globalOptions = shaderNode.get("options").getObject();
                 auto engineOptions = core->getOption("shaders", shaderName);
@@ -823,7 +823,7 @@ namespace Gek
                     std::string entryPoint(passNode.get("entry").convert(String::Empty));
                     auto programName = passNode.get("program").convert(String::Empty);
                     pass.name = String::Format("{}: {}", programName, entryPoint);
-                    std::string fileName(FileSystem::GetFileName(shaderName, programName).withExtension(".hlsl").getString());
+                    std::string fileName(FileSystem::CombinePaths(shaderName, programName).withExtension(".hlsl").getString());
                     Video::PipelineType pipelineType = (pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel);
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
                 }

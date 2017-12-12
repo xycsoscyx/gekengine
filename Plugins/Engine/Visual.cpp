@@ -29,7 +29,7 @@ namespace Gek
                 assert(videoDevice);
                 assert(resources);
 
-                const JSON::Instance visualNode = JSON::Load(getContext()->getRootFileName("data", "visuals", visualName).withExtension(".json"));
+                const JSON::Instance visualNode = JSON::Load(getContext()->findDataPath(FileSystem::CombinePaths("visuals", visualName).withExtension(".json")));
 
 				std::string inputVertexData;
 				std::vector<Video::InputElement> elementList;
@@ -108,7 +108,7 @@ namespace Gek
                 auto vertexNode = visualNode.get("vertex");
                 std::string vertexEntry(vertexNode.get("entry").convert(String::Empty));
                 std::string vertexProgram(vertexNode.get("program").convert(String::Empty));
-                std::string vertexFileName(FileSystem::GetFileName(visualName, vertexProgram).withExtension(".hlsl").getString());
+                std::string vertexFileName(FileSystem::CombinePaths(visualName, vertexProgram).withExtension(".hlsl").getString());
                 auto compiledVertexProgram = resources->compileProgram(Video::PipelineType::Vertex, vertexFileName, vertexEntry, engineData);
 				this->vertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiledVertexProgram.data(), compiledVertexProgram.size());
                 this->vertexProgram->setName(String::Format("{}:{}", vertexProgram, vertexEntry));
@@ -122,7 +122,7 @@ namespace Gek
                 std::string geometryProgram(geometryNode.get("program").convert(String::Empty));
                 if (!geometryEntry.empty() && !geometryProgram.empty())
                 {
-                    std::string geometryFileName(FileSystem::GetFileName(visualName, geometryProgram).withExtension(".hlsl").getString());
+                    std::string geometryFileName(FileSystem::CombinePaths(visualName, geometryProgram).withExtension(".hlsl").getString());
                     auto compiledGeometryProgram = resources->compileProgram(Video::PipelineType::Geometry, geometryFileName, geometryEntry);
                     this->geometryProgram = videoDevice->createProgram(Video::PipelineType::Geometry, compiledGeometryProgram.data(), compiledGeometryProgram.size());
                     this->geometryProgram->setName(String::Format("{}:{}", geometryProgram, geometryEntry));

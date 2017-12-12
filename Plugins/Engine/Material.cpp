@@ -30,7 +30,7 @@ namespace Gek
             {
                 assert(resources);
 
-                JSON::Instance materialNode = JSON::Load(getContext()->getRootFileName("data", "materials", materialName).withExtension(".json"));
+                JSON::Instance materialNode = JSON::Load(getContext()->findDataPath(FileSystem::CombinePaths("materials", materialName).withExtension(".json")));
                 auto &shaderNode = materialNode.get("shader");
                 auto shaderName = shaderNode.get("default").convert(String::Empty);
                 ShaderHandle shaderHandle = resources->getShader(shaderName, materialHandle);

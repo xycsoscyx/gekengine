@@ -88,7 +88,7 @@ namespace Gek
                 window->onMousePosition.connect(this, &Core::onMousePosition);
                 window->onMouseMovement.connect(this, &Core::onMouseMovement);
 
-                configuration = JSON::Load(getContext()->getRootFileName("config.json"));
+                configuration = JSON::Load(getContext()->findDataPath("config.json"s));
 
                 HRESULT resultValue = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
                 if (FAILED(resultValue))
@@ -199,7 +199,7 @@ namespace Gek
                 population = nullptr;
                 videoDevice = nullptr;
                 window = nullptr;
-                JSON::Reference(configuration).save(getContext()->getRootFileName("config.json"));
+                JSON::Reference(configuration).save(getContext()->findDataPath("config.json"s));
                 CoUninitialize();
 
                 GEK_PROFILE_STOP();
@@ -825,7 +825,7 @@ namespace Gek
                     {
                         auto &style = ImGui::GetStyle();
                         std::vector<std::string> scenes;
-                        getContext()->getRootFileName("data", "scenes").findFiles([&scenes](FileSystem::Path const &filePath) -> bool
+                        getContext()->findDataPath("scenes"s).findFiles([&scenes](FileSystem::Path const &filePath) -> bool
                         {
                             if (filePath.isFile())
                             {

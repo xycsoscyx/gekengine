@@ -148,7 +148,7 @@ namespace Gek
                     LockedWrite{ std::cout } << "Loading collision model: " << modelComponent.name;
 
 					static const std::vector<uint8_t> EmptyBuffer;
-					auto filePath = getContext()->getRootFileName("data", "physics", modelComponent.name).withExtension(".gek");
+                    auto filePath = getContext()->findDataPath(FileSystem::CombinePaths("physics", modelComponent.name).withExtension(".gek"));
                     std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
 					if (buffer.size() < sizeof(Header))
 					{
@@ -522,7 +522,7 @@ namespace Gek
                 else
                 {
                     surfaceIndexMap[hash] = 0;
-                    JSON::Instance materialNode = JSON::Load(getContext()->getRootFileName("data", "materials", surfaceName).withExtension(".json"));
+                    JSON::Instance materialNode = JSON::Load(getContext()->findDataPath(FileSystem::CombinePaths("materials", surfaceName).withExtension(".json")));
                     if (materialNode.getObject().has_member("surface"))
                     {
                         Surface surface;

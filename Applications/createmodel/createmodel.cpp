@@ -329,9 +329,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
 
     auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
-    auto dataPath(FileSystem::GetFileName(rootPath, "Data"));
+    auto dataPath(FileSystem::CombinePaths(rootPath, "Data"));
 
-    auto sourcePath(FileSystem::GetFileName(dataPath, "models", sourceName.getString()));
+    auto sourcePath(FileSystem::CombinePaths(dataPath, "models", sourceName.getString()));
     auto inputScene = aiImportFileExWithProperties(sourcePath.getString().data(), importFlags, nullptr, propertyStore);
     if (inputScene == nullptr)
     {
@@ -374,8 +374,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     aiReleasePropertyStore(propertyStore);
     aiReleaseImport(inputScene);
 
-	std::string texturesPath(String::GetLower(FileSystem::GetFileName(dataPath, "Textures").getString()));
-    auto materialsPath(FileSystem::GetFileName(dataPath, "Materials").getString());
+	std::string texturesPath(String::GetLower(FileSystem::CombinePaths(dataPath, "Textures").getString()));
+    auto materialsPath(FileSystem::CombinePaths(dataPath, "Materials").getString());
 
 	std::map<std::string, std::string> diffuseToMaterialMap;
     std::function<bool(FileSystem::Path const &)> findMaterials;
@@ -458,8 +458,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             String::Replace(modelName, replacement, "");
         }
 
-        auto outputParentPath(FileSystem::GetFileName(dataPath, "models", sourceName.withoutExtension().getString()));
-        auto outputPath(FileSystem::GetFileName(outputParentPath, modelName).withExtension(".gek"));
+        auto outputParentPath(FileSystem::CombinePaths(dataPath, "models", sourceName.withoutExtension().getString()));
+        auto outputPath(FileSystem::CombinePaths(outputParentPath, modelName).withExtension(".gek"));
         LockedWrite{ std::cout } << ">     " << model.name << ": " << outputPath.getString();
         LockedWrite{ std::cout } << "      Num. Meshes: " << model.meshList.size();
         LockedWrite{ std::cout } << "      Size: Minimum[" << model.boundingBox.minimum.x << ", " << model.boundingBox.minimum.y << ", " << model.boundingBox.minimum.z << "]";

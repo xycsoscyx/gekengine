@@ -45,7 +45,7 @@ namespace Gek
         Model(Context *context, Plugin::Population *population)
             : ContextRegistration(context)
             , ComponentMixin(population)
-            , modelsPath(context->getRootFileName("data", "models"))
+            , modelsPath(context->findDataPath("models"s))
         {
         }
 
@@ -307,7 +307,7 @@ namespace Gek
                     loadPool.enqueue([this, name = modelComponent.name, &group = pair.first->second](void) -> void
                     {
                         std::vector<FileSystem::Path> modelPathList;
-                        auto groupPath(getContext()->getRootFileName("data", "models", name));
+                        auto groupPath(getContext()->findDataPath(FileSystem::CombinePaths("models", name)));
                         groupPath.findFiles([&](FileSystem::Path const &filePath) -> bool
                         {
                             std::string fileName(filePath.getString());

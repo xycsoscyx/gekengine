@@ -68,13 +68,19 @@ namespace Gek
 
 		Path GetModuleFilePath(void);
 
-		template <typename... PARAMETERS>
-		Path GetFileName(Path const &rootDirectory, const PARAMETERS&... nameList)
-		{
-            return String::Join({ rootDirectory.getString(), nameList... }, static_cast<char>(std::experimental::filesystem::path::preferred_separator));
-		}
+        template <typename... PARAMETERS>
+        Path CombinePaths(const PARAMETERS&... nameList)
+        {
+            return String::Join({ nameList... }, static_cast<char>(std::experimental::filesystem::path::preferred_separator));
+        }
 
-		template <typename CONTAINER>
+        template <typename... PARAMETERS>
+        Path CombinePaths(Path const &rootDirectory, const PARAMETERS&... nameList)
+        {
+            return String::Join({ rootDirectory.getString(), nameList... }, static_cast<char>(std::experimental::filesystem::path::preferred_separator));
+        }
+
+        template <typename CONTAINER>
 		CONTAINER Load(Path const &filePath, CONTAINER const &defaultValue = CONTAINER(), std::uintmax_t limitReadSize = 0)
 		{
 			if (filePath.isFile())

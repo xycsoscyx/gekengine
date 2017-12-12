@@ -4,6 +4,7 @@
 #include "GEK/Utility/ContextUser.hpp"
 #include <unordered_map>
 #include <Windows.h>
+#include <set>
 
 namespace Gek
 {
@@ -11,19 +12,15 @@ namespace Gek
         : public Context
     {
     private:
-        FileSystem::Path rootPath;
         std::vector<HMODULE> moduleList;
         std::unordered_map<std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)>> classMap;
         std::unordered_multimap<std::string_view, std::string_view> typeMap;
+        std::set<std::string> dataPathList;
 
     public:
-        ContextImplementation(FileSystem::Path const &rootPath, std::vector<FileSystem::Path> searchPathList)
-            : rootPath(rootPath)
+        ContextImplementation(std::vector<FileSystem::Path> pluginSearchList)
         {
-            SetCurrentDirectoryW(rootPath.getWindowsString().data());
-            
-            searchPathList.push_back(rootPath);
-            for (auto const &searchPath : searchPathList)
+            for (auto const &searchPath : pluginSearchList)
             {
                 searchPath.findFiles([&](FileSystem::Path const &filePath) -> bool
                 {
@@ -79,9 +76,24 @@ namespace Gek
         }
 
         // Context
-        FileSystem::Path const &getRootPath(void) const
+        void addDataPath(FileSystem::Path const &path)
         {
-            return rootPath;
+            dataPathList.insert(path.getString());
+        }
+
+        FileSystem::Path findDataPath(FileSystem::Path const &path) const
+        {
+            auto pathString = path.getString();
+            for (auto &dataPath : dataPathList)
+            {
+                auto fullPath = FileSystem::CombinePaths(dataPath, pathString);
+                if (fullPath.isFile() || fullPath.isDirectory())
+                {
+                    return fullPath;
+                }
+            }
+
+            return path;
         }
 
         ContextUserPtr createBaseClass(std::string_view className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const
@@ -126,8 +138,8 @@ namespace Gek
         }
     };
 
-    ContextPtr Context::Create(FileSystem::Path const &rootPath, const std::vector<FileSystem::Path> &searchPathList)
+    ContextPtr Context::Create(const std::vector<FileSystem::Path> &pluginSearchList)
     {
-        return std::make_unique<ContextImplementation>(rootPath, searchPathList);
+        return std::make_unique<ContextImplementation>(pluginSearchList);
     }
 }; // namespace Gek

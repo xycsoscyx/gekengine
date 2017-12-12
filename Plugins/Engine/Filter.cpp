@@ -101,7 +101,7 @@ namespace Gek
                 depthState = resources->createDepthState(Video::DepthState::Description());
                 renderState = resources->createRenderState(Video::RenderState::Description());
 
-                const JSON::Instance filterNode = JSON::Load(getContext()->getRootFileName("data", "filters", filterName).withExtension(".json"));
+                const JSON::Instance filterNode = JSON::Load(getContext()->findDataPath(FileSystem::CombinePaths("filters", filterName).withExtension(".json")));
 
                 auto globalOptions = filterNode.get("options").getObject();
                 auto engineOptions = core->getOption("filters", filterName);
@@ -602,7 +602,7 @@ namespace Gek
                     std::string entryPoint(passNode.get("entry").convert(String::Empty));
                     auto programName = passNode.get("program").convert(String::Empty);
                     pass.name = String::Format("{}: {}", programName, entryPoint);
-                    std::string fileName(FileSystem::GetFileName(filterName, programName).withExtension(".hlsl").getString());
+                    std::string fileName(FileSystem::CombinePaths(filterName, programName + ".hlsl").getString());
                     Video::PipelineType pipelineType = (pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel);
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
                 }

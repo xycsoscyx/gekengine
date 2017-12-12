@@ -6,21 +6,34 @@
 
 using namespace Gek;
 
-int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ wchar_t *strCommandLine, _In_ int nCmdShow)
+int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstance, _In_ wchar_t *commandLine, _In_ int commandShow)
 {
     auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
     auto rootPath(pluginPath.getParentPath());
+    SetCurrentDirectoryW(rootPath.getWindowsString().data());
 
     std::vector<FileSystem::Path> searchPathList;
     searchPathList.push_back(pluginPath);
 
-    ContextPtr context(Context::Create(rootPath, searchPathList));
-    if (true)
+    ContextPtr context(Context::Create(searchPathList));
+    if (context)
     {
-        Engine::CorePtr core(context->createClass<Engine::Core>("Engine::Core", (Window *)nullptr));
-        while (core->update())
+        wchar_t gekDataPath[MAX_PATH + 1] = L"\0";
+        if (GetEnvironmentVariable(L"gek_data_path", gekDataPath, MAX_PATH) > 0)
         {
-        };
+            context->addDataPath(String::Narrow(gekDataPath));
+        }
+
+        context->addDataPath(FileSystem::CombinePaths(rootPath.getString(), "data"));
+        context->addDataPath(rootPath.getString());
+
+        Engine::CorePtr core(context->createClass<Engine::Core>("Engine::Core", (Window *)nullptr));
+        if (core)
+        {
+            while (core->update())
+            {
+            };
+        }
     }
 
     return 0;
