@@ -993,13 +993,12 @@ namespace Gek
                     ".bmp",
                 };
 
-                auto texturePath(getContext()->findDataPath(FileSystem::CombinePaths("textures", textureName)));
                 for (auto const &format : formatList)
                 {
-                    auto filePath(texturePath.withExtension(format));
-                    if (filePath.isFile())
+                    auto texturePath(getContext()->findDataPath(FileSystem::CombinePaths("textures", textureName).withExtension(format)));
+                    if (texturePath.isFile())
                     {
-                        auto load = [this, filePath = FileSystem::Path(filePath), textureName = std::string(textureName), flags](ResourceHandle)->Video::TexturePtr
+                        auto load = [this, filePath = FileSystem::Path(texturePath), textureName = std::string(textureName), flags](ResourceHandle)->Video::TexturePtr
                         {
                             return loadTextureData(filePath, textureName, flags);
                         };
@@ -1008,7 +1007,7 @@ namespace Gek
                         auto resource = dynamicCache.getHandle(hash, flags, std::move(load), false);
                         if (resource.first)
                         {
-                            auto description = videoDevice->loadTextureDescription(filePath);
+                            auto description = videoDevice->loadTextureDescription(texturePath);
                             textureDescriptionMap.insert(std::make_pair(resource.second, description));
                         }
 

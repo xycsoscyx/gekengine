@@ -30,30 +30,20 @@
     },
     "render": {},
     "shaders": {
-        "solid": {
-            "AmbientOcclusion": false,
-            "Bias": 0.2,
+        "glass": {
+            "ChromaticAbberation": false,
             "DistributionFactor": {
                 "options": ["None","Basic","TrowbridgeReitzGGX","TheOrder1886GGX","DisneyGGX"],
                 "selection": "DisneyGGX"
             },
-            "EdgeSharpness": 0.01,
-            "Epsilon": 0.01,
-            "FalloffFunction": 0,
             "FresnelTerm": {
                 "options": ["None","Schlick"],
                 "selection": "Schlick"
             },
-            "GaussianRadius": 4,
-            "GaussianSigma": 1.75,
             "GeometricAttenuationFunction": {
                 "options": ["None","Schlick","SmithGGX"],
                 "selection": "SmithGGX"
             },
-            "Intensity": 2.0,
-            "Radius": 1.0,
-            "SpiralTurns": 17.0,
-            "TapCount": 24,
             "UseDisneyAlpha": true,
             "UseHalfLambert": true
         }
