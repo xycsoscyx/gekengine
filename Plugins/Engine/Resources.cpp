@@ -104,13 +104,6 @@ namespace Gek
     {
         static ShuntingYard shuntingYard;
 
-        GEK_INTERFACE(ResourceRequester)
-        {
-            virtual ~ResourceRequester(void) = default;
-
-            virtual void addRequest(std::function<void(void)> &&load) = 0;
-        };
-
         template <class HANDLE, typename TYPE>
         class ResourceCache
         {
@@ -124,15 +117,14 @@ namespace Gek
             uint32_t nextIdentifier = 0;
 
         protected:
-            ResourceRequester *resources = nullptr;
-            ResourceHandleMap resourceHandleMap;
+			ThreadPool<5> &loadPool;
+			ResourceHandleMap resourceHandleMap;
             ResourceMap resourceMap;
 
         public:
-            ResourceCache(ResourceRequester *resources)
-                : resources(resources)
+            ResourceCache(ThreadPool<5> &loadPool)
+                : loadPool(loadPool)
             {
-                assert(resources);
             }
 
             virtual ~ResourceCache(void) = default;
@@ -149,7 +141,7 @@ namespace Gek
                 resourceMap.clear();
             }
 
-            void setResource(HANDLE handle, const TypePtr &data)
+			void setResource(HANDLE handle, TypePtr const &data)
             {
                 auto &resourceSearch = resourceMap.insert(std::make_pair(handle, nullptr));
                 auto &atomicResource = resourceSearch.first->second;
@@ -184,8 +176,8 @@ namespace Gek
             concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
 
         public:
-            GeneralResourceCache(ResourceRequester *resources)
-                : ResourceCache(resources)
+            GeneralResourceCache(ThreadPool<5> &loadPool)
+                : ResourceCache(loadPool)
             {
             }
 
@@ -195,7 +187,8 @@ namespace Gek
                 ResourceCache::clear();
             }
 
-            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::function<TypePtr(HANDLE)> &&load)
+			template <typename FUNCTOR>
+            std::pair<bool, HANDLE> getHandle(std::size_t hash, FUNCTOR &&load)
             {
                 if (requestedLoadSet.count(hash) > 0)
                 {
@@ -210,7 +203,7 @@ namespace Gek
                     requestedLoadSet.insert(hash);
                     HANDLE handle = getNextHandle();
                     resourceHandleMap[hash] = handle;
-                    resources->addRequest([this, handle, load = move(load)](void) -> void
+					loadPool.enqueue([this, handle, load = std::move(load)](void) -> void
                     {
                         setResource(handle, load(handle));
                     });
@@ -245,8 +238,8 @@ namespace Gek
             concurrency::concurrent_unordered_map<HANDLE, std::size_t> loadParameters;
 
         public:
-            DynamicResourceCache(ResourceRequester *resources)
-                : ResourceCache(resources)
+            DynamicResourceCache(ThreadPool<5> &loadPool)
+                : ResourceCache(loadPool)
             {
             }
 
@@ -264,7 +257,8 @@ namespace Gek
                 setResource(handle, data);
             }
 
-            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::size_t parameters, std::function<TypePtr(HANDLE)> &&load, uint32_t flags)
+			template <typename FUNCTOR>
+			std::pair<bool, HANDLE> getHandle(std::size_t hash, std::size_t parameters, FUNCTOR &&load, uint32_t flags)
             {
                 HANDLE handle;
                 if (requestedLoadSet.count(hash) > 0)
@@ -285,9 +279,9 @@ namespace Gek
                                 }
                                 else
                                 {
-                                    resources->addRequest([this, handle, load = move(load)](void) -> void
+									loadPool.enqueue([this, handle, load](void) -> void
                                     {
-                                        setResource(handle, load(handle));
+										setResource(handle, load(handle));
                                     });
                                 }
 
@@ -310,9 +304,9 @@ namespace Gek
                     }
                     else
                     {
-                        resources->addRequest([this, handle, load = move(load)](void) -> void
+						loadPool.enqueue([this, handle, load](void) -> void
                         {
-                            setResource(handle, load(handle));
+							setResource(handle, load(handle));
                         });
                     }
 
@@ -342,16 +336,17 @@ namespace Gek
             : public ResourceCache<HANDLE, TYPE>
         {
         public:
-            ProgramResourceCache(ResourceRequester *resources)
-                : ResourceCache(resources)
+            ProgramResourceCache(ThreadPool<5> &loadPool)
+                : ResourceCache(loadPool)
             {
             }
 
-            HANDLE getHandle(std::function<TypePtr(HANDLE)> &&load)
+			template <typename FUNCTOR>
+            HANDLE getHandle(FUNCTOR &&load)
             {
                 HANDLE handle;
                 handle = getNextHandle();
-                resources->addRequest([this, handle, load = move(load)](void) -> void
+				loadPool.enqueue([this, handle, load](void) -> void
                 {
                     setResource(handle, load(handle));
                 });
@@ -368,8 +363,8 @@ namespace Gek
             concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
 
         public:
-            ReloadResourceCache(ResourceRequester *resources)
-                : ResourceCache(resources)
+            ReloadResourceCache(ThreadPool<5> &loadPool)
+                : ResourceCache(loadPool)
             {
             }
 
@@ -391,7 +386,8 @@ namespace Gek
                 ResourceCache::clear();
             }
 
-            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::function<TypePtr(HANDLE)> &&load)
+			template <typename FUNCTOR>
+            std::pair<bool, HANDLE> getHandle(std::size_t hash, FUNCTOR &&load)
             {
                 HANDLE handle;
                 if (requestedLoadSet.count(hash) > 0)
@@ -501,7 +497,6 @@ namespace Gek
 
         GEK_CONTEXT_USER(Resources, Engine::Core *)
             , public Engine::Resources
-            , public ResourceRequester
         {
         private:
             Engine::Core *core = nullptr;
@@ -553,15 +548,15 @@ namespace Gek
                 : ContextRegistration(context)
                 , core(core)
                 , videoDevice(core->getVideoDevice())
-                , programCache(this)
-                , visualCache(this)
-                , materialCache(this)
-                , shaderCache(this)
-                , filterCache(this)
-                , dynamicCache(this)
-                , renderStateCache(this)
-                , depthStateCache(this)
-                , blendStateCache(this)
+                , programCache(loadPool)
+                , visualCache(loadPool)
+                , materialCache(loadPool)
+                , shaderCache(loadPool)
+                , filterCache(loadPool)
+                , dynamicCache(loadPool)
+                , renderStateCache(loadPool)
+                , depthStateCache(loadPool)
+                , blendStateCache(loadPool)
             {
                 assert(core);
                 assert(videoDevice);
@@ -702,8 +697,8 @@ namespace Gek
                 }
             }
 
-            template <typename CACHE>
-            void showVideoObjectMap(CACHE &cache, std::string_view name, std::function<void(typename CACHE::TypePtr &)> onObject)
+            template <typename CACHE, typename FUNCTOR>
+            void showVideoObjectMap(CACHE &cache, std::string_view name, FUNCTOR &&onObject)
             {
                 auto lowerName = String::GetLower(name);
                 if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_Framed))
@@ -730,8 +725,8 @@ namespace Gek
                 }
             }
 
-            template <typename CACHE>
-            void showVideoResourceMap(CACHE &cache, std::string_view name, std::function<void(typename CACHE::TypePtr &)> onObject)
+			template <typename CACHE, typename FUNCTOR>
+			void showVideoResourceMap(CACHE &cache, std::string_view name, FUNCTOR &&onObject)
             {
                 if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_Framed))
                 {
@@ -945,36 +940,23 @@ namespace Gek
                 filterCache.reload();
             }
 
-            // ResourceRequester
-            void addRequest(std::function<void(void)> &&load)
-            {
-                loadPool.enqueue([this, load = move(load)](void) -> void
-                {
-                    load();
-                });
-            }
-
             // Plugin::Resources
             VisualHandle loadVisual(std::string_view visualName)
             {
-                auto load = [this, visualName = std::string(visualName)](VisualHandle) -> Engine::VisualPtr
-                {
-                    return getContext()->createClass<Engine::Visual>("Engine::Visual", videoDevice, (Engine::Resources *)this, visualName);
-                };
-
                 auto hash = GetHash(visualName);
-                return visualCache.getHandle(hash, std::move(load)).second;
+                return visualCache.getHandle(hash, [this, visualName = std::string(visualName)](VisualHandle)->Engine::VisualPtr
+				{
+					return getContext()->createClass<Engine::Visual>("Engine::Visual", videoDevice, (Engine::Resources *)this, visualName);
+				}).second;
             }
 
             MaterialHandle loadMaterial(std::string_view materialName)
             {
-                auto load = [this, materialName = std::string(materialName)](MaterialHandle handle) -> Engine::MaterialPtr
-                {
-                    return getContext()->createClass<Engine::Material>("Engine::Material", (Engine::Resources *)this, materialName, handle);
-                };
-
                 auto hash = GetHash(materialName);
-                return materialCache.getHandle(hash, std::move(load)).second;
+                return materialCache.getHandle(hash, [this, materialName = std::string(materialName)](MaterialHandle handle)->Engine::MaterialPtr
+				{
+					return getContext()->createClass<Engine::Material>("Engine::Material", (Engine::Resources *)this, materialName, handle);
+				}).second;
             }
 
             ResourceHandle loadTexture(std::string_view textureName, uint32_t flags)
@@ -993,18 +975,17 @@ namespace Gek
                     ".bmp",
                 };
 
-                for (auto const &format : formatList)
+				auto hash = GetHash(textureName);
+				for (auto const &format : formatList)
                 {
                     auto texturePath(getContext()->findDataPath(FileSystem::CombinePaths("textures", textureName).withExtension(format)));
                     if (texturePath.isFile())
                     {
-                        auto load = [this, filePath = FileSystem::Path(texturePath), textureName = std::string(textureName), flags](ResourceHandle)->Video::TexturePtr
-                        {
-                            return loadTextureData(filePath, textureName, flags);
-                        };
+                        auto resource = dynamicCache.getHandle(hash, flags, [this, filePath = FileSystem::Path(texturePath), textureName = std::string(textureName), flags](ResourceHandle)->Video::TexturePtr
+						{
+							return loadTextureData(filePath, textureName, flags);
+						}, false);
 
-                        auto hash = GetHash(textureName);
-                        auto resource = dynamicCache.getHandle(hash, flags, std::move(load), false);
                         if (resource.first)
                         {
                             auto description = videoDevice->loadTextureDescription(texturePath);
@@ -1126,15 +1107,15 @@ namespace Gek
 
                 description.flags = Video::Texture::Flags::Resource;
                 std::string name(String::Format("{}:{}", pattern, parameters.convert(String::Empty)));
-                auto load = [this, name, description, data = move(data)](ResourceHandle) mutable -> Video::TexturePtr
-                {
-                    auto texture = videoDevice->createTexture(description, data.data());
-                    texture->setName(name);
-                    return texture;
-                };
-
                 auto hash = GetHash(name);
-                auto resource = dynamicCache.getHandle(hash, 0, std::move(load), false);
+
+                auto resource = dynamicCache.getHandle(hash, 0, [this, name, description, data = move(data)](ResourceHandle)->Video::TexturePtr
+				{
+					auto texture = videoDevice->createTexture(description, data.data());
+					texture->setName(name);
+					return texture;
+				}, false);
+
                 if (resource.first)
                 {
                     textureDescriptionMap.insert(std::make_pair(resource.second, description));
@@ -1145,13 +1126,6 @@ namespace Gek
 
             ResourceHandle createTexture(std::string_view textureName, const Video::Texture::Description &description, uint32_t flags)
             {
-                auto load = [this, textureName = std::string(textureName), description](ResourceHandle)->Video::TexturePtr
-                {
-                    auto texture = videoDevice->createTexture(description);
-                    texture->setName(textureName);
-                    return texture;
-                };
-
                 auto hash = GetHash(textureName);
                 auto parameters = description.getHash();
                 if (description.format == Video::Format::Unknown)
@@ -1159,7 +1133,13 @@ namespace Gek
                     flags |= Resources::Flags::LoadFromCache;
                 }
 
-                auto resource = dynamicCache.getHandle(hash, parameters, std::move(load), flags);
+                auto resource = dynamicCache.getHandle(hash, parameters, [this, textureName = std::string(textureName), description](ResourceHandle)->Video::TexturePtr
+				{
+					auto texture = videoDevice->createTexture(description);
+					texture->setName(textureName);
+					return texture;
+				}, flags);
+
                 if (resource.first)
                 {
                     textureDescriptionMap.insert(std::make_pair(resource.second, description));
@@ -1172,13 +1152,6 @@ namespace Gek
             {
                 assert(description.count > 0);
 
-                auto load = [this, bufferName = std::string(bufferName), description](ResourceHandle)->Video::BufferPtr
-                {
-                    auto buffer = videoDevice->createBuffer(description);
-                    buffer->setName(bufferName);
-                    return buffer;
-                };
-
                 auto hash = GetHash(bufferName);
                 auto parameters = description.getHash();
                 if (description.format == Video::Format::Unknown)
@@ -1186,8 +1159,14 @@ namespace Gek
                     flags |= Resources::Flags::LoadFromCache;
                 }
 
-                auto resource = dynamicCache.getHandle(hash, parameters, std::move(load), flags);
-                if (resource.first)
+                auto resource = dynamicCache.getHandle(hash, parameters, [this, bufferName = std::string(bufferName), description](ResourceHandle)->Video::BufferPtr
+				{
+					auto buffer = videoDevice->createBuffer(description);
+					buffer->setName(bufferName);
+					return buffer;
+				}, flags);
+
+				if (resource.first)
                 {
                     bufferDescriptionMap.insert(std::make_pair(resource.second, description));
                 }
@@ -1200,13 +1179,6 @@ namespace Gek
                 assert(description.count > 0);
                 assert(!staticData.empty());
 
-                auto load = [this, bufferName = std::string(bufferName), description, staticData = move(staticData)](ResourceHandle)->Video::BufferPtr
-                {
-                    auto buffer = videoDevice->createBuffer(description, (void *)staticData.data());
-                    buffer->setName(bufferName);
-                    return buffer;
-                };
-
                 auto hash = GetHash(bufferName);
                 auto parameters = reinterpret_cast<std::size_t>(staticData.data());
                 if (description.format == Video::Format::Unknown)
@@ -1214,8 +1186,14 @@ namespace Gek
                     flags |= Resources::Flags::LoadFromCache;
                 }
 
-                auto resource = dynamicCache.getHandle(hash, parameters, std::move(load), flags);
-                if (resource.first)
+                auto resource = dynamicCache.getHandle(hash, parameters, [this, bufferName = std::string(bufferName), description, staticData = move(staticData)](ResourceHandle)->Video::BufferPtr
+                {
+                    auto buffer = videoDevice->createBuffer(description, (void *)staticData.data());
+                    buffer->setName(bufferName);
+                    return buffer;
+                }, flags);
+
+				if (resource.first)
                 {
                     bufferDescriptionMap.insert(std::make_pair(resource.second, description));
                 }
@@ -1413,14 +1391,14 @@ namespace Gek
             ShaderHandle const getShader(std::string_view shaderName, MaterialHandle material)
             {
                 std::unique_lock<std::recursive_mutex> lock(shaderMutex);
-                auto load = [this, shaderName = std::string(shaderName)](ShaderHandle) -> Engine::ShaderPtr
-                {
-                    return getContext()->createClass<Engine::Shader>("Engine::Shader", core, shaderName);
-                };
 
                 auto hash = GetHash(shaderName);
-                auto resource = shaderCache.getHandle(hash, std::move(load));
-                if (material && resource.second)
+                auto resource = shaderCache.getHandle(hash, [this, shaderName = std::string(shaderName)](ShaderHandle)->Engine::ShaderPtr
+				{
+					return getContext()->createClass<Engine::Shader>("Engine::Shader", core, shaderName);
+				});
+
+				if (material && resource.second)
                 {
                     materialShaderMap[material] = resource.second;
                 }
@@ -1430,14 +1408,13 @@ namespace Gek
 
             Engine::Filter * const getFilter(std::string_view filterName)
             {
-                auto load = [this, filterName = std::string(filterName)](ResourceHandle)->Engine::FilterPtr
-                {
-                    return getContext()->createClass<Engine::Filter>("Engine::Filter", core, filterName);
-                };
-
                 auto hash = GetHash(filterName);
-                auto resource = filterCache.getHandle(hash, std::move(load));
-                return filterCache.getResource(resource.second);
+                auto resource = filterCache.getHandle(hash, [this, filterName = std::string(filterName)](ResourceHandle)->Engine::FilterPtr
+				{
+					return getContext()->createClass<Engine::Filter>("Engine::Filter", core, filterName);
+				});
+
+				return filterCache.getResource(resource.second);
             }
 
             Video::Texture::Description const * const getTextureDescription(ResourceHandle resourceHandle) const
@@ -1512,54 +1489,46 @@ namespace Gek
 
             ProgramHandle loadProgram(Video::PipelineType pipelineType, std::string_view name, std::string_view entryFunction, std::string_view engineData)
             {
-                auto load = [this, pipelineType, name = std::string(name), entryFunction = std::string(entryFunction), engineData = std::string(engineData)](ProgramHandle)->Video::ObjectPtr
-                {
-                    auto compiledProgram = compileProgram(pipelineType, name, entryFunction, engineData);
-                    auto program = videoDevice->createProgram(pipelineType, compiledProgram.data(), compiledProgram.size());
-                    program->setName(String::Format("{}:{}", name, entryFunction));
-                    return program;
-                };
-
-                return programCache.getHandle(std::move(load));
+                return programCache.getHandle([this, pipelineType, name = std::string(name), entryFunction = std::string(entryFunction), engineData = std::string(engineData)](ProgramHandle)->Video::ObjectPtr
+				{
+					auto compiledProgram = compileProgram(pipelineType, name, entryFunction, engineData);
+					auto program = videoDevice->createProgram(pipelineType, compiledProgram.data(), compiledProgram.size());
+					program->setName(String::Format("{}:{}", name, entryFunction));
+					return program;
+				});
             }
 
             RenderStateHandle createRenderState(Video::RenderState::Description const &description)
             {
-                auto load = [this, description](RenderStateHandle) -> Video::RenderStatePtr
-                {
-                    auto state = videoDevice->createRenderState(description);
+                auto hash = description.getHash();
+                return renderStateCache.getHandle(hash, [this, description](RenderStateHandle) -> Video::RenderStatePtr
+				{
+					auto state = videoDevice->createRenderState(description);
 					//state->setName(stateName);
 					return state;
-                };
-
-                auto hash = description.getHash();
-                return renderStateCache.getHandle(hash, std::move(load)).second;
+				}).second;
             }
 
             DepthStateHandle createDepthState(Video::DepthState::Description const &description)
             {
-                auto load = [this, description](DepthStateHandle) -> Video::DepthStatePtr
-                {
+                auto hash = description.getHash();
+                return depthStateCache.getHandle(hash, [this, description](DepthStateHandle) -> Video::DepthStatePtr
+				{
 					auto state = videoDevice->createDepthState(description);
 					//state->setName(stateName);
 					return state;
-				};
-
-                auto hash = description.getHash();
-                return depthStateCache.getHandle(hash, std::move(load)).second;
+				}).second;
             }
 
             BlendStateHandle createBlendState(Video::BlendState::Description const &description)
             {
-                auto load = [this, description](BlendStateHandle) -> Video::BlendStatePtr
-                {
+                auto hash = description.getHash();
+                return blendStateCache.getHandle(hash, [this, description](BlendStateHandle) -> Video::BlendStatePtr
+				{
 					auto state = videoDevice->createBlendState(description);
 					//state->setName(stateName);
 					return state;
-				};
-
-                auto hash = description.getHash();
-                return blendStateCache.getHandle(hash, std::move(load)).second;
+				}).second;
             }
 
             void generateMipMaps(Video::Device::Context *videoContext, ResourceHandle resourceHandle)
