@@ -300,17 +300,17 @@ namespace Gek
                         shapeZPositionList.resize(bufferedEntityCount);
                         shapeRadiusList.resize(bufferedEntityCount);
 
-                        for (size_t entityIndex = 0; entityIndex < entityCount; ++entityIndex)
-                        {
-                            auto entity = entityList[entityIndex];
-                            auto &transformComponent = entity->getComponent<Components::Transform>();
-                            auto &lightComponent = entity->getComponent<COMPONENT>();
+						concurrency::parallel_for(0ULL, entityCount, [&](size_t entityIndex) -> void
+						{
+							auto entity = entityList[entityIndex];
+							auto &transformComponent = entity->getComponent<Components::Transform>();
+							auto &lightComponent = entity->getComponent<COMPONENT>();
 
-                            shapeXPositionList[entityIndex] = transformComponent.position.x;
-                            shapeYPositionList[entityIndex] = transformComponent.position.y;
-                            shapeZPositionList[entityIndex] = transformComponent.position.z;
-                            shapeRadiusList[entityIndex] = (lightComponent.range + lightComponent.radius);
-                        }
+							shapeXPositionList[entityIndex] = transformComponent.position.x;
+							shapeYPositionList[entityIndex] = transformComponent.position.y;
+							shapeZPositionList[entityIndex] = transformComponent.position.z;
+							shapeRadiusList[entityIndex] = (lightComponent.range + lightComponent.radius);
+						});
 
                         visibilityList.resize(bufferedEntityCount);
                         lightList.clear();
