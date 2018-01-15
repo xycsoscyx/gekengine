@@ -16,6 +16,7 @@ namespace Gek
         std::unordered_map<std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)>> classMap;
         std::unordered_multimap<std::string_view, std::string_view> typeMap;
         std::set<std::string> dataPathList;
+		std::string cachePath;
 
     public:
         ContextImplementation(std::vector<FileSystem::Path> pluginSearchList)
@@ -76,7 +77,17 @@ namespace Gek
         }
 
         // Context
-        void addDataPath(FileSystem::Path const &path)
+		void setCachePath(FileSystem::Path const &path)
+		{
+			cachePath = path.getString();
+		}
+
+		FileSystem::Path getCachePath(FileSystem::Path const &path)
+		{
+			return FileSystem::CombinePaths(cachePath, path.getString());
+		}
+
+		void addDataPath(FileSystem::Path const &path)
         {
             dataPathList.insert(path.getString());
         }
@@ -84,9 +95,15 @@ namespace Gek
         FileSystem::Path findDataPath(FileSystem::Path const &path) const
         {
             auto pathString = path.getString();
+			auto fullPath = FileSystem::CombinePaths(cachePath, pathString);
+			if (fullPath.isFile() || fullPath.isDirectory())
+			{
+				return fullPath;
+			}
+
             for (auto &dataPath : dataPathList)
             {
-                auto fullPath = FileSystem::CombinePaths(dataPath, pathString);
+                fullPath = FileSystem::CombinePaths(dataPath, pathString);
                 if (fullPath.isFile() || fullPath.isDirectory())
                 {
                     return fullPath;
@@ -95,6 +112,25 @@ namespace Gek
 
             return path;
         }
+
+		void findDataFiles(FileSystem::Path const &path, std::function<bool(FileSystem::Path const &filePath)> onFileFound) const
+		{
+			auto pathString = path.getString();
+			auto fullPath = FileSystem::CombinePaths(cachePath, pathString);
+			if (fullPath.isDirectory())
+			{
+				fullPath.findFiles(onFileFound);
+			}
+
+			for (auto &dataPath : dataPathList)
+			{
+				fullPath = FileSystem::CombinePaths(dataPath, pathString);
+				if (fullPath.isDirectory())
+				{
+					fullPath.findFiles(onFileFound);
+				}
+			}
+		}
 
         ContextUserPtr createBaseClass(std::string_view className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const
         {

@@ -28,9 +28,12 @@ namespace Gek
 
         virtual ~Context(void) = default;
 
-        virtual void addDataPath(FileSystem::Path const &path) = 0;
+		virtual void setCachePath(FileSystem::Path const &path) = 0;
+		virtual FileSystem::Path getCachePath(FileSystem::Path const &path) = 0;
 
+        virtual void addDataPath(FileSystem::Path const &path) = 0;
         virtual FileSystem::Path findDataPath(FileSystem::Path const &path) const = 0;
+		virtual void findDataFiles(FileSystem::Path const &path, std::function<bool(FileSystem::Path const &filePath)> onFileFound) const = 0;
 
         virtual ContextUserPtr createBaseClass(std::string_view className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const = 0;
 

@@ -1464,7 +1464,7 @@ namespace Gek
 
                 auto hash = GetHash(uncompiledProgram);
                 auto cacheExtension = String::Format(".{}.bin", hash);
-                auto cachePath(getContext()->findDataPath(FileSystem::CombinePaths("cache", name).withExtension(cacheExtension)));
+                auto cachePath(getContext()->getCachePath(name).withExtension(cacheExtension));
 
 				std::vector<uint8_t> compiledProgram;
                 if (cachePath.isFile())
@@ -1477,7 +1477,7 @@ namespace Gek
                 {
 #ifdef _DEBUG
 					auto debugExtension = String::Format(".{}.hlsl", hash);
-					auto debugPath(getContext()->getRootFileName("data", "cache", name).withExtension(debugExtension));
+					auto debugPath(getContext()->getCachePath(name).withExtension(debugExtension));
 					FileSystem::Save(debugPath, uncompiledProgram);
 #endif
 					compiledProgram = videoDevice->compileProgram(pipelineType, name, uncompiledProgram, entryFunction);

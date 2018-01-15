@@ -10,7 +10,8 @@ int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstan
 {
     auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
     auto rootPath(pluginPath.getParentPath());
-    SetCurrentDirectoryW(rootPath.getWindowsString().data());
+	auto cachePath(FileSystem::CombinePaths(rootPath, "cache"));
+    SetCurrentDirectoryW(cachePath.getWindowsString().data());
 
     std::vector<FileSystem::Path> searchPathList;
     searchPathList.push_back(pluginPath);
@@ -18,6 +19,8 @@ int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstan
     ContextPtr context(Context::Create(searchPathList));
     if (context)
     {
+		context->setCachePath(cachePath);
+
         wchar_t gekDataPath[MAX_PATH + 1] = L"\0";
         if (GetEnvironmentVariable(L"gek_data_path", gekDataPath, MAX_PATH) > 0)
         {

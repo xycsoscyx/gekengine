@@ -199,7 +199,7 @@ namespace Gek
                 population = nullptr;
                 videoDevice = nullptr;
                 window = nullptr;
-                JSON::Reference(configuration).save(getContext()->findDataPath("config.json"s));
+                JSON::Reference(configuration).save(getContext()->getCachePath("config.json"s));
                 CoUninitialize();
 
                 GEK_PROFILE_STOP();
@@ -825,7 +825,7 @@ namespace Gek
                     {
                         auto &style = ImGui::GetStyle();
                         std::vector<std::string> scenes;
-                        getContext()->findDataPath("scenes"s).findFiles([&scenes](FileSystem::Path const &filePath) -> bool
+						getContext()->findDataFiles("scenes"s, [&scenes](FileSystem::Path const &filePath) -> bool
                         {
                             if (filePath.isFile())
                             {
