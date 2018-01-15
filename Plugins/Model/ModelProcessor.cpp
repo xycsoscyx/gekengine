@@ -510,7 +510,7 @@ namespace Gek
         {
             assert(renderer);
 
-            GEK_PROFILE_FUNCTION();
+            GEK_PROFILE_FUNCTION_SCOPE();
 
             // Cull by entity/group
             const auto entityCount = getEntityCount();

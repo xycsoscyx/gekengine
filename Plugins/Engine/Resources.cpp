@@ -583,7 +583,7 @@ namespace Gek
 
             std::string getFullProgram(std::string_view name, std::string_view engineData)
             {
-                auto programsPath(getContext()->findDataPath("programs"s));
+                auto programsPath(getContext()->findDataPath("programs"s, false));
                 auto filePath(FileSystem::CombinePaths(programsPath, name));
                 if (filePath.isFile())
                 {
@@ -1463,25 +1463,27 @@ namespace Gek
                 auto uncompiledProgram = getFullProgram(name, engineData);
 
                 auto hash = GetHash(uncompiledProgram);
-                auto cacheExtension = String::Format(".{}.bin", hash);
-                auto cachePath(getContext()->getCachePath(name).withExtension(cacheExtension));
+				auto cachePath = getContext()->getCachePath(FileSystem::CombinePaths("programs", name));
+                auto compiledExtension = String::Format(".{}.bin", hash);
+                auto compiledPath(cachePath.withExtension(compiledExtension));
 
 				std::vector<uint8_t> compiledProgram;
-                if (cachePath.isFile())
+                if (compiledPath.isFile())
                 {
 					static const std::vector<uint8_t> EmptyBuffer;
-					compiledProgram = FileSystem::Load(cachePath, EmptyBuffer);
+					compiledProgram = FileSystem::Load(compiledPath, EmptyBuffer);
                 }
                 
                 if (compiledProgram.empty())
                 {
-#ifdef _DEBUG
-					auto debugExtension = String::Format(".{}.hlsl", hash);
-					auto debugPath(getContext()->getCachePath(name).withExtension(debugExtension));
-					FileSystem::Save(debugPath, uncompiledProgram);
+#define GEK_OUTPUT_UNCOMPILED_SHADER
+#ifdef GEK_OUTPUT_UNCOMPILED_SHADER
+					auto uncompiledExtension = String::Format(".{}.hlsl", hash);
+					auto uncompiledPath(cachePath.withExtension(uncompiledExtension));
+					FileSystem::Save(uncompiledPath, uncompiledProgram);
 #endif
 					compiledProgram = videoDevice->compileProgram(pipelineType, name, uncompiledProgram, entryFunction);
-                    FileSystem::Save(cachePath, compiledProgram);
+                    FileSystem::Save(compiledPath, compiledProgram);
                 }
 
                 return compiledProgram;

@@ -92,18 +92,21 @@ namespace Gek
             dataPathList.insert(path.getString());
         }
 
-        FileSystem::Path findDataPath(FileSystem::Path const &path) const
+        FileSystem::Path findDataPath(FileSystem::Path const &path, bool includeCache) const
         {
             auto pathString = path.getString();
-			auto fullPath = FileSystem::CombinePaths(cachePath, pathString);
-			if (fullPath.isFile() || fullPath.isDirectory())
+			if (includeCache)
 			{
-				return fullPath;
+				auto fullPath = FileSystem::CombinePaths(cachePath, pathString);
+				if (fullPath.isFile() || fullPath.isDirectory())
+				{
+					return fullPath;
+				}
 			}
 
             for (auto &dataPath : dataPathList)
             {
-                fullPath = FileSystem::CombinePaths(dataPath, pathString);
+                auto fullPath = FileSystem::CombinePaths(dataPath, pathString);
                 if (fullPath.isFile() || fullPath.isDirectory())
                 {
                     return fullPath;
@@ -113,18 +116,21 @@ namespace Gek
             return path;
         }
 
-		void findDataFiles(FileSystem::Path const &path, std::function<bool(FileSystem::Path const &filePath)> onFileFound) const
+		void findDataFiles(FileSystem::Path const &path, std::function<bool(FileSystem::Path const &filePath)> onFileFound, bool includeCache) const
 		{
 			auto pathString = path.getString();
-			auto fullPath = FileSystem::CombinePaths(cachePath, pathString);
-			if (fullPath.isDirectory())
+			if (includeCache)
 			{
-				fullPath.findFiles(onFileFound);
+				auto fullPath = FileSystem::CombinePaths(cachePath, pathString);
+				if (fullPath.isDirectory())
+				{
+					fullPath.findFiles(onFileFound);
+				}
 			}
 
 			for (auto &dataPath : dataPathList)
 			{
-				fullPath = FileSystem::CombinePaths(dataPath, pathString);
+				auto fullPath = FileSystem::CombinePaths(dataPath, pathString);
 				if (fullPath.isDirectory())
 				{
 					fullPath.findFiles(onFileFound);

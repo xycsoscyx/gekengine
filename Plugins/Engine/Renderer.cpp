@@ -1125,7 +1125,7 @@ namespace Gek
                 assert(videoDevice);
                 assert(population);
 
-                GEK_PROFILE_FUNCTION();
+                GEK_PROFILE_FUNCTION_SCOPE();
 
                 EngineConstantData engineConstantData;
                 engineConstantData.frameTime = frameTime;
