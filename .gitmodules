@@ -25,8 +25,3 @@
 [submodule "External/Wink-Signals"]
 	path = External/Wink-Signals
 	url = https://github.com/miguelmartin75/Wink-Signals.git
-[submodule "External/easy_profiler"]
-
-	path = External/easy_profiler
-
-	url = https://github.com/yse/easy_profiler.git
