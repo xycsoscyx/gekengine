@@ -915,12 +915,12 @@ namespace Gek
             // Plugin::Core
             JSON::Reference getOption(std::string_view system, std::string_view name)
             {
-                return configuration.insert_or_assign(system.data(), JSON::EmptyObject).first->value().get(name.data());
+				return configuration.get(system.data(), JSON::EmptyObject).get(name.data(), JSON::EmptyObject);
             }
 
             void setOption(std::string_view system, std::string_view name, JSON::Object const &value)
             {
-                configuration.insert_or_assign(system.data(), JSON::EmptyObject).first->value().insert_or_assign(name.data(), value);
+                configuration[system.data()][name.data()] = value;
             }
 
             void deleteOption(std::string_view system, std::string_view name)
