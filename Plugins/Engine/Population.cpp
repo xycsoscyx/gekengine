@@ -54,12 +54,12 @@ namespace Gek
             }
 
             // Plugin::Entity
-            bool hasComponent(const std::type_index &type) const
+            bool hasComponent(std::type_index const &type) const
             {
                 return (componentMap.count(type) > 0);
             }
 
-			Plugin::Component::Data *getComponent(const std::type_index &type)
+			Plugin::Component::Data *getComponent(std::type_index const &type)
 			{
 				auto componentSearch = componentMap.find(type);
 				if (componentSearch == std::end(componentMap))
@@ -70,7 +70,7 @@ namespace Gek
 				return componentSearch->second.get();
 			}
 
-			const Plugin::Component::Data *getComponent(const std::type_index &type) const
+			const Plugin::Component::Data *getComponent(std::type_index const &type) const
 			{
 				auto componentSearch = componentMap.find(type);
 				if (componentSearch == std::end(componentMap))
@@ -167,7 +167,7 @@ namespace Gek
                 return entityList;
             }
 
-            Edit::Component *getComponent(const std::type_index &type)
+            Edit::Component *getComponent(std::type_index const &type)
             {
                 auto componentsSearch = componentMap.find(type);
                 if (componentsSearch != std::end(componentMap))
@@ -297,7 +297,7 @@ namespace Gek
                 {
                     JSON::Object entityData = JSON::EmptyObject;
                     Entity *editorEntity = static_cast<Entity *>(entity.get());
-                    editorEntity->listComponents([&](const std::type_index &type, const Plugin::Component::Data *data) -> void
+                    editorEntity->listComponents([&](std::type_index const &type, Plugin::Component::Data const *data) -> void
                     {
                         auto componentName = componentNameTypeMap.find(type);
                         if (componentName == std::end(componentNameTypeMap))
@@ -329,7 +329,7 @@ namespace Gek
                 JSON::Reference(scene).save(getContext()->getCachePath(FileSystem::CombinePaths("scenes", populationName).withExtension(".json")));
             }
 
-            Plugin::Entity *createEntity(const std::vector<Component> &componentList)
+            Plugin::Entity *createEntity(std::vector<Component> const &componentList)
             {
                 auto populationEntity = new Entity();
                 for (auto const &componentData : componentList)

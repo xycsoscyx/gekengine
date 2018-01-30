@@ -10,7 +10,7 @@ namespace Gek
             return (ImGui::GetWindowContentRegionMax() - ImGui::GetWindowContentRegionMin());
         }
 
-        ImVec4 PushStyleColor(ImGuiCol styleIndex, const ImVec4& color)
+        ImVec4 PushStyleColor(ImGuiCol styleIndex, ImVec4 const &color)
         {
             ImVec4 oldValue = ImGui::GetStyle().Colors[styleIndex];
             ImGui::PushStyleColor(styleIndex, color);
@@ -104,7 +104,7 @@ namespace Gek
             return isClicked;
         }
 
-        void TextFrame(std::string_view label, ImVec2 const &requestedSize, ImGuiButtonFlags flags, const ImU32 *frameColor, const ImColor *textColor)
+        void TextFrame(std::string_view label, ImVec2 const &requestedSize, ImGuiButtonFlags flags, ImU32 const *frameColor, ImColor const *textColor)
         {
             ImGuiWindow *window = ImGui::GetCurrentWindow();
             if (window->SkipItems)

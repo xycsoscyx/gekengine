@@ -161,7 +161,7 @@ namespace Gek
         }
 
         // Plugin::Editor Slots
-        void onModified(Plugin ::Entity * const entity, const std::type_index &type)
+        void onModified(Plugin::Entity * const entity, std::type_index const &type)
         {
             if (type == typeid(Components::Name))
             {

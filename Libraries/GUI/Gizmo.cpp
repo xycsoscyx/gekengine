@@ -7,10 +7,10 @@ namespace Gek
     {
         namespace Gizmo
         {
-            const float screenRotateSize = 0.1f;
+			static constexpr float screenRotateSize = 0.1f;
 
-            static const float angleLimit = 0.96f;
-            static const float planeLimit = 0.2f;
+			static constexpr float angleLimit = 0.96f;
+			static constexpr float planeLimit = 0.2f;
 
             static const Math::Float3 directionUnary[3] =
             {
@@ -19,44 +19,44 @@ namespace Gek
                 Math::Float3(0.0f, 0.0f, 1.0f)
             };
 
-            static const ImU32 directionColor[3] =
+			static constexpr ImU32 directionColor[3] =
             {
                 0xFF0000AA,
                 0xFF00AA00,
                 0xFFAA0000
             };
 
-            static const ImU32 selectionColor = 0xFF1080FF;
-            static const ImU32 inactiveColor = 0x99999999;
-            static const ImU32 translationLineColor = 0xAAAAAAAA;
-            static const char *translationInfoMask[] =
+			static constexpr ImU32 selectionColor = 0xFF1080FF;
+			static constexpr ImU32 inactiveColor = 0x99999999;
+			static constexpr ImU32 translationLineColor = 0xAAAAAAAA;
+			static constexpr std::string_view translationInfoMask[] =
             {
-                "X : %5.3f",
-                "Y : %5.3f",
-                "Z : %5.3f",
-                "X : %5.3f Y : %5.3f",
-                "Y : %5.3f Z : %5.3f",
-                "X : %5.3f Z : %5.3f",
-                "X : %5.3f Y : %5.3f Z : %5.3f"
+                "X : %5.3f"sv,
+                "Y : %5.3f"sv,
+                "Z : %5.3f"sv,
+                "X : %5.3f Y : %5.3f"sv,
+                "Y : %5.3f Z : %5.3f"sv,
+                "X : %5.3f Z : %5.3f"sv,
+                "X : %5.3f Y : %5.3f Z : %5.3f"sv,
             };
 
-            static const char *scaleInfoMask[] =
+			static constexpr std::string_view scaleInfoMask[] =
             {
-                "X : %5.2f",
-                "Y : %5.2f",
-                "Z : %5.2f",
-                "XYZ : %5.2f"
+                "X : %5.2f"sv,
+                "Y : %5.2f"sv,
+                "Z : %5.2f"sv,
+                "XYZ : %5.2f"sv,
             };
 
-            static const char *rotationInfoMask[] =
+			static constexpr std::string_view rotationInfoMask[] =
             {
-                "X : %5.2f deg %5.2f rad",
-                "Y : %5.2f deg %5.2f rad",
-                "Z : %5.2f deg %5.2f rad",
-                "Screen : %5.2f deg %5.2f rad"
+                "X : %5.2f deg %5.2f rad"sv,
+                "Y : %5.2f deg %5.2f rad"sv,
+                "Z : %5.2f deg %5.2f rad"sv,
+                "Screen : %5.2f deg %5.2f rad"sv,
             };
 
-            static const int translationInfoIndex[] =
+			static constexpr int translationInfoIndex[] =
             {
                 0, 0, 0,
                 1, 0, 0,
@@ -67,9 +67,9 @@ namespace Gek
                 0, 1, 2,
             };
 
-            static const float quadMinimum = 0.5f;
-            static const float quadMaximum = 0.8f;
-            static const float quadCoords[8] =
+			static constexpr float quadMinimum = 0.5f;
+			static constexpr float quadMaximum = 0.8f;
+			static constexpr float quadCoords[8] =
             {
                 quadMinimum, quadMinimum,
                 quadMinimum, quadMaximum,
@@ -77,8 +77,8 @@ namespace Gek
                 quadMaximum, quadMinimum
             };
 
-            static const int halfCircleSegmentCount = 64;
-            static const float snapTension = 0.5f;
+			static constexpr int halfCircleSegmentCount = 64;
+			static constexpr float snapTension = 0.5f;
 
             struct Control
             {
@@ -207,7 +207,7 @@ namespace Gek
                     rayDir = (rayEnd.xyz - rayOrigin).getNormal();
                 }
 
-                float IntersectRayPlane(const Math::Float3 & rOrigin, Math::Float3 const &rVector, const Shapes::Plane& plane)
+                float IntersectRayPlane(Math::Float3 const &rOrigin, Math::Float3 const &rVector, Shapes::Plane const &plane)
                 {
                     float numer = plane.getDistance(rOrigin);
                     float denom = plane.normal.dot(rVector);
@@ -472,7 +472,7 @@ namespace Gek
 
                         ImVec2 destinationPosOnScreen = circlePos[1];
                         char tmps[512];
-                        ImFormatString(tmps, sizeof(tmps), rotationInfoMask[control - Control::RotateX], (mRotationAngle / Math::Pi)*180.0f, mRotationAngle);
+                        ImFormatString(tmps, sizeof(tmps), rotationInfoMask[control - Control::RotateX].data(), (mRotationAngle / Math::Pi)*180.0f, mRotationAngle);
                         drawList->AddText(ImVec2(destinationPosOnScreen.x + 15, destinationPosOnScreen.y + 15), 0xFF000000, tmps);
                         drawList->AddText(ImVec2(destinationPosOnScreen.x + 14, destinationPosOnScreen.y + 14), 0xFFFFFFFF, tmps);
                     }
@@ -541,7 +541,7 @@ namespace Gek
 
                         char tmps[512];
                         int componentInfoIndex = (control - Control::ScaleX) * 3;
-                        ImFormatString(tmps, sizeof(tmps), scaleInfoMask[control - Control::ScaleX], scaleDisplay[translationInfoIndex[componentInfoIndex]]);
+                        ImFormatString(tmps, sizeof(tmps), scaleInfoMask[control - Control::ScaleX].data(), scaleDisplay[translationInfoIndex[componentInfoIndex]]);
                         drawList->AddText(ImVec2(destinationPosOnScreen.x + 15, destinationPosOnScreen.y + 15), 0xFF000000, tmps);
                         drawList->AddText(ImVec2(destinationPosOnScreen.x + 14, destinationPosOnScreen.y + 14), 0xFFFFFFFF, tmps);
                     }
@@ -610,7 +610,7 @@ namespace Gek
                         char tmps[512];
                         Math::Float3 deltaInfo = modelMatrix.rw.xyz - mMatrixOrigin;
                         int componentInfoIndex = (control - Control::MoveX) * 3;
-                        ImFormatString(tmps, sizeof(tmps), translationInfoMask[control - Control::MoveX], deltaInfo[translationInfoIndex[componentInfoIndex]], deltaInfo[translationInfoIndex[componentInfoIndex + 1]], deltaInfo[translationInfoIndex[componentInfoIndex + 2]]);
+                        ImFormatString(tmps, sizeof(tmps), translationInfoMask[control - Control::MoveX].data(), deltaInfo[translationInfoIndex[componentInfoIndex]], deltaInfo[translationInfoIndex[componentInfoIndex + 1]], deltaInfo[translationInfoIndex[componentInfoIndex + 2]]);
                         drawList->AddText(ImVec2(destinationPosOnScreen.x + 15, destinationPosOnScreen.y + 15), 0xFF000000, tmps);
                         drawList->AddText(ImVec2(destinationPosOnScreen.x + 14, destinationPosOnScreen.y + 14), 0xFFFFFFFF, tmps);
                     }
@@ -1133,8 +1133,8 @@ namespace Gek
                         Math::Float3 midPoint = (aabb[index] + aabb[(index + 1) % 4]) * 0.5f;
                         ImVec2 midBound = getPointFromPosition(midPoint, boundsMVP);
 
-                        static const float AnchorBigRadius = 10.0f;
-                        static const float AnchorSmallRadius = 8.0f;
+						static constexpr float AnchorBigRadius = 10.0f;
+						static constexpr float AnchorSmallRadius = 8.0f;
                         bool overBigAnchor = ImLengthSqr(worldBound1 - imGuiIO.MousePos) <= (AnchorBigRadius*AnchorBigRadius);
                         bool overSmallAnchor = ImLengthSqr(midBound - imGuiIO.MousePos) <= (AnchorBigRadius*AnchorBigRadius);
                         uint32_t bigAnchorColor = overBigAnchor ? selectionColor : axisColor;

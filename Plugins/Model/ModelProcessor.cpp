@@ -220,7 +220,7 @@ namespace Gek
             uint32_t instanceCount = 0;
             const Group::Model::Mesh *data = nullptr;
 
-            DrawData(uint32_t instanceStart = 0, uint32_t instanceCount = 0, const Group::Model::Mesh *data = nullptr)
+            DrawData(uint32_t instanceStart = 0, uint32_t instanceCount = 0, Group::Model::Mesh const *data = nullptr)
                 : instanceStart(instanceStart)
                 , instanceCount(instanceCount)
                 , data(data)
@@ -471,7 +471,7 @@ namespace Gek
         }
 
         // Plugin::Editor Slots
-        void onModified(Plugin::Entity * const entity, const std::type_index &type)
+        void onModified(Plugin::Entity * const entity, std::type_index const &type)
         {
             if (type == typeid(Components::Model))
             {
@@ -506,7 +506,7 @@ namespace Gek
         }
 
         // Plugin::Renderer Slots
-        void onQueueDrawCalls(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)
+        void onQueueDrawCalls(Shapes::Frustum const &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)
         {
             assert(renderer);
 
@@ -527,9 +527,7 @@ namespace Gek
 
             entityDataList.clear();
             entityDataList.reserve(entityCount);
-            if (true)
-            {
-                GEK_PROFILE_AUTO_SCOPE("Collect Entities");
+			GEK_PROFILE_BEGIN_SCOPE("Collect Entities");
                 parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
                 {
                     auto group = data.group;
@@ -548,14 +546,12 @@ namespace Gek
                         transformList[element][entityIndex] = matrix.data[element];
                     }
                 });
-            }
+			GEK_PROFILE_END_SCOPE();
 
             visibilityList.resize(bufferedEntityCount);
-            if (true)
-            {
-                GEK_PROFILE_AUTO_SCOPE("Cull Entities");
+			GEK_PROFILE_BEGIN_SCOPE("Cull Entities");
                 Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedEntityCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
-            }
+			GEK_PROFILE_END_SCOPE();
 
             // Cull by model inside group
             const auto modelCount = std::accumulate(std::begin(entityDataList), std::end(entityDataList), 0U, [this](auto count, auto const &entitySearch) -> auto
@@ -582,9 +578,7 @@ namespace Gek
 
             entityModelList.clear();
             entityModelList.reserve(bufferedModelCount);
-            if (true)
-            {
-                GEK_PROFILE_AUTO_SCOPE("Collect Models");
+			GEK_PROFILE_BEGIN_SCOPE("Collect Models");
                 concurrency::parallel_for_each(std::begin(entityDataList), std::end(entityDataList), [&](auto &entitySearch) -> void
                 {
                     auto entityDataIndex = std::get<2>(entitySearch);
@@ -615,18 +609,14 @@ namespace Gek
                         });
                     }
                 });
-            }
+			GEK_PROFILE_END_SCOPE();
 
             visibilityList.resize(bufferedModelCount);
-            if (true)
-            {
-                GEK_PROFILE_AUTO_SCOPE("Cull Models");
+			GEK_PROFILE_BEGIN_SCOPE("Cull Models");
                 Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedModelCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
-            }
+			GEK_PROFILE_END_SCOPE();
 
-            if (true)
-            {
-                GEK_PROFILE_AUTO_SCOPE("Collect Models");
+			GEK_PROFILE_BEGIN_SCOPE("Collect Models");
                 concurrency::parallel_for_each(std::begin(entityModelList), std::end(entityModelList), [&](auto &entitySearch) -> void
                 {
                     if (visibilityList[std::get<2>(entitySearch)])
@@ -645,12 +635,10 @@ namespace Gek
                         });
                     }
                 });
-            }
+			GEK_PROFILE_END_SCOPE();
 
             size_t maximumInstanceCount = 0;
-            if (true)
-            {
-                GEK_PROFILE_AUTO_SCOPE("Queue Models");
+			GEK_PROFILE_BEGIN_SCOPE("Queue Models");
                 concurrency::parallel_for_each(std::begin(renderList), std::end(renderList), [&](auto &materialPair) -> void
                 {
                     const auto material = materialPair.first;
@@ -700,7 +688,7 @@ namespace Gek
                         }
                     }));
                 });
-            }
+            GEK_PROFILE_END_SCOPE();
 
             if (instanceBuffer->getDescription().count < maximumInstanceCount)
             {

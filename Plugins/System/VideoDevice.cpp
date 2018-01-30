@@ -23,7 +23,7 @@ namespace Gek
     {
         bool HasAlpha(Format format)
         {
-            static const bool HasAlphaList[] =
+            static constexpr bool HasAlphaList[] =
             {
                 false, // Unknown = 0,
 

@@ -76,7 +76,7 @@ namespace Gek
             virtual std::string const &getOutput(void) const = 0;
 
             virtual Material::Iterator begin(void) = 0;
-            virtual Pass::Iterator begin(Video::Device::Context *videoContext, Math::Float4x4 const &viewMatrix, const Shapes::Frustum &viewFrustum) = 0;
+            virtual Pass::Iterator begin(Video::Device::Context *videoContext, Math::Float4x4 const &viewMatrix, Shapes::Frustum const &viewFrustum) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

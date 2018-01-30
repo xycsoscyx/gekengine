@@ -475,7 +475,7 @@ namespace Gek
                 bool editorActive = core->getOption("editor", "active").convert(false);
                 if (frameTime > 0.0f && !editorActive)
                 {
-                    static const float StepTime = (1.0f / 120.0f);
+					static constexpr float StepTime = (1.0f / 120.0f);
                     while (frameTime > 0.0f)
                     {
                         NewtonUpdate(newtonWorld, std::min(frameTime, StepTime));

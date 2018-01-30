@@ -39,7 +39,7 @@ namespace Gek
             }
 
             template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector2(const Vector2<OTHER> &vector) noexcept
+            Vector2(Vector2<OTHER> const &vector) noexcept
                 : x(TYPE(vector.x))
                 , y(TYPE(vector.y))
             {
@@ -55,7 +55,7 @@ namespace Gek
             {
             }
 
-            explicit Vector2(const TYPE *data) noexcept
+            explicit Vector2(TYPE const * const data) noexcept
                 : data{ TYPE(data[0]), TYPE(data[1]) }
             {
             }
@@ -71,7 +71,7 @@ namespace Gek
                 this->y = TYPE(y);
             }
 
-            void set(const TYPE *data) noexcept
+            void set(TYPE const * const data) noexcept
             {
                 this->x = TYPE(data[0]);
                 this->y = TYPE(data[1]);
@@ -192,7 +192,7 @@ namespace Gek
             }
 
             template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            TYPE2 &operator = (const Vector2<OTHER> &vector) noexcept
+            TYPE2 &operator = (Vector2<OTHER> const &vector) noexcept
             {
                 x = TYPE(vector.x);
                 y = TYPE(vector.y);

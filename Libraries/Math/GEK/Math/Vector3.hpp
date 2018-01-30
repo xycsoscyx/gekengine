@@ -63,7 +63,7 @@ namespace Gek
             {
             }
 
-            explicit Vector3(const TYPE *data) noexcept
+            explicit Vector3(TYPE const * const data) noexcept
                 : data{ data[0], data[1], data[2] }
             {
             }
@@ -87,7 +87,7 @@ namespace Gek
                 this->z = z;
             }
 
-            void set(const TYPE *data) noexcept
+            void set(TYPE const * const data) noexcept
             {
                 this->x = data[0];
                 this->y = data[1];

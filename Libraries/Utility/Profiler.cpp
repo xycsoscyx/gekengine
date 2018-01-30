@@ -159,18 +159,23 @@ namespace Gek
 			return hash;
 		}
 
+		static void AddTimeStamp(TimeStamp const &timeStamp)
+		{
+			timeStampList.push_back(timeStamp);
+			if (timeStampList.size() > 100)
+			{
+				FlushTimeStampList(std::move(timeStampList));
+				timeStampList.clear();
+			}
+		}
+
 		TimeStamp::TimeStamp(Type type, Hash nameIdentifier, std::chrono::nanoseconds const *timeStamp, Hash const *threadIdentifier)
 			: type(type)
 			, nameIdentifier(nameIdentifier)
 			, threadIdentifier(threadIdentifier ? *threadIdentifier : getThreadIdentifier())
 			, timeStamp(timeStamp ? *timeStamp : std::chrono::high_resolution_clock::now().time_since_epoch())
 		{
-			timeStampList.push_back(*this);
-			if (timeStampList.size() > 100)
-			{
-				FlushTimeStampList(std::move(timeStampList));
-				timeStampList.clear();
-			}
+			AddTimeStamp(*this);
 		}
 
 		TimeStamp::TimeStamp(Hash nameIdentifier, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime, Hash const *threadIdentifier)
@@ -180,6 +185,7 @@ namespace Gek
 			, timeStamp(startTime)
 			, duration(endTime - startTime)
 		{
+			AddTimeStamp(*this);
 		}
 
 		Scope::Scope(Hash nameIdentifier)
@@ -190,7 +196,7 @@ namespace Gek
 
 		Scope::~Scope()
 		{
-			TimeStamp(nameIdentifier, timeStamp, std::chrono::high_resolution_clock::now().time_since_epoch());
+			AddTimeStamp(TimeStamp(nameIdentifier, timeStamp, std::chrono::high_resolution_clock::now().time_since_epoch()));
 		}
 	}; // namespace Profiler
 }; // namespace Gek

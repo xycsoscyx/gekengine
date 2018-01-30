@@ -168,7 +168,7 @@ namespace Gek
                     }
                 }
 
-                static const std::string_view lightsData =
+				static constexpr std::string_view lightsData =
                     "namespace Lights\r\n" \
                     "{\r\n" \
                     "    cbuffer Parameters : register(b3)\r\n" \
@@ -218,7 +218,7 @@ namespace Gek
                     "    Buffer<uint2> clusterDataList : register(t3);\r\n" \
                     "    Buffer<uint> clusterIndexList : register(t4);\r\n" \
                     "};\r\n" \
-                    "\r\n";
+                    "\r\n"sv;
 
                 std::unordered_map<std::string, ResourceHandle> resourceMap;
                 std::unordered_map<std::string, std::string> resourceSemanticsMap;
@@ -1070,7 +1070,7 @@ namespace Gek
                 return Material::Iterator(materialMap.empty() ? nullptr : new MaterialImplementation(this, std::begin(materialMap), std::end(materialMap)));
             }
 
-            Pass::Iterator begin(Video::Device::Context *videoContext, Math::Float4x4 const &viewMatrix, const Shapes::Frustum &viewFrustum)
+            Pass::Iterator begin(Video::Device::Context *videoContext, Math::Float4x4 const &viewMatrix, Shapes::Frustum const &viewFrustum)
             {
                 assert(videoContext);
 

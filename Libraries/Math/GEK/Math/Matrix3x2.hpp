@@ -86,7 +86,7 @@ namespace Gek
             {
             }
 
-            inline Float3x2(const float *data) noexcept
+            inline Float3x2(float const * const data) noexcept
                 : data {
                 data[0], data[1],
                 data[2], data[3],

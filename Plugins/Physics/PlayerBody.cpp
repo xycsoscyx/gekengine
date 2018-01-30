@@ -16,13 +16,13 @@ namespace Gek
 {
 	namespace Newton
 	{
-        static const float NewtonEpsilon = 1.0e-5f;
-        static const float MinimumRestrainingDistance = 1.0e-2f;
-        static const float ContactSkinThickness = 0.025f;
-        static const uint32_t MaximumContactCount = 32;
-        static const uint32_t DiscreteMotionStepCount = 8;
-        static const uint32_t MaximumIntegrationStepCount = 8;
-        static const uint32_t MaximumSolverStepCount = 16;
+		static constexpr float NewtonEpsilon = 1.0e-5f;
+		static constexpr float MinimumRestrainingDistance = 1.0e-2f;
+		static constexpr float ContactSkinThickness = 0.025f;
+		static constexpr uint32_t MaximumContactCount = 32;
+		static constexpr uint32_t DiscreteMotionStepCount = 8;
+		static constexpr uint32_t MaximumIntegrationStepCount = 8;
+		static constexpr uint32_t MaximumSolverStepCount = 16;
 
         class ConvexCastFilter
         {

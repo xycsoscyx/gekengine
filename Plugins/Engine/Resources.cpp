@@ -431,7 +431,7 @@ namespace Gek
             std::vector<TYPE *> objectList;
 
             template <typename INPUT, typename HANDLE, typename SOURCE>
-            bool set(const std::vector<INPUT> &inputList, ResourceCache<HANDLE, SOURCE> &cache, TYPE *defaultObject = nullptr)
+            bool set(std::vector<INPUT>const  &inputList, ResourceCache<HANDLE, SOURCE> &cache, TYPE *defaultObject = nullptr)
             {
                 const auto listCount = inputList.size();
                 objectList.reserve(std::max(listCount, objectList.size()));
@@ -464,7 +464,7 @@ namespace Gek
             }
 
             template <typename INPUT, typename HANDLE>
-            bool set(const std::vector<INPUT> &inputList, ResourceCache<HANDLE, TYPE> &cache)
+            bool set(std::vector<INPUT> const &inputList, ResourceCache<HANDLE, TYPE> &cache)
             {
                 const auto listCount = inputList.size();
                 objectList.reserve(std::max(listCount, objectList.size()));
@@ -962,17 +962,17 @@ namespace Gek
             ResourceHandle loadTexture(std::string_view textureName, uint32_t flags)
             {
                 // iterate over formats in case the texture name has no extension
-                static const std::string formatList[] =
+				static constexpr std::string_view formatList[] =
                 {
-                    "",
-                    ".dds",
-                    ".tga",
-                    ".png",
-                    ".jpg",
-                    ".jpeg",
-                    ".tif",
-                    ".tiff",
-                    ".bmp",
+                    ""sv,
+                    ".dds"sv,
+                    ".tga"sv,
+                    ".png"sv,
+                    ".jpg"sv,
+                    ".jpeg"sv,
+                    ".tif"sv,
+                    ".tiff"sv,
+                    ".bmp"sv,
                 };
 
 				auto hash = GetHash(textureName);
@@ -1124,7 +1124,7 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createTexture(std::string_view textureName, const Video::Texture::Description &description, uint32_t flags)
+            ResourceHandle createTexture(std::string_view textureName, Video::Texture::Description const &description, uint32_t flags)
             {
                 auto hash = GetHash(textureName);
                 auto parameters = description.getHash();
@@ -1148,7 +1148,7 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createBuffer(std::string_view bufferName, const Video::Buffer::Description &description, uint32_t flags)
+            ResourceHandle createBuffer(std::string_view bufferName, Video::Buffer::Description const &description, uint32_t flags)
             {
                 assert(description.count > 0);
 
@@ -1174,7 +1174,7 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createBuffer(std::string_view bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData, uint32_t flags)
+            ResourceHandle createBuffer(std::string_view bufferName, Video::Buffer::Description const &description, std::vector<uint8_t> &&staticData, uint32_t flags)
             {
                 assert(description.count > 0);
                 assert(!staticData.empty());
@@ -1216,7 +1216,7 @@ namespace Gek
             }
 
             ObjectCache<Video::Buffer> vertexBufferCache;
-            void setVertexBufferList(Video::Device::Context *videoContext, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstSlot, uint32_t *offsetList)
+            void setVertexBufferList(Video::Device::Context *videoContext, std::vector<ResourceHandle> const &resourceHandleList, uint32_t firstSlot, uint32_t *offsetList)
             {
                 assert(videoContext);
 
@@ -1227,7 +1227,7 @@ namespace Gek
             }
 
             ObjectCache<Video::Buffer> constantBufferCache;
-            void setConstantBufferList(Video::Device::Context::Pipeline *videoPipeline, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstStage)
+            void setConstantBufferList(Video::Device::Context::Pipeline *videoPipeline, std::vector<ResourceHandle> const &resourceHandleList, uint32_t firstStage)
             {
                 assert(videoPipeline);
 
@@ -1239,7 +1239,7 @@ namespace Gek
             }
 
             ObjectCache<Video::Object> resourceCache;
-            void setResourceList(Video::Device::Context::Pipeline *videoPipeline, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstStage)
+            void setResourceList(Video::Device::Context::Pipeline *videoPipeline, std::vector<ResourceHandle> const &resourceHandleList, uint32_t firstStage)
             {
                 assert(videoPipeline);
 
@@ -1251,7 +1251,7 @@ namespace Gek
             }
 
             ObjectCache<Video::Object> unorderedAccessCache;
-            void setUnorderedAccessList(Video::Device::Context::Pipeline *videoPipeline, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstStage)
+            void setUnorderedAccessList(Video::Device::Context::Pipeline *videoPipeline, std::vector<ResourceHandle> const &resourceHandleList, uint32_t firstStage)
             {
                 assert(videoPipeline);
 
@@ -1705,7 +1705,7 @@ namespace Gek
 
             ObjectCache<Video::Target> renderTargetCache;
             std::vector<Video::ViewPort> viewPortCache;
-            void setRenderTargetList(Video::Device::Context *videoContext, const std::vector<ResourceHandle> &renderTargetHandleList, ResourceHandle const *depthBuffer)
+            void setRenderTargetList(Video::Device::Context *videoContext, std::vector<ResourceHandle> const &renderTargetHandleList, ResourceHandle const *depthBuffer)
             {
                 assert(videoContext);
 

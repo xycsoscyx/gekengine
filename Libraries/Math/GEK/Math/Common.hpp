@@ -16,46 +16,46 @@ namespace Gek
 {
 	namespace Math
 	{
-		const float Infinity = std::numeric_limits<float>::max();
-		const float NegativeInfinity = std::numeric_limits<float>::lowest();
-        const float NotANumber = std::nanf("Gek::Math");
-		const float Epsilon = 1.0e-5f;
-        const float Pi = 3.14159265358979323846f;
-        const float Tau = (2.0f * Pi);
-        const float E = 2.71828182845904523536f;
+		static constexpr float Infinity = std::numeric_limits<float>::max();
+		static constexpr float NegativeInfinity = std::numeric_limits<float>::lowest();
+		static const float NotANumber = std::nanf("Gek::Math");
+		static constexpr float Epsilon = 1.0e-5f;
+		static constexpr float Pi = 3.14159265358979323846f;
+		static constexpr float Tau = (2.0f * Pi);
+		static constexpr float E = 2.71828182845904523536f;
 
 		template <typename TYPE>
-		TYPE DegreesToRadians(TYPE degrees) noexcept
+		TYPE DegreesToRadians(TYPE const degrees) noexcept
 		{
 			return TYPE(degrees * (Pi / 180.0f));
 		}
 
 		template <typename TYPE>
-		TYPE RadiansToDegrees(TYPE radians) noexcept
+		TYPE RadiansToDegrees(TYPE const radians) noexcept
 		{
 			return TYPE(radians * (180.0f / Pi));
 		}
 
 		template <typename DATA, typename TYPE>
-		DATA Interpolate(const DATA &valueA, const DATA &valueB, TYPE factor) noexcept
+		DATA Interpolate(DATA const &valueA, DATA const &valueB, TYPE const factor) noexcept
 		{
 			return (((valueB - valueA) * factor) + valueA);
 		}
 
 		template <typename DATA, typename TYPE>
-		DATA Blend(const DATA &valueA, const DATA &valueB, TYPE factor) noexcept
+		DATA Blend(DATA const &valueA, DATA const &valueB, TYPE const factor) noexcept
 		{
 			return ((valueA * (1.0f - factor)) + (valueB * factor));
 		}
 
 		template <typename DATA, typename TYPE>
-		DATA Blend(const DATA &valueA, TYPE factorX, const DATA &valueB, TYPE factorY) noexcept
+		DATA Blend(DATA const &valueA, TYPE const factorX, DATA const &valueB, TYPE const factorY) noexcept
 		{
 			return ((valueA * factorX) + (valueB * factorY));
 		}
 
         template <typename TYPE>
-        TYPE Clamp(TYPE value, TYPE min, TYPE max) noexcept
+        TYPE Clamp(TYPE const value, TYPE const min, TYPE const max) noexcept
         {
             return std::min(std::max(value, min), max);
         }

@@ -26,7 +26,7 @@ namespace Gek
     {
         // All these lists must match, since the same GEK Format can be used for either textures or buffers
         // The size list must also match
-        static const DXGI_FORMAT TextureFormatList[] =
+        static constexpr DXGI_FORMAT TextureFormatList[] =
         {
             DXGI_FORMAT_UNKNOWN,
 
@@ -87,7 +87,7 @@ namespace Gek
 
         static_assert(ARRAYSIZE(TextureFormatList) == static_cast<uint8_t>(Video::Format::Count), "New format added without adding to all TextureFormatList.");
 
-        static const DXGI_FORMAT DepthFormatList[] =
+        static constexpr DXGI_FORMAT DepthFormatList[] =
         {
             DXGI_FORMAT_UNKNOWN,
 
@@ -148,7 +148,7 @@ namespace Gek
 
         static_assert(ARRAYSIZE(DepthFormatList) == static_cast<uint8_t>(Video::Format::Count), "New format added without adding to all DepthFormatList.");
 
-        static const DXGI_FORMAT ViewFormatList[] =
+        static constexpr DXGI_FORMAT ViewFormatList[] =
         {
             DXGI_FORMAT_UNKNOWN,
 
@@ -209,7 +209,7 @@ namespace Gek
 
         static_assert(ARRAYSIZE(ViewFormatList) == static_cast<uint8_t>(Video::Format::Count), "New format added without adding to all ViewFormatList.");
 
-        static const DXGI_FORMAT BufferFormatList[] =
+        static constexpr DXGI_FORMAT BufferFormatList[] =
         {
             DXGI_FORMAT_UNKNOWN,
 
@@ -270,7 +270,7 @@ namespace Gek
 
         static_assert(ARRAYSIZE(BufferFormatList) == static_cast<uint8_t>(Video::Format::Count), "New format added without adding to all BufferFormatList.");
 
-        static const uint32_t FormatStrideList[] =
+        static constexpr uint32_t FormatStrideList[] =
         {
             0, // DXGI_FORMAT_UNKNOWN,
 
@@ -331,7 +331,7 @@ namespace Gek
 
         static_assert(ARRAYSIZE(FormatStrideList) == static_cast<uint8_t>(Video::Format::Count), "New format added without adding to all FormatStrideList.");
 
-        static const D3D11_QUERY QueryList[] =
+        static constexpr D3D11_QUERY QueryList[] =
         {
             D3D11_QUERY_EVENT,
             D3D11_QUERY_TIMESTAMP,
@@ -340,13 +340,13 @@ namespace Gek
 
         static_assert(ARRAYSIZE(QueryList) == static_cast<uint8_t>(Video::Query::Type::Count), "New query type added without adding to QueryList.");
 
-        static const D3D11_DEPTH_WRITE_MASK DepthWriteMaskList[] =
+        static constexpr D3D11_DEPTH_WRITE_MASK DepthWriteMaskList[] =
         {
             D3D11_DEPTH_WRITE_MASK_ZERO,
             D3D11_DEPTH_WRITE_MASK_ALL,
         };
 
-        static const D3D11_TEXTURE_ADDRESS_MODE AddressModeList[] =
+        static constexpr D3D11_TEXTURE_ADDRESS_MODE AddressModeList[] =
         {
             D3D11_TEXTURE_ADDRESS_CLAMP,
             D3D11_TEXTURE_ADDRESS_WRAP,
@@ -355,7 +355,7 @@ namespace Gek
             D3D11_TEXTURE_ADDRESS_BORDER,
         };
 
-        static const D3D11_COMPARISON_FUNC ComparisonFunctionList[] =
+        static constexpr D3D11_COMPARISON_FUNC ComparisonFunctionList[] =
         {
             D3D11_COMPARISON_ALWAYS,
             D3D11_COMPARISON_NEVER,
@@ -367,7 +367,7 @@ namespace Gek
             D3D11_COMPARISON_GREATER_EQUAL,
         };
 
-        static const D3D11_STENCIL_OP StencilOperationList[] =
+        static constexpr D3D11_STENCIL_OP StencilOperationList[] =
         {
             D3D11_STENCIL_OP_ZERO,
             D3D11_STENCIL_OP_KEEP,
@@ -379,7 +379,7 @@ namespace Gek
             D3D11_STENCIL_OP_DECR_SAT,
         };
 
-        static const D3D11_BLEND BlendSourceList[] =
+        static constexpr D3D11_BLEND BlendSourceList[] =
         {
             D3D11_BLEND_ZERO,
             D3D11_BLEND_ONE,
@@ -400,7 +400,7 @@ namespace Gek
             D3D11_BLEND_INV_SRC1_ALPHA,
         };
 
-        static const D3D11_BLEND_OP BlendOperationList[] =
+        static constexpr D3D11_BLEND_OP BlendOperationList[] =
         {
             D3D11_BLEND_OP_ADD,
             D3D11_BLEND_OP_SUBTRACT,
@@ -409,20 +409,20 @@ namespace Gek
             D3D11_BLEND_OP_MAX,
         };
 
-        static const D3D11_FILL_MODE FillModeList[] =
+        static constexpr D3D11_FILL_MODE FillModeList[] =
         {
             D3D11_FILL_WIREFRAME,
             D3D11_FILL_SOLID,
         };
 
-        static const D3D11_CULL_MODE CullModeList[] =
+        static constexpr D3D11_CULL_MODE CullModeList[] =
         {
             D3D11_CULL_NONE,
             D3D11_CULL_FRONT,
             D3D11_CULL_BACK,
         };
 
-        static const D3D11_FILTER FilterList[] =
+        static constexpr D3D11_FILTER FilterList[] =
         {
             D3D11_FILTER_MIN_MAG_MIP_POINT,
             D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR,
@@ -462,7 +462,7 @@ namespace Gek
             D3D11_FILTER_MAXIMUM_ANISOTROPIC,
         };
 
-        static const D3D11_PRIMITIVE_TOPOLOGY TopologList[] =
+        static constexpr D3D11_PRIMITIVE_TOPOLOGY TopologList[] =
         {
             D3D11_PRIMITIVE_TOPOLOGY_POINTLIST,
             D3D11_PRIMITIVE_TOPOLOGY_LINELIST,
@@ -471,7 +471,7 @@ namespace Gek
             D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP,
         };
 
-        static const D3D11_MAP MapList[] =
+        static constexpr D3D11_MAP MapList[] =
         {
             D3D11_MAP_READ,
             D3D11_MAP_WRITE,
@@ -480,14 +480,14 @@ namespace Gek
             D3D11_MAP_WRITE_NO_OVERWRITE,
         };
 
-        static const std::string_view SemanticNameList[] =
+        static constexpr std::string_view SemanticNameList[] =
         {
-            "POSITION",
-            "TEXCOORD",
-            "TANGENT",
-            "BINORMAL",
-            "NORMAL",
-            "COLOR",
+            "POSITION"sv,
+            "TEXCOORD"sv,
+            "TANGENT"sv,
+            "BINORMAL"sv,
+            "NORMAL"sv,
+            "COLOR"sv,
         };
 
         static_assert(ARRAYSIZE(SemanticNameList) == static_cast<uint8_t>(Video::InputElement::Semantic::Count), "New input element semantic added without adding to all SemanticNameList.");

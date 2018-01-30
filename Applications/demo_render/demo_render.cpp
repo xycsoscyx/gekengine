@@ -170,7 +170,7 @@ namespace Gek
             imGuiIo.KeyMap[ImGuiKey_Y] = 'Y';
             imGuiIo.KeyMap[ImGuiKey_Z] = 'Z';
 
-            static const std::string_view guiProgram =
+            static constexpr std::string_view guiProgram =
                 "DeclareConstantBuffer(Constants, 0)\r\n" \
                 "{\r\n" \
                 "    float4x4 ProjectionMatrix;\r\n" \
@@ -193,7 +193,7 @@ namespace Gek
                 "    Output output;\r\n" \
                 "    output.screen = (input.color * SampleTexture(GuiTexture, PointSampler, input.texCoord));\r\n" \
                 "    return output;\r\n" \
-                "}";
+                "}"sv;
 
             Render::PipelineStateInformation pipelineStateInformation;
             pipelineStateInformation.vertexShader = guiProgram;

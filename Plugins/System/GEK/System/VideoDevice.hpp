@@ -209,7 +209,7 @@ namespace Gek
 				Count,
 			};
 
-            static const uint32_t AppendAligned = 0xFFFFFFFF;
+            static constexpr uint32_t AppendAligned = 0xFFFFFFFF;
 
             static Source GetSource(std::string_view elementSource);
             static std::string GetSource(Source elementSource);

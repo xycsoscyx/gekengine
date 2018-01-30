@@ -57,7 +57,7 @@ namespace Gek
                     ((cosPitch * cosYaw * cosRoll) + (sinPitch * sinYaw * sinRoll)));
             }
 
-            inline static Quaternion MakeAngularRotation(const Float3 &axis, float radians) noexcept
+            inline static Quaternion MakeAngularRotation(Float3 const &axis, float radians) noexcept
             {
                 float halfRadians = (radians * 0.5f);
                 Float3 normal(axis.getNormal());
@@ -107,7 +107,7 @@ namespace Gek
             {
             }
 
-            inline Quaternion(const Quaternion &rotation) noexcept
+            inline Quaternion(Quaternion const &rotation) noexcept
                 : axis(rotation.axis)
                 , angle(rotation.angle)
             {
@@ -121,7 +121,7 @@ namespace Gek
             {
             }
 
-            explicit inline Quaternion(const float *data) noexcept
+            explicit inline Quaternion(float const * const data) noexcept
                 : x(data[0])
                 , y(data[1])
                 , z(data[2])
@@ -143,7 +143,7 @@ namespace Gek
                 this->w = w;
             }
 
-            inline void set(const float *data) noexcept
+            inline void set(float const * constdata) noexcept
             {
                 this->x = data[0];
                 this->y = data[1];
@@ -211,12 +211,12 @@ namespace Gek
                 (*this) *= inverseLength;
             }
 
-            inline float dot(const Quaternion &rotation) const noexcept
+            inline float dot(Quaternion const &rotation) const noexcept
             {
                 return ((x * rotation.x) + (y * rotation.y) + (z * rotation.z) + (w * rotation.w));
             }
 
-            inline Quaternion slerp(const Quaternion &rotation, float factor) const noexcept
+            inline Quaternion slerp(Quaternion const &rotation, float factor) const noexcept
             {
                 Quaternion result;
                 float deltaAngle = dot(rotation);
@@ -261,7 +261,7 @@ namespace Gek
                 return result;
             }
 
-            inline bool operator == (const Quaternion &rotation) const noexcept
+            inline bool operator == (Quaternion const &rotation) const noexcept
             {
                 if (x != rotation.x) return false;
                 if (y != rotation.y) return false;
@@ -270,7 +270,7 @@ namespace Gek
                 return true;
             }
 
-            inline bool operator != (const Quaternion &rotation) const noexcept
+            inline bool operator != (Quaternion const &rotation) const noexcept
             {
                 if (x != rotation.x) return true;
                 if (y != rotation.y) return true;
@@ -284,13 +284,13 @@ namespace Gek
                 return data;
             }
 
-            inline Float3 rotate(const Float3 &vector) const noexcept
+            inline Float3 rotate(Float3 const &vector) const noexcept
             {
                 Float3 twoCross(2.0f * axis.cross(vector));
                 return (vector + (angle * twoCross) + axis.cross(twoCross));
             }
 
-            inline Quaternion operator * (const Quaternion &rotation) const noexcept
+            inline Quaternion operator * (Quaternion const &rotation) const noexcept
             {
                 return Quaternion(
                     (rotation.w * x) + (rotation.x * w) + (rotation.y * z) - (rotation.z * y),
@@ -299,12 +299,12 @@ namespace Gek
                     (rotation.w * w) - (rotation.x * x) - (rotation.y * y) - (rotation.z * z));
             }
 
-            inline void operator *= (const Quaternion &rotation) noexcept
+            inline void operator *= (Quaternion const &rotation) noexcept
             {
                 (*this) = ((*this) * rotation);
             }
 
-            inline Quaternion &operator = (const Quaternion &rotation) noexcept
+            inline Quaternion &operator = (Quaternion const &rotation) noexcept
             {
                 axis = rotation.axis;
                 angle = rotation.angle;
@@ -338,7 +338,7 @@ namespace Gek
                 return Quaternion((axis * scalar), (angle *scalar));
             }
 
-            inline Quaternion operator + (const Quaternion &rotation) const noexcept
+            inline Quaternion operator + (Quaternion const &rotation) const noexcept
             {
                 return Quaternion((axis + rotation.axis), (angle + rotation.angle));
             }

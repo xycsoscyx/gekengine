@@ -16,7 +16,7 @@ namespace Gek
 	{
         namespace SIMD
         {
-            struct Vector
+			struct Vector
             {
                 __m128 x, y, z, w;
             };
@@ -116,16 +116,16 @@ namespace Gek
                 FLOATS const &shapeRadiusList,
                 BOOLEANS &visibilityList) noexcept
             {
-                static const auto AllZero = _mm_setzero_ps();
-                for (size_t objectBase = 0; objectBase < objectCount; objectBase += 4)
+				static const auto Zero = _mm_setzero_ps();
+				for (size_t objectBase = 0; objectBase < objectCount; objectBase += 4)
                 {
                     const auto shapeXPosition = _mm_load_ps(&shapeXPositionList[objectBase]);
                     const auto shapeYPosition = _mm_load_ps(&shapeYPositionList[objectBase]);
                     const auto shapeZPosition = _mm_load_ps(&shapeZPositionList[objectBase]);
                     const auto shapeRadius = _mm_load_ps(&shapeRadiusList[objectBase]);
-                    const auto negativeShapeRadius = _mm_sub_ps(AllZero, shapeRadius);
+                    const auto negativeShapeRadius = _mm_sub_ps(Zero, shapeRadius);
 
-                    auto intersectionResult = AllZero;
+                    auto intersectionResult = Zero;
                     for (uint32_t plane = 0; plane < 6; ++plane)
                     {
                         // Plane.Normal.Dot(Sphere.Position)
@@ -268,7 +268,10 @@ namespace Gek
                 FLOATS const * const transformList,
                 BOOLEANS &visibilityList) noexcept
             {
-                auto combinedMatrix(viewMatrix * projectionMatrix);
+				static const auto Zero = _mm_setzero_ps();
+				static const auto True = _mm_cmpeq_ps(Zero, Zero);
+
+				auto combinedMatrix(viewMatrix * projectionMatrix);
                 const Matrix viewProjectionMatrix =
                 {
                     _mm_set_ps1(combinedMatrix.rx.x),
@@ -317,13 +320,11 @@ namespace Gek
 
                     const auto workdViewProjectionMatrix = multiply(workdMatrix, viewProjectionMatrix);
 
-                    static const auto AllZero = _mm_setzero_ps();
-
                     // Load the mininum and maximum corner positions of the bounding box in object space.
                     Vector minimum;
-                    minimum.x = _mm_sub_ps(AllZero, _mm_load_ps(&halfSizeXList[objectBase]));
-                    minimum.y = _mm_sub_ps(AllZero, _mm_load_ps(&halfSizeYList[objectBase]));
-                    minimum.z = _mm_sub_ps(AllZero, _mm_load_ps(&halfSizeZList[objectBase]));
+                    minimum.x = _mm_sub_ps(Zero, _mm_load_ps(&halfSizeXList[objectBase]));
+                    minimum.y = _mm_sub_ps(Zero, _mm_load_ps(&halfSizeYList[objectBase]));
+                    minimum.z = _mm_sub_ps(Zero, _mm_load_ps(&halfSizeZList[objectBase]));
                     minimum.w = _mm_set_ps1(1.0f);
 
                     Vector maximum;
@@ -336,22 +337,20 @@ namespace Gek
                     // Transform each bounding box corner from object to workdViewProjectionMatrix space by sharing calculations.
                     getViewSpaceRect(workdViewProjectionMatrix, minimum, maximum, viewSpaceBox);
 
-                    static const auto AllTrue = _mm_cmpeq_ps(AllZero, AllZero);
-
                     // Initialize test conditions.
-                    auto areAllXLess = AllTrue;
-                    auto areAllXGreater = AllTrue;
-                    auto areAllYLess = AllTrue;
-                    auto areAllYGreater = AllTrue;
-                    auto areAllZLess = AllTrue;
-                    auto areAllZGreater = AllTrue;
-                    auto areAnyZLess = _mm_cmpgt_ps(AllZero, AllZero);
+                    auto areAllXLess = True;
+                    auto areAllXGreater = True;
+                    auto areAllYLess = True;
+                    auto areAllYGreater = True;
+                    auto areAllZLess = True;
+                    auto areAllZGreater = True;
+                    auto areAnyZLess = _mm_cmpgt_ps(Zero, Zero);
 
                     // Test each corner of the oobb and if any corner intersects the frustum that object
                     // is visible.
                     for (unsigned edge = 0; edge < 8; ++edge)
                     {
-                        const auto negativeEdgeW = _mm_sub_ps(AllZero, viewSpaceBox[edge].w);
+                        const auto negativeEdgeW = _mm_sub_ps(Zero, viewSpaceBox[edge].w);
 
                         auto isXLess = _mm_cmple_ps(viewSpaceBox[edge].x, negativeEdgeW);
                         auto isXGreater = _mm_cmpge_ps(viewSpaceBox[edge].x, viewSpaceBox[edge].w);
@@ -363,7 +362,7 @@ namespace Gek
                         areAllYLess = _mm_and_ps(isYLess, areAllYLess);
                         areAllYGreater = _mm_and_ps(isYGreater, areAllYGreater);
 
-                        auto isZLess = _mm_cmple_ps(viewSpaceBox[edge].z, AllZero);
+                        auto isZLess = _mm_cmple_ps(viewSpaceBox[edge].z, Zero);
                         auto isZGreater = _mm_cmpge_ps(viewSpaceBox[edge].z, viewSpaceBox[edge].w);
                         areAllZLess = _mm_and_ps(isZLess, areAllZLess);
                         areAllZGreater = _mm_and_ps(isZGreater, areAllZGreater);
@@ -376,7 +375,7 @@ namespace Gek
                     auto isOutside = _mm_or_ps(areAnyXOutside, areAnyYOutside);
                     isOutside = _mm_or_ps(isOutside, areAnyZOutside);
 
-                    const auto isInside = _mm_xor_ps(isOutside, AllTrue);
+                    const auto isInside = _mm_xor_ps(isOutside, True);
 
                     alignas(16) uint32_t insideValues[4];
                     _mm_store_ps((float *)insideValues, isInside);

@@ -436,7 +436,7 @@ namespace Gek
                 Instance,
             };
 
-            static const uint32_t AppendAligned = 0xFFFFFFFF;
+			static constexpr uint32_t AppendAligned = 0xFFFFFFFF;
 
             static Source GetSource(std::string const &elementSource);
 
