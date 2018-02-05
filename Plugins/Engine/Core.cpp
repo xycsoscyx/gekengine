@@ -146,12 +146,12 @@ namespace Gek
                 getContext()->listTypes("ProcessorType", [&](std::string_view className) -> void
                 {
                     processorNameList.push_back(className);
-                });
+					LockedWrite{ std::cout } << "- " << className << " processor found";
+				});
 
                 processorList.reserve(processorNameList.size());
                 for (auto const &processorName : processorNameList)
                 {
-                    LockedWrite{ std::cout } << "Processor found: " << processorName;
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(processorName, (Plugin::Core *)this));
                 }
 

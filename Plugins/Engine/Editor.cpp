@@ -446,7 +446,7 @@ namespace Gek
                                             {
                                                 auto componentSearch = std::begin(componentMap);
                                                 std::advance(componentSearch, componentIndex);
-												auto componentName = componentSearch->second->getName();
+												std::string componentName(componentSearch->second->getName());
                                                 if (ImGui::Selectable((componentName.data() + 7), (selectedComponent == componentIndex)))
                                                 {
                                                     auto componentData = std::make_pair(componentName, JSON::EmptyObject);

@@ -33,19 +33,22 @@ namespace Gek
 							InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "initializePlugin");
 							if (initializePlugin)
 							{
+								LockedWrite{ std::cout } << "Initializing Plugin: " << filePath.getFileName();
 								initializePlugin([this, filePath = filePath.getString()](std::string_view className, std::function<ContextUserPtr(Context *, void *, std::vector<Hash> &)> creator) -> void
 								{
 									if (classMap.count(className) == 0)
 									{
 										classMap[className] = creator;
+										LockedWrite{ std::cout } << "- Adding " << className << " to context registry";
 									}
 									else
 									{
-                                        LockedWrite{ std::cerr } << "Skipping duplicate class from plugin: " << className << ", from: " << filePath;
+                                        LockedWrite{ std::cerr } << "- Skipping duplicate class from plugin: " << className << ", from: " << filePath;
 									}
 								}, [this](std::string_view typeName, std::string_view className) -> void
 								{
 									typeMap.insert(std::make_pair(typeName, className));
+									LockedWrite{ std::cout } << "- - Adding " << typeName << " to " << className;
 								});
 
 								moduleList.push_back(module);
@@ -57,7 +60,7 @@ namespace Gek
 						}
 						else
 						{
-                            LockedWrite{ std::cerr } << "Unable to load plugin: " << filePath.getString();
+                            LockedWrite{ std::cerr } << "! Unable to load plugin: " << filePath.getString();
 						}
 					}
 
