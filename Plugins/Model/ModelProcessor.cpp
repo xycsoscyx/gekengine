@@ -141,8 +141,7 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(ModelProcessor, Plugin::Core *)
-        , public Plugin::ProcessorMixin<ModelProcessor, Components::Model, Components::Transform>
-        , public Plugin::Processor
+        , public Plugin::EntityProcessor<ModelProcessor, Components::Model, Components::Transform>
         , public Gek::Processor::Model
     {
     public:
@@ -297,7 +296,7 @@ namespace Gek
 
         void addEntity(Plugin::Entity * const entity)
         {
-            ProcessorMixin::addEntity(entity, [&](bool isNewInsert, auto &data, auto &modelComponent, auto &transformComponent) -> void
+            EntityProcessor::addEntity(entity, [&](bool isNewInsert, auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
                 static const Group BlankGroup;
                 auto pair = groupMap.insert(std::make_pair(GetHash(modelComponent.name), BlankGroup));
@@ -471,7 +470,7 @@ namespace Gek
         }
 
         // Plugin::Editor Slots
-        void onModified(Plugin::Entity * const entity, std::type_index const &type)
+        void onModified(Plugin::Entity * const entity, Hash type)
         {
             if (type == typeid(Components::Model))
             {

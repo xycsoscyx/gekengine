@@ -75,7 +75,7 @@ namespace Gek
             virtual Plugin::Entity *createEntity(const std::vector<Component> &componentList = std::vector<Component>()) = 0;
             virtual void killEntity(Plugin::Entity * const entity) = 0;
             virtual void addComponent(Plugin::Entity * const entity, Component const &componentData) = 0;
-            virtual void removeComponent(Plugin::Entity * const entity, std::type_index const &type) = 0;
+            virtual void removeComponent(Plugin::Entity * const entity, Hash type) = 0;
 
             virtual void listEntities(std::function<void(Plugin::Entity * const entity)> onEntity) const = 0;
 

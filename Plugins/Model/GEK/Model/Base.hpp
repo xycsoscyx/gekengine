@@ -17,7 +17,9 @@ namespace Gek
     {
         GEK_COMPONENT(Model)
         {
-            std::string name;
+			GEK_COMPONENT_DATA(Model);
+
+			std::string name;
         };
     }; // namespace Components
 

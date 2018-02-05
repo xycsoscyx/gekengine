@@ -30,7 +30,7 @@ namespace Gek
                 componentMap[component->getIdentifier()] = std::move(data);
             }
 
-            void removeComponent(std::type_index const &type)
+            void removeComponent(Hash type)
             {
                 auto componentSearch = componentMap.find(type);
                 if (componentSearch != std::end(componentMap))
@@ -39,7 +39,7 @@ namespace Gek
                 }
             }
 
-            void listComponents(std::function<void(std::type_index const &, Plugin::Component::Data const *)> onComponent)
+            void listComponents(std::function<void(Hash , Plugin::Component::Data const *)> onComponent)
             {
                 for (auto const &component : componentMap)
                 {
@@ -54,12 +54,12 @@ namespace Gek
             }
 
             // Plugin::Entity
-            bool hasComponent(std::type_index const &type) const
+            bool hasComponent(Hash type) const
             {
                 return (componentMap.count(type) > 0);
             }
 
-			Plugin::Component::Data *getComponent(std::type_index const &type)
+			Plugin::Component::Data *getComponent(Hash type)
 			{
 				auto componentSearch = componentMap.find(type);
 				if (componentSearch == std::end(componentMap))
@@ -70,7 +70,7 @@ namespace Gek
 				return componentSearch->second.get();
 			}
 
-			const Plugin::Component::Data *getComponent(std::type_index const &type) const
+			const Plugin::Component::Data *getComponent(Hash type) const
 			{
 				auto componentSearch = componentMap.find(type);
 				if (componentSearch == std::end(componentMap))
@@ -91,8 +91,8 @@ namespace Gek
             ShuntingYard shuntingYard;
             concurrency::concurrent_queue<Action> actionQueue;
 
-            std::unordered_map<std::string, std::type_index> componentTypeNameMap;
-            std::unordered_map<std::type_index, std::string> componentNameTypeMap;
+            std::unordered_map<std::string, Hash> componentTypeNameMap;
+            std::unordered_map<Hash, std::string> componentNameTypeMap;
             ComponentMap componentMap;
 
             ThreadPool<1> workerPool;
@@ -167,7 +167,7 @@ namespace Gek
                 return entityList;
             }
 
-            Edit::Component *getComponent(std::type_index const &type)
+            Edit::Component *getComponent(Hash type)
             {
                 auto componentsSearch = componentMap.find(type);
                 if (componentsSearch != std::end(componentMap))
@@ -297,7 +297,7 @@ namespace Gek
                 {
                     JSON::Object entityData = JSON::EmptyObject;
                     Entity *editorEntity = static_cast<Entity *>(entity.get());
-                    editorEntity->listComponents([&](std::type_index const &type, Plugin::Component::Data const *data) -> void
+                    editorEntity->listComponents([&](Hash type, Plugin::Component::Data const *data) -> void
                     {
                         auto componentName = componentNameTypeMap.find(type);
                         if (componentName == std::end(componentNameTypeMap))
@@ -397,7 +397,7 @@ namespace Gek
                 }
             }
 
-            void removeComponent(Plugin::Entity * const entity, std::type_index const &type)
+            void removeComponent(Plugin::Entity * const entity, Hash type)
             {
                 assert(entity);
 

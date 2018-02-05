@@ -19,16 +19,21 @@ namespace Gek
     {
         GEK_COMPONENT(Scene)
         {
+			GEK_COMPONENT_DATA(Scene);
         };
 
         GEK_COMPONENT(Physical)
         {
-            float mass = 0.0f;
+			GEK_COMPONENT_DATA(Physical);
+			
+			float mass = 0.0f;
         };
 
         GEK_COMPONENT(Player)
         {
-            float height = 6.0f;
+			GEK_COMPONENT_DATA(Player);
+			
+			float height = 6.0f;
             float outerRadius = 1.5f;
             float innerRadius = 0.5f;
             float stairStep = 1.0f;

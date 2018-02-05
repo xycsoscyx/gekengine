@@ -48,8 +48,7 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(NameProcessor, Plugin::Core *)
-        , public Plugin::ProcessorMixin<NameProcessor, Components::Name>
-        , public Plugin::Processor
+        , public Plugin::EntityProcessor<NameProcessor, Components::Name>
         , public Gek::Processor::Name
     {
     public:
@@ -85,7 +84,7 @@ namespace Gek
         uint32_t uniqueIdentifier = 0;
         void addEntity(Plugin::Entity * const entity)
         {
-            ProcessorMixin::addEntity(entity, [&](bool isNewInsert, auto &data, auto &nameComponent) -> void
+            EntityProcessor::addEntity(entity, [&](bool isNewInsert, auto &data, auto &nameComponent) -> void
             {
                 auto nameSearch = nameMap.find(nameComponent.name);
                 if (nameSearch != std::end(nameMap) && nameSearch->second != entity)
@@ -123,7 +122,7 @@ namespace Gek
                     }
                 }
 
-                ProcessorMixin::removeEntity(entity);
+                EntityProcessor::removeEntity(entity);
             }
         }
 
@@ -161,7 +160,7 @@ namespace Gek
         }
 
         // Plugin::Editor Slots
-        void onModified(Plugin::Entity * const entity, std::type_index const &type)
+        void onModified(Plugin::Entity * const entity, Hash type)
         {
             if (type == typeid(Components::Name))
             {

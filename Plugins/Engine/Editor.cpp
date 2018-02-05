@@ -471,7 +471,7 @@ namespace Gek
                                     auto editEntity = dynamic_cast<Edit::Entity *>(selectedEntity);
                                     if (editEntity)
                                     {
-                                        std::set<std::type_index> deleteComponentSet;
+                                        std::set<Hash> deleteComponentSet;
                                         auto const &entityComponentMap = editEntity->getComponentMap();
                                         for (auto &componentSearch : entityComponentMap)
                                         {

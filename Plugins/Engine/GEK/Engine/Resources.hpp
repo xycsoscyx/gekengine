@@ -12,8 +12,6 @@
 #include "GEK/System/VideoDevice.hpp"
 #include "GEK/API/Resources.hpp"
 #include "GEK/Engine/Shader.hpp"
-#include <type_traits>
-#include <typeindex>
 
 namespace Gek
 {

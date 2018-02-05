@@ -9,6 +9,7 @@
 
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/Hash.hpp"
 #include <functional>
 #include <typeindex>
 #include <iostream>
@@ -35,13 +36,13 @@ namespace Gek
         virtual FileSystem::Path findDataPath(FileSystem::Path const &path, bool includeCache = true) const = 0;
 		virtual void findDataFiles(FileSystem::Path const &path, std::function<bool(FileSystem::Path const &filePath)> onFileFound, bool includeCache = true) const = 0;
 
-        virtual ContextUserPtr createBaseClass(std::string_view className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const = 0;
+        virtual ContextUserPtr createBaseClass(std::string_view className, void *typelessArguments, std::vector<Hash> &argumentTypes) const = 0;
 
         template <typename TYPE, typename... PARAMETERS>
         std::unique_ptr<TYPE> createClass(std::string_view className, PARAMETERS... arguments) const
         {
             std::tuple<PARAMETERS...> packedArguments(arguments...);
-            std::vector<std::type_index> argumentTypes = { typeid(PARAMETERS)... };
+            std::vector<Hash> argumentTypes = { typeid(PARAMETERS).hash_code()... };
             ContextUserPtr baseClass = createBaseClass(className, static_cast<void *>(&packedArguments), argumentTypes);
             if (!baseClass)
             {

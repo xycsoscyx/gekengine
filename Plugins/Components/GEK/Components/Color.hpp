@@ -8,6 +8,7 @@
 #pragma once
 
 #include "GEK/Math/Vector4.hpp"
+#include "GEK/Utility/Hash.hpp"
 #include "GEK/API/Component.hpp"
 
 namespace Gek
@@ -16,7 +17,9 @@ namespace Gek
     {
         GEK_COMPONENT(Color)
         {
-            Math::Float4 value = Math::Float4::White;
+			GEK_COMPONENT_DATA(Color);
+
+			Math::Float4 value = Math::Float4::White;
         };
     }; // namespace Components
 }; // namespace Gek

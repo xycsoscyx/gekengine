@@ -13,7 +13,7 @@ namespace Gek
     {
     private:
         std::vector<HMODULE> moduleList;
-        std::unordered_map<std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)>> classMap;
+        std::unordered_map<std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<Hash> &)>> classMap;
         std::unordered_multimap<std::string_view, std::string_view> typeMap;
         std::set<std::string> dataPathList;
 		std::string cachePath;
@@ -33,7 +33,7 @@ namespace Gek
 							InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "initializePlugin");
 							if (initializePlugin)
 							{
-								initializePlugin([this, filePath = filePath.getString()](std::string_view className, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)> creator) -> void
+								initializePlugin([this, filePath = filePath.getString()](std::string_view className, std::function<ContextUserPtr(Context *, void *, std::vector<Hash> &)> creator) -> void
 								{
 									if (classMap.count(className) == 0)
 									{
@@ -138,7 +138,7 @@ namespace Gek
 			}
 		}
 
-        ContextUserPtr createBaseClass(std::string_view className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const
+        ContextUserPtr createBaseClass(std::string_view className, void *typelessArguments, std::vector<Hash> &argumentTypes) const
         {
             auto classSearch = classMap.find(className);
             if (classSearch == std::end(classMap))

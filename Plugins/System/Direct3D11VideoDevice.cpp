@@ -635,11 +635,6 @@ namespace Gek
                 }
             }
 
-            std::type_index getTypeInfo(void) const
-            {
-                return typeid(BASE);
-            }
-
             virtual void setName(std::string_view name)
             {
                 this->name = name;

@@ -19,7 +19,9 @@ namespace Gek
     {
         GEK_COMPONENT(FirstPersonCamera)
         {
-            float fieldOfView = Math::DegreesToRadians(90.0f);
+			GEK_COMPONENT_DATA(FirstPersonCamera);
+
+			float fieldOfView = Math::DegreesToRadians(90.0f);
             float nearClip = 0.1f;
             float farClip = 200.0f;
             std::string target;
@@ -82,8 +84,7 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(CameraProcessor, Plugin::Core *)
-        , public Plugin::ProcessorMixin<CameraProcessor, Components::FirstPersonCamera, Components::Transform>
-        , public Plugin::Processor
+        , public Plugin::EntityProcessor<CameraProcessor, Components::FirstPersonCamera, Components::Transform>
     {
     public:
         struct Data
@@ -120,7 +121,7 @@ namespace Gek
 
         void addEntity(Plugin::Entity * const entity)
         {
-            ProcessorMixin::addEntity(entity, [&](bool isNewInsert, auto &data, auto &cameraComponent, auto &transformComponent) -> void
+            EntityProcessor::addEntity(entity, [&](bool isNewInsert, auto &data, auto &cameraComponent, auto &transformComponent) -> void
             {
                 if (!cameraComponent.target.empty())
                 {

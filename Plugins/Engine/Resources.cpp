@@ -731,18 +731,28 @@ namespace Gek
                 if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_Framed))
                 {
                     auto lowerName = String::GetLower(name);
-                    std::unordered_map<std::type_index, std::vector<CACHE::ResourceMap::value_type>> typeDataMap;
+                    std::unordered_map<std::string_view, std::vector<CACHE::ResourceMap::value_type>> typeDataMap;
                     auto &resourceMap = cache.getResourceMap();
                     for (auto &resourcePair : resourceMap)
                     {
                         auto &object = resourcePair.second;
-                        typeDataMap[object->getTypeInfo()].push_back(resourcePair);
-                    }
+						if (dynamic_cast<Video::Texture *>(object.get()))
+						{
+							typeDataMap["Texture"sv].push_back(resourcePair);
+						}
+						else if (dynamic_cast<Video::Target *>(object.get()))
+						{
+							typeDataMap["Target"sv].push_back(resourcePair);
+						}
+						else if (dynamic_cast<Video::Buffer *>(object.get()))
+						{
+							typeDataMap["Buffer"sv].push_back(resourcePair);
+						}
+					}
 
                     for (auto &typePair : typeDataMap)
                     {
-                        auto name = (std::strrchr(typePair.first.name(), ':') + 1);
-                        if (ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_Framed))
+                        if (ImGui::TreeNodeEx(typePair.first.data(), ImGuiTreeNodeFlags_Framed))
                         {
                             for (auto &resourcePair : typePair.second)
                             {
@@ -811,7 +821,7 @@ namespace Gek
             {
                 showVideoResourceMap(dynamicCache, "Resources"s, [&](auto &object) -> void
                 {
-                    if (object->getTypeInfo() == typeid(Video::Texture) || object->getTypeInfo() == typeid(Video::Target))
+					if (dynamic_cast<Video::Texture *>(object.get()) || dynamic_cast<Video::Target *>(object.get()))
                     {
                         auto texture = dynamic_cast<Video::Texture *>(object.get());
                         auto const &description = texture->getDescription();
@@ -828,8 +838,8 @@ namespace Gek
                         showResourceValue("MultiSample Quality", "##sampleQuality", std::to_string(description.sampleQuality));
                         showResourceValue("Flags", "##flags", std::to_string(description.flags));
                     }
-                    else if (object->getTypeInfo() == typeid(Video::Buffer))
-                    {
+					else if (dynamic_cast<Video::Buffer *>(object.get()))
+					{
                         auto buffer = dynamic_cast<Video::Buffer *>(object.get());
                         auto const &description = buffer->getDescription();
                         showResourceValue("Format", "##format", Video::GetFormat(description.format));

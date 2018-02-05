@@ -15,14 +15,18 @@ namespace Gek
     {
         GEK_COMPONENT(PointLight)
         {
-            float range = 0.0f;
+			GEK_COMPONENT_DATA(PointLight);
+
+			float range = 0.0f;
             float radius = 0.0f;
             float intensity = 0.0f;
         };
 
         GEK_COMPONENT(SpotLight)
         {
-            float range = 0.0f;
+			GEK_COMPONENT_DATA(SpotLight);
+
+			float range = 0.0f;
             float radius = 0.0f;
             float intensity = 0.0f;
             float innerAngle = 0.0f;
@@ -32,7 +36,9 @@ namespace Gek
 
         GEK_COMPONENT(DirectionalLight)
         {
-            float intensity;
+			GEK_COMPONENT_DATA(DirectionalLight);
+
+			float intensity;
         };
     }; // namespace Components
 }; // namespace Gek

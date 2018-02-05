@@ -18,7 +18,9 @@ namespace Gek
     {
         GEK_COMPONENT(Transform)
         {
-            Math::Float3 position = Math::Float3::Zero;
+			GEK_COMPONENT_DATA(Transform);
+
+			Math::Float3 position = Math::Float3::Zero;
             Math::Quaternion rotation = Math::Quaternion::Identity;
             Math::Float3 scale = Math::Float3::One;
 

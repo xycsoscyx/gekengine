@@ -9,11 +9,26 @@
 
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include <typeindex>
 
 #pragma warning(disable:4503)
 
 #define GEK_COMPONENT(TYPE)         struct TYPE : public Plugin::Component::Data
+
+#define GEK_COMPONENT_DATA(TYPE) \
+static std::string_view GetFullName(void) \
+{ \
+	return std::string_view(typeid(TYPE).name()); \
+} \
+\
+static std::string_view GetName(void) \
+{ \
+	return GetFullName().substr(GetFullName().rfind(":") + 1); \
+} \
+\
+static Hash GetIdentifier(void) \
+{ \
+	return typeid(TYPE).hash_code(); \
+}
 
 namespace Gek
 {
@@ -30,8 +45,8 @@ namespace Gek
 
             virtual ~Component(void) = default;
 
-			virtual std::string const &getName(void) const = 0;
-            virtual std::type_index getIdentifier(void) const = 0;
+			virtual std::string_view getName(void) const = 0;
+            virtual Hash getIdentifier(void) const = 0;
 
             virtual std::unique_ptr<Data> create(void) = 0;
             virtual void save(Data const * const data, JSON::Object &componentData) const = 0;

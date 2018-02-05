@@ -227,8 +227,6 @@ namespace Gek
         {
             virtual ~Object(void) = default;
 
-            virtual std::type_index getTypeInfo(void) const = 0;
-
             virtual void setName(std::string_view name) = 0;
             virtual std::string_view const getName(void) const = 0;
         };

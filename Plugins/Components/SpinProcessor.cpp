@@ -16,7 +16,9 @@ namespace Gek
     {
         GEK_COMPONENT(Spin)
         {
-            Math::Float3 torque;
+			GEK_COMPONENT_DATA(Spin);
+
+			Math::Float3 torque;
         };
     }; // namespace Components
 

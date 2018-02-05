@@ -8,6 +8,7 @@
 #pragma once
 
 #include "GEK/API/Component.hpp"
+#include "GEK/API/Processor.hpp"
 #include "GEK/API/Population.hpp"
 #include <concurrent_unordered_map.h>
 #include <new>
@@ -22,9 +23,6 @@ namespace Gek
         class ComponentMixin
             : public BASE
         {
-        private:
-            std::string name;
-
         protected:
             Population *population = nullptr;
 
@@ -32,25 +30,19 @@ namespace Gek
             ComponentMixin(Population *population)
                 : population(population)
             {
-                name = typeid(COMPONENT).name();
-                auto colonPosition = name.rfind(':');
-                if (colonPosition != std::string::npos)
-                {
-                    name = name.substr(colonPosition + 1);
-                }
             }
 
             virtual ~ComponentMixin(void) = default;
 
             // Plugin::Component
-            std::string const &getName(void) const
+			std::string_view getName(void) const
             {
-                return name;
+				return COMPONENT::GetName();
             }
 
-            std::type_index getIdentifier(void) const
+			Hash getIdentifier(void) const
             {
-                return typeid(COMPONENT);
+				return COMPONENT::GetIdentifier();
             }
 
             std::unique_ptr<Plugin::Component::Data> create(void)
@@ -90,7 +82,8 @@ namespace Gek
         };
 
         template <class CLASS, typename... REQUIRED>
-        class ProcessorMixin
+		class EntityProcessor
+			: public Plugin::Processor
         {
         private:
             struct Data : public CLASS::Data
@@ -102,7 +95,7 @@ namespace Gek
             EntityDataMap entityDataMap;
 
         public:
-            virtual ~ProcessorMixin(void) = default;
+            virtual ~EntityProcessor(void) = default;
 
             // ProcessorMixin
             void clear(void)

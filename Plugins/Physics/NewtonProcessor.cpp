@@ -384,7 +384,7 @@ namespace Gek
             }
 
             // Plugin::Editor Slots
-            void onModified(Plugin::Entity * const entity, const std::type_index &type)
+            void onModified(Plugin::Entity * const entity, Hash type)
             {
                 if (type == typeid(Components::Transform))
                 {
@@ -600,8 +600,8 @@ namespace Gek
                 const NewtonBody* const body1 = NewtonJointGetBody1(contactJoint);
 
                 NewtonWorld *newtonWorld = NewtonBodyGetWorld(body0);
-                Newton::World *processorBase = static_cast<Newton::World *>(NewtonWorldGetUserData(newtonWorld));
-                Processor *processor = dynamic_cast<Processor *>(processorBase);
+                Newton::World *EntityProcessor = static_cast<Newton::World *>(NewtonWorldGetUserData(newtonWorld));
+                Processor *processor = dynamic_cast<Processor *>(EntityProcessor);
 
                 Newton::Entity *newtonEntity0 = static_cast<Newton::Entity *>(NewtonBodyGetUserData(body0));
                 Newton::Entity *newtonEntity1 = static_cast<Newton::Entity *>(NewtonBodyGetUserData(body1));
