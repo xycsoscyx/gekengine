@@ -228,7 +228,7 @@ namespace Gek
                                             break;
                                         };
 
-                                        onModified(selectedEntity, typeid(Components::Transform));
+										onModified(selectedEntity, Components::Transform::GetIdentifier());
                                     }
                                 }
                             }
@@ -446,9 +446,10 @@ namespace Gek
                                             {
                                                 auto componentSearch = std::begin(componentMap);
                                                 std::advance(componentSearch, componentIndex);
-                                                if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
+												auto componentName = componentSearch->second->getName();
+                                                if (ImGui::Selectable((componentName.data() + 7), (selectedComponent == componentIndex)))
                                                 {
-                                                    auto componentData = std::make_pair(componentSearch->second->getName(), JSON::EmptyObject);
+                                                    auto componentData = std::make_pair(componentName, JSON::EmptyObject);
                                                     population->addComponent(entity, componentData);
                                                     ImGui::CloseCurrentPopup();
                                                 }
@@ -479,7 +480,7 @@ namespace Gek
                                             Plugin::Component::Data *componentData = componentSearch.second.get();
                                             if (component && componentData)
                                             {
-                                                ImGui::PushID(component->getIdentifier().hash_code());
+                                                ImGui::PushID(component->getIdentifier());
                                                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.0f, 0.0f, 1.0f));
                                                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.0f, 0.0f, 1.0f));
                                                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));

@@ -21,15 +21,15 @@ namespace Gek
         {
             virtual ~Entity(void) = default;
 
-            virtual bool hasComponent(const std::type_index &type) const = 0;
+            virtual bool hasComponent(Hash type) const = 0;
 
-			virtual Plugin::Component::Data *getComponent(const std::type_index &type) = 0;
-			virtual const Plugin::Component::Data *getComponent(const std::type_index &type) const = 0;
+			virtual Plugin::Component::Data *getComponent(Hash type) = 0;
+			virtual const Plugin::Component::Data *getComponent(Hash type) const = 0;
 
-            template <typename CLASS>
+            template <typename COMPONENT>
             bool hasComponent(void) const
             {
-                return hasComponent(typeid(CLASS));
+				return hasComponent(COMPONENT::GetIdentifier());
             }
 
             template<typename... PARAMETERS>
@@ -39,16 +39,16 @@ namespace Gek
 				return (std::accumulate(std::begin(hasComponentList), std::end(hasComponentList), 0U) == hasComponentList.size());
             }
 
-			template <typename CLASS>
-			CLASS &getComponent(void)
+			template <typename COMPONENT>
+			COMPONENT &getComponent(void)
 			{
-				return *static_cast<CLASS *>(getComponent(typeid(CLASS)));
+				return *static_cast<COMPONENT *>(getComponent(COMPONENT::GetIdentifier()));
 			}
 
-			template <typename CLASS>
-			const CLASS &getComponent(void) const
+			template <typename COMPONENT>
+			const COMPONENT &getComponent(void) const
 			{
-				return *static_cast<const CLASS *>(getComponent(typeid(CLASS)));
+				return *static_cast<const COMPONENT *>(getComponent(COMPONENT::GetIdentifier()));
 			}
 		};
     }; // namespace Plugin

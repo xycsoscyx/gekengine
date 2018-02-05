@@ -472,7 +472,7 @@ namespace Gek
         // Plugin::Editor Slots
         void onModified(Plugin::Entity * const entity, Hash type)
         {
-            if (type == typeid(Components::Model))
+            if (type == Components::Model::GetIdentifier())
             {
                 addEntity(entity);
             }

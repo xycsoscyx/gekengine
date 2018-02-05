@@ -115,7 +115,7 @@ namespace Gek
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className, static_cast<Plugin::Population *>(this)));
                     if (componentMap.count(component->getIdentifier()) > 0)
                     {
-                        LockedWrite{ std::cerr } << "Duplicate component identifier found: Class(" << className << "), Identifier(" << component->getIdentifier().name() << ")";
+                        LockedWrite{ std::cerr } << "Duplicate component identifier found: Class(" << className << "), Identifier(" << component->getIdentifier() << ")";
                         return;
                     }
 
@@ -302,14 +302,14 @@ namespace Gek
                         auto componentName = componentNameTypeMap.find(type);
                         if (componentName == std::end(componentNameTypeMap))
                         {
-                            LockedWrite{ std::cerr } << "Unknown component name found when trying to save population: " << type.name();
+                            LockedWrite{ std::cerr } << "Unknown component identifier found when trying to save population: " << type;
                         }
                         else
                         {
                             auto component = componentMap.find(type);
                             if (component == std::end(componentMap))
                             {
-                                LockedWrite{ std::cerr } << "Unknown component type found when trying to save population: " << type.name();
+								LockedWrite{ std::cerr } << "Unknown component type found when trying to save population: " << componentName->second << ", " << type;
                             }
                             else
                             {
@@ -363,7 +363,11 @@ namespace Gek
             {
                 assert(entity);
 
-                auto componentNameSearch = componentTypeNameMap.find(componentData.first);
+				auto componentNameSearch = std::find_if(std::begin(componentTypeNameMap), std::end(componentTypeNameMap), [&componentData](auto const &componentPair) -> bool
+				{
+					return (componentData.first == componentPair.first);
+				});
+
                 if (componentNameSearch != std::end(componentTypeNameMap))
                 {
                     auto componentSearch = componentMap.find(componentNameSearch->second);
@@ -378,7 +382,7 @@ namespace Gek
                     }
                     else
                     {
-                        LockedWrite{ std::cerr } << "Entity contains unknown component identifier: " << componentNameSearch->second.name();
+                        LockedWrite{ std::cerr } << "Entity contains unknown component identifier: " << componentData.first << ", " << componentNameSearch->second;
                     }
                 }
                 else

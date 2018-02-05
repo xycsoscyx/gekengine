@@ -386,7 +386,7 @@ namespace Gek
             // Plugin::Editor Slots
             void onModified(Plugin::Entity * const entity, Hash type)
             {
-                if (type == typeid(Components::Transform))
+                if (type == Components::Transform::GetIdentifier())
                 {
                     auto &transformComponent = entity->getComponent<Components::Transform>();
 
@@ -403,7 +403,7 @@ namespace Gek
                         NewtonSceneCollisionSetSubCollisionMatrix(newtonSceneCollision, sceneSearch->second, transformComponent.getMatrix().data);
                     }
                 }
-                else if (type == typeid(Components::Model))
+                else if (type == Components::Model::GetIdentifier())
                 {
                 }
             }

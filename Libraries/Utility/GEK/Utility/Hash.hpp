@@ -14,7 +14,7 @@ namespace Gek
 {
     using Hash = std::size_t;
 
-    inline Hash CombineHashes(const Hash upper, const Hash lower)
+    inline Hash CombineHashes(Hash upper, Hash lower)
     {
         return upper ^ (lower + 0x9e3779b9 + (upper << 6) + (upper >> 2));
     }

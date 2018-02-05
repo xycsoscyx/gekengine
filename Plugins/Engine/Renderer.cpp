@@ -242,7 +242,7 @@ namespace Gek
                         lightBufferDescription.stride = sizeof(DATA);
                         lightBufferDescription.count = createSize;
                         lightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
-                        lightDataBuffer->setName(String::Format("render:{}", typeid(COMPONENT).name()));
+						lightDataBuffer->setName(String::Format("render:{}", COMPONENT::GetName()));
                     }
                 }
 
