@@ -39,7 +39,7 @@ namespace Gek
                 virtual Mode prepare(void) = 0;
                 virtual void clear(void) = 0;
 
-                virtual std::string const &getName(void) const = 0;
+                virtual std::string_view getName(void) const = 0;
 
                 virtual size_t getMaterialHash(void) const = 0;
                 virtual uint32_t getFirstResourceStage(void) const = 0;
@@ -60,7 +60,7 @@ namespace Gek
 
                 virtual Iterator next(void) = 0;
 
-                virtual std::string const &getName(void) const = 0;
+                virtual std::string_view getName(void) const = 0;
                 virtual std::vector<Initializer> const &getInitializerList(void) const = 0;
                 virtual RenderStateHandle getRenderState(void) const = 0;
             };
@@ -69,7 +69,7 @@ namespace Gek
 
             virtual void reload(void) = 0;
 
-            virtual std::string const &getName(void) const = 0;
+			virtual std::string_view getName(void) const = 0;
 
             virtual uint32_t getDrawOrder(void) const = 0;
             virtual bool isLightingRequired(void) const = 0;

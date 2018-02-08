@@ -18,6 +18,7 @@ namespace Gek
             , public Engine::Material
         {
         private:
+			std::string materialName;
             Engine::Resources *resources = nullptr;
             std::unordered_map<size_t, Data> dataMap;
             RenderStateHandle renderState;
@@ -27,6 +28,7 @@ namespace Gek
             Material(Context *context, Engine::Resources *resources, std::string materialName, MaterialHandle materialHandle)
                 : ContextRegistration(context)
                 , resources(resources)
+				, materialName(materialName)
             {
                 assert(resources);
 
@@ -77,6 +79,11 @@ namespace Gek
             }
 
             // Material
+			std::string_view getName(void) const
+			{
+				return materialName;
+			}
+
             Data const *getData(size_t dataHash)
             {
                 auto dataSearch = dataMap.find(dataHash);

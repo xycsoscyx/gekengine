@@ -636,13 +636,13 @@ namespace Gek
             virtual void deleteResource(ResourceHandle resource) = 0;
             virtual void deleteQueue(QueueHandle queue) = 0;
 
-            virtual PipelineStateHandle createPipelineState(const PipelineStateInformation &pipelineState, std::string const &name = std::string()) = 0;
+            virtual PipelineStateHandle createPipelineState(const PipelineStateInformation &pipelineState, std::string const &name = String::Empty) = 0;
 
-            virtual SamplerStateHandle createSamplerState(const SamplerStateInformation &samplerState, std::string const &name = std::string()) = 0;
+            virtual SamplerStateHandle createSamplerState(const SamplerStateInformation &samplerState, std::string const &name = String::Empty) = 0;
 
-            virtual ResourceHandle createBuffer(const BufferDescription &description, const void *staticData = nullptr, std::string const &name = std::string()) = 0;
-            virtual ResourceHandle createTexture(const TextureDescription &description, const void *data = nullptr, std::string const &name = std::string()) = 0;
-            virtual ResourceHandle loadTexture(FileSystem::Path const &filePath, uint32_t flags, std::string const &name = std::string()) = 0;
+            virtual ResourceHandle createBuffer(const BufferDescription &description, const void *staticData = nullptr, std::string const &name = String::Empty) = 0;
+            virtual ResourceHandle createTexture(const TextureDescription &description, const void *data = nullptr, std::string const &name = String::Empty) = 0;
+            virtual ResourceHandle loadTexture(FileSystem::Path const &filePath, uint32_t flags, std::string const &name = String::Empty) = 0;
 
             virtual BufferDescription const * const getBufferDescription(ResourceHandle resource) const = 0;
             virtual TextureDescription const * const getTextureDescription(ResourceHandle resource) const = 0;
@@ -659,8 +659,8 @@ namespace Gek
             virtual void updateResource(ResourceHandle resource, const void *data) = 0;
             virtual void copyResource(ResourceHandle destination, ResourceHandle source) = 0;
 
-            virtual QueuePtr createQueue(uint32_t flags, std::string const &name = std::string()) = 0;
-            virtual QueueHandle compileQueue(Queue *queue, std::string const &name = std::string()) = 0;
+            virtual QueuePtr createQueue(uint32_t flags, std::string const &name = String::Empty) = 0;
+            virtual QueueHandle compileQueue(Queue *queue, std::string const &name = String::Empty) = 0;
             virtual void runQueue(Queue *queue) = 0;
             virtual void runQueue(QueueHandle queue) = 0;
 

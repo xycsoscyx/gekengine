@@ -340,8 +340,8 @@ namespace Gek
             std::vector<Video::Buffer *> lightBufferList;
             std::vector<Video::Object *> lightResoruceList;
 
-            Video::ObjectPtr deferredVertexProgram;
-            Video::ObjectPtr deferredPixelProgram;
+            Video::Program *deferredVertexProgram;
+            Video::Program *deferredPixelProgram;
             Video::BlendStatePtr blendState;
             Video::RenderStatePtr renderState;
             Video::DepthStatePtr depthState;
@@ -376,10 +376,10 @@ namespace Gek
                     Math::Float4x4 projectionMatrix;
                 };
 
-                Video::ObjectPtr vertexProgram;
+                Video::Program *vertexProgram;
                 Video::ObjectPtr inputLayout;
                 Video::BufferPtr constantBuffer;
-                Video::ObjectPtr pixelProgram;
+                Video::Program *pixelProgram;
                 Video::ObjectPtr blendState;
                 Video::ObjectPtr renderState;
                 Video::ObjectPtr depthState;
@@ -474,40 +474,38 @@ namespace Gek
                 lightBufferList = { lightConstantBuffer.get() };
 
 				static constexpr std::string_view program = \
-                    "struct Output"sv \
-                    "{"sv \
-                    "    float4 screen : SV_POSITION;"sv \
-                    "    float2 texCoord : TEXCOORD0;"sv \
-                    "};"sv \
-                    ""sv \
-                    "Output mainVertexProgram(in uint vertexID : SV_VertexID)"sv \
-                    "{"sv \
-                    "    Output output;"sv \
-                    "    output.texCoord = float2((vertexID << 1) & 2, vertexID & 2);"sv \
-                    "    output.screen = float4(output.texCoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f);"sv \
-                    "    return output;"sv \
-                    "}"sv \
-                    ""sv \
-                    "struct Input"sv \
-                    "{"sv \
+                    "struct Output\r\n"sv \
+                    "{\r\n"sv \
                     "    float4 screen : SV_POSITION;\r\n"sv \
-                    "    float2 texCoord : TEXCOORD0;"sv \
-                    "};"sv \
-                    ""sv \
-                    "Texture2D<float3> inputBuffer : register(t0);"sv \
-                    "float3 mainPixelProgram(in Input input) : SV_TARGET0"sv \
-                    "{"sv \
-                    "    uint width, height, mipMapCount;"sv \
-                    "    inputBuffer.GetDimensions(0, width, height, mipMapCount);"sv \
-                    "    return inputBuffer[input.texCoord * float2(width, height)];"sv \
-                    "}"sv;
+                    "    float2 texCoord : TEXCOORD0;\r\n"sv \
+                    "};\r\n"sv \
+                    "\r\n"sv \
+                    "Output mainVertexProgram(in uint vertexID : SV_VertexID)\r\n"sv \
+                    "{\r\n"sv \
+                    "    Output output;\r\n"sv \
+                    "    output.texCoord = float2((vertexID << 1) & 2, vertexID & 2);\r\n"sv \
+                    "    output.screen = float4(output.texCoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f);\r\n"sv \
+                    "    return output;\r\n"sv \
+                    "}\r\n"sv \
+                    "\r\n"sv \
+                    "struct Input\r\n"sv \
+                    "{\r\n"sv \
+                    "    float4 screen : SV_POSITION;\r\n\r\n"sv \
+                    "    float2 texCoord : TEXCOORD0;\r\n"sv \
+                    "};\r\n"sv \
+                    "\r\n"sv \
+                    "Texture2D<float3> inputBuffer : register(t0);\r\n"sv \
+                    "float3 mainPixelProgram(in Input input) : SV_TARGET0\r\n"sv \
+                    "{\r\n"sv \
+                    "    uint width, height, mipMapCount;\r\n"sv \
+                    "    inputBuffer.GetDimensions(0, width, height, mipMapCount);\r\n"sv \
+                    "    return inputBuffer[input.texCoord * float2(width, height)];\r\n"sv \
+                    "}\r\n"sv;
 
-                auto compiledVertexProgram = resources->compileProgram(Video::PipelineType::Vertex, "deferredVertexProgram", "mainVertexProgram", program);
-                deferredVertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiledVertexProgram.data(), compiledVertexProgram.size());
+				deferredVertexProgram = resources->getProgram(Video::Program::Type::Vertex, "deferredVertexProgram", "mainVertexProgram", program);
                 deferredVertexProgram->setName("renderer:deferredVertexProgram");
 
-                auto compiledPixelProgram = resources->compileProgram(Video::PipelineType::Pixel, "deferredPixelProgram", "mainPixelProgram", program);
-                deferredPixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiledPixelProgram.data(), compiledPixelProgram.size());
+                deferredPixelProgram = resources->getProgram(Video::Program::Type::Pixel, "deferredPixelProgram", "mainPixelProgram", program);
                 deferredPixelProgram->setName("renderer:deferredPixelProgram");
 
                 Video::Buffer::Description lightBufferDescription;
@@ -534,38 +532,37 @@ namespace Gek
                 LockedWrite{ std::cout } << "Initializing user interface data";
 
 				static constexpr std::string_view vertexShader =
-                    "cbuffer DataBuffer : register(b0)"sv \
-                    "{"sv \
-                    "    float4x4 ProjectionMatrix;"sv \
-                    "    bool TextureHasAlpha;"sv \
-                    "    bool buffer[3];"sv \
-                    "};"sv \
-                    ""sv \
-                    "struct VertexInput"sv \
-                    "{"sv \
-                    "    float2 position : POSITION;"sv \
-                    "    float4 color : COLOR0;"sv \
-                    "    float2 texCoord  : TEXCOORD0;"sv \
-                    "};"sv \
-                    ""sv \
-                    "struct PixelOutput"sv \
-                    "{"sv \
-                    "    float4 position : SV_POSITION;"sv \
-                    "    float4 color : COLOR0;"sv \
-                    "    float2 texCoord  : TEXCOORD0;"sv \
-                    "};"sv \
-                    ""sv \
-                    "PixelOutput main(in VertexInput input)"sv \
-                    "{"sv \
-                    "    PixelOutput output;"sv \
-                    "    output.position = mul(ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));"sv \
-                    "    output.color = input.color;"sv \
-                    "    output.texCoord  = input.texCoord;"sv \
-                    "    return output;"sv \
-                    "}"sv;
+                    "cbuffer DataBuffer : register(b0)\r\n"sv \
+                    "{\r\n"sv \
+                    "    float4x4 ProjectionMatrix;\r\n"sv \
+                    "    bool TextureHasAlpha;\r\n"sv \
+                    "    bool buffer[3];\r\n"sv \
+                    "};\r\n"sv \
+                    "\r\n"sv \
+                    "struct VertexInput\r\n"sv \
+                    "{\r\n"sv \
+                    "    float2 position : POSITION;\r\n"sv \
+                    "    float4 color : COLOR0;\r\n"sv \
+                    "    float2 texCoord  : TEXCOORD0;\r\n"sv \
+                    "};\r\n"sv \
+                    "\r\n"sv \
+                    "struct PixelOutput\r\n"sv \
+                    "{\r\n"sv \
+                    "    float4 position : SV_POSITION;\r\n"sv \
+                    "    float4 color : COLOR0;\r\n"sv \
+                    "    float2 texCoord  : TEXCOORD0;\r\n"sv \
+                    "};\r\n"sv \
+                    "\r\n"sv \
+                    "PixelOutput main(in VertexInput input)\r\n"sv \
+                    "{\r\n"sv \
+                    "    PixelOutput output;\r\n"sv \
+                    "    output.position = mul(ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));\r\n"sv \
+                    "    output.color = input.color;\r\n"sv \
+                    "    output.texCoord  = input.texCoord;\r\n"sv \
+                    "    return output;\r\n"sv \
+                    "}\r\n"sv;
 
-                auto &compiled = resources->compileProgram(Video::PipelineType::Vertex, "uiVertexProgram", "main", vertexShader);
-                gui.vertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiled.data(), compiled.size());
+				gui.vertexProgram = resources->getProgram(Video::Program::Type::Vertex, "uiVertexProgram", "main", vertexShader);
                 gui.vertexProgram->setName("core:vertexProgram");
 
                 std::vector<Video::InputElement> elementList;
@@ -583,7 +580,7 @@ namespace Gek
                 element.semantic = Video::InputElement::Semantic::Color;
                 elementList.push_back(element);
 
-                gui.inputLayout = videoDevice->createInputLayout(elementList, compiled.data(), compiled.size());
+                gui.inputLayout = videoDevice->createInputLayout(elementList, gui.vertexProgram->getInformation());
                 gui.inputLayout->setName("core:inputLayout");
 
                 Video::Buffer::Description constantBufferDescription;
@@ -594,30 +591,29 @@ namespace Gek
                 gui.constantBuffer->setName("core:constantBuffer");
 
 				static constexpr std::string_view pixelShader =
-                    "cbuffer DataBuffer : register(b0)"sv \
-                    "{"sv \
-                    "    float4x4 ProjectionMatrix;"sv \
-                    "    bool TextureHasAlpha;"sv \
-                    "    bool buffer[3];"sv \
-                    "};"sv \
-                    ""sv \
-                    "struct PixelInput"sv \
-                    "{"sv \
-                    "    float4 position : SV_POSITION;"sv \
-                    "    float4 color : COLOR0;"sv \
-                    "    float2 texCoord  : TEXCOORD0;"sv \
-                    "};"sv \
-                    ""sv \
-                    "sampler uiSampler;"sv \
-                    "Texture2D<float4> uiTexture : register(t0);"sv \
-                    ""sv \
-                    "float4 main(PixelInput input) : SV_Target"sv \
-                    "{"sv \
-                    "    return (input.color * uiTexture.Sample(uiSampler, input.texCoord));"sv \
-                    "}"sv;
+                    "cbuffer DataBuffer : register(b0)\r\n"sv \
+                    "{\r\n"sv \
+                    "    float4x4 ProjectionMatrix;\r\n"sv \
+                    "    bool TextureHasAlpha;\r\n"sv \
+                    "    bool buffer[3];\r\n"sv \
+                    "};\r\n"sv \
+                    "\r\n"sv \
+                    "struct PixelInput\r\n"sv \
+                    "{\r\n"sv \
+                    "    float4 position : SV_POSITION;\r\n"sv \
+                    "    float4 color : COLOR0;\r\n"sv \
+                    "    float2 texCoord  : TEXCOORD0;\r\n"sv \
+                    "};\r\n"sv \
+                    "\r\n"sv \
+                    "sampler uiSampler;\r\n"sv \
+                    "Texture2D<float4> uiTexture : register(t0);\r\n"sv \
+                    "\r\n"sv \
+                    "float4 main(PixelInput input) : SV_Target\r\n"sv \
+                    "{\r\n"sv \
+                    "    return (input.color * uiTexture.Sample(uiSampler, input.texCoord));\r\n"sv \
+                    "}\r\n"sv;
 
-                compiled = resources->compileProgram(Video::PipelineType::Pixel, "uiPixelProgram", "main", pixelShader);
-                gui.pixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiled.data(), compiled.size());
+				gui.pixelProgram = resources->getProgram(Video::Program::Type::Pixel, "uiPixelProgram", "main", pixelShader);
                 gui.pixelProgram->setName("core:pixelProgram");
 
                 Video::BlendState::Description blendStateInformation;
@@ -798,8 +794,8 @@ namespace Gek
                     videoContext->setVertexBufferList({ gui.vertexBuffer.get() }, 0);
                     videoContext->setIndexBuffer(gui.indexBuffer.get(), 0);
                     videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
-                    videoContext->vertexPipeline()->setProgram(gui.vertexProgram.get());
-                    videoContext->pixelPipeline()->setProgram(gui.pixelProgram.get());
+                    videoContext->vertexPipeline()->setProgram(gui.vertexProgram);
+                    videoContext->pixelPipeline()->setProgram(gui.pixelProgram);
                     videoContext->vertexPipeline()->setConstantBufferList({ gui.constantBuffer.get() }, 0);
                     videoContext->pixelPipeline()->setSamplerStateList({ bufferSamplerState.get() }, 0);
 
@@ -1429,7 +1425,7 @@ namespace Gek
                                         break;
 
                                     case Engine::Shader::Pass::Mode::Deferred:
-                                        videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
+                                        videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
                                         resources->drawPrimitive(videoContext, 3, 0);
                                         break;
 
@@ -1473,7 +1469,7 @@ namespace Gek
                     videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
 
                     uint8_t filterIndex = 0;
-                    videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
+                    videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
                     for (auto const &filterName : { "tonemap" })
                     {
                         GEK_PROFILE_AUTO_SCOPE("Render Filter");
@@ -1570,8 +1566,8 @@ namespace Gek
                 resources->startResourceBlock();
                 resources->setResourceList(videoContext->pixelPipeline(), { input }, 0);
 
-                videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                videoContext->pixelPipeline()->setProgram(deferredPixelProgram.get());
+                videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
+                videoContext->pixelPipeline()->setProgram(deferredPixelProgram);
                 resources->setRenderTargetList(videoContext, { target }, nullptr);
 
                 resources->drawPrimitive(videoContext, 3, 0);

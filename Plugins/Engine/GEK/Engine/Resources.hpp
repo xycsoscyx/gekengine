@@ -40,8 +40,8 @@ namespace Gek
             virtual Video::Buffer::Description const * const getBufferDescription(ResourceHandle resourceHandle) const = 0;
             virtual Video::Object * const getResource(ResourceHandle resourceHandle) const = 0;
 
-            virtual std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, std::string_view name, std::string_view entryFunction, std::string_view engineData = std::string()) = 0;
-            virtual ProgramHandle loadProgram(Video::PipelineType pipelineType, std::string_view name, std::string_view entryFunction, std::string_view engineData = std::string()) = 0;
+            virtual Video::Program * getProgram(Video::Program::Type type, std::string_view name, std::string_view entryFunction, std::string_view engineData = String::Empty) = 0;
+            virtual ProgramHandle loadProgram(Video::Program::Type type, std::string_view name, std::string_view entryFunction, std::string_view engineData = String::Empty) = 0;
 
             virtual RenderStateHandle createRenderState(Video::RenderState::Description const &renderState) = 0;
             virtual DepthStateHandle createDepthState(Video::DepthState::Description const &depthState) = 0;

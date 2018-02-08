@@ -16,15 +16,17 @@ namespace Gek
             , public Engine::Visual
         {
         private:
+			std::string visualName;
             Video::Device *videoDevice;
 			Video::ObjectPtr inputLayout;
-			Video::ObjectPtr vertexProgram;
-			Video::ObjectPtr geometryProgram;
+			Video::Program *vertexProgram;
+			Video::Program *geometryProgram;
 
         public:
             Visual(Context *context, Video::Device *videoDevice, Engine::Resources *resources, std::string visualName)
                 : ContextRegistration(context)
                 , videoDevice(videoDevice)
+				, visualName(visualName)
             {
                 assert(videoDevice);
                 assert(resources);
@@ -109,12 +111,11 @@ namespace Gek
                 std::string vertexEntry(vertexNode.get("entry").convert(String::Empty));
                 std::string vertexProgram(vertexNode.get("program").convert(String::Empty));
                 std::string vertexFileName(FileSystem::CombinePaths(visualName, vertexProgram).withExtension(".hlsl").getString());
-                auto compiledVertexProgram = resources->compileProgram(Video::PipelineType::Vertex, vertexFileName, vertexEntry, engineData);
-				this->vertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiledVertexProgram.data(), compiledVertexProgram.size());
+				this->vertexProgram = resources->getProgram(Video::Program::Type::Vertex, vertexFileName, vertexEntry, engineData);
                 this->vertexProgram->setName(String::Format("{}:{}", vertexProgram, vertexEntry));
                 if (!elementList.empty())
 				{
-					inputLayout = videoDevice->createInputLayout(elementList, compiledVertexProgram.data(), compiledVertexProgram.size());
+					inputLayout = videoDevice->createInputLayout(elementList, this->vertexProgram->getInformation());
 				}
 
                 auto geometryNode = visualNode.get("geometry");
@@ -123,18 +124,22 @@ namespace Gek
                 if (!geometryEntry.empty() && !geometryProgram.empty())
                 {
                     std::string geometryFileName(FileSystem::CombinePaths(visualName, geometryProgram).withExtension(".hlsl").getString());
-                    auto compiledGeometryProgram = resources->compileProgram(Video::PipelineType::Geometry, geometryFileName, geometryEntry);
-                    this->geometryProgram = videoDevice->createProgram(Video::PipelineType::Geometry, compiledGeometryProgram.data(), compiledGeometryProgram.size());
+					this->geometryProgram = resources->getProgram(Video::Program::Type::Geometry, geometryFileName, geometryEntry);
                     this->geometryProgram->setName(String::Format("{}:{}", geometryProgram, geometryEntry));
                 }
 			}
 
             // Plugin
+			std::string_view getName(void) const
+			{
+				return visualName;
+			}
+
             void enable(Video::Device::Context *videoContext)
             {
 				videoContext->setInputLayout(inputLayout.get());
-				videoContext->vertexPipeline()->setProgram(vertexProgram.get());
-				videoContext->geometryPipeline()->setProgram(geometryProgram.get());
+				videoContext->vertexPipeline()->setProgram(vertexProgram);
+				videoContext->geometryPipeline()->setProgram(geometryProgram);
 			}
         };
 

@@ -603,7 +603,7 @@ namespace Gek
                     auto programName = passNode.get("program").convert(String::Empty);
                     pass.name = String::Format("{}: {}", programName, entryPoint);
                     std::string fileName(FileSystem::CombinePaths(filterName, programName + ".hlsl").getString());
-                    Video::PipelineType pipelineType = (pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel);
+                    Video::Program::Type pipelineType = (pass.mode == Pass::Mode::Compute ? Video::Program::Type::Compute : Video::Program::Type::Pixel);
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
                 }
 
@@ -615,8 +615,8 @@ namespace Gek
             }
 
             // Filter
-            std::string const &getName(void) const
-            {
+			std::string_view getName(void) const
+			{
                 return filterName;
             }
 
@@ -778,8 +778,8 @@ namespace Gek
                     filterNode->clearPass(videoContext, (*current));
                 }
 
-                std::string const &getName(void) const
-                {
+				std::string_view getName(void) const
+				{
                     return current->name;
                 }
             };

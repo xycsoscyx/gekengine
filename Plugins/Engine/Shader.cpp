@@ -824,7 +824,7 @@ namespace Gek
                     auto programName = passNode.get("program").convert(String::Empty);
                     pass.name = String::Format("{}: {}", programName, entryPoint);
                     std::string fileName(FileSystem::CombinePaths(shaderName, programName).withExtension(".hlsl").getString());
-                    Video::PipelineType pipelineType = (pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel);
+                    Video::Program::Type pipelineType = (pass.mode == Pass::Mode::Compute ? Video::Program::Type::Compute : Video::Program::Type::Pixel);
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
                 }
 
@@ -832,8 +832,8 @@ namespace Gek
 			}
 
             // Shader
-            std::string const &getName(void) const
-            {
+			std::string_view getName(void) const
+			{
                 return shaderName;
             }
 
@@ -990,8 +990,8 @@ namespace Gek
                     return Iterator(++next == end ? nullptr : new MaterialImplementation(shaderNode, next, end));
                 }
 
-                std::string const &getName(void) const
-                {
+				std::string_view getName(void) const
+				{
                     return current->first;
                 }
 
@@ -1054,8 +1054,8 @@ namespace Gek
                     return (*current).lighting;
                 }
 
-                std::string const &getName(void) const
-                {
+				std::string_view getName(void) const
+				{
                     return current->name;
                 }
             };

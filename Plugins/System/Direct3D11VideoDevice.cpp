@@ -640,7 +640,7 @@ namespace Gek
                 this->name = name;
             }
 
-            std::string_view const getName(void) const
+            std::string_view getName(void) const
             {
                 return name;
             }
@@ -719,10 +719,6 @@ namespace Gek
         using BlendState = DescribedVideoObject<ID3D11BlendState, Video::BlendState>;
         using SamplerState = DescribedVideoObject<ID3D11SamplerState, Video::SamplerState>;
         using InputLayout = BaseVideoObject<ID3D11InputLayout>;
-        using ComputeProgram = BaseVideoObject<ID3D11ComputeShader>;
-        using VertexProgram = BaseVideoObject<ID3D11VertexShader>;
-        using GeometryProgram = BaseVideoObject<ID3D11GeometryShader>;
-        using PixelProgram = BaseVideoObject<ID3D11PixelShader>;
 
         using Resource = BaseObject<ID3D11Resource>;
         using ShaderResourceView = BaseObject<ID3D11ShaderResourceView>;
@@ -1032,6 +1028,48 @@ namespace Gek
             }
         };
 
+		template <typename D3DTYPE>
+		class Program
+			: public NamedObject<Video::Program>
+		{
+		public:
+			Video::Program::Information information;
+			D3DTYPE * d3dObject = nullptr;
+
+		public:
+			template <typename SOURCE>
+			Program(CComPtr<SOURCE> &d3dSource, Video::Program::Information information)
+				: information(information)
+			{
+				InterlockedExchangePointer(reinterpret_cast<void **>(&d3dObject), dynamic_cast<D3DTYPE *>(d3dSource.p));
+				d3dObject->AddRef();
+			}
+
+			virtual ~Program(void)
+			{
+				if (d3dObject)
+				{
+					reinterpret_cast<D3DTYPE *>(InterlockedExchangePointer((void **)&d3dObject, nullptr))->Release();
+				}
+			}
+
+			void setName(std::string const &name)
+			{
+				NamedObject::setName(name);
+				setDebugName(d3dObject);
+			}
+
+			Information const &getInformation(void) const
+			{
+				return information;
+			}
+		};
+
+		using ComputeProgram = Program<ID3D11ComputeShader>;
+		using VertexProgram = Program<ID3D11VertexShader>;
+		using GeometryProgram = Program<ID3D11GeometryShader>;
+		using PixelProgram = Program<ID3D11PixelShader>;
+
         GEK_CONTEXT_USER(Device, Window *, Video::Device::Description)
             , public Video::Debug::Device
         {
@@ -1052,12 +1090,12 @@ namespace Gek
                     }
 
                     // Video::Pipeline
-                    Video::PipelineType getType(void) const
+                    Type getType(void) const
                     {
-                        return Video::PipelineType::Compute;
+                        return Type::Compute;
                     }
 
-                    void setProgram(Video::Object *program)
+                    void setProgram(Video::Program *program)
                     {
                         assert(d3dDeviceContext);
 
@@ -1147,12 +1185,12 @@ namespace Gek
                     }
 
                     // Video::Pipeline
-                    Video::PipelineType getType(void) const
+					Type getType(void) const
                     {
-                        return Video::PipelineType::Vertex;
+                        return Type::Vertex;
                     }
 
-                    void setProgram(Video::Object *program)
+                    void setProgram(Video::Program *program)
                     {
                         assert(d3dDeviceContext);
 
@@ -1235,12 +1273,12 @@ namespace Gek
                     }
 
                     // Video::Pipeline
-                    Video::PipelineType getType(void) const
+                    Type getType(void) const
                     {
-                        return Video::PipelineType::Geometry;
+                        return Type::Geometry;
                     }
 
-                    void setProgram(Video::Object *program)
+                    void setProgram(Video::Program *program)
                     {
                         assert(d3dDeviceContext);
 
@@ -1323,12 +1361,12 @@ namespace Gek
                     }
 
                     // Video::Pipeline
-                    Video::PipelineType getType(void) const
+                    Type getType(void) const
                     {
-                        return Video::PipelineType::Pixel;
+                        return Type::Pixel;
                     }
 
-                    void setProgram(Video::Object *program)
+                    void setProgram(Video::Program *program)
                     {
                         assert(d3dDeviceContext);
 
@@ -2411,10 +2449,10 @@ namespace Gek
                 }
             }
 
-            Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, const void *compiledData, uint32_t compiledSize)
+            Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, Video::Program::Information const &information)
             {
-                assert(compiledSize);
-                assert(compiledData);
+				assert(!compiledProgram.data.empty());
+				assert(compiledProgram.type == Video::Program::Type::Vertex);
 
                 uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
                 std::vector<D3D11_INPUT_ELEMENT_DESC> d3dElementList;
@@ -2444,7 +2482,7 @@ namespace Gek
                 }
 
                 CComPtr<ID3D11InputLayout> d3dInputLayout;
-                HRESULT resultValue = d3dDevice->CreateInputLayout(d3dElementList.data(), UINT(d3dElementList.size()), compiledData, compiledSize, &d3dInputLayout);
+                HRESULT resultValue = d3dDevice->CreateInputLayout(d3dElementList.data(), UINT(d3dElementList.size()), information.compiledData.data(), information.compiledData.size(), &d3dInputLayout);
                 if (FAILED(resultValue) || !d3dInputLayout)
                 {
                     LockedWrite{ std::cerr } << "Unable to create input vertex layout";
@@ -2454,51 +2492,12 @@ namespace Gek
                 return std::make_unique<InputLayout>(d3dInputLayout);
             }
 
-            template <class SHADER, class PROGRAM, typename RETURN, typename CLASS, typename... PARAMETERS>
-            Video::ObjectPtr createProgram(const void *compiledData, uint32_t compiledSize, RETURN(__stdcall CLASS::*function)(PARAMETERS...))
-            {
-                assert(compiledData);
-                assert(compiledSize);
-                assert(function);
-
-                CComPtr<SHADER> d3dShader;
-                HRESULT resultValue = (d3dDevice->*function)(compiledData, compiledSize, nullptr, &d3dShader);
-                if (FAILED(resultValue) || !d3dShader)
-                {
-                    LockedWrite{ std::cerr } << "Unable to create program from compiled data";
-                    return nullptr;
-                }
-
-                return std::make_unique<PROGRAM>(d3dShader);
-            }
-
-            Video::ObjectPtr createProgram(Video::PipelineType pipelineType, const void *compiledData, uint32_t compiledSize)
-            {
-                assert(compiledData);
-                assert(compiledSize);
-
-                switch (pipelineType)
-                {
-                case Video::PipelineType::Compute:
-                    return createProgram<ID3D11ComputeShader, ComputeProgram>(compiledData, compiledSize, &ID3D11Device::CreateComputeShader);
-
-                case Video::PipelineType::Vertex:
-                    return createProgram<ID3D11VertexShader, VertexProgram>(compiledData, compiledSize, &ID3D11Device::CreateVertexShader);
-
-                case Video::PipelineType::Geometry:
-                    return createProgram<ID3D11GeometryShader, GeometryProgram>(compiledData, compiledSize, &ID3D11Device::CreateGeometryShader);
-
-                case Video::PipelineType::Pixel:
-                    return createProgram<ID3D11PixelShader, PixelProgram>(compiledData, compiledSize, &ID3D11Device::CreatePixelShader);
-                };
-
-                LockedWrite{ std::cerr } << "Unknown program pipline encountered";
-                return nullptr;
-            }
-
-            std::vector<uint8_t> compileProgram(std::string_view name, std::string_view type, std::string_view uncompiledProgram, std::string_view entryFunction)
-            {
+			Video::Program::Information compileProgram(Video::Program::Type type, std::string_view name, FileSystem::Path const &debugPath, std::string_view uncompiledProgram, std::string_view entryFunction)
+			{
                 assert(d3dDevice);
+				assert(!name.empty());
+				assert(!uncompiledProgram.empty());
+				assert(!entryFunction.empty());
 
                 uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
@@ -2510,47 +2509,82 @@ namespace Gek
                 flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif
 
-                CComPtr<ID3DBlob> d3dShaderBlob;
-                CComPtr<ID3DBlob> d3dCompilerErrors;
-                HRESULT resultValue = D3DCompile(uncompiledProgram.data(), (uncompiledProgram.size() + 1), name.data(), nullptr, nullptr, entryFunction.data(), type.data(), flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
-                if (FAILED(resultValue) || !d3dShaderBlob)
-                {
-                    _com_error error(resultValue);
-                    std::string_view compilerError = (char const *)d3dCompilerErrors->GetBufferPointer();
-                    LockedWrite{ std::cerr } << "D3DCompile Failed (" << error.ErrorMessage() << ") " << compilerError;
-                    static const std::vector<uint8_t> EmptyBuffer;
-                    return EmptyBuffer;
-                }
+				static const std::unordered_map<Video::Program::Type, std::string_view> D3DTypeMap = 
+				{
+					{ Video::Program::Type::Compute, "cs_5_0"sv, },
+					{ Video::Program::Type::Geometry, "gs_5_0"sv, },
+					{ Video::Program::Type::Vertex, "vs_5_0"sv, },
+					{ Video::Program::Type::Pixel, "ps_5_0"sv, },
+				};
 
-                uint8_t *data = (uint8_t *)d3dShaderBlob->GetBufferPointer();
-                return std::vector<uint8_t>(data, (data + d3dShaderBlob->GetBufferSize()));
+				static const std::vector<uint8_t> EmptyBuffer;
+				Video::Program::Information compiled =
+				{
+					type,
+					debugPath,
+					uncompiledProgram.data(),
+					EmptyBuffer
+				};
+
+				auto typeSearch = D3DTypeMap.find(type);
+				if (typeSearch != std::end(D3DTypeMap))
+				{
+					CComPtr<ID3DBlob> d3dShaderBlob;
+					CComPtr<ID3DBlob> d3dCompilerErrors;
+					HRESULT resultValue = D3DCompile(uncompiledProgram.data(), (uncompiledProgram.size() + 1), name.data(), nullptr, nullptr, entryFunction.data(), typeSearch->second.data(), flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+					if (FAILED(resultValue) || !d3dShaderBlob)
+					{
+						_com_error error(resultValue);
+						std::string_view compilerError = (char const *)d3dCompilerErrors->GetBufferPointer();
+						LockedWrite{ std::cerr } << "D3DCompile Failed (" << error.ErrorMessage() << ") " << compilerError;
+					}
+					else
+					{
+						uint8_t *data = (uint8_t *)d3dShaderBlob->GetBufferPointer();
+						compiled.compiledData.assign(data, (data + d3dShaderBlob->GetBufferSize()));
+					}
+				}
+
+				return compiled;
             }
 
-            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, std::string_view name, std::string_view uncompiledProgram, std::string_view entryFunction)
-            {
-                assert(!name.empty());
-                assert(!uncompiledProgram.empty());
-                assert(!entryFunction.empty());
+			template <class D3DTYPE, class TYPE, typename RETURN, typename CLASS, typename... PARAMETERS>
+			Video::ProgramPtr createProgram(Video::Program::Information const &information, RETURN(__stdcall CLASS::*function)(PARAMETERS...))
+			{
+				assert(!information.data.empty());
+				assert(function);
 
-                switch (pipelineType)
-                {
-                case Video::PipelineType::Compute:
-                    return compileProgram(name, "cs_5_0", uncompiledProgram, entryFunction);
+				CComPtr<D3DTYPE> d3dShader;
+				HRESULT resultValue = (d3dDevice->*function)(information.compiledData.data(), information.compiledData.size(), nullptr, &d3dShader);
+				if (FAILED(resultValue) || !d3dShader)
+				{
+					LockedWrite{ std::cerr } << "Unable to create program from compiled data";
+					return nullptr;
+				}
 
-                case Video::PipelineType::Vertex:
-                    return compileProgram(name, "vs_5_0", uncompiledProgram, entryFunction);
+				return std::make_unique<TYPE>(d3dShader, information);
+			}
 
-                case Video::PipelineType::Geometry:
-                    return compileProgram(name, "gs_5_0", uncompiledProgram, entryFunction);
+			Video::ProgramPtr createProgram(Video::Program::Information const &information)
+			{
+				switch (information.type)
+				{
+				case Video::Program::Type::Compute:
+					return createProgram<ID3D11ComputeShader, ComputeProgram>(information, &ID3D11Device::CreateComputeShader);
 
-                case Video::PipelineType::Pixel:
-                    return compileProgram(name, "ps_5_0", uncompiledProgram, entryFunction);
-                };
+				case Video::Program::Type::Vertex:
+					return createProgram<ID3D11VertexShader, VertexProgram>(information, &ID3D11Device::CreateVertexShader);
 
-                LockedWrite{ std::cerr } << "Unknown program pipline encountered";
-                static const std::vector<uint8_t> EmptyBuffer;
-                return EmptyBuffer;
-            }
+				case Video::Program::Type::Geometry:
+					return createProgram<ID3D11GeometryShader, GeometryProgram>(information, &ID3D11Device::CreateGeometryShader);
+
+				case Video::Program::Type::Pixel:
+					return createProgram<ID3D11PixelShader, PixelProgram>(information, &ID3D11Device::CreatePixelShader);
+				};
+
+				LockedWrite{ std::cerr } << "Unknown program pipline encountered";
+				return nullptr;
+			}
 
             Video::TexturePtr createTexture(const Video::Texture::Description &description, const void *data)
             {

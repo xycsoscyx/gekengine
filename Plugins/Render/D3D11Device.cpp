@@ -635,7 +635,7 @@ namespace Gek
     namespace Direct3D11
     {
         template <typename CLASS>
-        void setDebugName(CComPtr<CLASS> &object, std::string const &name, std::string const &member = std::string())
+        void setDebugName(CComPtr<CLASS> &object, std::string const &name, std::string const &member = String::Empty)
         {
 			auto finalName(name + (member.empty() ? "::" : String::Empty) + (member.empty() ? member : String::Empty));
             object->SetPrivateData(WKPDID_D3DDebugObjectName, UINT(finalName.size()), finalName.data());

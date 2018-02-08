@@ -24,6 +24,8 @@ namespace Gek
 
             virtual ~Material(void) = default;
 
+			virtual std::string_view getName(void) const = 0;
+
             virtual Data const *getData(size_t materialHash) = 0;
             virtual RenderStateHandle getRenderState(void) = 0;
         };

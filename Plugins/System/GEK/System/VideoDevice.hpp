@@ -113,14 +113,6 @@ namespace Gek
 
         using DisplayModeList = std::vector<DisplayMode>;
 
-        enum class PipelineType : uint8_t
-        {
-            Compute = 0,
-            Vertex,
-            Geometry,
-            Pixel,
-        };
-
         enum class ComparisonFunction : uint8_t
         {
             Always = 0,
@@ -228,7 +220,7 @@ namespace Gek
             virtual ~Object(void) = default;
 
             virtual void setName(std::string_view name) = 0;
-            virtual std::string_view const getName(void) const = 0;
+            virtual std::string_view getName(void) const = 0;
         };
 
         GEK_INTERFACE(RenderState)
@@ -604,7 +596,31 @@ namespace Gek
             virtual ~Query(void) = default;
         };
 
-        GEK_INTERFACE(Device)
+		GEK_INTERFACE(Program)
+			: virtual public Object
+		{
+			enum class Type : uint8_t
+			{
+				Compute = 0,
+				Vertex,
+				Geometry,
+				Pixel,
+			};
+
+			struct Information
+			{
+				Type type;
+				FileSystem::Path debugPath;
+				std::string uncompiledData;
+				std::vector<uint8_t> compiledData;
+			};
+
+			virtual ~Program(void) = default;
+
+			virtual Information const &getInformation(void) const = 0;
+		};
+
+		GEK_INTERFACE(Device)
         {
             struct Description
             {
@@ -618,11 +634,13 @@ namespace Gek
             {
                 GEK_INTERFACE(Pipeline)
                 {
+					using Type = Program::Type;
+
                     virtual ~Pipeline(void) = default;
 
-                    virtual Video::PipelineType getType(void) const = 0;
+                    virtual Type getType(void) const = 0;
 
-					virtual void setProgram(Object *program) = 0;
+					virtual void setProgram(Program *program) = 0;
 
                     virtual void setSamplerStateList(const std::vector<Object *> &samplerStateList, uint32_t firstStage) = 0;
                     virtual void setConstantBufferList(const std::vector<Buffer *> &constantBufferList, uint32_t firstStage) = 0;
@@ -721,10 +739,10 @@ namespace Gek
             virtual void updateResource(Object *buffer, const void *data) = 0;
             virtual void copyResource(Object *destination, Object *source) = 0;
 
-			virtual ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, const void *compiledData, uint32_t compiledSize) = 0;
+			virtual ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, Program::Information const &information) = 0;
 
-            virtual std::vector<uint8_t> compileProgram(PipelineType pipelineType, std::string_view name, std::string_view uncompiledProgram, std::string_view entryFunction) = 0;
-            virtual ObjectPtr createProgram(PipelineType pipelineType, const void *compiledData, uint32_t compiledSize) = 0;
+            virtual Program::Information compileProgram(Program::Type type, std::string_view name, FileSystem::Path const &debugPath, std::string_view uncompiledProgram, std::string_view entryFunction) = 0;
+            virtual ProgramPtr createProgram(Program::Information const &information) = 0;
 
             virtual void executeCommandList(Object *commandList) = 0;
 
