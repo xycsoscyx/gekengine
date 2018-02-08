@@ -1,4 +1,6 @@
 #include "GEK/GUI/Utilities.hpp"
+#include "GEK/Math/Common.hpp"
+#include "imgui_internal.h"
 #include <unordered_map>
 
 namespace Gek
@@ -191,5 +193,46 @@ namespace Gek
             radians[3] = degrees[3] * (2 * IM_PI) / 360.0f;
             return isChanged;
         }
-    }; // namespace UI
+
+		bool ToggleButton(const char* label, bool* state)
+		{
+			ImVec2 cursorPosition = ImGui::GetCursorScreenPos();
+			ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+			float height = ImGui::GetItemRectSize().y;
+			float width = height * 1.55f;
+			float radius = height * 0.50f;
+
+			ImGui::InvisibleButton(label, ImVec2(width, height));
+			bool changed = ImGui::IsItemClicked();
+			if (changed)
+			{
+				*state = !*state;
+			}
+
+			float t = *state ? 1.0f : 0.0f;
+
+			ImGuiContext& context = *GImGui;
+			float ANIM_SPEED = 0.08f;
+			if (context.LastActiveId == context.CurrentWindow->GetID(label))// && context.LastActiveIdTimer < ANIM_SPEED)
+			{
+				float t_anim = ImSaturate(context.LastActiveIdTimer / ANIM_SPEED);
+				t = *state ? (t_anim) : (1.0f - t_anim);
+			}
+
+			ImU32 col_bg;
+			if (ImGui::IsItemHovered())
+			{
+				col_bg = ImGui::GetColorU32(Math::Blend(ImVec4(0.78f, 0.78f, 0.78f, 1.0f), ImVec4(0.64f, 0.83f, 0.34f, 1.0f), t));
+			}
+			else
+			{
+				col_bg = ImGui::GetColorU32(Math::Blend(ImVec4(0.85f, 0.85f, 0.85f, 1.0f), ImVec4(0.56f, 0.83f, 0.26f, 1.0f), t));
+			}
+
+			drawList->AddRectFilled(cursorPosition, ImVec2(cursorPosition.x + width, cursorPosition.y + height), col_bg, height * 0.5f);
+			drawList->AddCircleFilled(ImVec2(cursorPosition.x + radius + t * (width - radius * 2.0f), cursorPosition.y + radius), radius - 1.5f, IM_COL32(255, 255, 255, 255));
+			return changed;
+		}
+	}; // namespace UI
 }; // namespace Gek

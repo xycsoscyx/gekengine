@@ -17,10 +17,10 @@ namespace Gek
         {
         private:
 			std::string visualName;
-            Video::Device *videoDevice;
+            Video::Device *videoDevice = nullptr;
 			Video::ObjectPtr inputLayout;
-			Video::Program *vertexProgram;
-			Video::Program *geometryProgram;
+			Video::Program *vertexProgram = nullptr;
+			Video::Program *geometryProgram = nullptr;
 
         public:
             Visual(Context *context, Video::Device *videoDevice, Engine::Resources *resources, std::string visualName)

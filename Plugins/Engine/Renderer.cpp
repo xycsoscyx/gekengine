@@ -340,8 +340,8 @@ namespace Gek
             std::vector<Video::Buffer *> lightBufferList;
             std::vector<Video::Object *> lightResoruceList;
 
-            Video::Program *deferredVertexProgram;
-            Video::Program *deferredPixelProgram;
+            Video::Program *deferredVertexProgram = nullptr;
+            Video::Program *deferredPixelProgram = nullptr;
             Video::BlendStatePtr blendState;
             Video::RenderStatePtr renderState;
             Video::DepthStatePtr depthState;
@@ -376,10 +376,10 @@ namespace Gek
                     Math::Float4x4 projectionMatrix;
                 };
 
-                Video::Program *vertexProgram;
+                Video::Program *vertexProgram = nullptr;
                 Video::ObjectPtr inputLayout;
                 Video::BufferPtr constantBuffer;
-                Video::Program *pixelProgram;
+                Video::Program *pixelProgram = nullptr;
                 Video::ObjectPtr blendState;
                 Video::ObjectPtr renderState;
                 Video::ObjectPtr depthState;

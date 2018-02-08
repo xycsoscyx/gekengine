@@ -847,7 +847,7 @@ namespace Gek
 						auto &pathString = information.debugPath.getString();
 						ImGui::PushItemWidth(-1.0f);
 						ImGui::InputText("##path", const_cast<char *>(pathString.data()), pathString.size(), ImGuiInputTextFlags_ReadOnly);
-						ImGui::InputTextMultiline("##data", const_cast<char *>(information.uncompiledData.data()), information.uncompiledData.size(), ImVec2(-1.0f, 100.0f), ImGuiInputTextFlags_ReadOnly);
+						ImGui::InputTextMultiline("##data", const_cast<char *>(information.uncompiledData.data()), information.uncompiledData.size(), ImVec2(-1.0f, 500.0f), ImGuiInputTextFlags_ReadOnly);
 						ImGui::PopItemWidth();
 					});
 
@@ -857,7 +857,7 @@ namespace Gek
 						auto &pathString = information.debugPath.getString();
 						ImGui::PushItemWidth(-1.0f);
 						ImGui::InputText("##path", const_cast<char *>(pathString.data()), pathString.size(), ImGuiInputTextFlags_ReadOnly);
-						ImGui::InputTextMultiline("##data", const_cast<char *>(information.uncompiledData.data()), information.uncompiledData.size(), ImVec2(-1.0f, 100.0f), ImGuiInputTextFlags_ReadOnly);
+						ImGui::InputTextMultiline("##data", const_cast<char *>(information.uncompiledData.data()), information.uncompiledData.size(), ImVec2(-1.0f, 500.0f), ImGuiInputTextFlags_ReadOnly);
 						ImGui::PopItemWidth();
 					});
 
