@@ -447,7 +447,7 @@ namespace Gek
                             circlePos[index] = getPointFromPosition(pos, modelViewProjectionMatrix);
                         }
 
-                        drawList->AddPolyline(circlePos, halfCircleSegmentCount, colors[3 - axis], false, 5, true);
+                        drawList->AddPolyline(circlePos, halfCircleSegmentCount, colors[3 - axis], false, 5);
                     }
 
                     drawList->AddCircle(getPointFromPosition(modelMatrix.rw.xyz, viewProjectionMatrix), screenRotateSize * viewPort.size.height, colors[0], 64, 5);
@@ -467,8 +467,8 @@ namespace Gek
                             circlePos[index] = getPointFromPosition(pos + modelMatrix.rw.xyz, viewProjectionMatrix);
                         }
 
-                        drawList->AddConvexPolyFilled(circlePos, halfCircleSegmentCount, 0x801080FF, true);
-                        drawList->AddPolyline(circlePos, halfCircleSegmentCount, 0xFF1080FF, true, 2, true);
+                        drawList->AddConvexPolyFilled(circlePos, halfCircleSegmentCount, 0x801080FF);
+                        drawList->AddPolyline(circlePos, halfCircleSegmentCount, 0xFF1080FF, true, 2);
 
                         ImVec2 destinationPosOnScreen = circlePos[1];
                         char tmps[512];
@@ -591,7 +591,7 @@ namespace Gek
                                 screenQuadPts[step] = getPointFromPosition(cornerWorldPos, modelViewProjectionMatrix);
                             }
 
-                            drawList->AddConvexPolyFilled(screenQuadPts, 4, colors[index + 4], true);
+                            drawList->AddConvexPolyFilled(screenQuadPts, 4, colors[index + 4]);
                         }
                     }
 
@@ -1309,7 +1309,7 @@ namespace Gek
 
                     if (isUsing || isOver)
                     {
-                        ImGui::SetMouseCursor(ImGuiMouseCursor_Move);
+                        ImGui::SetMouseCursor(ImGuiMouseCursor_Arrow);
                     }
                 }
 
@@ -1367,7 +1367,7 @@ namespace Gek
                         }
 
                         // draw face with lighter color
-                        currentDrawList->AddConvexPolyFilled(faceCoordsScreen, 4, directionColor[normalIndex] | 0x808080, true);
+                        currentDrawList->AddConvexPolyFilled(faceCoordsScreen, 4, directionColor[normalIndex] | 0x808080);
                     }
                 }
             };

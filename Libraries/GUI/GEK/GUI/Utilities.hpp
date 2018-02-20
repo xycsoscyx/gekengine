@@ -42,7 +42,7 @@ namespace Gek
             return isClicked;
         }
 
-        void TextFrame(std::string_view label, ImVec2 const &requestedSize = ImVec2(0.0f, 0.0f), ImGuiButtonFlags flags = 0, ImU32 const *frameColor = nullptr, ImColor const *textColor = nullptr);
+        void TextFrame(std::string_view label, ImVec2 const &requestedSize = ImVec2(0.0f, 0.0f), ImGuiButtonFlags flags = 0, ImU32 const *frameColor = nullptr, ImVec4 const *textColor = nullptr);
 
         bool SliderAngle2(std::string_view label, float v_rad[2], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
         bool SliderAngle3(std::string_view label, float v_rad[3], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);

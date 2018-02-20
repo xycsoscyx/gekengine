@@ -376,7 +376,8 @@ namespace Gek
                     Math::Float4x4 projectionMatrix;
                 };
 
-                Video::Program *vertexProgram = nullptr;
+				ImGuiContext *context = nullptr;
+				Video::Program *vertexProgram = nullptr;
                 Video::ObjectPtr inputLayout;
                 Video::BufferPtr constantBuffer;
                 Video::Program *pixelProgram = nullptr;
@@ -531,6 +532,7 @@ namespace Gek
             {
                 LockedWrite{ std::cout } << "Initializing user interface data";
 
+				gui.context = ImGui::CreateContext();
 				static constexpr std::string_view vertexShader =
                     "cbuffer DataBuffer : register(b0)\r\n"sv \
                     "{\r\n"sv \
@@ -696,7 +698,7 @@ namespace Gek
                 population->onUpdate[1000].disconnect(this, &Renderer::onUpdate);
 
                 ImGui::GetIO().Fonts->TexID = 0;
-                ImGui::Shutdown();
+				ImGui::DestroyContext(gui.context);
             }
 
             void addEntity(Plugin::Entity * const entity)

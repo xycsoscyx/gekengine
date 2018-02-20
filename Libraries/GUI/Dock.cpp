@@ -1165,7 +1165,8 @@ namespace Gek
                     {
                         ImGui::SetNextWindowPos(tab.position);
                         ImGui::SetNextWindowSize(tab.size);
-                        bool ret = ImGui::Begin(label.data(), opened, tab.size, -1.0f, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_ShowBorders | extraFlags);
+						ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+                        bool ret = ImGui::Begin(label.data(), opened, tab.size, -1.0f, ImGuiWindowFlags_NoCollapse | extraFlags);
                         endAction = EndAction::End;
                         tab.position = ImGui::GetWindowPos();
                         tab.size = ImGui::GetWindowSize();
@@ -1224,6 +1225,7 @@ namespace Gek
                     {
                         if (endAction == EndAction::End)
                         {
+							ImGui::PopStyleVar();
                             ImGui::End();
                         }
                         else if (endAction == EndAction::EndChild)

@@ -84,9 +84,15 @@ namespace Gek
 
                 if (!ImGui::TabWindow::DockPanelIconTextureID)
                 {
-                    int iconSize = 0;
-                    void const *iconBuffer = ImGui::TabWindow::GetDockPanelIconImagePng(&iconSize);
-                    dockPanelIcon = renderer->getVideoDevice()->loadTexture(iconBuffer, iconSize, 0);
+					int width = 0, height = 0;
+					ImVector<unsigned char> imageData;
+					ImGui::TabWindow::GetDockPanelIconImageRGBA(imageData, &width, &height);
+
+					Video::Texture::Description description;
+					description.format = Video::Format::R8G8B8A8_UNORM;
+					description.width = width;
+					description.height = height;
+					dockPanelIcon = renderer->getVideoDevice()->createTexture(description, imageData.Data);
                     ImGui::TabWindow::DockPanelIconTextureID = dynamic_cast<ImTextureID>(dockPanelIcon.get());
                 }
 
@@ -142,7 +148,8 @@ namespace Gek
             void showScene(void)
             {
                 auto &imGuiIo = ImGui::GetIO();
-                if (dock->BeginTab("Scene", &showSceneDock, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_ShowBorders))
+				ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+				if (dock->BeginTab("Scene", &showSceneDock, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
                 {
                     cameraSize = UI::GetWindowContentRegionSize();
 
@@ -236,6 +243,7 @@ namespace Gek
                     }
                 }
 
+				ImGui::PopStyleVar();
                 dock->EndTab();
             }
 
@@ -601,8 +609,9 @@ namespace Gek
                 ImGui::SetNextWindowPos(editorPosition);
                 ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-                auto oldWindowPadding = UI::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-                if (ImGui::Begin("Editor", nullptr, editorSize, 1.0f, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
+				ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+				auto oldWindowPadding = UI::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+				if (ImGui::Begin("Editor", nullptr, editorSize, 1.0f, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
                 {
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, oldWindowPadding);
                     dock->Begin("##Editor", (UI::GetWindowContentRegionSize()), true, ImVec2(10.0f, 10.0f));
@@ -615,7 +624,7 @@ namespace Gek
                 }
 
                 ImGui::End();
-                ImGui::PopStyleVar(3);
+                ImGui::PopStyleVar(4);
             }
 
             // Plugin::Population Slots

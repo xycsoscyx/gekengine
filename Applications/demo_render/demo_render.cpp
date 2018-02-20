@@ -46,6 +46,8 @@ namespace Gek
 
         struct GUI
         {
+			ImGuiContext *context = nullptr;
+
             Render::PipelineStateHandle pipelineState;
             Render::SamplerStateHandle samplerState;
 
@@ -273,6 +275,8 @@ namespace Gek
 
             dock = std::make_unique<UI::Dock::WorkSpace>();
 
+			gui->context = ImGui::CreateContext();
+			ImGui::Initialize(gui->context);
             imGuiIo.Fonts->AddFontFromFileTTF(getContext()->findDataPath(FileSystem::CombinePaths("fonts", "Ruda-Bold.ttf")).getString().data(), 14.0f);
 
             ImFontConfig fontConfig;
@@ -324,7 +328,7 @@ namespace Gek
         {
             gui = nullptr;
             ImGui::GetIO().Fonts->TexID = 0;
-            ImGui::Shutdown();
+            ImGui::DestroyContext(gui->context);
 
             renderDevice = nullptr;
             window = nullptr;
@@ -435,7 +439,8 @@ namespace Gek
             {
                 auto &style = ImGui::GetStyle();
                 ImGui::SetNextWindowPosCenter();
-                if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoSavedSettings))
+				ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+                if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
                 {
                     dock->Begin("##Settings", ImVec2(500.0f, 350.0f), true);
                     showDisplay();
@@ -469,16 +474,18 @@ namespace Gek
                     }
                 }
 
-                ImGui::End();
+				ImGui::PopStyleVar();
+				ImGui::End();
             }
-        }
+				}
 
         void showDisplayBackup(void)
         {
             if (showModeChange)
             {
                 ImGui::SetNextWindowPosCenter();
-                if (ImGui::Begin("Keep Display Mode", &showModeChange, ImVec2(225.0f, 0.0f), -1.0f, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+				ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+				if (ImGui::Begin("Keep Display Mode", &showModeChange, ImVec2(225.0f, 0.0f), -1.0f, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
                 {
                     ImGui::Text("Keep Display Mode?");
 
@@ -505,6 +512,7 @@ namespace Gek
                     ImGui::Text(String::Format("(Revert in {} seconds)", uint32_t(modeChangeTimer)).data());
                 }
 
+				ImGui::PopStyleVar();
                 ImGui::End();
             }
         }
@@ -698,9 +706,9 @@ namespace Gek
                     cursor = Window::Cursor::Text;
                     break;
 
-                case ImGuiMouseCursor_Move:
-                    cursor = Window::Cursor::Hand;
-                    break;
+                //case ImGuiMouseCursor_Move:
+                    //cursor = Window::Cursor::Hand;
+                    //break;
 
                 case ImGuiMouseCursor_ResizeNS:
                     cursor = Window::Cursor::SizeNS;
