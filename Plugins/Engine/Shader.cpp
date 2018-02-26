@@ -128,7 +128,7 @@ namespace Gek
                     globalOptions[enginePair.name()] = enginePair.value();
                 }
 
-                core->setOption("shaders", shaderName, globalOptions);
+                core->setOption("shaders", shaderName, std::move(globalOptions));
 
                 drawOrder = shaderNode.get("requires").getArray().size();
                 for (auto &requires : shaderNode.get("requires").getArray())

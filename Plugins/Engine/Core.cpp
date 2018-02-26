@@ -133,7 +133,7 @@ namespace Gek
                     displayModeStringList.push_back(displayModeString);
                 }
 
-                setDisplayMode(JSON::Reference(configuration).get("display").get("mode").convert(preferredDisplayMode));
+				setDisplayMode(getOption("display"s, "mode"s).convert(preferredDisplayMode));
 
                 population = getContext()->createClass<Engine::Population>("Engine::Population", (Engine::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Engine::Core *)this);
@@ -184,7 +184,7 @@ namespace Gek
                 engineRunning = true;
 
                 window->setVisibility(true);
-                setFullScreen(JSON::Reference(configuration).get("display").get("fullScreen").convert(false));
+				setFullScreen(getOption("display"s, "fullScreen"s).convert(false));
 				LockedWrite{ std::cout } << "Starting engine";
                 window->readEvents();
             }
@@ -209,7 +209,7 @@ namespace Gek
                 if (current.fullScreen != requestFullScreen)
                 {
                     current.fullScreen = requestFullScreen;
-                    configuration["display"]["fullScreen"] = requestFullScreen;
+					setOption("display"s, "fullScreen"s, requestFullScreen);
                     if (requestFullScreen)
                     {
                         window->move(Math::Int2::Zero);
@@ -237,7 +237,7 @@ namespace Gek
                     if (requestDisplayMode < displayModeList.size())
                     {
                         current.mode = requestDisplayMode;
-                        configuration["display"]["mode"] = requestDisplayMode;
+						setOption("display"s, "mode"s, requestDisplayMode);
                         videoDevice->setDisplayMode(displayModeData);
                         window->move();
                         onChangedDisplay();
@@ -351,7 +351,7 @@ namespace Gek
                         break;
 
                     case Window::Key::F1:
-                        configuration["editor"]["active"] = !JSON::Reference(configuration).get("editor").get("active").convert(false);
+						setOption("editor"s, "active"s, !getOption("editor"s, "active"s).convert(false));
                         break;
                     };
 
@@ -913,14 +913,14 @@ namespace Gek
             }
 
             // Plugin::Core
-            JSON::Reference getOption(std::string_view system, std::string_view name)
+            JSON::Reference getOption(std::string_view system, std::string_view name) const
             {
-				return configuration.get(system.data(), JSON::EmptyObject).get(name.data(), JSON::EmptyObject);
+				return configuration.get_with_default(system.data(), JSON::EmptyObject).get_with_default(name.data(), JSON::EmptyObject);
             }
 
-            void setOption(std::string_view system, std::string_view name, JSON::Object const &value)
+            void setOption(std::string_view system, std::string_view name, JSON::Object &&value)
             {
-                configuration[system.data()][name.data()] = value;
+				configuration[system.data()][name.data()] = std::move(value);
             }
 
             void deleteOption(std::string_view system, std::string_view name)

@@ -110,7 +110,7 @@ namespace Gek
                     globalOptions[enginePair.name()] = enginePair.value();
                 }
 
-                core->setOption("filters", filterName, globalOptions);
+                core->setOption("filters", filterName, std::move(globalOptions));
 
                 for (auto &requires : filterNode.get("requires").getArray())
                 {

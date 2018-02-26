@@ -6,11 +6,16 @@ namespace Gek
 {
     namespace JSON
     {
-        const Object EmptyObject = Object::make_object({});
-        const Object EmptyArray = Object::make_array();
+		const Object EmptyObject = Object();
+		const Object EmptyArray = Array();
 
         std::string Parse(ShuntingYard &shuntingYard, Object const &object, std::string_view defaultValue)
         {
+			if (object.is_empty() || object.is_null())
+			{
+				return std::string(defaultValue);
+			}
+
             switch (object.type_id())
             {
             case jsoncons::value_type::null_t:
@@ -25,7 +30,12 @@ namespace Gek
 
         bool Parse(ShuntingYard &shuntingYard, Object const &object, bool defaultValue)
         {
-            switch (object.type_id())
+			if (object.is_empty() || object.is_null())
+			{
+				return defaultValue;
+			}
+
+			switch (object.type_id())
             {
             case jsoncons::value_type::small_string_t:
             case jsoncons::value_type::string_t:
@@ -50,7 +60,12 @@ namespace Gek
 
         int32_t Parse(ShuntingYard &shuntingYard, Object const &object, int32_t defaultValue)
         {
-            switch (object.type_id())
+			if (object.is_empty() || object.is_null())
+			{
+				return defaultValue;
+			}
+
+			switch (object.type_id())
             {
             case jsoncons::value_type::small_string_t:
             case jsoncons::value_type::string_t:
@@ -75,7 +90,12 @@ namespace Gek
 
         uint32_t Parse(ShuntingYard &shuntingYard, Object const &object, uint32_t defaultValue)
         {
-            switch (object.type_id())
+			if (object.is_empty() || object.is_null())
+			{
+				return defaultValue;
+			}
+
+			switch (object.type_id())
             {
             case jsoncons::value_type::small_string_t:
             case jsoncons::value_type::string_t:
@@ -100,7 +120,12 @@ namespace Gek
 
         float Parse(ShuntingYard &shuntingYard, Object const &object, float defaultValue)
         {
-            switch (object.type_id())
+			if (object.is_empty() || object.is_null())
+			{
+				return defaultValue;
+			}
+
+			switch (object.type_id())
             {
             case jsoncons::value_type::small_string_t:
             case jsoncons::value_type::string_t:
@@ -130,7 +155,12 @@ namespace Gek
 
         Math::Float2 Parse(ShuntingYard &shuntingYard, Object const &object, Math::Float2 const &defaultValue)
         {
-            if (object.is_array())
+			if (object.is_empty() || object.is_null())
+			{
+				return defaultValue;
+			}
+
+			if (object.is_array())
             {
                 if (object.size() == 1)
                 {
@@ -153,7 +183,12 @@ namespace Gek
 
         Math::Float3 Parse(ShuntingYard &shuntingYard, Object const &object, Math::Float3 const &defaultValue)
         {
-            if (object.is_array())
+			if (object.is_empty() || object.is_null())
+			{
+				return defaultValue;
+			}
+
+			if (object.is_array())
             {
                 if (object.size() == 1)
                 {
@@ -179,7 +214,12 @@ namespace Gek
 
         Math::Float4 Parse(ShuntingYard &shuntingYard, Object const &object, Math::Float4 const &defaultValue)
         {
-            if (object.is_array())
+			if (object.is_empty() || object.is_null())
+			{
+				return defaultValue;
+			}
+
+			if (object.is_array())
             {
                 if (object.size() == 1)
                 {
@@ -217,7 +257,12 @@ namespace Gek
 
         Math::Quaternion Parse(ShuntingYard &shuntingYard, Object const &object, Math::Quaternion const &defaultValue)
         {
-            if (object.is_array())
+			if (object.is_empty() || object.is_null())
+			{
+				return defaultValue;
+			}
+
+			if (object.is_array())
             {
                 if (object.size() == 3)
                 {
@@ -244,7 +289,12 @@ namespace Gek
 
         std::string Convert(Object const &object, std::string_view defaultValue)
         {
-            switch (object.type_id())
+			if (object.is_empty() || object.is_null())
+			{
+				return std::string(defaultValue);
+			}
+
+			switch (object.type_id())
             {
             case jsoncons::value_type::null_t:
             case jsoncons::value_type::array_t:
@@ -258,11 +308,17 @@ namespace Gek
 
         bool Convert(Object const &object, bool defaultValue)
         {
+			if (object.is_empty() || object.is_null())
+			{
+				return defaultValue;
+			}
+
+			auto type_id = object.type_id();
             switch (object.type_id())
             {
             case jsoncons::value_type::small_string_t:
             case jsoncons::value_type::string_t:
-                return String::Convert(object.as_string(), defaultValue) != 0.0f;
+				return String::Convert(object.as_string(), defaultValue);
 
             case jsoncons::value_type::bool_t:
                 return object.var_.bool_data_cast()->value();
@@ -283,7 +339,12 @@ namespace Gek
 
         int32_t Convert(Object const &object, int32_t defaultValue)
         {
-            switch (object.type_id())
+			if (object.is_empty() || object.is_null())
+			{
+				return defaultValue;
+			}
+
+			switch (object.type_id())
             {
             case jsoncons::value_type::small_string_t:
             case jsoncons::value_type::string_t:
@@ -308,7 +369,12 @@ namespace Gek
 
         uint32_t Convert(Object const &object, uint32_t defaultValue)
         {
-            switch (object.type_id())
+			if (object.is_empty() || object.is_null())
+			{
+				return defaultValue;
+			}
+
+			switch (object.type_id())
             {
             case jsoncons::value_type::small_string_t:
             case jsoncons::value_type::string_t:
@@ -333,7 +399,12 @@ namespace Gek
 
         float Convert(Object const &object, float defaultValue)
         {
-            switch (object.type_id())
+			if (object.is_empty() || object.is_null())
+			{
+				return defaultValue;
+			}
+
+			switch (object.type_id())
             {
             case jsoncons::value_type::small_string_t:
             case jsoncons::value_type::string_t:
@@ -358,7 +429,12 @@ namespace Gek
 
         Math::Float2 Convert(Object const &object, Math::Float2 const &defaultValue)
         {
-            if (object.is_array() && object.size() == 2)
+			if (object.is_empty() || object.is_null())
+			{
+				return defaultValue;
+			}
+
+			if (object.is_array() && object.size() == 2)
             {
                 return Math::Float2(
                     Convert(object.at(0), defaultValue.x),
@@ -370,7 +446,12 @@ namespace Gek
 
         Math::Float3 Convert(Object const &object, Math::Float3 const &defaultValue)
         {
-            if (object.is_array() && object.size() == 3)
+			if (object.is_empty() || object.is_null())
+			{
+				return defaultValue;
+			}
+
+			if (object.is_array() && object.size() == 3)
             {
                 return Math::Float3(
                     Convert(object.at(0), defaultValue.x),
@@ -383,7 +464,12 @@ namespace Gek
 
         Math::Float4 Convert(Object const &object, Math::Float4 const &defaultValue)
         {
-            if (object.is_array())
+			if (object.is_empty() || object.is_null())
+			{
+				return defaultValue;
+			}
+
+			if (object.is_array())
             {
                 if (object.size() == 3)
                 {
@@ -408,7 +494,12 @@ namespace Gek
 
         Math::Quaternion Convert(Object const &object, Math::Quaternion const &defaultValue)
         {
-            if (object.is_array())
+			if (object.is_empty() || object.is_null())
+			{
+				return defaultValue;
+			}
+
+			if (object.is_array())
             {
                 if (object.size() == 3)
                 {
@@ -451,73 +542,6 @@ namespace Gek
             {
                 return decoder.get_result();
             }
-        }
-
-        Object Make(std::string_view value)
-        {
-            return value;
-        }
-
-        Object Make(std::string const &value)
-        {
-            return value;
-        }
-
-        Object Make(bool value)
-        {
-            return value;
-        }
-
-        Object Make(int32_t value)
-        {
-            return value;
-        }
-
-        Object Make(uint32_t value)
-        {
-            return value;
-        }
-
-        Object Make(float value)
-        {
-            return value;
-        }
-
-        Object Make(Math::Float2 const &value)
-        {
-            return Object::make_array({
-                value.x,
-                value.y,
-            });
-        }
-
-        Object Make(Math::Float3 const &value)
-        {
-            return Object::make_array({
-                value.x,
-                value.y,
-                value.z,
-            });
-        }
-
-        Object Make(Math::Float4 const &value)
-        {
-            return Object::make_array({
-                value.x,
-                value.y,
-                value.z,
-                value.w,
-            });
-        }
-
-        Object Make(Math::Quaternion const &value)
-        {
-            return Object::make_array({
-                value.x,
-                value.y,
-                value.z,
-                value.w,
-            });
         }
     }; // namespace JSON
 }; // namespace Gek

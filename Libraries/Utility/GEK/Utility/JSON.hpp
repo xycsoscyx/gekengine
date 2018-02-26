@@ -25,6 +25,8 @@ namespace Gek
         extern const Object EmptyObject;
         extern const Object EmptyArray;
 
+		Object Load(FileSystem::Path const &filePath);
+
         std::string Parse(ShuntingYard &shuntingYard, Object const &object, std::string_view defaultValue);
         bool Parse(ShuntingYard &shuntingYard, Object const &object, bool defaultValue);
         int32_t Parse(ShuntingYard &shuntingYard, Object const &object, int32_t defaultValue);
@@ -229,18 +231,5 @@ namespace Gek
 
         using Instance = Typeless<Object>;
         using Reference = Typeless<Object const &>;
-
-        Object Load(FileSystem::Path const &filePath);
-
-        Object Make(std::string_view value);
-        Object Make(std::string const &value);
-        Object Make(bool value);
-        Object Make(int32_t value);
-        Object Make(uint32_t value);
-        Object Make(float value);
-        Object Make(Math::Float2 const &value);
-        Object Make(Math::Float3 const &value);
-        Object Make(Math::Float4 const &value);
-        Object Make(Math::Quaternion const &value);
     }; // namespace JSON
 }; // namespace Gek

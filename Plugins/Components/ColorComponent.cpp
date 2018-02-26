@@ -25,7 +25,7 @@ namespace Gek
         // Plugin::Component
         void save(Components::Color const * const data, JSON::Object &componentData) const
         {
-            componentData = JSON::Make(data->value);
+			componentData = JSON::Array({ data->value.x, data->value.y, data->value.z, data->value.w });
         }
 
         void load(Components::Color * const data, JSON::Reference componentData)

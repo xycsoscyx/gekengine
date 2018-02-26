@@ -407,7 +407,7 @@ namespace Gek
                 population->onComponentRemoved.connect(this, &Renderer::onComponentRemoved);
                 population->onUpdate[1000].connect(this, &Renderer::onUpdate);
 
-                core->setOption("render"s, "invertedDepthBuffer"s, true);
+				core->setOption("render"s, "invertedDepthBuffer"s, true);
 
                 initializeSystem();
                 initializeUI();

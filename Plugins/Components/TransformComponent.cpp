@@ -20,8 +20,8 @@ namespace Gek
         // Plugin::Component
         void save(Components::Transform const * const data, JSON::Object &componentData) const
         {
-            componentData["position"] = JSON::Make(data->position);
-            componentData["rotation"] = JSON::Make(data->rotation);
+			componentData["position"] = JSON::Array({ data->position.x, data->position.y, data->position.z });
+			componentData["rotation"] = JSON::Array({ data->rotation.x, data->rotation.y, data->rotation.z, data->rotation.w });
         }
 
         void load(Components::Transform * const data, JSON::Reference componentData)
