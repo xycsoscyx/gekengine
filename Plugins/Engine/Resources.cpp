@@ -675,7 +675,7 @@ namespace Gek
 
             // Renderer
             bool showResources = false;
-            void onShowUserInterface(ImGuiContext * const guiContext)
+            void onShowUserInterface(void)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 auto mainMenu = ImGui::FindWindowByName("##MainMenuBar");

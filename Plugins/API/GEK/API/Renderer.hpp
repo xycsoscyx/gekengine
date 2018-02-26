@@ -22,11 +22,12 @@ namespace Gek
         GEK_INTERFACE(Renderer)
         {
             wink::signal<wink::slot<void(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)>> onQueueDrawCalls;
-            wink::signal<wink::slot<void(ImGuiContext * const guiContext)>> onShowUserInterface;
+            wink::signal<wink::slot<void(void)>> onShowUserInterface;
 
             virtual ~Renderer(void) = default;
 
             virtual Video::Device * getVideoDevice(void) const = 0;
+			virtual ImGuiContext * const getGuiContext(void) const = 0;
 
             virtual void queueCamera(Math::Float4x4 const &viewMatrix, float fieldOfView, float aspectRatio, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget = ResourceHandle(), std::string const &forceShader = String::Empty) = 0;
             virtual void queueCamera(Math::Float4x4 const &viewMatrix, float left, float top, float right, float bottom, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget = ResourceHandle(), std::string const &forceShader = String::Empty) = 0;

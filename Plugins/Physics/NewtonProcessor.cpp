@@ -409,7 +409,7 @@ namespace Gek
             }
 
             // Plugin::Core Slots
-            void onShowUserInterface(ImGuiContext * const guiContext)
+            void onShowUserInterface(void)
             {
             }
 

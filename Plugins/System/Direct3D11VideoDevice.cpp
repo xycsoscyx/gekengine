@@ -2451,8 +2451,8 @@ namespace Gek
 
             Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, Video::Program::Information const &information)
             {
-				assert(!compiledProgram.data.empty());
-				assert(compiledProgram.type == Video::Program::Type::Vertex);
+				assert(!information.compiledData.empty());
+				assert(information.type == Video::Program::Type::Vertex);
 
                 uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
                 std::vector<D3D11_INPUT_ELEMENT_DESC> d3dElementList;
@@ -2551,7 +2551,7 @@ namespace Gek
 			template <class D3DTYPE, class TYPE, typename RETURN, typename CLASS, typename... PARAMETERS>
 			Video::ProgramPtr createProgram(Video::Program::Information const &information, RETURN(__stdcall CLASS::*function)(PARAMETERS...))
 			{
-				assert(!information.data.empty());
+				assert(!information.compiledData.empty());
 				assert(function);
 
 				CComPtr<D3DTYPE> d3dShader;

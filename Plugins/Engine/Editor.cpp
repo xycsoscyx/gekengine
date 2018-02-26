@@ -89,6 +89,7 @@ namespace Gek
 					ImGui::TabWindow::GetDockPanelIconImageRGBA(imageData, &width, &height);
 
 					Video::Texture::Description description;
+					description.flags = Video::Texture::Flags::Resource;
 					description.format = Video::Format::R8G8B8A8_UNORM;
 					description.width = width;
 					description.height = height;
@@ -148,7 +149,6 @@ namespace Gek
             void showScene(void)
             {
                 auto &imGuiIo = ImGui::GetIO();
-				ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
 				if (dock->BeginTab("Scene", &showSceneDock, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
                 {
                     cameraSize = UI::GetWindowContentRegionSize();
@@ -243,7 +243,6 @@ namespace Gek
                     }
                 }
 
-				ImGui::PopStyleVar();
                 dock->EndTab();
             }
 
@@ -565,7 +564,7 @@ namespace Gek
                 dock->EndTab();
             }
 
-            void onShowUserInterface(ImGuiContext * const guiContext)
+            void onShowUserInterface(void)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 auto mainMenu = ImGui::FindWindowByName("##MainMenuBar");
@@ -609,7 +608,6 @@ namespace Gek
                 ImGui::SetNextWindowPos(editorPosition);
                 ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-				ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
 				auto oldWindowPadding = UI::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 				if (ImGui::Begin("Editor", nullptr, editorSize, 1.0f, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
                 {
@@ -624,7 +622,7 @@ namespace Gek
                 }
 
                 ImGui::End();
-                ImGui::PopStyleVar(4);
+                ImGui::PopStyleVar(3);
             }
 
             // Plugin::Population Slots

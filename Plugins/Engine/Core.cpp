@@ -456,7 +456,7 @@ namespace Gek
             }
 
             // Renderer
-            void onShowUserInterface(ImGuiContext * const guiContext)
+            void onShowUserInterface(void)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 if (enableInterfaceControl)
@@ -733,7 +733,6 @@ namespace Gek
                 {
                     auto &style = ImGui::GetStyle();
                     ImGui::SetNextWindowPosCenter();
-					ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
 					if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
                     {
                         dock->Begin("##Settings", ImVec2(500.0f, 350.0f), true);
@@ -776,7 +775,6 @@ namespace Gek
                         }
                     }
 
-					ImGui::PopStyleVar();
 					ImGui::End();
                 }
             }
@@ -786,7 +784,6 @@ namespace Gek
                 if (showModeChange)
                 {
                     ImGui::SetNextWindowPosCenter();
-					ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
 					if (ImGui::Begin("Keep Display Mode", &showModeChange, ImVec2(225.0f, 0.0f), -1.0f, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
                     {
                         ImGui::Text("Keep Display Mode?");
@@ -814,7 +811,6 @@ namespace Gek
                         ImGui::Text(String::Format("(Revert in {} seconds)", uint32_t(modeChangeTimer)).data());
                     }
 
-					ImGui::PopStyleVar();
 					ImGui::End();
                 }
             }
@@ -824,7 +820,6 @@ namespace Gek
                 if (showLoadMenu)
                 {
                     ImGui::SetNextWindowPosCenter();
-					ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
 					if (ImGui::Begin("Load", &showLoadMenu, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
                     {
                         auto &style = ImGui::GetStyle();
@@ -881,7 +876,6 @@ namespace Gek
                         }
                     }
 
-					ImGui::PopStyleVar();
 					ImGui::End();
                 }
             }
@@ -891,7 +885,6 @@ namespace Gek
                 if (showResetDialog)
                 {
                     ImGui::SetNextWindowPosCenter();
-					ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
 					if (ImGui::Begin("Reset?", &showResetDialog, ImVec2(225.0f, 0.0f), -1.0f, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
                     {
                         ImGui::Text("Reset Scene?");
@@ -915,7 +908,6 @@ namespace Gek
                         }
                     }
 
-					ImGui::PopStyleVar();
                     ImGui::End();
                 }
             }

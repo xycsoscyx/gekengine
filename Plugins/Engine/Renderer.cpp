@@ -533,6 +533,7 @@ namespace Gek
                 LockedWrite{ std::cout } << "Initializing user interface data";
 
 				gui.context = ImGui::CreateContext();
+
 				static constexpr std::string_view vertexShader =
                     "cbuffer DataBuffer : register(b0)\r\n"sv \
                     "{\r\n"sv \
@@ -1070,6 +1071,11 @@ namespace Gek
                 return videoDevice;
             }
 
+			ImGuiContext * const getGuiContext(void) const
+			{
+				return gui.context;
+			}
+
             void queueCamera(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &perspectiveMatrix, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget, std::string const &forceShader)
             {
                 Camera renderCall;
@@ -1519,7 +1525,7 @@ namespace Gek
                     imGuiIo.DisplaySize = ImVec2(float(width), float(height));
 
                     ImGui::NewFrame();
-                    onShowUserInterface(ImGui::GetCurrentContext());
+                    onShowUserInterface();
                     auto mainMenu = ImGui::FindWindowByName("##MainMenuBar");
                     auto mainMenuShowing = (mainMenu ? mainMenu->Active : false);
                     if (mainMenuShowing)
