@@ -24,7 +24,8 @@ namespace Gek
 
     private:
         std::vector<std::thread> workerList;
-        std::queue<std::function<void()>> taskQueue;
+		using Task = std::tuple<std::function<void()>, char const *, size_t>;
+        std::queue<Task> taskQueue;
 
         std::mutex queueMutex;
         std::condition_variable condition;
@@ -44,11 +45,10 @@ namespace Gek
 #ifdef _WIN32
                     CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
 #endif
-                    for (;;)
+					// Task to execute
+					Task task;
+					for (;;)
                     {
-                        // Task to execute
-                        std::function<void()> task;
-
                         // Wait for additional work signal
                         if (true)
                         {
@@ -71,7 +71,7 @@ namespace Gek
                         }
 
                         // Execute
-                        task();
+						std::get<0>(task)();
                     }
 
 #ifdef _WIN32
@@ -132,7 +132,7 @@ namespace Gek
         }
 
         template<typename FUNCTION, typename... PARAMETERS>
-        auto enqueue(FUNCTION&& function, PARAMETERS&&... arguments) -> std::future<typename std::result_of<FUNCTION(PARAMETERS...)>::type>
+        auto enqueue(FUNCTION&& function, PARAMETERS&&... arguments, char const *fileName = nullptr, size_t line = 0) -> std::future<typename std::result_of<FUNCTION(PARAMETERS...)>::type>
         {
             using ReturnType = typename std::result_of<FUNCTION(PARAMETERS...)>::type;
             using PackagedTask = std::packaged_task<ReturnType()>;
@@ -148,10 +148,10 @@ namespace Gek
                     return result;
                 }
 
-                taskQueue.emplace([task]()
+                taskQueue.emplace(std::make_tuple([task]()
                 {
                     (*task)();
-                });
+                }, fileName, line));
             }
 
             condition.notify_one();
@@ -159,17 +159,17 @@ namespace Gek
         }
 
         template<typename FUNCTION, typename... PARAMETERS>
-        auto enqueueAndDetach(FUNCTION&& function, PARAMETERS&&... arguments) -> void
+        auto enqueueAndDetach(FUNCTION&& function, PARAMETERS&&... arguments, char const *fileName = nullptr, size_t line = 0) -> void
         {
             if(true)
             {
                 Lock lock(queueMutex);
                 if (stop)
                 {
-                    return
+					return;
                 }
 
-                taskQueue.emplace(std::bind(std::forward<FUNCTION>(function), std::forward<PARAMETERS>(arguments)...));
+                taskQueue.emplace(std::make_tuple(std::bind(std::forward<FUNCTION>(function), std::forward<PARAMETERS>(arguments)...), fileName, line));
             }
 
             condition.notify_one();

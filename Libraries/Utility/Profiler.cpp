@@ -90,13 +90,13 @@ namespace Gek
 		{
 			if (writePool)
 			{
-				writePool->enqueue([flushList = move(flushList)](void) mutable -> void
+				writePool->enqueueAndDetach([flushList = move(flushList)](void) mutable -> void
 				{
 					for (auto &timeStamp : flushList)
 					{
 						WriteTimeStamp(&timeStamp);
 					}
-				});
+				}, __FILE__, __LINE__);
 			}
 		}
 

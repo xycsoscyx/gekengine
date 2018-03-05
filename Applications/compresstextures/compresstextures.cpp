@@ -191,40 +191,57 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 {
     LockedWrite{ std::cout } << "GEK Texture Compressor";
 
-    auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
-    std::vector<FileSystem::Path> searchPathList;
-    searchPathList.push_back(pluginPath);
+	auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
+	auto rootPath(pluginPath.getParentPath());
+	auto cachePath(FileSystem::CombinePaths(rootPath, "cache"));
+	SetCurrentDirectoryW(cachePath.getWindowsString().data());
 
-    auto rootPath(pluginPath.getParentPath());
-    ContextPtr context(Context::Create(searchPathList));
-    context->addDataPath(FileSystem::CombinePaths(rootPath.getString(), "data"));
-    context->addDataPath(rootPath.getString());
+	std::vector<FileSystem::Path> searchPathList;
+	searchPathList.push_back(pluginPath);
 
-    Window::Description description;
-    description.className = "GEK_Engine_Textures";
-    description.windowName = "GEK Engine Textures";
-    WindowPtr window(context->createClass<Window>("Default::System::Window", description));
-
-    Video::Device::Description deviceDescription;
-    Video::DevicePtr device(context->createClass<Video::Device>("Default::Device::Video", window.get(), deviceDescription));
-
-    std::function<bool(FileSystem::Path const &)> searchDirectory;
-	searchDirectory = [&](FileSystem::Path const &filePath) -> bool
+	ContextPtr context(Context::Create(searchPathList));
+	if (context)
 	{
-		if (filePath.isDirectory())
+		context->setCachePath(cachePath);
+
+		wchar_t gekDataPath[MAX_PATH + 1] = L"\0";
+		if (GetEnvironmentVariable(L"gek_data_path", gekDataPath, MAX_PATH) > 0)
 		{
-			filePath.findFiles(searchDirectory);
-		}
-		else if (filePath.isFile() && filePath.getExtension() != ".dds")
-		{
-			compressTexture(dynamic_cast<Video::Debug::Device *>(device.get()), String::GetLower(filePath.getString()));
+			context->addDataPath(String::Narrow(gekDataPath));
 		}
 
-		return true;
-	};
+		context->addDataPath(FileSystem::CombinePaths(rootPath.getString(), "data"));
+		context->addDataPath(rootPath.getString());
 
-    CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
-    context->findDataPath("textures"s).findFiles(searchDirectory);
-	CoUninitialize();
+		Window::Description description;
+		description.className = "GEK_Engine_Textures";
+		description.windowName = "GEK Engine Textures";
+		WindowPtr window(context->createClass<Window>("Default::System::Window", description));
+
+		Video::Device::Description deviceDescription;
+		Video::DevicePtr device(context->createClass<Video::Device>("Default::Device::Video", window.get(), deviceDescription));
+		if (device)
+		{
+			std::function<bool(FileSystem::Path const &)> searchDirectory;
+			searchDirectory = [&](FileSystem::Path const &filePath) -> bool
+			{
+				if (filePath.isDirectory())
+				{
+					filePath.findFiles(searchDirectory);
+				}
+				else if (filePath.isFile() && filePath.getExtension() != ".dds")
+				{
+					compressTexture(dynamic_cast<Video::Debug::Device *>(device.get()), String::GetLower(filePath.getString()));
+				}
+
+				return true;
+			};
+
+			CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
+			context->findDataPath("textures"s).findFiles(searchDirectory);
+			CoUninitialize();
+		}
+	}
+
     return 0;
 }

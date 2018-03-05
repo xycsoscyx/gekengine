@@ -151,13 +151,15 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	aiLogStream logStream;
 	logStream.callback = [](char const *message, char *user) -> void
 	{
-		LockedWrite{ std::cerr } << "Assimp: " << message;
+		std::string trimmedMessage(message);
+		trimmedMessage = trimmedMessage.substr(0, trimmedMessage.size() - 1);
+		LockedWrite{ std::cerr } << "Assimp: " << trimmedMessage;
 	};
 
 	logStream.user = nullptr;
 	aiAttachLogStream(&logStream);
 
-    int notRequiredComponents =
+	int notRequiredComponents =
         aiComponent_TEXCOORDS |
         aiComponent_NORMALS |
 		aiComponent_TANGENTS_AND_BITANGENTS |

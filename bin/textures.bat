@@ -1,1 +1,3 @@
 .\debug\compresstextures.exe
+
+pause

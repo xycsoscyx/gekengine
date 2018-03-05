@@ -1209,7 +1209,7 @@ namespace Gek
                                 });
 
                                 directionalLightData.createBuffer();
-                            });
+                            }, __FILE__, __LINE__);
 
                             auto frustum = Math::SIMD::loadFrustum((Math::Float4 *)currentCamera.viewFrustum.planeList);
                             concurrency::parallel_for_each(std::begin(tilePointLightIndexList), std::end(tilePointLightIndexList), [&](auto &gridData) -> void
@@ -1239,7 +1239,7 @@ namespace Gek
                                     });
                                 GEK_PROFILE_END_SCOPE();
                                 pointLightData.createBuffer();
-                            });
+                            }, __FILE__, __LINE__);
 
                             auto spotLightsDone = workerPool.enqueue([&](void) -> void
                             {
@@ -1258,7 +1258,7 @@ namespace Gek
                                     });
                                 GEK_PROFILE_END_SCOPE();
                                 spotLightData.createBuffer();
-                            });
+                            }, __FILE__, __LINE__);
 
                             directionalLightsDone.get();
                             pointLightsDone.get();

@@ -915,7 +915,18 @@ namespace Gek
             // Plugin::Core
             JSON::Reference getOption(std::string_view system, std::string_view name) const
             {
-				return configuration.get_with_default(system.data(), JSON::EmptyObject).get_with_default(name.data(), JSON::EmptyObject);
+				JSON::Object::string_view_type jsonSystem(system.data());
+				if (configuration.has_key(jsonSystem))
+				{
+					auto &systemConfiguration = configuration.get(jsonSystem);
+					JSON::Object::string_view_type jsonName(name.data());
+					if (systemConfiguration.has_key(jsonName))
+					{
+						return systemConfiguration.get(jsonName);
+					}
+				}
+
+				return JSON::EmptyObject;
             }
 
             void setOption(std::string_view system, std::string_view name, JSON::Object &&value)

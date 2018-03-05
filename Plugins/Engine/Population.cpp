@@ -219,18 +219,18 @@ namespace Gek
 
             void reset(void)
             {
-                workerPool.enqueue([this](void) -> void
+                workerPool.enqueueAndDetach([this](void) -> void
                 {
                     actionQueue.clear();
                     onReset();
                     entityList.clear();
-                });
+                }, __FILE__, __LINE__);
             }
 
             void load(std::string const &populationName)
             {
                 reset();
-                workerPool.enqueue([this, populationName](void) -> void
+                workerPool.enqueueAndDetach([this, populationName](void) -> void
                 {
                     LockedWrite{ std::cout } << "Loading population: " << populationName;
 
@@ -287,7 +287,7 @@ namespace Gek
                         auto entity = dynamic_cast<Plugin::Entity *>(populationEntity);
                         queueEntity(entity);
                     }
-                });
+                }, __FILE__, __LINE__);
             }
 
             void save(std::string const &populationName)

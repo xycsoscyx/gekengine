@@ -90,6 +90,12 @@ bool GetModels(const Parameters &parameters, const aiScene *inputScene, const ai
 
         Model model;
         model.name = inputNode->mName.C_Str();
+		if (model.name.empty())
+		{
+			model.name = String::Format("model_{}", modelList.size());
+		}
+
+		LockedWrite{ std::cout } << "Found Assimp Model: " << inputNode->mName.C_Str();
         for (uint32_t meshIndex = 0; meshIndex < inputNode->mNumMeshes; ++meshIndex)
         {
             uint32_t nodeMeshIndex = inputNode->mMeshes[meshIndex];
@@ -178,20 +184,23 @@ bool GetModels(const Parameters &parameters, const aiScene *inputScene, const ai
                         inputMesh->mNormals[vertexIndex].z);
                 }
 
-                mesh.faceList.resize(inputMesh->mNumFaces);
+                mesh.faceList.reserve(inputMesh->mNumFaces);
                 for (uint32_t faceIndex = 0; faceIndex < inputMesh->mNumFaces; ++faceIndex)
                 {
                     const aiFace &face = inputMesh->mFaces[faceIndex];
                     if (face.mNumIndices != 3)
                     {
-                        LockedWrite{ std::cerr } << "Non-triangular face encountered";
-                        return false;
+                        LockedWrite{ std::cerr } << "Skipping non-triangular face, face: " << faceIndex << ": " << face.mNumIndices << " indices";
+						continue;
                     }
 
+					Mesh::Face meshFace;
                     for (uint32_t edgeIndex = 0; edgeIndex < 3; ++edgeIndex)
                     {
-                        mesh.faceList[faceIndex][edgeIndex] = face.mIndices[edgeIndex];
+						meshFace[edgeIndex] = face.mIndices[edgeIndex];
                     }
+
+					mesh.faceList.push_back(meshFace);
                 }
 
                 model.meshList.push_back(mesh);
@@ -328,8 +337,17 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
 
-    auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
-    auto dataPath(FileSystem::CombinePaths(rootPath, "Data"));
+	FileSystem::Path dataPath;
+	wchar_t gekDataPath[MAX_PATH + 1] = L"\0";
+	if (GetEnvironmentVariable(L"gek_data_path", gekDataPath, MAX_PATH) > 0)
+	{
+		dataPath = String::Narrow(gekDataPath);
+	}
+	else
+	{
+		auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
+		dataPath = FileSystem::CombinePaths(rootPath, "Data");
+	}
 
     auto sourcePath(FileSystem::CombinePaths(dataPath, "models", sourceName.getString()));
     auto inputScene = aiImportFileExWithProperties(sourcePath.getString().data(), importFlags, nullptr, propertyStore);

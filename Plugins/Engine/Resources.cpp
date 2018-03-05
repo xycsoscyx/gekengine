@@ -203,10 +203,10 @@ namespace Gek
                     requestedLoadSet.insert(hash);
                     HANDLE handle = getNextHandle();
                     resourceHandleMap[hash] = handle;
-					loadPool.enqueue([this, handle, load = std::move(load)](void) -> void
+					loadPool.enqueueAndDetach([this, handle, load = std::move(load)](void) -> void
                     {
                         setResource(handle, load(handle));
-                    });
+                    }, __FILE__, __LINE__);
 
                     return std::make_pair(true, handle);
                 }
@@ -279,10 +279,10 @@ namespace Gek
                                 }
                                 else
                                 {
-									loadPool.enqueue([this, handle, load](void) -> void
+									loadPool.enqueueAndDetach([this, handle, load](void) -> void
                                     {
 										setResource(handle, load(handle));
-                                    });
+                                    }, __FILE__, __LINE__);
                                 }
 
                                 return std::make_pair(true, handle);
@@ -304,10 +304,10 @@ namespace Gek
                     }
                     else
                     {
-						loadPool.enqueue([this, handle, load](void) -> void
+						loadPool.enqueueAndDetach([this, handle, load](void) -> void
                         {
 							setResource(handle, load(handle));
-                        });
+                        }, __FILE__, __LINE__);
                     }
 
                     return std::make_pair(true, handle);
@@ -346,10 +346,10 @@ namespace Gek
             {
                 HANDLE handle;
                 handle = getNextHandle();
-				loadPool.enqueue([this, handle, load](void) -> void
+				loadPool.enqueueAndDetach([this, handle, load](void) -> void
                 {
                     setResource(handle, load(handle));
-                });
+                }, __FILE__, __LINE__);
 
                 return handle;
             }

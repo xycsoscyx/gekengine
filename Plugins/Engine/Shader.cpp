@@ -128,8 +128,6 @@ namespace Gek
                     globalOptions[enginePair.name()] = enginePair.value();
                 }
 
-                core->setOption("shaders", shaderName, std::move(globalOptions));
-
                 drawOrder = shaderNode.get("requires").getArray().size();
                 for (auto &requires : shaderNode.get("requires").getArray())
                 {
@@ -828,6 +826,7 @@ namespace Gek
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
                 }
 
+				core->setOption("shaders", shaderName, std::move(globalOptions));
 				LockedWrite{ std::cout } << "Shader loaded successfully: " << shaderName;
 			}
 

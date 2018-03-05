@@ -303,7 +303,7 @@ namespace Gek
                 if (pair.second)
                 {
                     LockedWrite{ std::cout } << "Queueing group for load: " << modelComponent.name;
-                    loadPool.enqueue([this, name = modelComponent.name, &group = pair.first->second](void) -> void
+                    loadPool.enqueueAndDetach([this, name = modelComponent.name, &group = pair.first->second](void) -> void
                     {
                         std::vector<FileSystem::Path> modelPathList;
                         auto groupPath(getContext()->findDataPath(FileSystem::CombinePaths("models", name)));
@@ -355,7 +355,7 @@ namespace Gek
                         {
                             auto &model = group.modelList[modelIndex];
                             auto &filePath = modelPathList[modelIndex];
-                            loadPool.enqueue([this, name = name, filePath, &group, &model](void) -> void
+                            loadPool.enqueueAndDetach([this, name = name, filePath, &group, &model](void) -> void
                             {
                                 auto fileName(filePath.getFileName());
 
@@ -417,11 +417,11 @@ namespace Gek
                                 }
 
                                 LockedWrite{ std::cout } << "Group " << name << ", mesh " << fileName << "successfully loaded";
-                            });
+                            }, __FILE__, __LINE__);
                         }
 
                         LockedWrite{ std::cout } << "Group " << name << " successfully queued";
-                    });
+                    }, __FILE__, __LINE__);
                 }
 
                 data.group = &pair.first->second;

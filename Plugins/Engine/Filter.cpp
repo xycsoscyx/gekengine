@@ -110,8 +110,6 @@ namespace Gek
                     globalOptions[enginePair.name()] = enginePair.value();
                 }
 
-                core->setOption("filters", filterName, std::move(globalOptions));
-
                 for (auto &requires : filterNode.get("requires").getArray())
                 {
                     resources->getShader(JSON::Reference(requires).convert(String::Empty), MaterialHandle());
@@ -607,6 +605,7 @@ namespace Gek
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
                 }
 
+				core->setOption("filters", filterName, std::move(globalOptions));
 				LockedWrite{ std::cout } << "Filter loaded successfully: " << filterName;
 			}
 
