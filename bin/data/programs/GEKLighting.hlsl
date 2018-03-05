@@ -88,7 +88,7 @@ float3 getSurfaceIrradiance(
 
     float3 reflectedRadiance = lerp(materialAlbedo, lightRadiance, materialMetallic);
 
-    float D = 0.0f;
+    float D = 1.0f;
     switch (Options::DistributionFactor::Selection)
     {
     case Options::DistributionFactor::Basic:
@@ -108,7 +108,7 @@ float3 getSurfaceIrradiance(
         break;
     };
 
-    float3 F = 0.0f;
+    float3 F = 1.0f;
     switch (Options::FresnelTerm::Selection)
     {
     case Options::FresnelTerm::Schlick:
@@ -116,7 +116,7 @@ float3 getSurfaceIrradiance(
         break;
     };
 
-    float G = 0.0f;
+    float G = 1.0f;
     switch (Options::GeometricAttenuationFunction::Selection)
     {
     case Options::GeometricAttenuationFunction::Schlick:

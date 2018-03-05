@@ -19,32 +19,30 @@ namespace Gek
 			return std::stoull(thread.str());
 		}
 
-		uint64_t processIdentifier = GetCurrentProcessId();
-		Hash mainThread = getThreadIdentifier();
+		static const uint64_t processIdentifier = GetCurrentProcessId();
+		static const Hash mainThread = getThreadIdentifier();
 
-		std::chrono::high_resolution_clock clock;
-		concurrency::critical_section criticalSection;
+		static std::chrono::high_resolution_clock clock;
 
-		std::unique_ptr<ThreadPool<1>> writePool;
-		std::ofstream fileOutput;
+		static std::unique_ptr<ThreadPool<1>> writePool;
+		static std::ofstream fileOutput;
 
-		std::chrono::nanoseconds frameTimeStamp;
-		concurrency::concurrent_unordered_map<Hash, std::string> nameMap;
-		concurrency::concurrent_vector<TimeStamp> timeStampList;
+		static concurrency::concurrent_unordered_map<Hash, std::string> nameMap;
+		static concurrency::concurrent_vector<TimeStamp> timeStampList;
 
-		static void WriteTimeStamp(TimeStamp *timeStamp)
+		static void WriteTimeStamp(TimeStamp const &timeStamp)
 		{
-			auto eventSearch = nameMap.find(timeStamp->nameIdentifier);
+			auto eventSearch = nameMap.find(timeStamp.nameIdentifier);
 			if (eventSearch != std::end(nameMap))
 			{
-				auto threadSearch = nameMap.find(timeStamp->threadIdentifier);
+				auto threadSearch = nameMap.find(timeStamp.threadIdentifier);
 				if (threadSearch == std::end(nameMap))
 				{
-					auto threadInsert = nameMap.insert(std::make_pair(timeStamp->threadIdentifier, String::Format("thread_{}", timeStamp->threadIdentifier)));
+					auto threadInsert = nameMap.insert(std::make_pair(timeStamp.threadIdentifier, String::Format("thread_{}", timeStamp.threadIdentifier)));
 					threadSearch = threadInsert.first;
 				}
 
-				switch (timeStamp->type)
+				switch (timeStamp.type)
 				{
 				case TimeStamp::Type::Begin:
 					fileOutput <<
@@ -54,7 +52,7 @@ namespace Gek
 						", \"ph\": \"B\"" \
 						", \"pid\": \"" << processIdentifier << "\"" \
 						", \"tid\": \"" << threadSearch->second << "\"" \
-						", \"ts\": " << timeStamp->timeStamp.count() <<
+						", \"ts\": " << timeStamp.timeStamp.count() <<
 						"}";
 					break;
 
@@ -66,7 +64,7 @@ namespace Gek
 						", \"ph\": \"E\"" \
 						", \"pid\": \"" << processIdentifier << "\"" \
 						", \"tid\": \"" << threadSearch->second << "\"" \
-						", \"ts\": " << timeStamp->timeStamp.count() <<
+						", \"ts\": " << timeStamp.timeStamp.count() <<
 						"}";
 					break;
 
@@ -78,8 +76,8 @@ namespace Gek
 						", \"ph\": \"X\"" \
 						", \"pid\": \"" << processIdentifier << "\"" \
 						", \"tid\": \"" << threadSearch->second << "\"" \
-						", \"ts\": " << timeStamp->timeStamp.count() <<
-						", \"dur\": " << timeStamp->duration.count() <<
+						", \"ts\": " << timeStamp.timeStamp.count() <<
+						", \"dur\": " << timeStamp.duration.count() <<
 						"}";
 					break;
 				};
@@ -90,11 +88,11 @@ namespace Gek
 		{
 			if (writePool)
 			{
-				writePool->enqueueAndDetach([flushList = move(flushList)](void) mutable -> void
+				writePool->enqueueAndDetach([flushList = std::move(flushList)](void) -> void
 				{
 					for (auto &timeStamp : flushList)
 					{
-						WriteTimeStamp(&timeStamp);
+						WriteTimeStamp(timeStamp);
 					}
 				}, __FILE__, __LINE__);
 			}
@@ -125,9 +123,9 @@ namespace Gek
 				writePool->drain();
 				writePool = nullptr;
 
-				for (auto &timeStamp : timeStampList)
+				for (auto const &timeStamp : timeStampList)
 				{
-					WriteTimeStamp(&timeStamp);
+					WriteTimeStamp(timeStamp);
 				}
 			}
 
@@ -164,8 +162,10 @@ namespace Gek
 			timeStampList.push_back(timeStamp);
 			if (timeStampList.size() > 100)
 			{
-				FlushTimeStampList(std::move(timeStampList));
-				timeStampList.clear();
+				concurrency::concurrent_vector<TimeStamp> flushList;
+				timeStampList.swap(flushList);
+
+				FlushTimeStampList(std::move(flushList));
 			}
 		}
 

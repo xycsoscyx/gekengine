@@ -45,11 +45,14 @@ namespace Gek
 #ifdef _WIN32
                     CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
 #endif
-					// Task to execute
-					Task task;
+					size_t lastTaskLine = 0;
+					char const *lastTaskName = nullptr;
 					for (;;)
                     {
-                        // Wait for additional work signal
+						// Task to execute
+						Task task;
+						
+						// Wait for additional work signal
                         if (true)
                         {
                             // Wait to be notified of work
@@ -71,8 +74,10 @@ namespace Gek
                         }
 
                         // Execute
+						lastTaskName = std::get<1>(task);
+						lastTaskLine = std::get<2>(task);
 						std::get<0>(task)();
-                    }
+					}
 
 #ifdef _WIN32
                     CoUninitialize();
