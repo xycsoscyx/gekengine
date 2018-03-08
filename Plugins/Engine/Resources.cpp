@@ -603,76 +603,6 @@ namespace Gek
                 return texture;
             }
 
-            std::string getFullProgram(std::string_view name, std::string_view engineData)
-            {
-                auto programsPath(getContext()->findDataPath("programs"s, false));
-                auto filePath(FileSystem::CombinePaths(programsPath, name));
-                if (filePath.isFile())
-                {
-                    auto programDirectory(filePath.getParentPath());
-					std::string baseProgram(FileSystem::Load(filePath, String::Empty));
-                    String::Replace(baseProgram, "\r", "$");
-					String::Replace(baseProgram, "\n", "$");
-					String::Replace(baseProgram, "$$", "$");
-                    auto programLines = String::Split(baseProgram, '$', false);
-
-                    std::string uncompiledProgram;
-                    for (auto const &line : programLines)
-                    {
-                        if (line.empty())
-                        {
-                            uncompiledProgram.append("\r\n");
-                        }
-                        else if (line.find("#include") == 0)
-                        {
-							std::string includeName(String::GetLower(line.substr(8)));
-							String::Trim(includeName);
-
-                            std::string includeData;
-                            if (includeName == "gekengine")
-                            {
-                                includeData = engineData;
-                            }
-                            else
-                            {
-                                auto includeType = includeName.at(0);
-                                includeName = includeName.substr(1, includeName.length() - 2);
-                                if (includeType == '\"')
-                                {
-                                    auto localPath(FileSystem::CombinePaths(programDirectory, includeName));
-                                    if (localPath.isFile())
-                                    {
-										includeData = FileSystem::Load(localPath, String::Empty);
-                                    }
-                                }
-                                else if (includeType == '<')
-                                {
-                                    auto rootPath(FileSystem::CombinePaths(programsPath, includeName));
-                                    if (rootPath.isFile())
-                                    {
-										includeData = FileSystem::Load(rootPath, String::Empty);
-                                    }
-                                }
-                            }
-
-                            uncompiledProgram.append(includeData);
-                        }
-                        else
-                        {
-                            uncompiledProgram.append(line);
-                        }
-
-                        uncompiledProgram.append("\r\n");
-                    }
-
-                    return uncompiledProgram;
-                }
-                else
-                {
-                    return std::string(engineData);
-                }
-            }
-
             // Renderer
             bool showResources = false;
             void onShowUserInterface(void)
@@ -1533,15 +1463,17 @@ namespace Gek
                 return dynamicCache.getResource(resourceHandle);
             }
 
-            Video::Program::Information getProgramInformation(Video::Program::Type type, std::string_view name, std::string_view entryFunction, std::string_view engineData)
+			Video::Program::Information getProgramInformation(Video::Program::Type type, std::string_view name, std::string_view entryFunction, std::string_view engineData)
             {
-                auto uncompiledData = getFullProgram(name, engineData);
+				auto programsPath(getContext()->findDataPath("programs"s, false));
+				auto filePath(FileSystem::CombinePaths(programsPath, name));
+				auto programDirectory(filePath.getParentPath());
+				std::string uncompiledData(FileSystem::Load(filePath, std::string(engineData)));
 
-                auto hash = GetHash(uncompiledData);
+				auto hash = GetHash(name, uncompiledData, engineData);
 				auto cachePath = getContext()->getCachePath(FileSystem::CombinePaths("programs", name));
 				auto uncompiledPath(cachePath.withExtension(String::Format(".{}.hlsl", hash)));
 				auto compiledPath(cachePath.withExtension(String::Format(".{}.bin", hash)));
-
 				Video::Program::Information information =
 				{
 					type
@@ -1555,7 +1487,56 @@ namespace Gek
                 
                 if (information.compiledData.empty())
                 {
-					information = videoDevice->compileProgram(type, name, uncompiledPath, uncompiledData, entryFunction);
+					std::map<std::string_view, std::string> includedMap;
+					auto onInclude = [programsPath, programDirectory, &includedMap, engineData](Video::IncludeType includeType, std::string_view fileName, void const **data, uint32_t *size) -> bool
+					{
+						std::string includeData;
+						if (String::GetLower(fileName) == "gekengine"s)
+						{
+							(*data) = engineData.data();
+							(*size) = engineData.size();
+							return true;
+						}
+						else
+						{
+							switch (includeType)
+							{
+							case Video::IncludeType::Local:
+								if (true)
+								{
+									auto localPath(FileSystem::CombinePaths(programDirectory, fileName));
+									if (localPath.isFile())
+									{
+										includedMap[fileName] = FileSystem::Load(localPath, String::Empty);
+										(*data) = includedMap[fileName].data();
+										(*size) = includedMap[fileName].size();
+										return true;
+									}
+								}
+
+								break;
+
+							case Video::IncludeType::Global:
+								if (true)
+								{
+									auto rootPath(FileSystem::CombinePaths(programsPath, fileName));
+									if (rootPath.isFile())
+									{
+										includedMap[fileName] = FileSystem::Load(rootPath, String::Empty);
+										(*data) = includedMap[fileName].data();
+										(*size) = includedMap[fileName].size();
+										return true;
+									}
+								}
+
+								break;
+							};
+						}
+
+						return false;
+					};
+
+					information = videoDevice->compileProgram(type, name, uncompiledPath, uncompiledData, entryFunction, onInclude);
 					FileSystem::Save(uncompiledPath, information.uncompiledData);
 					FileSystem::Save(compiledPath, information.compiledData);
 				}

@@ -1,4 +1,4 @@
-#include GEKEngine
+#include <GEKEngine>
 
 #include <GEKGlobal.hlsl>
 

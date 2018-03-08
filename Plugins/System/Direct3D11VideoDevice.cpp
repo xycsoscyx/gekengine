@@ -2016,11 +2016,6 @@ namespace Gek
                 }
             }
 
-            std::string_view const getSemanticMoniker(Video::InputElement::Semantic semantic)
-            {
-                return DirectX::SemanticNameList[static_cast<uint8_t>(semantic)];
-            }
-
             Video::Target * const getBackBuffer(void)
             {
                 if (!backBuffer)
@@ -2449,7 +2444,12 @@ namespace Gek
                 }
             }
 
-            Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, Video::Program::Information const &information)
+			std::string_view const getSemanticMoniker(Video::InputElement::Semantic semantic)
+			{
+				return DirectX::SemanticNameList[static_cast<uint8_t>(semantic)];
+			}
+
+			Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, Video::Program::Information const &information)
             {
 				assert(!information.compiledData.empty());
 				assert(information.type == Video::Program::Type::Vertex);
@@ -2492,7 +2492,47 @@ namespace Gek
                 return std::make_unique<InputLayout>(d3dInputLayout);
             }
 
-			Video::Program::Information compileProgram(Video::Program::Type type, std::string_view name, FileSystem::Path const &debugPath, std::string_view uncompiledProgram, std::string_view entryFunction)
+			class Include
+				: public ID3DInclude
+			{
+			private:
+				using IncludeFunction = std::function<bool(Video::IncludeType includeType, std::string_view fileName, void const **data, uint32_t *size)>;
+				IncludeFunction function;
+
+			public:
+				Include(IncludeFunction &&function)
+					: function(std::move(function))
+				{
+				}
+
+				// ID3DInclude 
+				ULONG AddRef(void)
+				{
+					return 1;
+				}
+
+				HRESULT QueryInterface(IID const &interfaceType, void **object)
+				{
+					return E_FAIL;
+				}
+
+				ULONG Release(void)
+				{
+					return 1;
+				}
+
+				HRESULT Close(LPCVOID pData)
+				{
+					return S_OK;
+				}
+
+				HRESULT Open(D3D_INCLUDE_TYPE includeType, char const *fileName, void const *parentData, void const **data, uint32_t *size)
+				{
+					return function(includeType == D3D_INCLUDE_LOCAL ? Video::IncludeType::Local : Video::IncludeType::Global, fileName, data, size) ? S_OK : E_FAIL;
+				}
+			};
+
+			Video::Program::Information compileProgram(Video::Program::Type type, std::string_view name, FileSystem::Path const &debugPath, std::string_view uncompiledProgram, std::string_view entryFunction, std::function<bool(Video::IncludeType, std::string_view, void const **data, uint32_t *size)> &&onInclude)
 			{
                 assert(d3dDevice);
 				assert(!name.empty());
@@ -2529,9 +2569,14 @@ namespace Gek
 				auto typeSearch = D3DTypeMap.find(type);
 				if (typeSearch != std::end(D3DTypeMap))
 				{
+					auto function = [](Video::IncludeType includeType, std::string_view fileName, void const **data, uint32_t *size) -> bool
+					{
+						return false;
+					};
+
 					CComPtr<ID3DBlob> d3dShaderBlob;
 					CComPtr<ID3DBlob> d3dCompilerErrors;
-					HRESULT resultValue = D3DCompile(uncompiledProgram.data(), (uncompiledProgram.size() + 1), name.data(), nullptr, nullptr, entryFunction.data(), typeSearch->second.data(), flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+					HRESULT resultValue = D3DCompile(uncompiledProgram.data(), (uncompiledProgram.size() + 1), name.data(), nullptr, &Include(std::move(onInclude)), entryFunction.data(), typeSearch->second.data(), flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
 					if (FAILED(resultValue) || !d3dShaderBlob)
 					{
 						_com_error error(resultValue);

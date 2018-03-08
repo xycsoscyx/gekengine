@@ -1550,7 +1550,7 @@ namespace Gek
                     }
                 GEK_PROFILE_END_SCOPE();
 
-                GEK_PROFILE_BEGIN_SCOPE("Show User Interface")
+				GEK_PROFILE_BEGIN_SCOPE("Show User Interface");
                     ImGui::Render();
                     //const auto userInterface = this->registerName("User Interface");
                 GEK_PROFILE_END_SCOPE();

@@ -10,6 +10,8 @@
 #include "GEK/Utility/Hash.hpp"
 #include <inttypes.h>
 
+#define MTR_ENABLED
+
 // If MTR_ENABLED is not defined, Minitrace does nothing and has near zero overhead.
 // Preferably, set this flag in your build system. If you can't just uncomment this line.
 // #define MTR_ENABLED
@@ -247,7 +249,7 @@ void internal_mtr_raw_event_arg(const char *category, const char *name, char ph,
 	};
 #endif
 
-#define GEK_PROFILE_FUNCTION_SCOPE() MTR_SCOPE(__FILE__, __FUNCTION__)
-#define GEK_PROFILE_AUTO_SCOPE(CATEGORY) MTR_SCOPE(__FILE__, CATEGORY)
-#define GEK_PROFILE_BEGIN_SCOPE(CATEGORY) do { MTR_SCOPE(__FILE__, CATEGORY)
+#define GEK_PROFILE_FUNCTION_SCOPE() MTR_SCOPE(__FILE__, __FUNCTION__);
+#define GEK_PROFILE_AUTO_SCOPE(CATEGORY) MTR_SCOPE(__FILE__, CATEGORY);
+#define GEK_PROFILE_BEGIN_SCOPE(CATEGORY) do { MTR_SCOPE(__FILE__, CATEGORY);
 #define GEK_PROFILE_END_SCOPE() } while(false);

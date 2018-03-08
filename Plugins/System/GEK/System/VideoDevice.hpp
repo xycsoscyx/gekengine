@@ -164,6 +164,12 @@ namespace Gek
             };
         }; // ClearFlags
 
+		enum class IncludeType : uint8_t
+		{
+			Local = 0,
+			Global,
+		};
+
         struct ViewPort
         {
             Math::Float2 position = Math::Float2::Zero;
@@ -707,8 +713,6 @@ namespace Gek
             virtual void setDisplayMode(const DisplayMode &displayMode) = 0;
             virtual void handleResize(void) = 0;
 
-			virtual std::string_view const getSemanticMoniker(InputElement::Semantic semantic) = 0;
-
             virtual Target * const getBackBuffer(void) = 0;
             virtual Context * const getDefaultContext(void) = 0;
 
@@ -739,9 +743,9 @@ namespace Gek
             virtual void updateResource(Object *buffer, const void *data) = 0;
             virtual void copyResource(Object *destination, Object *source) = 0;
 
+			virtual std::string_view const getSemanticMoniker(InputElement::Semantic semantic) = 0;
 			virtual ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, Program::Information const &information) = 0;
-
-            virtual Program::Information compileProgram(Program::Type type, std::string_view name, FileSystem::Path const &debugPath, std::string_view uncompiledProgram, std::string_view entryFunction) = 0;
+			virtual Program::Information compileProgram(Program::Type type, std::string_view name, FileSystem::Path const &debugPath, std::string_view uncompiledProgram, std::string_view entryFunction, std::function<bool(IncludeType, std::string_view, void const **data, uint32_t *size)> &&onInclude = nullptr) = 0;
             virtual ProgramPtr createProgram(Program::Information const &information) = 0;
 
             virtual void executeCommandList(Object *commandList) = 0;

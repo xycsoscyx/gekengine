@@ -1,6 +1,6 @@
 #include <GEKGlobal.hlsl>
 
-#include GEKEngine
+#include <GEKEngine>
 
 OutputVertex mainVertexProgram(InputVertex inputVertex)
 {

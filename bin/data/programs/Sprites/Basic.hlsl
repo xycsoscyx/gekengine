@@ -1,7 +1,7 @@
 #include <GEKGlobal.hlsl>
 #include <GEKUtility.hlsl>
 
-#include GEKEngine
+#include <GEKEngine>
 
 namespace Sprite
 {
