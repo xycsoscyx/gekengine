@@ -8,7 +8,7 @@
 #pragma once
 
 #include <future>
-#include <queue>
+#include <concurrent_queue.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -20,21 +20,21 @@ namespace Gek
     template <size_t threadCount = 1>
     class ThreadPool final
     {
-        using Lock = std::unique_lock<std::mutex>;
-
-    private:
+		using Lock = std::unique_lock<std::mutex>;
+	
+	private:
         std::vector<std::thread> workerList;
 		using Task = std::tuple<std::function<void()>, char const *, size_t>;
-        std::queue<Task> taskQueue;
+        concurrency::concurrent_queue<Task> taskQueue;
 
-        std::mutex queueMutex;
+		std::mutex mutex;
         std::condition_variable condition;
 		std::atomic<bool> stop = false;
 
 	private:
         void create(void)
         {
-            stop = false;
+			stop.store(false);
             workerList.clear();
             workerList.reserve(threadCount);
             for (size_t count = 0; count < threadCount; ++count)
@@ -47,37 +47,33 @@ namespace Gek
 #endif
 					size_t lastTaskLine = 0;
 					char const *lastTaskName = nullptr;
-					for (;;)
+					while (true)
                     {
+						// Wait for additional work signal
+                        // Wait to be notified of work
+                        condition.wait(Lock(mutex), [this](void) -> bool
+                        {
+                            return stop.load() || !taskQueue.empty();
+                        });
+
+                        // If stopping and no work remains, exit the work loop and thread
+                        if (stop.load() && taskQueue.empty())
+                        {
+                            break;
+                        }
+
 						// Task to execute
 						Task task;
 						
-						// Wait for additional work signal
-                        if (true)
-                        {
-                            // Wait to be notified of work
-                            Lock lock(queueMutex);
-                            condition.wait(lock, [this](void) -> bool
-                            {
-                                return stop || !taskQueue.empty();
-                            });
-
-                            // If stopping and no work remains, exit the work loop and thread
-                            if (stop && taskQueue.empty())
-                            {
-                                break;
-                            }
-
-                            // Dequeue the next task
-                            task = std::move(taskQueue.front());
-                            taskQueue.pop();
-                        }
-
-                        // Execute
-						lastTaskName = std::get<1>(task);
-						lastTaskLine = std::get<2>(task);
-						std::get<0>(task)();
-					}
+						// Dequeue the next task
+						if (taskQueue.try_pop(task))
+						{
+							// Execute
+							lastTaskName = std::get<1>(task);
+							lastTaskLine = std::get<2>(task);
+							std::get<0>(task)();
+						}
+					};
 
 #ifdef _WIN32
                     CoUninitialize();
@@ -104,20 +100,23 @@ namespace Gek
 		ThreadPool& operator= (const ThreadPool &) = delete;
         ThreadPool& operator= (const ThreadPool &&) = delete;
 
-        void drain(void)
+        void drain(bool executePendingTasks = false)
         {
-            [this](void)
+            [this, executePendingTasks](void)
             {
-                Lock lock(queueMutex);
                 while (!taskQueue.empty())
                 {
-                    taskQueue.pop();
+					Task task;
+					if (taskQueue.try_pop(task) && executePendingTasks)
+					{
+						std::get<0>(task)();
+					}
                 };
             } ();
 
             if (!workerList.empty())
             {
-                stop = true;
+				stop.store(true);
                 condition.notify_all();
 
                 // Wait for threads to complete work
@@ -145,38 +144,28 @@ namespace Gek
             auto task = std::make_shared<PackagedTask>(std::bind(std::forward<FUNCTION>(function), std::forward<PARAMETERS>(arguments)...));
             std::future<ReturnType> result = task->get_future();
 
-            if(true)
-            {
-                Lock lock(queueMutex);
-                if (stop)
-                {
-                    return result;
-                }
-
-                taskQueue.emplace(std::make_tuple([task]()
-                {
-                    (*task)();
-                }, fileName, line));
+			if (stop.load())
+			{
+                return result;
             }
 
+            taskQueue.push(std::make_tuple([task]()
+            {
+                (*task)();
+            }, fileName, line));
             condition.notify_one();
             return result;
         }
 
         template<typename FUNCTION, typename... PARAMETERS>
-        auto enqueueAndDetach(FUNCTION&& function, PARAMETERS&&... arguments, char const *fileName = nullptr, size_t line = 0) -> void
+        void enqueueAndDetach(FUNCTION&& function, PARAMETERS&&... arguments, char const *fileName = nullptr, size_t line = 0)
         {
-            if(true)
+            if (stop.load())
             {
-                Lock lock(queueMutex);
-                if (stop)
-                {
-					return;
-                }
-
-                taskQueue.emplace(std::make_tuple(std::bind(std::forward<FUNCTION>(function), std::forward<PARAMETERS>(arguments)...), fileName, line));
+				return;
             }
 
+            taskQueue.push(std::make_tuple(std::bind(std::forward<FUNCTION>(function), std::forward<PARAMETERS>(arguments)...), fileName, line));
             condition.notify_one();
         }
     };

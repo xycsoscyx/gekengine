@@ -27,7 +27,7 @@ namespace Gek
 			void*           GetVarPtr(ImGuiStyle* style) const { return (void*)((unsigned char*)style + Offset); }
 		};
 
-		static const ImGuiStyleVarInfo GStyleVarInfo[] =
+		static const ImGuiStyleVarInfo ImGuiStyleVariableInformation[] =
 		{
 			{ ImGuiDataType_Float,  (ImU32)IM_OFFSETOF(ImGuiStyle, Alpha) },                // ImGuiStyleVar_Alpha
 			{ ImGuiDataType_Float2, (ImU32)IM_OFFSETOF(ImGuiStyle, WindowPadding) },        // ImGuiStyleVar_WindowPadding
@@ -52,43 +52,45 @@ namespace Gek
 			{ ImGuiDataType_Float2, (ImU32)IM_OFFSETOF(ImGuiStyle, ButtonTextAlign) },      // ImGuiStyleVar_ButtonTextAlign
 		};
 
-		static const ImGuiStyleVarInfo* GetStyleVarInfo(ImGuiStyleVar idx)
+		static ImGuiStyleVarInfo const * GetStyleVarInfo(ImGuiStyleVar index)
 		{
-			IM_ASSERT(idx >= 0 && idx < ImGuiStyleVar_Count_);
-			IM_ASSERT(IM_ARRAYSIZE(GStyleVarInfo) == ImGuiStyleVar_Count_);
-			return &GStyleVarInfo[idx];
+			IM_ASSERT(index >= 0 && index < ImGuiStyleVar_Count_);
+			IM_ASSERT(IM_ARRAYSIZE(ImGuiStyleVariableInformation) == ImGuiStyleVar_Count_);
+			return &ImGuiStyleVariableInformation[index];
 		}
 
-		float PushStyleVar(ImGuiStyleVar idx, float val)
+		float PushStyleVar(ImGuiStyleVar index, float newValue)
 		{
-			const ImGuiStyleVarInfo* var_info = GetStyleVarInfo(idx);
-			if (var_info->Type == ImGuiDataType_Float)
+			const ImGuiStyleVarInfo* variableInformation = GetStyleVarInfo(index);
+			if (variableInformation->Type == ImGuiDataType_Float)
 			{
-				ImGuiContext& g = *GImGui;
-				float* pvar = (float*)var_info->GetVarPtr(&g.Style);
-				auto oldValue = *pvar;
-				g.StyleModifiers.push_back(ImGuiStyleMod(idx, *pvar));
-				*pvar = val;
+				ImGuiContext& imGuiContext = *GImGui;
+				float* activeValue = (float*)variableInformation->GetVarPtr(&imGuiContext.Style);
+				auto oldValue = *activeValue;
+				imGuiContext.StyleModifiers.push_back(ImGuiStyleMod(index, *activeValue));
+				*activeValue = newValue;
 				return oldValue;
 			}
 
 			IM_ASSERT(0); // Called function with wrong-type? Variable is not a float.
+			return float();
 		}
 
-		ImVec2 PushStyleVar(ImGuiStyleVar idx, const ImVec2& val)
+		ImVec2 PushStyleVar(ImGuiStyleVar index, const ImVec2& newValue)
 		{
-			const ImGuiStyleVarInfo* var_info = GetStyleVarInfo(idx);
-			if (var_info->Type == ImGuiDataType_Float2)
+			const ImGuiStyleVarInfo* variableInformation = GetStyleVarInfo(index);
+			if (variableInformation->Type == ImGuiDataType_Float2)
 			{
-				ImGuiContext& g = *GImGui;
-				ImVec2* pvar = (ImVec2*)var_info->GetVarPtr(&g.Style);
-				auto oldValue = *pvar;
-				g.StyleModifiers.push_back(ImGuiStyleMod(idx, *pvar));
-				*pvar = val;
+				ImGuiContext& imGuiContext = *GImGui;
+				ImVec2* activeValue = (ImVec2*)variableInformation->GetVarPtr(&imGuiContext.Style);
+				auto oldValue = *activeValue;
+				imGuiContext.StyleModifiers.push_back(ImGuiStyleMod(index, *activeValue));
+				*activeValue = newValue;
 				return oldValue;
 			}
 
 			IM_ASSERT(0); // Called function with wrong-type? Variable is not a ImVec2.
+			return ImVec2();
 		}
 
         bool InputString(std::string_view label, std::string &string, ImGuiInputTextFlags flags, ImGuiTextEditCallback callback, void *userData)

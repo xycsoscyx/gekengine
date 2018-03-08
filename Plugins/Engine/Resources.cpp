@@ -1425,7 +1425,7 @@ namespace Gek
             {
                 textureDescriptionMap.clear();
                 bufferDescriptionMap.clear();
-                loadPool.reset();
+                loadPool.drain();
                 materialShaderMap.clear();
                 programCache.clear();
                 materialCache.clear();
