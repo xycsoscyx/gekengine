@@ -64,7 +64,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(_window)
             {
-				mtr_init("profile.json");
+				Gek::Profiler::Initialize("profile.json");
                 LockedWrite{ std::cout } << "Starting GEK Engine";
 
                 if (!window)
@@ -201,7 +201,7 @@ namespace Gek
                 JSON::Reference(configuration).save(getContext()->getCachePath("config.json"s));
                 CoUninitialize();
 
-				mtr_shutdown();
+				Gek::Profiler::Shutdown();
             }
 
             bool setFullScreen(bool requestFullScreen)

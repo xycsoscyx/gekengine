@@ -119,7 +119,16 @@
         "Intensity": 2.0,
         "Bias": 0.2,
         "Epsilon": 0.01,
-        "FalloffFunction": 0,
+        "FalloffFunction": {
+            "selection": "HighQuality",
+            "options": [
+                "HighQuality",
+                "FalloffHPG12",
+                "FalloffSmooth",
+                "FalloffMedium",
+                "FalloffQuick"
+            ]
+        },
         "GaussianRadius": 4,
         "GaussianSigma": 1.75,
         "EdgeSharpness": 0.01
@@ -134,7 +143,7 @@
             "depthBuffer": "depthBuffer",
             "depthStyle": {
                 "camera": "perspective",
-                "clear":  true
+                "clear": true
             },
             "targets": [
                 "finalBuffer",

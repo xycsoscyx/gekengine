@@ -1,4 +1,5 @@
 ﻿#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/Profiler.hpp"
 #include "GEK/API/ComponentMixin.hpp"
 #include "GEK/API/Core.hpp"
 #include "GEK/API/Processor.hpp"
@@ -75,7 +76,8 @@ namespace Gek
         {
             assert(population);
 
-            bool editorActive = core->getOption("editor", "active").convert(false);
+			GEK_PROFILE_FUNCTION_SCOPE();
+			bool editorActive = core->getOption("editor", "active").convert(false);
             if (frameTime > 0.0f && !editorActive)
             {
                 population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity * const entity, auto &transformComponent, auto &spinComponent) -> void

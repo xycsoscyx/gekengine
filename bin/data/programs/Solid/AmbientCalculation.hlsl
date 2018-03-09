@@ -4,11 +4,6 @@
 #include <GEKUtility.hlsl>
 
 // https://raw.githubusercontent.com/PeterTh/gedosato/master/pack/assets/dx9/SAO.fx
-#define HighQuality                 0
-#define FalloffHPG12				1
-#define FalloffSmooth				2
-#define FalloffMedium				3
-#define FalloffQuick				4
 
 namespace Options
 {
@@ -67,9 +62,9 @@ float getAmbientObscurance(float2 texCoord, float3 surfacePosition, float3 surfa
 
     // [Boulotaur2024] yes branching is bad but choice is good...
     [branch]
-    switch (Options::FalloffFunction)
+    switch (Options::FalloffFunction::Selection)
     {
-    case HighQuality:
+	case Options::FalloffFunction::HighQuality:
         if (true)
         {
             // Addition from http://graphics.cs.williams.edu/papers/DeepGBuffer13/	
@@ -78,12 +73,12 @@ float getAmbientObscurance(float2 texCoord, float3 surfacePosition, float3 surfa
             return (falloff * max((normalAngle - Options::Bias) * rsqrt(Options::Epsilon + deltaAngle), 0.0));
         }
 
-    case FalloffHPG12:
+    case Options::FalloffFunction::FalloffHPG12:
         // A: From the HPG12 paper
         // Note large Options::Epsilon to avoid overdarkening withcracks
         return (float(deltaAngle < Options::RadiusSquared) * max((normalAngle - Options::Bias) * rcp(Options::Epsilon + deltaAngle), 0.0) * Options::RadiusSquared * 0.6);
 
-    case FalloffSmooth:
+    case Options::FalloffFunction::FalloffSmooth:
         if (true)
         {
             // B: Smoother transition to zero (lowers contrast, smoothing out corners). [Recommended]
@@ -92,13 +87,13 @@ float getAmbientObscurance(float2 texCoord, float3 surfacePosition, float3 surfa
             // / (Options::Epsilon + deltaAngle) (optimization by BartWronski)
         }
 
-    case FalloffMedium:
+    case Options::FalloffFunction::FalloffMedium:
         // surfacePosition: Medium contrast (which looks better at high radii), no division.  Note that the 
         // contribution still falls off with Options::Radius^2, but we've adjusted the rate a way that is
         // more computationally efficient and happens to be aesthetically pleasing.
         return (4.0 * max(1.0 - deltaAngle * 1.0 / Options::RadiusSquared, 0.0) * max(normalAngle - Options::Bias, 0.0));
 
-    case FalloffQuick:
+    case Options::FalloffFunction::FalloffQuick:
         // D: Low contrast, no division operation
         return (2.0 * float(deltaAngle < Options::RadiusSquared) * max(normalAngle - Options::Bias, 0.0));
 
@@ -129,7 +124,7 @@ float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 
     totalOcclusion /= pow(Options::RadiusCubed, 2.0);
 
-    if (Options::FalloffFunction == HighQuality)
+    if (Options::FalloffFunction::Selection == Options::FalloffFunction::HighQuality)
     {
         // Addition from http://graphics.cs.williams.edu/papers/DeepGBuffer13/
         totalOcclusion = pow(max(0.0, 1.0 - sqrt(totalOcclusion * (3.0 / Options::TapCount))), Options::Intensity);
