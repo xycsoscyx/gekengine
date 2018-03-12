@@ -33,8 +33,6 @@ namespace Gek
 {
 	namespace Profiler
 	{
-		// Ugh, this struct is already pretty heavy.
-		// Will probably need to move arguments to a second buffer to support more than one.
 		struct RawEvent
 		{
 			std::string_view name;
@@ -49,12 +47,12 @@ namespace Gek
 			double duration;
 		};
 
-		static std::vector<RawEvent> buffer;
-		static volatile int count = 0;
-		static int is_tracing = 0;
-		static int64_t time_offset = 0;
-		static int first_line = 1;
-		static FILE *file = nullptr;
+		static std::vector<RawEvent> eventBuffer;
+		static volatile int currentEventIndex = 0;
+		static int isTracingActive = 0;
+		static int64_t initializationTime = 0;
+		static int isFirstLine = 1;
+		static FILE *outputFile = nullptr;
 		static __thread int currentThreadIdentifier;	// Thread local storage
 		static pthread_mutex_t mutex;
 
@@ -91,30 +89,29 @@ namespace Gek
 #ifndef GEK_PROFILER_ENABLED
 			return;
 #endif
-			buffer.resize(INTERNAL_MINITRACE_BUFFER_SIZE);
-			is_tracing = 1;
-			count = 0;
-			file = fopen(fileName.data(), "wb");
+			eventBuffer.resize(INTERNAL_MINITRACE_BUFFER_SIZE);
+			isTracingActive = 1;
+			currentEventIndex = 0;
+			outputFile = fopen(fileName.data(), "wb");
 			std::string_view header = "{\"traceEvents\":[\n"s;
-			fwrite(header.data(), 1, header.size(), file);
-			time_offset = (uint64_t)(GetTime() * 1000000);
-			first_line = 1;
+			fwrite(header.data(), 1, header.size(), outputFile);
+			initializationTime = (uint64_t)(GetTime() * 1000000);
+			isFirstLine = 1;
 			pthread_mutex_init(&mutex, 0);
 		}
 
 		void Shutdown(void)
 		{
-			int i;
 #ifndef GEK_PROFILER_ENABLED
 			return;
 #endif
-			is_tracing = 0;
+			isTracingActive = 0;
 			Flush();
-			fwrite("\n]}\n", 1, 4, file);
-			fclose(file);
+			fwrite("\n]}\n", 1, 4, outputFile);
+			fclose(outputFile);
 			pthread_mutex_destroy(&mutex);
-			file = 0;
-			buffer.clear();
+			outputFile = 0;
+			eventBuffer.clear();
 		}
 
 		void Resume(void)
@@ -122,7 +119,7 @@ namespace Gek
 #ifndef GEK_PROFILER_ENABLED
 			return;
 #endif
-			is_tracing = 1;
+			isTracingActive = 1;
 		}
 
 		void Pause(void)
@@ -130,7 +127,7 @@ namespace Gek
 #ifndef GEK_PROFILER_ENABLED
 			return;
 #endif
-			is_tracing = 0;
+			isTracingActive = 0;
 		}
 
 		// TODO: fwrite more than one line at a time.
@@ -139,21 +136,20 @@ namespace Gek
 #ifndef GEK_PROFILER_ENABLED
 			return;
 #endif
-			int i = 0;
-			char linebuf[1024];
-			char arg_buf[256];
-			char id_buf[256];
+			char lineBuffer[1024];
+			char argumentBuffer[256];
+			char identifierBuffer[256];
 
 			// We have to lock while flushing. So we really should avoid flushing as much as possible.
 			pthread_mutex_lock(&mutex);
-			int old_tracing = is_tracing;
-			is_tracing = 0;	// Stop logging even if using interlocked increments instead of the mutex. Can cause data loss.
+			int oldTracingState = isTracingActive;
+			isTracingActive = 0;	// Stop logging even if using interlocked increments instead of the mutex. Can cause data loss.
 
-			for (i = 0; i < count; i++)
+			for (int eventIndex = 0; eventIndex < currentEventIndex; eventIndex++)
 			{
-				RawEvent *raw = &buffer[i];
-				int len;
-				snprintf(arg_buf, ARRAY_SIZE(arg_buf), "\"%s\":%s", raw->argumentName, raw->argumentValue.to_string().data());
+				RawEvent *raw = &eventBuffer[eventIndex];
+				int stringLength;
+				snprintf(argumentBuffer, ARRAY_SIZE(argumentBuffer), "\"%s\":%s", raw->argumentName.data(), raw->argumentValue.to_string().data());
 				if (raw->id)
 				{
 					switch (raw->ph)
@@ -162,17 +158,17 @@ namespace Gek
 					case 'T':
 					case 'F':
 						// TODO: Support full 64-bit pointers
-						snprintf(id_buf, ARRAY_SIZE(id_buf), ",\"id\":\"0x%08x\"", (uint32_t)(uintptr_t)raw->id);
+						snprintf(identifierBuffer, ARRAY_SIZE(identifierBuffer), ",\"id\":\"0x%08x\"", (uint32_t)(uintptr_t)raw->id);
 						break;
 
 					case 'X':
-						snprintf(id_buf, ARRAY_SIZE(id_buf), ",\"dur\":%i", (int)raw->duration);
+						snprintf(identifierBuffer, ARRAY_SIZE(identifierBuffer), ",\"dur\":%index", (int)raw->duration);
 						break;
-					}
+					};
 				}
 				else
 				{
-					id_buf[0] = 0;
+					identifierBuffer[0] = 0;
 				}
 
 				std::string_view category = raw->category;
@@ -180,29 +176,27 @@ namespace Gek
 				// On Windows, we often end up with backslashes in category.
 				if (true)
 				{
-					char temp[256];
-					int len = (int)strlen(category);
-					int i;
-					if (len > 255) len = 255;
-					for (i = 0; i < len; i++)
+					char temporaryBuffer[256];
+					int stringLength = std::max(category.size(), 255ULL);
+					for (int categoryIndex = 0; categoryIndex < stringLength; categoryIndex++)
 					{
-						temp[i] = category[i] == '\\' ? '/' : category[i];
+						temporaryBuffer[categoryIndex] = category[categoryIndex] == '\\' ? '/' : category[categoryIndex];
 					}
 
-					temp[len] = 0;
-					category = temp;
+					temporaryBuffer[stringLength] = 0;
+					category = temporaryBuffer;
 				}
 #endif
 
-				len = snprintf(linebuf, ARRAY_SIZE(linebuf), "%s{\"category\":\"%s\",\"pid\":%i,\"tid\":%i,\"ts\":%" PRId64 ",\"ph\":\"%c\",\"name\":\"%s\",\"args\":{%s}%s}",
-					first_line ? "" : ",\n",
-					category, raw->pid, raw->tid, raw->ts - time_offset, raw->ph, raw->name, arg_buf, id_buf);
-				fwrite(linebuf, 1, len, file);
-				first_line = 0;
+				stringLength = snprintf(lineBuffer, ARRAY_SIZE(lineBuffer), "%s{\"category\":\"%s\",\"pid\":%index,\"tid\":%index,\"ts\":%" PRId64 ",\"ph\":\"%c\",\"name\":\"%s\",\"args\":{%s}%s}",
+					isFirstLine ? "" : ",\n",
+					category.data(), raw->pid, raw->tid, raw->ts - initializationTime, raw->ph, raw->name.data(), argumentBuffer, identifierBuffer);
+				fwrite(lineBuffer, 1, stringLength, outputFile);
+				isFirstLine = 0;
 			}
 
-			count = 0;
-			is_tracing = old_tracing;
+			currentEventIndex = 0;
+			isTracingActive = oldTracingState;
 			pthread_mutex_unlock(&mutex);
 		}
 
@@ -211,45 +205,45 @@ namespace Gek
 #ifndef GEK_PROFILER_ENABLED
 			return;
 #endif
-			if (!is_tracing || count >= INTERNAL_MINITRACE_BUFFER_SIZE)
+			if (!isTracingActive || currentEventIndex >= INTERNAL_MINITRACE_BUFFER_SIZE)
 			{
 				return;
 			}
 
-			double ts = GetTime();
+			double currentTime = GetTime();
 			if (!currentThreadIdentifier)
 			{
 				currentThreadIdentifier = GetThreadIdentifier();
 			}
 
 #if 0 && _WIN32	// TODO: This needs testing
-			int bufPos = InterlockedIncrement(&count);
-			RawEvent *ev = &buffer[count - 1];
+			int nextEventIndex = InterlockedIncrement(&currentEventIndex);
+			RawEvent *currentEvent = &eventBuffer[nextEventIndex - 1];
 #else
 			pthread_mutex_lock(&mutex);
-			RawEvent *ev = &buffer[count];
-			count++;
+			RawEvent *currentEvent = &eventBuffer[currentEventIndex];
+			currentEventIndex++;
 			pthread_mutex_unlock(&mutex);
 #endif
 
-			ev->category = category;
-			ev->name = name;
-			ev->id = id;
-			ev->ph = ph;
-			if (ev->ph == 'X')
+			currentEvent->category = category;
+			currentEvent->name = name;
+			currentEvent->id = id;
+			currentEvent->ph = ph;
+			if (currentEvent->ph == 'X')
 			{
 				double x;
 				memcpy(&x, id, sizeof(double));
-				ev->ts = (int64_t)(x * 1000000);
-				ev->duration = (ts - x) * 1000000;
+				currentEvent->ts = (int64_t)(x * 1000000);
+				currentEvent->duration = (currentTime - x) * 1000000;
 			}
 			else
 			{
-				ev->ts = (int64_t)(ts * 1000000);
+				currentEvent->ts = (int64_t)(currentTime * 1000000);
 			}
 
-			ev->tid = currentThreadIdentifier;
-			ev->pid = 0;
+			currentEvent->tid = currentThreadIdentifier;
+			currentEvent->pid = 0;
 		}
 
 		void AddEvent(std::string_view category, std::string_view name, char ph, void *id, std::string_view argumentName, JSON::Reference argumentValue)
@@ -257,7 +251,7 @@ namespace Gek
 #ifndef GEK_PROFILER_ENABLED
 			return;
 #endif
-			if (!is_tracing || count >= INTERNAL_MINITRACE_BUFFER_SIZE)
+			if (!isTracingActive || currentEventIndex >= INTERNAL_MINITRACE_BUFFER_SIZE)
 			{
 				return;
 			}
@@ -270,24 +264,24 @@ namespace Gek
 			double ts = GetTime();
 
 #if 0 && _WIN32	// TODO: This needs testing
-			int bufPos = InterlockedIncrement(&count);
-			RawEvent *ev = &buffer[count - 1];
+			int nextEventIndex = InterlockedIncrement(&currentEventIndex);
+			RawEvent *currentEvent = &eventBuffer[nextEventIndex - 1];
 #else
 			pthread_mutex_lock(&mutex);
-			RawEvent *ev = &buffer[count];
-			count++;
+			RawEvent *currentEvent = &eventBuffer[currentEventIndex];
+			currentEventIndex++;
 			pthread_mutex_unlock(&mutex);
 #endif
 
-			ev->category = category;
-			ev->name = name;
-			ev->id = id;
-			ev->ts = (int64_t)(ts * 1000000);
-			ev->ph = ph;
-			ev->tid = currentThreadIdentifier;
-			ev->pid = 0;
-			ev->argumentName = argumentName;
-			ev->argumentValue = argumentValue.getObject();
+			currentEvent->category = category;
+			currentEvent->name = name;
+			currentEvent->id = id;
+			currentEvent->ts = (int64_t)(ts * 1000000);
+			currentEvent->ph = ph;
+			currentEvent->tid = currentThreadIdentifier;
+			currentEvent->pid = 0;
+			currentEvent->argumentName = argumentName;
+			currentEvent->argumentValue = argumentValue.getObject();
 		}
 	}; // namespace Profiler
 }; // namespace Gek
