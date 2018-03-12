@@ -594,7 +594,7 @@ namespace Gek
             struct DisjointTimeStamp
             {
                 uint64_t frequency = 0;
-                uint32_t disjoint = false;
+                uint32_t isDisjoint = false;
             };
 
             using TimeStamp = uint64_t;
@@ -751,7 +751,12 @@ namespace Gek
             virtual void executeCommandList(Object *commandList) = 0;
 
             virtual void present(bool waitForVerticalSync) = 0;
-        };
+
+			virtual void beginProfilerBlock(void) = 0;
+			virtual void beginProfilerEvent(std::string_view name) = 0;
+			virtual void endProfilerEvent(std::string_view name) = 0;
+			virtual void endProfilerBlock(void) = 0;
+		};
 
         namespace Debug
         {

@@ -27,6 +27,7 @@ namespace Gek
 		std::string_view GetPoolString(std::string_view name);
 
 		void AddEvent(std::string_view category, std::string_view name, char ph, void *id);
+		void AddSpan(std::string_view category, std::string_view name, double startTime, double endTime);
 		void AddEvent(std::string_view category, std::string_view name, char ph, void *id, std::string_view argumentName, JSON::Reference argumentValue);
 
 #ifdef GEK_PROFILER_ENABLED
@@ -116,12 +117,12 @@ namespace Gek
 
 	// Async events. Can span threads. ID identifies which events to connect in the view.
 	#define GEK_PROFILER_START(c, n, id) AddEvent(c, n, 'S', JSON::Object(id))
-	#define GEK_PROFILER_STEP(c, n, id, step) AddEvent(c, n, 'T', JSON::Object(id), ArgumentType::StringView, "step"s, JSON::Object(step))
+	#define GEK_PROFILER_STEP(c, n, id, step) AddEvent(c, n, 'T', JSON::Object(id), "step"s, JSON::Object(step))
 	#define GEK_PROFILER_FINISH(c, n, id) AddEvent(c, n, 'F', JSON::Object(id))
 
 	// Flow events. Like async events, but displayed in a more fancy way in the viewer.
 	#define GEK_PROFILER_FLOW_START(c, n, id) AddEvent(c, n, 's', JSON::Object(id))
-	#define GEK_PROFILER_FLOW_STEP(c, n, id, step) AddEvent(c, n, 't', JSON::Object(id), ArgumentType::StringView, "step"s, JSON::Object(step))
+	#define GEK_PROFILER_FLOW_STEP(c, n, id, step) AddEvent(c, n, 't', JSON::Object(id), "step"s, JSON::Object(step))
 	#define GEK_PROFILER_FLOW_FINISH(c, n, id) AddEvent(c, n, 'f', JSON::Object(id))
 
 	// The same macros, but with a single named argument which shows up as metadata in the viewer.

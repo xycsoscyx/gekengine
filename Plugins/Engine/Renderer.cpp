@@ -1130,6 +1130,7 @@ namespace Gek
                 assert(population);
 
                 GEK_PROFILE_FUNCTION_SCOPE();
+				videoDevice->beginProfilerBlock();
 
                 EngineConstantData engineConstantData;
                 engineConstantData.frameTime = frameTime;
@@ -1392,19 +1393,20 @@ namespace Gek
                         uint8_t shaderIndex = 0;
                         std::string finalOutput;
                         auto forceShader = (currentCamera.forceShader ? resources->getShader(currentCamera.forceShader) : nullptr);
-                        for (auto const &shaderDrawCallList : drawCallSetMap)
+						videoDevice->beginProfilerEvent("Shaders");
+						for (auto const &shaderDrawCallList : drawCallSetMap)
                         {
                             for (auto const &shaderDrawCall : shaderDrawCallList.second)
                             {
                                 auto &shader = shaderDrawCall.shader;
-                                GEK_PROFILE_AUTO_SCOPE("Render Shader");
+								videoDevice->beginProfilerEvent(shader->getName());
 
                                 finalOutput = shader->getOutput();
 
                                 for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentCamera.viewFrustum); pass; pass = pass->next())
                                 {
-                                    GEK_PROFILE_AUTO_SCOPE("Render Pass");
-                                    resources->startResourceBlock();
+									videoDevice->beginProfilerEvent(pass->getName());
+									resources->startResourceBlock();
                                     switch (pass->prepare())
                                     {
                                     case Engine::Shader::Pass::Mode::Forward:
@@ -1412,8 +1414,8 @@ namespace Gek
                                         {
                                             VisualHandle currentVisual;
                                             MaterialHandle currentMaterial;
-                                            GEK_PROFILE_AUTO_SCOPE("Render Forward Draw Calls");
-                                            for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
+											videoDevice->beginProfilerEvent("Draw Calls"s);
+											for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
                                             {
                                                 if (currentVisual != drawCall->plugin)
                                                 {
@@ -1429,7 +1431,9 @@ namespace Gek
 
                                                 drawCall->onDraw(videoContext);
                                             }
-                                        }();
+
+											videoDevice->endProfilerEvent("Draw Calls"s);
+										}();
                                         break;
 
                                     case Engine::Shader::Pass::Mode::Deferred:
@@ -1442,15 +1446,18 @@ namespace Gek
                                     };
 
                                     pass->clear();
-                                }
-                            }
+									videoDevice->endProfilerEvent(pass->getName());
+								}
+
+								videoDevice->endProfilerEvent(shader->getName());
+							}
                         }
 
-                        videoContext->geometryPipeline()->clearConstantBufferList(2, 0);
+						videoDevice->endProfilerEvent("Shaders");
+						videoContext->geometryPipeline()->clearConstantBufferList(2, 0);
                         videoContext->vertexPipeline()->clearConstantBufferList(2, 0);
                         videoContext->pixelPipeline()->clearConstantBufferList(2, 0);
                         videoContext->computePipeline()->clearConstantBufferList(2, 0);
-
                         if (currentCamera.cameraTarget)
                         {
                             auto finalHandle = resources->getResourceHandle(finalOutput);
@@ -1477,17 +1484,18 @@ namespace Gek
                     videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
 
                     uint8_t filterIndex = 0;
-                    videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
-                    for (auto const &filterName : { "tonemap" })
+					videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
+					videoDevice->beginProfilerEvent("Filters");
+					for (auto const &filterName : { "tonemap" })
                     {
-                        GEK_PROFILE_AUTO_SCOPE("Render Filter");
                         auto const filter = resources->getFilter(filterName);
                         if (filter)
                         {
-                            for (auto pass = filter->begin(videoContext, screenHandle, ResourceHandle()); pass; pass = pass->next())
+							videoDevice->beginProfilerEvent(filter->getName());
+							for (auto pass = filter->begin(videoContext, screenHandle, ResourceHandle()); pass; pass = pass->next())
                             {
-                                GEK_PROFILE_AUTO_SCOPE("Render Pass");
-                                switch (pass->prepare())
+								videoDevice->beginProfilerEvent(pass->getName());
+								switch (pass->prepare())
                                 {
                                 case Engine::Filter::Pass::Mode::Deferred:
                                     resources->drawPrimitive(videoContext, 3, 0);
@@ -1498,15 +1506,19 @@ namespace Gek
                                 };
 
                                 pass->clear();
-                            }
-                        }
+								videoDevice->endProfilerEvent(pass->getName());
+							}
+
+							videoDevice->endProfilerEvent(filter->getName());
+						}
                     }
 
-                    videoContext->geometryPipeline()->clearConstantBufferList(1, 0);
+					videoDevice->endProfilerEvent("Filters");
+					videoContext->geometryPipeline()->clearConstantBufferList(1, 0);
                     videoContext->vertexPipeline()->clearConstantBufferList(1, 0);
                     videoContext->pixelPipeline()->clearConstantBufferList(1, 0);
                     videoContext->computePipeline()->clearConstantBufferList(1, 0);
-                }
+				}
                 else
                 {
                     static const JSON::Object Black = JSON::Array({ 0.0f, 0.0f, 0.0f, 1.0f });
@@ -1550,12 +1562,12 @@ namespace Gek
                     }
                 GEK_PROFILE_END_SCOPE();
 
-				GEK_PROFILE_BEGIN_SCOPE("Show User Interface");
-                    ImGui::Render();
-                    //const auto userInterface = this->registerName("User Interface");
-                GEK_PROFILE_END_SCOPE();
+				videoDevice->beginProfilerEvent("User Interface");
+				ImGui::Render();
+				videoDevice->endProfilerEvent("User Interface");
 
-                videoDevice->present(true);
+				videoDevice->endProfilerBlock();
+				videoDevice->present(true);
 
                 if (reloadRequired)
                 {

@@ -3,6 +3,7 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/Profiler.hpp"
 #include "GEK/System/VideoDevice.hpp"
 #include "GEK/System/Window.hpp"
 #include <d3dcompiler.h>
@@ -1777,6 +1778,19 @@ namespace Gek
             Video::Device::ContextPtr defaultContext;
             Video::TargetPtr backBuffer;
 
+			struct BufferedQuery
+			{
+				Video::QueryPtr queries[2];
+			};
+
+			struct BlockQuery
+			{
+				BufferedQuery begin, end;
+			};
+
+			BufferedQuery disjointTimeStamp;
+			std::unordered_map<std::string_view, BlockQuery> eventMap;
+
         public:
             Device(Gek::Context *context, Window *window, Video::Device::Description deviceDescription)
                 : ContextRegistration(context)
@@ -1844,10 +1858,16 @@ namespace Gek
 #endif
 
                 defaultContext = std::make_unique<Context>(d3dDeviceContext);
-            }
+				disjointTimeStamp.queries[0] = createQuery(Video::Query::Type::DisjointTimeStamp);
+				disjointTimeStamp.queries[1] = createQuery(Video::Query::Type::DisjointTimeStamp);
+			}
 
             ~Device(void)
             {
+				disjointTimeStamp.queries[0] = nullptr;
+				disjointTimeStamp.queries[1] = nullptr;
+				eventMap.clear();
+
                 setFullScreenState(false);
 
                 backBuffer = nullptr;
@@ -3054,7 +3074,81 @@ namespace Gek
 
                 dxgiSwapChain->Present(waitForVerticalSync ? 1 : 0, 0);
             }
-        };
+
+			int currentQueryFrame = 0;
+			int currentCollectFrame = -1;
+			std::array<std::vector<BlockQuery *>, 2> frameEventList;
+			void beginProfilerBlock(void)
+			{
+				defaultContext->begin(disjointTimeStamp.queries[currentQueryFrame].get());
+			}
+
+			void beginProfilerEvent(std::string_view name)
+			{
+				auto eventInsert = eventMap.insert({ name, BlockQuery() });
+				if (eventInsert.second)
+				{
+					eventInsert.first->second.begin.queries[0] = createQuery(Video::Query::Type::TimeStamp);
+					eventInsert.first->second.begin.queries[1] = createQuery(Video::Query::Type::TimeStamp);
+					eventInsert.first->second.end.queries[0] = createQuery(Video::Query::Type::TimeStamp);
+					eventInsert.first->second.end.queries[1] = createQuery(Video::Query::Type::TimeStamp);
+				}
+
+				defaultContext->end(eventInsert.first->second.begin.queries[currentQueryFrame].get());
+			}
+
+			void endProfilerEvent(std::string_view name)
+			{
+				auto eventInsert = eventMap.insert({ name, BlockQuery() });
+				if (eventInsert.second)
+				{
+					eventInsert.first->second.begin.queries[0] = createQuery(Video::Query::Type::TimeStamp);
+					eventInsert.first->second.begin.queries[1] = createQuery(Video::Query::Type::TimeStamp);
+					eventInsert.first->second.end.queries[0] = createQuery(Video::Query::Type::TimeStamp);
+					eventInsert.first->second.end.queries[1] = createQuery(Video::Query::Type::TimeStamp);
+				}
+
+				frameEventList[currentQueryFrame].push_back(&eventInsert.first->second);
+				defaultContext->end(eventInsert.first->second.end.queries[currentQueryFrame].get());
+			}
+
+			void endProfilerBlock(void)
+			{
+				defaultContext->end(disjointTimeStamp.queries[currentQueryFrame].get());
+				++currentQueryFrame &= 1;
+
+				if (currentCollectFrame < 0)
+				{
+					// Haven't run enough frames yet to have data
+					currentCollectFrame = 0;
+					return;
+				}
+
+				int currentFrame = currentCollectFrame;
+				++currentCollectFrame &= 1;
+
+				// Wait for data
+				Video::Query::DisjointTimeStamp disjointResult;
+				defaultContext->getData(disjointTimeStamp.queries[currentFrame].get(), &disjointResult, sizeof(Video::Query::DisjointTimeStamp), true);
+				if (disjointResult.isDisjoint)
+				{
+					return;
+				}
+
+				for (auto &frameEvent : frameEventList[currentFrame])
+				{
+					uint64_t startTime, endTime;
+					if (defaultContext->getData(frameEvent->begin.queries[currentFrame].get(), &startTime, sizeof(uint64_t), 0) == Video::Query::Status::Ready &&
+						defaultContext->getData(frameEvent->end.queries[currentFrame].get(), &endTime, sizeof(uint64_t), 0) == Video::Query::Status::Ready)
+
+					{
+						Profiler::AddSpan("GPU", "name", (double(startTime) / 1000000.0), (double(endTime) / 1000000.0));
+					}
+				}
+
+				frameEventList[currentFrame].clear();
+			}
+		};
 
         GEK_REGISTER_CONTEXT_USER(Device);
     }; // Direct3D11

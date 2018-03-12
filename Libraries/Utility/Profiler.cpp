@@ -200,6 +200,43 @@ namespace Gek
 			pthread_mutex_unlock(&mutex);
 		}
 
+		void AddSpan(std::string_view category, std::string_view name, double startTime, double endTime)
+		{
+#ifndef GEK_PROFILER_ENABLED
+			return;
+#endif
+			if (!isTracingActive || currentEventIndex >= INTERNAL_MINITRACE_BUFFER_SIZE)
+			{
+				return;
+		}
+
+			double currentTime = GetTime();
+			if (!currentThreadIdentifier)
+			{
+				currentThreadIdentifier = GetThreadIdentifier();
+			}
+
+#if 0 && _WIN32	// TODO: This needs testing
+			int nextEventIndex = InterlockedIncrement(&currentEventIndex);
+			RawEvent *currentEvent = &eventBuffer[nextEventIndex - 1];
+#else
+			pthread_mutex_lock(&mutex);
+			RawEvent *currentEvent = &eventBuffer[currentEventIndex];
+			currentEventIndex++;
+			pthread_mutex_unlock(&mutex);
+#endif
+
+			currentEvent->category = category;
+			currentEvent->name = name;
+			currentEvent->ph = 'X';
+
+			currentEvent->ts = (int64_t)(startTime * 1000000);
+			currentEvent->duration = (endTime - startTime) * 1000000;
+
+			currentEvent->tid = currentThreadIdentifier;
+			currentEvent->pid = 0;
+		}
+
 		void AddEvent(std::string_view category, std::string_view name, char ph, void *id)
 		{
 #ifndef GEK_PROFILER_ENABLED
