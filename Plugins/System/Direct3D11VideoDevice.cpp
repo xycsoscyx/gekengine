@@ -3077,9 +3077,11 @@ namespace Gek
 
 			int currentQueryFrame = 0;
 			int currentCollectFrame = -1;
+			std::chrono::nanoseconds profilerStartTime;
 			std::array<std::vector<BlockQuery *>, 2> frameEventList;
 			void beginProfilerBlock(void)
 			{
+				profilerStartTime = std::chrono::high_resolution_clock::now().time_since_epoch();
 				defaultContext->begin(disjointTimeStamp.queries[currentQueryFrame].get());
 			}
 
@@ -3135,14 +3137,16 @@ namespace Gek
 					return;
 				}
 
+				double frequency = (1.0 / double(disjointResult.frequency));
 				for (auto &frameEvent : frameEventList[currentFrame])
 				{
-					uint64_t startTime, endTime;
-					if (defaultContext->getData(frameEvent->begin.queries[currentFrame].get(), &startTime, sizeof(uint64_t), 0) == Video::Query::Status::Ready &&
-						defaultContext->getData(frameEvent->end.queries[currentFrame].get(), &endTime, sizeof(uint64_t), 0) == Video::Query::Status::Ready)
-
+					uint64_t eventStartTime, eventEndTime;
+					if (defaultContext->getData(frameEvent->begin.queries[currentFrame].get(), &eventStartTime, sizeof(uint64_t), 0) == Video::Query::Status::Ready &&
+						defaultContext->getData(frameEvent->end.queries[currentFrame].get(), &eventEndTime, sizeof(uint64_t), 0) == Video::Query::Status::Ready)
 					{
-						Profiler::AddSpan("GPU", "name", (double(startTime) / 1000000.0), (double(endTime) / 1000000.0));
+						Profiler::AddSpan("GPU", "name",
+							(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(double(eventStartTime) * frequency)) - profilerStartTime),
+							(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(double(eventEndTime) * frequency))) - profilerStartTime);
 					}
 				}
 
