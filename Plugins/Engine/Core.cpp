@@ -987,7 +987,7 @@ namespace Gek
 
             bool update(void)
             {
-                GEK_PROFILE_FUNCTION_SCOPE();
+                GEK_PROFILER_FUNCTION_SCOPE();
                 window->readEvents();
 
                 timer.update();

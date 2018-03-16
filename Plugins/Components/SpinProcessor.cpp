@@ -76,7 +76,7 @@ namespace Gek
         {
             assert(population);
 
-			GEK_PROFILE_FUNCTION_SCOPE();
+			GEK_PROFILER_FUNCTION_SCOPE();
 			bool editorActive = core->getOption("editor", "active").convert(false);
             if (frameTime > 0.0f && !editorActive)
             {

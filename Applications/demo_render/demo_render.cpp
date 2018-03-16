@@ -85,7 +85,7 @@ namespace Gek
 
 			context = Context::Create(searchPathList);
 			context->addDataPath(FileSystem::CombinePaths(rootPath.getString(), "data"));
-			configuration = JSON::Load(getContext()->findDataPath("config.json"s));
+			configuration = JSON::Load(getContext()->findDataPath("config.json"sv));
 
 			Window::Description windowDescription;
 			windowDescription.allowResize = true;
@@ -277,18 +277,19 @@ namespace Gek
 
 			gui->context = ImGui::CreateContext();
 			ImGui::Initialize(gui->context);
-			imGuiIo.Fonts->AddFontFromFileTTF(getContext()->findDataPath(FileSystem::CombinePaths("fonts", "Ruda-Bold.ttf")).getString().data(), 14.0f);
+			auto fontPath = getContext()->findDataPath("fonts"sv);
+			imGuiIo.Fonts->AddFontFromFileTTF(FileSystem::CombinePaths(fontPath, "Ruda-Bold.ttf").getString().data(), 14.0f);
 
 			ImFontConfig fontConfig;
 			fontConfig.MergeMode = true;
 
 			fontConfig.GlyphOffset.y = 1.0f;
 			const ImWchar fontAwesomeRanges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-			imGuiIo.Fonts->AddFontFromFileTTF(getContext()->findDataPath(FileSystem::CombinePaths("fonts", "fontawesome-webfont.ttf")).getString().data(), 16.0f, &fontConfig, fontAwesomeRanges);
+			imGuiIo.Fonts->AddFontFromFileTTF(FileSystem::CombinePaths(fontPath, "fontawesome-webfont.ttf").getString().data(), 16.0f, &fontConfig, fontAwesomeRanges);
 
 			fontConfig.GlyphOffset.y = 3.0f;
 			const ImWchar googleIconRanges[] = { ICON_MIN_MD, ICON_MAX_MD, 0 };
-			imGuiIo.Fonts->AddFontFromFileTTF(getContext()->findDataPath(FileSystem::CombinePaths("fonts", "MaterialIcons-Regular.ttf")).getString().data(), 16.0f, &fontConfig, googleIconRanges);
+			imGuiIo.Fonts->AddFontFromFileTTF(FileSystem::CombinePaths(fontPath, "MaterialIcons-Regular.ttf").getString().data(), 16.0f, &fontConfig, googleIconRanges);
 
 			imGuiIo.Fonts->Build();
 

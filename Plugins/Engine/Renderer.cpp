@@ -294,7 +294,7 @@ namespace Gek
                     auto buffer = (entityCount % 4);
                     buffer = (buffer ? (4 - buffer) : buffer);
                     auto bufferedEntityCount = (entityCount + buffer);
-                    GEK_PROFILE_BEGIN_SCOPE("SIMD Buffer Organization");
+                    GEK_PROFILER_BEGIN_SCOPE("SIMD Buffer Organization");
                         shapeXPositionList.resize(bufferedEntityCount);
                         shapeYPositionList.resize(bufferedEntityCount);
                         shapeZPositionList.resize(bufferedEntityCount);
@@ -314,11 +314,11 @@ namespace Gek
 
                         visibilityList.resize(bufferedEntityCount);
                         lightList.clear();
-                    GEK_PROFILE_END_SCOPE();
+                    GEK_PROFILER_END_SCOPE();
 
-                    GEK_PROFILE_BEGIN_SCOPE("SIMD Box Culling");
+                    GEK_PROFILER_BEGIN_SCOPE("SIMD Box Culling");
                         Math::SIMD::cullSpheres(frustum, bufferedEntityCount, shapeXPositionList, shapeYPositionList, shapeZPositionList, shapeRadiusList, visibilityList);
-                    GEK_PROFILE_END_SCOPE();
+                    GEK_PROFILER_END_SCOPE();
                 }
             };
 
@@ -1129,7 +1129,7 @@ namespace Gek
                 assert(videoDevice);
                 assert(population);
 
-                GEK_PROFILE_FUNCTION_SCOPE();
+                GEK_PROFILER_FUNCTION_SCOPE();
 				videoDevice->beginProfilerBlock();
 
                 EngineConstantData engineConstantData;
@@ -1140,7 +1140,7 @@ namespace Gek
                 Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                 while (cameraQueue.try_pop(currentCamera))
                 {
-                    GEK_PROFILE_AUTO_SCOPE("Render Camera");
+                    GEK_PROFILER_AUTO_SCOPE("Render Camera");
 
                     clipDistance = (currentCamera.farClip - currentCamera.nearClip);
                     reciprocalClipDistance = (1.0f / clipDistance);
@@ -1154,18 +1154,18 @@ namespace Gek
                         const auto width = backBuffer->getDescription().width;
                         const auto height = backBuffer->getDescription().height;
 
-                        GEK_PROFILE_BEGIN_SCOPE("Sort Draw Calls");
+                        GEK_PROFILER_BEGIN_SCOPE("Sort Draw Calls");
                             concurrency::parallel_sort(std::begin(drawCallList), std::end(drawCallList), [](DrawCallValue const &leftValue, DrawCallValue const &rightValue) -> bool
                             {
                                 return (leftValue.value < rightValue.value);
                             });
-                        GEK_PROFILE_END_SCOPE();
+                        GEK_PROFILER_END_SCOPE();
 
                         bool isLightingRequired = false;
 
                         ShaderHandle currentShader;
                         std::map<uint32_t, std::vector<DrawCallSet>> drawCallSetMap;
-                        GEK_PROFILE_BEGIN_SCOPE("Organize Draw Calls");
+                        GEK_PROFILER_BEGIN_SCOPE("Organize Draw Calls");
                             for (auto &drawCall = std::begin(drawCallList); drawCall != std::end(drawCallList); )
                             {
                                 currentShader = drawCall->shader;
@@ -1187,13 +1187,13 @@ namespace Gek
                                 auto &shaderList = drawCallSetMap[shader->getDrawOrder()];
                                 shaderList.push_back(DrawCallSet(shader, beginShaderList, endShaderList));
                             }
-                        GEK_PROFILE_END_SCOPE();
+                        GEK_PROFILER_END_SCOPE();
 
                         if (isLightingRequired)
                         {
                             auto directionalLightsDone = workerPool.enqueue([&](void) -> void
                             {
-                                GEK_PROFILE_AUTO_SCOPE("Directional Light Culling");
+                                GEK_PROFILER_AUTO_SCOPE("Directional Light Culling");
 
                                 directionalLightData.lightList.clear();
                                 directionalLightData.lightList.reserve(directionalLightData.entityList.size());
@@ -1225,10 +1225,10 @@ namespace Gek
 
                             auto pointLightsDone = workerPool.enqueue([&](void) -> void
                             {
-                                GEK_PROFILE_AUTO_SCOPE("Entity Culling");
+                                GEK_PROFILER_AUTO_SCOPE("Entity Culling");
 
                                 pointLightData.cull(frustum);
-                                GEK_PROFILE_BEGIN_SCOPE("Cell Culling");
+                                GEK_PROFILER_BEGIN_SCOPE("Cell Culling");
                                     concurrency::parallel_for(size_t(0), pointLightData.entityList.size(), [&](size_t index) -> void
                                     {
                                         if (pointLightData.visibilityList[index])
@@ -1238,16 +1238,16 @@ namespace Gek
                                             addPointLight(entity, lightComponent);
                                         }
                                     });
-                                GEK_PROFILE_END_SCOPE();
+                                GEK_PROFILER_END_SCOPE();
                                 pointLightData.createBuffer();
                             }, __FILE__, __LINE__);
 
                             auto spotLightsDone = workerPool.enqueue([&](void) -> void
                             {
-                                GEK_PROFILE_AUTO_SCOPE("Light Culling");
+                                GEK_PROFILER_AUTO_SCOPE("Light Culling");
 
                                 spotLightData.cull(frustum);
-                                GEK_PROFILE_BEGIN_SCOPE("Cell Culling");
+                                GEK_PROFILER_BEGIN_SCOPE("Cell Culling");
                                     concurrency::parallel_for(size_t(0), spotLightData.entityList.size(), [&](size_t index) -> void
                                     {
                                         if (spotLightData.visibilityList[index])
@@ -1257,7 +1257,7 @@ namespace Gek
                                             addSpotLight(entity, lightComponent);
                                         }
                                     });
-                                GEK_PROFILE_END_SCOPE();
+                                GEK_PROFILER_END_SCOPE();
                                 spotLightData.createBuffer();
                             }, __FILE__, __LINE__);
 
@@ -1265,7 +1265,7 @@ namespace Gek
                             pointLightsDone.get();
                             spotLightsDone.get();
 
-                            GEK_PROFILE_BEGIN_SCOPE("Update Light Buffers");
+                            GEK_PROFILER_BEGIN_SCOPE("Update Light Buffers");
                                 concurrency::combinable<size_t> lightIndexCount;
                                 concurrency::parallel_for_each(std::begin(tilePointLightIndexList), std::end(tilePointLightIndexList), [&](auto &gridData) -> void
                                 {
@@ -1346,13 +1346,13 @@ namespace Gek
                                 lightConstants.tileSize.x = (width / GridWidth);
                                 lightConstants.tileSize.y = (height / GridHeight);
                                 videoDevice->updateResource(lightConstantBuffer.get(), &lightConstants);
-                            GEK_PROFILE_END_SCOPE();
+                            GEK_PROFILER_END_SCOPE();
                         }
 
                         CameraConstantData cameraConstantData;
                         [&](void) -> void
                         {
-                            GEK_PROFILE_AUTO_SCOPE("Set Engine Buffers");
+                            GEK_PROFILER_AUTO_SCOPE("Set Engine Buffers");
 
                             cameraConstantData.fieldOfView.x = (1.0f / currentCamera.projectionMatrix._11);
                             cameraConstantData.fieldOfView.y = (1.0f / currentCamera.projectionMatrix._22);
@@ -1527,7 +1527,7 @@ namespace Gek
                 }
 
                 bool reloadRequired = false;
-                GEK_PROFILE_BEGIN_SCOPE("Prepare User Interface");
+                GEK_PROFILER_BEGIN_SCOPE("Prepare User Interface");
                     ImGuiIO &imGuiIo = ImGui::GetIO();
                     imGuiIo.DeltaTime = frameTime;
 
@@ -1560,7 +1560,7 @@ namespace Gek
                         ImGui::PopStyleVar(2);
                         ImGui::EndMainMenuBar();
                     }
-                GEK_PROFILE_END_SCOPE();
+                GEK_PROFILER_END_SCOPE();
 
 				videoDevice->beginProfilerEvent("User Interface");
 				ImGui::Render();
