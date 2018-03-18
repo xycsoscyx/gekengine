@@ -43,8 +43,6 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                     std::map<std::string, std::map<uint32_t, std::pair<FileSystem::Path, std::string>>> fileMap;
                     textureSetPath.findFiles([&](FileSystem::Path const &filePath) -> bool
                     {
-                        LockedWrite{ std::cout } << ">> File Found: " << filePath.getString();
-
                         uint32_t extensionImportance = 0;
 						std::string extension(String::GetLower(filePath.getExtension()));
                         if (extension == ".json")
@@ -93,7 +91,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                             String::EndsWith(textureName, "_c"))
                         {
                             fileMap["albedo"][extensionImportance] = std::make_pair(filePath, textureName);
-                            LockedWrite{ std::cout } << "Found Albedo: " << filePath.getString();
+                            LockedWrite{ std::cout } << ">> Found Albedo: " << filePath.getString();
                         }
                         else if (String::EndsWith(textureName, "normal") ||
                             String::EndsWith(textureName, "normalmap") ||
@@ -101,7 +99,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                             String::EndsWith(textureName, "_n"))
                         {
                             fileMap["normal"][extensionImportance] = std::make_pair(filePath, textureName);
-                            LockedWrite{ std::cout } << "Found Normal: " << filePath.getString();
+                            LockedWrite{ std::cout } << ">> Found Normal: " << filePath.getString();
                         }
                         else if (String::EndsWith(textureName, "roughness") ||
                             String::EndsWith(textureName, "roughness_s") ||
@@ -109,13 +107,13 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                             String::EndsWith(textureName, "_r"))
                         {
                             fileMap["roughness"][extensionImportance] = std::make_pair(filePath, textureName);
-                            LockedWrite{ std::cout } << "Found Roughness: " << filePath.getString();
+                            LockedWrite{ std::cout } << ">> Found Roughness: " << filePath.getString();
                         }
                         else if (String::EndsWith(textureName, "specular") ||
                             String::EndsWith(textureName, "_s"))
                         {
                             fileMap["specular"][extensionImportance] = std::make_pair(filePath, textureName);
-                            LockedWrite{ std::cout } << "Found Specular: " << filePath.getString();
+                            LockedWrite{ std::cout } << ">> Found Specular: " << filePath.getString();
                         }
                         else if (String::EndsWith(textureName, "metalness") ||
                             String::EndsWith(textureName, "metallic") ||
@@ -123,34 +121,34 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                             String::EndsWith(textureName, "_m"))
                         {
                             fileMap["metallic"][extensionImportance] = std::make_pair(filePath, textureName);
-                            LockedWrite{ std::cout } << "Found Metallic: " << filePath.getString();
+                            LockedWrite{ std::cout } << ">> Found Metallic: " << filePath.getString();
                         }
                         else if (String::EndsWith(textureName, "clarity"))
                         {
                             fileMap["clarity"][extensionImportance] = std::make_pair(filePath, textureName);
-                            LockedWrite{ std::cout } << "Found Clarity: " << filePath.getString();
+                            LockedWrite{ std::cout } << ">> Found Clarity: " << filePath.getString();
                         }
                         else if (String::EndsWith(textureName, "thickness"))
                         {
                             fileMap["thickness"][extensionImportance] = std::make_pair(filePath, textureName);
-                            LockedWrite{ std::cout } << "Found Thickness: " << filePath.getString();
+                            LockedWrite{ std::cout } << ">> Found Thickness: " << filePath.getString();
                         }
                         else if (String::EndsWith(textureName, "height") ||
                             String::EndsWith(textureName, "displace"))
                         {
                             fileMap["height"][extensionImportance] = std::make_pair(filePath, textureName);
-                            LockedWrite{ std::cout } << "Found Height: " << filePath.getString();
+                            LockedWrite{ std::cout } << ">> Found Height: " << filePath.getString();
                         }
                         else if (String::EndsWith(textureName, "ambientocclusion") ||
                             String::EndsWith(textureName, "occlusion") ||
                             String::EndsWith(textureName, "ao"))
                         {
                             fileMap["occlusion"][extensionImportance] = std::make_pair(filePath, textureName);
-                            LockedWrite{ std::cout } << "Found Occlusion: " << filePath.getString();
+                            LockedWrite{ std::cout } << ">> Found Occlusion: " << filePath.getString();
                         }
                         else
                         {
-                            LockedWrite{ std::cout } << "Unknown map type found: " << textureName;
+                            LockedWrite{ std::cout } << "!! Unknown map type found: " << textureName;
                         }
 
                         return true;
