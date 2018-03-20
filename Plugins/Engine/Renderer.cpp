@@ -267,6 +267,7 @@ namespace Gek
             struct LightVisibilityData
                 : public LightData<COMPONENT, DATA, RESERVE>
             {
+				Context * const context = nullptr;
                 std::vector<float, AlignedAllocator<float, 16>> shapeXPositionList;
                 std::vector<float, AlignedAllocator<float, 16>> shapeYPositionList;
                 std::vector<float, AlignedAllocator<float, 16>> shapeZPositionList;
@@ -275,10 +276,16 @@ namespace Gek
 
                 LightVisibilityData(Engine::Core *core)
                     : LightData(core->getVideoDevice())
+					, context(core->getContext())
                 {
                 }
 
-                void clearEntities(void)
+				Context * const getContext(void) const
+				{
+					return context;
+				}
+
+				void clearEntities(void)
                 {
                     LightData::clearEntities();
                     shapeXPositionList.clear();

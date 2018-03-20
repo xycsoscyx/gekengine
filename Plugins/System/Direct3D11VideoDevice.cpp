@@ -1789,7 +1789,7 @@ namespace Gek
 			};
 
 			BufferedQuery disjointTimeStamp;
-			using EventMap = std::unordered_map<std::string_view, BlockQuery>;
+			using EventMap = std::unordered_map<std::string, BlockQuery>;
 			EventMap eventMap;
 
         public:
@@ -3079,14 +3079,17 @@ namespace Gek
 			int currentQueryFrame = 0;
 			int currentCollectFrame = -1;
 			std::array<std::vector<EventMap::value_type *>, 2> frameEventList;
+			std::array<std::chrono::nanoseconds, 2> profilerStartTimes;
 			void beginProfilerBlock(void)
 			{
 				defaultContext->begin(disjointTimeStamp.queries[currentQueryFrame].get());
+				profilerStartTimes[currentQueryFrame] = std::chrono::high_resolution_clock::now().time_since_epoch();
+				beginProfilerEvent("GPU Frame"sv);
 			}
 
 			void beginProfilerEvent(std::string_view name)
 			{
-				auto eventInsert = eventMap.insert({ name, BlockQuery() });
+				auto eventInsert = eventMap.insert({ name.data(), BlockQuery() });
 				if (eventInsert.second)
 				{
 					eventInsert.first->second.begin.queries[0] = createQuery(Video::Query::Type::TimeStamp);
@@ -3100,22 +3103,21 @@ namespace Gek
 
 			void endProfilerEvent(std::string_view name)
 			{
-				auto eventInsert = eventMap.insert({ name, BlockQuery() });
-				if (eventInsert.second)
+				auto eventSearch = eventMap.find(name.data());
+				if (eventSearch == std::end(eventMap))
 				{
-					eventInsert.first->second.begin.queries[0] = createQuery(Video::Query::Type::TimeStamp);
-					eventInsert.first->second.begin.queries[1] = createQuery(Video::Query::Type::TimeStamp);
-					eventInsert.first->second.end.queries[0] = createQuery(Video::Query::Type::TimeStamp);
-					eventInsert.first->second.end.queries[1] = createQuery(Video::Query::Type::TimeStamp);
 				}
-
-				auto eventData = &(*eventInsert.first);
-				frameEventList[currentQueryFrame].push_back(eventData);
-				defaultContext->end(eventData->second.end.queries[currentQueryFrame].get());
+				else
+				{
+					auto eventData = &(*eventSearch);
+					frameEventList[currentQueryFrame].push_back(eventData);
+					defaultContext->end(eventData->second.end.queries[currentQueryFrame].get());
+				}
 			}
 
 			void endProfilerBlock(void)
 			{
+				beginProfilerEvent("GPU Frame"sv);
 				defaultContext->end(disjointTimeStamp.queries[currentQueryFrame].get());
 				++currentQueryFrame &= 1;
 
@@ -3137,6 +3139,8 @@ namespace Gek
 					return;
 				}
 
+				bool firstEvent = true;
+				uint64_t frameStartTime, frameEndTime;
 				double frequency = (1.0 / double(disjointResult.frequency));
 				for (auto &eventData : frameEventList[currentFrame])
 				{
@@ -3144,9 +3148,18 @@ namespace Gek
 					if (defaultContext->getData(eventData->second.begin.queries[currentFrame].get(), &eventStartTime, sizeof(uint64_t), 0) == Video::Query::Status::Ready &&
 						defaultContext->getData(eventData->second.end.queries[currentFrame].get(), &eventEndTime, sizeof(uint64_t), 0) == Video::Query::Status::Ready)
 					{
-						Profiler::AddSpan("GPU", eventData->first,
-							std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(double(eventStartTime) * frequency)),
-							std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(double(eventEndTime) * frequency)));
+						if (firstEvent)
+						{
+							frameEndTime = false;
+							frameStartTime = eventStartTime;
+							frameEndTime = eventEndTime;
+						}
+						else
+						{
+							getContext()->addSpan("GPU", eventData->first,
+								profilerStartTimes[currentFrame] + std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(double(eventStartTime - frameStartTime) * frequency)),
+								profilerStartTimes[currentFrame] + std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(double(eventEndTime - frameEndTime) * frequency)));
+						}
 					}
 				}
 

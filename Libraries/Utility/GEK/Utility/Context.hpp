@@ -9,6 +9,7 @@
 
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/Profiler.hpp"
 #include "GEK/Utility/Hash.hpp"
 #include <functional>
 #include <typeindex>
@@ -24,6 +25,7 @@ namespace Gek
     GEK_PREDECLARE(ContextUser);
 
     GEK_INTERFACE(Context)
+		: public Profiler
     {
         static ContextPtr Create(const std::vector<FileSystem::Path> &pluginSearchList);
 

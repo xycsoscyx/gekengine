@@ -9,6 +9,9 @@
 
 #include "GEK/Utility/Hash.hpp"
 #include "GEK/Utility/JSON.hpp"
+#include "GEK/Utility/ThreadPool.hpp"
+#include <concurrent_unordered_map.h>
+#include <concurrent_vector.h>
 #include <inttypes.h>
 #include <chrono>
 #include <any>
@@ -17,26 +20,57 @@
 
 namespace Gek
 {
-	namespace Profiler
+	class Profiler
 	{
-		void Initialize(std::string_view fileName);
-		void Shutdown(void);
-		std::string_view GetPoolString(std::string_view name);
+	public:
+		struct Event
+		{
+			Hash pid;
+			Hash tid;
+			std::string name;
+			std::string category;
+			std::chrono::nanoseconds ts;
+			std::chrono::nanoseconds dur;
+			char ph;
+			uint64_t id;
+			std::string_view argument;
+			std::any value;
+		};
 
-		void AddEvent(std::string_view category, std::string_view name, char ph, uint64_t id = 0, std::string_view argument = nullptr, std::any value = nullptr);
-		void AddSpan(std::string_view category, std::string_view name, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime);
+	private:
+		Hash processIdentifier;
+		Hash mainThreadIdentifier;
+
+		std::chrono::nanoseconds startTime;
+		ThreadPool<1> writePool;
+		std::ofstream fileOutput;
+
+		concurrency::concurrent_unordered_map<Hash, std::string> nameMap;
+		concurrency::concurrent_vector<Event> eventList;
+
+	private:
+		void flush(void);
+
+	public:
+		Profiler(std::string_view fileName = nullptr);
+		~Profiler(void);
+
+		void addEvent(std::string_view category, std::string_view name, char ph, uint64_t id = 0, std::string_view argument = nullptr, std::any value = nullptr);
+		void addSpan(std::string_view category, std::string_view name, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime);
 
 #ifdef GEK_PROFILER_ENABLED
 		class ScopedTrace
 		{
 		private:
+			Profiler *profiler = nullptr;
 			std::string_view category;
 			std::string_view name;
 			std::chrono::nanoseconds startTime;
 
 		public:
-			ScopedTrace(std::string_view category, std::string_view name)
-				: category(category)
+			ScopedTrace(Profiler *profiler, std::string_view category, std::string_view name)
+				: profiler(profiler)
+				, category(category)
 				, name(name)
 				, startTime(std::chrono::high_resolution_clock::now().time_since_epoch())
 			{
@@ -44,7 +78,7 @@ namespace Gek
 
 			~ScopedTrace()
 			{
-				AddSpan(category, name, startTime, std::chrono::high_resolution_clock::now().time_since_epoch());
+				profiler->addSpan(category, name, startTime, std::chrono::high_resolution_clock::now().time_since_epoch());
 			}
 		};
 #endif // GEK_PROFILER_ENABLED
@@ -57,35 +91,35 @@ namespace Gek
 	// NAME - name. Pass __FUNCTION__ in most cases, unless you are marking up parts of one.
 
 	// Scopes. In C++, use GEK_PROFILER_SCOPE. In C, always match them within the same scope.
-	#define GEK_PROFILER_BEGIN(CATEGORY, NAME) AddEvent(CATEGORY, NAME, 'B')
-	#define GEK_PROFILER_END(CATEGORY, NAME) AddEvent(CATEGORY, NAME, 'E')
-	#define GEK_PROFILER_SCOPE(CATEGORY, NAME) Gek::Profiler::ScopedTrace ____GEK_PROFILER_scope(CATEGORY, NAME)
+	#define GEK_PROFILER_BEGIN(CATEGORY, NAME) getContext()->addEvent(CATEGORY, NAME, 'B')
+	#define GEK_PROFILER_END(CATEGORY, NAME) getContext()->addEvent(CATEGORY, NAME, 'E')
+	#define GEK_PROFILER_SCOPE(CATEGORY, NAME) Gek::Profiler::ScopedTrace ____GEK_PROFILER_scope(getContext(), CATEGORY, NAME)
 
 	// Async events. Can span threads. ID identifies which events to connect in the view.
-	#define GEK_PROFILER_START(CATEGORY, NAME, IDENTIFIER) AddEvent(CATEGORY, NAME, 'S', IDENTIFIER)
-	#define GEK_PROFILER_STEP(CATEGORY, NAME, IDENTIFIER, STEP) AddEvent(CATEGORY, NAME, 'T', IDENTIFIER, "STEP"s, STEP)
-	#define GEK_PROFILER_FINISH(CATEGORY, NAME, IDENTIFIER) AddEvent(CATEGORY, NAME, 'F', IDENTIFIER)
+	#define GEK_PROFILER_START(CATEGORY, NAME, IDENTIFIER) getContext()->addEvent(CATEGORY, NAME, 'S', IDENTIFIER)
+	#define GEK_PROFILER_STEP(CATEGORY, NAME, IDENTIFIER, STEP) getContext()->addEvent(CATEGORY, NAME, 'T', IDENTIFIER, "STEP"s, STEP)
+	#define GEK_PROFILER_FINISH(CATEGORY, NAME, IDENTIFIER) getContext()->addEvent(CATEGORY, NAME, 'F', IDENTIFIER)
 
 	// Flow events. Like async events, but displayed in a more fancy way in the viewer.
-	#define GEK_PROFILER_FLOW_START(CATEGORY, NAME, IDENTIFIER) AddEvent(CATEGORY, NAME, 's', IDENTIFIER)
-	#define GEK_PROFILER_FLOW_STEP(CATEGORY, NAME, IDENTIFIER, STEP) AddEvent(CATEGORY, NAME, 't', IDENTIFIER, "STEP"s, STEP)
-	#define GEK_PROFILER_FLOW_FINISH(CATEGORY, NAME, IDENTIFIER) AddEvent(CATEGORY, NAME, 'f', IDENTIFIER)
+	#define GEK_PROFILER_FLOW_START(CATEGORY, NAME, IDENTIFIER) getContext()->addEvent(CATEGORY, NAME, 's', IDENTIFIER)
+	#define GEK_PROFILER_FLOW_STEP(CATEGORY, NAME, IDENTIFIER, STEP) getContext()->addEvent(CATEGORY, NAME, 't', IDENTIFIER, "STEP"s, STEP)
+	#define GEK_PROFILER_FLOW_FINISH(CATEGORY, NAME, IDENTIFIER) getContext()->addEvent(CATEGORY, NAME, 'f', IDENTIFIER)
 
 	// Note that it's fine to match BEGIN_S with END and BEGIN with END_S, etc.
-	#define GEK_PROFILER_BEGIN_VALUE(CATEGORY, NAME, ARGUMENT, VALUE) AddEvent(CATEGORY, NAME, 'B', 0, ARGUMENT, VALUE)
-	#define GEK_PROFILER_END_VALUE(CATEGORY, NAME, ARGUMENT, VALUE) AddEvent(CATEGORY, NAME, 'E', 0, ARGUMENT, VALUE)
+	#define GEK_PROFILER_BEGIN_VALUE(CATEGORY, NAME, ARGUMENT, VALUE) getContext()->addEvent(CATEGORY, NAME, 'B', 0, ARGUMENT, VALUE)
+	#define GEK_PROFILER_END_VALUE(CATEGORY, NAME, ARGUMENT, VALUE) getContext()->addEvent(CATEGORY, NAME, 'E', 0, ARGUMENT, VALUE)
 
 	// Instant events. For things with no duration.
-	#define GEK_PROFILER_INSTANT(CATEGORY, NAME) AddEvent(CATEGORY, NAME, 'I', 0)
-	#define GEK_PROFILER_INSTANT_VALUE(CATEGORY, NAME, ARGUMENT, VALUE) AddEvent(CATEGORY, NAME, 'I', 0, ARGUMENT, VALUE)
+	#define GEK_PROFILER_INSTANT(CATEGORY, NAME) getContext()->addEvent(CATEGORY, NAME, 'I', 0)
+	#define GEK_PROFILER_INSTANT_VALUE(CATEGORY, NAME, ARGUMENT, VALUE) getContext()->addEvent(CATEGORY, NAME, 'I', 0, ARGUMENT, VALUE)
 
 	// Counters (can't do multi-value counters yet)
-	#define GEK_PROFILER_COUNTER(CATEGORY, NAME, VALUE) AddEvent(CATEGORY, NAME, 'C', 0, NAME, VALUE)
+	#define GEK_PROFILER_COUNTER(CATEGORY, NAME, VALUE) getContext()->addEvent(CATEGORY, NAME, 'C', 0, NAME, VALUE)
 
 	// Metadata. Call at the start preferably. Must be const strings.
-	#define GEK_PROFILER_META_PROCESS_NAME(NAME) AddEvent(""s, "process_name"s, 'M', 0, "name"s, NAME)
-	#define GEK_PROFILER_META_THREAD_NAME(NAME) AddEvent(""s, "thread_name"s, 'M', 0, "name"s, NAME)
-	#define GEK_PROFILER_META_THREAD_SORT_INDEX(i) AddEvent(""s, "thread_sort_index"s, 'M', 0, "sort_index"s, i)
+	#define GEK_PROFILER_META_PROCESS_NAME(NAME) getContext()->addEvent(""s, "process_name"s, 'M', 0, "name"s, NAME)
+	#define GEK_PROFILER_META_THREAD_NAME(NAME) getContext()->addEvent(""s, "thread_name"s, 'M', 0, "name"s, NAME)
+	#define GEK_PROFILER_META_THREAD_SORT_INDEX(INDEX) getContext()->addEvent(""s, "thread_sort_index"s, 'M', 0, "sort_index"s, INDEX)
 #else
 	#define GEK_PROFILER_BEGIN(CATEGORY, NAME)
 	#define GEK_PROFILER_END(CATEGORY, NAME)
@@ -112,7 +146,7 @@ namespace Gek
 	#define GEK_PROFILER_META_PROCESS_NAME(NAME)
 
 	#define GEK_PROFILER_META_THREAD_NAME(NAME)
-	#define GEK_PROFILER_META_THREAD_SORT_INDEX(i)
+	#define GEK_PROFILER_META_THREAD_SORT_INDEX(INDEX)
 #endif // GEK_PROFILER_ENABLED
 
 #define GEK_PROFILER_FUNCTION_SCOPE() GEK_PROFILER_SCOPE(__FILE__, __FUNCTION__);
