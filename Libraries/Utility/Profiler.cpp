@@ -17,63 +17,84 @@ namespace Gek
 
 	thread_local Hash currentThreadIdentifier = 0;
 
-	Profiler::Profiler(std::string_view fileName)
-		: processIdentifier(GetCurrentProcessId())
-		, mainThreadIdentifier(GetThreadIdentifier())
+	struct Profiler::Data
 	{
-		startTime = std::chrono::high_resolution_clock::now().time_since_epoch();
+		struct Event
+		{
+			Hash pid = 0;
+			Hash tid = 0;
+			std::string_view name = String::Empty;
+			std::string_view category = String::Empty;
+			std::chrono::nanoseconds ts;
+			std::chrono::nanoseconds dur;
+			char ph = 0;
+			uint64_t id = 0;
+			std::string_view argument = String::Empty;
+			std::any value = 0ULL;
+		};
 
-		fileOutput.open(fileName.empty() ? String::Format("profile_{}.json", processIdentifier).data() : fileName.data());
-		fileOutput <<
-			"{\n" \
-			"\t\"traceEvents\": [";
-		fileOutput <<
-			"\n" \
-			"\t\t{" \
-			"\"name\": \"" << "Profiler" << "\"" \
-			", \"ph\": \"B\"" \
-			", \"pid\": \"" << processIdentifier << "\"" \
-			", \"tid\": \"" << "MainThread" << "\"" \
-			", \"ts\": 0" <<
-			"},\n";
+		Hash processIdentifier = GetCurrentProcessId();
+		Hash mainThreadIdentifier = GetThreadIdentifier();
+
+		ThreadPool<1> writePool;
+		std::ofstream fileOutput;
+
+		concurrency::concurrent_unordered_map<Hash, std::string> nameMap;
+		concurrency::concurrent_vector<Event> eventList;
+		concurrency::critical_section criticalSection;
+	};
+
+	Profiler::Profiler(std::string_view fileName)
+		: data(std::make_unique<Data>())
+	{
+		data->fileOutput.open(fileName.empty() ? String::Format("profile_{}.json", data->processIdentifier).data() : fileName.data());
+		data->fileOutput <<
+			"{\n" << 
+				"\t\"traceEvents\": [\n" <<
+				"\t\t{" <<
+					"\"name\": \"" << "Profiler" << "\"" <<
+					", \"ph\": \"B\"" <<
+					", \"pid\": \"" << data->processIdentifier << "\"" <<
+					", \"tid\": \"" << "MainThread" << "\"" <<
+					", \"ts\": 0" <<
+				"},\n";
 	}
 
 	Profiler::~Profiler(void)
 	{
 		flush();
-		writePool.drain(true);
+		data->writePool.drain(true);
 
-		fileOutput <<
-			"\t\t{" \
-			"\"name\": \"" << "Profiler" << "\"" \
-			", \"ph\": \"E\"" \
-			", \"pid\": \"" << processIdentifier << "\"" \
-			", \"tid\": \"" << "MainThread" << "\"" \
-			", \"ts\": " << (std::chrono::high_resolution_clock::now().time_since_epoch() - startTime).count() <<
-			"}\n";
-		fileOutput <<
-			"\n" \
-			"\t],\n" \
-			"\t\"displayTimeUnit\": \"ns\",\n" \
-			"\t\"systemTraceEvents\": \"SystemTraceData\",\n" \
-			"\t\"otherData\": {\n" \
-			"\t\t\"version\": \"GEK Profile TimeStamp v1.0\"\n" \
-			"\t}\n" \
-			"}\n";
-		fileOutput.close();
+		data->fileOutput <<
+					"\t\t{" <<
+						"\"name\": \"" << "Profiler" << "\"" <<
+						", \"ph\": \"E\"" <<
+						", \"pid\": \"" << data->processIdentifier << "\"" <<
+						", \"tid\": \"" << "MainThread" << "\"" <<
+						", \"ts\": " << std::chrono::high_resolution_clock::now().time_since_epoch().count() <<
+					"}\n" <<
+				"\t],\n" <<
+				"\t\"displayTimeUnit\": \"ns\",\n" <<
+				"\t\"systemTraceEvents\": \"SystemTraceData\",\n" <<
+				"\t\"otherData\": {\n" <<
+				"\t\t\"version\": \"GEK Profile TimeStamp v1.0\"\n" <<
+				"\t}\n" <<
+			"}";
+		data->fileOutput.close();
 	}
 
 	void Profiler::flush(void)
 	{
-		if (eventList.size() > 100)
+		concurrency::critical_section::scoped_lock lock(data->criticalSection);
+		if (data->eventList.size() > 100)
 		{
-			concurrency::concurrent_vector<Event> flushList;
-			eventList.swap(flushList);
-			eventList.reserve(100);
+			concurrency::concurrent_vector<Data::Event> flushList;
+			data->eventList.swap(flushList);
+			data->eventList.reserve(100);
 
 			if (!flushList.empty())
 			{
-				writePool.enqueueAndDetach([this, flushList = std::move(flushList)](void) -> void
+				data->writePool.enqueueAndDetach([this, flushList = std::move(flushList)](void) -> void
 				{
 					for (auto &eventData : flushList)
 					{
@@ -102,7 +123,7 @@ namespace Gek
 
 						eventOutput << ", \"pid\": \"" << eventData.pid << "\"";
 						eventOutput << ", \"tid\": \"" << eventData.tid << "\"},\n";
-						fileOutput << eventOutput.str();
+						data->fileOutput << eventOutput.str();
 					}
 				}, __FILE__, __LINE__);
 			}
@@ -119,7 +140,7 @@ namespace Gek
 		auto lastSlash = category.rfind('\\');
 		category = category.substr(lastSlash == std::string_view::npos ? 0 : lastSlash + 1);
 		static const auto Zero = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(0.0));
-		eventList.push_back(Event { processIdentifier, currentThreadIdentifier, name.data(), category.data(), (std::chrono::high_resolution_clock::now().time_since_epoch() - startTime), Zero, ph, id, argument, value });
+		data->eventList.push_back(Data::Event { data->processIdentifier, currentThreadIdentifier, name.data(), category.data(), std::chrono::high_resolution_clock::now().time_since_epoch(), Zero, ph, id, argument, value });
 		flush();
 	}
 
@@ -132,7 +153,7 @@ namespace Gek
 
 		auto lastSlash = category.rfind('\\');
 		category = category.substr(lastSlash == std::string_view::npos ? 0 : lastSlash + 1);
-		eventList.push_back({ processIdentifier, currentThreadIdentifier, name.data(), category.data(), (std::chrono::high_resolution_clock::now().time_since_epoch() - startTime), (endTime - startTime), 'X', 0, String::Empty, 0ULL });
+		data->eventList.push_back({ data->processIdentifier, currentThreadIdentifier, name.data(), category.data(),startTime, (endTime - startTime), 'X', 0, String::Empty, 0ULL });
 		flush();
 	}
 #else

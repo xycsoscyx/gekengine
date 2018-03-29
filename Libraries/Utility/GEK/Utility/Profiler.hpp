@@ -22,33 +22,9 @@ namespace Gek
 {
 	class Profiler
 	{
-	public:
-		struct Event
-		{
-			Hash pid = 0;
-			Hash tid = 0;
-			std::string name = String::Empty;
-			std::string category = String::Empty;
-			std::chrono::nanoseconds ts;
-			std::chrono::nanoseconds dur;
-			char ph = 0;
-			uint64_t id = 0;
-			std::string_view argument = String::Empty;
-			std::any value = 0ULL;
-		};
-
 	private:
-		Hash processIdentifier;
-		Hash mainThreadIdentifier;
-
-		std::chrono::nanoseconds startTime;
-		ThreadPool<1> writePool;
-		std::ofstream fileOutput;
-
-		concurrency::concurrent_unordered_map<Hash, std::string> nameMap;
-		concurrency::concurrent_vector<Event> eventList;
-
-	private:
+		struct Data;
+		std::unique_ptr<Data> data;
 		void flush(void);
 
 	public:

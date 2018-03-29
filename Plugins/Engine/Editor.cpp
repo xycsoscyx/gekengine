@@ -101,7 +101,8 @@ namespace Gek
                 gizmo = std::make_unique<UI::Gizmo::WorkSpace>();
                 core->onInitialized.connect(this, &Editor::onInitialized);
                 core->onShutdown.connect(this, &Editor::onShutdown);
-                population->onAction.connect(this, &Editor::onAction);
+				population->onReset.connect(this, &Editor::onReset);
+				population->onAction.connect(this, &Editor::onAction);
                 population->onUpdate[90].connect(this, &Editor::onUpdate);
                 renderer->onShowUserInterface.connect(this, &Editor::onShowUserInterface);
             }
@@ -124,7 +125,8 @@ namespace Gek
                 renderer->onShowUserInterface.disconnect(this, &Editor::onShowUserInterface);
                 population->onAction.disconnect(this, &Editor::onAction);
                 population->onUpdate[90].disconnect(this, &Editor::onUpdate);
-            }
+				population->onReset.disconnect(this, &Editor::onReset);
+			}
 
             // Renderer
             bool isObjectInFrustum(Shapes::Frustum &frustum, Shapes::OrientedBox &orientedBox)
@@ -454,7 +456,7 @@ namespace Gek
                                                 auto componentSearch = std::begin(componentMap);
                                                 std::advance(componentSearch, componentIndex);
 												std::string componentName(componentSearch->second->getName());
-                                                if (ImGui::Selectable((componentName.data() + 7), (selectedComponent == componentIndex)))
+                                                if (ImGui::Selectable(componentName.data(), (selectedComponent == componentIndex)))
                                                 {
                                                     auto componentData = std::make_pair(componentName, JSON::EmptyObject);
                                                     population->addComponent(entity, componentData);
@@ -626,6 +628,11 @@ namespace Gek
             }
 
             // Plugin::Population Slots
+			void onReset(void)
+			{
+				selectedEntity = nullptr;
+			}
+
             void onAction(Plugin::Population::Action const &action)
             {
                 bool editorActive = core->getOption("editor", "active").convert(false);
