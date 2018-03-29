@@ -236,7 +236,7 @@ namespace Gek
             return isChanged;
         }
 
-		bool ToggleButton(const char* label, bool* state)
+		bool ToggleButton(char const *label, bool *state)
 		{
 			ImVec2 cursorPosition = ImGui::GetCursorScreenPos();
 			ImDrawList* drawList = ImGui::GetWindowDrawList();

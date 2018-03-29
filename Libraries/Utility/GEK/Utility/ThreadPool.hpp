@@ -39,14 +39,14 @@ namespace Gek
             workerList.reserve(threadCount);
             for (size_t count = 0; count < threadCount; ++count)
             {
-                // Worker execution loop
+				static size_t lastTaskLine = 0;
+				static char const *lastTaskName = nullptr;
+				// Worker execution loop
                 workerList.emplace_back([this](void) -> void
                 {
 #ifdef _WIN32
                     CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
 #endif
-					size_t lastTaskLine = 0;
-					char const *lastTaskName = nullptr;
 					while (true)
                     {
 						// Wait for additional work signal
@@ -94,11 +94,11 @@ namespace Gek
             drain();
         }
 
-        ThreadPool(const ThreadPool &) = delete;
+        ThreadPool(ThreadPool const &) = delete;
 		ThreadPool(ThreadPool &&) = delete;
 		
-		ThreadPool& operator= (const ThreadPool &) = delete;
-        ThreadPool& operator= (const ThreadPool &&) = delete;
+		ThreadPool& operator= (ThreadPool const &) = delete;
+        ThreadPool& operator= (ThreadPool const &&) = delete;
 
         void drain(bool executePendingTasks = false)
         {
@@ -135,13 +135,13 @@ namespace Gek
             create();
         }
 
-        template<typename FUNCTION, typename... PARAMETERS>
-        auto enqueue(FUNCTION&& function, PARAMETERS&&... arguments, char const *fileName = nullptr, size_t line = 0) -> std::future<typename std::result_of<FUNCTION(PARAMETERS...)>::type>
+        template<typename FUNCTION>
+        auto enqueue(FUNCTION&& function, char const *fileName = nullptr, size_t line = 0) -> std::future<typename std::result_of<FUNCTION(void)>::type>
         {
-            using ReturnType = typename std::result_of<FUNCTION(PARAMETERS...)>::type;
+            using ReturnType = typename std::result_of<FUNCTION(void)>::type;
             using PackagedTask = std::packaged_task<ReturnType()>;
 
-            auto task = std::make_shared<PackagedTask>(std::bind(std::forward<FUNCTION>(function), std::forward<PARAMETERS>(arguments)...));
+            auto task = std::make_shared<PackagedTask>(std::forward<FUNCTION>(function));
             std::future<ReturnType> result = task->get_future();
 
 			if (stop.load())
@@ -157,15 +157,15 @@ namespace Gek
             return result;
         }
 
-        template<typename FUNCTION, typename... PARAMETERS>
-        void enqueueAndDetach(FUNCTION&& function, PARAMETERS&&... arguments, char const *fileName = nullptr, size_t line = 0)
+        template<typename FUNCTION>
+        void enqueueAndDetach(FUNCTION&& function, char const *fileName = nullptr, size_t line = 0)
         {
             if (stop.load())
             {
 				return;
             }
 
-            taskQueue.push(std::make_tuple(std::bind(std::forward<FUNCTION>(function), std::forward<PARAMETERS>(arguments)...), fileName, line));
+            taskQueue.push(std::make_tuple(std::forward<FUNCTION>(function), fileName, line));
             condition.notify_one();
         }
     };

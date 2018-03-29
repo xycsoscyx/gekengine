@@ -30,7 +30,7 @@ struct Parameters
     float feetPerUnit = 1.0f;
 };
 
-bool getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode *node, std::vector<Math::Float3> &pointList, Shapes::AlignedBox &boundingBox)
+bool getMeshes(Parameters const &parameters, aiScene const *scene, aiNode const *node, std::vector<Math::Float3> &pointList, Shapes::AlignedBox &boundingBox)
 {
     if (node == nullptr)
     {

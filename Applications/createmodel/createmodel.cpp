@@ -72,7 +72,7 @@ struct Parameters
     float feetPerUnit = 1.0f;
 };
 
-bool GetModels(const Parameters &parameters, const aiScene *inputScene, const aiNode *inputNode, ModelList &modelList)
+bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode const *inputNode, ModelList &modelList)
 {
     if (inputNode == nullptr)
     {

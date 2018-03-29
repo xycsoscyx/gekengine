@@ -13,7 +13,7 @@ namespace Gek
         {
         }
 
-        AlignedBox::AlignedBox(const AlignedBox &box) noexcept
+        AlignedBox::AlignedBox(AlignedBox const &box) noexcept
             : minimum(box.minimum)
             , maximum(box.maximum)
         {
@@ -31,7 +31,7 @@ namespace Gek
         {
         }
 
-        AlignedBox &AlignedBox::operator = (const AlignedBox &box) noexcept
+        AlignedBox &AlignedBox::operator = (AlignedBox const &box) noexcept
         {
             minimum = box.minimum;
             maximum = box.maximum;

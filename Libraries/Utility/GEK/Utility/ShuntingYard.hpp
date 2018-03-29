@@ -129,7 +129,7 @@ namespace Gek
         Operand getOperand(Token const &token);
 		bool insertToken(TokenList &infixTokenList, Token &token);
         std::optional<TokenList> convertExpressionToInfix(std::string const &expression);
-        std::optional<OperandList> convertInfixToReversePolishNotation(const TokenList &infixTokenList);
-        std::optional<float> evaluateReversePolishNotation(const OperandList &rpnOperandList);
+        std::optional<OperandList> convertInfixToReversePolishNotation(TokenList const &infixTokenList);
+        std::optional<float> evaluateReversePolishNotation(OperandList const &rpnOperandList);
     };
 }; // namespace Gek

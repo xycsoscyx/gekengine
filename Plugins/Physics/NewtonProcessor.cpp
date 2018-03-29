@@ -128,7 +128,7 @@ namespace Gek
                 renderer->onShowUserInterface.connect(this, &Processor::onShowUserInterface);
             }
 
-            NewtonCollision *loadCollision(const Components::Model &modelComponent)
+            NewtonCollision *loadCollision(Components::Model const &modelComponent)
             {
                 NewtonCollision *newtonCollision = nullptr;
 
@@ -549,7 +549,7 @@ namespace Gek
             }
 
             // Processor
-            static void newtonWorldPreUpdate(const NewtonWorld* const world, void* const userData, float frameTime)
+            static void newtonWorldPreUpdate(NewtonWorld const * const world, void* const userData, float frameTime)
             {
                 std::map<Newton::Entity *, float> updateMap;
                 Processor *processor = static_cast<Processor *>(userData);
@@ -566,7 +566,7 @@ namespace Gek
                 NewtonSyncThreadJobs(processor->newtonWorld);
             }
 
-            static void newtonWorldPostUpdate(const NewtonWorld* const world, void* const userData, float frameTime)
+            static void newtonWorldPostUpdate(NewtonWorld const * const world, void* const userData, float frameTime)
             {
                 std::map<Newton::Entity *, float> updateMap;
                 Processor *processor = static_cast<Processor *>(userData);

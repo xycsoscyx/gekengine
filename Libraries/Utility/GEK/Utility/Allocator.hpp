@@ -25,11 +25,11 @@ namespace Gek
         {
         }
 
-        AlignedAllocator(const AlignedAllocator &)
+        AlignedAllocator(AlignedAllocator const &)
         {
         }
 
-        template <typename NEWTYPE> AlignedAllocator(const AlignedAllocator<NEWTYPE, ALIGNMENT> &)
+        template <typename NEWTYPE> AlignedAllocator(AlignedAllocator<NEWTYPE, ALIGNMENT> const &)
         {
         }
 
@@ -42,7 +42,7 @@ namespace Gek
             return &value;
         }
 
-        const TYPE *address(const TYPE &value) const
+        const TYPE *address(TYPE const &value) const
         {
             return &value;
         }
@@ -58,12 +58,12 @@ namespace Gek
             using other = AlignedAllocator<NEWTYPE, ALIGNMENT>;
         };
 
-        bool operator != (const AlignedAllocator &other) const
+        bool operator != (AlignedAllocator const &other) const
         {
             return !((*this) == other);
         }
 
-        void construct(TYPE *const value, const TYPE &data) const
+        void construct(TYPE * const value, TYPE const &data) const
         {
             void * const nebulous = static_cast<void *>(value);
             new (nebulous) TYPE(data);
@@ -74,12 +74,12 @@ namespace Gek
             value->~TYPE();
         }
 
-        bool operator == (const AlignedAllocator &other) const
+        bool operator == (AlignedAllocator const &other) const
         {
             return true;
         }
 
-        TYPE *allocate(const std::size_t size) const
+        TYPE *allocate(std::size_t const size) const
         {
             if (size == 0)
             {
@@ -106,12 +106,12 @@ namespace Gek
         }
 
         template <typename NEWTYPE>
-        TYPE *allocate(const std::size_t size, const NEWTYPE *) const
+        TYPE *allocate(std::size_t const size, NEWTYPE const *) const
         {
             return allocate(size);
         }
 
     private:
-        AlignedAllocator &operator=(const AlignedAllocator &);
+        AlignedAllocator &operator=(AlignedAllocator const &);
     };
 }; // namespace Gek

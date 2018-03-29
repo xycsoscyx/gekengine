@@ -65,46 +65,59 @@ namespace Gek
 
 	void Profiler::flush(void)
 	{
-		concurrency::concurrent_vector<Event> flushList;
-		eventList.swap(flushList);
-		eventList.reserve(100);
-
-		writePool.enqueueAndDetach([this, flushList = std::move(flushList)](void) -> void
+		if (eventList.size() > 100)
 		{
-			for (auto &eventData : flushList)
+			concurrency::concurrent_vector<Event> flushList;
+			eventList.swap(flushList);
+			eventList.reserve(100);
+
+			if (!flushList.empty())
 			{
-				std::ostringstream eventOutput;
-				eventOutput << "\t\t{\"category\": \"" << eventData.category << "\"";
-				eventOutput << ", \"name\": \"" << eventData.name << "\"";
-				eventOutput << ", \"ts\": " << eventData.ts.count();
-				eventOutput << ", \"ph\": \"" << eventData.ph << "\"";
-				switch (eventData.ph)
+				writePool.enqueueAndDetach([this, flushList = std::move(flushList)](void) -> void
 				{
-				case 'S':
-				case 'T':
-				case 'F':
-					eventOutput << ", \"id\": " << eventData.id;
-					break;
+					for (auto &eventData : flushList)
+					{
+						std::ostringstream eventOutput;
+						eventOutput << "\t\t{\"category\": \"" << eventData.category << "\"";
+						eventOutput << ", \"name\": \"" << eventData.name << "\"";
+						eventOutput << ", \"ts\": " << eventData.ts.count();
+						eventOutput << ", \"ph\": \"" << eventData.ph << "\"";
+						switch (eventData.ph)
+						{
+						case 'S':
+						case 'T':
+						case 'F':
+							eventOutput << ", \"id\": " << eventData.id;
+							break;
 
-				case 'X':
-					eventOutput << ", \"dur\": " << eventData.dur.count();
-					break;
-				};
+						case 'X':
+							eventOutput << ", \"dur\": " << eventData.dur.count();
+							break;
+						};
 
-				if (!eventData.argument.empty() && eventData.value.has_value())
-				{
-					eventOutput << ", \"args\": {\"" << eventData.argument << "\": " << std::any_cast<uint64_t>(eventData.value) << "}";
-				}
+						if (!eventData.argument.empty() && eventData.value.has_value())
+						{
+							eventOutput << ", \"args\": {\"" << eventData.argument << "\": " << std::any_cast<uint64_t>(eventData.value) << "}";
+						}
 
-				eventOutput << ", \"pid\": \"" << eventData.pid << "\"";
-				eventOutput << ", \"tid\": \"" << eventData.tid << "\"},\n";
-				fileOutput << eventOutput.str();
+						eventOutput << ", \"pid\": \"" << eventData.pid << "\"";
+						eventOutput << ", \"tid\": \"" << eventData.tid << "\"},\n";
+						fileOutput << eventOutput.str();
+					}
+				}, __FILE__, __LINE__);
 			}
-		}, __FILE__, __LINE__);
+		}
 	}
 
 	void Profiler::addEvent(std::string_view category, std::string_view name, char ph, uint64_t id, std::string_view argument, std::any value)
 	{
+		if (!currentThreadIdentifier)
+		{
+			currentThreadIdentifier = GetThreadIdentifier();
+		}
+
+		auto lastSlash = category.rfind('\\');
+		category = category.substr(lastSlash == std::string_view::npos ? 0 : lastSlash + 1);
 		static const auto Zero = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(0.0));
 		eventList.push_back(Event { processIdentifier, currentThreadIdentifier, name.data(), category.data(), (std::chrono::high_resolution_clock::now().time_since_epoch() - startTime), Zero, ph, id, argument, value });
 		flush();
@@ -112,7 +125,14 @@ namespace Gek
 
 	void Profiler::addSpan(std::string_view category, std::string_view name, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime)
 	{
-		eventList.push_back({ processIdentifier, currentThreadIdentifier, name.data(), category.data(), (std::chrono::high_resolution_clock::now().time_since_epoch() - startTime), (endTime - startTime), 0, 0, nullptr, nullptr });
+		if (!currentThreadIdentifier)
+		{
+			currentThreadIdentifier = GetThreadIdentifier();
+		}
+
+		auto lastSlash = category.rfind('\\');
+		category = category.substr(lastSlash == std::string_view::npos ? 0 : lastSlash + 1);
+		eventList.push_back({ processIdentifier, currentThreadIdentifier, name.data(), category.data(), (std::chrono::high_resolution_clock::now().time_since_epoch() - startTime), (endTime - startTime), 'X', 0, String::Empty, 0ULL });
 		flush();
 	}
 #else

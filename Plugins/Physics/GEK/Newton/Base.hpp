@@ -62,7 +62,7 @@ namespace Gek
 
             // Called when setting the transformation matrix of the body
             // Applies to rigid bodies only
-            virtual void onSetTransform(const float* const matrixData, int threadHandle) { };
+            virtual void onSetTransform(float const * const matrixData, int threadHandle) { };
         };
 
         GEK_INTERFACE(World)

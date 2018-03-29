@@ -55,7 +55,7 @@ struct Parameters
     float feetPerUnit = 1.0f;
 };
 
-void GetNodeMeshes(const Parameters &parameters, const aiScene *scene, const aiNode *inputNode, Model &model)
+void GetNodeMeshes(Parameters const &parameters, aiScene const *scene, aiNode const *inputNode, Model &model)
 {
     if (inputNode == nullptr)
     {

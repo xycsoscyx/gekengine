@@ -22,9 +22,9 @@ namespace Gek
         public:
             Ray(void) noexcept;
             Ray(Math::Float3 const &origin, Math::Float3 const &normal) noexcept;
-            Ray(const Ray &ray) noexcept;
+            Ray(Ray const &ray) noexcept;
 
-            Ray &operator = (const Ray &ray) noexcept;
+            Ray &operator = (Ray const &ray) noexcept;
         };
     }; // namespace Shapes
 }; // namespace Gek

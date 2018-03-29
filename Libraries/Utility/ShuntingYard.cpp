@@ -538,7 +538,7 @@ namespace Gek
         return infixTokenList;
     }
 
-    std::optional<ShuntingYard::OperandList> ShuntingYard::convertInfixToReversePolishNotation(const TokenList &infixTokenList)
+    std::optional<ShuntingYard::OperandList> ShuntingYard::convertInfixToReversePolishNotation(TokenList const &infixTokenList)
     {
         OperandList rpnOperandList;
 		std::stack<Token> tokenStack;
@@ -679,7 +679,7 @@ namespace Gek
         return rpnOperandList;
     }
 
-    std::optional<float> ShuntingYard::evaluateReversePolishNotation(const OperandList &rpnOperandList)
+    std::optional<float> ShuntingYard::evaluateReversePolishNotation(OperandList const &rpnOperandList)
     {
         if (rpnOperandList.empty())
         {

@@ -39,7 +39,7 @@ namespace Gek
 
         public:
             Frustum(void) noexcept;
-            Frustum(const Frustum &frustum) noexcept;
+            Frustum(Frustum const &frustum) noexcept;
             Frustum(Math::Float4x4 const &perspectiveTransform) noexcept;
 
             void create(Math::Float4x4 const &perspectiveTransform) noexcept;

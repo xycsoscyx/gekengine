@@ -25,7 +25,7 @@ namespace Gek
     }
 
     template <typename TYPE, typename... PARAMETERS>
-    Hash GetHash(const TYPE &value, const PARAMETERS&... arguments)
+    Hash GetHash(TYPE const &value, PARAMETERS const &... arguments)
     {
         Hash seed = std::hash<TYPE>()(value);
         Hash remainder = GetHash(arguments...);

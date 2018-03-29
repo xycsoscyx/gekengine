@@ -8,7 +8,7 @@ namespace Gek
         {
         }
 
-        Frustum::Frustum(const Frustum &frustum) noexcept
+        Frustum::Frustum(Frustum const &frustum) noexcept
         {
             for (uint32_t index = 0; index < 6; ++index)
             {

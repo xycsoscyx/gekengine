@@ -21,11 +21,11 @@ namespace Gek
 
         public:
             AlignedBox(void) noexcept;
-            AlignedBox(const AlignedBox &box) noexcept;
+            AlignedBox(AlignedBox const &box) noexcept;
             AlignedBox(float size) noexcept;
             AlignedBox(Math::Float3 const &minimum, Math::Float3 const &maximum) noexcept;
 
-            AlignedBox &operator = (const AlignedBox &box) noexcept;
+            AlignedBox &operator = (AlignedBox const &box) noexcept;
 
             void extend(Math::Float3 &point) noexcept;
 

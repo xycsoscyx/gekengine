@@ -27,7 +27,9 @@ namespace Gek
     GEK_INTERFACE(Context)
 		: public Profiler
     {
-        static ContextPtr Create(const std::vector<FileSystem::Path> &pluginSearchList);
+        static ContextPtr Create(std::vector<FileSystem::Path> const &pluginSearchList, std::string_view profilerFileName = String::Empty);
+
+		using Profiler::Profiler;
 
         virtual ~Context(void) = default;
 

@@ -69,13 +69,13 @@ namespace Gek
 		Path GetModuleFilePath(void);
 
         template <typename... PARAMETERS>
-        Path CombinePaths(const PARAMETERS&... nameList)
+        Path CombinePaths(PARAMETERS const & ... nameList)
         {
             return String::Join({ nameList... }, static_cast<char>(std::experimental::filesystem::path::preferred_separator));
         }
 
         template <typename... PARAMETERS>
-        Path CombinePaths(Path const &rootDirectory, const PARAMETERS&... nameList)
+        Path CombinePaths(Path const &rootDirectory, PARAMETERS const &... nameList)
         {
             return String::Join({ rootDirectory.getString(), nameList... }, static_cast<char>(std::experimental::filesystem::path::preferred_separator));
         }

@@ -17,13 +17,13 @@ namespace Gek
         {
         }
 
-        Ray::Ray(const Ray &ray) noexcept
+        Ray::Ray(Ray const &ray) noexcept
             : origin(ray.origin)
             , normal(ray.normal)
         {
         }
 
-        Ray &Ray::operator = (const Ray &ray) noexcept
+        Ray &Ray::operator = (Ray const &ray) noexcept
         {
             origin = ray.origin;
             normal = ray.normal;

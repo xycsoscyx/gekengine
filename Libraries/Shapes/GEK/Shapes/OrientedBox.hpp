@@ -24,11 +24,11 @@ namespace Gek
 
         public:
             OrientedBox(void) noexcept;
-            OrientedBox(const OrientedBox &box) noexcept;
-            OrientedBox(Math::Quaternion const &rotation, Math::Float3 const &translation, const AlignedBox &box) noexcept;
-            OrientedBox(Math::Float4x4 const &matrix, const AlignedBox &box) noexcept;
+            OrientedBox(OrientedBox const &box) noexcept;
+            OrientedBox(Math::Quaternion const &rotation, Math::Float3 const &translation, AlignedBox const &box) noexcept;
+            OrientedBox(Math::Float4x4 const &matrix, AlignedBox const &box) noexcept;
 
-            OrientedBox &operator = (const OrientedBox &box) noexcept;
+            OrientedBox &operator = (OrientedBox const &box) noexcept;
         };
     }; // namespace Shapes
 }; // namespace Gek

@@ -912,7 +912,7 @@ namespace Gek
             // Plugin::Core
 			Context * const getContext(void) const
 			{
-				return getContext();
+				return ContextRegistration::getContext();
 			}
 
             JSON::Reference getOption(std::string_view system, std::string_view name) const

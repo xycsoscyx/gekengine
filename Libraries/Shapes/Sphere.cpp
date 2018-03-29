@@ -10,7 +10,7 @@ namespace Gek
         {
         }
 
-        Sphere::Sphere(const Sphere &sphere) noexcept
+        Sphere::Sphere(Sphere const &sphere) noexcept
             : position(sphere.position)
             , radius(sphere.radius)
         {
@@ -22,7 +22,7 @@ namespace Gek
         {
         }
 
-        Sphere &Sphere::operator = (const Sphere &sphere) noexcept
+        Sphere &Sphere::operator = (Sphere const &sphere) noexcept
         {
             position = sphere.position;
             radius = sphere.radius;

@@ -25,16 +25,16 @@ namespace Gek
 	public:
 		struct Event
 		{
-			Hash pid;
-			Hash tid;
-			std::string name;
-			std::string category;
+			Hash pid = 0;
+			Hash tid = 0;
+			std::string name = String::Empty;
+			std::string category = String::Empty;
 			std::chrono::nanoseconds ts;
 			std::chrono::nanoseconds dur;
-			char ph;
-			uint64_t id;
-			std::string_view argument;
-			std::any value;
+			char ph = 0;
+			uint64_t id = 0;
+			std::string_view argument = String::Empty;
+			std::any value = 0ULL;
 		};
 
 	private:
@@ -52,7 +52,7 @@ namespace Gek
 		void flush(void);
 
 	public:
-		Profiler(std::string_view fileName = nullptr);
+		Profiler(std::string_view fileName = String::Empty);
 		~Profiler(void);
 
 		void addEvent(std::string_view category, std::string_view name, char ph, uint64_t id = 0, std::string_view argument = nullptr, std::any value = nullptr);

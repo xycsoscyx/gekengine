@@ -19,7 +19,8 @@ namespace Gek
 		std::string cachePath;
 
     public:
-        ContextImplementation(std::vector<FileSystem::Path> pluginSearchList)
+        ContextImplementation(std::vector<FileSystem::Path> const &pluginSearchList, std::string_view profilerFileName)
+			: Context(profilerFileName)
         {
             for (auto const &searchPath : pluginSearchList)
             {
@@ -183,8 +184,8 @@ namespace Gek
         }
     };
 
-    ContextPtr Context::Create(const std::vector<FileSystem::Path> &pluginSearchList)
+    ContextPtr Context::Create(std::vector<FileSystem::Path> const &pluginSearchList, std::string_view profilerFileName)
     {
-        return std::make_unique<ContextImplementation>(pluginSearchList);
+        return std::make_unique<ContextImplementation>(pluginSearchList, profilerFileName);
     }
 }; // namespace Gek
