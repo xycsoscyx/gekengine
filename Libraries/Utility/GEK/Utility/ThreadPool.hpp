@@ -102,17 +102,24 @@ namespace Gek
 
         void drain(bool executePendingTasks = false)
         {
-            [this, executePendingTasks](void)
-            {
-                while (!taskQueue.empty())
-                {
-					Task task;
-					if (taskQueue.try_pop(task) && executePendingTasks)
+			if (executePendingTasks)
+			{
+				[this](void)
+				{
+					while (!taskQueue.empty())
 					{
-						std::get<0>(task)();
-					}
-                };
-            } ();
+						Task task;
+						if (taskQueue.try_pop(task))
+						{
+							std::get<0>(task)();
+						}
+					};
+				} ();
+			}
+			else
+			{
+				taskQueue.clear();
+			}
 
             if (!workerList.empty())
             {

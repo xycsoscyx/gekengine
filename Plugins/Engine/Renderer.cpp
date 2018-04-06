@@ -1272,7 +1272,7 @@ namespace Gek
                             pointLightsDone.get();
                             spotLightsDone.get();
 
-                            GEK_PROFILER_BEGIN_SCOPE("Update Light Buffers");
+                            GEK_PROFILER_BEGIN_SCOPE("Update Lighting Buffers");
                                 concurrency::combinable<size_t> lightIndexCount;
                                 concurrency::parallel_for_each(std::begin(tilePointLightIndexList), std::end(tilePointLightIndexList), [&](auto &gridData) -> void
                                 {
@@ -1359,7 +1359,7 @@ namespace Gek
                         CameraConstantData cameraConstantData;
                         [&](void) -> void
                         {
-                            GEK_PROFILER_AUTO_SCOPE("Set Engine Buffers");
+                            GEK_PROFILER_AUTO_SCOPE("Update Engine Buffers");
 
                             cameraConstantData.fieldOfView.x = (1.0f / currentCamera.projectionMatrix._11);
                             cameraConstantData.fieldOfView.y = (1.0f / currentCamera.projectionMatrix._22);
@@ -1400,67 +1400,67 @@ namespace Gek
                         uint8_t shaderIndex = 0;
                         std::string finalOutput;
                         auto forceShader = (currentCamera.forceShader ? resources->getShader(currentCamera.forceShader) : nullptr);
-						videoDevice->beginProfilerEvent("Shaders");
-						for (auto const &shaderDrawCallList : drawCallSetMap)
-                        {
-                            for (auto const &shaderDrawCall : shaderDrawCallList.second)
-                            {
-                                auto &shader = shaderDrawCall.shader;
-								videoDevice->beginProfilerEvent(shader->getName());
+						Video::Scope(videoDevice, "Handle Shaders", [&](void) -> void
+						{
+							for (auto const &shaderDrawCallList : drawCallSetMap)
+							{
+								for (auto const &shaderDrawCall : shaderDrawCallList.second)
+								{
+									auto &shader = shaderDrawCall.shader;
+									Video::Scope(videoDevice, shader->getName(), [&](void) -> void
+									{
+										finalOutput = shader->getOutput();
+										for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentCamera.viewFrustum); pass; pass = pass->next())
+										{
+											Video::Scope(videoDevice, pass->getName(), [&](void) -> void
+											{
+												resources->startResourceBlock();
+												switch (pass->prepare())
+												{
+												case Engine::Shader::Pass::Mode::Forward:
+													[&](void) -> void
+													{
+														VisualHandle currentVisual;
+														MaterialHandle currentMaterial;
+														Video::Scope(videoDevice, "Draw Geometry", [&](void) -> void
+														{
+															for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
+															{
+																if (currentVisual != drawCall->plugin)
+																{
+																	currentVisual = drawCall->plugin;
+																	resources->setVisual(videoContext, currentVisual);
+																}
 
-                                finalOutput = shader->getOutput();
+																if (currentMaterial != drawCall->material)
+																{
+																	currentMaterial = drawCall->material;
+																	resources->setMaterial(videoContext, pass.get(), currentMaterial, (forceShader == shader));
+																}
 
-                                for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentCamera.viewFrustum); pass; pass = pass->next())
-                                {
-									videoDevice->beginProfilerEvent(pass->getName());
-									resources->startResourceBlock();
-                                    switch (pass->prepare())
-                                    {
-                                    case Engine::Shader::Pass::Mode::Forward:
-                                        [&](void) -> void
-                                        {
-                                            VisualHandle currentVisual;
-                                            MaterialHandle currentMaterial;
-											videoDevice->beginProfilerEvent("Draw Calls"s);
-											for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
-                                            {
-                                                if (currentVisual != drawCall->plugin)
-                                                {
-                                                    currentVisual = drawCall->plugin;
-                                                    resources->setVisual(videoContext, currentVisual);
-                                                }
+																drawCall->onDraw(videoContext);
+															}
+														});
+													}();
+													break;
 
-                                                if (currentMaterial != drawCall->material)
-                                                {
-                                                    currentMaterial = drawCall->material;
-                                                    resources->setMaterial(videoContext, pass.get(), currentMaterial, (forceShader == shader));
-                                                }
+												case Engine::Shader::Pass::Mode::Deferred:
+													videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
+													resources->drawPrimitive(videoContext, 3, 0);
+													break;
 
-                                                drawCall->onDraw(videoContext);
-                                            }
+												case Engine::Shader::Pass::Mode::Compute:
+													break;
+												};
 
-											videoDevice->endProfilerEvent("Draw Calls"s);
-										}();
-                                        break;
-
-                                    case Engine::Shader::Pass::Mode::Deferred:
-                                        videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
-                                        resources->drawPrimitive(videoContext, 3, 0);
-                                        break;
-
-                                    case Engine::Shader::Pass::Mode::Compute:
-                                        break;
-                                    };
-
-                                    pass->clear();
-									videoDevice->endProfilerEvent(pass->getName());
+												pass->clear();
+											});
+										}
+									});
 								}
-
-								videoDevice->endProfilerEvent(shader->getName());
 							}
-                        }
+						});
 
-						videoDevice->endProfilerEvent("Shaders");
 						videoContext->geometryPipeline()->clearConstantBufferList(2, 0);
                         videoContext->vertexPipeline()->clearConstantBufferList(2, 0);
                         videoContext->pixelPipeline()->clearConstantBufferList(2, 0);
@@ -1492,35 +1492,36 @@ namespace Gek
 
                     uint8_t filterIndex = 0;
 					videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
-					videoDevice->beginProfilerEvent("Filters");
-					for (auto const &filterName : { "tonemap" })
-                    {
-                        auto const filter = resources->getFilter(filterName);
-                        if (filter)
-                        {
-							videoDevice->beginProfilerEvent(filter->getName());
-							for (auto pass = filter->begin(videoContext, screenHandle, ResourceHandle()); pass; pass = pass->next())
-                            {
-								videoDevice->beginProfilerEvent(pass->getName());
-								switch (pass->prepare())
-                                {
-                                case Engine::Filter::Pass::Mode::Deferred:
-                                    resources->drawPrimitive(videoContext, 3, 0);
-                                    break;
+					Video::Scope(videoDevice, "Handle Filters", [&](void) -> void
+					{
+						for (auto const &filterName : { "tonemap" })
+						{
+							auto const filter = resources->getFilter(filterName);
+							if (filter)
+							{
+								videoDevice->beginProfilerEvent(filter->getName());
+								for (auto pass = filter->begin(videoContext, screenHandle, ResourceHandle()); pass; pass = pass->next())
+								{
+									videoDevice->beginProfilerEvent(pass->getName());
+									switch (pass->prepare())
+									{
+									case Engine::Filter::Pass::Mode::Deferred:
+										resources->drawPrimitive(videoContext, 3, 0);
+										break;
 
-                                case Engine::Filter::Pass::Mode::Compute:
-                                    break;
-                                };
+									case Engine::Filter::Pass::Mode::Compute:
+										break;
+									};
 
-                                pass->clear();
-								videoDevice->endProfilerEvent(pass->getName());
+									pass->clear();
+									videoDevice->endProfilerEvent(pass->getName());
+								}
+
+								videoDevice->endProfilerEvent(filter->getName());
 							}
-
-							videoDevice->endProfilerEvent(filter->getName());
 						}
-                    }
+					});
 
-					videoDevice->endProfilerEvent("Filters");
 					videoContext->geometryPipeline()->clearConstantBufferList(1, 0);
                     videoContext->vertexPipeline()->clearConstantBufferList(1, 0);
                     videoContext->pixelPipeline()->clearConstantBufferList(1, 0);
@@ -1569,9 +1570,10 @@ namespace Gek
                     }
                 GEK_PROFILER_END_SCOPE();
 
-				videoDevice->beginProfilerEvent("User Interface");
-				ImGui::Render();
-				videoDevice->endProfilerEvent("User Interface");
+				Video::Scope(videoDevice, "Draw UI", [&](void) -> void
+				{
+					ImGui::Render();
+				});
 
 				videoDevice->endProfilerBlock();
 				videoDevice->present(true);

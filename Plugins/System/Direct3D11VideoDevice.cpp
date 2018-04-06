@@ -1855,7 +1855,7 @@ namespace Gek
                 CComQIPtr<ID3D11InfoQueue> d3dInfoQueue(d3dDebug);
                 d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
                 d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
-                //d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
+                d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
 #endif
 
                 defaultContext = std::make_unique<Context>(d3dDeviceContext);
@@ -3117,7 +3117,7 @@ namespace Gek
 
 			void endProfilerBlock(void)
 			{
-				beginProfilerEvent("GPU Frame"sv);
+				endProfilerEvent("GPU Frame"sv);
 				defaultContext->end(disjointTimeStamp.queries[currentQueryFrame].get());
 				++currentQueryFrame &= 1;
 

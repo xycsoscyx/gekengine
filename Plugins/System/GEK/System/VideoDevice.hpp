@@ -768,5 +768,24 @@ namespace Gek
                 virtual void *getDevice(void) = 0;
             };
         }; // namespace Debug
-    }; // namespace Video
+
+		template <typename FUNCTION>
+		static auto Scope(Device *device, std::string_view name, FUNCTION &&function)
+			-> std::enable_if_t<std::is_void<typename std::result_of<FUNCTION>::type>::value, int>
+		{
+			device->beginProfilerEvent(name);
+			function();
+			device->endProfilerEvent(name);
+		}
+
+		template <typename FUNCTION>
+		static auto Scope(Device *device, std::string_view name, FUNCTION &&function)
+			-> std::enable_if_t<!std::is_void<typename std::result_of<FUNCTION>::type>::value, int>
+		{
+			device->beginProfilerEvent(name);
+			auto result = function();
+			device->endProfilerEvent(name);
+			return result;
+		}
+	}; // namespace Video
 }; // namespace Gek
