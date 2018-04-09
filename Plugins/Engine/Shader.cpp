@@ -352,6 +352,7 @@ namespace Gek
                     materialData.renderState = resources->createRenderState(renderStateInformation);
                 }
 
+				uint32_t passCount = 0;
                 auto passesNode = shaderNode.get("passes");
                 passList.resize(passesNode.getArray().size());
                 auto passData = std::begin(passList);
@@ -820,7 +821,7 @@ namespace Gek
 
                     std::string entryPoint(passNode.get("entry").convert(String::Empty));
                     auto programName = passNode.get("program").convert(String::Empty);
-                    pass.name = String::Format("{}: {}", programName, entryPoint);
+                    pass.name = String::Format("{}: {} - Pass {}: {}", shaderName, programName, passCount++, entryPoint);
                     std::string fileName(FileSystem::CombinePaths(shaderName, programName).withExtension(".hlsl").getString());
                     Video::Program::Type pipelineType = (pass.mode == Pass::Mode::Compute ? Video::Program::Type::Compute : Video::Program::Type::Pixel);
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);

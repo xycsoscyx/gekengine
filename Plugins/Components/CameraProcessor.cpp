@@ -180,30 +180,29 @@ namespace Gek
         {
             assert(renderer);
 
-			GEK_PROFILER_FUNCTION_SCOPE();
 			bool editorActive = core->getOption("editor", "active").convert(false);
-            if (frameTime > 0.0f && !editorActive)
-            {
-                parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void
-                {
-                    std::string name;
-                    if (entity->hasComponent<Components::Name>())
-                    {
-                        name = entity->getComponent<Components::Name>().name;
-                    }
-                    else
-                    {
-                        name = String::Format("camera_{}", *reinterpret_cast<int *>(entity));
-                    }
+			if (frameTime > 0.0f && !editorActive)
+			{
+				parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void
+				{
+					std::string name;
+					if (entity->hasComponent<Components::Name>())
+					{
+						name = entity->getComponent<Components::Name>().name;
+					}
+					else
+					{
+						name = String::Format("camera_{}", *reinterpret_cast<int *>(entity));
+					}
 
-                    auto viewMatrix(transformComponent.getMatrix().getInverse());
+					auto viewMatrix(transformComponent.getMatrix().getInverse());
 
-                    const auto backBuffer = core->getRenderer()->getVideoDevice()->getBackBuffer();
-                    const float width = float(backBuffer->getDescription().width);
-                    const float height = float(backBuffer->getDescription().height);
-                    renderer->queueCamera(viewMatrix, cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip, name, data.target);
-                });
-            }
+					const auto backBuffer = core->getRenderer()->getVideoDevice()->getBackBuffer();
+					const float width = float(backBuffer->getDescription().width);
+					const float height = float(backBuffer->getDescription().height);
+					renderer->queueCamera(viewMatrix, cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip, name, data.target);
+				});
+			}
         }
     };
 

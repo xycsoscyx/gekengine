@@ -64,6 +64,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(_window)
             {
+				getContext()->setThreadName("Main Thread"sv);
                 LockedWrite{ std::cout } << "Starting GEK Engine";
 
                 if (!window)
@@ -989,40 +990,41 @@ namespace Gek
 
             bool update(void)
             {
-                GEK_PROFILER_FUNCTION_SCOPE();
-                window->readEvents();
+				GEK_PROFILER_BEGIN_SCOPE("Core Update")
+				{
+					window->readEvents();
 
-                timer.update();
+					timer.update();
 
-                // Read keyboard modifiers inputs
-                ImGuiIO &imGuiIo = ImGui::GetIO();
-                imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-                imGuiIo.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-                imGuiIo.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
-                imGuiIo.KeySuper = false;
-                // imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
-                // imGuiIo.MousePos : filled by WM_MOUSEMOVE events
-                // imGuiIo.MouseDown : filled by WM_*BUTTON* events
-                // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
+					// Read keyboard modifiers inputs
+					ImGuiIO &imGuiIo = ImGui::GetIO();
+					imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+					imGuiIo.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+					imGuiIo.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+					imGuiIo.KeySuper = false;
+					// imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
+					// imGuiIo.MousePos : filled by WM_MOUSEMOVE events
+					// imGuiIo.MouseDown : filled by WM_*BUTTON* events
+					// imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
 
-                if (windowActive)
-                {
-                    float frameTime = timer.getUpdateTime();
-                    modeChangeTimer -= frameTime;
-                    if (enableInterfaceControl)
-                    {
-                        population->update(0.0f);
-                    }
-                    else
-                    {
-                        population->update(frameTime);
-                        auto rectangle = window->getScreenRectangle();
-                        window->setCursorPosition(Math::Int2(
-                            int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
-                            int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
-                    }
-                }
-
+					if (windowActive)
+					{
+						float frameTime = timer.getUpdateTime();
+						modeChangeTimer -= frameTime;
+						if (enableInterfaceControl)
+						{
+							population->update(0.0f);
+						}
+						else
+						{
+							population->update(frameTime);
+							auto rectangle = window->getScreenRectangle();
+							window->setCursorPosition(Math::Int2(
+								int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
+								int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
+						}
+					}
+				} GEK_PROFILER_END_SCOPE();
                 return engineRunning;
             }
         };

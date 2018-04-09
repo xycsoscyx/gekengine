@@ -470,20 +470,21 @@ namespace Gek
                 assert(population);
                 assert(newtonWorld);
 
-                GEK_PROFILER_FUNCTION_SCOPE();
+				GEK_PROFILER_BEGIN_SCOPE("Newton Update")
+				{
+					bool editorActive = core->getOption("editor", "active").convert(false);
+					if (frameTime > 0.0f && !editorActive)
+					{
+						static constexpr float StepTime = (1.0f / 120.0f);
+						while (frameTime > 0.0f)
+						{
+							NewtonUpdate(newtonWorld, std::min(frameTime, StepTime));
+							frameTime -= StepTime;
+						};
 
-                bool editorActive = core->getOption("editor", "active").convert(false);
-                if (frameTime > 0.0f && !editorActive)
-                {
-					static constexpr float StepTime = (1.0f / 120.0f);
-                    while (frameTime > 0.0f)
-                    {
-                        NewtonUpdate(newtonWorld, std::min(frameTime, StepTime));
-                        frameTime -= StepTime;
-                    };
-
-                    NewtonWaitForUpdateToFinish(newtonWorld);
-                }
+						NewtonWaitForUpdateToFinish(newtonWorld);
+					}
+				} GEK_PROFILER_END_SCOPE();
             }
 
             // Newton::Entity

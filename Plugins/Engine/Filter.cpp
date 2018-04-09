@@ -228,6 +228,7 @@ namespace Gek
                     }
                 }
 
+				uint32_t passCount = 0;
                 auto &passesNode = filterNode.get("passes");
                 passList.resize(passesNode.getArray().size());
                 auto passData = std::begin(passList);
@@ -599,8 +600,8 @@ namespace Gek
 
                     std::string entryPoint(passNode.get("entry").convert(String::Empty));
                     auto programName = passNode.get("program").convert(String::Empty);
-                    pass.name = String::Format("{}: {}", programName, entryPoint);
-                    std::string fileName(FileSystem::CombinePaths(filterName, programName + ".hlsl").getString());
+					pass.name = String::Format("{}: {} - Pass {}: {}", filterName, programName, passCount++, entryPoint);
+					std::string fileName(FileSystem::CombinePaths(filterName, programName + ".hlsl").getString());
                     Video::Program::Type pipelineType = (pass.mode == Pass::Mode::Compute ? Video::Program::Type::Compute : Video::Program::Type::Pixel);
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
                 }

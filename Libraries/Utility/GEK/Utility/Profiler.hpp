@@ -25,39 +25,25 @@ namespace Gek
 	private:
 		struct Data;
 		std::unique_ptr<Data> data;
-		void flush(void);
 
 	public:
 		Profiler(std::string_view fileName = String::Empty);
 		~Profiler(void);
 
-		void addEvent(std::string_view category, std::string_view name, char ph, uint64_t id = 0, std::string_view argument = nullptr, std::any value = nullptr);
-		void addSpan(std::string_view category, std::string_view name, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime);
+		void setThreadName(std::string_view name);
+		Hash registerName(std::string_view name);
+		void addEvent(std::string_view category, std::string_view name, char ph, uint64_t id = 0, std::string_view argument = nullptr, std::any value = nullptr, Hash *threadIdentifier = nullptr);
+		void addSpan(std::string_view category, std::string_view name, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime, Hash *threadIdentifier = nullptr);
 
-#ifdef GEK_PROFILER_ENABLED
-		class ScopedTrace
+		template <typename FUNCTION, typename... ARGUMENTS>
+		static auto Scope(Profiler *profiler, std::string_view category, std::string_view name, FUNCTION function, ARGUMENTS&&... arguments) -> void
 		{
-		private:
-			Profiler *profiler = nullptr;
-			std::string_view category;
-			std::string_view name;
-			std::chrono::nanoseconds startTime;
-
-		public:
-			ScopedTrace(Profiler *profiler, std::string_view category, std::string_view name)
-				: profiler(profiler)
-				, category(category)
-				, name(name)
-				, startTime(std::chrono::high_resolution_clock::now().time_since_epoch())
-			{
-			}
-
-			~ScopedTrace()
-			{
-				profiler->addSpan(category, name, startTime, std::chrono::high_resolution_clock::now().time_since_epoch());
-			}
-		};
+#ifdef GEK_PROFILER_ENABLED
+			auto startTime = std::chrono::high_resolution_clock::now().time_since_epoch();
+			function(std::forward<ARGUMENTS>(arguments)...);
+			profiler->addSpan(category, name, startTime, std::chrono::high_resolution_clock::now().time_since_epoch());
 #endif // GEK_PROFILER_ENABLED
+		}
 	}; // namespace Profiler
 }; // namespace Gek
 
@@ -69,7 +55,6 @@ namespace Gek
 	// Scopes. In C++, use GEK_PROFILER_SCOPE. In C, always match them within the same scope.
 	#define GEK_PROFILER_BEGIN(CATEGORY, NAME) getContext()->addEvent(CATEGORY, NAME, 'B')
 	#define GEK_PROFILER_END(CATEGORY, NAME) getContext()->addEvent(CATEGORY, NAME, 'E')
-	#define GEK_PROFILER_SCOPE(CATEGORY, NAME) Gek::Profiler::ScopedTrace ____GEK_PROFILER_scope(getContext(), CATEGORY, NAME)
 
 	// Async events. Can span threads. ID identifies which events to connect in the view.
 	#define GEK_PROFILER_START(CATEGORY, NAME, IDENTIFIER) getContext()->addEvent(CATEGORY, NAME, 'S', IDENTIFIER)
@@ -99,33 +84,23 @@ namespace Gek
 #else
 	#define GEK_PROFILER_BEGIN(CATEGORY, NAME)
 	#define GEK_PROFILER_END(CATEGORY, NAME)
-	#define GEK_PROFILER_SCOPE(CATEGORY, NAME)
 	#define GEK_PROFILER_START(CATEGORY, NAME, IDENTIFIER)
 	#define GEK_PROFILER_STEP(CATEGORY, NAME, IDENTIFIER, STEP)
 	#define GEK_PROFILER_FINISH(CATEGORY, NAME, IDENTIFIER)
 	#define GEK_PROFILER_FLOW_START(CATEGORY, NAME, IDENTIFIER)
 	#define GEK_PROFILER_FLOW_STEP(CATEGORY, NAME, IDENTIFIER, STEP)
 	#define GEK_PROFILER_FLOW_FINISH(CATEGORY, NAME, IDENTIFIER)
+	#define GEK_PROFILER_BEGIN_VALUE(CATEGORY, NAME, ARGUMENT, VALUE)
+	#define GEK_PROFILER_END_VALUE(CATEGORY, NAME, ARGUMENT, VALUE)
 	#define GEK_PROFILER_INSTANT(CATEGORY, NAME)
-
-	#define GEK_PROFILER_BEGIN_VALUE(CATEGORY, NAME, ARGUMENT, astrval)
-	#define GEK_PROFILER_END_VALUE(CATEGORY, NAME, ARGUMENT, astrval)
-	#define GEK_PROFILER_SCOPE_VALUE(CATEGORY, NAME, ARGUMENT, astrval)
-
-	#define GEK_PROFILER_INSTANT(CATEGORY, NAME)
-	#define GEK_PROFILER_INSTANT_VALUE(CATEGORY, NAME, ARGUMENT, astrval)
-
-	// Counters (can't do multi-value counters yet)
+	#define GEK_PROFILER_INSTANT_VALUE(CATEGORY, NAME, ARGUMENT, VALUE)
 	#define GEK_PROFILER_COUNTER(CATEGORY, NAME, VALUE)
-
-	// Metadata. Call at the start preferably. Must be const strings.
 	#define GEK_PROFILER_META_PROCESS_NAME(NAME)
-
 	#define GEK_PROFILER_META_THREAD_NAME(NAME)
 	#define GEK_PROFILER_META_THREAD_SORT_INDEX(INDEX)
 #endif // GEK_PROFILER_ENABLED
 
 #define GEK_PROFILER_FUNCTION_SCOPE() GEK_PROFILER_SCOPE(__FILE__, __FUNCTION__);
 #define GEK_PROFILER_AUTO_SCOPE(NAME) GEK_PROFILER_SCOPE(__FILE__, NAME);
-#define GEK_PROFILER_BEGIN_SCOPE(NAME) do { GEK_PROFILER_SCOPE(__FILE__, NAME);
-#define GEK_PROFILER_END_SCOPE() } while(false);
+#define GEK_PROFILER_BEGIN_SCOPE(NAME) Gek::Profiler::Scope(getContext(), __FILE__, NAME, [&](void) -> void
+#define GEK_PROFILER_END_SCOPE() )

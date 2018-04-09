@@ -769,23 +769,18 @@ namespace Gek
             };
         }; // namespace Debug
 
-		template <typename FUNCTION>
-		static auto Scope(Device *device, std::string_view name, FUNCTION &&function)
-			-> std::enable_if_t<std::is_void<typename std::result_of<FUNCTION>::type>::value, int>
+		namespace Profiler
 		{
-			device->beginProfilerEvent(name);
-			function();
-			device->endProfilerEvent(name);
-		}
-
-		template <typename FUNCTION>
-		static auto Scope(Device *device, std::string_view name, FUNCTION &&function)
-			-> std::enable_if_t<!std::is_void<typename std::result_of<FUNCTION>::type>::value, int>
-		{
-			device->beginProfilerEvent(name);
-			auto result = function();
-			device->endProfilerEvent(name);
-			return result;
-		}
+			template <typename FUNCTION, typename... ARGUMENTS>
+			auto Scope(Device *device, std::string_view name, FUNCTION function, ARGUMENTS&&... arguments) -> void
+			{
+				device->beginProfilerEvent(name);
+				function(std::forward<ARGUMENTS>(arguments)...);
+				device->endProfilerEvent(name);
+			}
+		}; // namespace Profiler
 	}; // namespace Video
 }; // namespace Gek
+
+#define GEK_VIDEO_PROFILER_BEGIN_SCOPE(DEVICE, NAME) Gek::Video::Profiler::Scope(DEVICE, NAME, [&](void) -> void
+#define GEK_VIDEO_PROFILER_END_SCOPE() )

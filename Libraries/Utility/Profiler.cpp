@@ -5,7 +5,6 @@
 
 namespace Gek
 {
-#ifdef GEK_PROFILER_ENABLED
 	Hash GetThreadIdentifier(void)
 	{
 		return std::hash<std::thread::id>()(std::this_thread::get_id());;
@@ -42,6 +41,75 @@ namespace Gek
 		concurrency::concurrent_unordered_map<Hash, std::string> nameMap;
 		concurrency::concurrent_vector<Event> eventList;
 		concurrency::critical_section criticalSection;
+
+		template <typename ...ARGUMENTS>
+		void addEvent(Hash *threadIdentifier, ARGUMENTS&&... arguments)
+		{
+			[&](void) -> void
+			{
+				concurrency::critical_section::scoped_lock lock(criticalSection);
+				if (!currentThreadIdentifier)
+				{
+					currentThreadIdentifier = GetThreadIdentifier();
+				}
+
+				eventList.push_back({ processIdentifier, (threadIdentifier ? *threadIdentifier : currentThreadIdentifier), std::forward<ARGUMENTS>(arguments)... });
+			}();
+
+			if (eventList.size() > 100 && criticalSection.try_lock())
+			{
+				concurrency::concurrent_vector<Data::Event> flushList;
+				eventList.swap(flushList);
+				eventList.clear();
+				eventList.reserve(100);
+				criticalSection.unlock();
+
+				if (!flushList.empty())
+				{
+					writePool.enqueueAndDetach([this, flushList = std::move(flushList)](void) -> void
+					{
+						for (auto &eventData : flushList)
+						{
+							std::ostringstream eventOutput;
+							eventOutput << "\t\t{\"category\": \"" << eventData.category << "\"";
+							eventOutput << ", \"name\": \"" << eventData.name << "\"";
+							eventOutput << ", \"ts\": " << eventData.ts.count();
+							eventOutput << ", \"ph\": \"" << eventData.ph << "\"";
+							switch (eventData.ph)
+							{
+							case 'S':
+							case 'T':
+							case 'F':
+								eventOutput << ", \"id\": " << eventData.id;
+								break;
+
+							case 'X':
+								eventOutput << ", \"dur\": " << eventData.dur.count();
+								break;
+							};
+
+							if (!eventData.argument.empty() && eventData.value.has_value())
+							{
+								//eventOutput << ", \"args\": {\"" << eventData.argument << "\": " << std::any_cast<uint64_t>(eventData.value) << "}";
+							}
+
+							eventOutput << ", \"pid\": \"" << eventData.pid << "\"";
+							auto nameSearch = nameMap.find(eventData.tid);
+							if (nameSearch == std::end(nameMap))
+							{
+								eventOutput << ", \"tid\": \"" << eventData.tid << "\"},\n";
+							}
+							else
+							{
+								eventOutput << ", \"tid\": \"" << nameSearch->second << "\"},\n";
+							}
+
+							fileOutput << eventOutput.str();
+						}
+					}, __FILE__, __LINE__);
+				}
+			}
+		}
 	};
 
 	Profiler::Profiler(std::string_view fileName)
@@ -49,29 +117,22 @@ namespace Gek
 	{
 		data->fileOutput.open(fileName.empty() ? String::Format("profile_{}.json", data->processIdentifier).data() : fileName.data());
 		data->fileOutput <<
-			"{\n" << 
-				"\t\"traceEvents\": [\n" <<
-				"\t\t{" <<
-					"\"name\": \"" << "Profiler" << "\"" <<
-					", \"ph\": \"B\"" <<
-					", \"pid\": \"" << data->processIdentifier << "\"" <<
-					", \"tid\": \"" << "MainThread" << "\"" <<
-					", \"ts\": 0" <<
-				"},\n";
+			"{\n" <<
+			"\t\"traceEvents\": [\n";
 	}
 
 	Profiler::~Profiler(void)
 	{
-		flush();
 		data->writePool.drain(true);
 
 		data->fileOutput <<
 					"\t\t{" <<
 						"\"name\": \"" << "Profiler" << "\"" <<
-						", \"ph\": \"E\"" <<
+						", \"ph\": \"X\"" <<
 						", \"pid\": \"" << data->processIdentifier << "\"" <<
-						", \"tid\": \"" << "MainThread" << "\"" <<
+						", \"tid\": \"" << "Main Thread" << "\"" <<
 						", \"ts\": " << std::chrono::high_resolution_clock::now().time_since_epoch().count() <<
+						", \"dur\": 0" <<
 					"}\n" <<
 				"\t],\n" <<
 				"\t\"displayTimeUnit\": \"ns\",\n" <<
@@ -83,79 +144,35 @@ namespace Gek
 		data->fileOutput.close();
 	}
 
-	void Profiler::flush(void)
-	{
-		concurrency::critical_section::scoped_lock lock(data->criticalSection);
-		if (data->eventList.size() > 100)
-		{
-			concurrency::concurrent_vector<Data::Event> flushList;
-			data->eventList.swap(flushList);
-			data->eventList.reserve(100);
-
-			if (!flushList.empty())
-			{
-				data->writePool.enqueueAndDetach([this, flushList = std::move(flushList)](void) -> void
-				{
-					for (auto &eventData : flushList)
-					{
-						std::ostringstream eventOutput;
-						eventOutput << "\t\t{\"category\": \"" << eventData.category << "\"";
-						eventOutput << ", \"name\": \"" << eventData.name << "\"";
-						eventOutput << ", \"ts\": " << eventData.ts.count();
-						eventOutput << ", \"ph\": \"" << eventData.ph << "\"";
-						switch (eventData.ph)
-						{
-						case 'S':
-						case 'T':
-						case 'F':
-							eventOutput << ", \"id\": " << eventData.id;
-							break;
-
-						case 'X':
-							eventOutput << ", \"dur\": " << eventData.dur.count();
-							break;
-						};
-
-						if (!eventData.argument.empty() && eventData.value.has_value())
-						{
-							eventOutput << ", \"args\": {\"" << eventData.argument << "\": " << std::any_cast<uint64_t>(eventData.value) << "}";
-						}
-
-						eventOutput << ", \"pid\": \"" << eventData.pid << "\"";
-						eventOutput << ", \"tid\": \"" << eventData.tid << "\"},\n";
-						data->fileOutput << eventOutput.str();
-					}
-				}, __FILE__, __LINE__);
-			}
-		}
-	}
-
-	void Profiler::addEvent(std::string_view category, std::string_view name, char ph, uint64_t id, std::string_view argument, std::any value)
+	void Profiler::setThreadName(std::string_view name)
 	{
 		if (!currentThreadIdentifier)
 		{
 			currentThreadIdentifier = GetThreadIdentifier();
 		}
 
+		data->nameMap.insert(std::make_pair(currentThreadIdentifier, name.data()));
+	}
+
+	Hash Profiler::registerName(std::string_view name)
+	{
+		auto hash = GetHash(name, "GEK Engine Profiler Name"sv);
+		data->nameMap.insert(std::make_pair(hash, name.data()));
+		return hash;
+	}
+
+	void Profiler::addEvent(std::string_view category, std::string_view name, char ph, uint64_t id, std::string_view argument, std::any value, Hash *threadIdentifier)
+	{
 		auto lastSlash = category.rfind('\\');
 		category = category.substr(lastSlash == std::string_view::npos ? 0 : lastSlash + 1);
 		static const auto Zero = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(0.0));
-		data->eventList.push_back(Data::Event { data->processIdentifier, currentThreadIdentifier, name.data(), category.data(), std::chrono::high_resolution_clock::now().time_since_epoch(), Zero, ph, id, argument, value });
-		flush();
+		data->addEvent(threadIdentifier, name.data(), category.data(), std::chrono::high_resolution_clock::now().time_since_epoch(), Zero, ph, id, argument, value);
 	}
 
-	void Profiler::addSpan(std::string_view category, std::string_view name, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime)
+	void Profiler::addSpan(std::string_view category, std::string_view name, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime, Hash *threadIdentifier)
 	{
-		if (!currentThreadIdentifier)
-		{
-			currentThreadIdentifier = GetThreadIdentifier();
-		}
-
 		auto lastSlash = category.rfind('\\');
 		category = category.substr(lastSlash == std::string_view::npos ? 0 : lastSlash + 1);
-		data->eventList.push_back({ data->processIdentifier, currentThreadIdentifier, name.data(), category.data(),startTime, (endTime - startTime), 'X', 0, String::Empty, 0ULL });
-		flush();
+		data->addEvent(threadIdentifier, name.data(), category.data(),startTime, (endTime - startTime), 'X', 0ULL, String::Empty, 0ULL);
 	}
-#else
-#endif
 }; // namespace Gek

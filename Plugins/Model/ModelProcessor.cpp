@@ -509,199 +509,206 @@ namespace Gek
         {
             assert(renderer);
 
-            GEK_PROFILER_FUNCTION_SCOPE();
+			GEK_PROFILER_BEGIN_SCOPE("Models Update")
+			{
+				// Cull by entity/group
+				const auto entityCount = getEntityCount();
+				auto buffer = (entityCount % 4);
+				buffer = (buffer ? (4 - buffer) : buffer);
+				const auto bufferedEntityCount = (entityCount + buffer);
+				halfSizeXList.resize(bufferedEntityCount);
+				halfSizeYList.resize(bufferedEntityCount);
+				halfSizeZList.resize(bufferedEntityCount);
+				for (auto &elementList : transformList)
+				{
+					elementList.resize(bufferedEntityCount);
+				}
 
-            // Cull by entity/group
-            const auto entityCount = getEntityCount();
-            auto buffer = (entityCount % 4);
-            buffer = (buffer ? (4 - buffer) : buffer);
-            const auto bufferedEntityCount = (entityCount + buffer);
-            halfSizeXList.resize(bufferedEntityCount);
-            halfSizeYList.resize(bufferedEntityCount);
-            halfSizeZList.resize(bufferedEntityCount);
-            for (auto &elementList : transformList)
-            {
-                elementList.resize(bufferedEntityCount);
-            }
+				entityDataList.clear();
+				entityDataList.reserve(entityCount);
+				GEK_PROFILER_BEGIN_SCOPE("Collect Entities")
+				{
+					parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
+					{
+						auto group = data.group;
+						auto matrix(transformComponent.getMatrix());
+						matrix.translation.xyz += group->boundingBox.getCenter();
+						auto halfSize(group->boundingBox.getHalfSize() * transformComponent.scale);
 
-            entityDataList.clear();
-            entityDataList.reserve(entityCount);
-			GEK_PROFILER_BEGIN_SCOPE("Collect Entities");
-                parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
-                {
-                    auto group = data.group;
-                    auto matrix(transformComponent.getMatrix());
-                    matrix.translation.xyz += group->boundingBox.getCenter();
-                    auto halfSize(group->boundingBox.getHalfSize() * transformComponent.scale);
+						auto entityInsert = entityDataList.push_back(std::make_tuple(entity, &data, 0));
+						auto entityIndex = std::get<2>(*entityInsert) = std::distance(std::begin(entityDataList), entityInsert);
 
-                    auto entityInsert = entityDataList.push_back(std::make_tuple(entity, &data, 0));
-                    auto entityIndex = std::get<2>(*entityInsert) = std::distance(std::begin(entityDataList), entityInsert);
+						halfSizeXList[entityIndex] = halfSize.x;
+						halfSizeYList[entityIndex] = halfSize.y;
+						halfSizeZList[entityIndex] = halfSize.z;
+						for (size_t element = 0; element < 16; ++element)
+						{
+							transformList[element][entityIndex] = matrix.data[element];
+						}
+					});
+				} GEK_PROFILER_END_SCOPE();
 
-                    halfSizeXList[entityIndex] = halfSize.x;
-                    halfSizeYList[entityIndex] = halfSize.y;
-                    halfSizeZList[entityIndex] = halfSize.z;
-                    for (size_t element = 0; element < 16; ++element)
-                    {
-                        transformList[element][entityIndex] = matrix.data[element];
-                    }
-                });
-			GEK_PROFILER_END_SCOPE();
+				visibilityList.resize(bufferedEntityCount);
+				GEK_PROFILER_BEGIN_SCOPE("Cull Entities")
+				{
+					Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedEntityCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
+				} GEK_PROFILER_END_SCOPE();
 
-            visibilityList.resize(bufferedEntityCount);
-			GEK_PROFILER_BEGIN_SCOPE("Cull Entities");
-                Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedEntityCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
-			GEK_PROFILER_END_SCOPE();
+				// Cull by model inside group
+				const auto modelCount = std::accumulate(std::begin(entityDataList), std::end(entityDataList), 0U, [this](auto count, auto const &entitySearch) -> auto
+				{
+					if (visibilityList[std::get<2>(entitySearch)])
+					{
+						auto data = std::get<1>(entitySearch);
+						count += data->group->modelList.size();
+					}
 
-            // Cull by model inside group
-            const auto modelCount = std::accumulate(std::begin(entityDataList), std::end(entityDataList), 0U, [this](auto count, auto const &entitySearch) -> auto
-            {
-                if (visibilityList[std::get<2>(entitySearch)])
-                {
-                    auto data = std::get<1>(entitySearch);
-                    count += data->group->modelList.size();
-                }
+					return count;
+				});
 
-                return count;
-            });
+				buffer = (modelCount % 4);
+				buffer = (buffer ? (4 - buffer) : buffer);
+				const auto bufferedModelCount = (modelCount + buffer);
+				halfSizeXList.resize(bufferedModelCount);
+				halfSizeYList.resize(bufferedModelCount);
+				halfSizeZList.resize(bufferedModelCount);
+				for (auto &elementList : transformList)
+				{
+					elementList.resize(bufferedModelCount);
+				}
 
-            buffer = (modelCount % 4);
-            buffer = (buffer ? (4 - buffer) : buffer);
-            const auto bufferedModelCount = (modelCount + buffer);
-            halfSizeXList.resize(bufferedModelCount);
-            halfSizeYList.resize(bufferedModelCount);
-            halfSizeZList.resize(bufferedModelCount);
-            for (auto &elementList : transformList)
-            {
-                elementList.resize(bufferedModelCount);
-            }
+				entityModelList.clear();
+				entityModelList.reserve(bufferedModelCount);
+				GEK_PROFILER_BEGIN_SCOPE("Collect Models")
+				{
+					concurrency::parallel_for_each(std::begin(entityDataList), std::end(entityDataList), [&](auto &entitySearch) -> void
+					{
+						auto entityDataIndex = std::get<2>(entitySearch);
+						if (visibilityList[entityDataIndex])
+						{
+							auto entity = std::get<0>(entitySearch);
+							auto data = std::get<1>(entitySearch);
+							auto group = data->group;
 
-            entityModelList.clear();
-            entityModelList.reserve(bufferedModelCount);
-			GEK_PROFILER_BEGIN_SCOPE("Collect Models");
-                concurrency::parallel_for_each(std::begin(entityDataList), std::end(entityDataList), [&](auto &entitySearch) -> void
-                {
-                    auto entityDataIndex = std::get<2>(entitySearch);
-                    if (visibilityList[entityDataIndex])
-                    {
-                        auto entity = std::get<0>(entitySearch);
-                        auto data = std::get<1>(entitySearch);
-                        auto group = data->group;
+							auto &transformComponent = entity->getComponent<Components::Transform>();
+							auto matrix(transformComponent.getMatrix());
 
-                        auto &transformComponent = entity->getComponent<Components::Transform>();
-                        auto matrix(transformComponent.getMatrix());
+							concurrency::parallel_for_each(std::begin(group->modelList), std::end(group->modelList), [&](Group::Model const &model) -> void
+							{
+								auto halfSize(group->boundingBox.getHalfSize() * transformComponent.scale);
+								auto center = Math::Float4x4::MakeTranslation(model.boundingBox.getCenter());
 
-                        concurrency::parallel_for_each(std::begin(group->modelList), std::end(group->modelList), [&](Group::Model const &model) -> void
-                        {
-                            auto halfSize(group->boundingBox.getHalfSize() * transformComponent.scale);
-                            auto center = Math::Float4x4::MakeTranslation(model.boundingBox.getCenter());
+								auto entityInsert = entityModelList.push_back(std::make_tuple(entity, &model, 0));
+								auto entityModelIndex = std::get<2>(*entityInsert) = std::distance(std::begin(entityModelList), entityInsert);
 
-                            auto entityInsert = entityModelList.push_back(std::make_tuple(entity, &model, 0));
-                            auto entityModelIndex = std::get<2>(*entityInsert) = std::distance(std::begin(entityModelList), entityInsert);
+								halfSizeXList[entityModelIndex] = halfSize.x;
+								halfSizeYList[entityModelIndex] = halfSize.y;
+								halfSizeZList[entityModelIndex] = halfSize.z;
+								for (size_t element = 0; element < 16; ++element)
+								{
+									transformList[element][entityModelIndex] = (matrix.data[element] + center.data[element]);
+								}
+							});
+						}
+					});
+				} GEK_PROFILER_END_SCOPE();
 
-                            halfSizeXList[entityModelIndex] = halfSize.x;
-                            halfSizeYList[entityModelIndex] = halfSize.y;
-                            halfSizeZList[entityModelIndex] = halfSize.z;
-                            for (size_t element = 0; element < 16; ++element)
-                            {
-                                transformList[element][entityModelIndex] = (matrix.data[element] + center.data[element]);
-                            }
-                        });
-                    }
-                });
-			GEK_PROFILER_END_SCOPE();
+				visibilityList.resize(bufferedModelCount);
+				GEK_PROFILER_BEGIN_SCOPE("Cull Models")
+				{
+					Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedModelCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
+				} GEK_PROFILER_END_SCOPE();
 
-            visibilityList.resize(bufferedModelCount);
-			GEK_PROFILER_BEGIN_SCOPE("Cull Models");
-                Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedModelCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
-			GEK_PROFILER_END_SCOPE();
+				GEK_PROFILER_BEGIN_SCOPE("Collect Models")
+				{
+					concurrency::parallel_for_each(std::begin(entityModelList), std::end(entityModelList), [&](auto &entitySearch) -> void
+					{
+						if (visibilityList[std::get<2>(entitySearch)])
+						{
+							auto entity = std::get<0>(entitySearch);
+							auto model = std::get<1>(entitySearch);
 
-			GEK_PROFILER_BEGIN_SCOPE("Collect Models");
-                concurrency::parallel_for_each(std::begin(entityModelList), std::end(entityModelList), [&](auto &entitySearch) -> void
-                {
-                    if (visibilityList[std::get<2>(entitySearch)])
-                    {
-                        auto entity = std::get<0>(entitySearch);
-                        auto model = std::get<1>(entitySearch);
+							auto &transformComponent = entity->getComponent<Components::Transform>();
+							auto modelViewMatrix(transformComponent.getScaledMatrix() * viewMatrix);
 
-                        auto &transformComponent = entity->getComponent<Components::Transform>();
-                        auto modelViewMatrix(transformComponent.getScaledMatrix() * viewMatrix);
+							concurrency::parallel_for_each(std::begin(model->meshList), std::end(model->meshList), [&](Group::Model::Mesh const &mesh) -> void
+							{
+								auto &meshMap = renderList[mesh.material];
+								auto &instanceList = meshMap[&mesh];
+								instanceList.push_back(modelViewMatrix);
+							});
+						}
+					});
+				} GEK_PROFILER_END_SCOPE();
 
-                        concurrency::parallel_for_each(std::begin(model->meshList), std::end(model->meshList), [&](Group::Model::Mesh const &mesh) -> void
-                        {
-                            auto &meshMap = renderList[mesh.material];
-                            auto &instanceList = meshMap[&mesh];
-                            instanceList.push_back(modelViewMatrix);
-                        });
-                    }
-                });
-			GEK_PROFILER_END_SCOPE();
+				size_t maximumInstanceCount = 0;
+				GEK_PROFILER_BEGIN_SCOPE("Queue Models")
+				{
+					concurrency::parallel_for_each(std::begin(renderList), std::end(renderList), [&](auto &materialPair) -> void
+					{
+						const auto material = materialPair.first;
+						auto &materialMap = materialPair.second;
 
-            size_t maximumInstanceCount = 0;
-			GEK_PROFILER_BEGIN_SCOPE("Queue Models");
-                concurrency::parallel_for_each(std::begin(renderList), std::end(renderList), [&](auto &materialPair) -> void
-                {
-                    const auto material = materialPair.first;
-                    auto &materialMap = materialPair.second;
+						size_t materialInstanceCount = 0;
+						for (auto const &materialPair : materialMap)
+						{
+							const auto material = materialPair.first;
+							auto const &materialInstanceList = materialPair.second;
+							materialInstanceCount += materialInstanceList.size();
+						}
 
-                    size_t materialInstanceCount = 0;
-                    for (auto const &materialPair : materialMap)
-                    {
-                        const auto material = materialPair.first;
-                        auto const &materialInstanceList = materialPair.second;
-                        materialInstanceCount += materialInstanceList.size();
-                    }
+						std::vector<DrawData> drawDataList(materialMap.size());
+						std::vector<Math::Float4x4> instanceList(materialInstanceCount);
+						for (auto &levelPair : materialMap)
+						{
+							auto level = levelPair.first;
+							if (level)
+							{
+								auto &levelInstanceList = levelPair.second;
+								drawDataList.push_back(DrawData(instanceList.size(), levelInstanceList.size(), level));
+								instanceList.insert(std::end(instanceList), std::begin(levelInstanceList), std::end(levelInstanceList));
+								levelInstanceList.clear();
+							}
+						}
 
-                    std::vector<DrawData> drawDataList(materialMap.size());
-                    std::vector<Math::Float4x4> instanceList(materialInstanceCount);
-                    for (auto &levelPair : materialMap)
-                    {
-                        auto level = levelPair.first;
-                        if (level)
-                        {
-                            auto &levelInstanceList = levelPair.second;
-                            drawDataList.push_back(DrawData(instanceList.size(), levelInstanceList.size(), level));
-                            instanceList.insert(std::end(instanceList), std::begin(levelInstanceList), std::end(levelInstanceList));
-                            levelInstanceList.clear();
-                        }
-                    }
+						InterlockedExchange(&maximumInstanceCount, std::max(maximumInstanceCount, instanceList.size()));
+						renderer->queueDrawCall(visual, material, std::move([this, drawDataList = move(drawDataList), instanceList = move(instanceList)](Video::Device::Context *videoContext) -> void
+						{
+							Math::Float4x4 *instanceData = nullptr;
+							if (videoDevice->mapBuffer(instanceBuffer.get(), instanceData))
+							{
+								std::copy(std::begin(instanceList), std::end(instanceList), instanceData);
+								videoDevice->unmapBuffer(instanceBuffer.get());
+								videoContext->setVertexBufferList({ instanceBuffer.get() }, 5);
+								for (auto const &drawData : drawDataList)
+								{
+									if (drawData.data)
+									{
+										auto &level = *drawData.data;
+										resources->setVertexBufferList(videoContext, level.vertexBufferList, 0);
+										resources->setIndexBuffer(videoContext, level.indexBuffer, 0);
+										resources->drawInstancedIndexedPrimitive(videoContext, drawData.instanceCount, drawData.instanceStart, level.indexCount, 0, 0);
+									}
+								}
+							}
+						}));
+					});
+				} GEK_PROFILER_END_SCOPE();
 
-                    InterlockedExchange(&maximumInstanceCount, std::max(maximumInstanceCount, instanceList.size()));
-                    renderer->queueDrawCall(visual, material, std::move([this, drawDataList = move(drawDataList), instanceList = move(instanceList)](Video::Device::Context *videoContext) -> void
-                    {
-                        Math::Float4x4 *instanceData = nullptr;
-                        if (videoDevice->mapBuffer(instanceBuffer.get(), instanceData))
-                        {
-                            std::copy(std::begin(instanceList), std::end(instanceList), instanceData);
-                            videoDevice->unmapBuffer(instanceBuffer.get());
-                            videoContext->setVertexBufferList({ instanceBuffer.get() }, 5);
-                            for (auto const &drawData : drawDataList)
-                            {
-                                if (drawData.data)
-                                {
-                                    auto &level = *drawData.data;
-                                    resources->setVertexBufferList(videoContext, level.vertexBufferList, 0);
-                                    resources->setIndexBuffer(videoContext, level.indexBuffer, 0);
-                                    resources->drawInstancedIndexedPrimitive(videoContext, drawData.instanceCount, drawData.instanceStart, level.indexCount, 0, 0);
-                                }
-                            }
-                        }
-                    }));
-                });
-            GEK_PROFILER_END_SCOPE();
-
-            if (instanceBuffer->getDescription().count < maximumInstanceCount)
-            {
-                instanceBuffer = nullptr;
-                Video::Buffer::Description instanceDescription;
-                instanceDescription.stride = sizeof(Math::Float4x4);
-                instanceDescription.count = maximumInstanceCount;
-                instanceDescription.type = Video::Buffer::Type::Vertex;
-                instanceDescription.flags = Video::Buffer::Flags::Mappable;
-                instanceBuffer = videoDevice->createBuffer(instanceDescription);
-                instanceBuffer->setName("model:instances");
-            }
-        }
-    };
+				if (instanceBuffer->getDescription().count < maximumInstanceCount)
+				{
+					instanceBuffer = nullptr;
+					Video::Buffer::Description instanceDescription;
+					instanceDescription.stride = sizeof(Math::Float4x4);
+					instanceDescription.count = maximumInstanceCount;
+					instanceDescription.type = Video::Buffer::Type::Vertex;
+					instanceDescription.flags = Video::Buffer::Flags::Mappable;
+					instanceBuffer = videoDevice->createBuffer(instanceDescription);
+					instanceBuffer->setName("model:instances");
+				}
+			} GEK_PROFILER_END_SCOPE();
+		}
+	};
 
     GEK_REGISTER_CONTEXT_USER(Model)
     GEK_REGISTER_CONTEXT_USER(ModelProcessor)

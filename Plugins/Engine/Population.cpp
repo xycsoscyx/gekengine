@@ -186,30 +186,32 @@ namespace Gek
 
             void update(float frameTime)
             {
-                GEK_PROFILER_FUNCTION_SCOPE();
-                if (frameTime == 0.0f)
-                {
-                    actionQueue.clear();
-                }
-                else
-                {
-                    Action action;
-                    while (actionQueue.try_pop(action))
-                    {
-                        onAction(action);
-                    };
-                }
+				GEK_PROFILER_BEGIN_SCOPE("Population Update")
+				{
+					if (frameTime == 0.0f)
+					{
+						actionQueue.clear();
+					}
+					else
+					{
+						Action action;
+						while (actionQueue.try_pop(action))
+						{
+							onAction(action);
+						};
+					}
 
-                for (auto &slot : onUpdate)
-                {
-                    slot.second(frameTime);
-                }
+					for (auto &slot : onUpdate)
+					{
+						slot.second(frameTime);
+					}
 
-                std::function<void(void)> entityAction;
-                while (entityQueue.try_pop(entityAction))
-                {
-                    entityAction();
-                };
+					std::function<void(void)> entityAction;
+					while (entityQueue.try_pop(entityAction))
+					{
+						entityAction();
+					};
+				} GEK_PROFILER_END_SCOPE();
             }
 
             void action(Action const &action)
