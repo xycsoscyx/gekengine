@@ -509,7 +509,7 @@ namespace Gek
         {
             assert(renderer);
 
-			GEK_PROFILER_BEGIN_SCOPE("Models Update")
+			GEK_PROFILER_BEGIN_SCOPE("Models Update"sv)
 			{
 				// Cull by entity/group
 				const auto entityCount = getEntityCount();
@@ -526,7 +526,7 @@ namespace Gek
 
 				entityDataList.clear();
 				entityDataList.reserve(entityCount);
-				GEK_PROFILER_BEGIN_SCOPE("Collect Entities")
+				GEK_PROFILER_BEGIN_SCOPE("Collect Entities"sv)
 				{
 					parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
 					{
@@ -549,7 +549,7 @@ namespace Gek
 				} GEK_PROFILER_END_SCOPE();
 
 				visibilityList.resize(bufferedEntityCount);
-				GEK_PROFILER_BEGIN_SCOPE("Cull Entities")
+				GEK_PROFILER_BEGIN_SCOPE("Cull Entities"sv)
 				{
 					Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedEntityCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
 				} GEK_PROFILER_END_SCOPE();
@@ -579,7 +579,7 @@ namespace Gek
 
 				entityModelList.clear();
 				entityModelList.reserve(bufferedModelCount);
-				GEK_PROFILER_BEGIN_SCOPE("Collect Models")
+				GEK_PROFILER_BEGIN_SCOPE("Collect Models"sv)
 				{
 					concurrency::parallel_for_each(std::begin(entityDataList), std::end(entityDataList), [&](auto &entitySearch) -> void
 					{
@@ -614,12 +614,12 @@ namespace Gek
 				} GEK_PROFILER_END_SCOPE();
 
 				visibilityList.resize(bufferedModelCount);
-				GEK_PROFILER_BEGIN_SCOPE("Cull Models")
+				GEK_PROFILER_BEGIN_SCOPE("Cull Models"sv)
 				{
 					Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedModelCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
 				} GEK_PROFILER_END_SCOPE();
 
-				GEK_PROFILER_BEGIN_SCOPE("Collect Models")
+				GEK_PROFILER_BEGIN_SCOPE("Collect Models"sv)
 				{
 					concurrency::parallel_for_each(std::begin(entityModelList), std::end(entityModelList), [&](auto &entitySearch) -> void
 					{
@@ -642,7 +642,7 @@ namespace Gek
 				} GEK_PROFILER_END_SCOPE();
 
 				size_t maximumInstanceCount = 0;
-				GEK_PROFILER_BEGIN_SCOPE("Queue Models")
+				GEK_PROFILER_BEGIN_SCOPE("Queue Models"sv)
 				{
 					concurrency::parallel_for_each(std::begin(renderList), std::end(renderList), [&](auto &materialPair) -> void
 					{
@@ -704,7 +704,7 @@ namespace Gek
 					instanceDescription.type = Video::Buffer::Type::Vertex;
 					instanceDescription.flags = Video::Buffer::Flags::Mappable;
 					instanceBuffer = videoDevice->createBuffer(instanceDescription);
-					instanceBuffer->setName("model:instances");
+					instanceBuffer->setName("model:instances"sv);
 				}
 			} GEK_PROFILER_END_SCOPE();
 		}

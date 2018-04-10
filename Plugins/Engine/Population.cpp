@@ -186,7 +186,7 @@ namespace Gek
 
             void update(float frameTime)
             {
-				GEK_PROFILER_BEGIN_SCOPE("Population Update")
+				GEK_PROFILER_BEGIN_SCOPE("Population Update"sv)
 				{
 					if (frameTime == 0.0f)
 					{

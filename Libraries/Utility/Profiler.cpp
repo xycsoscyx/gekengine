@@ -5,6 +5,8 @@
 
 namespace Gek
 {
+	const Profiler::Arguments Profiler::EmptyArguments;
+
 	Hash GetThreadIdentifier(void)
 	{
 		return std::hash<std::thread::id>()(std::this_thread::get_id());;
@@ -14,22 +16,30 @@ namespace Gek
 		return std::stoull(thread.str());
 	}
 
-	thread_local Hash currentThreadIdentifier = 0;
+	Hash GetCurrentThreadIdentifier(void)
+	{
+		thread_local Hash currentThreadIdentifier = 0;
+		if (!currentThreadIdentifier)
+		{
+			currentThreadIdentifier = GetThreadIdentifier();
+		}
+
+		return currentThreadIdentifier;
+	}
 
 	struct Profiler::Data
 	{
 		struct Event
 		{
-			Hash pid = 0;
-			Hash tid = 0;
+			Hash processIdentifier = 0;
+			Hash threadIdentifier = 0;
 			std::string_view name = String::Empty;
 			std::string_view category = String::Empty;
-			TimeFormat ts;
-			TimeFormat dur;
-			char ph = 0;
-			uint64_t id = 0;
-			std::string_view argument = String::Empty;
-			std::any value = 0ULL;
+			TimeFormat startTime;
+			TimeFormat duration;
+			char eventType = 0;
+			uint64_t eventIdentifier = 0;
+			Arguments arguments;
 		};
 
 		Hash processIdentifier = GetCurrentProcessId();
@@ -39,7 +49,6 @@ namespace Gek
 		std::ofstream fileOutput;
 		bool exportedFirstEvent = false;
 
-		concurrency::concurrent_unordered_map<Hash, std::string> nameMap;
 		concurrency::concurrent_vector<Event> eventList;
 		concurrency::critical_section criticalSection;
 
@@ -49,12 +58,7 @@ namespace Gek
 			[&](void) -> void
 			{
 				concurrency::critical_section::scoped_lock lock(criticalSection);
-				if (!currentThreadIdentifier)
-				{
-					currentThreadIdentifier = GetThreadIdentifier();
-				}
-
-				eventList.push_back({ processIdentifier, (threadIdentifier ? *threadIdentifier : currentThreadIdentifier), std::forward<ARGUMENTS>(arguments)... });
+				eventList.push_back({ processIdentifier, (threadIdentifier ? *threadIdentifier : GetCurrentThreadIdentifier()), std::forward<ARGUMENTS>(arguments)... });
 			}();
 
 			if (eventList.size() > 100 && criticalSection.try_lock())
@@ -75,39 +79,47 @@ namespace Gek
 							exportedFirstEvent = true;
 
 							std::ostringstream eventOutput;
-							eventOutput << "\t\t" << (isFirstEvent ? "," : "")  << "{\"category\": \"" << eventData.category << "\"";
+							eventOutput << "\t\t" << (isFirstEvent ? "," : "") << "{\"category\": \"" << eventData.category << "\"";
 							eventOutput << ", \"name\": \"" << eventData.name << "\"";
-							eventOutput << ", \"ts\": " << eventData.ts.count();
-							eventOutput << ", \"ph\": \"" << eventData.ph << "\"";
-							switch (eventData.ph)
+							eventOutput << ", \"ts\": " << eventData.startTime.count();
+							eventOutput << ", \"ph\": \"" << eventData.eventType << "\"";
+							switch (eventData.eventType)
 							{
 							case 'S':
 							case 'T':
 							case 'F':
-								eventOutput << ", \"id\": " << eventData.id;
+								eventOutput << ", \"id\": " << eventData.eventIdentifier;
 								break;
 
 							case 'X':
-								eventOutput << ", \"dur\": " << eventData.dur.count();
+								eventOutput << ", \"dur\": " << eventData.duration.count();
 								break;
 							};
 
-							if (!eventData.argument.empty() && eventData.value.has_value())
+							if (!eventData.arguments.empty())
 							{
-								//eventOutput << ", \"args\": {\"" << eventData.argument << "\": " << std::any_cast<uint64_t>(eventData.value) << "}";
+								eventOutput << ", \"args\": { ";
+
+								bool firstArgument = false;
+								for (auto &argument : eventData.arguments)
+								{
+									eventOutput << (firstArgument ? "" : ", ") << "\"" << argument.first << "\": ";
+									firstArgument = true;
+
+									if (argument.second.type() == typeid(std::string)) eventOutput << std::any_cast<std::string>(argument);
+									else if (argument.second.type() == typeid(std::string_view)) eventOutput << std::any_cast<std::string_view>(argument);
+									else if (argument.second.type() == typeid(int32_t)) eventOutput << std::any_cast<int32_t>(argument);
+									else if (argument.second.type() == typeid(uint32_t)) eventOutput << std::any_cast<uint32_t>(argument);
+									else if (argument.second.type() == typeid(int64_t)) eventOutput << std::any_cast<int64_t>(argument);
+									else if (argument.second.type() == typeid(uint64_t)) eventOutput << std::any_cast<uint64_t>(argument);
+									else if (argument.second.type() == typeid(float)) eventOutput << std::any_cast <float>(argument);
+								}
+
+								eventOutput << "}";
 							}
 
-							eventOutput << ", \"pid\": \"" << eventData.pid << "\"";
-							auto nameSearch = nameMap.find(eventData.tid);
-							if (nameSearch == std::end(nameMap))
-							{
-								eventOutput << ", \"tid\": \"" << eventData.tid << "\"},\n";
-							}
-							else
-							{
-								eventOutput << ", \"tid\": \"" << nameSearch->second << "\"}\n";
-							}
-
+							eventOutput << ", \"pid\": \"" << eventData.processIdentifier << "\"";
+							eventOutput << ", \"tid\": \"" << eventData.threadIdentifier << "\"},\n";
 							fileOutput << eventOutput.str();
 						}
 					}, __FILE__, __LINE__);
@@ -123,7 +135,7 @@ namespace Gek
 		data->fileOutput <<
 			"{\n" <<
 			"\t\"displayTimeUnit\": \"ms\",\n" <<
-			"\t\"traceEvents\": [\n";
+			"\t\"traceEvenstartTime\": [\n";
 	}
 
 	Profiler::~Profiler(void)
@@ -131,40 +143,24 @@ namespace Gek
 		data->writePool.drain(true);
 
 		data->fileOutput <<
-				"\t]\n" <<
+			"\t]\n" <<
 			"}";
 		data->fileOutput.close();
 	}
 
-	void Profiler::setThreadName(std::string_view name)
+	static const Profiler::Arguments EmptyArgumentMap;
+	void Profiler::addEvent(std::string_view category, std::string_view name, char eventType, uint64_t eventIdentifier, Hash *threadIdentifier, Arguments *arguments)
 	{
-		if (!currentThreadIdentifier)
-		{
-			currentThreadIdentifier = GetThreadIdentifier();
-		}
-
-		data->nameMap.insert(std::make_pair(currentThreadIdentifier, name.data()));
-	}
-
-	Hash Profiler::registerName(std::string_view name)
-	{
-		auto hash = GetHash(name, "GEK Engine Profiler Name"sv);
-		data->nameMap.insert(std::make_pair(hash, name.data()));
-		return hash;
-	}
-
-	void Profiler::addEvent(std::string_view category, std::string_view name, char ph, uint64_t id, std::string_view argument, std::any value, Hash *threadIdentifier)
-	{
-		auto lastSlash = category.rfind('\\');
-		category = category.substr(lastSlash == std::string_view::npos ? 0 : lastSlash + 1);
+		auto lasstartTimelash = category.rfind('\\');
+		category = category.substr(lasstartTimelash == std::string_view::npos ? 0 : lasstartTimelash + 1);
 		static const auto Zero = std::chrono::duration_cast<TimeFormat>(std::chrono::duration<double>(0.0));
-		data->addEvent(threadIdentifier, name.data(), category.data(), GetProfilerTime(), Zero, ph, id, argument, value);
+		data->addEvent(threadIdentifier, name.data(), category.data(), GetProfilerTime(), Zero, eventType, eventIdentifier, (arguments ? (*arguments) : EmptyArgumentMap));
 	}
 
 	void Profiler::addSpan(std::string_view category, std::string_view name, TimeFormat startTime, TimeFormat endTime, Hash *threadIdentifier)
 	{
-		auto lastSlash = category.rfind('\\');
-		category = category.substr(lastSlash == std::string_view::npos ? 0 : lastSlash + 1);
-		data->addEvent(threadIdentifier, name.data(), category.data(), startTime, (endTime - startTime), 'X', 0ULL, String::Empty, 0ULL);
+		auto lasstartTimelash = category.rfind('\\');
+		category = category.substr(lasstartTimelash == std::string_view::npos ? 0 : lasstartTimelash + 1);
+		data->addEvent(threadIdentifier, name.data(), category.data(), startTime, (endTime - startTime), 'X', 0ULL, EmptyArgumentMap);
 	}
 }; // namespace Gek

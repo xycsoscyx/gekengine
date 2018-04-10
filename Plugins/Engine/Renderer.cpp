@@ -301,7 +301,7 @@ namespace Gek
 					auto buffer = (entityCount % 4);
 					buffer = (buffer ? (4 - buffer) : buffer);
 					auto bufferedEntityCount = (entityCount + buffer);
-					GEK_PROFILER_BEGIN_SCOPE("SIMD Buffer Organization")
+					GEK_PROFILER_BEGIN_SCOPE("SIMD Buffer Organization"sv)
 					{
 						shapeXPositionList.resize(bufferedEntityCount);
 						shapeYPositionList.resize(bufferedEntityCount);
@@ -324,7 +324,7 @@ namespace Gek
 						lightList.clear();
 					} GEK_PROFILER_END_SCOPE();
 
-					GEK_PROFILER_BEGIN_SCOPE("SIMD Box Culling")
+					GEK_PROFILER_BEGIN_SCOPE("SIMD Box Culling"sv)
 					{
 						Math::SIMD::cullSpheres(frustum, bufferedEntityCount, shapeXPositionList, shapeYPositionList, shapeZPositionList, shapeRadiusList, visibilityList);
 					} GEK_PROFILER_END_SCOPE();
@@ -1138,7 +1138,7 @@ namespace Gek
 				assert(videoDevice);
 				assert(population);
 
-				GEK_PROFILER_BEGIN_SCOPE("Renderer Update")
+				GEK_PROFILER_BEGIN_SCOPE("Renderer Update"sv)
 				{
 					videoDevice->beginProfilerBlock();
 
@@ -1164,7 +1164,7 @@ namespace Gek
 								const auto width = backBuffer->getDescription().width;
 								const auto height = backBuffer->getDescription().height;
 
-								GEK_PROFILER_BEGIN_SCOPE("Sort Draw Calls")
+								GEK_PROFILER_BEGIN_SCOPE("Sort Draw Calls"sv)
 								{
 									concurrency::parallel_sort(std::begin(drawCallList), std::end(drawCallList), [](DrawCallValue const &leftValue, DrawCallValue const &rightValue) -> bool
 									{
@@ -1176,7 +1176,7 @@ namespace Gek
 
 								ShaderHandle currentShader;
 								std::map<uint32_t, std::vector<DrawCallSet>> drawCallSetMap;
-								GEK_PROFILER_BEGIN_SCOPE("Split Draw Calls")
+								GEK_PROFILER_BEGIN_SCOPE("Split Draw Calls"sv)
 								{
 									for (auto &drawCall = std::begin(drawCallList); drawCall != std::end(drawCallList); )
 									{
@@ -1205,8 +1205,8 @@ namespace Gek
 								{
 									auto directionalLightsDone = workerPool.enqueue([&](void) -> void
 									{
-										getContext()->setThreadName("Directional Light Worker");
-										GEK_PROFILER_BEGIN_SCOPE("Cull Directional Lights")
+										GEK_PROFILER_META_THREAD_NAME("Directional Light Worker"sv);
+										GEK_PROFILER_BEGIN_SCOPE("Cull Directional Lights"sv)
 										{
 											directionalLightData.lightList.clear();
 											directionalLightData.lightList.reserve(directionalLightData.entityList.size());
@@ -1239,8 +1239,8 @@ namespace Gek
 
 									auto pointLightsDone = workerPool.enqueue([&](void) -> void
 									{
-										getContext()->setThreadName("Point Light Worker");
-										GEK_PROFILER_BEGIN_SCOPE("Point Light Culling")
+										GEK_PROFILER_META_THREAD_NAME("Point Light Worker"sv);
+										GEK_PROFILER_BEGIN_SCOPE("Point Light Culling"sv)
 										{
 											pointLightData.cull(frustum);
 											concurrency::parallel_for(size_t(0), pointLightData.entityList.size(), [&](size_t index) -> void
@@ -1259,8 +1259,8 @@ namespace Gek
 
 									auto spotLightsDone = workerPool.enqueue([&](void) -> void
 									{
-										getContext()->setThreadName("Spot Light Worker");
-										GEK_PROFILER_BEGIN_SCOPE("Spot Light Culling")
+										GEK_PROFILER_META_THREAD_NAME("Spot Light Worker"sv);
+										GEK_PROFILER_BEGIN_SCOPE("Spot Light Culling"sv)
 										{
 											spotLightData.cull(frustum);
 											concurrency::parallel_for(size_t(0), spotLightData.entityList.size(), [&](size_t index) -> void
@@ -1281,7 +1281,7 @@ namespace Gek
 									pointLightsDone.get();
 									spotLightsDone.get();
 
-									GEK_PROFILER_BEGIN_SCOPE("Update Lighting Buffers")
+									GEK_PROFILER_BEGIN_SCOPE("Update Lighting Buffers"sv)
 									{
 										concurrency::combinable<size_t> lightIndexCount;
 										concurrency::parallel_for_each(std::begin(tilePointLightIndexList), std::end(tilePointLightIndexList), [&](auto &gridData) -> void
@@ -1367,7 +1367,7 @@ namespace Gek
 								}
 
 								CameraConstantData cameraConstantData;
-								GEK_PROFILER_BEGIN_SCOPE("Update Engine Buffers")
+								GEK_PROFILER_BEGIN_SCOPE("Update Engine Buffers"sv)
 								{
 									cameraConstantData.fieldOfView.x = (1.0f / currentCamera.projectionMatrix._11);
 									cameraConstantData.fieldOfView.y = (1.0f / currentCamera.projectionMatrix._22);
@@ -1541,7 +1541,7 @@ namespace Gek
 					}
 
 					bool reloadRequired = false;
-					GEK_PROFILER_BEGIN_SCOPE("Prepare User Interface")
+					GEK_PROFILER_BEGIN_SCOPE("Prepare User Interface"sv)
 					{
 						ImGuiIO &imGuiIo = ImGui::GetIO();
 						imGuiIo.DeltaTime = frameTime;
@@ -1577,7 +1577,7 @@ namespace Gek
 						}
 					} GEK_PROFILER_END_SCOPE();
 
-					GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, "Draw UI")
+					GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, "Draw UI"sv)
 					{
 						ImGui::Render();
 					} GEK_VIDEO_PROFILER_END_SCOPE();

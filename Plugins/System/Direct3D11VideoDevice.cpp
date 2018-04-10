@@ -3165,7 +3165,8 @@ namespace Gek
 					return;
 				}
 
-				auto videoThread = getContext()->registerName("Video Thread");
+				Hash renderTHread = Hash(this);
+				GEK_PROFILER_META_NAME("Render Thread"sv, renderTHread);
 				double frequency = (1.0 / double(disjointResult.frequency));
 				for (auto &eventSearch : frameEventList[currentFrame])
 				{
@@ -3176,7 +3177,7 @@ namespace Gek
 					{
 						auto eventDuration = std::chrono::duration<double>((eventEndTime - eventStartTime) * frequency);
 						auto eventTime = std::chrono::duration_cast<Profiler::TimeFormat>(eventDuration);
-						getContext()->addSpan(__FILE__, eventData.name, eventData.startTimes[currentFrame], eventTime, &videoThread);
+						getContext()->addSpan(__FILE__, eventData.name, eventData.startTimes[currentFrame], eventTime, &renderTHread);
 					}
 				}
 

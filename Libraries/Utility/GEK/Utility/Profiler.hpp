@@ -24,6 +24,8 @@ namespace Gek
 	{
 	public:
 		using TimeFormat = std::chrono::microseconds;
+		using Arguments = std::unordered_map<std::string_view, std::any>;
+		static const Arguments EmptyArguments;
 
 	private:
 		struct Data;
@@ -39,9 +41,7 @@ namespace Gek
 			return std::chrono::duration_cast<TimeFormat>(currentTime);
 		}
 
-		void setThreadName(std::string_view name);
-		Hash registerName(std::string_view name);
-		void addEvent(std::string_view category, std::string_view name, char ph, uint64_t id = 0, std::string_view argument = nullptr, std::any value = nullptr, Hash *threadIdentifier = nullptr);
+		void addEvent(std::string_view category, std::string_view name, char eventType, uint64_t eventIdentifier = 0, Hash *threadIdentifier = nullptr, Arguments const &arguments = EmptyArguments);
 		void addSpan(std::string_view category, std::string_view name, TimeFormat startTime, TimeFormat endTime, Hash *threadIdentifier = nullptr);
 
 		template <typename FUNCTION, typename... ARGUMENTS>
@@ -87,9 +87,10 @@ namespace Gek
 	#define GEK_PROFILER_COUNTER(CATEGORY, NAME, VALUE) getContext()->addEvent(CATEGORY, NAME, 'C', 0, NAME, VALUE)
 
 	// Metadata. Call at the start preferably. Must be const strings.
-	#define GEK_PROFILER_META_PROCESS_NAME(NAME) getContext()->addEvent(""s, "process_name"s, 'M', 0, "name"s, NAME)
-	#define GEK_PROFILER_META_THREAD_NAME(NAME) getContext()->addEvent(""s, "thread_name"s, 'M', 0, "name"s, NAME)
-	#define GEK_PROFILER_META_THREAD_SORT_INDEX(INDEX) getContext()->addEvent(""s, "thread_sort_index"s, 'M', 0, "sort_index"s, INDEX)
+	#define GEK_PROFILER_META_PROCESS_NAME(NAME) getContext()->addEvent(""sv, "process_name"sv, 'M', 0, nullptr, Gek::Profiler::Arguments({ "name"sv, NAME }))
+	#define GEK_PROFILER_META_THREAD_NAME(NAME) getContext()->addEvent(""sv, "thread_name"sv, 'M', 0, nullptr, Gek::Profiler::Arguments({ "name"sv, NAME }))
+	#define GEK_PROFILER_META_NAME(NAME, HASH) getContext()->addEvent(""sv, "thread_name"sv, 'M', 0, &HASH, Gek::Profiler::Arguments({ "name"sv, NAME }))
+	#define GEK_PROFILER_META_THREAD_SORT_INDEX(INDEX) getContext()->addEvent(""sv, "thread_sort_index"sv, 'M', 0, nullptr, Gek::Profiler::Arguments({ "sort_index"sv, NAME }))
 #else
 	#define GEK_PROFILER_BEGIN(CATEGORY, NAME)
 	#define GEK_PROFILER_END(CATEGORY, NAME)
@@ -106,7 +107,8 @@ namespace Gek
 	#define GEK_PROFILER_COUNTER(CATEGORY, NAME, VALUE)
 	#define GEK_PROFILER_META_PROCESS_NAME(NAME)
 	#define GEK_PROFILER_META_THREAD_NAME(NAME)
-	#define GEK_PROFILER_META_THREAD_SORT_INDEX(INDEX)
+	#define GEK_PROFILER_META_NAME(NAME, HASH)
+#define GEK_PROFILER_META_THREAD_SORT_INDEX(INDEX)
 #endif // GEK_PROFILER_ENABLED
 
 #define GEK_PROFILER_FUNCTION_SCOPE() GEK_PROFILER_SCOPE(__FILE__, __FUNCTION__);
