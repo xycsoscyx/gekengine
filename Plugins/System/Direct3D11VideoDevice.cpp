@@ -1786,7 +1786,7 @@ namespace Gek
 			struct BlockQuery
 			{
 				std::string_view name;
-				std::chrono::nanoseconds startTimes[2];
+				Profiler::TimeFormat startTimes[2];
 				BufferedQuery begin, end;
 			};
 
@@ -3112,7 +3112,7 @@ namespace Gek
 				}
 
 				criticalSection.unlock();
-				eventData.startTimes[currentQueryFrame] = std::chrono::high_resolution_clock::now().time_since_epoch();
+				eventData.startTimes[currentQueryFrame] = Profiler::GetProfilerTime();
 				defaultContext->end(eventData.begin.queries[currentQueryFrame].get());
 			}
 
@@ -3167,14 +3167,16 @@ namespace Gek
 
 				auto videoThread = getContext()->registerName("Video Thread");
 				double frequency = (1.0 / double(disjointResult.frequency));
-				for (auto &eventData : frameEventList[currentFrame])
+				for (auto &eventSearch : frameEventList[currentFrame])
 				{
+					auto &eventData = eventSearch->second;
 					uint64_t eventStartTime, eventEndTime;
-					if (defaultContext->getData(eventData->second.begin.queries[currentFrame].get(), &eventStartTime, sizeof(uint64_t), 0) == Video::Query::Status::Ready &&
-						defaultContext->getData(eventData->second.end.queries[currentFrame].get(), &eventEndTime, sizeof(uint64_t), 0) == Video::Query::Status::Ready)
+					if (defaultContext->getData(eventData.begin.queries[currentFrame].get(), &eventStartTime, sizeof(uint64_t)) == Video::Query::Status::Ready &&
+						defaultContext->getData(eventData.end.queries[currentFrame].get(), &eventEndTime, sizeof(uint64_t)) == Video::Query::Status::Ready)
 					{
-						getContext()->addSpan(__FILE__, eventData->second.name, eventData->second.startTimes[currentFrame],
-							std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(double(eventEndTime - eventStartTime) * frequency)), &videoThread);
+						auto eventDuration = std::chrono::duration<double>((eventEndTime - eventStartTime) * frequency);
+						auto eventTime = std::chrono::duration_cast<Profiler::TimeFormat>(eventDuration);
+						getContext()->addSpan(__FILE__, eventData.name, eventData.startTimes[currentFrame], eventTime, &videoThread);
 					}
 				}
 

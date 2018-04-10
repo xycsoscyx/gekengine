@@ -22,6 +22,9 @@ namespace Gek
 {
 	class Profiler
 	{
+	public:
+		using TimeFormat = std::chrono::microseconds;
+
 	private:
 		struct Data;
 		std::unique_ptr<Data> data;
@@ -30,18 +33,24 @@ namespace Gek
 		Profiler(std::string_view fileName = String::Empty);
 		~Profiler(void);
 
+		static const TimeFormat GetProfilerTime(void)
+		{
+			auto currentTime = std::chrono::high_resolution_clock::now().time_since_epoch();
+			return std::chrono::duration_cast<TimeFormat>(currentTime);
+		}
+
 		void setThreadName(std::string_view name);
 		Hash registerName(std::string_view name);
 		void addEvent(std::string_view category, std::string_view name, char ph, uint64_t id = 0, std::string_view argument = nullptr, std::any value = nullptr, Hash *threadIdentifier = nullptr);
-		void addSpan(std::string_view category, std::string_view name, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime, Hash *threadIdentifier = nullptr);
+		void addSpan(std::string_view category, std::string_view name, TimeFormat startTime, TimeFormat endTime, Hash *threadIdentifier = nullptr);
 
 		template <typename FUNCTION, typename... ARGUMENTS>
 		static auto Scope(Profiler *profiler, std::string_view category, std::string_view name, FUNCTION function, ARGUMENTS&&... arguments) -> void
 		{
 #ifdef GEK_PROFILER_ENABLED
-			auto startTime = std::chrono::high_resolution_clock::now().time_since_epoch();
+			auto startTime = GetProfilerTime();
 			function(std::forward<ARGUMENTS>(arguments)...);
-			profiler->addSpan(category, name, startTime, std::chrono::high_resolution_clock::now().time_since_epoch());
+			profiler->addSpan(category, name, startTime, GetProfilerTime());
 #endif // GEK_PROFILER_ENABLED
 		}
 	}; // namespace Profiler

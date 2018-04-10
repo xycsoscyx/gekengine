@@ -24,8 +24,8 @@ namespace Gek
 			Hash tid = 0;
 			std::string_view name = String::Empty;
 			std::string_view category = String::Empty;
-			std::chrono::nanoseconds ts;
-			std::chrono::nanoseconds dur;
+			TimeFormat ts;
+			TimeFormat dur;
 			char ph = 0;
 			uint64_t id = 0;
 			std::string_view argument = String::Empty;
@@ -37,6 +37,7 @@ namespace Gek
 
 		ThreadPool<1> writePool;
 		std::ofstream fileOutput;
+		bool exportedFirstEvent = false;
 
 		concurrency::concurrent_unordered_map<Hash, std::string> nameMap;
 		concurrency::concurrent_vector<Event> eventList;
@@ -70,8 +71,11 @@ namespace Gek
 					{
 						for (auto &eventData : flushList)
 						{
+							auto isFirstEvent = exportedFirstEvent;
+							exportedFirstEvent = true;
+
 							std::ostringstream eventOutput;
-							eventOutput << "\t\t{\"category\": \"" << eventData.category << "\"";
+							eventOutput << "\t\t" << (isFirstEvent ? "," : "")  << "{\"category\": \"" << eventData.category << "\"";
 							eventOutput << ", \"name\": \"" << eventData.name << "\"";
 							eventOutput << ", \"ts\": " << eventData.ts.count();
 							eventOutput << ", \"ph\": \"" << eventData.ph << "\"";
@@ -101,7 +105,7 @@ namespace Gek
 							}
 							else
 							{
-								eventOutput << ", \"tid\": \"" << nameSearch->second << "\"},\n";
+								eventOutput << ", \"tid\": \"" << nameSearch->second << "\"}\n";
 							}
 
 							fileOutput << eventOutput.str();
@@ -118,6 +122,7 @@ namespace Gek
 		data->fileOutput.open(fileName.empty() ? String::Format("profile_{}.json", data->processIdentifier).data() : fileName.data());
 		data->fileOutput <<
 			"{\n" <<
+			"\t\"displayTimeUnit\": \"ms\",\n" <<
 			"\t\"traceEvents\": [\n";
 	}
 
@@ -126,20 +131,7 @@ namespace Gek
 		data->writePool.drain(true);
 
 		data->fileOutput <<
-					"\t\t{" <<
-						"\"name\": \"" << "Profiler" << "\"" <<
-						", \"ph\": \"X\"" <<
-						", \"pid\": \"" << data->processIdentifier << "\"" <<
-						", \"tid\": \"" << "Main Thread" << "\"" <<
-						", \"ts\": " << std::chrono::high_resolution_clock::now().time_since_epoch().count() <<
-						", \"dur\": 0" <<
-					"}\n" <<
-				"\t],\n" <<
-				"\t\"displayTimeUnit\": \"ns\",\n" <<
-				"\t\"systemTraceEvents\": \"SystemTraceData\",\n" <<
-				"\t\"otherData\": {\n" <<
-				"\t\t\"version\": \"GEK Profile TimeStamp v1.0\"\n" <<
-				"\t}\n" <<
+				"\t]\n" <<
 			"}";
 		data->fileOutput.close();
 	}
@@ -165,14 +157,14 @@ namespace Gek
 	{
 		auto lastSlash = category.rfind('\\');
 		category = category.substr(lastSlash == std::string_view::npos ? 0 : lastSlash + 1);
-		static const auto Zero = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::duration<double>(0.0));
-		data->addEvent(threadIdentifier, name.data(), category.data(), std::chrono::high_resolution_clock::now().time_since_epoch(), Zero, ph, id, argument, value);
+		static const auto Zero = std::chrono::duration_cast<TimeFormat>(std::chrono::duration<double>(0.0));
+		data->addEvent(threadIdentifier, name.data(), category.data(), GetProfilerTime(), Zero, ph, id, argument, value);
 	}
 
-	void Profiler::addSpan(std::string_view category, std::string_view name, std::chrono::nanoseconds startTime, std::chrono::nanoseconds endTime, Hash *threadIdentifier)
+	void Profiler::addSpan(std::string_view category, std::string_view name, TimeFormat startTime, TimeFormat endTime, Hash *threadIdentifier)
 	{
 		auto lastSlash = category.rfind('\\');
 		category = category.substr(lastSlash == std::string_view::npos ? 0 : lastSlash + 1);
-		data->addEvent(threadIdentifier, name.data(), category.data(),startTime, (endTime - startTime), 'X', 0ULL, String::Empty, 0ULL);
+		data->addEvent(threadIdentifier, name.data(), category.data(), startTime, (endTime - startTime), 'X', 0ULL, String::Empty, 0ULL);
 	}
 }; // namespace Gek
