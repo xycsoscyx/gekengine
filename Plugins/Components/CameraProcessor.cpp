@@ -190,7 +190,8 @@ namespace Gek
 					{
 						name = entity->getComponent<Components::Name>().name;
 					}
-					else
+
+					if (name.empty())
 					{
 						name = String::Format("camera_{}", *reinterpret_cast<int *>(entity));
 					}

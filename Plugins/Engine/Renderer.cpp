@@ -163,7 +163,8 @@ namespace Gek
 				}
 
 				Camera(Camera const &renderCall)
-					: viewFrustum(renderCall.viewFrustum)
+					: name(renderCall.name)
+					, viewFrustum(renderCall.viewFrustum)
 					, viewMatrix(renderCall.viewMatrix)
 					, projectionMatrix(renderCall.projectionMatrix)
 					, nearClip(renderCall.nearClip)
@@ -301,7 +302,7 @@ namespace Gek
 					auto buffer = (entityCount % 4);
 					buffer = (buffer ? (4 - buffer) : buffer);
 					auto bufferedEntityCount = (entityCount + buffer);
-					GEK_PROFILER_BEGIN_SCOPE("SIMD Buffer Organization"sv)
+					GEK_PROFILER_BEGIN_SCOPE(getContext(), "SIMD Reorganization"sv)
 					{
 						shapeXPositionList.resize(bufferedEntityCount);
 						shapeYPositionList.resize(bufferedEntityCount);
@@ -324,7 +325,7 @@ namespace Gek
 						lightList.clear();
 					} GEK_PROFILER_END_SCOPE();
 
-					GEK_PROFILER_BEGIN_SCOPE("SIMD Box Culling"sv)
+					GEK_PROFILER_BEGIN_SCOPE(getContext(), "SIMD Culling"sv)
 					{
 						Math::SIMD::cullSpheres(frustum, bufferedEntityCount, shapeXPositionList, shapeYPositionList, shapeZPositionList, shapeRadiusList, visibilityList);
 					} GEK_PROFILER_END_SCOPE();
@@ -398,6 +399,10 @@ namespace Gek
 				Video::BufferPtr indexBuffer;
 			} gui;
 
+			Hash directionalThreadIdentifier;
+			Hash pointLightThreadIdentifier;
+			Hash spotLightThreadIdentifier;
+
 		public:
 			Renderer(Context *context, Engine::Core *core)
 				: ContextRegistration(context)
@@ -408,6 +413,9 @@ namespace Gek
 				, directionalLightData(core->getVideoDevice())
 				, pointLightData(core)
 				, spotLightData(core)
+				, directionalThreadIdentifier(Hash(&directionalLightData))
+				, pointLightThreadIdentifier(Hash(&pointLightData))
+				, spotLightThreadIdentifier(Hash(&spotLightData))
 			{
 				population->onReset.connect(this, &Renderer::onReset);
 				population->onEntityCreated.connect(this, &Renderer::onEntityCreated);
@@ -425,6 +433,15 @@ namespace Gek
 			void initializeSystem(void)
 			{
 				LockedWrite{ std::cout } << "Initializing rendering system components";
+
+				GEK_PROFILER_SET_THREAD_NAME(getContext(), directionalThreadIdentifier, "Directional Light Worker"sv);
+				GEK_PROFILER_SET_THREAD_SORT_INDEX(getContext(), directionalThreadIdentifier, 10);
+
+				GEK_PROFILER_SET_THREAD_NAME(getContext(), pointLightThreadIdentifier, "Point Light Worker"sv);
+				GEK_PROFILER_SET_THREAD_SORT_INDEX(getContext(), pointLightThreadIdentifier, 11);
+
+				GEK_PROFILER_SET_THREAD_NAME(getContext(), pointLightThreadIdentifier, "Spot Light Worker"sv);
+				GEK_PROFILER_SET_THREAD_SORT_INDEX(getContext(), pointLightThreadIdentifier, 12);
 
 				Video::SamplerState::Description bufferSamplerStateData;
 				bufferSamplerStateData.filterMode = Video::SamplerState::FilterMode::MinificationMagnificationMipMapPoint;
@@ -1138,7 +1155,7 @@ namespace Gek
 				assert(videoDevice);
 				assert(population);
 
-				GEK_PROFILER_BEGIN_SCOPE("Renderer Update"sv)
+				GEK_PROFILER_BEGIN_SCOPE(getContext(), "Renderer Update"sv)
 				{
 					videoDevice->beginProfilerBlock();
 
@@ -1150,7 +1167,7 @@ namespace Gek
 					Video::Device::Context *videoContext = videoDevice->getDefaultContext();
 					while (cameraQueue.try_pop(currentCamera))
 					{
-						GEK_PROFILER_BEGIN_SCOPE(currentCamera.name)
+						GEK_PROFILER_BEGIN_SCOPE(getContext(), currentCamera.name)
 						{
 							clipDistance = (currentCamera.farClip - currentCamera.nearClip);
 							reciprocalClipDistance = (1.0f / clipDistance);
@@ -1164,7 +1181,7 @@ namespace Gek
 								const auto width = backBuffer->getDescription().width;
 								const auto height = backBuffer->getDescription().height;
 
-								GEK_PROFILER_BEGIN_SCOPE("Sort Draw Calls"sv)
+								GEK_PROFILER_BEGIN_SCOPE(getContext(), "Sort Draw Calls"sv)
 								{
 									concurrency::parallel_sort(std::begin(drawCallList), std::end(drawCallList), [](DrawCallValue const &leftValue, DrawCallValue const &rightValue) -> bool
 									{
@@ -1176,7 +1193,7 @@ namespace Gek
 
 								ShaderHandle currentShader;
 								std::map<uint32_t, std::vector<DrawCallSet>> drawCallSetMap;
-								GEK_PROFILER_BEGIN_SCOPE("Split Draw Calls"sv)
+								GEK_PROFILER_BEGIN_SCOPE(getContext(), "Split Draw Calls"sv)
 								{
 									for (auto &drawCall = std::begin(drawCallList); drawCall != std::end(drawCallList); )
 									{
@@ -1205,8 +1222,7 @@ namespace Gek
 								{
 									auto directionalLightsDone = workerPool.enqueue([&](void) -> void
 									{
-										GEK_PROFILER_META_THREAD_NAME("Directional Light Worker"sv);
-										GEK_PROFILER_BEGIN_SCOPE("Cull Directional Lights"sv)
+										GEK_PROFILER_BEGIN_CUSTOM_SCOPE(getContext(), "Cull Directional Lights"sv, directionalThreadIdentifier)
 										{
 											directionalLightData.lightList.clear();
 											directionalLightData.lightList.reserve(directionalLightData.entityList.size());
@@ -1223,7 +1239,7 @@ namespace Gek
 											});
 
 											directionalLightData.createBuffer();
-										} GEK_PROFILER_END_SCOPE();
+										} GEK_PROFILER_END_CUSTOM_SCOPE();
 									}, __FILE__, __LINE__);
 
 									auto frustum = Math::SIMD::loadFrustum((Math::Float4 *)currentCamera.viewFrustum.planeList);
@@ -1239,8 +1255,7 @@ namespace Gek
 
 									auto pointLightsDone = workerPool.enqueue([&](void) -> void
 									{
-										GEK_PROFILER_META_THREAD_NAME("Point Light Worker"sv);
-										GEK_PROFILER_BEGIN_SCOPE("Point Light Culling"sv)
+										GEK_PROFILER_BEGIN_CUSTOM_SCOPE(getContext(), "Point Light Culling"sv, pointLightThreadIdentifier)
 										{
 											pointLightData.cull(frustum);
 											concurrency::parallel_for(size_t(0), pointLightData.entityList.size(), [&](size_t index) -> void
@@ -1254,13 +1269,12 @@ namespace Gek
 											});
 
 											pointLightData.createBuffer();
-										} GEK_PROFILER_END_SCOPE();
+										} GEK_PROFILER_END_CUSTOM_SCOPE();
 									}, __FILE__, __LINE__);
 
 									auto spotLightsDone = workerPool.enqueue([&](void) -> void
 									{
-										GEK_PROFILER_META_THREAD_NAME("Spot Light Worker"sv);
-										GEK_PROFILER_BEGIN_SCOPE("Spot Light Culling"sv)
+										GEK_PROFILER_BEGIN_CUSTOM_SCOPE(getContext(), "Spot Light Culling"sv, pointLightThreadIdentifier)
 										{
 											spotLightData.cull(frustum);
 											concurrency::parallel_for(size_t(0), spotLightData.entityList.size(), [&](size_t index) -> void
@@ -1274,14 +1288,14 @@ namespace Gek
 											});
 
 											spotLightData.createBuffer();
-										} GEK_PROFILER_END_SCOPE();
+										} GEK_PROFILER_END_CUSTOM_SCOPE();
 									}, __FILE__, __LINE__);
 
 									directionalLightsDone.get();
 									pointLightsDone.get();
 									spotLightsDone.get();
 
-									GEK_PROFILER_BEGIN_SCOPE("Update Lighting Buffers"sv)
+									GEK_PROFILER_BEGIN_SCOPE(getContext(), "Update Lighting Buffers"sv)
 									{
 										concurrency::combinable<size_t> lightIndexCount;
 										concurrency::parallel_for_each(std::begin(tilePointLightIndexList), std::end(tilePointLightIndexList), [&](auto &gridData) -> void
@@ -1367,7 +1381,7 @@ namespace Gek
 								}
 
 								CameraConstantData cameraConstantData;
-								GEK_PROFILER_BEGIN_SCOPE("Update Engine Buffers"sv)
+								GEK_PROFILER_BEGIN_SCOPE(getContext(), "Update Engine Buffers"sv)
 								{
 									cameraConstantData.fieldOfView.x = (1.0f / currentCamera.projectionMatrix._11);
 									cameraConstantData.fieldOfView.y = (1.0f / currentCamera.projectionMatrix._22);
@@ -1408,7 +1422,7 @@ namespace Gek
 								uint8_t shaderIndex = 0;
 								std::string finalOutput;
 								auto forceShader = (currentCamera.forceShader ? resources->getShader(currentCamera.forceShader) : nullptr);
-								GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, "Handle Shaders")
+								GEK_PROFILER_BEGIN_SCOPE(getContext(), "Handle Shaders")
 								{
 									for (auto const &shaderDrawCallList : drawCallSetMap)
 									{
@@ -1428,7 +1442,7 @@ namespace Gek
 														switch (pass->prepare())
 														{
 														case Engine::Shader::Pass::Mode::Forward:
-															GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, "Draw Geometry")
+															GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, String::Format("{}, Geometry", pass->getName()))
 															{
 																for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
 																{
@@ -1464,7 +1478,7 @@ namespace Gek
 											} GEK_VIDEO_PROFILER_END_SCOPE();
 										}
 									}
-								} GEK_VIDEO_PROFILER_END_SCOPE();
+								} GEK_PROFILER_END_SCOPE();
 
 								videoContext->geometryPipeline()->clearConstantBufferList(2, 0);
 								videoContext->vertexPipeline()->clearConstantBufferList(2, 0);
@@ -1498,35 +1512,37 @@ namespace Gek
 
 						uint8_t filterIndex = 0;
 						videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
-						GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, "Handle Filters")
+						GEK_PROFILER_BEGIN_SCOPE(getContext(), "Handle Filters")
 						{
 							for (auto const &filterName : { "tonemap" })
 							{
 								auto const filter = resources->getFilter(filterName);
 								if (filter)
 								{
-									videoDevice->beginProfilerEvent(filter->getName());
-									for (auto pass = filter->begin(videoContext, screenHandle, ResourceHandle()); pass; pass = pass->next())
+									GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, filter->getName())
 									{
-										videoDevice->beginProfilerEvent(pass->getName());
-										switch (pass->prepare())
+										for (auto pass = filter->begin(videoContext, screenHandle, ResourceHandle()); pass; pass = pass->next())
 										{
-										case Engine::Filter::Pass::Mode::Deferred:
-											resources->drawPrimitive(videoContext, 3, 0);
-											break;
+											GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, pass->getName())
+											{
+												switch (pass->prepare())
+												{
+												case Engine::Filter::Pass::Mode::Deferred:
+													resources->drawPrimitive(videoContext, 3, 0);
+													break;
 
-										case Engine::Filter::Pass::Mode::Compute:
-											break;
-										};
+												case Engine::Filter::Pass::Mode::Compute:
+													break;
+												};
 
-										pass->clear();
-										videoDevice->endProfilerEvent(pass->getName());
-									}
+												pass->clear();
+											} GEK_VIDEO_PROFILER_END_SCOPE();
+										}
 
-									videoDevice->endProfilerEvent(filter->getName());
+									} GEK_VIDEO_PROFILER_END_SCOPE();
 								}
 							}
-						} GEK_VIDEO_PROFILER_END_SCOPE();
+						} GEK_PROFILER_END_SCOPE();
 
 						videoContext->geometryPipeline()->clearConstantBufferList(1, 0);
 						videoContext->vertexPipeline()->clearConstantBufferList(1, 0);
@@ -1541,7 +1557,7 @@ namespace Gek
 					}
 
 					bool reloadRequired = false;
-					GEK_PROFILER_BEGIN_SCOPE("Prepare User Interface"sv)
+					GEK_PROFILER_BEGIN_SCOPE(getContext(), "Prepare User Interface"sv)
 					{
 						ImGuiIO &imGuiIo = ImGui::GetIO();
 						imGuiIo.DeltaTime = frameTime;

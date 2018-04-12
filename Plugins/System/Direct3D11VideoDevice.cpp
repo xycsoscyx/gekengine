@@ -1795,13 +1795,23 @@ namespace Gek
 			concurrency::critical_section criticalSection;
 			EventMap eventMap;
 
+			Hash renderThreadIdentifier;
+			int currentQueryFrame = 0;
+			int currentCollectFrame = -1;
+			std::array<std::vector<EventMap::value_type *>, 2> frameEventList;
+			std::list<Hash> hashStack;
+
         public:
             Device(Gek::Context *context, Window *window, Video::Device::Description deviceDescription)
                 : ContextRegistration(context)
                 , window(window)
                 , isChildWindow(GetParent((HWND)window->getBaseWindow()) != nullptr)
+				, renderThreadIdentifier(Hash(this))
             {
                 assert(window);
+
+				GEK_PROFILER_SET_THREAD_NAME(getContext(), renderThreadIdentifier, "Render Thread"sv);
+				GEK_PROFILER_SET_THREAD_SORT_INDEX(getContext(), renderThreadIdentifier, 100);
 
                 UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG
@@ -3079,10 +3089,6 @@ namespace Gek
                 dxgiSwapChain->Present(waitForVerticalSync ? 1 : 0, 0);
             }
 
-			int currentQueryFrame = 0;
-			int currentCollectFrame = -1;
-			std::array<std::vector<EventMap::value_type *>, 2> frameEventList;
-			std::list<Hash> hashStack;
 			void beginProfilerBlock(void)
 			{
 				defaultContext->begin(disjointTimeStamp.queries[currentQueryFrame].get());
@@ -3165,8 +3171,6 @@ namespace Gek
 					return;
 				}
 
-				Hash renderTHread = Hash(this);
-				GEK_PROFILER_META_NAME("Render Thread"sv, renderTHread);
 				double frequency = (1.0 / double(disjointResult.frequency));
 				for (auto &eventSearch : frameEventList[currentFrame])
 				{
@@ -3175,9 +3179,9 @@ namespace Gek
 					if (defaultContext->getData(eventData.begin.queries[currentFrame].get(), &eventStartTime, sizeof(uint64_t)) == Video::Query::Status::Ready &&
 						defaultContext->getData(eventData.end.queries[currentFrame].get(), &eventEndTime, sizeof(uint64_t)) == Video::Query::Status::Ready)
 					{
-						auto eventDuration = std::chrono::duration<double>((eventEndTime - eventStartTime) * frequency);
-						auto eventTime = std::chrono::duration_cast<Profiler::TimeFormat>(eventDuration);
-						getContext()->addSpan(__FILE__, eventData.name, eventData.startTimes[currentFrame], eventTime, &renderTHread);
+						auto duration = std::chrono::duration<double>((eventEndTime - eventStartTime) * frequency);
+						auto profilerDuration = std::chrono::duration_cast<Profiler::TimeFormat>(duration);
+						getContext()->addEvent(renderThreadIdentifier, __FILE__, eventData.name, eventData.startTimes[currentFrame], profilerDuration, 'X', 0, Profiler::EmptyArguments);
 					}
 				}
 

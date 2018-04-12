@@ -6,6 +6,17 @@
 namespace Gek
 {
 	const Profiler::Arguments Profiler::EmptyArguments;
+	const Profiler::TimeFormat Profiler::EmptyTime;
+
+	template <typename ARGUMENT0, typename ... ARGUMENTS>
+	std::ostream & operator << (std::ostream & stream, std::variant<ARGUMENT0, ARGUMENTS...> const & variant)
+	{
+		std::visit([&](auto && argument)
+		{
+			stream << argument;
+		}, variant);
+		return stream;
+	}
 
 	Hash GetThreadIdentifier(void)
 	{
@@ -16,25 +27,13 @@ namespace Gek
 		return std::stoull(thread.str());
 	}
 
-	Hash GetCurrentThreadIdentifier(void)
-	{
-		thread_local Hash currentThreadIdentifier = 0;
-		if (!currentThreadIdentifier)
-		{
-			currentThreadIdentifier = GetThreadIdentifier();
-		}
-
-		return currentThreadIdentifier;
-	}
-
 	struct Profiler::Data
 	{
 		struct Event
 		{
-			Hash processIdentifier = 0;
 			Hash threadIdentifier = 0;
-			std::string_view name = String::Empty;
 			std::string_view category = String::Empty;
+			std::string_view name = String::Empty;
 			TimeFormat startTime;
 			TimeFormat duration;
 			char eventType = 0;
@@ -42,6 +41,7 @@ namespace Gek
 			Arguments arguments;
 		};
 
+		TimeFormat profilerStartTime = GetProfilerTime();
 		Hash processIdentifier = GetCurrentProcessId();
 		Hash mainThreadIdentifier = GetThreadIdentifier();
 
@@ -53,12 +53,12 @@ namespace Gek
 		concurrency::critical_section criticalSection;
 
 		template <typename ...ARGUMENTS>
-		void addEvent(Hash *threadIdentifier, ARGUMENTS&&... arguments)
+		void addEvent(ARGUMENTS&&... arguments)
 		{
 			[&](void) -> void
 			{
 				concurrency::critical_section::scoped_lock lock(criticalSection);
-				eventList.push_back({ processIdentifier, (threadIdentifier ? *threadIdentifier : GetCurrentThreadIdentifier()), std::forward<ARGUMENTS>(arguments)... });
+				eventList.push_back({ std::forward<ARGUMENTS>(arguments)... });
 			}();
 
 			if (eventList.size() > 100 && criticalSection.try_lock())
@@ -75,14 +75,15 @@ namespace Gek
 					{
 						for (auto &eventData : flushList)
 						{
-							auto isFirstEvent = exportedFirstEvent;
-							exportedFirstEvent = true;
+							auto lastBackSlash = eventData.category.rfind('\\');
+							auto category = eventData.category.substr(lastBackSlash == std::string_view::npos ? 0 : lastBackSlash + 1);
 
 							std::ostringstream eventOutput;
-							eventOutput << "\t\t" << (isFirstEvent ? "," : "") << "{\"category\": \"" << eventData.category << "\"";
-							eventOutput << ", \"name\": \"" << eventData.name << "\"";
-							eventOutput << ", \"ts\": " << eventData.startTime.count();
-							eventOutput << ", \"ph\": \"" << eventData.eventType << "\"";
+							eventOutput << "\t\t" << (exportedFirstEvent ? "," : "") << "{ " <<
+								"\"cat\": \"" << category << "\"" <<
+								", \"name\": \"" << eventData.name << "\"" <<
+								", \"ts\": " << (eventData.startTime - profilerStartTime).count() <<
+								", \"ph\": \"" << eventData.eventType << "\"";
 							switch (eventData.eventType)
 							{
 							case 'S':
@@ -100,27 +101,23 @@ namespace Gek
 							{
 								eventOutput << ", \"args\": { ";
 
-								bool firstArgument = false;
+								bool exportedFirstArgument = false;
 								for (auto &argument : eventData.arguments)
 								{
-									eventOutput << (firstArgument ? "" : ", ") << "\"" << argument.first << "\": ";
-									firstArgument = true;
+									eventOutput << (exportedFirstArgument ? "," : " ") << "\"" << argument.first << "\": \"" << argument.second << "\"";
+									exportedFirstArgument = true;
 
-									if (argument.second.type() == typeid(std::string)) eventOutput << std::any_cast<std::string>(argument);
-									else if (argument.second.type() == typeid(std::string_view)) eventOutput << std::any_cast<std::string_view>(argument);
-									else if (argument.second.type() == typeid(int32_t)) eventOutput << std::any_cast<int32_t>(argument);
-									else if (argument.second.type() == typeid(uint32_t)) eventOutput << std::any_cast<uint32_t>(argument);
-									else if (argument.second.type() == typeid(int64_t)) eventOutput << std::any_cast<int64_t>(argument);
-									else if (argument.second.type() == typeid(uint64_t)) eventOutput << std::any_cast<uint64_t>(argument);
-									else if (argument.second.type() == typeid(float)) eventOutput << std::any_cast <float>(argument);
 								}
 
-								eventOutput << "}";
+								eventOutput << " }";
 							}
 
-							eventOutput << ", \"pid\": \"" << eventData.processIdentifier << "\"";
-							eventOutput << ", \"tid\": \"" << eventData.threadIdentifier << "\"},\n";
+							eventOutput <<
+								", \"pid\": \"" << processIdentifier << "\"" <<
+								", \"tid\": \"" << eventData.threadIdentifier <<
+								"\" }\n";
 							fileOutput << eventOutput.str();
+							exportedFirstEvent = true;
 						}
 					}, __FILE__, __LINE__);
 				}
@@ -135,7 +132,7 @@ namespace Gek
 		data->fileOutput <<
 			"{\n" <<
 			"\t\"displayTimeUnit\": \"ms\",\n" <<
-			"\t\"traceEvenstartTime\": [\n";
+			"\t\"traceEvents\": [\n";
 	}
 
 	Profiler::~Profiler(void)
@@ -148,19 +145,20 @@ namespace Gek
 		data->fileOutput.close();
 	}
 
-	static const Profiler::Arguments EmptyArgumentMap;
-	void Profiler::addEvent(std::string_view category, std::string_view name, char eventType, uint64_t eventIdentifier, Hash *threadIdentifier, Arguments *arguments)
+	Hash Profiler::getCurrentThreadIdentifier(void)
 	{
-		auto lasstartTimelash = category.rfind('\\');
-		category = category.substr(lasstartTimelash == std::string_view::npos ? 0 : lasstartTimelash + 1);
-		static const auto Zero = std::chrono::duration_cast<TimeFormat>(std::chrono::duration<double>(0.0));
-		data->addEvent(threadIdentifier, name.data(), category.data(), GetProfilerTime(), Zero, eventType, eventIdentifier, (arguments ? (*arguments) : EmptyArgumentMap));
+		thread_local Hash currentThreadIdentifier = 0;
+		if (!currentThreadIdentifier)
+		{
+			currentThreadIdentifier = GetThreadIdentifier();
+		}
+
+		return currentThreadIdentifier;
 	}
 
-	void Profiler::addSpan(std::string_view category, std::string_view name, TimeFormat startTime, TimeFormat endTime, Hash *threadIdentifier)
+	void Profiler::addEvent(Hash threadIdentifier, std::string_view category, std::string_view name, TimeFormat startTime, TimeFormat duration, char eventType, uint64_t eventIdentifier, Arguments const &arguments)
 	{
-		auto lasstartTimelash = category.rfind('\\');
-		category = category.substr(lasstartTimelash == std::string_view::npos ? 0 : lasstartTimelash + 1);
-		data->addEvent(threadIdentifier, name.data(), category.data(), startTime, (endTime - startTime), 'X', 0ULL, EmptyArgumentMap);
+		static const auto Zero = std::chrono::duration_cast<TimeFormat>(std::chrono::duration<double>(0.0));
+		data->addEvent(threadIdentifier, category.data(), name.data(), startTime, duration, eventType, eventIdentifier, arguments);
 	}
 }; // namespace Gek

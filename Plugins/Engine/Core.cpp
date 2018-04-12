@@ -64,8 +64,9 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(_window)
             {
-				GEK_PROFILER_META_PROCESS_NAME("GEK Engine"sv);
-				GEK_PROFILER_META_THREAD_NAME("Main Thread"sv);
+				GEK_PROFILER_SET_PROCESS_NAME(getContext(), "GEK Engine"sv);
+				GEK_PROFILER_SET_CURRENT_THREAD_NAME(getContext(), "Main Thread"sv);
+				GEK_PROFILER_SET_CURRENT_THREAD_SORT_INDEX(getContext(), 0);
 				LockedWrite{ std::cout } << "Starting GEK Engine";
 
                 if (!window)
@@ -991,7 +992,7 @@ namespace Gek
 
             bool update(void)
             {
-				GEK_PROFILER_BEGIN_SCOPE("Core Update"sv)
+				GEK_PROFILER_BEGIN_SCOPE(getContext(), "Core Update"sv)
 				{
 					window->readEvents();
 
