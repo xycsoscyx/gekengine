@@ -296,13 +296,13 @@ namespace Gek
 					visibilityList.clear();
 				}
 
-				void cull(Math::SIMD::Frustum const &frustum)
+				void cull(Math::SIMD::Frustum const &frustum, Hash identifier)
 				{
 					const auto entityCount = entityList.size();
 					auto buffer = (entityCount % 4);
 					buffer = (buffer ? (4 - buffer) : buffer);
 					auto bufferedEntityCount = (entityCount + buffer);
-					GEK_PROFILER_BEGIN_SCOPE(getContext(), "SIMD Reorganization"sv)
+					GEK_PROFILER_BEGIN_CUSTOM_SCOPE(getContext(), "SIMD Reorganization"sv, identifier)
 					{
 						shapeXPositionList.resize(bufferedEntityCount);
 						shapeYPositionList.resize(bufferedEntityCount);
@@ -323,12 +323,12 @@ namespace Gek
 
 						visibilityList.resize(bufferedEntityCount);
 						lightList.clear();
-					} GEK_PROFILER_END_SCOPE();
+					} GEK_PROFILER_END_CUSTOM_SCOPE();
 
-					GEK_PROFILER_BEGIN_SCOPE(getContext(), "SIMD Culling"sv)
+					GEK_PROFILER_BEGIN_CUSTOM_SCOPE(getContext(), "SIMD Culling"sv, identifier)
 					{
 						Math::SIMD::cullSpheres(frustum, bufferedEntityCount, shapeXPositionList, shapeYPositionList, shapeZPositionList, shapeRadiusList, visibilityList);
-					} GEK_PROFILER_END_SCOPE();
+					} GEK_PROFILER_END_CUSTOM_SCOPE();
 				}
 			};
 
@@ -440,8 +440,8 @@ namespace Gek
 				GEK_PROFILER_SET_THREAD_NAME(getContext(), pointLightThreadIdentifier, "Point Light Worker"sv);
 				GEK_PROFILER_SET_THREAD_SORT_INDEX(getContext(), pointLightThreadIdentifier, 11);
 
-				GEK_PROFILER_SET_THREAD_NAME(getContext(), pointLightThreadIdentifier, "Spot Light Worker"sv);
-				GEK_PROFILER_SET_THREAD_SORT_INDEX(getContext(), pointLightThreadIdentifier, 12);
+				GEK_PROFILER_SET_THREAD_NAME(getContext(), spotLightThreadIdentifier, "Spot Light Worker"sv);
+				GEK_PROFILER_SET_THREAD_SORT_INDEX(getContext(), spotLightThreadIdentifier, 12);
 
 				Video::SamplerState::Description bufferSamplerStateData;
 				bufferSamplerStateData.filterMode = Video::SamplerState::FilterMode::MinificationMagnificationMipMapPoint;
@@ -1155,10 +1155,9 @@ namespace Gek
 				assert(videoDevice);
 				assert(population);
 
+				videoDevice->beginProfilerBlock();
 				GEK_PROFILER_BEGIN_SCOPE(getContext(), "Renderer Update"sv)
 				{
-					videoDevice->beginProfilerBlock();
-
 					EngineConstantData engineConstantData;
 					engineConstantData.frameTime = frameTime;
 					engineConstantData.worldTime = 0.0f;
@@ -1257,7 +1256,7 @@ namespace Gek
 									{
 										GEK_PROFILER_BEGIN_CUSTOM_SCOPE(getContext(), "Point Light Culling"sv, pointLightThreadIdentifier)
 										{
-											pointLightData.cull(frustum);
+											pointLightData.cull(frustum, pointLightThreadIdentifier);
 											concurrency::parallel_for(size_t(0), pointLightData.entityList.size(), [&](size_t index) -> void
 											{
 												if (pointLightData.visibilityList[index])
@@ -1274,9 +1273,9 @@ namespace Gek
 
 									auto spotLightsDone = workerPool.enqueue([&](void) -> void
 									{
-										GEK_PROFILER_BEGIN_CUSTOM_SCOPE(getContext(), "Spot Light Culling"sv, pointLightThreadIdentifier)
+										GEK_PROFILER_BEGIN_CUSTOM_SCOPE(getContext(), "Spot Light Culling"sv, spotLightThreadIdentifier)
 										{
-											spotLightData.cull(frustum);
+											spotLightData.cull(frustum, spotLightThreadIdentifier);
 											concurrency::parallel_for(size_t(0), spotLightData.entityList.size(), [&](size_t index) -> void
 											{
 												if (spotLightData.visibilityList[index])
@@ -1429,12 +1428,12 @@ namespace Gek
 										for (auto const &shaderDrawCall : shaderDrawCallList.second)
 										{
 											auto &shader = shaderDrawCall.shader;
-											GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, shader->getName())
+											GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, shader->getName(), *(Hash *)shader)
 											{
 												finalOutput = shader->getOutput();
 												for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentCamera.viewFrustum); pass; pass = pass->next())
 												{
-													GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, pass->getName())
+													GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, pass->getName(), *(Hash *)pass.get())
 													{
 														VisualHandle currentVisual;
 														MaterialHandle currentMaterial;
@@ -1442,7 +1441,7 @@ namespace Gek
 														switch (pass->prepare())
 														{
 														case Engine::Shader::Pass::Mode::Forward:
-															GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, String::Format("{}, Geometry", pass->getName()))
+															GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, "Draw Geometry"sv, *(Hash *)pass.get())
 															{
 																for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
 																{
@@ -1519,11 +1518,11 @@ namespace Gek
 								auto const filter = resources->getFilter(filterName);
 								if (filter)
 								{
-									GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, filter->getName())
+									GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, filter->getName(), *(Hash *)filter)
 									{
 										for (auto pass = filter->begin(videoContext, screenHandle, ResourceHandle()); pass; pass = pass->next())
 										{
-											GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, pass->getName())
+											GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, pass->getName(), *(Hash *)pass.get())
 											{
 												switch (pass->prepare())
 												{
@@ -1593,12 +1592,11 @@ namespace Gek
 						}
 					} GEK_PROFILER_END_SCOPE();
 
-					GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, "Draw UI"sv)
+					GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, "Draw User Interface"sv, 0)
 					{
 						ImGui::Render();
 					} GEK_VIDEO_PROFILER_END_SCOPE();
 
-					videoDevice->endProfilerBlock();
 					videoDevice->present(true);
 
 					if (reloadRequired)
@@ -1606,6 +1604,8 @@ namespace Gek
 						resources->reload();
 					}
 				} GEK_PROFILER_END_SCOPE();
+
+				videoDevice->endProfilerBlock();
 			}
 
 			void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle target)

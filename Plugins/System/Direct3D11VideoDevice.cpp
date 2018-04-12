@@ -1786,6 +1786,7 @@ namespace Gek
 			struct BlockQuery
 			{
 				std::string_view name;
+				Hash identifier;
 				Profiler::TimeFormat startTimes[2];
 				BufferedQuery begin, end;
 			};
@@ -3092,10 +3093,10 @@ namespace Gek
 			void beginProfilerBlock(void)
 			{
 				defaultContext->begin(disjointTimeStamp.queries[currentQueryFrame].get());
-				beginProfilerEvent("Video Frame"sv);
+				beginProfilerEvent("Video Frame"sv, 0);
 			}
 
-			void beginProfilerEvent(std::string_view name)
+			void beginProfilerEvent(std::string_view name, Hash identifier)
 			{
 				while (!criticalSection.try_lock())
 				{
@@ -3103,6 +3104,7 @@ namespace Gek
 				};
 
 				auto hash = CombineHashes(GetHash(name), hashStack.back());
+				hash = CombineHashes(hash, identifier);
 				hashStack.push_back(hash);
 
 				auto eventInsert = eventMap.insert({ hash, BlockQuery() });
@@ -3111,6 +3113,7 @@ namespace Gek
 				if (eventInsert.second)
 				{
 					eventData.name = name;
+					eventData.identifier = identifier;
 					eventData.begin.queries[0] = createQuery(Video::Query::Type::TimeStamp);
 					eventData.begin.queries[1] = createQuery(Video::Query::Type::TimeStamp);
 					eventData.end.queries[0] = createQuery(Video::Query::Type::TimeStamp);
@@ -3181,7 +3184,7 @@ namespace Gek
 					{
 						auto duration = std::chrono::duration<double>((eventEndTime - eventStartTime) * frequency);
 						auto profilerDuration = std::chrono::duration_cast<Profiler::TimeFormat>(duration);
-						getContext()->addEvent(renderThreadIdentifier, __FILE__, eventData.name, eventData.startTimes[currentFrame], profilerDuration, 'X', 0, Profiler::EmptyArguments);
+						getContext()->addEvent(renderThreadIdentifier, __FILE__, eventData.name, eventData.startTimes[currentFrame], profilerDuration, 'X', eventData.identifier, Profiler::EmptyArguments);
 					}
 				}
 
