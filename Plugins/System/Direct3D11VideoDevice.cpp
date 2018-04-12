@@ -1786,7 +1786,6 @@ namespace Gek
 			struct BlockQuery
 			{
 				std::string_view name;
-				Hash identifier;
 				Profiler::TimeFormat startTimes[2];
 				BufferedQuery begin, end;
 			};
@@ -1802,79 +1801,101 @@ namespace Gek
 			std::array<std::vector<EventMap::value_type *>, 2> frameEventList;
 			std::list<Hash> hashStack;
 
+			Profiler::TimeFormat engineStartTime;
+
         public:
-            Device(Gek::Context *context, Window *window, Video::Device::Description deviceDescription)
-                : ContextRegistration(context)
-                , window(window)
-                , isChildWindow(GetParent((HWND)window->getBaseWindow()) != nullptr)
+			Device(Gek::Context *context, Window *window, Video::Device::Description deviceDescription)
+				: ContextRegistration(context)
+				, window(window)
+				, isChildWindow(GetParent((HWND)window->getBaseWindow()) != nullptr)
 				, renderThreadIdentifier(Hash(this))
-            {
-                assert(window);
+			{
+				assert(window);
 
 				GEK_PROFILER_SET_THREAD_NAME(getContext(), renderThreadIdentifier, "Render Thread"sv);
 				GEK_PROFILER_SET_THREAD_SORT_INDEX(getContext(), renderThreadIdentifier, 100);
 
-                UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+				UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG
-                flags |= D3D11_CREATE_DEVICE_DEBUG;
+				flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-                D3D_FEATURE_LEVEL featureLevelList[] =
-                {
-                    D3D_FEATURE_LEVEL_11_0,
-                };
+				D3D_FEATURE_LEVEL featureLevelList[] =
+				{
+					D3D_FEATURE_LEVEL_11_0,
+				};
 
-                D3D_FEATURE_LEVEL featureLevel;
-                HRESULT resultValue = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevelList, 1, D3D11_SDK_VERSION, &d3dDevice, &featureLevel, &d3dDeviceContext);
-                if (featureLevel != featureLevelList[0])
-                {
-                    throw std::exception("Direct3D 11.0 feature level required");
-                }
+				D3D_FEATURE_LEVEL featureLevel;
+				HRESULT resultValue = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevelList, 1, D3D11_SDK_VERSION, &d3dDevice, &featureLevel, &d3dDeviceContext);
+				if (featureLevel != featureLevelList[0])
+				{
+					throw std::exception("Direct3D 11.0 feature level required");
+				}
 
-                if (FAILED(resultValue) || !d3dDevice || !d3dDeviceContext)
-                {
-                    throw std::exception("Unable to create rendering device and context");
-                }
+				if (FAILED(resultValue) || !d3dDevice || !d3dDeviceContext)
+				{
+					throw std::exception("Unable to create rendering device and context");
+				}
 
-                CComPtr<IDXGIFactory2> dxgiFactory;
-                resultValue = CreateDXGIFactory2(0, IID_PPV_ARGS(&dxgiFactory));
-                if (FAILED(resultValue) || !dxgiFactory)
-                {
-                    throw std::exception("Unable to get graphics factory");
-                }
+				CComPtr<IDXGIFactory2> dxgiFactory;
+				resultValue = CreateDXGIFactory2(0, IID_PPV_ARGS(&dxgiFactory));
+				if (FAILED(resultValue) || !dxgiFactory)
+				{
+					throw std::exception("Unable to get graphics factory");
+				}
 
-                DXGI_SWAP_CHAIN_DESC1 swapChainDescription;
-                swapChainDescription.Width = 0;
-                swapChainDescription.Height = 0;
-                swapChainDescription.Format = DirectX::TextureFormatList[static_cast<uint8_t>(deviceDescription.displayFormat)];
-                swapChainDescription.Stereo = false;
-                swapChainDescription.SampleDesc.Count = deviceDescription.sampleCount;
-                swapChainDescription.SampleDesc.Quality = deviceDescription.sampleQuality;
-                swapChainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
-                swapChainDescription.BufferCount = 2;
-                swapChainDescription.Scaling = DXGI_SCALING_STRETCH;
-                swapChainDescription.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-                swapChainDescription.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
-                swapChainDescription.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-                resultValue = dxgiFactory->CreateSwapChainForHwnd(d3dDevice, (HWND)window->getBaseWindow(), &swapChainDescription, nullptr, nullptr, &dxgiSwapChain);
-                if (FAILED(resultValue) || !dxgiSwapChain)
-                {
-                    throw std::exception("Unable to create swap chain for window");
-                }
+				DXGI_SWAP_CHAIN_DESC1 swapChainDescription;
+				swapChainDescription.Width = 0;
+				swapChainDescription.Height = 0;
+				swapChainDescription.Format = DirectX::TextureFormatList[static_cast<uint8_t>(deviceDescription.displayFormat)];
+				swapChainDescription.Stereo = false;
+				swapChainDescription.SampleDesc.Count = deviceDescription.sampleCount;
+				swapChainDescription.SampleDesc.Quality = deviceDescription.sampleQuality;
+				swapChainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
+				swapChainDescription.BufferCount = 2;
+				swapChainDescription.Scaling = DXGI_SCALING_STRETCH;
+				swapChainDescription.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+				swapChainDescription.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
+				swapChainDescription.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+				resultValue = dxgiFactory->CreateSwapChainForHwnd(d3dDevice, (HWND)window->getBaseWindow(), &swapChainDescription, nullptr, nullptr, &dxgiSwapChain);
+				if (FAILED(resultValue) || !dxgiSwapChain)
+				{
+					throw std::exception("Unable to create swap chain for window");
+				}
 
-                dxgiFactory->MakeWindowAssociation((HWND)window->getBaseWindow(), 0);
+				dxgiFactory->MakeWindowAssociation((HWND)window->getBaseWindow(), 0);
 
 #ifdef _DEBUG
-                CComQIPtr<ID3D11Debug> d3dDebug(d3dDevice);
-                CComQIPtr<ID3D11InfoQueue> d3dInfoQueue(d3dDebug);
-                d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
-                d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
-                d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
+				CComQIPtr<ID3D11Debug> d3dDebug(d3dDevice);
+				CComQIPtr<ID3D11InfoQueue> d3dInfoQueue(d3dDebug);
+				d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
+				d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+				d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
 #endif
 
-                defaultContext = std::make_unique<Context>(d3dDeviceContext);
+				defaultContext = std::make_unique<Context>(d3dDeviceContext);
 				disjointTimeStamp.queries[0] = createQuery(Video::Query::Type::DisjointTimeStamp);
 				disjointTimeStamp.queries[1] = createQuery(Video::Query::Type::DisjointTimeStamp);
+
+				auto disjoint = createQuery(Video::Query::Type::DisjointTimeStamp);
+				auto startTime = createQuery(Video::Query::Type::TimeStamp);
+
+				defaultContext->begin(disjoint.get());
+				defaultContext->end(startTime.get());
+				defaultContext->end(disjoint.get());
+
+				Video::Query::DisjointTimeStamp disjointResult;
+				defaultContext->getData(disjoint.get(), &disjointResult, sizeof(Video::Query::DisjointTimeStamp), true);
+				if (!disjointResult.isDisjoint)
+				{
+					uint64_t timeStamp;
+					if (defaultContext->getData(startTime.get(), &timeStamp, sizeof(uint64_t)) == Video::Query::Status::Ready)
+					{
+						double frequency = (1.0 / double(disjointResult.frequency));
+						auto renderTimeStamp = std::chrono::duration<double>(double(timeStamp) * frequency);
+						engineStartTime = std::chrono::duration_cast<Profiler::TimeFormat>(renderTimeStamp);
+					}
+				}
 			}
 
             ~Device(void)
@@ -3093,10 +3114,10 @@ namespace Gek
 			void beginProfilerBlock(void)
 			{
 				defaultContext->begin(disjointTimeStamp.queries[currentQueryFrame].get());
-				beginProfilerEvent("Video Frame"sv, 0);
+				beginProfilerEvent("Video Frame"sv);
 			}
 
-			void beginProfilerEvent(std::string_view name, Hash identifier)
+			void beginProfilerEvent(std::string_view name)
 			{
 				while (!criticalSection.try_lock())
 				{
@@ -3104,7 +3125,6 @@ namespace Gek
 				};
 
 				auto hash = CombineHashes(GetHash(name), hashStack.back());
-				hash = CombineHashes(hash, identifier);
 				hashStack.push_back(hash);
 
 				auto eventInsert = eventMap.insert({ hash, BlockQuery() });
@@ -3113,7 +3133,6 @@ namespace Gek
 				if (eventInsert.second)
 				{
 					eventData.name = name;
-					eventData.identifier = identifier;
 					eventData.begin.queries[0] = createQuery(Video::Query::Type::TimeStamp);
 					eventData.begin.queries[1] = createQuery(Video::Query::Type::TimeStamp);
 					eventData.end.queries[0] = createQuery(Video::Query::Type::TimeStamp);
@@ -3182,9 +3201,17 @@ namespace Gek
 					if (defaultContext->getData(eventData.begin.queries[currentFrame].get(), &eventStartTime, sizeof(uint64_t)) == Video::Query::Status::Ready &&
 						defaultContext->getData(eventData.end.queries[currentFrame].get(), &eventEndTime, sizeof(uint64_t)) == Video::Query::Status::Ready)
 					{
-						auto duration = std::chrono::duration<double>((eventEndTime - eventStartTime) * frequency);
-						auto profilerDuration = std::chrono::duration_cast<Profiler::TimeFormat>(duration);
-						getContext()->addEvent(renderThreadIdentifier, __FILE__, eventData.name, eventData.startTimes[currentFrame], profilerDuration, 'X', eventData.identifier, Profiler::EmptyArguments);
+						auto renderStartTime = std::chrono::duration<double>(double(eventStartTime) * frequency);
+						auto profilerStartTime = std::chrono::duration_cast<Profiler::TimeFormat>(renderStartTime) - engineStartTime;
+
+						auto renderEndTime = std::chrono::duration<double>(double(eventStartTime) * frequency);
+						auto profilerEndTime = std::chrono::duration_cast<Profiler::TimeFormat>(renderStartTime) - engineStartTime;
+						getContext()->addEvent(renderThreadIdentifier, __FILE__, eventData.name, profilerStartTime, Profiler::EmptyTime, 'B', 0, Profiler::EmptyArguments);
+						getContext()->addEvent(renderThreadIdentifier, __FILE__, eventData.name, profilerEndTime, Profiler::EmptyTime, 'E', 0, Profiler::EmptyArguments);
+
+						auto renderDuration = std::chrono::duration<double>(double(eventEndTime - eventStartTime) * frequency);
+						auto profilerDuration = std::chrono::duration_cast<Profiler::TimeFormat>(renderDuration);
+						//getContext()->addEvent(renderThreadIdentifier, __FILE__, eventData.name, eventData.startTimes[currentFrame], profilerDuration, 'X', 0, Profiler::EmptyArguments);
 					}
 				}
 

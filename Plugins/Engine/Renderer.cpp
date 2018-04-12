@@ -1428,7 +1428,7 @@ namespace Gek
 										for (auto const &shaderDrawCall : shaderDrawCallList.second)
 										{
 											auto &shader = shaderDrawCall.shader;
-											GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, shader->getName(), *(Hash *)shader)
+											GEK_PROFILER_BEGIN_SCOPE(getContext(), shader->getName())
 											{
 												finalOutput = shader->getOutput();
 												for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentCamera.viewFrustum); pass; pass = pass->next())
@@ -1474,7 +1474,7 @@ namespace Gek
 														pass->clear();
 													} GEK_VIDEO_PROFILER_END_SCOPE();
 												}
-											} GEK_VIDEO_PROFILER_END_SCOPE();
+											} GEK_PROFILER_END_SCOPE();
 										}
 									}
 								} GEK_PROFILER_END_SCOPE();
@@ -1518,7 +1518,7 @@ namespace Gek
 								auto const filter = resources->getFilter(filterName);
 								if (filter)
 								{
-									GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, filter->getName(), *(Hash *)filter)
+									GEK_PROFILER_BEGIN_SCOPE(getContext(), filter->getName())
 									{
 										for (auto pass = filter->begin(videoContext, screenHandle, ResourceHandle()); pass; pass = pass->next())
 										{
@@ -1538,7 +1538,7 @@ namespace Gek
 											} GEK_VIDEO_PROFILER_END_SCOPE();
 										}
 
-									} GEK_VIDEO_PROFILER_END_SCOPE();
+									} GEK_PROFILER_END_SCOPE();
 								}
 							}
 						} GEK_PROFILER_END_SCOPE();
