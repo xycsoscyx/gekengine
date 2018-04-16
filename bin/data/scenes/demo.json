@@ -30,8 +30,8 @@
             },
             "SpotLight": {
                 "range": "random(10, 30)",
-                "innerAngle": "random(30,60)",
-                "outerAngle": "random(75,120)",
+                "innerAngle": "random(10,50)",
+                "outerAngle": "random(60,90)",
                 "coneFalloff": "random(0.5, 4.0)",
                 "intensity": "random(1, 10)"
             },

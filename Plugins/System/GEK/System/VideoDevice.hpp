@@ -753,8 +753,8 @@ namespace Gek
             virtual void present(bool waitForVerticalSync) = 0;
 
 			virtual void beginProfilerBlock(void) = 0;
-			virtual void beginProfilerEvent(std::string_view name) = 0;
-			virtual void endProfilerEvent(std::string_view name) = 0;
+			virtual void beginProfilerEvent(std::string_view name, Hash eventIdentifier) = 0;
+			virtual void endProfilerEvent(std::string_view name, Hash eventIdentifier) = 0;
 			virtual void endProfilerBlock(void) = 0;
 		};
 
@@ -772,15 +772,15 @@ namespace Gek
 		namespace Profiler
 		{
 			template <typename FUNCTION, typename... ARGUMENTS>
-			auto Scope(Device *device, std::string_view name, FUNCTION function, ARGUMENTS&&... arguments) -> void
+			auto Scope(Device *device, std::string_view name, Hash eventIdentifier, FUNCTION function, ARGUMENTS&&... arguments) -> void
 			{
-				device->beginProfilerEvent(name);
+				device->beginProfilerEvent(name, eventIdentifier);
 				function(std::forward<ARGUMENTS>(arguments)...);
-				device->endProfilerEvent(name);
+				device->endProfilerEvent(name, eventIdentifier);
 			}
 		}; // namespace Profiler
 	}; // namespace Video
 }; // namespace Gek
 
-#define GEK_VIDEO_PROFILER_BEGIN_SCOPE(DEVICE, NAME) Gek::Video::Profiler::Scope(DEVICE, NAME, [&](void) -> void
+#define GEK_VIDEO_PROFILER_BEGIN_SCOPE(DEVICE, NAME, EVENT) Gek::Video::Profiler::Scope(DEVICE, NAME, EVENT, [&](void) -> void
 #define GEK_VIDEO_PROFILER_END_SCOPE() )

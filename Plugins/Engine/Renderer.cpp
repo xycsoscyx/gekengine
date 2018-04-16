@@ -1433,7 +1433,7 @@ namespace Gek
 												finalOutput = shader->getOutput();
 												for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentCamera.viewFrustum); pass; pass = pass->next())
 												{
-													GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, pass->getName(), *(Hash *)pass.get())
+													GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, pass->getName(), pass->getIdentifier())
 													{
 														VisualHandle currentVisual;
 														MaterialHandle currentMaterial;
@@ -1441,7 +1441,7 @@ namespace Gek
 														switch (pass->prepare())
 														{
 														case Engine::Shader::Pass::Mode::Forward:
-															GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, "Draw Geometry"sv, *(Hash *)pass.get())
+															GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, "Draw Geometry"sv, CombineHashes(pass->getIdentifier(), 0xFFFFFFFF))
 															{
 																for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
 																{
@@ -1522,7 +1522,7 @@ namespace Gek
 									{
 										for (auto pass = filter->begin(videoContext, screenHandle, ResourceHandle()); pass; pass = pass->next())
 										{
-											GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, pass->getName(), *(Hash *)pass.get())
+											GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, pass->getName(), pass->getIdentifier())
 											{
 												switch (pass->prepare())
 												{

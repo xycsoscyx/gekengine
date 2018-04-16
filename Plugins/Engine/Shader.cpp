@@ -823,7 +823,7 @@ namespace Gek
                     std::string fileName(FileSystem::CombinePaths(shaderName, programName).withExtension(".hlsl").getString());
                     Video::Program::Type pipelineType = (pass.mode == Pass::Mode::Compute ? Video::Program::Type::Compute : Video::Program::Type::Pixel);
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
-					pass.name = String::Format("{}.{}", programName, pass.program.identifier);
+					pass.name = programName;
 				}
 
 				core->setOption("shaders", shaderName, std::move(globalOptions));
@@ -831,6 +831,11 @@ namespace Gek
 			}
 
             // Shader
+			Hash getIdentifier(void) const
+			{
+				return GetHash(this);
+			}
+
 			std::string_view getName(void) const
 			{
                 return shaderName;
@@ -989,19 +994,24 @@ namespace Gek
                     return Iterator(++next == end ? nullptr : new MaterialImplementation(shaderNode, next, end));
                 }
 
+				Hash getIdentifier(void) const
+				{
+					return GetHash(this);
+				}
+
 				std::string_view getName(void) const
 				{
-                    return current->first;
+                    return (*current).first;
                 }
 
                 std::vector<Initializer> const &getInitializerList(void) const
                 {
-                    return current->second.initializerList;
+                    return (*current).second.initializerList;
                 }
 
                 RenderStateHandle getRenderState(void) const
                 {
-                    return current->second.renderState;
+                    return (*current).second.renderState;
                 }
             };
 
@@ -1053,9 +1063,14 @@ namespace Gek
                     return (*current).lighting;
                 }
 
+				Hash getIdentifier(void) const
+				{
+					return (*current).program.identifier;
+				}
+
 				std::string_view getName(void) const
 				{
-                    return current->name;
+                    return (*current).name;
                 }
             };
 

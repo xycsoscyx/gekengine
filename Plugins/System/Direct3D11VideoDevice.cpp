@@ -1795,19 +1795,18 @@ namespace Gek
 			concurrency::critical_section criticalSection;
 			EventMap eventMap;
 
+			Hash renderProcessIdentifier;
 			Hash renderThreadIdentifier;
 			int currentQueryFrame = 0;
 			int currentCollectFrame = -1;
 			std::array<std::vector<EventMap::value_type *>, 2> frameEventList;
-			std::list<Hash> hashStack;
-
-			Profiler::TimeFormat engineStartTime;
 
         public:
 			Device(Gek::Context *context, Window *window, Video::Device::Description deviceDescription)
 				: ContextRegistration(context)
 				, window(window)
 				, isChildWindow(GetParent((HWND)window->getBaseWindow()) != nullptr)
+				, renderProcessIdentifier(Hash(this))
 				, renderThreadIdentifier(Hash(this))
 			{
 				assert(window);
@@ -1876,26 +1875,6 @@ namespace Gek
 				defaultContext = std::make_unique<Context>(d3dDeviceContext);
 				disjointTimeStamp.queries[0] = createQuery(Video::Query::Type::DisjointTimeStamp);
 				disjointTimeStamp.queries[1] = createQuery(Video::Query::Type::DisjointTimeStamp);
-
-				auto disjoint = createQuery(Video::Query::Type::DisjointTimeStamp);
-				auto startTime = createQuery(Video::Query::Type::TimeStamp);
-
-				defaultContext->begin(disjoint.get());
-				defaultContext->end(startTime.get());
-				defaultContext->end(disjoint.get());
-
-				Video::Query::DisjointTimeStamp disjointResult;
-				defaultContext->getData(disjoint.get(), &disjointResult, sizeof(Video::Query::DisjointTimeStamp), true);
-				if (!disjointResult.isDisjoint)
-				{
-					uint64_t timeStamp;
-					if (defaultContext->getData(startTime.get(), &timeStamp, sizeof(uint64_t)) == Video::Query::Status::Ready)
-					{
-						double frequency = (1.0 / double(disjointResult.frequency));
-						auto renderTimeStamp = std::chrono::duration<double>(double(timeStamp) * frequency);
-						engineStartTime = std::chrono::duration_cast<Profiler::TimeFormat>(renderTimeStamp);
-					}
-				}
 			}
 
             ~Device(void)
@@ -3114,20 +3093,17 @@ namespace Gek
 			void beginProfilerBlock(void)
 			{
 				defaultContext->begin(disjointTimeStamp.queries[currentQueryFrame].get());
-				beginProfilerEvent("Video Frame"sv);
+				beginProfilerEvent("Video Frame"sv, Hash(this));
 			}
 
-			void beginProfilerEvent(std::string_view name)
+			void beginProfilerEvent(std::string_view name, Hash eventIdentifier)
 			{
 				while (!criticalSection.try_lock())
 				{
 					Sleep(1);
 				};
 
-				auto hash = CombineHashes(GetHash(name), hashStack.back());
-				hashStack.push_back(hash);
-
-				auto eventInsert = eventMap.insert({ hash, BlockQuery() });
+				auto eventInsert = eventMap.insert({ eventIdentifier, BlockQuery() });
 				auto &eventSearch = eventInsert.first;
 				auto &eventData = eventSearch->second;
 				if (eventInsert.second)
@@ -3144,18 +3120,15 @@ namespace Gek
 				defaultContext->end(eventData.begin.queries[currentQueryFrame].get());
 			}
 
-			void endProfilerEvent(std::string_view name)
+			void endProfilerEvent(std::string_view name, Hash eventIdentifier)
 			{
 				while (!criticalSection.try_lock())
 				{
 					Sleep(1);
 				};
 
-				auto hash = hashStack.back();
-				hashStack.pop_back();
 				criticalSection.unlock();
-
-				auto eventSearch = eventMap.find(hash);
+				auto eventSearch = eventMap.find(eventIdentifier);
 				if (eventSearch == std::end(eventMap))
 				{
 				}
@@ -3169,8 +3142,7 @@ namespace Gek
 
 			void endProfilerBlock(void)
 			{
-				endProfilerEvent("Video Frame"sv);
-				assert(hashStack.size() == 0);
+				endProfilerEvent("Video Frame"sv, Hash(this));
 
 				defaultContext->end(disjointTimeStamp.queries[currentQueryFrame].get());
 				++currentQueryFrame &= 1;
@@ -3201,17 +3173,10 @@ namespace Gek
 					if (defaultContext->getData(eventData.begin.queries[currentFrame].get(), &eventStartTime, sizeof(uint64_t)) == Video::Query::Status::Ready &&
 						defaultContext->getData(eventData.end.queries[currentFrame].get(), &eventEndTime, sizeof(uint64_t)) == Video::Query::Status::Ready)
 					{
-						auto renderStartTime = std::chrono::duration<double>(double(eventStartTime) * frequency);
-						auto profilerStartTime = std::chrono::duration_cast<Profiler::TimeFormat>(renderStartTime) - engineStartTime;
-
-						auto renderEndTime = std::chrono::duration<double>(double(eventStartTime) * frequency);
-						auto profilerEndTime = std::chrono::duration_cast<Profiler::TimeFormat>(renderStartTime) - engineStartTime;
-						getContext()->addEvent(renderThreadIdentifier, __FILE__, eventData.name, profilerStartTime, Profiler::EmptyTime, 'B', 0, Profiler::EmptyArguments);
-						getContext()->addEvent(renderThreadIdentifier, __FILE__, eventData.name, profilerEndTime, Profiler::EmptyTime, 'E', 0, Profiler::EmptyArguments);
-
-						auto renderDuration = std::chrono::duration<double>(double(eventEndTime - eventStartTime) * frequency);
-						auto profilerDuration = std::chrono::duration_cast<Profiler::TimeFormat>(renderDuration);
-						//getContext()->addEvent(renderThreadIdentifier, __FILE__, eventData.name, eventData.startTimes[currentFrame], profilerDuration, 'X', 0, Profiler::EmptyArguments);
+						auto startTime = std::chrono::duration<double>(double(eventStartTime) * frequency);
+						auto endTime = std::chrono::duration<double>(double(eventEndTime) * frequency);
+						auto duration = std::chrono::duration_cast<Profiler::TimeFormat>(endTime - startTime);
+						getContext()->addEvent(renderProcessIdentifier, renderThreadIdentifier, __FILE__, eventData.name, std::chrono::duration_cast<Profiler::TimeFormat>(startTime), duration, 'X', eventSearch->first, Profiler::EmptyArguments);
 					}
 				}
 

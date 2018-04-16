@@ -416,7 +416,7 @@ namespace Gek
                                     mesh.indexCount = indexBufferDescription.count;
                                 }
 
-                                LockedWrite{ std::cout } << "Group " << name << ", mesh " << fileName << "successfully loaded";
+                                LockedWrite{ std::cout } << "Group " << name << ", mesh " << fileName << " successfully loaded";
                             }, __FILE__, __LINE__);
                         }
 

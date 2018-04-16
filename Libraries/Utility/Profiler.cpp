@@ -31,18 +31,19 @@ namespace Gek
 	{
 		struct Event
 		{
+			Hash processIdentifier = 0;
 			Hash threadIdentifier = 0;
 			std::string_view category = String::Empty;
 			std::string_view name = String::Empty;
 			TimeFormat startTime;
 			TimeFormat duration;
 			char eventType = 0;
-			uint64_t eventIdentifier = 0;
+			Hash eventIdentifier = 0;
 			Arguments arguments;
 		};
 
 		TimeFormat profilerStartTime = GetProfilerTime();
-		Hash processIdentifier = GetCurrentProcessId();
+		Hash mainProcessIdentifier = GetCurrentProcessId();
 		Hash mainThreadIdentifier = GetThreadIdentifier();
 
 		ThreadPool<1> writePool;
@@ -84,18 +85,15 @@ namespace Gek
 								", \"name\": \"" << eventData.name << "\"" <<
 								", \"ts\": " << (eventData.startTime - profilerStartTime).count() <<
 								", \"ph\": \"" << eventData.eventType << "\"";
-							switch (eventData.eventType)
+							if (eventData.eventIdentifier)
 							{
-							case 'S':
-							case 'T':
-							case 'F':
 								eventOutput << ", \"id\": " << eventData.eventIdentifier;
-								break;
+							}
 
-							case 'X':
+							if (eventData.eventType == 'X')
+							{
 								eventOutput << ", \"dur\": " << eventData.duration.count();
-								break;
-							};
+							}
 
 							if (!eventData.arguments.empty())
 							{
@@ -113,7 +111,7 @@ namespace Gek
 							}
 
 							eventOutput <<
-								", \"pid\": \"" << processIdentifier << "\"" <<
+								", \"pid\": \"" << processIdentifier ? processIdentifier : mainProcessIdentifier << "\"" <<
 								", \"tid\": \"" << eventData.threadIdentifier <<
 								"\" }\n";
 							fileOutput << eventOutput.str();
@@ -128,7 +126,7 @@ namespace Gek
 	Profiler::Profiler(std::string_view fileName)
 		: data(std::make_unique<Data>())
 	{
-		data->fileOutput.open(fileName.empty() ? String::Format("profile_{}.json", data->processIdentifier).data() : fileName.data());
+		data->fileOutput.open(fileName.empty() ? String::Format("profile_{}.json", data->mainProcessIdentifier).data() : fileName.data());
 		data->fileOutput <<
 			"{\n" <<
 			"\t\"displayTimeUnit\": \"ms\",\n" <<
@@ -156,9 +154,9 @@ namespace Gek
 		return currentThreadIdentifier;
 	}
 
-	void Profiler::addEvent(Hash threadIdentifier, std::string_view category, std::string_view name, TimeFormat startTime, TimeFormat duration, char eventType, uint64_t eventIdentifier, Arguments const &arguments)
+	void Profiler::addEvent(Hash processIdentifier, Hash threadIdentifier, std::string_view category, std::string_view name, TimeFormat startTime, TimeFormat duration, char eventType, Hash eventIdentifier, Arguments const &arguments)
 	{
 		static const auto Zero = std::chrono::duration_cast<TimeFormat>(std::chrono::duration<double>(0.0));
-		data->addEvent(threadIdentifier, category.data(), name.data(), startTime, duration, eventType, eventIdentifier, arguments);
+		data->addEvent(processIdentifier, threadIdentifier, category.data(), name.data(), startTime, duration, eventType, eventIdentifier, arguments);
 	}
 }; // namespace Gek
