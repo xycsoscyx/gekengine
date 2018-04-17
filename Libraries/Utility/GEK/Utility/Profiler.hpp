@@ -24,7 +24,8 @@ namespace Gek
 	{
 	public:
 		using TimeFormat = std::chrono::microseconds;
-		using Arguments = std::unordered_map<std::string_view, std::variant<std::string, std::string_view, int32_t, uint32_t, int64_t, uint64_t, float, Hash>>;
+		using Argument = std::variant<std::string, std::string_view, int32_t, uint32_t, int64_t, uint64_t, float, Hash>;
+		using Arguments = std::unordered_map<std::string_view, Argument>;
 
 		static const TimeFormat EmptyTime;
 		static const Arguments EmptyArguments;

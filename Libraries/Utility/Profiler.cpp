@@ -83,8 +83,12 @@ namespace Gek
 							eventOutput << "\t\t" << (exportedFirstEvent ? "," : "") << "{ " <<
 								"\"cat\": \"" << category << "\"" <<
 								", \"name\": \"" << eventData.name << "\"" <<
-								", \"ts\": " << (eventData.startTime - profilerStartTime).count() <<
-								", \"ph\": \"" << eventData.eventType << "\"";
+								", \"ts\": " << (eventData.startTime - profilerStartTime).count();
+							if (eventData.eventType)
+							{
+								eventOutput << ", \"ph\": \"" << eventData.eventType << "\"";
+							}
+
 							if (eventData.eventIdentifier)
 							{
 								eventOutput << ", \"id\": " << eventData.eventIdentifier;
@@ -97,12 +101,12 @@ namespace Gek
 
 							if (!eventData.arguments.empty())
 							{
-								eventOutput << ", \"args\": { ";
+								eventOutput << ", \"args\": {";
 
 								bool exportedFirstArgument = false;
 								for (auto &argument : eventData.arguments)
 								{
-									eventOutput << (exportedFirstArgument ? "," : " ") << "\"" << argument.first << "\": \"" << argument.second << "\"";
+									eventOutput << (exportedFirstArgument ? ", " : " ") << "\"" << argument.first << "\": \"" << argument.second << "\"";
 									exportedFirstArgument = true;
 
 								}
@@ -111,7 +115,7 @@ namespace Gek
 							}
 
 							eventOutput <<
-								", \"pid\": \"" << processIdentifier ? processIdentifier : mainProcessIdentifier << "\"" <<
+								", \"pid\": \"" << (eventData.processIdentifier ? eventData.processIdentifier : mainProcessIdentifier) << "\"" <<
 								", \"tid\": \"" << eventData.threadIdentifier <<
 								"\" }\n";
 							fileOutput << eventOutput.str();

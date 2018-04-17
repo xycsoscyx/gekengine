@@ -1875,6 +1875,26 @@ namespace Gek
 				defaultContext = std::make_unique<Context>(d3dDeviceContext);
 				disjointTimeStamp.queries[0] = createQuery(Video::Query::Type::DisjointTimeStamp);
 				disjointTimeStamp.queries[1] = createQuery(Video::Query::Type::DisjointTimeStamp);
+
+				auto query = createQuery(Video::Query::Type::TimeStamp);
+				defaultContext->begin(disjointTimeStamp.queries[0].get());
+				defaultContext->end(query.get());
+				defaultContext->end(disjointTimeStamp.queries[0].get());
+
+				Video::Query::DisjointTimeStamp disjointResult;
+				defaultContext->getData(disjointTimeStamp.queries[0].get(), &disjointResult, sizeof(Video::Query::DisjointTimeStamp), true);
+				if (!disjointResult.isDisjoint)
+				{
+					double frequency = (1.0 / double(disjointResult.frequency));
+
+					uint64_t eventTime;
+					if (defaultContext->getData(query.get(), &eventTime, sizeof(uint64_t)) == Video::Query::Status::Ready)
+					{
+						auto timeStamp = std::chrono::duration<double>(double(eventTime) * frequency);
+						auto timeFormat = std::chrono::duration_cast<Profiler::TimeFormat>(timeStamp);
+						getContext()->addEvent(renderProcessIdentifier, renderThreadIdentifier, __FILE__, "clock_sync"sv, Profiler::GetProfilerTime(), Profiler::EmptyTime, 'c', 0, { { "sync_id"sv, "d3d_clock_sync"sv }, { "issue_ts"sv, timeFormat.count() } });
+					}
+				}
 			}
 
             ~Device(void)
