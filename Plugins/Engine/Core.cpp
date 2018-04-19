@@ -67,6 +67,7 @@ namespace Gek
 				GEK_PROFILER_SET_PROCESS_NAME(getContext(), "GEK Engine"sv);
 				GEK_PROFILER_SET_CURRENT_THREAD_NAME(getContext(), "Main Thread"sv);
 				GEK_PROFILER_SET_CURRENT_THREAD_SORT_INDEX(getContext(), 0);
+
 				LockedWrite{ std::cout } << "Starting GEK Engine";
 
                 if (!window)

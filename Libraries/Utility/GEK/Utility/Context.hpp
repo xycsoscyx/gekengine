@@ -33,6 +33,8 @@ namespace Gek
 
         virtual ~Context(void) = default;
 
+		virtual void synchronizeClock(Profiler::TimeFormat time, Hash processIdentifier, Hash threadIdentifier) = 0;
+
 		virtual void setCachePath(FileSystem::Path const &path) = 0;
 		virtual FileSystem::Path getCachePath(FileSystem::Path const &path) = 0;
 

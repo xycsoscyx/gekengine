@@ -42,7 +42,6 @@ namespace Gek
 			Arguments arguments;
 		};
 
-		TimeFormat profilerStartTime = GetProfilerTime();
 		Hash mainProcessIdentifier = GetCurrentProcessId();
 		Hash mainThreadIdentifier = GetThreadIdentifier();
 
@@ -83,7 +82,7 @@ namespace Gek
 							eventOutput << "\t\t" << (exportedFirstEvent ? "," : "") << "{ " <<
 								"\"cat\": \"" << category << "\"" <<
 								", \"name\": \"" << eventData.name << "\"" <<
-								", \"ts\": " << (eventData.startTime - profilerStartTime).count();
+								", \"ts\": " << eventData.startTime.count();
 							if (eventData.eventType)
 							{
 								eventOutput << ", \"ph\": \"" << eventData.eventType << "\"";

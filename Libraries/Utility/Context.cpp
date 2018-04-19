@@ -18,11 +18,16 @@ namespace Gek
         std::set<std::string> dataPathList;
 		std::string cachePath;
 
-    public:
+		Profiler::TimeFormat clockSynchronizationTime;
+
+	public:
         ContextImplementation(std::vector<FileSystem::Path> const &pluginSearchList, std::string_view profilerFileName)
 			: Context(profilerFileName)
         {
-            for (auto const &searchPath : pluginSearchList)
+			clockSynchronizationTime = Profiler::GetProfilerTime();
+			addEvent(0, getCurrentThreadIdentifier(), __FILE__, "clock_sync"sv, clockSynchronizationTime, Profiler::EmptyTime, 'c', 0, { { "sync_id"sv, "context_clock_sync"sv } });
+
+			for (auto const &searchPath : pluginSearchList)
             {
                 searchPath.findFiles([&](FileSystem::Path const &filePath) -> bool
                 {
@@ -81,6 +86,11 @@ namespace Gek
         }
 
         // Context
+		void synchronizeClock(Profiler::TimeFormat time, Hash processIdentifier, Hash threadIdentifier)
+		{
+			addEvent(processIdentifier, threadIdentifier, __FILE__, "clock_sync"sv, time, Profiler::EmptyTime, 'c', 0, { { "sync_id"sv, "context_clock_sync"sv },{ "issue_ts"sv, Profiler::EmptyTime.count() } });
+		}
+
 		void setCachePath(FileSystem::Path const &path)
 		{
 			cachePath = path.getString();

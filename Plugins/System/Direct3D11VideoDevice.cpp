@@ -1892,7 +1892,7 @@ namespace Gek
 					{
 						auto timeStamp = std::chrono::duration<double>(double(eventTime) * frequency);
 						auto timeFormat = std::chrono::duration_cast<Profiler::TimeFormat>(timeStamp);
-						getContext()->addEvent(renderProcessIdentifier, renderThreadIdentifier, __FILE__, "clock_sync"sv, Profiler::GetProfilerTime(), Profiler::EmptyTime, 'c', 0, { { "sync_id"sv, "d3d_clock_sync"sv }, { "issue_ts"sv, timeFormat.count() } });
+						getContext()->synchronizeClock(timeFormat, renderProcessIdentifier, renderThreadIdentifier);
 					}
 				}
 			}

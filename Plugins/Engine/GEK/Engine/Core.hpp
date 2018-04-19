@@ -25,7 +25,7 @@ namespace Gek
         GEK_INTERFACE(Core)
             : public Plugin::Core
         {
-            wink::signal<wink::slot<void(void)>> onChangedDisplay;
+			wink::signal<wink::slot<void(void)>> onChangedDisplay;
             wink::signal<wink::slot<void(void)>> onChangedSettings;
 
             virtual ~Core(void) = default;
