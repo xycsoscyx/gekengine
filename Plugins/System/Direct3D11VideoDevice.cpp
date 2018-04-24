@@ -1892,7 +1892,7 @@ namespace Gek
 					{
 						auto timeStamp = std::chrono::duration<double>(double(eventTime) * frequency);
 						auto timeFormat = std::chrono::duration_cast<Profiler::TimeFormat>(timeStamp);
-						getContext()->synchronizeClock(timeFormat, renderProcessIdentifier, renderThreadIdentifier);
+						getContext()->synchronizeClock(renderProcessIdentifier, renderThreadIdentifier, timeFormat);
 					}
 				}
 			}

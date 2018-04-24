@@ -64,11 +64,11 @@ namespace Gek
 	// NAME - name. Pass __FUNCTION__ in most cases, unless you are marking up parts of one.
 
 	// Metadata. Call at the start preferably. Must be const strings.
-	#define GEK_PROFILER_SET_PROCESS_NAME(PROFILER, NAME) PROFILER->addEvent(0, 0, String::Empty, "process_name"sv, Gek::Profiler::EmptyTime, Gek::Profiler::EmptyTime, 'M', 0, Gek::Profiler::Arguments{{ "name"sv, NAME }})
-	#define GEK_PROFILER_SET_THREAD_NAME(PROFILER, THREAD, NAME) PROFILER->addEvent(0, THREAD, String::Empty, "thread_name"sv, Gek::Profiler::EmptyTime, Gek::Profiler::EmptyTime, 'M', 0, Gek::Profiler::Arguments{{ "name"sv, NAME }})
-	#define GEK_PROFILER_SET_THREAD_SORT_INDEX(PROFILER, THREAD, INDEX) PROFILER->addEvent(0, THREAD, String::Empty, "thread_sort_index"sv, Gek::Profiler::EmptyTime, Gek::Profiler::EmptyTime, 'M', 0, Gek::Profiler::Arguments{{ "sort_index"sv, INDEX }})
-	#define GEK_PROFILER_SET_CURRENT_THREAD_NAME(PROFILER, NAME) PROFILER->addEvent(0, PROFILER->getCurrentThreadIdentifier(), String::Empty, "thread_name"sv, Gek::Profiler::EmptyTime, Gek::Profiler::EmptyTime, 'M', 0, Gek::Profiler::Arguments{{ "name"sv, NAME }})
-	#define GEK_PROFILER_SET_CURRENT_THREAD_SORT_INDEX(PROFILER, INDEX) PROFILER->addEvent(0, PROFILER->getCurrentThreadIdentifier(), String::Empty, "thread_sort_index"sv, Gek::Profiler::EmptyTime, Gek::Profiler::EmptyTime, 'M', 0, Gek::Profiler::Arguments{{ "sort_index"sv, INDEX }})
+	#define GEK_PROFILER_SET_PROCESS_NAME(PROFILER, NAME) PROFILER->addEvent(0, 0, "__metadata"sv, "process_name"sv, Gek::Profiler::EmptyTime, Gek::Profiler::EmptyTime, 'M', 0, Gek::Profiler::Arguments{{ "name"sv, NAME }})
+	#define GEK_PROFILER_SET_THREAD_NAME(PROFILER, THREAD, NAME) PROFILER->addEvent(0, THREAD, "__metadata"sv, "thread_name"sv, Gek::Profiler::EmptyTime, Gek::Profiler::EmptyTime, 'M', 0, Gek::Profiler::Arguments{{ "name"sv, NAME }})
+	#define GEK_PROFILER_SET_THREAD_SORT_INDEX(PROFILER, THREAD, INDEX) PROFILER->addEvent(0, THREAD, "__metadata"sv, "thread_sort_index"sv, Gek::Profiler::EmptyTime, Gek::Profiler::EmptyTime, 'M', 0, Gek::Profiler::Arguments{{ "sort_index"sv, INDEX }})
+	#define GEK_PROFILER_SET_CURRENT_THREAD_NAME(PROFILER, NAME) PROFILER->addEvent(0, PROFILER->getCurrentThreadIdentifier(), "__metadata"sv, "thread_name"sv, Gek::Profiler::EmptyTime, Gek::Profiler::EmptyTime, 'M', 0, Gek::Profiler::Arguments{{ "name"sv, NAME }})
+	#define GEK_PROFILER_SET_CURRENT_THREAD_SORT_INDEX(PROFILER, INDEX) PROFILER->addEvent(0, PROFILER->getCurrentThreadIdentifier(), "__metadata"sv, "thread_sort_index"sv, Gek::Profiler::EmptyTime, Gek::Profiler::EmptyTime, 'M', 0, Gek::Profiler::Arguments{{ "sort_index"sv, INDEX }})
 
 	// Async events. Can span threads. ID identifies which events to connect in the view.
 	#define GEK_PROFILER_ASYNC_BEGIN(PROFILER, CATEGORY, NAME, IDENTIFIER, ...) PROFILER->addEvent(0, PROFILER->getCurrentThreadIdentifier(), CATEGORY, NAME, Gek::Profiler::GetProfilerTime(), Gek::Profiler::EmptyTime, 'S', IDENTIFIER, __VA_ARGS__)
