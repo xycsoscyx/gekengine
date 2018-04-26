@@ -114,7 +114,7 @@ namespace Gek
 							}
 
 							eventOutput <<
-								", \"pid\": \"" << (eventData.processIdentifier ? eventData.processIdentifier : mainProcessIdentifier) << "\"" <<
+								", \"pid\": \"" << eventData.processIdentifier << "\"" <<
 								", \"tid\": \"" << eventData.threadIdentifier <<
 								"\" }\n";
 							fileOutput << eventOutput.str();
@@ -159,6 +159,8 @@ namespace Gek
 
 	void Profiler::addEvent(Hash processIdentifier, Hash threadIdentifier, std::string_view category, std::string_view name, TimeFormat startTime, TimeFormat duration, char eventType, Hash eventIdentifier, Arguments const &arguments)
 	{
+		threadIdentifier = (threadIdentifier ? threadIdentifier : getCurrentThreadIdentifier());
+		processIdentifier = (processIdentifier ? processIdentifier : data->mainProcessIdentifier);
 		static const auto Zero = std::chrono::duration_cast<TimeFormat>(std::chrono::duration<double>(0.0));
 		data->addEvent(processIdentifier, threadIdentifier, category.data(), name.data(), startTime, duration, eventType, eventIdentifier, arguments);
 	}

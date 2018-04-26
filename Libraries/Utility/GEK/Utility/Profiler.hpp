@@ -63,35 +63,41 @@ namespace Gek
 	//     A good use is to pass __FILE__, there are macros further below that will do it for you.
 	// NAME - name. Pass __FUNCTION__ in most cases, unless you are marking up parts of one.
 
+	#define GEK_PROFILER_DEFAULT getContext(), 0, 0
+	#define GEK_PROFILER_CUSTOM(PROCESS, THREAD) getContext(), PROCESS, THREAD
+
 	// Metadata. Call at the start preferably. Must be const strings.
-	#define GEK_PROFILER_SET_PROCESS_NAME(PROFILER, NAME) PROFILER->addEvent(0, 0, "__metadata"sv, "process_name"sv, Gek::Profiler::EmptyTime, Gek::Profiler::EmptyTime, 'M', 0, Gek::Profiler::Arguments{{ "name"sv, NAME }})
+	#define GEK_PROFILER_SET_PROCESS_NAME(PROFILER, PROCESS, NAME) PROFILER->addEvent(PROCESS, 0, "__metadata"sv, "process_name"sv, Gek::Profiler::EmptyTime, Gek::Profiler::EmptyTime, 'M', 0, Gek::Profiler::Arguments{{ "name"sv, NAME }})
 	#define GEK_PROFILER_SET_THREAD_NAME(PROFILER, THREAD, NAME) PROFILER->addEvent(0, THREAD, "__metadata"sv, "thread_name"sv, Gek::Profiler::EmptyTime, Gek::Profiler::EmptyTime, 'M', 0, Gek::Profiler::Arguments{{ "name"sv, NAME }})
 	#define GEK_PROFILER_SET_THREAD_SORT_INDEX(PROFILER, THREAD, INDEX) PROFILER->addEvent(0, THREAD, "__metadata"sv, "thread_sort_index"sv, Gek::Profiler::EmptyTime, Gek::Profiler::EmptyTime, 'M', 0, Gek::Profiler::Arguments{{ "sort_index"sv, INDEX }})
-	#define GEK_PROFILER_SET_CURRENT_THREAD_NAME(PROFILER, NAME) PROFILER->addEvent(0, PROFILER->getCurrentThreadIdentifier(), "__metadata"sv, "thread_name"sv, Gek::Profiler::EmptyTime, Gek::Profiler::EmptyTime, 'M', 0, Gek::Profiler::Arguments{{ "name"sv, NAME }})
-	#define GEK_PROFILER_SET_CURRENT_THREAD_SORT_INDEX(PROFILER, INDEX) PROFILER->addEvent(0, PROFILER->getCurrentThreadIdentifier(), "__metadata"sv, "thread_sort_index"sv, Gek::Profiler::EmptyTime, Gek::Profiler::EmptyTime, 'M', 0, Gek::Profiler::Arguments{{ "sort_index"sv, INDEX }})
 
 	// Async events. Can span threads. ID identifies which events to connect in the view.
-	#define GEK_PROFILER_ASYNC_BEGIN(PROFILER, CATEGORY, NAME, IDENTIFIER, ...) PROFILER->addEvent(0, PROFILER->getCurrentThreadIdentifier(), CATEGORY, NAME, Gek::Profiler::GetProfilerTime(), Gek::Profiler::EmptyTime, 'S', IDENTIFIER, __VA_ARGS__)
-	#define GEK_PROFILER_ASYNC_STEP(PROFILER, CATEGORY, NAME, IDENTIFIER, STEP) PROFILER->addEvent(0, PROFILER->getCurrentThreadIdentifier(), CATEGORY, NAME, Gek::Profiler::GetProfilerTime(), Gek::Profiler::EmptyTime, 'T', IDENTIFIER, Gek::Profiler::Arguments{{ "STEP"s, STEP }})
-	#define GEK_PROFILER_ASYNC_END(PROFILER, CATEGORY, NAME, IDENTIFIER) PROFILER->addEvent(0, PROFILER->getCurrentThreadIdentifier(), CATEGORY, NAME, Gek::Profiler::GetProfilerTime(), Gek::Profiler::EmptyTime, 'F', IDENTIFIER, Gek::Profiler::EmptyArguments)
+	#define _GEK_PROFILER_ASYNC_BEGIN(PROFILER, PROCESS, THREAD, CATEGORY, NAME, IDENTIFIER, ARGUMENTS) PROFILER->addEvent(PROCESS, THREAD, CATEGORY, NAME, Gek::Profiler::GetProfilerTime(), Gek::Profiler::EmptyTime, 'S', IDENTIFIER, ARGUMENTS)
+	#define _GEK_PROFILER_ASYNC_STEP(PROFILER, PROCESS, THREAD, CATEGORY, NAME, IDENTIFIER, STEP) PROFILER->addEvent(PROCESS, THREAD, CATEGORY, NAME, Gek::Profiler::GetProfilerTime(), Gek::Profiler::EmptyTime, 'T', IDENTIFIER, Gek::Profiler::Arguments{{ "step"sv, STEP }})
+	#define _GEK_PROFILER_ASYNC_END(PROFILER, PROCESS, THREAD, CATEGORY, NAME, IDENTIFIER) PROFILER->addEvent(PROCESS, THREAD, CATEGORY, NAME, Gek::Profiler::GetProfilerTime(), Gek::Profiler::EmptyTime, 'F', IDENTIFIER, Gek::Profiler::EmptyArguments)
+	#define GEK_PROFILER_ASYNC_BEGIN(...) _GEK_PROFILER_ASYNC_BEGIN(__VA_ARGS__)
+	#define GEK_PROFILER_ASYNC_STEP(...) _GEK_PROFILER_ASYNC_STEP(__VA_ARGS__)
+	#define GEK_PROFILER_ASYNC_END(...) _GEK_PROFILER_ASYNC_END(__VA_ARGS__)
 
 	// Flow events. Like async events, but displayed in a more fancy way in the viewer.
-	#define GEK_PROFILER_FLOW_BEGIN(PROFILER, CATEGORY, NAME, IDENTIFIER, ...) PROFILER->addEvent(0, PROFILER->getCurrentThreadIdentifier(), CATEGORY, NAME, Gek::Profiler::GetProfilerTime(), Gek::Profiler::EmptyTime, 's', IDENTIFIER, __VA_ARGS__)
-	#define GEK_PROFILER_FLOW_STEP(PROFILER, CATEGORY, NAME, IDENTIFIER, STEP) PROFILER->addEvent(0, PROFILER->getCurrentThreadIdentifier(), CATEGORY, NAME, Gek::Profiler::GetProfilerTime(), Gek::Profiler::EmptyTime, 't', IDENTIFIER, Gek::Profiler::Arguments{{ "STEP"s, STEP }})
-	#define GEK_PROFILER_FLOW_END(PROFILER, CATEGORY, NAME, IDENTIFIER) PROFILER->addEvent(0, PROFILER->getCurrentThreadIdentifier(), CATEGORY, NAME, Gek::Profiler::GetProfilerTime(), Gek::Profiler::EmptyTime, 'f', IDENTIFIER, Gek::Profiler::EmptyArguments)
+	#define _GEK_PROFILER_FLOW_BEGIN(PROFILER, PROCESS, THREAD, CATEGORY, NAME, IDENTIFIER, ARGUMENTS) PROFILER->addEvent(PROCESS, THREAD, CATEGORY, NAME, Gek::Profiler::GetProfilerTime(), Gek::Profiler::EmptyTime, 's', IDENTIFIER, ARGUMENTS)
+	#define _GEK_PROFILER_FLOW_STEP(PROFILER, PROCESS, THREAD, CATEGORY, NAME, IDENTIFIER, STEP) PROFILER->addEvent(PROCESS, THREAD, CATEGORY, NAME, Gek::Profiler::GetProfilerTime(), Gek::Profiler::EmptyTime, 't', IDENTIFIER, Gek::Profiler::Arguments{{ "step"sv, STEP }})
+	#define _GEK_PROFILER_FLOW_END(PROFILER, PROCESS, THREAD, CATEGORY, NAME, IDENTIFIER) PROFILER->addEvent(PROCESS, THREAD, CATEGORY, NAME, Gek::Profiler::GetProfilerTime(), Gek::Profiler::EmptyTime, 'f', IDENTIFIER, Gek::Profiler::EmptyArguments)
+	#define GEK_PROFILER_FLOW_BEGIN(...) _GEK_PROFILER_FLOW_BEGIN(__VA_ARGS__)
+	#define GEK_PROFILER_FLOW_STEP(...) _GEK_PROFILER_FLOW_STEP(__VA_ARGS__)
+	#define GEK_PROFILER_FLOW_END(...) _GEK_PROFILER_FLOW_END(__VA_ARGS__)
 
 	// Instant events. For things with no duration.
-	#define GEK_PROFILER_MOMENT(PROFILER, CATEGORY, NAME, ...) PROFILER->addEvent(0, PROFILER->getCurrentThreadIdentifier(), CATEGORY, NAME, Gek::Profiler::GetProfilerTime(), Gek::Profiler::EmptyTime, 'I', 0, __VA_ARGS__)
+	#define _GEK_PROFILER_MOMENT(PROFILER, PROCESS, THREAD, CATEGORY, NAME, ARGUMENTS) PROFILER->addEvent(PROCESS, THREAD, CATEGORY, NAME, Gek::Profiler::GetProfilerTime(), Gek::Profiler::EmptyTime, 'I', 0, ARGUMENTS)
+	#define GEK_PROFILER_MOMENT(...) _GEK_PROFILER_MOMENT(__VA_ARGS__)
 
 	// Counters
-	#define GEK_PROFILER_COUNTER(PROFILER, CATEGORY, NAME, ...) PROFILER->addEvent(0, PROFILER->getCurrentThreadIdentifier(), CATEGORY, NAME, Gek::Profiler::GetProfilerTime(), Gek::Profiler::EmptyTime, 'C', 0, __VA_ARGS__)
+	#define _GEK_PROFILER_COUNTER(PROFILER, PROCESS, THREAD, CATEGORY, NAME, ARGUMENTS) PROFILER->addEvent(PROCESS, THREAD, CATEGORY, NAME, Gek::Profiler::GetProfilerTime(), Gek::Profiler::EmptyTime, 'C', 0, ARGUMENTS)
+	#define GEK_PROFILER_COUNTER(...) _GEK_PROFILER_COUNTER(__VA_ARGS__)
 
-	#define GEK_PROFILER_BEGIN_SCOPE(PROFILER, NAME) Gek::Profiler::Scope(PROFILER, 0, PROFILER->getCurrentThreadIdentifier(), __FILE__, NAME, 0, Gek::Profiler::EmptyArguments, [&](void) -> void
-	#define GEK_PROFILER_BEGIN_SCOPE_ARGUMENTS(PROFILER, NAME, ARGUMENTS) Gek::Profiler::Scope(PROFILER, 0, PROFILER->getCurrentThreadIdentifier(), __FILE__, NAME, 0, ARGUMENTS, [&](void) -> void
+	// Lambda encased scope
+	#define _GEK_PROFILER_BEGIN_SCOPE(PROFILER, PROCESS, THREAD, CATEGORY, NAME, ARGUMENTS) Gek::Profiler::Scope(PROFILER, PROCESS, THREAD, CATEGORY, NAME, 0, ARGUMENTS, [&](void) -> void
+	#define GEK_PROFILER_BEGIN_SCOPE(...) _GEK_PROFILER_BEGIN_SCOPE(__VA_ARGS__)
 	#define GEK_PROFILER_END_SCOPE() )
-
-	#define GEK_PROFILER_BEGIN_CUSTOM_SCOPE(PROFILER, NAME, THREAD) Gek::Profiler::Scope(PROFILER, 0, THREAD, __FILE__, NAME, 0, Gek::Profiler::EmptyArguments, [&](void) -> void
-	#define GEK_PROFILER_BEGIN_CUSTOM_SCOPE_ARGUMENTS(PROFILER, NAME, THREAD, ARGUMENTS) Gek::Profiler::Scope(PROFILER, 0, THREAD, __FILE__, NAME, 0, ARGUMENTS, [&](void) -> void
-	#define GEK_PROFILER_END_CUSTOM_SCOPE() )
 #else
 #endif // GEK_PROFILER_ENABLED

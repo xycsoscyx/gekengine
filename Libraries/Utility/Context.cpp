@@ -88,7 +88,7 @@ namespace Gek
         // Context
 		void synchronizeClock(Hash processIdentifier, Hash threadIdentifier, Profiler::TimeFormat time)
 		{
-			addEvent(processIdentifier, threadIdentifier, "__metadata"sv, "clock_sync"sv, time, Profiler::EmptyTime, 'c', 0, { { "sync_id"sv, "context_clock_sync"sv }, { "issue_ts"sv, (Profiler::GetProfilerTime() - clockSynchronizationTime).count() } });
+			addEvent(processIdentifier, threadIdentifier, "__metadata"sv, "clock_sync"sv, time, Profiler::EmptyTime, 'c', 0, { { "sync_id"sv, "context_clock_sync2"sv }, { "issue_ts"sv, (Profiler::GetProfilerTime() - time).count() } });
 		}
 
 		void setCachePath(FileSystem::Path const &path)
