@@ -470,7 +470,7 @@ namespace Gek
                 assert(population);
                 assert(newtonWorld);
 
-				GEK_PROFILER_BEGIN_SCOPE(GEK_PROFILER_DEFAULT, "Newton"sv, "Update"sv, Profiler::EmptyArguments)
+				GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Newton"sv, "Update"sv, Profiler::EmptyArguments)
 				{
 					bool editorActive = core->getOption("editor", "active").convert(false);
 					if (frameTime > 0.0f && !editorActive)

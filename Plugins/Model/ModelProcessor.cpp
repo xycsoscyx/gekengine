@@ -509,7 +509,7 @@ namespace Gek
         {
             assert(renderer);
 
-			GEK_PROFILER_BEGIN_SCOPE(GEK_PROFILER_DEFAULT, "Models"sv, "Update"sv, Profiler::EmptyArguments)
+			GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Models"sv, "Update"sv, Profiler::EmptyArguments)
 			{
 				// Cull by entity/group
 				const auto entityCount = getEntityCount();
@@ -526,7 +526,7 @@ namespace Gek
 
 				entityDataList.clear();
 				entityDataList.reserve(entityCount);
-				GEK_PROFILER_BEGIN_SCOPE(GEK_PROFILER_DEFAULT, "Models"sv, "Collect Entities"sv, Profiler::EmptyArguments)
+				GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Models"sv, "Collect Entities"sv, Profiler::EmptyArguments)
 				{
 					parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
 					{
@@ -549,7 +549,7 @@ namespace Gek
 				} GEK_PROFILER_END_SCOPE();
 
 				visibilityList.resize(bufferedEntityCount);
-				GEK_PROFILER_BEGIN_SCOPE(GEK_PROFILER_DEFAULT, "Models"sv, "Cull Entities"sv, Profiler::EmptyArguments)
+				GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Models"sv, "Cull Entities"sv, Profiler::EmptyArguments)
 				{
 					Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedEntityCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
 				} GEK_PROFILER_END_SCOPE();
@@ -579,7 +579,7 @@ namespace Gek
 
 				entityModelList.clear();
 				entityModelList.reserve(bufferedModelCount);
-				GEK_PROFILER_BEGIN_SCOPE(GEK_PROFILER_DEFAULT, "Models"sv, "Collect Models"sv, Profiler::EmptyArguments)
+				GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Models"sv, "Collect Models"sv, Profiler::EmptyArguments)
 				{
 					concurrency::parallel_for_each(std::begin(entityDataList), std::end(entityDataList), [&](auto &entitySearch) -> void
 					{
@@ -614,12 +614,12 @@ namespace Gek
 				} GEK_PROFILER_END_SCOPE();
 
 				visibilityList.resize(bufferedModelCount);
-				GEK_PROFILER_BEGIN_SCOPE(GEK_PROFILER_DEFAULT, "Models"sv, "Cull Models"sv, Profiler::EmptyArguments)
+				GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Models"sv, "Cull Models"sv, Profiler::EmptyArguments)
 				{
 					Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedModelCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
 				} GEK_PROFILER_END_SCOPE();
 
-				GEK_PROFILER_BEGIN_SCOPE(GEK_PROFILER_DEFAULT, "Models"sv, "Bin Models"sv, Profiler::EmptyArguments)
+				GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Models"sv, "Bin Models"sv, Profiler::EmptyArguments)
 				{
 					concurrency::parallel_for_each(std::begin(entityModelList), std::end(entityModelList), [&](auto &entitySearch) -> void
 					{
@@ -642,7 +642,7 @@ namespace Gek
 				} GEK_PROFILER_END_SCOPE();
 
 				size_t maximumInstanceCount = 0;
-				GEK_PROFILER_BEGIN_SCOPE(GEK_PROFILER_DEFAULT, "Models"sv, "Queue Models"sv, Profiler::EmptyArguments)
+				GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Models"sv, "Queue Models"sv, Profiler::EmptyArguments)
 				{
 					concurrency::parallel_for_each(std::begin(renderList), std::end(renderList), [&](auto &materialPair) -> void
 					{

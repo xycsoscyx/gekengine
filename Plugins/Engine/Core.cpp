@@ -993,7 +993,7 @@ namespace Gek
 
             bool update(void)
             {
-				GEK_PROFILER_BEGIN_SCOPE(GEK_PROFILER_DEFAULT, "Core"sv, "Update"sv)
+				GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Core"sv, "Update"sv, Profiler::EmptyArguments)
 				{
 					window->readEvents();
 
