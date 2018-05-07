@@ -1867,9 +1867,9 @@ namespace Gek
 #ifdef _DEBUG
 				CComQIPtr<ID3D11Debug> d3dDebug(d3dDevice);
 				CComQIPtr<ID3D11InfoQueue> d3dInfoQueue(d3dDebug);
-				d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
-				d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
-				d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
+				//d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
+				//d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+				//d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
 #endif
 
 				defaultContext = std::make_unique<Context>(d3dDeviceContext);
@@ -2598,7 +2598,7 @@ namespace Gek
 #ifdef _DEBUG
                 flags |= D3DCOMPILE_DEBUG;
                 flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
-                flags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
+                //flags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
 #else
                 flags |= D3DCOMPILE_SKIP_VALIDATION;
                 flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;

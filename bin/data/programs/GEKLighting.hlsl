@@ -184,7 +184,6 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
     }
 
     float3 surfaceIrradiance = 0.0;
-
     for (uint directionalIndex = 0; directionalIndex < Lights::directionalCount; directionalIndex++)
     {
         float3 lightDirection = Lights::directionalList[directionalIndex].direction;
@@ -193,16 +192,16 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
         surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, lightDirection, lightRadiance);
     }
 
-    uint clusterOffset = getClusterOffset(screenCoord, surfacePosition.z);
-    uint2 clusterData = Lights::clusterDataList[clusterOffset];
-    uint indexOffset = clusterData.x;
-    uint pointLightCount = clusterData.y & 0x0000FFFF;
-    uint spotLightCount = clusterData.y >> 16;
+	const uint clusterOffset = getClusterOffset(screenCoord, surfacePosition.z);
+	const uint2 clusterData = Lights::clusterDataList[clusterOffset];
+	const uint indexOffset = clusterData.x;
+	const uint pointLightOffset = indexOffset + 1;// ((clusterData.y & 0x0000FFFF) + indexOffset);
+	const uint spotLightOffset = pointLightOffset + 1;// (((clusterData.y >> 16) & 0x0000FFFF) + pointLightOffset);
     //return HUEtoRGB((pointLightCount + spotLightCount) * 0.01);
-    while (pointLightCount-- > 0)
+	for (uint pointLightIndex = indexOffset; pointLightIndex < pointLightOffset; pointLightIndex++)
     {
-        uint lightIndex = Lights::clusterIndexList[indexOffset++];
-        Lights::PointData lightData = Lights::pointList[lightIndex];
+		const uint lightIndex = Lights::clusterIndexList[pointLightIndex];
+		const Lights::PointData lightData = Lights::pointList[lightIndex];
 
         float3 lightRay = (lightData.position - surfacePosition);
         float3 centerToRay = (lightRay - (dot(lightRay, reflectNormal) * reflectNormal));
@@ -214,10 +213,10 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
         surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, lightDirection, lightRadiance);
     };
 
-    while (spotLightCount-- > 0)
+	for (uint spotLightIndex = pointLightOffset; spotLightIndex < spotLightOffset; spotLightIndex++)
     {
-        uint lightIndex = Lights::clusterIndexList[indexOffset++];
-        Lights::SpotData lightData = Lights::spotList[lightIndex];
+		const uint lightIndex = Lights::clusterIndexList[spotLightIndex];
+		const Lights::SpotData lightData = Lights::spotList[lightIndex];
 
         float3 lightRay = (lightData.position - surfacePosition);
         float lightDistance = length(lightRay);
