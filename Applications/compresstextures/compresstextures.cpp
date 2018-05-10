@@ -15,25 +15,25 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 {
 	if (!inputFilePath.isFile())
 	{
-        LockedWrite{ std::cerr } << "Input file not found: " << inputFilePath.getString();
-        return;
+		LockedWrite{ std::cerr } << "Input file not found: " << inputFilePath.getString();
+		return;
 	}
 
-    auto outputFilePath(inputFilePath.withExtension(".dds"));
+	auto outputFilePath(inputFilePath.withExtension(".dds"));
 	if (outputFilePath.isFile() && outputFilePath.isNewerThan(inputFilePath))
 	{
 		LockedWrite{ std::cerr } << "Input file hasn't changed since last compression: " << inputFilePath.getString();
-        return;
-    }
+		return;
+	}
 
-    std::string extension(String::GetLower(inputFilePath.getExtension()));
-    if (extension == ".dds")
-    {
-        LockedWrite{ std::cerr } << "Input file is alrady compressed: " << inputFilePath.getString();
-        return;
-    }
+	std::string extension(String::GetLower(inputFilePath.getExtension()));
+	if (extension == ".dds")
+	{
+		LockedWrite{ std::cerr } << "Input file is alrady compressed: " << inputFilePath.getString();
+		return;
+	}
 
-    std::function<HRESULT(std::vector<uint8_t> const &, ::DirectX::ScratchImage &)> load;
+	std::function<HRESULT(std::vector<uint8_t> const &, ::DirectX::ScratchImage &)> load;
 	if (extension == ".tga")
 	{
 		load = [](std::vector<uint8_t> const &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromTGAMemory(buffer.data(), buffer.size(), nullptr, image); };
@@ -46,51 +46,51 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 	{
 		load = [](std::vector<uint8_t> const &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_BMP, nullptr, image); };
 	}
-    else if (extension == ".jpg" || extension == ".jpeg")
-    {
-        load = [](std::vector<uint8_t> const &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, nullptr, image); };
-    }
-    else if (extension == ".tif" || extension == ".tiff")
-    {
-        load = [](std::vector<uint8_t> const &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_TIFF, nullptr, image); };
-    }
-/*
-	else if (extension == ".dds")
+	else if (extension == ".jpg" || extension == ".jpeg")
 	{
-		load = std::bind(::DirectX::LoadFromDDSMemory, std::placeholders::_1, std::placeholders::_2, 0, nullptr, std::placeholders::_3);
+		load = [](std::vector<uint8_t> const &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, nullptr, image); };
 	}
-*/
+	else if (extension == ".tif" || extension == ".tiff")
+	{
+		load = [](std::vector<uint8_t> const &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_TIFF, nullptr, image); };
+	}
+	/*
+		else if (extension == ".dds")
+		{
+			load = std::bind(::DirectX::LoadFromDDSMemory, std::placeholders::_1, std::placeholders::_2, 0, nullptr, std::placeholders::_3);
+		}
+	*/
 	if (!load)
 	{
-        LockedWrite{ std::cerr } << "Unknown file type of " << extension << " for input: " << inputFilePath.getString();
-        return;
-    }
+		LockedWrite{ std::cerr } << "Unknown file type of " << extension << " for input: " << inputFilePath.getString();
+		return;
+	}
 
-    static const std::vector<uint8_t> EmptyBuffer;
-    std::vector<uint8_t> buffer(FileSystem::Load(inputFilePath, EmptyBuffer));
+	static const std::vector<uint8_t> EmptyBuffer;
+	std::vector<uint8_t> buffer(FileSystem::Load(inputFilePath, EmptyBuffer));
 
-    ::DirectX::ScratchImage image;
-    HRESULT resultValue = load(buffer, image);
-    if (FAILED(resultValue))
-    {
-        LockedWrite{ std::cerr } << "Unable to load input file: " << inputFilePath.getString();
-        return;
-    }
+	::DirectX::ScratchImage image;
+	HRESULT resultValue = load(buffer, image);
+	if (FAILED(resultValue))
+	{
+		LockedWrite{ std::cerr } << "Unable to load input file: " << inputFilePath.getString();
+		return;
+	}
 
-    bool useDevice = false;
+	bool useDevice = false;
 	uint32_t flags = ::DirectX::TEX_COMPRESS_PARALLEL;
 	DXGI_FORMAT outputFormat = DXGI_FORMAT_UNKNOWN;
 	std::string textureName(String::GetLower(inputFilePath.withoutExtension().getString()));
-    if (String::EndsWith(textureName, "basecolor") ||
-        String::EndsWith(textureName, "base_color") ||
-        String::EndsWith(textureName, "diffuse") ||
-        String::EndsWith(textureName, "diffuse_s") ||
-        String::EndsWith(textureName, "albedo") ||
-        String::EndsWith(textureName, "albedo_s") ||
-        String::EndsWith(textureName, "alb") ||
-        String::EndsWith(textureName, "_d") ||
-        String::EndsWith(textureName, "_c"))
-    {
+	if (String::EndsWith(textureName, "basecolor") ||
+		String::EndsWith(textureName, "base_color") ||
+		String::EndsWith(textureName, "diffuse") ||
+		String::EndsWith(textureName, "diffuse_s") ||
+		String::EndsWith(textureName, "albedo") ||
+		String::EndsWith(textureName, "albedo_s") ||
+		String::EndsWith(textureName, "alb") ||
+		String::EndsWith(textureName, "_d") ||
+		String::EndsWith(textureName, "_c"))
+	{
 		useDevice = true;
 		//flags |= ::DirectX::TEX_COMPRESS_SRGB_IN;
 		//flags |= ::DirectX::TEX_COMPRESS_SRGB_OUT;
@@ -103,18 +103,18 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 			outputFormat = DXGI_FORMAT_BC1_UNORM_SRGB;
 		}
 	}
-    else if (String::EndsWith(textureName, "normal") ||
-        String::EndsWith(textureName, "normalmap") ||
-        String::EndsWith(textureName, "normalmap_s") ||
-        String::EndsWith(textureName, "_n"))
-    {
+	else if (String::EndsWith(textureName, "normal") ||
+		String::EndsWith(textureName, "normalmap") ||
+		String::EndsWith(textureName, "normalmap_s") ||
+		String::EndsWith(textureName, "_n"))
+	{
 		outputFormat = DXGI_FORMAT_BC5_UNORM;
 	}
-    else if (String::EndsWith(textureName, "roughness") ||
-        String::EndsWith(textureName, "roughness_s") ||
-        String::EndsWith(textureName, "rough") ||
-        String::EndsWith(textureName, "_r"))
-    {
+	else if (String::EndsWith(textureName, "roughness") ||
+		String::EndsWith(textureName, "roughness_s") ||
+		String::EndsWith(textureName, "rough") ||
+		String::EndsWith(textureName, "_r"))
+	{
 		outputFormat = DXGI_FORMAT_BC4_UNORM;
 	}
 	else if (String::EndsWith(textureName, "metalness") ||
@@ -123,6 +123,16 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 		String::EndsWith(textureName, "_m"))
 	{
 		outputFormat = DXGI_FORMAT_BC4_UNORM;
+	}
+	else if (String::EndsWith(textureName, "clarity") ||
+		String::EndsWith(textureName, "height") ||
+		String::EndsWith(textureName, "occlusion") ||
+		String::EndsWith(textureName, "thickness") ||
+		String::EndsWith(textureName, "specular")
+		)
+	{
+		LockedWrite{ std::cerr } << "Skipping unhandled texture material type: " << textureName;
+		return;
 	}
 	else
 	{

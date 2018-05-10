@@ -597,19 +597,19 @@ namespace Gek
         class BaseObject
         {
         public:
-            TYPE *d3dObject = nullptr;
+            TYPE * d3dObject = nullptr;
 
         public:
             template <typename TYPE>
             BaseObject(CComPtr<TYPE> &d3dSource)
             {
-                if(d3dSource)
+                if (d3dSource)
                 {
                     InterlockedExchangePointer(reinterpret_cast<void **>(&d3dObject), d3dSource);
                     d3dObject->AddRef();
                 }
             }
-            
+
             virtual ~BaseObject(void)
             {
                 if (d3dObject)
@@ -652,7 +652,7 @@ namespace Gek
             : public NamedObject<BASE>
         {
         public:
-            TYPE *d3dObject = nullptr;
+            TYPE * d3dObject = nullptr;
 
         public:
             template <typename SOURCE>
@@ -676,13 +676,13 @@ namespace Gek
                 setDebugName(d3dObject);
             }
         };
-        
+
         template <typename TYPE, typename BASE>
         class DescribedVideoObject
             : public NamedObject<BASE>
         {
         public:
-            TYPE *d3dObject = nullptr;
+            TYPE * d3dObject = nullptr;
             typename BASE::Description description;
 
         public:
@@ -730,7 +730,7 @@ namespace Gek
             : public NamedObject<Video::Query>
         {
         public:
-            ID3D11Query *d3dObject = nullptr;
+            ID3D11Query * d3dObject = nullptr;
 
         public:
             Query(CComPtr<ID3D11Query> &d3dSource)
@@ -761,7 +761,7 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            ID3D11Buffer *d3dObject = nullptr;
+            ID3D11Buffer * d3dObject = nullptr;
             Video::Buffer::Description description;
 
         public:
@@ -994,7 +994,7 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            ID3D11DepthStencilView *d3dObject = nullptr;
+            ID3D11DepthStencilView * d3dObject = nullptr;
 
         public:
             DepthTexture(CComPtr<ID3D11Resource> &d3dResource,
@@ -1029,47 +1029,47 @@ namespace Gek
             }
         };
 
-		template <typename D3DTYPE>
-		class Program
-			: public NamedObject<Video::Program>
-		{
-		public:
-			Video::Program::Information information;
-			D3DTYPE * d3dObject = nullptr;
+        template <typename D3DTYPE>
+        class Program
+            : public NamedObject<Video::Program>
+        {
+        public:
+            Video::Program::Information information;
+            D3DTYPE * d3dObject = nullptr;
 
-		public:
-			template <typename SOURCE>
-			Program(CComPtr<SOURCE> &d3dSource, Video::Program::Information information)
-				: information(information)
-			{
-				InterlockedExchangePointer(reinterpret_cast<void **>(&d3dObject), dynamic_cast<D3DTYPE *>(d3dSource.p));
-				d3dObject->AddRef();
-			}
+        public:
+            template <typename SOURCE>
+            Program(CComPtr<SOURCE> &d3dSource, Video::Program::Information information)
+                : information(information)
+            {
+                InterlockedExchangePointer(reinterpret_cast<void **>(&d3dObject), dynamic_cast<D3DTYPE *>(d3dSource.p));
+                d3dObject->AddRef();
+            }
 
-			virtual ~Program(void)
-			{
-				if (d3dObject)
-				{
-					reinterpret_cast<D3DTYPE *>(InterlockedExchangePointer((void **)&d3dObject, nullptr))->Release();
-				}
-			}
+            virtual ~Program(void)
+            {
+                if (d3dObject)
+                {
+                    reinterpret_cast<D3DTYPE *>(InterlockedExchangePointer((void **)&d3dObject, nullptr))->Release();
+                }
+            }
 
-			void setName(std::string const &name)
-			{
-				NamedObject::setName(name);
-				setDebugName(d3dObject);
-			}
+            void setName(std::string const &name)
+            {
+                NamedObject::setName(name);
+                setDebugName(d3dObject);
+            }
 
-			Information const &getInformation(void) const
-			{
-				return information;
-			}
-		};
+            Information const &getInformation(void) const
+            {
+                return information;
+            }
+        };
 
-		using ComputeProgram = Program<ID3D11ComputeShader>;
-		using VertexProgram = Program<ID3D11VertexShader>;
-		using GeometryProgram = Program<ID3D11GeometryShader>;
-		using PixelProgram = Program<ID3D11PixelShader>;
+        using ComputeProgram = Program<ID3D11ComputeShader>;
+        using VertexProgram = Program<ID3D11VertexShader>;
+        using GeometryProgram = Program<ID3D11GeometryShader>;
+        using PixelProgram = Program<ID3D11PixelShader>;
 
         GEK_CONTEXT_USER(Device, Window *, Video::Device::Description)
             , public Video::Debug::Device
@@ -1081,7 +1081,7 @@ namespace Gek
                     : public Video::Device::Context::Pipeline
                 {
                 private:
-                    ID3D11DeviceContext *d3dDeviceContext = nullptr;
+                    ID3D11DeviceContext * d3dDeviceContext = nullptr;
 
                 public:
                     ComputePipeline(ID3D11DeviceContext *d3dDeviceContext)
@@ -1176,7 +1176,7 @@ namespace Gek
                     : public Video::Device::Context::Pipeline
                 {
                 private:
-                    ID3D11DeviceContext *d3dDeviceContext = nullptr;
+                    ID3D11DeviceContext * d3dDeviceContext = nullptr;
 
                 public:
                     VertexPipeline(ID3D11DeviceContext *d3dDeviceContext)
@@ -1186,7 +1186,7 @@ namespace Gek
                     }
 
                     // Video::Pipeline
-					Type getType(void) const
+     Type getType(void) const
                     {
                         return Type::Vertex;
                     }
@@ -1264,7 +1264,7 @@ namespace Gek
                     : public Video::Device::Context::Pipeline
                 {
                 private:
-                    ID3D11DeviceContext *d3dDeviceContext = nullptr;
+                    ID3D11DeviceContext * d3dDeviceContext = nullptr;
 
                 public:
                     GeometryPipeline(ID3D11DeviceContext *d3dDeviceContext)
@@ -1352,7 +1352,7 @@ namespace Gek
                     : public Video::Device::Context::Pipeline
                 {
                 private:
-                    ID3D11DeviceContext *d3dDeviceContext = nullptr;
+                    ID3D11DeviceContext * d3dDeviceContext = nullptr;
 
                 public:
                     PixelPipeline(ID3D11DeviceContext *d3dDeviceContext)
@@ -1768,7 +1768,7 @@ namespace Gek
             };
 
         public:
-            Window *window = nullptr;
+            Window * window = nullptr;
             bool isChildWindow = false;
 
             CComPtr<ID3D11Device> d3dDevice;
@@ -1778,130 +1778,130 @@ namespace Gek
             Video::Device::ContextPtr defaultContext;
             Video::TargetPtr backBuffer;
 
-			struct BufferedQuery
-			{
-				Video::QueryPtr queries[2];
-			};
+            struct BufferedQuery
+   {
+    Video::QueryPtr queries[2];
+   };
 
-			struct BlockQuery
-			{
-				std::string_view name;
-				Profiler::TimeFormat startTimes[2];
-				BufferedQuery begin, end;
-			};
+   struct BlockQuery
+   {
+    std::string_view name;
+    Profiler::TimeFormat startTimes[2];
+    BufferedQuery begin, end;
+   };
 
-			BufferedQuery disjointTimeStamp;
-			using EventMap = std::unordered_map<Hash, BlockQuery>;
-			concurrency::critical_section criticalSection;
-			EventMap eventMap;
+   BufferedQuery disjointTimeStamp;
+   using EventMap = std::unordered_map<Hash, BlockQuery>;
+   concurrency::critical_section criticalSection;
+   EventMap eventMap;
 
-			Hash renderProcessIdentifier;
-			Hash renderThreadIdentifier;
-			int currentQueryFrame = 0;
-			int currentCollectFrame = -1;
-			std::array<std::vector<EventMap::value_type *>, 2> frameEventList;
+   Hash renderProcessIdentifier;
+   Hash renderThreadIdentifier;
+   int currentQueryFrame = 0;
+   int currentCollectFrame = -1;
+   std::array<std::vector<EventMap::value_type *>, 2> frameEventList;
 
         public:
-			Device(Gek::Context *context, Window *window, Video::Device::Description deviceDescription)
-				: ContextRegistration(context)
-				, window(window)
-				, isChildWindow(GetParent((HWND)window->getBaseWindow()) != nullptr)
-				, renderProcessIdentifier(Hash(this))
-				, renderThreadIdentifier(Hash(this))
-			{
-				assert(window);
+   Device(Gek::Context *context, Window *window, Video::Device::Description deviceDescription)
+    : ContextRegistration(context)
+    , window(window)
+    , isChildWindow(GetParent((HWND)window->getBaseWindow()) != nullptr)
+    , renderProcessIdentifier(Hash(this))
+    , renderThreadIdentifier(Hash(this))
+   {
+    assert(window);
 
-				GEK_PROFILER_SET_THREAD_NAME(getContext(), renderThreadIdentifier, "Render Thread"sv);
-				GEK_PROFILER_SET_THREAD_SORT_INDEX(getContext(), renderThreadIdentifier, 100);
+    GEK_PROFILER_SET_THREAD_NAME(getContext(), renderThreadIdentifier, "Render Thread"sv);
+    GEK_PROFILER_SET_THREAD_SORT_INDEX(getContext(), renderThreadIdentifier, 100);
 
-				UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+    UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG
-				flags |= D3D11_CREATE_DEVICE_DEBUG;
+    flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-				D3D_FEATURE_LEVEL featureLevelList[] =
-				{
-					D3D_FEATURE_LEVEL_11_0,
-				};
+    D3D_FEATURE_LEVEL featureLevelList[] =
+    {
+     D3D_FEATURE_LEVEL_11_0,
+    };
 
-				D3D_FEATURE_LEVEL featureLevel;
-				HRESULT resultValue = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevelList, 1, D3D11_SDK_VERSION, &d3dDevice, &featureLevel, &d3dDeviceContext);
-				if (featureLevel != featureLevelList[0])
-				{
-					throw std::exception("Direct3D 11.0 feature level required");
-				}
+    D3D_FEATURE_LEVEL featureLevel;
+    HRESULT resultValue = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevelList, 1, D3D11_SDK_VERSION, &d3dDevice, &featureLevel, &d3dDeviceContext);
+    if (featureLevel != featureLevelList[0])
+    {
+     throw std::exception("Direct3D 11.0 feature level required");
+    }
 
-				if (FAILED(resultValue) || !d3dDevice || !d3dDeviceContext)
-				{
-					throw std::exception("Unable to create rendering device and context");
-				}
+    if (FAILED(resultValue) || !d3dDevice || !d3dDeviceContext)
+    {
+     throw std::exception("Unable to create rendering device and context");
+    }
 
-				CComPtr<IDXGIFactory2> dxgiFactory;
-				resultValue = CreateDXGIFactory2(0, IID_PPV_ARGS(&dxgiFactory));
-				if (FAILED(resultValue) || !dxgiFactory)
-				{
-					throw std::exception("Unable to get graphics factory");
-				}
+    CComPtr<IDXGIFactory2> dxgiFactory;
+    resultValue = CreateDXGIFactory2(0, IID_PPV_ARGS(&dxgiFactory));
+    if (FAILED(resultValue) || !dxgiFactory)
+    {
+     throw std::exception("Unable to get graphics factory");
+    }
 
-				DXGI_SWAP_CHAIN_DESC1 swapChainDescription;
-				swapChainDescription.Width = 0;
-				swapChainDescription.Height = 0;
-				swapChainDescription.Format = DirectX::TextureFormatList[static_cast<uint8_t>(deviceDescription.displayFormat)];
-				swapChainDescription.Stereo = false;
-				swapChainDescription.SampleDesc.Count = deviceDescription.sampleCount;
-				swapChainDescription.SampleDesc.Quality = deviceDescription.sampleQuality;
-				swapChainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
-				swapChainDescription.BufferCount = 2;
-				swapChainDescription.Scaling = DXGI_SCALING_STRETCH;
-				swapChainDescription.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-				swapChainDescription.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
-				swapChainDescription.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-				resultValue = dxgiFactory->CreateSwapChainForHwnd(d3dDevice, (HWND)window->getBaseWindow(), &swapChainDescription, nullptr, nullptr, &dxgiSwapChain);
-				if (FAILED(resultValue) || !dxgiSwapChain)
-				{
-					throw std::exception("Unable to create swap chain for window");
-				}
+    DXGI_SWAP_CHAIN_DESC1 swapChainDescription;
+    swapChainDescription.Width = 0;
+    swapChainDescription.Height = 0;
+    swapChainDescription.Format = DirectX::TextureFormatList[static_cast<uint8_t>(deviceDescription.displayFormat)];
+    swapChainDescription.Stereo = false;
+    swapChainDescription.SampleDesc.Count = deviceDescription.sampleCount;
+    swapChainDescription.SampleDesc.Quality = deviceDescription.sampleQuality;
+    swapChainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
+    swapChainDescription.BufferCount = 2;
+    swapChainDescription.Scaling = DXGI_SCALING_STRETCH;
+    swapChainDescription.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+    swapChainDescription.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
+    swapChainDescription.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+    resultValue = dxgiFactory->CreateSwapChainForHwnd(d3dDevice, (HWND)window->getBaseWindow(), &swapChainDescription, nullptr, nullptr, &dxgiSwapChain);
+    if (FAILED(resultValue) || !dxgiSwapChain)
+    {
+     throw std::exception("Unable to create swap chain for window");
+    }
 
-				dxgiFactory->MakeWindowAssociation((HWND)window->getBaseWindow(), 0);
+    dxgiFactory->MakeWindowAssociation((HWND)window->getBaseWindow(), 0);
 
 #ifdef _DEBUG
-				CComQIPtr<ID3D11Debug> d3dDebug(d3dDevice);
-				CComQIPtr<ID3D11InfoQueue> d3dInfoQueue(d3dDebug);
-				//d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
-				//d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
-				//d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
+    CComQIPtr<ID3D11Debug> d3dDebug(d3dDevice);
+    CComQIPtr<ID3D11InfoQueue> d3dInfoQueue(d3dDebug);
+    //d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
+    //d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+    //d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
 #endif
 
-				defaultContext = std::make_unique<Context>(d3dDeviceContext);
-				disjointTimeStamp.queries[0] = createQuery(Video::Query::Type::DisjointTimeStamp);
-				disjointTimeStamp.queries[1] = createQuery(Video::Query::Type::DisjointTimeStamp);
+    defaultContext = std::make_unique<Context>(d3dDeviceContext);
+    disjointTimeStamp.queries[0] = createQuery(Video::Query::Type::DisjointTimeStamp);
+    disjointTimeStamp.queries[1] = createQuery(Video::Query::Type::DisjointTimeStamp);
 
-				auto query = createQuery(Video::Query::Type::TimeStamp);
-				defaultContext->begin(disjointTimeStamp.queries[0].get());
-				defaultContext->end(query.get());
-				defaultContext->end(disjointTimeStamp.queries[0].get());
+    auto query = createQuery(Video::Query::Type::TimeStamp);
+    defaultContext->begin(disjointTimeStamp.queries[0].get());
+    defaultContext->end(query.get());
+    defaultContext->end(disjointTimeStamp.queries[0].get());
 
-				Video::Query::DisjointTimeStamp disjointResult;
-				defaultContext->getData(disjointTimeStamp.queries[0].get(), &disjointResult, sizeof(Video::Query::DisjointTimeStamp), true);
-				if (!disjointResult.isDisjoint)
-				{
-					double frequency = (1.0 / double(disjointResult.frequency));
+    Video::Query::DisjointTimeStamp disjointResult;
+    defaultContext->getData(disjointTimeStamp.queries[0].get(), &disjointResult, sizeof(Video::Query::DisjointTimeStamp), true);
+    if (!disjointResult.isDisjoint)
+    {
+     double frequency = (1.0 / double(disjointResult.frequency));
 
-					uint64_t eventTime;
-					if (defaultContext->getData(query.get(), &eventTime, sizeof(uint64_t)) == Video::Query::Status::Ready)
-					{
-						auto timeStamp = std::chrono::duration<double>(double(eventTime) * frequency);
-						auto timeFormat = std::chrono::duration_cast<Profiler::TimeFormat>(timeStamp);
-						getContext()->synchronizeClock(renderProcessIdentifier, renderThreadIdentifier, timeFormat);
-					}
-				}
-			}
+     uint64_t eventTime;
+     if (defaultContext->getData(query.get(), &eventTime, sizeof(uint64_t)) == Video::Query::Status::Ready)
+     {
+      auto timeStamp = std::chrono::duration<double>(double(eventTime) * frequency);
+      auto timeFormat = std::chrono::duration_cast<Profiler::TimeFormat>(timeStamp);
+      getContext()->synchronizeClock(renderProcessIdentifier, renderThreadIdentifier, timeFormat);
+     }
+    }
+   }
 
             ~Device(void)
             {
-				disjointTimeStamp.queries[0] = nullptr;
-				disjointTimeStamp.queries[1] = nullptr;
-				eventMap.clear();
+    disjointTimeStamp.queries[0] = nullptr;
+    disjointTimeStamp.queries[1] = nullptr;
+    eventMap.clear();
 
                 setFullScreenState(false);
 
@@ -1967,7 +1967,7 @@ namespace Gek
                         displayMode.aspectRatio = getAspectRatio(displayMode.width, displayMode.height);
                         displayMode.refreshRate.numerator = dxgiDisplayMode.RefreshRate.Numerator;
                         displayMode.refreshRate.denominator = dxgiDisplayMode.RefreshRate.Denominator;
-                        if (! [&](void) -> bool
+                        if (![&](void) -> bool
                         {
                             for (auto &checkMode : displayModeList)
                             {
@@ -2499,15 +2499,15 @@ namespace Gek
                 }
             }
 
-			std::string_view const getSemanticMoniker(Video::InputElement::Semantic semantic)
-			{
-				return DirectX::SemanticNameList[static_cast<uint8_t>(semantic)];
-			}
+   std::string_view const getSemanticMoniker(Video::InputElement::Semantic semantic)
+   {
+    return DirectX::SemanticNameList[static_cast<uint8_t>(semantic)];
+   }
 
-			Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, Video::Program::Information const &information)
+   Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, Video::Program::Information const &information)
             {
-				assert(!information.compiledData.empty());
-				assert(information.type == Video::Program::Type::Vertex);
+    assert(!information.compiledData.empty());
+    assert(information.type == Video::Program::Type::Vertex);
 
                 uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
                 std::vector<D3D11_INPUT_ELEMENT_DESC> d3dElementList;
@@ -2547,52 +2547,52 @@ namespace Gek
                 return std::make_unique<InputLayout>(d3dInputLayout);
             }
 
-			class Include
-				: public ID3DInclude
-			{
-			private:
-				using IncludeFunction = std::function<bool(Video::IncludeType includeType, std::string_view fileName, void const **data, uint32_t *size)>;
-				IncludeFunction function;
+   class Include
+    : public ID3DInclude
+   {
+   private:
+    using IncludeFunction = std::function<bool(Video::IncludeType includeType, std::string_view fileName, void const **data, uint32_t *size)>;
+    IncludeFunction function;
 
-			public:
-				Include(IncludeFunction &&function)
-					: function(std::move(function))
-				{
-				}
+   public:
+    Include(IncludeFunction &&function)
+     : function(std::move(function))
+    {
+    }
 
-				// ID3DInclude 
-				ULONG AddRef(void)
-				{
-					return 1;
-				}
+    // ID3DInclude 
+    ULONG AddRef(void)
+    {
+     return 1;
+    }
 
-				HRESULT QueryInterface(IID const &interfaceType, void **object)
-				{
-					return E_FAIL;
-				}
+    HRESULT QueryInterface(IID const &interfaceType, void **object)
+    {
+     return E_FAIL;
+    }
 
-				ULONG Release(void)
-				{
-					return 1;
-				}
+    ULONG Release(void)
+    {
+     return 1;
+    }
 
-				HRESULT Close(LPCVOID pData)
-				{
-					return S_OK;
-				}
+    HRESULT Close(LPCVOID pData)
+    {
+     return S_OK;
+    }
 
-				HRESULT Open(D3D_INCLUDE_TYPE includeType, char const *fileName, void const *parentData, void const **data, uint32_t *size)
-				{
-					return function(includeType == D3D_INCLUDE_LOCAL ? Video::IncludeType::Local : Video::IncludeType::Global, fileName, data, size) ? S_OK : E_FAIL;
-				}
-			};
+    HRESULT Open(D3D_INCLUDE_TYPE includeType, char const *fileName, void const *parentData, void const **data, uint32_t *size)
+    {
+     return function(includeType == D3D_INCLUDE_LOCAL ? Video::IncludeType::Local : Video::IncludeType::Global, fileName, data, size) ? S_OK : E_FAIL;
+    }
+   };
 
-			Video::Program::Information compileProgram(Video::Program::Type type, std::string_view name, FileSystem::Path const &debugPath, std::string_view uncompiledProgram, std::string_view entryFunction, std::function<bool(Video::IncludeType, std::string_view, void const **data, uint32_t *size)> &&onInclude)
-			{
+   Video::Program::Information compileProgram(Video::Program::Type type, std::string_view name, FileSystem::Path const &debugPath, std::string_view uncompiledProgram, std::string_view entryFunction, std::function<bool(Video::IncludeType, std::string_view, void const **data, uint32_t *size)> &&onInclude)
+   {
                 assert(d3dDevice);
-				assert(!name.empty());
-				assert(!uncompiledProgram.empty());
-				assert(!entryFunction.empty());
+    assert(!name.empty());
+    assert(!uncompiledProgram.empty());
+    assert(!entryFunction.empty());
 
                 uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
@@ -2604,87 +2604,87 @@ namespace Gek
                 flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif
 
-				static const std::unordered_map<Video::Program::Type, std::string_view> D3DTypeMap = 
-				{
-					{ Video::Program::Type::Compute, "cs_5_0"sv, },
-					{ Video::Program::Type::Geometry, "gs_5_0"sv, },
-					{ Video::Program::Type::Vertex, "vs_5_0"sv, },
-					{ Video::Program::Type::Pixel, "ps_5_0"sv, },
-				};
+    static const std::unordered_map<Video::Program::Type, std::string_view> D3DTypeMap =
+    {
+     { Video::Program::Type::Compute, "cs_5_0"sv, },
+     { Video::Program::Type::Geometry, "gs_5_0"sv, },
+     { Video::Program::Type::Vertex, "vs_5_0"sv, },
+     { Video::Program::Type::Pixel, "ps_5_0"sv, },
+    };
 
-				static const std::vector<uint8_t> EmptyBuffer;
-				Video::Program::Information compiled =
-				{
-					type,
-					debugPath,
-					uncompiledProgram.data(),
-					EmptyBuffer
-				};
+    static const std::vector<uint8_t> EmptyBuffer;
+    Video::Program::Information compiled =
+    {
+     type,
+     debugPath,
+     uncompiledProgram.data(),
+     EmptyBuffer
+    };
 
-				auto typeSearch = D3DTypeMap.find(type);
-				if (typeSearch != std::end(D3DTypeMap))
-				{
-					auto function = [](Video::IncludeType includeType, std::string_view fileName, void const **data, uint32_t *size) -> bool
-					{
-						return false;
-					};
+    auto typeSearch = D3DTypeMap.find(type);
+    if (typeSearch != std::end(D3DTypeMap))
+    {
+     auto function = [](Video::IncludeType includeType, std::string_view fileName, void const **data, uint32_t *size) -> bool
+     {
+      return false;
+     };
 
-					CComPtr<ID3DBlob> d3dShaderBlob;
-					CComPtr<ID3DBlob> d3dCompilerErrors;
-					HRESULT resultValue = D3DCompile(uncompiledProgram.data(), (uncompiledProgram.size() + 1), name.data(), nullptr, &Include(std::move(onInclude)), entryFunction.data(), typeSearch->second.data(), flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
-					if (FAILED(resultValue) || !d3dShaderBlob)
-					{
-						_com_error error(resultValue);
-						std::string_view compilerError = (char const *)d3dCompilerErrors->GetBufferPointer();
-						LockedWrite{ std::cerr } << "D3DCompile Failed (" << error.ErrorMessage() << ") " << compilerError;
-					}
-					else
-					{
-						uint8_t *data = (uint8_t *)d3dShaderBlob->GetBufferPointer();
-						compiled.compiledData.assign(data, (data + d3dShaderBlob->GetBufferSize()));
-					}
-				}
+     CComPtr<ID3DBlob> d3dShaderBlob;
+     CComPtr<ID3DBlob> d3dCompilerErrors;
+     HRESULT resultValue = D3DCompile(uncompiledProgram.data(), (uncompiledProgram.size() + 1), name.data(), nullptr, &Include(std::move(onInclude)), entryFunction.data(), typeSearch->second.data(), flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+     if (FAILED(resultValue) || !d3dShaderBlob)
+     {
+      _com_error error(resultValue);
+      std::string_view compilerError = (char const *)d3dCompilerErrors->GetBufferPointer();
+      LockedWrite{ std::cerr } << "D3DCompile Failed (" << error.ErrorMessage() << ") " << compilerError;
+     }
+     else
+     {
+      uint8_t *data = (uint8_t *)d3dShaderBlob->GetBufferPointer();
+      compiled.compiledData.assign(data, (data + d3dShaderBlob->GetBufferSize()));
+     }
+    }
 
-				return compiled;
+    return compiled;
             }
 
-			template <class D3DTYPE, class TYPE, typename RETURN, typename CLASS, typename... PARAMETERS>
-			Video::ProgramPtr createProgram(Video::Program::Information const &information, RETURN(__stdcall CLASS::*function)(PARAMETERS...))
-			{
-				assert(!information.compiledData.empty());
-				assert(function);
+   template <class D3DTYPE, class TYPE, typename RETURN, typename CLASS, typename... PARAMETERS>
+   Video::ProgramPtr createProgram(Video::Program::Information const &information, RETURN(__stdcall CLASS::*function)(PARAMETERS...))
+   {
+    assert(!information.compiledData.empty());
+    assert(function);
 
-				CComPtr<D3DTYPE> d3dShader;
-				HRESULT resultValue = (d3dDevice->*function)(information.compiledData.data(), information.compiledData.size(), nullptr, &d3dShader);
-				if (FAILED(resultValue) || !d3dShader)
-				{
-					LockedWrite{ std::cerr } << "Unable to create program from compiled data";
-					return nullptr;
-				}
+    CComPtr<D3DTYPE> d3dShader;
+    HRESULT resultValue = (d3dDevice->*function)(information.compiledData.data(), information.compiledData.size(), nullptr, &d3dShader);
+    if (FAILED(resultValue) || !d3dShader)
+    {
+     LockedWrite{ std::cerr } << "Unable to create program from compiled data";
+     return nullptr;
+    }
 
-				return std::make_unique<TYPE>(d3dShader, information);
-			}
+    return std::make_unique<TYPE>(d3dShader, information);
+   }
 
-			Video::ProgramPtr createProgram(Video::Program::Information const &information)
-			{
-				switch (information.type)
-				{
-				case Video::Program::Type::Compute:
-					return createProgram<ID3D11ComputeShader, ComputeProgram>(information, &ID3D11Device::CreateComputeShader);
+   Video::ProgramPtr createProgram(Video::Program::Information const &information)
+   {
+    switch (information.type)
+    {
+    case Video::Program::Type::Compute:
+     return createProgram<ID3D11ComputeShader, ComputeProgram>(information, &ID3D11Device::CreateComputeShader);
 
-				case Video::Program::Type::Vertex:
-					return createProgram<ID3D11VertexShader, VertexProgram>(information, &ID3D11Device::CreateVertexShader);
+    case Video::Program::Type::Vertex:
+     return createProgram<ID3D11VertexShader, VertexProgram>(information, &ID3D11Device::CreateVertexShader);
 
-				case Video::Program::Type::Geometry:
-					return createProgram<ID3D11GeometryShader, GeometryProgram>(information, &ID3D11Device::CreateGeometryShader);
+    case Video::Program::Type::Geometry:
+     return createProgram<ID3D11GeometryShader, GeometryProgram>(information, &ID3D11Device::CreateGeometryShader);
 
-				case Video::Program::Type::Pixel:
-					return createProgram<ID3D11PixelShader, PixelProgram>(information, &ID3D11Device::CreatePixelShader);
-				};
+    case Video::Program::Type::Pixel:
+     return createProgram<ID3D11PixelShader, PixelProgram>(information, &ID3D11Device::CreatePixelShader);
+    };
 
-				LockedWrite{ std::cerr } << "Unknown program pipline encountered";
-				return nullptr;
-			}
+    LockedWrite{ std::cerr } << "Unknown program pipline encountered";
+    return nullptr;
+   }
 
             Video::TexturePtr createTexture(const Video::Texture::Description &description, const void *data)
             {
@@ -3110,99 +3110,99 @@ namespace Gek
                 dxgiSwapChain->Present(waitForVerticalSync ? 1 : 0, 0);
             }
 
-			void beginProfilerBlock(void)
-			{
-				defaultContext->begin(disjointTimeStamp.queries[currentQueryFrame].get());
-				beginProfilerEvent("Video Frame"sv, Hash(this));
-			}
+   void beginProfilerBlock(void)
+   {
+    defaultContext->begin(disjointTimeStamp.queries[currentQueryFrame].get());
+    beginProfilerEvent("Video Frame"sv, Hash(this));
+   }
 
-			void beginProfilerEvent(std::string_view name, Hash eventIdentifier)
-			{
-				while (!criticalSection.try_lock())
-				{
-					Sleep(1);
-				};
+   void beginProfilerEvent(std::string_view name, Hash eventIdentifier)
+   {
+    while (!criticalSection.try_lock())
+    {
+     Sleep(1);
+    };
 
-				auto eventInsert = eventMap.insert({ eventIdentifier, BlockQuery() });
-				auto &eventSearch = eventInsert.first;
-				auto &eventData = eventSearch->second;
-				if (eventInsert.second)
-				{
-					eventData.name = name;
-					eventData.begin.queries[0] = createQuery(Video::Query::Type::TimeStamp);
-					eventData.begin.queries[1] = createQuery(Video::Query::Type::TimeStamp);
-					eventData.end.queries[0] = createQuery(Video::Query::Type::TimeStamp);
-					eventData.end.queries[1] = createQuery(Video::Query::Type::TimeStamp);
-				}
+    auto eventInsert = eventMap.insert({ eventIdentifier, BlockQuery() });
+    auto &eventSearch = eventInsert.first;
+    auto &eventData = eventSearch->second;
+    if (eventInsert.second)
+    {
+     eventData.name = name;
+     eventData.begin.queries[0] = createQuery(Video::Query::Type::TimeStamp);
+     eventData.begin.queries[1] = createQuery(Video::Query::Type::TimeStamp);
+     eventData.end.queries[0] = createQuery(Video::Query::Type::TimeStamp);
+     eventData.end.queries[1] = createQuery(Video::Query::Type::TimeStamp);
+    }
 
-				criticalSection.unlock();
-				eventData.startTimes[currentQueryFrame] = Profiler::GetProfilerTime();
-				defaultContext->end(eventData.begin.queries[currentQueryFrame].get());
-			}
+    criticalSection.unlock();
+    eventData.startTimes[currentQueryFrame] = Profiler::GetProfilerTime();
+    defaultContext->end(eventData.begin.queries[currentQueryFrame].get());
+   }
 
-			void endProfilerEvent(std::string_view name, Hash eventIdentifier)
-			{
-				while (!criticalSection.try_lock())
-				{
-					Sleep(1);
-				};
+   void endProfilerEvent(std::string_view name, Hash eventIdentifier)
+   {
+    while (!criticalSection.try_lock())
+    {
+     Sleep(1);
+    };
 
-				criticalSection.unlock();
-				auto eventSearch = eventMap.find(eventIdentifier);
-				if (eventSearch == std::end(eventMap))
-				{
-				}
-				else
-				{
-					auto eventData = &(*eventSearch);
-					frameEventList[currentQueryFrame].push_back(eventData);
-					defaultContext->end(eventData->second.end.queries[currentQueryFrame].get());
-				}
-			}
+    criticalSection.unlock();
+    auto eventSearch = eventMap.find(eventIdentifier);
+    if (eventSearch == std::end(eventMap))
+    {
+    }
+    else
+    {
+     auto eventData = &(*eventSearch);
+     frameEventList[currentQueryFrame].push_back(eventData);
+     defaultContext->end(eventData->second.end.queries[currentQueryFrame].get());
+    }
+   }
 
-			void endProfilerBlock(void)
-			{
-				endProfilerEvent("Video Frame"sv, Hash(this));
+   void endProfilerBlock(void)
+   {
+    endProfilerEvent("Video Frame"sv, Hash(this));
 
-				defaultContext->end(disjointTimeStamp.queries[currentQueryFrame].get());
-				++currentQueryFrame &= 1;
+    defaultContext->end(disjointTimeStamp.queries[currentQueryFrame].get());
+    ++currentQueryFrame &= 1;
 
-				if (currentCollectFrame < 0)
-				{
-					// Haven't run enough frames yet to have data
-					currentCollectFrame = 0;
-					return;
-				}
+    if (currentCollectFrame < 0)
+    {
+        // Haven't run enough frames yet to have data
+        currentCollectFrame = 0;
+        return;
+       }
 
-				int currentFrame = currentCollectFrame;
-				++currentCollectFrame &= 1;
+       int currentFrame = currentCollectFrame;
+       ++currentCollectFrame &= 1;
 
-				// Wait for data
-				Video::Query::DisjointTimeStamp disjointResult;
-				defaultContext->getData(disjointTimeStamp.queries[currentFrame].get(), &disjointResult, sizeof(Video::Query::DisjointTimeStamp), true);
-				if (disjointResult.isDisjoint)
-				{
-					return;
-				}
+       // Wait for data
+       Video::Query::DisjointTimeStamp disjointResult;
+       defaultContext->getData(disjointTimeStamp.queries[currentFrame].get(), &disjointResult, sizeof(Video::Query::DisjointTimeStamp), true);
+       if (disjointResult.isDisjoint)
+       {
+        return;
+       }
 
-				double frequency = (1.0 / double(disjointResult.frequency));
-				for (auto &eventSearch : frameEventList[currentFrame])
-				{
-					auto &eventData = eventSearch->second;
-					uint64_t eventStartTime, eventEndTime;
-					if (defaultContext->getData(eventData.begin.queries[currentFrame].get(), &eventStartTime, sizeof(uint64_t)) == Video::Query::Status::Ready &&
-						defaultContext->getData(eventData.end.queries[currentFrame].get(), &eventEndTime, sizeof(uint64_t)) == Video::Query::Status::Ready)
-					{
-						auto startTime = std::chrono::duration<double>(double(eventStartTime) * frequency);
-						auto endTime = std::chrono::duration<double>(double(eventEndTime) * frequency);
-						auto duration = std::chrono::duration_cast<Profiler::TimeFormat>(endTime - startTime);
-						getContext()->addEvent(renderProcessIdentifier, renderThreadIdentifier, __FILE__, eventData.name, std::chrono::duration_cast<Profiler::TimeFormat>(startTime), duration, 'X', eventSearch->first, Profiler::EmptyArguments);
-					}
-				}
+       double frequency = (1.0 / double(disjointResult.frequency));
+       for (auto &eventSearch : frameEventList[currentFrame])
+       {
+        auto &eventData = eventSearch->second;
+        uint64_t eventStartTime, eventEndTime;
+        if (defaultContext->getData(eventData.begin.queries[currentFrame].get(), &eventStartTime, sizeof(uint64_t)) == Video::Query::Status::Ready &&
+         defaultContext->getData(eventData.end.queries[currentFrame].get(), &eventEndTime, sizeof(uint64_t)) == Video::Query::Status::Ready)
+        {
+         auto startTime = std::chrono::duration<double>(double(eventStartTime) * frequency);
+         auto endTime = std::chrono::duration<double>(double(eventEndTime) * frequency);
+         auto duration = std::chrono::duration_cast<Profiler::TimeFormat>(endTime - startTime);
+         getContext()->addEvent(renderProcessIdentifier, renderThreadIdentifier, __FILE__, eventData.name, std::chrono::duration_cast<Profiler::TimeFormat>(startTime), duration, 'X', eventSearch->first, Profiler::EmptyArguments);
+        }
+       }
 
-				frameEventList[currentFrame].clear();
-			}
-		};
+       frameEventList[currentFrame].clear();
+      }
+        };
 
         GEK_REGISTER_CONTEXT_USER(Device);
     }; // Direct3D11

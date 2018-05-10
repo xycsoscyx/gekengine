@@ -85,29 +85,44 @@
     },
     "output": "finalBuffer",
     "options": {
-        "DistributionFactor": {
-            "selection": "DisneyGGX",
+        "NormalDistribution": {
+            "selection": "None",
             "options": [
                 "None",
-                "Basic",
-                "TrowbridgeReitzGGX",
-                "TheOrder1886GGX",
-                "DisneyGGX"
+                "Beckmann",
+                "Gaussian",
+                "GGX",
+                "TrowbridgeReitz"
             ]
         },
-        "FresnelTerm": {
-            "selection": "Schlick",
-            "options": [
-                "None",
-                "Schlick"
-            ]
-        },
-        "GeometricAttenuationFunction": {
-            "selection": "SmithGGX",
+        "Fresnel": {
+            "selection": "None",
             "options": [
                 "None",
                 "Schlick",
-                "SmithGGX"
+                "SphericalGaussian"
+            ]
+        },
+        "GeometricShadowing": {
+            "selection": "None",
+            "options": [
+                "None",
+                "AshikhminShirley",
+                "AshikhminPremoze",
+                "Duer",
+                "Neumann",
+                "Kelemen",
+                "ModifiedKelemen",
+                "CookTorrence",
+                "Ward",
+                "Kurt",
+                "WalterEtAl",
+                "Beckman",
+                "GGX",
+                "Schlick",
+                "SchlickBeckman",
+                "SchlickGGX",
+                "Implicit"
             ]
         },
         "UseHalfLambert": true,
