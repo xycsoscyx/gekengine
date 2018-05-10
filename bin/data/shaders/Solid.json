@@ -85,68 +85,71 @@
     },
     "output": "finalBuffer",
     "options": {
-        "NormalDistribution": {
-            "selection": "None",
-            "options": [
-                "None",
-                "Beckmann",
-                "Gaussian",
-                "GGX",
-                "TrowbridgeReitz"
-            ]
+        "BRDF": {
+            "NormalDistribution": {
+                "selection": "TrowbridgeReitz",
+                "options": [
+                    "None",
+                    "Beckmann",
+                    "Gaussian",
+                    "GGX",
+                    "TrowbridgeReitz"
+                ]
+            },
+            "Fresnel": {
+                "selection": "SphericalGaussian",
+                "options": [
+                    "None",
+                    "Schlick",
+                    "SphericalGaussian"
+                ]
+            },
+            "GeometricShadowing": {
+                "selection": "AshikhminShirley",
+                "options": [
+                    "None",
+                    "AshikhminShirley",
+                    "AshikhminPremoze",
+                    "Duer",
+                    "Neumann",
+                    "Kelemen",
+                    "ModifiedKelemen",
+                    "CookTorrence",
+                    "Ward",
+                    "Kurt",
+                    "WalterEtAl",
+                    "Beckman",
+                    "GGX",
+                    "Schlick",
+                    "SchlickBeckman",
+                    "SchlickGGX",
+                    "Implicit"
+                ]
+            },
+            "UseHalfLambert": true
         },
-        "Fresnel": {
-            "selection": "None",
-            "options": [
-                "None",
-                "Schlick",
-                "SphericalGaussian"
-            ]
-        },
-        "GeometricShadowing": {
-            "selection": "None",
-            "options": [
-                "None",
-                "AshikhminShirley",
-                "AshikhminPremoze",
-                "Duer",
-                "Neumann",
-                "Kelemen",
-                "ModifiedKelemen",
-                "CookTorrence",
-                "Ward",
-                "Kurt",
-                "WalterEtAl",
-                "Beckman",
-                "GGX",
-                "Schlick",
-                "SchlickBeckman",
-                "SchlickGGX",
-                "Implicit"
-            ]
-        },
-        "UseHalfLambert": true,
-        "UseDisneyAlpha": true,
-        "AmbientOcclusion": false,
-        "Radius": 1.0,
-        "TapCount": 24,
-        "SpiralTurns": 17.0,
-        "Intensity": 2.0,
-        "Bias": 0.2,
-        "Epsilon": 0.01,
-        "FalloffFunction": {
-            "selection": "HighQuality",
-            "options": [
-                "HighQuality",
-                "FalloffHPG12",
-                "FalloffSmooth",
-                "FalloffMedium",
-                "FalloffQuick"
-            ]
-        },
-        "GaussianRadius": 4,
-        "GaussianSigma": 1.75,
-        "EdgeSharpness": 0.01
+        "AmbientOcclusion": {
+            "Enable": false,
+            "Radius": 1.0,
+            "TapCount": 24,
+            "SpiralTurns": 17.0,
+            "Intensity": 2.0,
+            "Bias": 0.2,
+            "Epsilon": 0.01,
+            "Falloff": {
+                "selection": "HighQuality",
+                "options": [
+                    "HighQuality",
+                    "HPG12",
+                    "Smooth",
+                    "Medium",
+                    "Quick"
+                ]
+            },
+            "GaussianRadius": 4,
+            "GaussianSigma": 1.75,
+            "EdgeSharpness": 0.01
+        }
     },
     "passes": [
         {
@@ -167,7 +170,7 @@
             ]
         },
         {
-            "enable": "AmbientOcclusion",
+            "enable": "AmbientOcclusion:Enable",
             "program": "AmbientCalculation",
             "entry": "mainPixelProgram",
             "resources": [
@@ -179,7 +182,7 @@
             ]
         },
         {
-            "enable": "AmbientOcclusion",
+            "enable": "AmbientOcclusion:Enable",
             "program": "AmbientBlur",
             "entry": "mainPixelProgram",
             "resources": [
@@ -190,11 +193,13 @@
                 "gaussianBuffer"
             ],
             "options": {
-                "BlurAxis": [ 1, 0 ]
+                "AmbientOcclusion": {
+                    "BlurAxis": [ 1, 0 ]
+                }
             }
         },
         {
-            "enable": "AmbientOcclusion",
+            "enable": "AmbientOcclusion:Enable",
             "program": "AmbientBlur",
             "entry": "mainPixelProgram",
             "resources": [
@@ -205,11 +210,13 @@
                 "ambientBuffer"
             ],
             "options": {
-                "BlurAxis": [ 0, 1 ]
+                "AmbientOcclusion": {
+                    "BlurAxis": [ 0, 1 ]
+                }
             }
         },
         {
-            "enable": "AmbientOcclusion",
+            "enable": "AmbientOcclusion:Enable",
             "program": "AmbientLighting",
             "entry": "mainPixelProgram",
             "resources": [

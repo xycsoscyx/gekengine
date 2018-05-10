@@ -556,165 +556,175 @@ namespace Gek
                                     continue;
                                 }
 
-                                if (ImGui::TreeNodeEx(groupName.data(), ImGuiTreeNodeFlags_Framed))
+                                std::function<void(std::string_view, JSON::Object &)> showOptions;
+                                showOptions = [&](std::string_view groupName, JSON::Object &groupValues) -> void
                                 {
-                                    for (auto &optionPair : groupValues.members())
+                                    if (ImGui::TreeNodeEx(groupName.data(), ImGuiTreeNodeFlags_Framed))
                                     {
-                                        auto optionName = optionPair.name();
-                                        auto &optionValue = optionPair.value();
-                                        JSON::Reference option(optionValue);
-
-                                        auto label(String::Format("##{}{}", groupName, optionName));
-
-                                        ImGui::Text(optionName.data());
-                                        ImGui::SameLine();
-                                        ImGui::PushItemWidth(-1.0f);
-                                        if (optionValue.is_object())
+                                        for (auto &optionPair : groupValues.members())
                                         {
-                                            if (option.has("options"))
+                                            auto optionName = optionPair.name();
+                                            auto &optionValue = optionPair.value();
+                                            JSON::Reference option(optionValue);
+
+                                            auto label(String::Format("##{}{}", groupName, optionName));
+
+                                            ImGui::Text(optionName.data());
+                                            ImGui::SameLine();
+                                            ImGui::PushItemWidth(-1.0f);
+                                            if (optionValue.is_object())
                                             {
-                                                std::vector<std::string> optionList;
-                                                for (JSON::Reference choice : option.get("options").getArray())
+                                                if (option.has("options"))
                                                 {
-                                                    optionList.push_back(choice.convert(String::Empty));
-                                                }
-
-                                                int selection = 0;
-                                                auto &selectionNode = option.get("selection");
-                                                if (selectionNode.isString())
-                                                {
-                                                    auto selectedName = selectionNode.convert(String::Empty);
-                                                    auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string_view choice) -> bool
+                                                    std::vector<std::string> optionList;
+                                                    for (JSON::Reference choice : option.get("options").getArray())
                                                     {
-                                                        return (selectedName == choice);
-                                                    });
+                                                        optionList.push_back(choice.convert(String::Empty));
+                                                    }
 
-                                                    if (optionsSearch != std::end(optionList))
+                                                    int selection = 0;
+                                                    auto &selectionNode = option.get("selection");
+                                                    if (selectionNode.isString())
                                                     {
-                                                        selection = std::distance(std::begin(optionList), optionsSearch);
+                                                        auto selectedName = selectionNode.convert(String::Empty);
+                                                        auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string_view choice) -> bool
+                                                        {
+                                                            return (selectedName == choice);
+                                                        });
+
+                                                        if (optionsSearch != std::end(optionList))
+                                                        {
+                                                            selection = std::distance(std::begin(optionList), optionsSearch);
+                                                            optionValue.set("selection", selection);
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        selection = selectionNode.convert(0);
+                                                    }
+
+                                                    if (ImGui::Combo(label.data(), &selection, [](void *userData, int index, char const **outputText) -> bool
+                                                    {
+                                                        auto &optionList = *(std::vector<std::string> *)userData;
+                                                        if (index >= 0 && index < optionList.size())
+                                                        {
+                                                            *outputText = optionList[index].data();
+                                                            return true;
+                                                        }
+
+                                                        return false;
+                                                    }, &optionList, optionList.size(), 10))
+                                                    {
                                                         optionValue.set("selection", selection);
+                                                        changedVisualOptions = true;
                                                     }
                                                 }
                                                 else
                                                 {
-                                                    selection = selectionNode.convert(0);
-                                                }
-
-                                                if (ImGui::Combo(label.data(), &selection, [](void *userData, int index, char const **outputText) -> bool
-                                                {
-                                                    auto &optionList = *(std::vector<std::string> *)userData;
-                                                    if (index >= 0 && index < optionList.size())
-                                                    {
-                                                        *outputText = optionList[index].data();
-                                                        return true;
-                                                    }
-
-                                                    return false;
-                                                }, &optionList, optionList.size(), 10))
-                                                {
-                                                    optionValue.set("selection", selection);
-                                                    changedVisualOptions = true;
+                                                    showOptions(optionName, optionValue);
                                                 }
                                             }
-                                        }
-                                        else if (optionValue.is_array())
-                                        {
-                                            switch (optionValue.size())
+                                            else if (optionValue.is_array())
                                             {
-                                            case 1:
-                                                [&](void) -> void
+                                                switch (optionValue.size())
                                                 {
-                                                    float data = JSON::Reference(optionValue[0]).convert(0.0f);
+                                                case 1:
+                                                    [&](void) -> void
+                                                    {
+                                                        float data = JSON::Reference(optionValue[0]).convert(0.0f);
+                                                        if (ImGui::InputFloat(label.data(), &data))
+                                                        {
+                                                            optionValue = data;
+                                                            changedVisualOptions = true;
+                                                        }
+                                                    }();
+                                                    break;
+
+                                                case 2:
+                                                    [&](void) -> void
+                                                    {
+                                                        Math::Float2 data(
+                                                            JSON::Reference(optionValue[0]).convert(0.0f),
+                                                            JSON::Reference(optionValue[1]).convert(0.0f));
+                                                        if (ImGui::InputFloat2(label.data(), data.data))
+                                                        {
+                                                            optionValue = JSON::Array({ data.x, data.y });
+                                                            changedVisualOptions = true;
+                                                        }
+                                                    }();
+                                                    break;
+
+                                                case 3:
+                                                    [&](void) -> void
+                                                    {
+                                                        Math::Float3 data(
+                                                            JSON::Reference(optionValue[0]).convert(0.0f),
+                                                            JSON::Reference(optionValue[1]).convert(0.0f),
+                                                            JSON::Reference(optionValue[2]).convert(0.0f));
+                                                        if (ImGui::InputFloat3(label.data(), data.data))
+                                                        {
+                                                            optionValue = JSON::Array({ data.x, data.y, data.z });
+                                                            changedVisualOptions = true;
+                                                        }
+                                                    }();
+                                                    break;
+
+                                                case 4:
+                                                    [&](void) -> void
+                                                    {
+                                                        Math::Float4 data(
+                                                            JSON::Reference(optionValue[0]).convert(0.0f),
+                                                            JSON::Reference(optionValue[1]).convert(0.0f),
+                                                            JSON::Reference(optionValue[2]).convert(0.0f),
+                                                            JSON::Reference(optionValue[3]).convert(0.0f));
+                                                        if (ImGui::InputFloat4(label.data(), data.data))
+                                                        {
+                                                            optionValue = JSON::Array({ data.x, data.y, data.z, data.w });
+                                                            changedVisualOptions = true;
+                                                        }
+                                                    }();
+                                                    break;
+                                                };
+                                            }
+                                            else
+                                            {
+                                                if (optionValue.is_bool())
+                                                {
+                                                    bool data = option.convert(false);
+                                                    if (ImGui::Checkbox(label.data(), &data))
+                                                    {
+                                                        optionValue = data;
+                                                        changedVisualOptions = true;
+                                                    }
+                                                }
+                                                else if (optionValue.is_integer())
+                                                {
+                                                    int data = option.convert(0);
+                                                    if (ImGui::InputInt(label.data(), &data))
+                                                    {
+                                                        optionValue = data;
+                                                        changedVisualOptions = true;
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    float data = option.convert(0.0f);
                                                     if (ImGui::InputFloat(label.data(), &data))
                                                     {
                                                         optionValue = data;
                                                         changedVisualOptions = true;
                                                     }
-                                                }();
-                                                break;
-
-                                            case 2:
-                                                [&](void) -> void
-                                                {
-                                                    Math::Float2 data(
-                                                        JSON::Reference(optionValue[0]).convert(0.0f),
-                                                        JSON::Reference(optionValue[1]).convert(0.0f));
-                                                    if (ImGui::InputFloat2(label.data(), data.data))
-                                                    {
-                                                        optionValue = JSON::Array({ data.x, data.y });
-                                                        changedVisualOptions = true;
-                                                    }
-                                                }();
-                                                break;
-
-                                            case 3:
-                                                [&](void) -> void
-                                                {
-                                                    Math::Float3 data(
-                                                        JSON::Reference(optionValue[0]).convert(0.0f),
-                                                        JSON::Reference(optionValue[1]).convert(0.0f),
-                                                        JSON::Reference(optionValue[2]).convert(0.0f));
-                                                    if (ImGui::InputFloat3(label.data(), data.data))
-                                                    {
-                                                        optionValue = JSON::Array({ data.x, data.y, data.z });
-                                                        changedVisualOptions = true;
-                                                    }
-                                                }();
-                                                break;
-
-                                            case 4:
-                                                [&](void) -> void
-                                                {
-                                                    Math::Float4 data(
-                                                        JSON::Reference(optionValue[0]).convert(0.0f),
-                                                        JSON::Reference(optionValue[1]).convert(0.0f),
-                                                        JSON::Reference(optionValue[2]).convert(0.0f),
-                                                        JSON::Reference(optionValue[3]).convert(0.0f));
-                                                    if (ImGui::InputFloat4(label.data(), data.data))
-                                                    {
-                                                        optionValue = JSON::Array({ data.x, data.y, data.z, data.w });
-                                                        changedVisualOptions = true;
-                                                    }
-                                                }();
-                                                break;
-                                            };
-                                        }
-                                        else
-                                        {
-                                            if (optionValue.is_bool())
-                                            {
-                                                bool data = option.convert(false);
-                                                if (ImGui::Checkbox(label.data(), &data))
-                                                {
-                                                    optionValue = data;
-                                                    changedVisualOptions = true;
                                                 }
                                             }
-                                            else if (optionValue.is_integer())
-                                            {
-                                                int data = option.convert(0);
-                                                if (ImGui::InputInt(label.data(), &data))
-                                                {
-                                                    optionValue = data;
-                                                    changedVisualOptions = true;
-                                                }
-                                            }
-                                            else
-                                            {
-                                                float data = option.convert(0.0f);
-                                                if (ImGui::InputFloat(label.data(), &data))
-                                                {
-                                                    optionValue = data;
-                                                    changedVisualOptions = true;
-                                                }
-                                            }
+
+                                            ImGui::PopItemWidth();
                                         }
 
-                                        ImGui::PopItemWidth();
+                                        ImGui::TreePop();
                                     }
+                                };
 
-                                    ImGui::TreePop();
-                                }
+                                showOptions(groupName, groupValues);
                             }
 
                             ImGui::TreePop();

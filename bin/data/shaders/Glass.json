@@ -95,49 +95,50 @@
     },
     "output": "finalBuffer",
     "options": {
-        "NormalDistribution": {
-            "selection": "None",
-            "options": [
-                "None",
-                "Beckmann",
-                "Gaussian",
-                "GGX",
-                "TrowbridgeReitz"
-            ]
+        "BRDF": {
+            "NormalDistribution": {
+                "selection": "TrowbridgeReitz",
+                "options": [
+                    "None",
+                    "Beckmann",
+                    "Gaussian",
+                    "GGX",
+                    "TrowbridgeReitz"
+                ]
+            },
+            "Fresnel": {
+                "selection": "SphericalGaussian",
+                "options": [
+                    "None",
+                    "Schlick",
+                    "SphericalGaussian"
+                ]
+            },
+            "GeometricShadowing": {
+                "selection": "AshikhminShirley",
+                "options": [
+                    "None",
+                    "AshikhminShirley",
+                    "AshikhminPremoze",
+                    "Duer",
+                    "Neumann",
+                    "Kelemen",
+                    "ModifiedKelemen",
+                    "CookTorrence",
+                    "Ward",
+                    "Kurt",
+                    "WalterEtAl",
+                    "Beckman",
+                    "GGX",
+                    "Schlick",
+                    "SchlickBeckman",
+                    "SchlickGGX",
+                    "Implicit"
+                ]
+            },
+            "UseHalfLambert": true
         },
-        "Fresnel": {
-            "selection": "None",
-            "options": [
-                "None",
-                "Schlick",
-                "SphericalGaussian"
-            ]
-        },
-        "GeometricShadowing": {
-            "selection": "None",
-            "options": [
-                "None",
-                "AshikhminShirley",
-                "AshikhminPremoze",
-                "Duer",
-                "Neumann",
-                "Kelemen",
-                "ModifiedKelemen",
-                "CookTorrence",
-                "Ward",
-                "Kurt",
-                "WalterEtAl",
-                "Beckman",
-                "GGX",
-                "Schlick",
-                "SchlickBeckman",
-                "SchlickGGX",
-                "Implicit"
-            ]
-        },
-        "UseHalfLambert": true,
-        "UseDisneyAlpha": true,
-        "ChromaticAbberation": false
+        "UseChromaticAbberation": false
     },
     "passes": [
         {

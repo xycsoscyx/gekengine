@@ -1,3 +1,13 @@
+float square(float value)
+{
+    return (value * value);
+}
+
+float cube(float value)
+{
+    return (value * value * value);
+}
+
 float GetRandom(int2 position, float time = 1.0)
 {
     return (61.111231231 * time + (9.2735171213125 * position.x + -7.235171213125 * position.y + 1.53713171123412415411 * (position.x ^ position.y)));

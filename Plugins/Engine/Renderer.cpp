@@ -1433,46 +1433,49 @@ namespace Gek
 												finalOutput = shader->getOutput();
 												for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentCamera.viewFrustum); pass; pass = pass->next())
 												{
-													GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, pass->getName(), pass->getIdentifier())
-													{
-														VisualHandle currentVisual;
-														MaterialHandle currentMaterial;
-														resources->startResourceBlock();
-														switch (pass->prepare())
-														{
-														case Engine::Shader::Pass::Mode::Forward:
-															GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, "Draw Geometry"sv, CombineHashes(pass->getIdentifier(), 0xFFFFFFFF))
-															{
-																for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
-																{
-																	if (currentVisual != drawCall->plugin)
-																	{
-																		currentVisual = drawCall->plugin;
-																		resources->setVisual(videoContext, currentVisual);
-																	}
+                                                    if (pass->isEnabled())
+                                                    {
+                                                        GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, pass->getName(), pass->getIdentifier())
+                                                        {
+                                                            VisualHandle currentVisual;
+                                                            MaterialHandle currentMaterial;
+                                                            resources->startResourceBlock();
+                                                            switch (pass->prepare())
+                                                            {
+                                                            case Engine::Shader::Pass::Mode::Forward:
+                                                                GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, "Draw Geometry"sv, CombineHashes(pass->getIdentifier(), 0xFFFFFFFF))
+                                                                {
+                                                                    for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
+                                                                    {
+                                                                        if (currentVisual != drawCall->plugin)
+                                                                        {
+                                                                            currentVisual = drawCall->plugin;
+                                                                            resources->setVisual(videoContext, currentVisual);
+                                                                        }
 
-																	if (currentMaterial != drawCall->material)
-																	{
-																		currentMaterial = drawCall->material;
-																		resources->setMaterial(videoContext, pass.get(), currentMaterial, (forceShader == shader));
-																	}
+                                                                        if (currentMaterial != drawCall->material)
+                                                                        {
+                                                                            currentMaterial = drawCall->material;
+                                                                            resources->setMaterial(videoContext, pass.get(), currentMaterial, (forceShader == shader));
+                                                                        }
 
-																	drawCall->onDraw(videoContext);
-																}
-															} GEK_VIDEO_PROFILER_END_SCOPE();
-															break;
+                                                                        drawCall->onDraw(videoContext);
+                                                                    }
+                                                                } GEK_VIDEO_PROFILER_END_SCOPE();
+                                                                break;
 
-														case Engine::Shader::Pass::Mode::Deferred:
-															videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
-															resources->drawPrimitive(videoContext, 3, 0);
-															break;
+                                                            case Engine::Shader::Pass::Mode::Deferred:
+                                                                videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
+                                                                resources->drawPrimitive(videoContext, 3, 0);
+                                                                break;
 
-														case Engine::Shader::Pass::Mode::Compute:
-															break;
-														};
+                                                            case Engine::Shader::Pass::Mode::Compute:
+                                                                break;
+                                                            };
 
-														pass->clear();
-													} GEK_VIDEO_PROFILER_END_SCOPE();
+                                                            pass->clear();
+                                                        } GEK_VIDEO_PROFILER_END_SCOPE();
+                                                    }
 												}
 											} GEK_PROFILER_END_SCOPE();
 										}
@@ -1522,20 +1525,23 @@ namespace Gek
 									{
 										for (auto pass = filter->begin(videoContext, screenHandle, ResourceHandle()); pass; pass = pass->next())
 										{
-											GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, pass->getName(), pass->getIdentifier())
-											{
-												switch (pass->prepare())
-												{
-												case Engine::Filter::Pass::Mode::Deferred:
-													resources->drawPrimitive(videoContext, 3, 0);
-													break;
+                                            if (pass->isEnabled())
+                                            {
+                                                GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, pass->getName(), pass->getIdentifier())
+                                                {
+                                                    switch (pass->prepare())
+                                                    {
+                                                    case Engine::Filter::Pass::Mode::Deferred:
+                                                        resources->drawPrimitive(videoContext, 3, 0);
+                                                        break;
 
-												case Engine::Filter::Pass::Mode::Compute:
-													break;
-												};
+                                                    case Engine::Filter::Pass::Mode::Compute:
+                                                        break;
+                                                    };
 
-												pass->clear();
-											} GEK_VIDEO_PROFILER_END_SCOPE();
+                                                    pass->clear();
+                                                } GEK_VIDEO_PROFILER_END_SCOPE();
+                                            }
 										}
 
 									} GEK_PROFILER_END_SCOPE();

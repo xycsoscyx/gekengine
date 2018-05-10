@@ -39,6 +39,8 @@ namespace Gek
                 virtual Mode prepare(void) = 0;
                 virtual void clear(void) = 0;
 
+                virtual bool isEnabled(void) const = 0;
+
 				virtual Hash getIdentifier(void) const = 0;
 				virtual std::string_view getName(void) const = 0;
 

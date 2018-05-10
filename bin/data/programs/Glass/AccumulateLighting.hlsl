@@ -79,7 +79,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 
     float materialClarity = Resources::clarity.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
     float glassLevel = (1.0f - materialClarity);
-    if (Options::ChromaticAbberation)
+    if (Options::UseChromaticAbberation)
     {
         float materialThickness = Resources::thickness.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
         float2 screenCoordRed = (inputPixel.screen.xy + (surfaceNormal.xy * materialThickness * -60.0f));
