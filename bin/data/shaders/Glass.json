@@ -96,6 +96,21 @@
     "output": "finalBuffer",
     "options": {
         "BRDF": {
+            "Debug": {
+                "selection": "None",
+                "options": [
+                    "None",
+                    "ShowAttenuation",
+                    "ShowDiffuse",
+                    "ShowDistribution",
+                    "ShowFresnel",
+                    "ShowGeometricShadow",
+                    "ShowAlbedo",
+                    "ShowNormal",
+                    "ShowRoughness",
+                    "ShowMetallic"
+                ]
+            },
             "NormalDistribution": {
                 "selection": "TrowbridgeReitz",
                 "options": [

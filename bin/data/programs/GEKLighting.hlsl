@@ -227,6 +227,16 @@ float3 getSurfaceIrradiance(
     float f0 = F0(NdotL, NdotV, LdotH, materialRoughness);
     diffuseColor *= f0;
 
+    switch (Options::BRDF::Debug::Selection)
+    {
+    case Options::BRDF::Debug::ShowDiffuse:
+        return diffuseColor;
+
+    case Options::BRDF::Debug::ShowAttenuation:
+        return attenuation;
+    };
+
+
     float3 specularBase = lerp(lightRadiance, materialAlbedo, materialMetallic * 0.5);
 
     //Specular calculations
@@ -342,6 +352,18 @@ float3 getSurfaceIrradiance(
         break;
     };
 
+    switch (Options::BRDF::Debug::Selection)
+    {
+    case Options::BRDF::Debug::ShowDistribution:
+        return distribution;
+
+    case Options::BRDF::Debug::ShowFresnel:
+        return fresnel;
+
+    case Options::BRDF::Debug::ShowGeometricShadow:
+        return geometricShadow;
+    };
+
     float lambert;
     if (Options::BRDF::UseHalfLambert)
     {
@@ -370,6 +392,21 @@ uint getClusterOffset(float2 screenPosition, float surfaceDepth)
 
 float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 surfaceNormal, float3 materialAlbedo, float materialRoughness, float materialMetallic)
 {
+    switch (Options::BRDF::Debug::Selection)
+    {
+    case Options::BRDF::Debug::ShowAlbedo:
+        return materialAlbedo;
+
+    case Options::BRDF::Debug::ShowNormal:
+        return surfaceNormal;
+
+    case Options::BRDF::Debug::ShowRoughness:
+        return materialRoughness;
+
+    case Options::BRDF::Debug::ShowMetallic:
+        return materialMetallic;
+    };
+
     float3 viewDirection = -normalize(surfacePosition);
     float3 reflectedViewDirection = reflect(-viewDirection, surfaceNormal);
     float NdotV = saturate(dot(surfaceNormal, viewDirection));
