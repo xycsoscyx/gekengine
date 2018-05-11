@@ -201,7 +201,9 @@ namespace Gek
                 population = nullptr;
                 videoDevice = nullptr;
                 window = nullptr;
+#ifndef _DEBUG
                 JSON::Reference(configuration).save(getContext()->getCachePath("config.json"s));
+#endif
                 CoUninitialize();
             }
 
@@ -332,30 +334,54 @@ namespace Gek
 
                 if (!state)
                 {
-					auto changeShader = [&](std::string_view option) -> void
+					auto changeShader = [&](std::string_view shaderName, std::string_view optionName) -> void
 					{
-						auto &debug = configuration["shaders"]["solid"]["BRDF"][option.data()];
-						auto selection = JSON::Reference(debug.get("selection")).convert();
-						debug["selection"] = (++selection % debug.get("options").size());
+                        auto shadersNode = configuration.get("shaders");
+                        auto shaderNode = shadersNode.get(shaderName.data());
+                        auto brdfNode = shaderNode.get("BRDF");
+                        auto optionNode = brdfNode.get(optionName.data());
+                        auto selectionNode = optionNode.get("selection");
+                        auto optionsNode = optionNode.get("options");
+
+                        uint32_t selection = 0;
+                        if (selectionNode.is_integer())
+                        {
+                            selection = (selectionNode.as_integer() + 1);
+                            selection = (selection % optionsNode.size());
+                        }
+
+                        optionNode.set("selection", selection);
+                        brdfNode.set(optionName.data(), optionNode);
+                        shaderNode.set("BRDF", brdfNode);
+                        shadersNode.set(shaderName.data(), shaderNode);
+                        configuration.set("shaders", shadersNode);
 					};
 
                     switch (key)
                     {
 					case Window::Key::F2:
-						changeShader("Debug");
+                        changeShader("solid", "Debug");
+                        changeShader("glass", "Debug");
+                        resources->reload();
 						break;
 
 					case Window::Key::F3:
-						changeShader("Fresnel");
-						break;
+                        changeShader("solid", "Fresnel");
+                        changeShader("glass", "Fresnel");
+                        resources->reload();
+                        break;
 
 					case Window::Key::F4:
-						changeShader("GeometricShadowing");
-						break;
+                        changeShader("solid", "GeometricShadowing");
+                        changeShader("glass", "GeometricShadowing");
+                        resources->reload();
+                        break;
 
 					case Window::Key::F5:
-						changeShader("NormalDistribution");
-						break;
+                        changeShader("solid", "NormalDistribution");
+                        changeShader("glass", "NormalDistribution");
+                        resources->reload();
+                        break;
 
 					case Window::Key::Escape:
                         enableInterfaceControl = !enableInterfaceControl;

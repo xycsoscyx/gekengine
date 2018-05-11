@@ -100,15 +100,15 @@
                 "selection": "None",
                 "options": [
                     "None",
+                    "ShowAlbedo",
+                    "ShowNormal",
+                    "ShowRoughness",
+                    "ShowMetallic",
                     "ShowAttenuation",
                     "ShowDiffuse",
                     "ShowDistribution",
                     "ShowFresnel",
-                    "ShowGeometricShadow",
-                    "ShowAlbedo",
-                    "ShowNormal",
-                    "ShowRoughness",
-                    "ShowMetallic"
+                    "ShowGeometricShadow"
                 ]
             },
             "NormalDistribution": {

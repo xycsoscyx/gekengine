@@ -1537,8 +1537,10 @@ namespace Gek
 					};
 
 					information = videoDevice->compileProgram(type, name, uncompiledPath, uncompiledData, entryFunction, onInclude);
+#ifndef _DEBUG
 					FileSystem::Save(uncompiledPath, information.uncompiledData);
 					FileSystem::Save(compiledPath, information.compiledData);
+#endif
 				}
 				else
 				{

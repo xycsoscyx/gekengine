@@ -35,13 +35,13 @@ namespace Fresnel
 {
     float3 Schlick(float3 SpecularColor, float LdotH)
     {
-        return SpecularColor + (1.0 - SpecularColor) * SchlickFresnel(LdotH);
+        return (SpecularColor + (1.0 - SpecularColor) * pow(1.0 - LdotH, 5.0));
     }
 
     float3 SphericalGaussian(float LdotH, float3 SpecularColor)
     {
-        float power = ((-5.55473 * LdotH) - 6.98316) * LdotH;
-        return SpecularColor + (1.0 - SpecularColor) * pow(2.0, power);
+        static const float OneOnLN2_x6 = -8.656170; // == 1/ln(2) * 6   (6 is SpecularPower of 5 + 1)
+        return SpecularColor + (1.0 - SpecularColor) * exp2(OneOnLN2_x6 * LdotH);
     }
 }; // namespace Fresnel
 
@@ -49,9 +49,9 @@ namespace NormalDistribution
 {
     float Beckmann(float materialRoughness, float NdotH)
     {
-        float roughnessSqr = materialRoughness * materialRoughness;
-        float NdotHSqr = NdotH * NdotH;
-        return max(0.000001, (1.0 / (Math::Pi * roughnessSqr * NdotHSqr * NdotHSqr)) * exp((NdotHSqr - 1) / (roughnessSqr * NdotHSqr)));
+        float roughnessSqr = square(materialRoughness);
+        float NdotHSqr = square(NdotH);
+        return exp((NdotHSqr - 1.0) / (roughnessSqr*NdotHSqr)) / (roughnessSqr*NdotHSqr*NdotHSqr);
     }
 
     float Gaussian(float materialRoughness, float NdotH)
@@ -63,11 +63,10 @@ namespace NormalDistribution
 
     float GGX(float materialRoughness, float NdotH)
     {
-        float roughnessSqr = materialRoughness * materialRoughness;
-        float NdotHSqr = NdotH * NdotH;
-        float TanNdotHSqr = (1.0 - NdotHSqr) / NdotHSqr;
-        return (1.0 / Math::Pi) * square(materialRoughness / (NdotHSqr * (roughnessSqr + TanNdotHSqr)));
-        //    float denom = NdotHSqr * (roughnessSqr-1)
+        float a2 = materialRoughness * materialRoughness;
+        float cos2 = NdotH * NdotH;
+
+        return Math::ReciprocalPi * square(materialRoughness / (cos2 * (a2 - 1.0) + 1.0));
     }
 
     float TrowbridgeReitz(float NdotH, float materialRoughness)
@@ -215,13 +214,13 @@ float3 getSurfaceIrradiance(
     float3 lightDirection, float3 lightRadiance, float attenuation)
 {
     float3 lightReflectDirection = reflect(-lightDirection, surfaceNormal);
-    float NdotL = saturate(dot(surfaceNormal, lightDirection));
+    float NdotL = max(0.0, dot(surfaceNormal, lightDirection));
     float3 halfDirection = normalize(viewDirection + lightDirection);
-    float NdotH = saturate(dot(surfaceNormal, halfDirection));
-    float VdotH = saturate(dot(viewDirection, halfDirection));
-    float LdotH = saturate(dot(lightDirection, halfDirection));
-    float LdotV = saturate(dot(lightDirection, viewDirection));
-    float RdotV = saturate(dot(lightReflectDirection, viewDirection));
+    float NdotH = max(0.0, dot(surfaceNormal, halfDirection));
+    float VdotH = max(0.0, dot(viewDirection, halfDirection));
+    float LdotH = max(0.0, dot(lightDirection, halfDirection));
+    float LdotV = max(0.0, dot(lightDirection, viewDirection));
+    float RdotV = max(0.0, dot(lightReflectDirection, viewDirection));
     float3 attenuatedColor = attenuation * lightRadiance;
 
     float3 diffuseColor = lerp(materialAlbedo, 0.0, materialMetallic);
@@ -368,8 +367,8 @@ float3 getSurfaceIrradiance(
         lambert = NdotL;
     }
 
-    float3 specularColor = (distribution * fresnel * geometricShadow) / (4.0 * (NdotL * NdotV));
-    return (diffuseColor + specularColor) * lambert * attenuatedColor;
+    float3 specularColor = ((distribution * fresnel * geometricShadow) / (4.0 * (NdotL * NdotV)));
+    return ((diffuseColor + specularColor) * lambert * attenuatedColor);
 }
 
 uint getClusterOffset(float2 screenPosition, float surfaceDepth)
@@ -401,7 +400,7 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
 
     float3 viewDirection = -normalize(surfacePosition);
     float3 reflectedViewDirection = reflect(-viewDirection, surfaceNormal);
-    float NdotV = saturate(dot(surfaceNormal, viewDirection));
+    float NdotV = max(0.0, dot(surfaceNormal, viewDirection));
 
     float3 surfaceIrradiance = 0.0;
 
@@ -424,7 +423,7 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
 
         float3 lightRay = (lightData.position - surfacePosition);
         float3 centerToRay = (lightRay - (dot(lightRay, reflectedViewDirection) * reflectedViewDirection));
-        float3 closestPoint = (lightRay + (centerToRay * saturate(lightData.radius / length(centerToRay))));
+        float3 closestPoint = (lightRay + (centerToRay * max(0.0, (lightData.radius / length(centerToRay)))));
         float lightDistance = length(closestPoint);
         float3 lightDirection = normalize(closestPoint);
         float attenuation = getFalloff(lightDistance, lightData.range);
@@ -440,8 +439,8 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
         float3 lightRay = (lightData.position - surfacePosition);
         float lightDistance = length(lightRay);
         float3 lightDirection = (lightRay / lightDistance);
-        float rho = saturate(dot(lightData.direction, -lightDirection));
-        float spotFactor = pow(saturate(rho - lightData.outerAngle) / (lightData.innerAngle - lightData.outerAngle), lightData.coneFalloff);
+        float rho = max(0.0, (dot(lightData.direction, -lightDirection)));
+        float spotFactor = pow(max(0.0, (rho - lightData.outerAngle) / (lightData.innerAngle - lightData.outerAngle)), lightData.coneFalloff);
         float attenuation = (getFalloff(lightDistance, lightData.range) * spotFactor);
 
         surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, reflectedViewDirection, NdotV, materialAlbedo, materialRoughness, materialMetallic, lightDirection, lightData.radiance, attenuation);
