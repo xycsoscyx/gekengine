@@ -332,9 +332,32 @@ namespace Gek
 
                 if (!state)
                 {
+					auto changeShader = [&](std::string_view option) -> void
+					{
+						auto &debug = configuration["shaders"]["solid"]["BRDF"][option.data()];
+						auto selection = JSON::Reference(debug.get("selection")).convert();
+						debug["selection"] = (++selection % debug.get("options").size());
+					};
+
                     switch (key)
                     {
-                    case Window::Key::Escape:
+					case Window::Key::F2:
+						changeShader("Debug");
+						break;
+
+					case Window::Key::F3:
+						changeShader("Fresnel");
+						break;
+
+					case Window::Key::F4:
+						changeShader("GeometricShadowing");
+						break;
+
+					case Window::Key::F5:
+						changeShader("NormalDistribution");
+						break;
+
+					case Window::Key::Escape:
                         enableInterfaceControl = !enableInterfaceControl;
                         imGuiIo.MouseDrawCursor = false;// enableInterfaceControl;
                         if (enableInterfaceControl)

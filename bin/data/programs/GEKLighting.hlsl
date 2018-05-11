@@ -8,7 +8,8 @@ float getFalloff(float distance, float range)
 }
 
 // schlick functions
-float SchlickFresnel(float i) {
+float SchlickFresnel(float i)
+{
     float x = clamp(1.0 - i, 0.0, 1.0);
     float x2 = x * x;
     return x2 * x2 * x;
@@ -20,29 +21,29 @@ float3 FresnelLerp(float3 x, float3 y, float d)
     return lerp(x, y, t);
 }
 
+// normal incidence reflection calculation
+float F0(float NdotL, float NdotV, float LdotH, float materialRoughness)
+{
+	// Diffuse fresnel
+	float FresnelLight = SchlickFresnel(NdotL);
+	float FresnelView = SchlickFresnel(NdotV);
+	float FresnelDiffuse90 = 0.5 + 2.0 * LdotH * LdotH * materialRoughness;
+	return  lerp(1, FresnelDiffuse90, FresnelLight) * lerp(1, FresnelDiffuse90, FresnelView);
+}
+
 namespace Fresnel
 {
     float3 Schlick(float3 SpecularColor, float LdotH)
     {
-        return SpecularColor + (1 - SpecularColor) * SchlickFresnel(LdotH);
+        return SpecularColor + (1.0 - SpecularColor) * SchlickFresnel(LdotH);
     }
 
     float3 SphericalGaussian(float LdotH, float3 SpecularColor)
     {
         float power = ((-5.55473 * LdotH) - 6.98316) * LdotH;
-        return SpecularColor + (1 - SpecularColor) * pow(2, power);
+        return SpecularColor + (1.0 - SpecularColor) * pow(2.0, power);
     }
 }; // namespace Fresnel
-
-// normal incidence reflection calculation
-float F0(float NdotL, float NdotV, float LdotH, float materialRoughness)
-{
-    // Diffuse fresnel
-    float FresnelLight = SchlickFresnel(NdotL);
-    float FresnelView = SchlickFresnel(NdotV);
-    float FresnelDiffuse90 = 0.5 + 2.0 * LdotH * LdotH * materialRoughness;
-    return  lerp(1, FresnelDiffuse90, FresnelLight) * lerp(1, FresnelDiffuse90, FresnelView);
-}
 
 namespace NormalDistribution
 {
@@ -64,7 +65,7 @@ namespace NormalDistribution
     {
         float roughnessSqr = materialRoughness * materialRoughness;
         float NdotHSqr = NdotH * NdotH;
-        float TanNdotHSqr = (1 - NdotHSqr) / NdotHSqr;
+        float TanNdotHSqr = (1.0 - NdotHSqr) / NdotHSqr;
         return (1.0 / Math::Pi) * square(materialRoughness / (NdotHSqr * (roughnessSqr + TanNdotHSqr)));
         //    float denom = NdotHSqr * (roughnessSqr-1)
     }
@@ -121,13 +122,13 @@ namespace GeometricShadowing
     {
         float c = 0.797884560802865; // c = sqrt(2 / Pi)
         float k = materialRoughness * materialRoughness * c;
-        float gH = NdotV * k + (1 - k);
+        float gH = NdotV * k + (1.0 - k);
         return (gH * gH * NdotL);
     }
 
     float CookTorrence(float NdotL, float NdotV, float VdotH, float NdotH)
     {
-        float Gs = min(1.0, min(2 * NdotH * NdotV / VdotH, 2 * NdotH * NdotL / VdotH));
+        float Gs = min(1.0, min(2.0 * NdotH * NdotV / VdotH, 2 * NdotH * NdotL / VdotH));
         return  (Gs);
     }
 
@@ -150,8 +151,8 @@ namespace GeometricShadowing
         float alphaSqr = alpha * alpha;
         float NdotLSqr = NdotL * NdotL;
         float NdotVSqr = NdotV * NdotV;
-        float SmithL = 2 / (1 + sqrt(1 + alphaSqr * (1 - NdotLSqr) / (NdotLSqr)));
-        float SmithV = 2 / (1 + sqrt(1 + alphaSqr * (1 - NdotVSqr) / (NdotVSqr)));
+        float SmithL = 2.0 / (1.0 + sqrt(1.0 + alphaSqr * (1.0 - NdotLSqr) / (NdotLSqr)));
+        float SmithV = 2.0 / (1.0 + sqrt(1.0 + alphaSqr * (1.0 - NdotVSqr) / (NdotVSqr)));
         float Gs = (SmithL * SmithV);
         return Gs;
     }
@@ -163,8 +164,8 @@ namespace GeometricShadowing
         float NdotVSqr = NdotV * NdotV;
         float calulationL = (NdotL) / (roughnessSqr * sqrt(1 - NdotLSqr));
         float calulationV = (NdotV) / (roughnessSqr * sqrt(1 - NdotVSqr));
-        float SmithL = calulationL < 1.6 ? (((3.535 * calulationL) + (2.181 * calulationL * calulationL)) / (1 + (2.276 * calulationL) + (2.577 * calulationL * calulationL))) : 1.0;
-        float SmithV = calulationV < 1.6 ? (((3.535 * calulationV) + (2.181 * calulationV * calulationV)) / (1 + (2.276 * calulationV) + (2.577 * calulationV * calulationV))) : 1.0;
+        float SmithL = calulationL < 1.6 ? (((3.535 * calulationL) + (2.181 * calulationL * calulationL)) / (1.0 + (2.276 * calulationL) + (2.577 * calulationL * calulationL))) : 1.0;
+        float SmithV = calulationV < 1.6 ? (((3.535 * calulationV) + (2.181 * calulationV * calulationV)) / (1.0 + (2.276 * calulationV) + (2.577 * calulationV * calulationV))) : 1.0;
         float Gs = (SmithL * SmithV);
         return Gs;
     }
@@ -174,8 +175,8 @@ namespace GeometricShadowing
         float roughnessSqr = materialRoughness * materialRoughness;
         float NdotLSqr = NdotL * NdotL;
         float NdotVSqr = NdotV * NdotV;
-        float SmithL = (2 * NdotL) / (NdotL + sqrt(roughnessSqr + (1 - roughnessSqr) * NdotLSqr));
-        float SmithV = (2 * NdotV) / (NdotV + sqrt(roughnessSqr + (1 - roughnessSqr) * NdotVSqr));
+        float SmithL = (2.0 * NdotL) / (NdotL + sqrt(roughnessSqr + (1.0 - roughnessSqr) * NdotLSqr));
+        float SmithV = (2.0 * NdotV) / (NdotV + sqrt(roughnessSqr + (1.0 - roughnessSqr) * NdotVSqr));
         float Gs = (SmithL * SmithV);
         return Gs;
     }
@@ -183,8 +184,8 @@ namespace GeometricShadowing
     float Schlick(float NdotL, float NdotV, float materialRoughness)
     {
         float roughnessSqr = materialRoughness * materialRoughness;
-        float SmithL = (NdotL) / (NdotL * (1 - roughnessSqr) + roughnessSqr);
-        float SmithV = (NdotV) / (NdotV * (1 - roughnessSqr) + roughnessSqr);
+        float SmithL = (NdotL) / (NdotL * (1.0 - roughnessSqr) + roughnessSqr);
+        float SmithV = (NdotV) / (NdotV * (1.0 - roughnessSqr) + roughnessSqr);
         return (SmithL * SmithV);
     }
 
@@ -192,17 +193,17 @@ namespace GeometricShadowing
     {
         float roughnessSqr = materialRoughness * materialRoughness;
         float k = roughnessSqr * 0.797884560802865;
-        float SmithL = (NdotL) / (NdotL * (1 - k) + k);
-        float SmithV = (NdotV) / (NdotV * (1 - k) + k);
+        float SmithL = (NdotL) / (NdotL * (1.0 - k) + k);
+        float SmithV = (NdotV) / (NdotV * (1.0 - k) + k);
         float Gs = (SmithL * SmithV);
         return Gs;
     }
 
     float SchlickGGX(float NdotL, float NdotV, float materialRoughness)
     {
-        float k = materialRoughness / 2;
-        float SmithL = (NdotL) / (NdotL * (1 - k) + k);
-        float SmithV = (NdotV) / (NdotV * (1 - k) + k);
+        float k = materialRoughness / 2.0;
+        float SmithL = (NdotL) / (NdotL * (1.0 - k) + k);
+        float SmithV = (NdotV) / (NdotV * (1.0 - k) + k);
         float Gs = (SmithL * SmithV);
         return Gs;
     }
@@ -214,30 +215,29 @@ float3 getSurfaceIrradiance(
     float3 lightDirection, float3 lightRadiance, float attenuation)
 {
     float3 lightReflectDirection = reflect(-lightDirection, surfaceNormal);
-    float NdotL = max(0.0, dot(surfaceNormal, lightDirection));
+    float NdotL = saturate(dot(surfaceNormal, lightDirection));
     float3 halfDirection = normalize(viewDirection + lightDirection);
-    float NdotH = max(0.0, dot(surfaceNormal, halfDirection));
-    float VdotH = max(0.0, dot(viewDirection, halfDirection));
-    float LdotH = max(0.0, dot(lightDirection, halfDirection));
-    float LdotV = max(0.0, dot(lightDirection, viewDirection));
-    float RdotV = max(0.0, dot(lightReflectDirection, viewDirection));
+    float NdotH = saturate(dot(surfaceNormal, halfDirection));
+    float VdotH = saturate(dot(viewDirection, halfDirection));
+    float LdotH = saturate(dot(lightDirection, halfDirection));
+    float LdotV = saturate(dot(lightDirection, viewDirection));
+    float RdotV = saturate(dot(lightReflectDirection, viewDirection));
     float3 attenuatedColor = attenuation * lightRadiance;
 
-    float3 diffuseColor = materialAlbedo * (1.0 - materialMetallic);
+    float3 diffuseColor = lerp(materialAlbedo, 0.0, materialMetallic);
     float f0 = F0(NdotL, NdotV, LdotH, materialRoughness);
     diffuseColor *= f0;
 
     switch (Options::BRDF::Debug::Selection)
     {
     case Options::BRDF::Debug::ShowDiffuse:
-        return diffuseColor;
+        return diffuseColor * attenuation;
 
     case Options::BRDF::Debug::ShowAttenuation:
         return attenuation;
     };
 
-
-    float3 specularBase = lerp(lightRadiance, materialAlbedo, materialMetallic * 0.5);
+    float3 specularBase = lerp(lightRadiance, materialAlbedo, materialMetallic);
 
     //Specular calculations
     float3 distribution = specularBase;
@@ -257,10 +257,6 @@ float3 getSurfaceIrradiance(
 
     case Options::BRDF::NormalDistribution::TrowbridgeReitz:
         distribution *= NormalDistribution::TrowbridgeReitz(NdotH, materialRoughness);
-        break;
-
-    default:
-        distribution = 1;
         break;
     };
 
@@ -332,23 +328,19 @@ float3 getSurfaceIrradiance(
         break;
 
     default:
-        geometricShadow = 1;
+        geometricShadow = 1.0;
         break;
     };
 
-    float3 fresnel;
+    float3 fresnel = specularBase;
     switch (Options::BRDF::Fresnel::Selection)
     {
     case Options::BRDF::Fresnel::Schlick:
-        fresnel = Fresnel::Schlick(specularBase, LdotH);
+        fresnel *= Fresnel::Schlick(specularBase, LdotH);
         break;
 
     case Options::BRDF::Fresnel::SphericalGaussian:
-        fresnel = Fresnel::SphericalGaussian(LdotH, specularBase);
-        break;
-
-    default:
-        fresnel = 1;
+        fresnel *= Fresnel::SphericalGaussian(LdotH, specularBase);
         break;
     };
 
@@ -376,7 +368,7 @@ float3 getSurfaceIrradiance(
         lambert = NdotL;
     }
 
-    float3 specularColor = (distribution * fresnel * geometricShadow) / (4 * (NdotL * NdotV));
+    float3 specularColor = (distribution * fresnel * geometricShadow) / (4.0 * (NdotL * NdotV));
     return (diffuseColor + specularColor) * lambert * attenuatedColor;
 }
 
@@ -411,16 +403,12 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
     float3 reflectedViewDirection = reflect(-viewDirection, surfaceNormal);
     float NdotV = saturate(dot(surfaceNormal, viewDirection));
 
-    materialRoughness = square(materialRoughness);
-
     float3 surfaceIrradiance = 0.0;
 
     for (uint directionalIndex = 0; directionalIndex < Lights::directionalCount; directionalIndex++)
     {
-        float3 lightDirection = Lights::directionalList[directionalIndex].direction;
-        float3 lightRadiance = Lights::directionalList[directionalIndex].radiance;
-
-        surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, reflectedViewDirection, NdotV, materialAlbedo, materialRoughness, materialMetallic, lightDirection, lightRadiance, 1.0);
+		const Lights::DirectionalData lightData = Lights::directionalList[directionalIndex];
+        surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, reflectedViewDirection, NdotV, materialAlbedo, materialRoughness, materialMetallic, lightData.direction, lightData.radiance, 1.0);
     }
 
     const uint clusterOffset = getClusterOffset(screenCoord, surfacePosition.z);
