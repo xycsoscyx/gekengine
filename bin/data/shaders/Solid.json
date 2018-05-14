@@ -141,7 +141,8 @@
                     "Implicit"
                 ]
             },
-            "UseHalfLambert": true
+            "UseHalfLambert": true,
+            "UseDisneyAlpha":  true
         },
         "AmbientOcclusion": {
             "Enable": false,

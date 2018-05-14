@@ -151,7 +151,8 @@
                     "Implicit"
                 ]
             },
-            "UseHalfLambert": true
+            "UseHalfLambert": true,
+            "UseDisneyAlpha": true
         },
         "UseChromaticAbberation": false
     },

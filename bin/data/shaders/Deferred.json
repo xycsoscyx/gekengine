@@ -145,7 +145,8 @@
                     "Implicit"
                 ]
             },
-            "UseHalfLambert": true
+            "UseHalfLambert": true,
+            "UseDisneyAlpha": true
         },
     },
     "passes": [
