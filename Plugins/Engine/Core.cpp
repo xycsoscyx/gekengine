@@ -64,9 +64,10 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(_window)
             {
-				GEK_PROFILER_SET_PROCESS_NAME(getContext(), 0, "GEK Engine"sv);
-				GEK_PROFILER_SET_THREAD_NAME(getContext(), 0, "Main Thread"sv);
-				GEK_PROFILER_SET_THREAD_SORT_INDEX(getContext(), 0, 0);
+                getContext()->startProfiler(String::Empty);
+				GEK_PROFILER_SET_PROCESS_NAME(getProfiler(), 0, "GEK Engine"sv);
+				GEK_PROFILER_SET_THREAD_NAME(getProfiler(), 0, "Main Thread"sv);
+				GEK_PROFILER_SET_THREAD_SORT_INDEX(getProfiler(), 0, 0);
 
 				LockedWrite{ std::cout } << "Starting GEK Engine";
 
@@ -201,6 +202,9 @@ namespace Gek
                 population = nullptr;
                 videoDevice = nullptr;
                 window = nullptr;
+
+                getContext()->stopProfiler();
+
 #ifndef _DEBUG
                 JSON::Reference(configuration).save(getContext()->getCachePath("config.json"s));
 #endif
@@ -1052,7 +1056,7 @@ namespace Gek
 
             bool update(void)
             {
-				GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Core"sv, "Update"sv, Profiler::EmptyArguments)
+				GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Core"sv, "Update"sv, Profiler::EmptyArguments)
 				{
 					window->readEvents();
 

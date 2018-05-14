@@ -12,7 +12,7 @@
         "BasicPointLight": {
             "Model": "lightbulb",
             "Transform": {
-                "position": [ "random(-40, 40)", "random(5, 40)", "random(-10, 10)" ],
+                "position": [ "random(-50, 50)", "random(-10, 40)", "random(-20, 20)" ],
                 "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
             },
             "PointLight": {
@@ -25,7 +25,7 @@
         "BasicSpotLight": {
             "Model": "flashlight",
             "Transform": {
-                "position": [ "random(-40, 40)", "random(5, 40)", "random(-10, 10)" ],
+                "position": [ "random(-50, 50)", "random(-10, 40)", "random(-20, 20)" ],
                 "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
             },
             "SpotLight": {
@@ -83,37 +83,6 @@
                 "mass": 250
             }
         },
-
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
-        { "Template": "BasicCube" },
 
         { "Template": "BasicPointLight" },
         { "Template": "BasicPointLight" },

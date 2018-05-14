@@ -52,77 +52,76 @@ namespace Gek
 		concurrency::concurrent_vector<Event> eventList;
 		concurrency::critical_section criticalSection;
 
+        void flush(void)
+        {
+            if (eventList.size() > 100)
+            {
+                concurrency::concurrent_vector<Data::Event> flushList;
+                eventList.swap(flushList);
+                eventList.clear();
+                eventList.reserve(100);
+                if (!flushList.empty())
+                {
+                    writePool.enqueueAndDetach([this, flushList = std::move(flushList)](void) -> void
+                    {
+                        for (auto &eventData : flushList)
+                        {
+                            auto lastBackSlash = eventData.category.rfind('\\');
+                            auto category = eventData.category.substr(lastBackSlash == std::string_view::npos ? 0 : lastBackSlash + 1);
+
+                            std::ostringstream eventOutput;
+                            eventOutput << "\t\t" << (exportedFirstEvent ? "," : "") << "{ " <<
+                                "\"cat\": \"" << category << "\"" <<
+                                ", \"name\": \"" << eventData.name << "\"" <<
+                                ", \"ts\": " << eventData.startTime.count();
+                            if (eventData.eventType)
+                            {
+                                eventOutput << ", \"ph\": \"" << eventData.eventType << "\"";
+                            }
+
+                            if (eventData.eventIdentifier)
+                            {
+                                eventOutput << ", \"id\": " << eventData.eventIdentifier;
+                            }
+
+                            if (eventData.eventType == 'X')
+                            {
+                                eventOutput << ", \"dur\": " << eventData.duration.count();
+                            }
+
+                            if (!eventData.arguments.empty())
+                            {
+                                eventOutput << ", \"args\": {";
+
+                                bool exportedFirstArgument = false;
+                                for (auto &argument : eventData.arguments)
+                                {
+                                    eventOutput << (exportedFirstArgument ? ", " : " ") << "\"" << argument.first << "\": \"" << argument.second << "\"";
+                                    exportedFirstArgument = true;
+
+                                }
+
+                                eventOutput << " }";
+                            }
+
+                            eventOutput <<
+                                ", \"pid\": \"" << eventData.processIdentifier << "\"" <<
+                                ", \"tid\": \"" << eventData.threadIdentifier <<
+                                "\" }\n";
+                            fileOutput << eventOutput.str();
+                            exportedFirstEvent = true;
+                        }
+                    }, __FILE__, __LINE__);
+                }
+            }
+        }
+
 		template <typename ...ARGUMENTS>
 		void addEvent(ARGUMENTS&&... arguments)
 		{
-			[&](void) -> void
-			{
-				concurrency::critical_section::scoped_lock lock(criticalSection);
-				eventList.push_back({ std::forward<ARGUMENTS>(arguments)... });
-			}();
-
-			if (eventList.size() > 100 && criticalSection.try_lock())
-			{
-				concurrency::concurrent_vector<Data::Event> flushList;
-				eventList.swap(flushList);
-				eventList.clear();
-				eventList.reserve(100);
-				criticalSection.unlock();
-
-				if (!flushList.empty())
-				{
-					writePool.enqueueAndDetach([this, flushList = std::move(flushList)](void) -> void
-					{
-						for (auto &eventData : flushList)
-						{
-							auto lastBackSlash = eventData.category.rfind('\\');
-							auto category = eventData.category.substr(lastBackSlash == std::string_view::npos ? 0 : lastBackSlash + 1);
-
-							std::ostringstream eventOutput;
-							eventOutput << "\t\t" << (exportedFirstEvent ? "," : "") << "{ " <<
-								"\"cat\": \"" << category << "\"" <<
-								", \"name\": \"" << eventData.name << "\"" <<
-								", \"ts\": " << eventData.startTime.count();
-							if (eventData.eventType)
-							{
-								eventOutput << ", \"ph\": \"" << eventData.eventType << "\"";
-							}
-
-							if (eventData.eventIdentifier)
-							{
-								eventOutput << ", \"id\": " << eventData.eventIdentifier;
-							}
-
-							if (eventData.eventType == 'X')
-							{
-								eventOutput << ", \"dur\": " << eventData.duration.count();
-							}
-
-							if (!eventData.arguments.empty())
-							{
-								eventOutput << ", \"args\": {";
-
-								bool exportedFirstArgument = false;
-								for (auto &argument : eventData.arguments)
-								{
-									eventOutput << (exportedFirstArgument ? ", " : " ") << "\"" << argument.first << "\": \"" << argument.second << "\"";
-									exportedFirstArgument = true;
-
-								}
-
-								eventOutput << " }";
-							}
-
-							eventOutput <<
-								", \"pid\": \"" << eventData.processIdentifier << "\"" <<
-								", \"tid\": \"" << eventData.threadIdentifier <<
-								"\" }\n";
-							fileOutput << eventOutput.str();
-							exportedFirstEvent = true;
-						}
-					}, __FILE__, __LINE__);
-				}
-			}
+			concurrency::critical_section::scoped_lock lock(criticalSection);
+			eventList.push_back({ std::forward<ARGUMENTS>(arguments)... });
+            flush();
 		}
 	};
 
@@ -138,12 +137,15 @@ namespace Gek
 
 	Profiler::~Profiler(void)
 	{
-		data->writePool.drain(true);
-
-		data->fileOutput <<
-			"\t]\n" <<
-			"}";
-		data->fileOutput.close();
+        [&](void) -> void
+        {
+            concurrency::critical_section::scoped_lock lock(data->criticalSection);
+            data->flush();
+            data->fileOutput <<
+                "\t]\n" <<
+                "}";
+            data->fileOutput.close();
+        }();
 	}
 
 	Hash Profiler::getCurrentThreadIdentifier(void)

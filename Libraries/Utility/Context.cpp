@@ -18,15 +18,12 @@ namespace Gek
         std::set<std::string> dataPathList;
 		std::string cachePath;
 
+        std::unique_ptr<Profiler> profiler;
 		Profiler::TimeFormat clockSynchronizationTime;
 
 	public:
-        ContextImplementation(std::vector<FileSystem::Path> const &pluginSearchList, std::string_view profilerFileName)
-			: Context(profilerFileName)
+        ContextImplementation(std::vector<FileSystem::Path> const &pluginSearchList)
         {
-			clockSynchronizationTime = Profiler::GetProfilerTime();
-			addEvent(0, getCurrentThreadIdentifier(), "__metadata"sv, "clock_sync"sv, clockSynchronizationTime, Profiler::EmptyTime, 'c', 0, { { "sync_id"sv, "context_clock_sync"sv } });
-
 			for (auto const &searchPath : pluginSearchList)
             {
                 searchPath.findFiles([&](FileSystem::Path const &filePath) -> bool
@@ -86,9 +83,26 @@ namespace Gek
         }
 
         // Context
-		void synchronizeClock(Hash processIdentifier, Hash threadIdentifier, Profiler::TimeFormat time)
+        void startProfiler(std::string_view output)
+        {
+            profiler = std::make_unique<Profiler>(output);
+            clockSynchronizationTime = Profiler::GetProfilerTime();
+            //addEvent(0, getCurrentThreadIdentifier(), "__metadata"sv, "clock_sync"sv, clockSynchronizationTime, Profiler::EmptyTime, 'c', 0, { { "sync_id"sv, "context_clock_sync"sv } });
+        }
+
+        void stopProfiler(void)
+        {
+            profiler = nullptr;
+        }
+
+        Profiler * const getProfiler(void) const
+        {
+            return profiler.get();
+        }
+
+        void synchronizeClock(Hash processIdentifier, Hash threadIdentifier, Profiler::TimeFormat time)
 		{
-			addEvent(processIdentifier, threadIdentifier, "__metadata"sv, "clock_sync"sv, time, Profiler::EmptyTime, 'c', 0, { { "sync_id"sv, "context_clock_sync2"sv }, { "issue_ts"sv, (Profiler::GetProfilerTime() - time).count() } });
+			//addEvent(processIdentifier, threadIdentifier, "__metadata"sv, "clock_sync"sv, time, Profiler::EmptyTime, 'c', 0, { { "sync_id"sv, "context_clock_sync2"sv }, { "issue_ts"sv, (Profiler::GetProfilerTime() - time).count() } });
 		}
 
 		void setCachePath(FileSystem::Path const &path)
@@ -194,8 +208,8 @@ namespace Gek
         }
     };
 
-    ContextPtr Context::Create(std::vector<FileSystem::Path> const &pluginSearchList, std::string_view profilerFileName)
+    ContextPtr Context::Create(std::vector<FileSystem::Path> const &pluginSearchList)
     {
-        return std::make_unique<ContextImplementation>(pluginSearchList, profilerFileName);
+        return std::make_unique<ContextImplementation>(pluginSearchList);
     }
 }; // namespace Gek

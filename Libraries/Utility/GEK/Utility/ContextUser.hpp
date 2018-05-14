@@ -72,6 +72,11 @@ namespace Gek
             return context;
         }
 
+        Profiler * const getProfiler(void) const
+        {
+            return context->getProfiler();
+        }
+
     public:
         static ContextUserPtr createBase(Context *context, PARAMETERS... arguments)
         {

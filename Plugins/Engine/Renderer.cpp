@@ -268,7 +268,7 @@ namespace Gek
 			struct LightVisibilityData
 				: public LightData<COMPONENT, DATA, RESERVE>
 			{
-				Context * const context = nullptr;
+				Profiler * const profiler = nullptr;
 				std::vector<float, AlignedAllocator<float, 16>> shapeXPositionList;
 				std::vector<float, AlignedAllocator<float, 16>> shapeYPositionList;
 				std::vector<float, AlignedAllocator<float, 16>> shapeZPositionList;
@@ -277,13 +277,8 @@ namespace Gek
 
 				LightVisibilityData(Engine::Core *core)
 					: LightData(core->getVideoDevice())
-					, context(core->getContext())
+					, profiler(core->getContext()->getProfiler())
 				{
-				}
-
-				Context * const getContext(void) const
-				{
-					return context;
 				}
 
 				void clearEntities(void)
@@ -302,7 +297,7 @@ namespace Gek
 					auto buffer = (entityCount % 4);
 					buffer = (buffer ? (4 - buffer) : buffer);
 					auto bufferedEntityCount = (entityCount + buffer);
-					GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, identifier, "SIMD"sv, "Data Organization"sv, Profiler::EmptyArguments)
+					GEK_PROFILER_BEGIN_SCOPE(profiler, 0, identifier, "SIMD"sv, "Data Organization"sv, Profiler::EmptyArguments)
 					{
 						shapeXPositionList.resize(bufferedEntityCount);
 						shapeYPositionList.resize(bufferedEntityCount);
@@ -325,7 +320,7 @@ namespace Gek
 						lightList.clear();
 					} GEK_PROFILER_END_SCOPE();
 
-					GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, identifier, "SIMD"sv, "Culling"sv, Profiler::EmptyArguments)
+					GEK_PROFILER_BEGIN_SCOPE(profiler, 0, identifier, "SIMD"sv, "Culling"sv, Profiler::EmptyArguments)
 					{
 						Math::SIMD::cullSpheres(frustum, bufferedEntityCount, shapeXPositionList, shapeYPositionList, shapeZPositionList, shapeRadiusList, visibilityList);
 					} GEK_PROFILER_END_SCOPE();
@@ -434,14 +429,14 @@ namespace Gek
 			{
 				LockedWrite{ std::cout } << "Initializing rendering system components";
 
-				GEK_PROFILER_SET_THREAD_NAME(getContext(), directionalThreadIdentifier, "Directional Light Worker"sv);
-				GEK_PROFILER_SET_THREAD_SORT_INDEX(getContext(), directionalThreadIdentifier, 10);
+				GEK_PROFILER_SET_THREAD_NAME(getProfiler(), directionalThreadIdentifier, "Directional Light Worker"sv);
+				GEK_PROFILER_SET_THREAD_SORT_INDEX(getProfiler(), directionalThreadIdentifier, 10);
 
-				GEK_PROFILER_SET_THREAD_NAME(getContext(), pointLightThreadIdentifier, "Point Light Worker"sv);
-				GEK_PROFILER_SET_THREAD_SORT_INDEX(getContext(), pointLightThreadIdentifier, 11);
+				GEK_PROFILER_SET_THREAD_NAME(getProfiler(), pointLightThreadIdentifier, "Point Light Worker"sv);
+				GEK_PROFILER_SET_THREAD_SORT_INDEX(getProfiler(), pointLightThreadIdentifier, 11);
 
-				GEK_PROFILER_SET_THREAD_NAME(getContext(), spotLightThreadIdentifier, "Spot Light Worker"sv);
-				GEK_PROFILER_SET_THREAD_SORT_INDEX(getContext(), spotLightThreadIdentifier, 12);
+				GEK_PROFILER_SET_THREAD_NAME(getProfiler(), spotLightThreadIdentifier, "Spot Light Worker"sv);
+				GEK_PROFILER_SET_THREAD_SORT_INDEX(getProfiler(), spotLightThreadIdentifier, 12);
 
 				Video::SamplerState::Description bufferSamplerStateData;
 				bufferSamplerStateData.filterMode = Video::SamplerState::FilterMode::MinificationMagnificationMipMapPoint;
@@ -1156,7 +1151,7 @@ namespace Gek
 				assert(population);
 
 				videoDevice->beginProfilerBlock();
-				GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Render"sv, "Update"sv, Profiler::EmptyArguments)
+				GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Render"sv, "Update"sv, Profiler::EmptyArguments)
 				{
 					EngineConstantData engineConstantData;
 					engineConstantData.frameTime = frameTime;
@@ -1166,7 +1161,7 @@ namespace Gek
 					Video::Device::Context *videoContext = videoDevice->getDefaultContext();
 					while (cameraQueue.try_pop(currentCamera))
 					{
-						GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Render"sv, currentCamera.name, Profiler::EmptyArguments)
+						GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Render"sv, currentCamera.name, Profiler::EmptyArguments)
 						{
 							clipDistance = (currentCamera.farClip - currentCamera.nearClip);
 							reciprocalClipDistance = (1.0f / clipDistance);
@@ -1180,7 +1175,7 @@ namespace Gek
 								const auto width = backBuffer->getDescription().width;
 								const auto height = backBuffer->getDescription().height;
 
-								GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Render"sv, "Sort Draw Calls"sv, Profiler::EmptyArguments)
+								GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Render"sv, "Sort Draw Calls"sv, Profiler::EmptyArguments)
 								{
 									concurrency::parallel_sort(std::begin(drawCallList), std::end(drawCallList), [](DrawCallValue const &leftValue, DrawCallValue const &rightValue) -> bool
 									{
@@ -1192,7 +1187,7 @@ namespace Gek
 
 								ShaderHandle currentShader;
 								std::map<uint32_t, std::vector<DrawCallSet>> drawCallSetMap;
-								GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Render"sv, "Split Draw Calls"sv, Profiler::EmptyArguments)
+								GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Render"sv, "Split Draw Calls"sv, Profiler::EmptyArguments)
 								{
 									for (auto &drawCall = std::begin(drawCallList); drawCall != std::end(drawCallList); )
 									{
@@ -1221,7 +1216,7 @@ namespace Gek
 								{
 									auto directionalLightsDone = workerPool.enqueue([&](void) -> void
 									{
-										GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, directionalThreadIdentifier, "Render"sv, "Cull Directional Lights"sv, Profiler::EmptyArguments)
+										GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, directionalThreadIdentifier, "Render"sv, "Cull Directional Lights"sv, Profiler::EmptyArguments)
 										{
 											directionalLightData.lightList.clear();
 											directionalLightData.lightList.reserve(directionalLightData.entityList.size());
@@ -1254,7 +1249,7 @@ namespace Gek
 
 									auto pointLightsDone = workerPool.enqueue([&](void) -> void
 									{
-										GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, pointLightThreadIdentifier, "Render"sv, "Point Directional Lights"sv, Profiler::EmptyArguments)
+										GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, pointLightThreadIdentifier, "Render"sv, "Point Directional Lights"sv, Profiler::EmptyArguments)
 										{
 											pointLightData.cull(frustum, pointLightThreadIdentifier);
 											concurrency::parallel_for(size_t(0), pointLightData.entityList.size(), [&](size_t index) -> void
@@ -1273,7 +1268,7 @@ namespace Gek
 
 									auto spotLightsDone = workerPool.enqueue([&](void) -> void
 									{
-										GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, spotLightThreadIdentifier, "Render"sv, "Spot Directional Lights"sv, Profiler::EmptyArguments)
+										GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, spotLightThreadIdentifier, "Render"sv, "Spot Directional Lights"sv, Profiler::EmptyArguments)
 										{
 											spotLightData.cull(frustum, spotLightThreadIdentifier);
 											concurrency::parallel_for(size_t(0), spotLightData.entityList.size(), [&](size_t index) -> void
@@ -1294,7 +1289,7 @@ namespace Gek
 									pointLightsDone.get();
 									spotLightsDone.get();
 
-									GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Render"sv, "Update Lighting Buffers"sv, Profiler::EmptyArguments)
+									GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Render"sv, "Update Lighting Buffers"sv, Profiler::EmptyArguments)
 									{
 										concurrency::combinable<size_t> lightIndexCount;
 										concurrency::parallel_for_each(std::begin(tilePointLightIndexList), std::end(tilePointLightIndexList), [&](auto &gridData) -> void
@@ -1380,7 +1375,7 @@ namespace Gek
 								}
 
 								CameraConstantData cameraConstantData;
-								GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Render"sv, "Update Engine Buffers"sv, Profiler::EmptyArguments)
+								GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Render"sv, "Update Engine Buffers"sv, Profiler::EmptyArguments)
 								{
 									cameraConstantData.fieldOfView.x = (1.0f / currentCamera.projectionMatrix._11);
 									cameraConstantData.fieldOfView.y = (1.0f / currentCamera.projectionMatrix._22);
@@ -1421,14 +1416,14 @@ namespace Gek
 								uint8_t shaderIndex = 0;
 								std::string finalOutput;
 								auto forceShader = (currentCamera.forceShader ? resources->getShader(currentCamera.forceShader) : nullptr);
-								GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Render"sv, "Handle Shaders", Profiler::EmptyArguments)
+								GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Render"sv, "Handle Shaders", Profiler::EmptyArguments)
 								{
 									for (auto const &shaderDrawCallList : drawCallSetMap)
 									{
 										for (auto const &shaderDrawCall : shaderDrawCallList.second)
 										{
 											auto &shader = shaderDrawCall.shader;
-											GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Render"sv, shader->getName(), Profiler::EmptyArguments)
+											GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Render"sv, shader->getName(), Profiler::EmptyArguments)
 											{
 												finalOutput = shader->getOutput();
 												for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentCamera.viewFrustum); pass; pass = pass->next())
@@ -1514,14 +1509,14 @@ namespace Gek
 
 						uint8_t filterIndex = 0;
 						videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
-						GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Render"sv, "Handle Filters", Profiler::EmptyArguments)
+						GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Render"sv, "Handle Filters", Profiler::EmptyArguments)
 						{
 							for (auto const &filterName : { "tonemap" })
 							{
 								auto const filter = resources->getFilter(filterName);
 								if (filter)
 								{
-									GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Render"sv, filter->getName(), Profiler::EmptyArguments)
+									GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Render"sv, filter->getName(), Profiler::EmptyArguments)
 									{
 										for (auto pass = filter->begin(videoContext, screenHandle, ResourceHandle()); pass; pass = pass->next())
 										{
@@ -1562,7 +1557,7 @@ namespace Gek
 					}
 
 					bool reloadRequired = false;
-					GEK_PROFILER_BEGIN_SCOPE(getContext(), 0, 0, "Render"sv, "Prepare User Interface"sv, Profiler::EmptyArguments)
+					GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Render"sv, "Prepare User Interface"sv, Profiler::EmptyArguments)
 					{
 						ImGuiIO &imGuiIo = ImGui::GetIO();
 						imGuiIo.DeltaTime = frameTime;
