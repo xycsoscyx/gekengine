@@ -95,10 +95,9 @@
                     "ShowRoughness",
                     "ShowMetallic",
                     "ShowAttenuation",
-                    "ShowDiffuse",
                     "ShowDistribution",
-                    "ShowFresnel",
-                    "ShowGeometricShadow"
+                    "ShowGeometricShadow",
+                    "ShowFresnel"
                 ]
             },
             "NormalDistribution": {
@@ -112,7 +111,7 @@
                 ]
             },
             "Fresnel": {
-                "selection": "SphericalGaussian",
+                "selection": "Schlick",
                 "options": [
                     "None",
                     "Schlick",
@@ -120,7 +119,7 @@
                 ]
             },
             "GeometricShadowing": {
-                "selection": "AshikhminShirley",
+                "selection": "CookTorrence",
                 "options": [
                     "None",
                     "AshikhminShirley",
@@ -141,8 +140,7 @@
                     "Implicit"
                 ]
             },
-            "UseHalfLambert": true,
-            "UseDisneyAlpha":  true
+            "UseHalfLambert": true
         },
         "AmbientOcclusion": {
             "Enable": false,

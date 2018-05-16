@@ -354,6 +354,8 @@ namespace Gek
                             selection = (selection % optionsNode.size());
                         }
 
+                        LockedWrite{ std::cout } << shaderName << ": " << optionName << " changed to " << optionsNode[selection];
+
                         optionNode.set("selection", selection);
                         brdfNode.set(optionName.data(), optionNode);
                         shaderNode.set("BRDF", brdfNode);
@@ -363,30 +365,6 @@ namespace Gek
 
                     switch (key)
                     {
-					case Window::Key::F2:
-                        changeShader("solid", "Debug");
-                        changeShader("glass", "Debug");
-                        resources->reload();
-						break;
-
-					case Window::Key::F3:
-                        changeShader("solid", "Fresnel");
-                        changeShader("glass", "Fresnel");
-                        resources->reload();
-                        break;
-
-					case Window::Key::F4:
-                        changeShader("solid", "GeometricShadowing");
-                        changeShader("glass", "GeometricShadowing");
-                        resources->reload();
-                        break;
-
-					case Window::Key::F5:
-                        changeShader("solid", "NormalDistribution");
-                        changeShader("glass", "NormalDistribution");
-                        resources->reload();
-                        break;
-
 					case Window::Key::Escape:
                         enableInterfaceControl = !enableInterfaceControl;
                         imGuiIo.MouseDrawCursor = false;// enableInterfaceControl;
@@ -405,23 +383,29 @@ namespace Gek
                         break;
 
                     case Window::Key::F1:
-						setOption("editor"s, "active"s, !getOption("editor"s, "active"s).convert(false));
+                        changeShader("solid", "Debug");
+                        changeShader("glass", "Debug");
+                        resources->reload();
+                        break;
+
+                    case Window::Key::F2:
+                        changeShader("solid", "Fresnel");
+                        changeShader("glass", "Fresnel");
+                        resources->reload();
+                        break;
+
+                    case Window::Key::F3:
+                        changeShader("solid", "GeometricShadowing");
+                        changeShader("glass", "GeometricShadowing");
+                        resources->reload();
+                        break;
+
+                    case Window::Key::F4:
+                        changeShader("solid", "NormalDistribution");
+                        changeShader("glass", "NormalDistribution");
+                        resources->reload();
                         break;
                     };
-
-                    if (population)
-                    {
-                        switch (key)
-                        {
-                        case Window::Key::F5:
-                            population->save("autosave");
-                            break;
-
-                        case Window::Key::F6:
-                            population->load("autosave");
-                            break;
-                        };
-                    }
                 }
 
                 if (!enableInterfaceControl && population)

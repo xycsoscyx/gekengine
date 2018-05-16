@@ -245,11 +245,30 @@ namespace Gek
                     LockedWrite{ std::cout } << "Found " << populationArray.size() << " Entity Definitions";
                     for (auto const &entityNode : populationArray)
                     {
+                        uint32_t count = 1;
                         std::vector<Component> entityComponentList;
                         if (entityNode.has_member("Template"))
                         {
+                            std::string templateName;
                             auto &entityTemplateNode = entityNode["Template"];
-                            auto &templateNode = templatesNode.get(entityTemplateNode.as_string());
+                            if (entityTemplateNode.is_string())
+                            {
+                                templateName = entityTemplateNode.as_string();
+                            }
+                            else
+                            {
+                                if (entityTemplateNode.has_member("Base"))
+                                {
+                                    templateName = entityTemplateNode.get("Base").as_string();
+                                }
+
+                                if (entityTemplateNode.has_member("Count"))
+                                {
+                                    count = entityTemplateNode.get("Count").as_integer();
+                                }
+                            }
+
+                            auto &templateNode = templatesNode.get(templateName);
                             for (auto const &componentNode : templateNode.getMembers())
                             {
                                 entityComponentList.push_back(std::make_pair(componentNode.name(), componentNode.value()));
@@ -277,17 +296,20 @@ namespace Gek
                             }
                         }
 
-                        auto populationEntity = new Entity();
-                        for (auto const &componentData : entityComponentList)
+                        while (count-- > 0)
                         {
-                            if (componentData.first != "Template")
+                            auto populationEntity = new Entity();
+                            for (auto const &componentData : entityComponentList)
                             {
-                                addComponent(populationEntity, componentData);
+                                if (componentData.first != "Template")
+                                {
+                                    addComponent(populationEntity, componentData);
+                                }
                             }
-                        }
 
-                        auto entity = dynamic_cast<Plugin::Entity *>(populationEntity);
-                        queueEntity(entity);
+                            auto entity = dynamic_cast<Plugin::Entity *>(populationEntity);
+                            queueEntity(entity);
+                        };
                     }
                 }, __FILE__, __LINE__);
             }

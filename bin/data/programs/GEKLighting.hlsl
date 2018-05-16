@@ -7,11 +7,11 @@ struct LightData
     float3 reflectedViewDirection;
     float3 materialAlbedo;
     float materialRoughness;
+    float materialAlpha;
     float materialMetallic;
     float3 lightDirection;
     float3 lightRadiance;
     float attenuation;
-    float3 attenuatedColor;
     float3 reflectedRadiance;
     float3 lightReflectDirection;
     float NdotV;
@@ -22,87 +22,55 @@ struct LightData
     float LdotV;
     float RdotV;
 
-    void prepare(void)
-    {
-        attenuatedColor = attenuation * lightRadiance;
-        reflectedRadiance = lerp(materialAlbedo, lightRadiance, materialMetallic);
-        lightReflectDirection = reflect(-lightDirection, surfaceNormal);
-        float3 halfDirection = normalize(viewDirection + lightDirection);
-        NdotL = saturate(dot(surfaceNormal, lightDirection));
-        NdotH = saturate(dot(surfaceNormal, halfDirection));
-        VdotH = saturate(dot(viewDirection, halfDirection));
-        LdotH = saturate(dot(lightDirection, halfDirection));
-        LdotV = saturate(dot(lightDirection, viewDirection));
-        RdotV = saturate(dot(lightReflectDirection, viewDirection));
-    }
-
-    // schlick functions
-    float getSchlickFresnel(float index)
-    {
-        float x = clamp(1.0 - index, 0.0, 1.0);
-        float x2 = square(x);
-        return x2 * x2 * x;
-    }
-
-    float3 getFresnelLerp(float3 x, float3 y, float delta)
-    {
-        float transition = getSchlickFresnel(delta);
-        return lerp(x, y, transition);
-    }
-
     float getNormalDistributionBeckmann(void)
     {
-        float roughnessSquared = square(materialRoughness);
+        float materialAlphaSquared = square(materialAlpha);
         float NdotHSquared = square(NdotH);
-        return (1.0 / (Math::Pi * roughnessSquared * square(NdotHSquared))) * exp((NdotHSquared - 1.0) / (roughnessSquared * NdotHSquared));
+        float NdotHCubed = square(NdotHSquared);
+        return (1.0 / (Math::Pi * materialAlphaSquared * NdotHCubed)) *
+            exp((NdotHSquared - 1.0) / (materialAlphaSquared * NdotHSquared));
     }
 
     float getNormalDistributionGaussian(void)
     {
-        float roughnessSquared = square(materialRoughness);
+        float materialAlphaSquared = square(materialAlpha);
         float thetaH = acos(NdotH);
-        return exp(-thetaH * thetaH / roughnessSquared);
+        return exp(-thetaH * thetaH / materialAlphaSquared);
     }
 
     float getNormalDistributionGGX(void)
     {
-        float roughnessSquared = square(materialRoughness);
+        float materialAlphaSquared = square(materialAlpha);
         float NdotHSquared = square(NdotH);
         float TangentNdotHSquared = (1.0 - NdotHSquared) / NdotHSquared;
-        return Math::ReciprocalPi * square(materialRoughness / (NdotHSquared * (roughnessSquared + TangentNdotHSquared)));
+        return Math::ReciprocalPi * square(materialRoughness / (NdotHSquared * (materialAlphaSquared + TangentNdotHSquared)));
     }
 
     float getNormalDistributionTrowbridgeReitz(void)
     {
-        float roughnessSquared = square(materialRoughness);
-        float distribution = square(NdotH) * (roughnessSquared - 1.0) + 1.0;
-        return roughnessSquared / (Math::Pi * square(distribution));
+        float materialAlphaSquared = square(materialAlpha);
+        float NdotHSquared = square(NdotH);
+        return materialAlphaSquared / (Math::Pi * square(NdotHSquared * (materialAlphaSquared - 1.0) + 1.0));
     }
 
-    float3 getNormalDistribution(void)
+    float getNormalDistribution(void)
     {
-        //Specular calculations
-        float3 normalDistribution = reflectedRadiance;
         switch (Options::BRDF::NormalDistribution::Selection)
         {
         case Options::BRDF::NormalDistribution::Beckmann:
-            normalDistribution *= getNormalDistributionBeckmann();
-            break;
+            return getNormalDistributionBeckmann();
 
         case Options::BRDF::NormalDistribution::Gaussian:
-            normalDistribution *= getNormalDistributionGaussian();
-            break;
+            return getNormalDistributionGaussian();
 
         case Options::BRDF::NormalDistribution::GGX:
-            normalDistribution *= getNormalDistributionGGX();
-            break;
+            return getNormalDistributionGGX();
 
         case Options::BRDF::NormalDistribution::TrowbridgeReitz:
-            normalDistribution *= getNormalDistributionTrowbridgeReitz();
-            break;
+            return getNormalDistributionTrowbridgeReitz();
         };
 
-        return normalDistribution;
+        return 1.0;
     }
 
     float getGeometricShadowingImplicit(void)
@@ -133,21 +101,22 @@ struct LightData
 
     float getGeometricShadowingKelemen(void)
     {
-        //	return (NdotL * NdotV)/ (LdotH * LdotH);           //this
-        return (NdotL * NdotV) / (VdotH * VdotH);       //or this?
+        return (NdotL * NdotV) / square(VdotH);
     }
 
     float getGeometricShadowingModifiedKelemen(void)
     {
         static const float SqureRoot2OverPi = 0.797884560802865; // SqureRoot2OverPi = sqrt(2 / Pi)
-        float modifiedRoughnessSquared = materialRoughness * materialRoughness * SqureRoot2OverPi;
-        float gH = NdotV * modifiedRoughnessSquared + (1.0 - modifiedRoughnessSquared);
+        float modifiedmaterialAlphaSquared = materialRoughness * materialRoughness * SqureRoot2OverPi;
+        float gH = NdotV * modifiedmaterialAlphaSquared + (1.0 - modifiedmaterialAlphaSquared);
         return (square(gH) * NdotL);
     }
 
     float getGeometricShadowingCookTorrence(void)
     {
-        return min(1.0, min(2.0 * NdotH * NdotV / VdotH, 2 * NdotH * NdotL / VdotH));
+        float NdotVProduct = (2.0 * (NdotH * NdotV)) / VdotH;
+        float NdotLProduct = (2.0 * (NdotH * NdotL)) / VdotH;
+        return min(1.0, min(NdotVProduct, NdotLProduct));
     }
 
     float getGeometricShadowingWard(void)
@@ -160,168 +129,126 @@ struct LightData
         return (VdotH * pow(NdotL * NdotV, materialRoughness)) / NdotL * NdotV;
     }
 
-    //SmithModelsBelow
-    //Gs = F(NdotL) * F(NdotV);
-    float getGeometricShadowingWalterEtAl(void)
+    float getGeometricShadowingWalterEtAl(float angle)
     {
-        float roughnessSquared = square(materialRoughness);
-        float NdotLSquared = square(NdotL);
-        float NdotVSquared = square(NdotV);
-        float SmithNdotL = 2.0 / (1.0 + sqrt(1.0 + roughnessSquared * (1.0 - NdotLSquared) / (NdotLSquared)));
-        float SmithNdotV = 2.0 / (1.0 + sqrt(1.0 + roughnessSquared * (1.0 - NdotVSquared) / (NdotVSquared)));
-        return (SmithNdotL * SmithNdotV);
+        float materialAlphaSquared = square(materialAlpha);
+        float angleSquared = square(angle);
+        return 2.0 / (1.0 + sqrt(1.0 + materialAlphaSquared * (1.0 - angleSquared) / angleSquared));
     }
 
-    float getGeometricShadowingBeckman(void)
+    float getGeometricShadowingBeckman(float angle)
     {
-        float roughnessSquared = square(materialRoughness);
-        float NdotLSquared = square(NdotL);
-        float NdotVSquared = square(NdotV);
-        float calulationL = (NdotL) / (roughnessSquared * sqrt(1 - NdotLSquared));
-        float calulationV = (NdotV) / (roughnessSquared * sqrt(1 - NdotVSquared));
-        float SmithNdotL = calulationL < 1.6 ? (((3.535 * calulationL) + (2.181 * calulationL * calulationL)) / (1.0 + (2.276 * calulationL) + (2.577 * calulationL * calulationL))) : 1.0;
-        float SmithNdotV = calulationV < 1.6 ? (((3.535 * calulationV) + (2.181 * calulationV * calulationV)) / (1.0 + (2.276 * calulationV) + (2.577 * calulationV * calulationV))) : 1.0;
-        return (SmithNdotL * SmithNdotV);
+        float angleSquared = square(angle);
+        float c = angle / (materialAlpha * sqrt(1.0 - angleSquared));
+        float cSquared = square(c);
+        return c < 1.6 ? (((3.535 * c) + (2.181 * cSquared)) / (1.0 + (2.276 * c) + (2.577 * cSquared))) : 1.0;
     }
 
-    float getGeometricShadowingGGX(void)
+    float getGeometricShadowingGGX(float angle)
     {
-        float roughnessSquared = square(materialRoughness);
-        float NdotLSquared = square(NdotL);
-        float NdotVSquared = square(NdotV);
-        float SmithNdotL = (2.0 * NdotL) / (NdotL + sqrt(roughnessSquared + (1.0 - roughnessSquared) * NdotLSquared));
-        float SmithNdotV = (2.0 * NdotV) / (NdotV + sqrt(roughnessSquared + (1.0 - roughnessSquared) * NdotVSquared));
-        return (SmithNdotL * SmithNdotV);
+        float materialAlphaSquared = square(materialAlpha);
+        return (2.0 * angle) / (angle + sqrt(materialAlphaSquared + ((1.0 - materialAlphaSquared) * square(angle))));
     }
 
-    float getGeometricShadowingSchlick(void)
+    float getGeometricShadowingSchlick(float angle)
     {
-        float roughnessSquared = square(materialRoughness);
-        float SmithNdotL = (NdotL) / (NdotL * (1.0 - roughnessSquared) + roughnessSquared);
-        float SmithNdotV = (NdotV) / (NdotV * (1.0 - roughnessSquared) + roughnessSquared);
-        return (SmithNdotL * SmithNdotV);
+        float materialAlphaSquared = square(materialAlpha);
+        return angle / ((angle * (1.0 - materialAlphaSquared)) + materialAlphaSquared);
     }
 
-    float getGeometricShadowingSchlickBeckman(void)
+    float getGeometricShadowingSchlickBeckman(float angle)
     {
-        float roughnessSquared = square(materialRoughness);
-        float k = roughnessSquared * 0.797884560802865;
-        float SmithNdotL = (NdotL) / (NdotL * (1.0 - k) + k);
-        float SmithNdotV = (NdotV) / (NdotV * (1.0 - k) + k);
-        return (SmithNdotL * SmithNdotV);
+        static const float SquareRootTwoOverPi = sqrt(2.0 / Math::Pi);
+        float materialAlphaSquared = square(materialAlpha);
+        float k = materialAlphaSquared * SquareRootTwoOverPi;
+        return angle / ((angle * (1.0 - k)) + k);
     }
 
-    float getGeometricShadowingSchlickGGX(void)
+    float getGeometricShadowingSchlickGGX(float angle)
     {
-        float k = materialRoughness / 2.0;
-        float SmithNdotL = (NdotL) / (NdotL * (1.0 - k) + k);
-        float SmithNdotV = (NdotV) / (NdotV * (1.0 - k) + k);
-        return (SmithNdotL * SmithNdotV);
+        float k = materialAlpha / 2.0;
+        return angle / ((angle * (1.0 - k)) + k);
     }
 
     float getGeometricShadowing(void)
     {
-        float geometricShadow;
         switch (Options::BRDF::GeometricShadowing::Selection)
         {
         case Options::BRDF::GeometricShadowing::AshikhminShirley:
-            geometricShadow = getGeometricShadowingAshikhminShirley();
-            break;
+            return getGeometricShadowingAshikhminShirley();
 
         case Options::BRDF::GeometricShadowing::AshikhminPremoze:
-            geometricShadow = getGeometricShadowingAshikhminPremoze();
-            break;
+            return getGeometricShadowingAshikhminPremoze();
 
         case Options::BRDF::GeometricShadowing::Duer:
-            geometricShadow = getGeometricShadowingDuer();
-            break;
+            return getGeometricShadowingDuer();
 
         case Options::BRDF::GeometricShadowing::Neumann:
-            geometricShadow = getGeometricShadowingNeumann();
-            break;
+            return getGeometricShadowingNeumann();
 
         case Options::BRDF::GeometricShadowing::Kelemen:
-            geometricShadow = getGeometricShadowingKelemen();
-            break;
+            return getGeometricShadowingKelemen();
 
         case Options::BRDF::GeometricShadowing::ModifiedKelemen:
-            geometricShadow = getGeometricShadowingModifiedKelemen();
-            break;
+            return getGeometricShadowingModifiedKelemen();
 
         case Options::BRDF::GeometricShadowing::CookTorrence:
-            geometricShadow = getGeometricShadowingCookTorrence();
-            break;
+            return getGeometricShadowingCookTorrence();
 
         case Options::BRDF::GeometricShadowing::Ward:
-            geometricShadow = getGeometricShadowingWard();
-            break;
+            return getGeometricShadowingWard();
 
         case Options::BRDF::GeometricShadowing::Kurt:
-            geometricShadow = getGeometricShadowingKurt();
-            break;
+            return getGeometricShadowingKurt();
 
         case Options::BRDF::GeometricShadowing::WalterEtAl:
-            geometricShadow = getGeometricShadowingWalterEtAl();
-            break;
+            return getGeometricShadowingWalterEtAl(NdotL) * getGeometricShadowingWalterEtAl(NdotV);
 
         case Options::BRDF::GeometricShadowing::Beckman:
-            geometricShadow = getGeometricShadowingBeckman();
-            break;
+            return getGeometricShadowingBeckman(NdotL) * getGeometricShadowingBeckman(NdotV);
 
         case Options::BRDF::GeometricShadowing::GGX:
-            geometricShadow = getGeometricShadowingGGX();
-            break;
+            return getGeometricShadowingGGX(NdotL) * getGeometricShadowingGGX(NdotV);
 
         case Options::BRDF::GeometricShadowing::Schlick:
-            geometricShadow = getGeometricShadowingSchlick();
-            break;
+            return getGeometricShadowingSchlick(NdotL) * getGeometricShadowingSchlick(NdotV);
 
         case Options::BRDF::GeometricShadowing::SchlickBeckman:
-            geometricShadow = getGeometricShadowingSchlickBeckman();
-            break;
+            return getGeometricShadowingSchlickBeckman(NdotL) * getGeometricShadowingSchlickBeckman(NdotV);
 
         case Options::BRDF::GeometricShadowing::SchlickGGX:
-            geometricShadow = getGeometricShadowingSchlickGGX();
-            break;
+            return getGeometricShadowingSchlickGGX(NdotL) * getGeometricShadowingSchlickGGX(NdotV);
 
         case Options::BRDF::GeometricShadowing::Implicit:
-            geometricShadow = getGeometricShadowingImplicit();
-            break;
-
-        default:
-            geometricShadow = 1.0;
-            break;
+            return getGeometricShadowingImplicit();
         };
 
-        return geometricShadow;
+        return 1.0;
     }
 
     float3 getFresnelSchlick(void)
     {
-        return reflectedRadiance + (1.0 - reflectedRadiance)* getSchlickFresnel(LdotH);
+        return reflectedRadiance + ((1.0 - reflectedRadiance) * pow((1.0 - VdotH), 5.0));
     }
 
     float3 getFresnelSphericalGaussian(void)
     {
         float gaussianPower = ((-5.55473 * LdotH) - 6.98316) * LdotH;
-        return reflectedRadiance + (1.0 - reflectedRadiance) * pow(2.0, gaussianPower);
+        return reflectedRadiance + ((1.0 - reflectedRadiance) * pow(2.0, gaussianPower));
     }
 
     float3 getFresnel(void)
     {
-        float3 fresnel = reflectedRadiance;
         switch (Options::BRDF::Fresnel::Selection)
         {
         case Options::BRDF::Fresnel::Schlick:
-            fresnel *= getFresnelSchlick();
-            break;
+            return reflectedRadiance * getFresnelSchlick();
 
         case Options::BRDF::Fresnel::SphericalGaussian:
-            fresnel *= getFresnelSphericalGaussian();
-            break;
+            return reflectedRadiance  * getFresnelSphericalGaussian();
         };
 
-        return fresnel;
+        return reflectedRadiance;
     }
 
     float getLambert(void)
@@ -329,8 +256,8 @@ struct LightData
         if (Options::BRDF::UseHalfLambert)
         {
             // http://developer.valvesoftware.com/wiki/Half_Lambert
-            float halfLdotN = ((dot(surfaceNormal, lightDirection) * 0.5) + 0.5);
-            return pow(halfLdotN, 2.0);
+            float halfLdotN = saturate((dot(surfaceNormal, lightDirection) * 0.5) + 0.5);
+            return square(halfLdotN);
         }
         else
         {
@@ -338,23 +265,26 @@ struct LightData
         }
     }
 
-    float3 getDiffuseColor(void)
-    {
-        float fresnelLight = getSchlickFresnel(NdotL);
-        float fresnelView = getSchlickFresnel(NdotV);
-        float fresnelDiffuse90 = 0.5 + 2.0 * LdotH * LdotH * materialRoughness;
-        float f0 = lerp(1.0, fresnelDiffuse90, fresnelLight) * lerp(1.0, fresnelDiffuse90, fresnelView);
-        return f0 * lerp(materialAlbedo, 1.0, materialMetallic);
-    }
-
     float3 getSpecularColor(void)
     {
-        return ((getNormalDistribution() * getFresnel() * getGeometricShadowing()) / (4.0 * (NdotL * NdotV)));
+        return ((getNormalDistribution() * getGeometricShadowing() * getFresnel()) / (4.0 * (NdotL * NdotV)));
     }
 
-    float3 getIrradiance(void)
+    float3 getIrradiance(float3 _lightDirection, float3 _lightRadiance, float _attenuation)
     {
-        prepare();
+        lightDirection = _lightDirection;
+        lightRadiance = _lightRadiance;
+        attenuation = _attenuation;
+        reflectedRadiance = lerp(materialAlbedo, lightRadiance, materialMetallic);
+        lightReflectDirection = reflect(-lightDirection, surfaceNormal);
+        float3 halfDirection = normalize(viewDirection + lightDirection);
+        NdotL = saturate(dot(surfaceNormal, lightDirection));
+        NdotH = saturate(dot(surfaceNormal, halfDirection));
+        VdotH = saturate(dot(viewDirection, halfDirection));
+        LdotH = saturate(dot(lightDirection, halfDirection));
+        LdotV = saturate(dot(lightDirection, viewDirection));
+        RdotV = saturate(dot(lightReflectDirection, viewDirection));
+
         switch (Options::BRDF::Debug::Selection)
         {
         case Options::BRDF::Debug::ShowAttenuation:
@@ -370,7 +300,7 @@ struct LightData
             return getGeometricShadowing();
         };
 
-        return max(0.0, ((getDiffuseColor() + getSpecularColor()) * getLambert() * attenuation * lightRadiance));
+        return (getSpecularColor() * getLambert() * attenuation * lightRadiance);
     }
 };
 
@@ -393,18 +323,6 @@ uint getClusterOffset(float2 screenPosition, float surfaceDepth)
 
 float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 surfaceNormal, float3 materialAlbedo, float materialRoughness, float materialMetallic)
 {
-    float materialAlpha;
-    if (Options::BRDF::UseDisneyAlpha)
-    {
-        // materialAlpha modifications by Disney - s2012_pbs_disney_brdf_notes_v2.pdf
-        materialAlpha = pow(materialRoughness, 2.0);
-    }
-    else
-    {
-        // reduce roughness range from [0 .. 1] to [0.5 .. 1]
-        materialAlpha = pow(0.5 + materialRoughness * 0.5, 2.0);
-    }
-
     switch (Options::BRDF::Debug::Selection)
     {
     case Options::BRDF::Debug::ShowAlbedo:
@@ -414,7 +332,7 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
         return surfaceNormal;
 
     case Options::BRDF::Debug::ShowRoughness:
-        return materialAlpha;
+        return materialRoughness;
 
     case Options::BRDF::Debug::ShowMetallic:
         return materialMetallic;
@@ -425,7 +343,8 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
     LightData data;
     data.surfaceNormal = surfaceNormal;
     data.materialAlbedo = materialAlbedo;
-    data.materialRoughness = materialAlpha;
+    data.materialRoughness = materialRoughness;
+    data.materialAlpha = pow(materialRoughness, 2.0);;
     data.materialMetallic = materialMetallic;
     data.viewDirection = viewDirection;
     data.reflectedViewDirection = reflect(-viewDirection, surfaceNormal);
@@ -437,10 +356,7 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
     {
 		const Lights::DirectionalData lightData = Lights::directionalList[directionalIndex];
 
-        data.lightDirection = lightData.direction;
-        data.lightRadiance = lightData.radiance;
-        data.attenuation = 1.0;
-        surfaceIrradiance += data.getIrradiance();
+        surfaceIrradiance += data.getIrradiance(lightData.direction, lightData.radiance, 1.0);
     }
 
     const uint clusterOffset = getClusterOffset(screenCoord, surfacePosition.z);
@@ -460,11 +376,7 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
         float lightDistance = length(closestPoint);
         float3 lightDirection = normalize(closestPoint);
         float attenuation = getFalloff(lightDistance, lightData.range);
-
-        data.lightDirection = lightDirection;
-        data.lightRadiance = lightData.radiance;
-        data.attenuation = attenuation;
-        surfaceIrradiance += data.getIrradiance();
+        surfaceIrradiance += data.getIrradiance(lightDirection, lightData.radiance, attenuation);
     };
 
     while (indexOffset < spotLightEnd)
@@ -478,11 +390,7 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
         float rho = max(0.0, (dot(lightData.direction, -lightDirection)));
         float spotFactor = pow(max(0.0, (rho - lightData.outerAngle) / (lightData.innerAngle - lightData.outerAngle)), lightData.coneFalloff);
         float attenuation = (getFalloff(lightDistance, lightData.range) * spotFactor);
-
-        data.lightDirection = lightDirection;
-        data.lightRadiance = lightData.radiance;
-        data.attenuation = attenuation;
-        surfaceIrradiance += data.getIrradiance();
+        surfaceIrradiance += data.getIrradiance(lightDirection, lightData.radiance, attenuation);
     };
 
     return surfaceIrradiance;

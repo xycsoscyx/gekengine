@@ -99,10 +99,9 @@
                     "ShowRoughness",
                     "ShowMetallic",
                     "ShowAttenuation",
-                    "ShowDiffuse",
                     "ShowDistribution",
-                    "ShowFresnel",
-                    "ShowGeometricShadow"
+                    "ShowGeometricShadow",
+                    "ShowFresnel"
                 ]
             },
             "NormalDistribution": {
@@ -145,9 +144,8 @@
                     "Implicit"
                 ]
             },
-            "UseHalfLambert": true,
-            "UseDisneyAlpha": true
-        },
+            "UseHalfLambert": true
+        }
     },
     "passes": [
         {
