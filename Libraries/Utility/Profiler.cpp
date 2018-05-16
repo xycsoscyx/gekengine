@@ -33,8 +33,8 @@ namespace Gek
 		{
 			Hash processIdentifier = 0;
 			Hash threadIdentifier = 0;
-			std::string_view category = String::Empty;
-			std::string_view name = String::Empty;
+			std::string category = String::Empty;
+			std::string name = String::Empty;
 			TimeFormat startTime;
 			TimeFormat duration;
 			char eventType = 0;
