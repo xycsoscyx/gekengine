@@ -389,8 +389,8 @@ namespace Gek
                         break;
 
                     case Window::Key::F2:
-                        changeShader("solid", "Fresnel");
-                        changeShader("glass", "Fresnel");
+                        changeShader("solid", "NormalDistribution");
+                        changeShader("glass", "NormalDistribution");
                         resources->reload();
                         break;
 
@@ -401,8 +401,8 @@ namespace Gek
                         break;
 
                     case Window::Key::F4:
-                        changeShader("solid", "NormalDistribution");
-                        changeShader("glass", "NormalDistribution");
+                        changeShader("solid", "Fresnel");
+                        changeShader("glass", "Fresnel");
                         resources->reload();
                         break;
                     };

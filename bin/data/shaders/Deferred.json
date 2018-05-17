@@ -99,7 +99,7 @@
                     "ShowRoughness",
                     "ShowMetallic",
                     "ShowAttenuation",
-                    "ShowDistribution",
+                    "ShowNormalDistribution",
                     "ShowGeometricShadow",
                     "ShowFresnel"
                 ]

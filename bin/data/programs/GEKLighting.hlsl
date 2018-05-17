@@ -9,11 +9,13 @@ struct LightData
     float materialRoughness;
     float materialAlpha;
     float materialMetallic;
+    float materialNonMetallic;
     float3 lightDirection;
-    float3 lightRadiance;
-    float attenuation;
-    float3 reflectedRadiance;
     float3 lightReflectDirection;
+    float3 lightRadiance;
+    float3 diffuseRadiance;
+    float3 specularRadiance;
+    float attenuation;
     float NdotV;
     float NdotL;
     float NdotH;
@@ -21,6 +23,20 @@ struct LightData
     float LdotH;
     float LdotV;
     float RdotV;
+
+    void initialize(float2 _screenCoord, float3 _surfacePosition, float3 _surfaceNormal, float3 _materialAlbedo, float _materialRoughness, float _materialMetallic)
+    {
+        surfaceNormal = _surfaceNormal;
+        materialAlbedo = _materialAlbedo;
+        materialRoughness = _materialRoughness;
+        materialAlpha = pow(_materialRoughness, 2.0);;
+        materialMetallic = _materialMetallic;
+        materialNonMetallic = 1.0 - _materialMetallic;
+        viewDirection = -normalize(_surfacePosition);
+        reflectedViewDirection = reflect(-viewDirection, _surfaceNormal);
+        diffuseRadiance = _materialAlbedo * materialNonMetallic;
+        NdotV = saturate(dot(_surfaceNormal, viewDirection));
+    }
 
     float getNormalDistributionBeckmann(void)
     {
@@ -53,24 +69,29 @@ struct LightData
         return materialAlphaSquared / (Math::Pi * square(NdotHSquared * (materialAlphaSquared - 1.0) + 1.0));
     }
 
-    float getNormalDistribution(void)
+    float3 getNormalDistribution(void)
     {
+        float3 normalDistribution = specularRadiance;
         switch (Options::BRDF::NormalDistribution::Selection)
         {
         case Options::BRDF::NormalDistribution::Beckmann:
-            return getNormalDistributionBeckmann();
+            normalDistribution *= getNormalDistributionBeckmann();
+            break;
 
         case Options::BRDF::NormalDistribution::Gaussian:
-            return getNormalDistributionGaussian();
+            normalDistribution *= getNormalDistributionGaussian();
+            break;
 
         case Options::BRDF::NormalDistribution::GGX:
-            return getNormalDistributionGGX();
+            normalDistribution *= getNormalDistributionGGX();
+            break;
 
         case Options::BRDF::NormalDistribution::TrowbridgeReitz:
-            return getNormalDistributionTrowbridgeReitz();
+            normalDistribution *= getNormalDistributionTrowbridgeReitz();
+            break;
         };
 
-        return 1.0;
+        return normalDistribution;
     }
 
     float getGeometricShadowingImplicit(void)
@@ -90,8 +111,8 @@ struct LightData
 
     float getGeometricShadowingDuer(void)
     {
-        float3 LplusV = lightDirection + viewDirection;
-        return dot(LplusV, LplusV) * pow(dot(LplusV, surfaceNormal), -4.0);
+        float3 LplusV = normalize(lightDirection + viewDirection);
+        return dot(LplusV, LplusV) * pow(dot(LplusV, surfaceNormal), 4.0);
     }
 
     float getGeometricShadowingNeumann(void)
@@ -172,83 +193,103 @@ struct LightData
 
     float getGeometricShadowing(void)
     {
+        float geometricShadowing = 1.0;
         switch (Options::BRDF::GeometricShadowing::Selection)
         {
         case Options::BRDF::GeometricShadowing::AshikhminShirley:
-            return getGeometricShadowingAshikhminShirley();
+            geometricShadowing = getGeometricShadowingAshikhminShirley();
+            break;
 
         case Options::BRDF::GeometricShadowing::AshikhminPremoze:
-            return getGeometricShadowingAshikhminPremoze();
+            geometricShadowing = getGeometricShadowingAshikhminPremoze();
+            break;
 
         case Options::BRDF::GeometricShadowing::Duer:
-            return getGeometricShadowingDuer();
+            geometricShadowing = getGeometricShadowingDuer();
+            break;
 
         case Options::BRDF::GeometricShadowing::Neumann:
-            return getGeometricShadowingNeumann();
+            geometricShadowing = getGeometricShadowingNeumann();
+            break;
 
         case Options::BRDF::GeometricShadowing::Kelemen:
-            return getGeometricShadowingKelemen();
+            geometricShadowing = getGeometricShadowingKelemen();
+            break;
 
         case Options::BRDF::GeometricShadowing::ModifiedKelemen:
-            return getGeometricShadowingModifiedKelemen();
+            geometricShadowing = getGeometricShadowingModifiedKelemen();
+            break;
 
         case Options::BRDF::GeometricShadowing::CookTorrence:
-            return getGeometricShadowingCookTorrence();
+            geometricShadowing = getGeometricShadowingCookTorrence();
+            break;
 
         case Options::BRDF::GeometricShadowing::Ward:
-            return getGeometricShadowingWard();
+            geometricShadowing = getGeometricShadowingWard();
+            break;
 
         case Options::BRDF::GeometricShadowing::Kurt:
-            return getGeometricShadowingKurt();
+            geometricShadowing = getGeometricShadowingKurt();
+            break;
 
         case Options::BRDF::GeometricShadowing::WalterEtAl:
-            return getGeometricShadowingWalterEtAl(NdotL) * getGeometricShadowingWalterEtAl(NdotV);
+            geometricShadowing = getGeometricShadowingWalterEtAl(NdotL) * getGeometricShadowingWalterEtAl(NdotV);
+            break;
 
         case Options::BRDF::GeometricShadowing::Beckman:
-            return getGeometricShadowingBeckman(NdotL) * getGeometricShadowingBeckman(NdotV);
+            geometricShadowing = getGeometricShadowingBeckman(NdotL) * getGeometricShadowingBeckman(NdotV);
+            break;
 
         case Options::BRDF::GeometricShadowing::GGX:
-            return getGeometricShadowingGGX(NdotL) * getGeometricShadowingGGX(NdotV);
+            geometricShadowing = getGeometricShadowingGGX(NdotL) * getGeometricShadowingGGX(NdotV);
+            break;
 
         case Options::BRDF::GeometricShadowing::Schlick:
-            return getGeometricShadowingSchlick(NdotL) * getGeometricShadowingSchlick(NdotV);
+            geometricShadowing = getGeometricShadowingSchlick(NdotL) * getGeometricShadowingSchlick(NdotV);
+            break;
 
         case Options::BRDF::GeometricShadowing::SchlickBeckman:
-            return getGeometricShadowingSchlickBeckman(NdotL) * getGeometricShadowingSchlickBeckman(NdotV);
+            geometricShadowing = getGeometricShadowingSchlickBeckman(NdotL) * getGeometricShadowingSchlickBeckman(NdotV);
+            break;
 
         case Options::BRDF::GeometricShadowing::SchlickGGX:
-            return getGeometricShadowingSchlickGGX(NdotL) * getGeometricShadowingSchlickGGX(NdotV);
+            geometricShadowing = getGeometricShadowingSchlickGGX(NdotL) * getGeometricShadowingSchlickGGX(NdotV);
+            break;
 
         case Options::BRDF::GeometricShadowing::Implicit:
-            return getGeometricShadowingImplicit();
+            geometricShadowing = getGeometricShadowingImplicit();
+            break;
         };
 
-        return 1.0;
+        return geometricShadowing;
     }
 
     float3 getFresnelSchlick(void)
     {
-        return reflectedRadiance + ((1.0 - reflectedRadiance) * pow((1.0 - VdotH), 5.0));
+        return specularRadiance + (1.0 - specularRadiance) * pow(LdotH, 5.0);
     }
 
     float3 getFresnelSphericalGaussian(void)
     {
         float gaussianPower = ((-5.55473 * LdotH) - 6.98316) * LdotH;
-        return reflectedRadiance + ((1.0 - reflectedRadiance) * pow(2.0, gaussianPower));
+        return specularRadiance + (1.0 - specularRadiance) * pow(2.0, gaussianPower);
     }
 
     float3 getFresnel(void)
     {
+        float3 fresnel = specularRadiance;
         switch (Options::BRDF::Fresnel::Selection)
         {
         case Options::BRDF::Fresnel::Schlick:
-            return reflectedRadiance * getFresnelSchlick();
+            fresnel *= getFresnelSchlick();
+            break;
 
         case Options::BRDF::Fresnel::SphericalGaussian:
-            return reflectedRadiance  * getFresnelSphericalGaussian();
+            fresnel *= getFresnelSphericalGaussian();
+            break;
         };
 
-        return reflectedRadiance;
+        return fresnel;
     }
 
     float getLambert(void)
@@ -265,18 +306,13 @@ struct LightData
         }
     }
 
-    float3 getSpecularColor(void)
-    {
-        return ((getNormalDistribution() * getGeometricShadowing() * getFresnel()) / (4.0 * (NdotL * NdotV)));
-    }
-
     float3 getIrradiance(float3 _lightDirection, float3 _lightRadiance, float _attenuation)
     {
         lightDirection = _lightDirection;
+        lightReflectDirection = reflect(-lightDirection, surfaceNormal);
         lightRadiance = _lightRadiance;
         attenuation = _attenuation;
-        reflectedRadiance = lerp(materialAlbedo, lightRadiance, materialMetallic);
-        lightReflectDirection = reflect(-lightDirection, surfaceNormal);
+        specularRadiance = lerp(lightRadiance, lightRadiance * materialAlbedo, materialMetallic);
         float3 halfDirection = normalize(viewDirection + lightDirection);
         NdotL = saturate(dot(surfaceNormal, lightDirection));
         NdotH = saturate(dot(surfaceNormal, halfDirection));
@@ -290,17 +326,30 @@ struct LightData
         case Options::BRDF::Debug::ShowAttenuation:
             return attenuation;
 
-        case Options::BRDF::Debug::ShowDistribution:
+        case Options::BRDF::Debug::ShowNormalDistribution:
             return getNormalDistribution();
-
-        case Options::BRDF::Debug::ShowFresnel:
-            return getFresnel();
 
         case Options::BRDF::Debug::ShowGeometricShadow:
             return getGeometricShadowing();
+
+        case Options::BRDF::Debug::ShowFresnel:
+            return getFresnel();
         };
 
-        return (getSpecularColor() * getLambert() * attenuation * lightRadiance);
+        float lambert = getLambert();
+
+        float3 diffuseRadiance = lerp(materialAlbedo, 0.0, materialMetallic);
+        float3 diffuseIrradiance = (diffuseRadiance * Math::InversePi);
+
+        float3 specularIrradiance = ((getNormalDistribution() * getGeometricShadowing() * getFresnel()) / (4.0 * NdotV * NdotL));
+
+        /* Maintain energy conservation:
+            Energy conservation is a restriction on the reflection model that requires that the total amount of reflected light cannot be more than the incoming light.
+            http://www.rorydriscoll.com/2009/01/25/energy-conservation-in-games/
+        */
+        diffuseIrradiance *= (1.0 - specularIrradiance);
+
+        return (diffuseIrradiance + specularIrradiance) * lambert * attenuation * lightRadiance;
     }
 };
 
@@ -338,20 +387,10 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
         return materialMetallic;
     };
 
-    float3 viewDirection = -normalize(surfacePosition);
-
     LightData data;
-    data.surfaceNormal = surfaceNormal;
-    data.materialAlbedo = materialAlbedo;
-    data.materialRoughness = materialRoughness;
-    data.materialAlpha = pow(materialRoughness, 2.0);;
-    data.materialMetallic = materialMetallic;
-    data.viewDirection = viewDirection;
-    data.reflectedViewDirection = reflect(-viewDirection, surfaceNormal);
-    data.NdotV = saturate(dot(surfaceNormal, viewDirection));
+    data.initialize(screenCoord, surfacePosition, surfaceNormal, materialAlbedo, materialRoughness, materialMetallic);
 
     float3 surfaceIrradiance = 0.0;
-
     for (uint directionalIndex = 0; directionalIndex < Lights::directionalCount; directionalIndex++)
     {
 		const Lights::DirectionalData lightData = Lights::directionalList[directionalIndex];
