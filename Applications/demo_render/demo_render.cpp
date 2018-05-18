@@ -17,7 +17,7 @@ namespace Gek
 	class Core
 	{
 	private:
-		JSON::Object configuration;
+		JSON configuration;
 
 		ContextPtr context;
 		WindowPtr window;
@@ -85,7 +85,7 @@ namespace Gek
 
 			context = Context::Create(searchPathList);
 			context->addDataPath(FileSystem::CombinePaths(rootPath.getString(), "data"));
-			configuration = JSON::Load(getContext()->findDataPath("config.json"sv));
+			configuration.load(getContext()->findDataPath("config.json"sv));
 
 			Window::Description windowDescription;
 			windowDescription.allowResize = true;
@@ -113,7 +113,6 @@ namespace Gek
 			Render::Device::Description deviceDescription;
 			renderDevice = getContext()->createClass<Render::Device>("Default::Render::Device", window.get(), deviceDescription);
 
-			uint32_t preferredDisplayMode = 0;
 			auto fullDisplayModeList = renderDevice->getDisplayModeList(deviceDescription.displayFormat);
 			for (auto const &displayMode : fullDisplayModeList)
 			{
@@ -123,7 +122,9 @@ namespace Gek
 				}
 			}
 
-			for (auto const &displayMode : displayModeList)
+            uint32_t preferredHeight = 0;
+            uint32_t preferredDisplayMode = 0;
+            for (auto const &displayMode : displayModeList)
 			{
 				auto currentDisplayMode = displayModeStringList.size();
 				std::string displayModeString(String::Format("{}x{}, {}hz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
@@ -134,20 +135,30 @@ namespace Gek
 					break;
 
 				case Render::DisplayMode::AspectRatio::_16x9:
-					preferredDisplayMode = (preferredDisplayMode == 0 && displayMode.height > 800 ? currentDisplayMode : preferredDisplayMode);
+                    if (displayMode.height > 800 && displayMode.height > preferredHeight)
+                    {
+                        preferredHeight = displayMode.height;
+                        preferredDisplayMode = currentDisplayMode;
+                    }
+
 					displayModeString.append(" (16x9)");
 					break;
 
 				case Render::DisplayMode::AspectRatio::_16x10:
-					preferredDisplayMode = (preferredDisplayMode == 0 && displayMode.height > 800 ? currentDisplayMode : preferredDisplayMode);
-					displayModeString.append(" (16x10)");
+                    if (displayMode.height > 800 && displayMode.height > preferredHeight)
+                    {
+                        preferredHeight = displayMode.height;
+                        preferredDisplayMode = currentDisplayMode;
+                    }
+
+                    displayModeString.append(" (16x10)");
 					break;
 				};
 
 				displayModeStringList.push_back(displayModeString);
 			}
 
-			setDisplayMode(JSON::Reference(configuration).get("display").get("mode").convert(preferredDisplayMode));
+            setDisplayMode(configuration.get("display").get("mode").as<uint32_t>(preferredDisplayMode));
 
 			gui->renderQueue = renderDevice->createQueue(0);
 
@@ -320,7 +331,7 @@ namespace Gek
 			};
 
 			window->setVisibility(true);
-			setFullScreen(JSON::Reference(configuration).get("display").get("fullScreen").convert(false));
+            setFullScreen(configuration.get("display").get("fullScreen").as<bool>(false));
 			engineRunning = true;
 			windowActive = true;
 		}
@@ -776,7 +787,7 @@ namespace Gek
 					break;
 
 				case Window::Key::F1:
-					configuration["editor"]["active"] = !JSON::Reference(configuration).get("editor").get("active").convert(false);
+                    configuration["editor"]["active"] = !configuration.get("editor").get("active").as<bool>(false);
 					break;
 				};
 			}

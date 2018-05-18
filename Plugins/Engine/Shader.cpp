@@ -128,6 +128,21 @@ namespace Gek
                     globalOptions[enginePair.name()] = enginePair.value();
                 }
 
+                for (auto &globalPair : globalOptions.members())
+                {
+                    if (globalPair.name() == "#import")
+                    {
+                        auto importName = JSON::Reference(globalPair.value()).convert(String::Empty);
+                        globalOptions.erase(globalPair.name());
+
+                        const JSON::Instance importOptions = JSON::Load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", importName).withExtension(".json")));
+                        for (auto &importPair : importOptions.getMembers())
+                        {
+                            globalOptions[importPair.name()] = importPair.value();
+                        }
+                    }
+                }
+
                 drawOrder = shaderNode.get("requires").getArray().size();
                 for (auto &requires : shaderNode.get("requires").getArray())
                 {
@@ -384,7 +399,7 @@ namespace Gek
                         }
                     }
 
-                    JSON::Object passOptions(globalOptions);
+                    JSON passOptions(globalOptions);
                     if (passNode.has("options"))
                     {
                         auto overrideOptions = passNode.get("options");

@@ -17,14 +17,14 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(Components::PointLight const * const data, JSON::Object &componentData) const
+        void save(Components::PointLight const * const data, JSON &componentData) const
         {
             componentData.set("range", data->range);
             componentData.set("radius", data->radius);
             componentData.set("intensity", data->intensity);
         }
 
-        void load(Components::PointLight * const data, JSON::Reference componentData)
+        void load(Components::PointLight * const data, JSON &componentData)
         {
             data->range = parse(componentData.get("range"), 0.0f);
             data->radius = parse(componentData.get("radius"), 0.0f);
@@ -71,7 +71,7 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(Components::SpotLight const * const data, JSON::Object &componentData) const
+        void save(Components::SpotLight const * const data, JSON &componentData) const
         {
             componentData.set("range", data->range);
             componentData.set("radius", data->radius);
@@ -81,7 +81,7 @@ namespace Gek
             componentData.set("coneFalloff", data->coneFalloff);
         }
 
-        void load(Components::SpotLight * const data, JSON::Reference componentData)
+        void load(Components::SpotLight * const data, JSON &componentData)
         {
             data->range = parse(componentData.get("range"), 0.0f);
             data->radius = parse(componentData.get("radius"), 0.0f);
@@ -145,12 +145,12 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(Components::DirectionalLight const * const data, JSON::Object &componentData) const
+        void save(Components::DirectionalLight const * const data, JSON &componentData) const
         {
             componentData.set("intensity", data->intensity);
         }
 
-        void load(Components::DirectionalLight * const data, JSON::Reference componentData)
+        void load(Components::DirectionalLight * const data, JSON &componentData)
         {
             data->intensity = parse(componentData.get("intensity"), 0.0f);
         }

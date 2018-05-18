@@ -27,7 +27,7 @@ namespace Gek
             }
 
             // Plugin::Component
-            void save(Components::Player const * const data, JSON::Object &componentData) const
+            void save(Components::Player const * const data, JSON &componentData) const
             {
                 componentData.set("height", data->height);
                 componentData.set("outerRadius", data->outerRadius);
@@ -35,7 +35,7 @@ namespace Gek
                 componentData.set("stairStep", data->stairStep);
             }
 
-            void load(Components::Player * const data, JSON::Reference componentData)
+            void load(Components::Player * const data, JSON &componentData)
             {
                 data->height = parse(componentData.get("height"), 0.0f);
                 data->outerRadius = parse(componentData.get("outerRadius"), 0.0f);

@@ -1551,7 +1551,7 @@ namespace Gek
 					}
 					else
 					{
-						static const JSON::Object Black = JSON::Array({ 0.0f, 0.0f, 0.0f, 1.0f });
+						static const JSON Black = JSON::Array({ 0.0f, 0.0f, 0.0f, 1.0f });
 						auto blackPattern = resources->createPattern("color", Black);
 						renderOverlay(videoContext, blackPattern, ResourceHandle());
 					}

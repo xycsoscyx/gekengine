@@ -71,23 +71,27 @@ struct LightData
 
     float3 getNormalDistribution(void)
     {
-        float3 normalDistribution = specularRadiance;
+        float3 normalDistribution;
         switch (Options::BRDF::NormalDistribution::Selection)
         {
         case Options::BRDF::NormalDistribution::Beckmann:
-            normalDistribution *= getNormalDistributionBeckmann();
+            normalDistribution = getNormalDistributionBeckmann();
             break;
 
         case Options::BRDF::NormalDistribution::Gaussian:
-            normalDistribution *= getNormalDistributionGaussian();
+            normalDistribution = getNormalDistributionGaussian();
             break;
 
         case Options::BRDF::NormalDistribution::GGX:
-            normalDistribution *= getNormalDistributionGGX();
+            normalDistribution = getNormalDistributionGGX();
             break;
 
         case Options::BRDF::NormalDistribution::TrowbridgeReitz:
-            normalDistribution *= getNormalDistributionTrowbridgeReitz();
+            normalDistribution = getNormalDistributionTrowbridgeReitz();
+            break;
+
+        default:
+            normalDistribution = 0;
             break;
         };
 
@@ -193,7 +197,7 @@ struct LightData
 
     float getGeometricShadowing(void)
     {
-        float geometricShadowing = 1.0;
+        float geometricShadowing;
         switch (Options::BRDF::GeometricShadowing::Selection)
         {
         case Options::BRDF::GeometricShadowing::AshikhminShirley:
@@ -259,6 +263,10 @@ struct LightData
         case Options::BRDF::GeometricShadowing::Implicit:
             geometricShadowing = getGeometricShadowingImplicit();
             break;
+
+        default:
+            geometricShadowing = 0;
+            break;
         };
 
         return geometricShadowing;
@@ -277,15 +285,19 @@ struct LightData
 
     float3 getFresnel(void)
     {
-        float3 fresnel = specularRadiance;
+        float3 fresnel;
         switch (Options::BRDF::Fresnel::Selection)
         {
         case Options::BRDF::Fresnel::Schlick:
-            fresnel *= getFresnelSchlick();
+            fresnel = getFresnelSchlick();
             break;
 
         case Options::BRDF::Fresnel::SphericalGaussian:
-            fresnel *= getFresnelSphericalGaussian();
+            fresnel = getFresnelSphericalGaussian();
+            break;
+
+        default:
+            fresnel = 0;
             break;
         };
 
@@ -348,8 +360,7 @@ struct LightData
             http://www.rorydriscoll.com/2009/01/25/energy-conservation-in-games/
         */
         diffuseIrradiance *= (1.0 - specularIrradiance);
-
-        return (diffuseIrradiance + specularIrradiance) * lambert * attenuation * lightRadiance;
+        return (diffuseIrradiance + specularIrradiance) * lambert * attenuation;
     }
 };
 

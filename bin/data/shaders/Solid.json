@@ -85,63 +85,7 @@
     },
     "output": "finalBuffer",
     "options": {
-        "BRDF": {
-            "Debug": {
-                "selection": "None",
-                "options": [
-                    "None",
-                    "ShowAlbedo",
-                    "ShowNormal",
-                    "ShowRoughness",
-                    "ShowMetallic",
-                    "ShowAttenuation",
-                    "ShowNormalDistribution",
-                    "ShowGeometricShadow",
-                    "ShowFresnel"
-                ]
-            },
-            "NormalDistribution": {
-                "selection": "TrowbridgeReitz",
-                "options": [
-                    "None",
-                    "Beckmann",
-                    "Gaussian",
-                    "GGX",
-                    "TrowbridgeReitz"
-                ]
-            },
-            "Fresnel": {
-                "selection": "Schlick",
-                "options": [
-                    "None",
-                    "Schlick",
-                    "SphericalGaussian"
-                ]
-            },
-            "GeometricShadowing": {
-                "selection": "CookTorrence",
-                "options": [
-                    "None",
-                    "AshikhminShirley",
-                    "AshikhminPremoze",
-                    "Duer",
-                    "Neumann",
-                    "Kelemen",
-                    "ModifiedKelemen",
-                    "CookTorrence",
-                    "Ward",
-                    "Kurt",
-                    "WalterEtAl",
-                    "Beckman",
-                    "GGX",
-                    "Schlick",
-                    "SchlickBeckman",
-                    "SchlickGGX",
-                    "Implicit"
-                ]
-            },
-            "UseHalfLambert": true
-        },
+        "#import":  "Lighting.json",
         "AmbientOcclusion": {
             "Enable": false,
             "Radius": 1.0,

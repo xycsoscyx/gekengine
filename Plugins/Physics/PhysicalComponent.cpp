@@ -20,12 +20,12 @@ namespace Gek
             }
 
             // Plugin::Component
-            void save(Components::Physical const * const data, JSON::Object &componentData) const
+            void save(Components::Physical const * const data, JSON &componentData) const
             {
                 componentData.set("mass", data->mass);
             }
 
-            void load(Components::Physical * const data, JSON::Reference componentData)
+            void load(Components::Physical * const data, JSON &componentData)
             {
                 data->mass = parse(componentData.get("mass"), 0.0f);
             }

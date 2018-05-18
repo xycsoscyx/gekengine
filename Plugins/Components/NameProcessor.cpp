@@ -19,12 +19,12 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(Components::Name const * const data, JSON::Object &componentData) const
+        void save(Components::Name const * const data, JSON &componentData) const
         {
             componentData = data->name;
         }
 
-        void load(Components::Name * const data, JSON::Reference componentData)
+        void load(Components::Name * const data, JSON &componentData)
         {
             data->name = componentData.convert(String::Empty);
         }

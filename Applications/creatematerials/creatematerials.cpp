@@ -39,7 +39,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                     materialName = materialName.substr(texturesPath.size() + 1);
 					LockedWrite{ std::cout } << "> Material Found: " << materialName;
 
-                    JSON::Object renderState;
+                    JSON renderState;
                     std::map<std::string, std::map<uint32_t, std::pair<FileSystem::Path, std::string>>> fileMap;
                     textureSetPath.findFiles([&](FileSystem::Path const &filePath) -> bool
                     {
@@ -47,7 +47,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 						std::string extension(String::GetLower(filePath.getExtension()));
                         if (extension == ".json")
                         {
-                            renderState = JSON::Load(filePath);
+                            renderState.load(filePath);
                         }
                         else if (extension == ".dds")
                         {
@@ -156,7 +156,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
                     if (!fileMap.empty())
                     {
-                        JSON::Object dataNode;
+                        JSON dataNode;
                         for(auto &mapSearch : fileMap)
                         {
                             auto mapType(String::GetLower(mapSearch.first));
@@ -173,20 +173,20 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                                 sourceFilePath.rename(filePath);
                             }
 
-                            JSON::Object node;
+                            JSON node;
                             node["file"] = textureName;
                             if (mapType == "albedo")
                             {
                                 node["flags"] = "sRGB";
                             }
 
-                            dataNode.set(mapType, node);
+                            dataNode[mapType] = node;
                         }
 
                         auto materialPath(FileSystem::CombinePaths(materialsPath, materialName + ".json"));
                         materialPath.getParentPath().createChain();
 
-                        JSON::Object shaderNode;
+                        JSON shaderNode;
                         shaderNode["data"] = dataNode;
                         if (!renderState.is_null())
                         {
@@ -202,9 +202,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                             shaderNode["default"] = "solid";
                         }
 
-                        JSON::Object materialNode;
+                        JSON materialNode;
                         materialNode["shader"] = shaderNode;
-                        JSON::Reference(materialNode).save(materialPath);
+                        materialNode.save(materialPath);
                     }
 				}
 

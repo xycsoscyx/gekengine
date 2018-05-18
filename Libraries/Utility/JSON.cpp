@@ -1,547 +1,188 @@
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/Context.hpp"
+#include <jsoncons/json.hpp>
 
 namespace Gek
 {
-    namespace JSON
+    const JSON::Array JSON::EmptyArray = JSON::Array();
+    const JSON::Object JSON::EmptyObject = JSON::Object();
+    const JSON JSON::Empty = JSON();
+
+    void LoadJSON(JSON &value, jsoncons::json const &object)
     {
-		const Object EmptyObject = Object();
-		const Object EmptyArray = Array();
-
-        std::string Parse(ShuntingYard &shuntingYard, Object const &object, std::string_view defaultValue)
+        if (object.is_empty() || object.is_null())
         {
-			if (object.is_empty() || object.is_null())
-			{
-				return std::string(defaultValue);
-			}
-
-            switch (object.type_id())
-            {
-            case jsoncons::value_type::null_t:
-            case jsoncons::value_type::array_t:
-            case jsoncons::value_type::object_t:
-                return std::string(defaultValue);
-
-            default:
-                return object.as_string();
-            };
+            return;
         }
 
-        bool Parse(ShuntingYard &shuntingYard, Object const &object, bool defaultValue)
+        switch (object.type_id())
         {
-			if (object.is_empty() || object.is_null())
-			{
-				return defaultValue;
-			}
+        case jsoncons::value_type::small_string_t:
+        case jsoncons::value_type::string_t:
+            value = object.as_string();
+            break;
 
-			switch (object.type_id())
+        case jsoncons::value_type::bool_t:
+            value = object.as_bool();
+            break;
+
+        case jsoncons::value_type::double_t:
+            value = float(object.as_double());
+            break;
+
+        case jsoncons::value_type::integer_t:
+            value = object.as_integer();
+            break;
+
+        case jsoncons::value_type::uinteger_t:
+            value = object.as_uinteger();
+            break;
+
+        case jsoncons::value_type::array_t:
+            if (true)
             {
-            case jsoncons::value_type::small_string_t:
-            case jsoncons::value_type::string_t:
-                return shuntingYard.evaluate(object.as_string()).value_or(defaultValue) != 0.0f;
-
-            case jsoncons::value_type::bool_t:
-                return object.var_.bool_data_cast()->value();
-
-            case jsoncons::value_type::double_t:
-                return object.var_.double_data_cast()->value() != 0.0;
-
-            case jsoncons::value_type::integer_t:
-                return object.var_.integer_data_cast()->value() != 0;
-
-            case jsoncons::value_type::uinteger_t:
-                return object.var_.uinteger_data_cast()->value() != 0;
-
-            default:
-                return defaultValue;
-            };
-        }
-
-        int32_t Parse(ShuntingYard &shuntingYard, Object const &object, int32_t defaultValue)
-        {
-			if (object.is_empty() || object.is_null())
-			{
-				return defaultValue;
-			}
-
-			switch (object.type_id())
-            {
-            case jsoncons::value_type::small_string_t:
-            case jsoncons::value_type::string_t:
-                return static_cast<int32_t>(shuntingYard.evaluate(object.as_string()).value_or(defaultValue));
-
-            case jsoncons::value_type::double_t:
-                return static_cast<int64_t>(object.var_.double_data_cast()->value());
-
-            case jsoncons::value_type::integer_t:
-                return static_cast<int64_t>(object.var_.integer_data_cast()->value());
-
-            case jsoncons::value_type::uinteger_t:
-                return static_cast<int64_t>(object.var_.uinteger_data_cast()->value());
-
-            case jsoncons::value_type::bool_t:
-                return object.var_.bool_data_cast()->value() ? 1 : 0;
-
-            default:
-                return defaultValue;
-            };
-        }
-
-        uint32_t Parse(ShuntingYard &shuntingYard, Object const &object, uint32_t defaultValue)
-        {
-			if (object.is_empty() || object.is_null())
-			{
-				return defaultValue;
-			}
-
-			switch (object.type_id())
-            {
-            case jsoncons::value_type::small_string_t:
-            case jsoncons::value_type::string_t:
-                return static_cast<uint32_t>(shuntingYard.evaluate(object.as_string()).value_or(defaultValue));
-
-            case jsoncons::value_type::double_t:
-                return static_cast<uint32_t>(object.var_.double_data_cast()->value());
-
-            case jsoncons::value_type::integer_t:
-                return static_cast<uint32_t>(object.var_.integer_data_cast()->value());
-
-            case jsoncons::value_type::uinteger_t:
-                return static_cast<uint32_t>(object.var_.uinteger_data_cast()->value());
-
-            case jsoncons::value_type::bool_t:
-                return object.var_.bool_data_cast()->value() ? 1 : 0;
-
-            default:
-                return defaultValue;
-            };
-        }
-
-        float Parse(ShuntingYard &shuntingYard, Object const &object, float defaultValue)
-        {
-			if (object.is_empty() || object.is_null())
-			{
-				return defaultValue;
-			}
-
-			switch (object.type_id())
-            {
-            case jsoncons::value_type::small_string_t:
-            case jsoncons::value_type::string_t:
-                return shuntingYard.evaluate(object.as_string()).value_or(defaultValue);
-
-            case jsoncons::value_type::double_t:
-                return static_cast<float>(object.var_.double_data_cast()->value());
-
-            case jsoncons::value_type::integer_t:
-                return static_cast<float>(object.var_.integer_data_cast()->value());
-
-            case jsoncons::value_type::uinteger_t:
-                return static_cast<float>(object.var_.uinteger_data_cast()->value());
-
-            case jsoncons::value_type::bool_t:
-                return object.var_.bool_data_cast()->value() ? 1.0f : 0.0f;
-
-            case jsoncons::value_type::array_t:
-                if (object.size() == 1)
+                auto &data = value = JSON::Array(object.size());
+                for (size_t index = 0; index < object.size(); ++index)
                 {
-                    Parse(shuntingYard, object.at(0), defaultValue);
-                }
-            };
-
-            return defaultValue;
-        }
-
-        Math::Float2 Parse(ShuntingYard &shuntingYard, Object const &object, Math::Float2 const &defaultValue)
-        {
-			if (object.is_empty() || object.is_null())
-			{
-				return defaultValue;
-			}
-
-			if (object.is_array())
-            {
-                if (object.size() == 1)
-                {
-                    return Math::Float2(
-                        Parse(shuntingYard, object.at(0), defaultValue.x),
-                        Parse(shuntingYard, object.at(0), defaultValue.y));
-                }
-                else if (object.size() == 2)
-                {
-                    return Math::Float2(
-                        Parse(shuntingYard, object.at(0), defaultValue.x),
-                        Parse(shuntingYard, object.at(1), defaultValue.y));
+                    LoadJSON(data[index], object[index]);
                 }
             }
 
-            return Math::Float2(
-                Parse(shuntingYard, object, defaultValue.x),
-                Parse(shuntingYard, object, defaultValue.y));
-        }
+            break;
 
-        Math::Float3 Parse(ShuntingYard &shuntingYard, Object const &object, Math::Float3 const &defaultValue)
-        {
-			if (object.is_empty() || object.is_null())
-			{
-				return defaultValue;
-			}
-
-			if (object.is_array())
+        case jsoncons::value_type::object_t:
+            if (true)
             {
-                if (object.size() == 1)
+                auto &data = value = JSON::Object();
+                for (auto &pair : object.members())
                 {
-                    return Math::Float3(
-                        Parse(shuntingYard, object.at(0), defaultValue.x),
-                        Parse(shuntingYard, object.at(0), defaultValue.y),
-                        Parse(shuntingYard, object.at(0), defaultValue.z));
-                }
-                else if (object.size() == 3)
-                {
-                    return Math::Float3(
-                        Parse(shuntingYard, object.at(0), defaultValue.x),
-                        Parse(shuntingYard, object.at(1), defaultValue.y),
-                        Parse(shuntingYard, object.at(2), defaultValue.z));
+                    LoadJSON(data[pair.name()], pair.value());
                 }
             }
 
-            return Math::Float3(
-                Parse(shuntingYard, object, defaultValue.x),
-                Parse(shuntingYard, object, defaultValue.y),
-                Parse(shuntingYard, object, defaultValue.z));
-        }
+            break;
+        };
+    }
 
-        Math::Float4 Parse(ShuntingYard &shuntingYard, Object const &object, Math::Float4 const &defaultValue)
+    void SaveJSON(JSON const &value, std::stringstream &stream)
+    {
+        value.visit([&](auto && data)
         {
-			if (object.is_empty() || object.is_null())
-			{
-				return defaultValue;
-			}
-
-			if (object.is_array())
+            using TYPE = std::decay_t<decltype(data)>;
+            if constexpr (std::is_same_v<TYPE, std::string>)
             {
-                if (object.size() == 1)
-                {
-                    return Math::Float4(
-                        Parse(shuntingYard, object.at(0), defaultValue.x),
-                        Parse(shuntingYard, object.at(0), defaultValue.y),
-                        Parse(shuntingYard, object.at(0), defaultValue.z),
-                        Parse(shuntingYard, object.at(0), defaultValue.w));
-
-                }
-                else if (object.size() == 3)
-                {
-                    return Math::Float4(
-                        Parse(shuntingYard, object.at(0), defaultValue.x),
-                        Parse(shuntingYard, object.at(1), defaultValue.y),
-                        Parse(shuntingYard, object.at(2), defaultValue.z),
-                        defaultValue.w);
-                }
-                else if (object.size() == 4)
-                {
-                    return Math::Float4(
-                        Parse(shuntingYard, object.at(0), defaultValue.x),
-                        Parse(shuntingYard, object.at(1), defaultValue.y),
-                        Parse(shuntingYard, object.at(2), defaultValue.z),
-                        Parse(shuntingYard, object.at(3), defaultValue.w));
-                }
+                stream << "\"" << data << "\"";
             }
-
-            return Math::Float4(
-                Parse(shuntingYard, object, defaultValue.x),
-                Parse(shuntingYard, object, defaultValue.y),
-                Parse(shuntingYard, object, defaultValue.z),
-                Parse(shuntingYard, object, defaultValue.w));
-        }
-
-        Math::Quaternion Parse(ShuntingYard &shuntingYard, Object const &object, Math::Quaternion const &defaultValue)
-        {
-			if (object.is_empty() || object.is_null())
-			{
-				return defaultValue;
-			}
-
-			if (object.is_array())
+            else if constexpr (std::is_same_v<TYPE, JSON::Array>)
             {
-                if (object.size() == 3)
+                stream << "[ ";
+                bool writtenPrevious = false;
+                for (auto &index : data)
                 {
-                    float pitch = Parse(shuntingYard, object.at(0), Math::Infinity);
-                    float yaw = Parse(shuntingYard, object.at(1), Math::Infinity);
-                    float roll = Parse(shuntingYard, object.at(2), Math::Infinity);
-                    if (pitch != Math::Infinity && yaw != Math::Infinity && roll != Math::Infinity)
+                    SaveJSON(index, stream);
+                    if (writtenPrevious)
                     {
-                        return Math::Quaternion::MakeEulerRotation(pitch, yaw, roll);
+                        stream << ", ";
                     }
+
+                    writtenPrevious = true;
                 }
-                else if (object.size() == 4)
-                {
-                    return Math::Quaternion(
-                        Parse(shuntingYard, object.at(0), defaultValue.x),
-                        Parse(shuntingYard, object.at(1), defaultValue.y),
-                        Parse(shuntingYard, object.at(2), defaultValue.z),
-                        Parse(shuntingYard, object.at(3), defaultValue.w));
-                }
+
+                stream << "]";
             }
-
-            return defaultValue;
-        }
-
-        std::string Convert(Object const &object, std::string_view defaultValue)
-        {
-			if (object.is_empty() || object.is_null())
-			{
-				return std::string(defaultValue);
-			}
-
-			switch (object.type_id())
+            else if constexpr (std::is_same_v<TYPE, JSON::Object>)
             {
-            case jsoncons::value_type::null_t:
-            case jsoncons::value_type::array_t:
-            case jsoncons::value_type::object_t:
-                return String::Empty;
-
-            default:
-                return object.as_string();
-            };
-        }
-
-        bool Convert(Object const &object, bool defaultValue)
-        {
-			if (object.is_empty() || object.is_null())
-			{
-				return defaultValue;
-			}
-
-			auto type_id = object.type_id();
-            switch (object.type_id())
-            {
-            case jsoncons::value_type::small_string_t:
-            case jsoncons::value_type::string_t:
-				return String::Convert(object.as_string(), defaultValue);
-
-            case jsoncons::value_type::bool_t:
-                return object.var_.bool_data_cast()->value();
-
-            case jsoncons::value_type::double_t:
-                return object.var_.double_data_cast()->value() != 0.0;
-
-            case jsoncons::value_type::integer_t:
-                return object.var_.integer_data_cast()->value() != 0;
-
-            case jsoncons::value_type::uinteger_t:
-                return object.var_.uinteger_data_cast()->value() != 0;
-
-            default:
-                return defaultValue;
-            };
-        }
-
-        int32_t Convert(Object const &object, int32_t defaultValue)
-        {
-			if (object.is_empty() || object.is_null())
-			{
-				return defaultValue;
-			}
-
-			switch (object.type_id())
-            {
-            case jsoncons::value_type::small_string_t:
-            case jsoncons::value_type::string_t:
-                return static_cast<int32_t>(String::Convert(object.as_string(), defaultValue));
-
-            case jsoncons::value_type::double_t:
-                return static_cast<int64_t>(object.var_.double_data_cast()->value());
-
-            case jsoncons::value_type::integer_t:
-                return static_cast<int64_t>(object.var_.integer_data_cast()->value());
-
-            case jsoncons::value_type::uinteger_t:
-                return static_cast<int64_t>(object.var_.uinteger_data_cast()->value());
-
-            case jsoncons::value_type::bool_t:
-                return object.var_.bool_data_cast()->value() ? 1 : 0;
-
-            default:
-                return defaultValue;
-            };
-        }
-
-        uint32_t Convert(Object const &object, uint32_t defaultValue)
-        {
-			if (object.is_empty() || object.is_null())
-			{
-				return defaultValue;
-			}
-
-			switch (object.type_id())
-            {
-            case jsoncons::value_type::small_string_t:
-            case jsoncons::value_type::string_t:
-                return static_cast<uint32_t>(String::Convert(object.as_string(), defaultValue));
-
-            case jsoncons::value_type::double_t:
-                return static_cast<uint32_t>(object.var_.double_data_cast()->value());
-
-            case jsoncons::value_type::integer_t:
-                return static_cast<uint32_t>(object.var_.integer_data_cast()->value());
-
-            case jsoncons::value_type::uinteger_t:
-                return static_cast<uint32_t>(object.var_.uinteger_data_cast()->value());
-
-            case jsoncons::value_type::bool_t:
-                return object.var_.bool_data_cast()->value() ? 1 : 0;
-
-            default:
-                return defaultValue;
-            };
-        }
-
-        float Convert(Object const &object, float defaultValue)
-        {
-			if (object.is_empty() || object.is_null())
-			{
-				return defaultValue;
-			}
-
-			switch (object.type_id())
-            {
-            case jsoncons::value_type::small_string_t:
-            case jsoncons::value_type::string_t:
-                return String::Convert(object.as_string(), defaultValue);
-
-            case jsoncons::value_type::double_t:
-                return static_cast<float>(object.var_.double_data_cast()->value());
-
-            case jsoncons::value_type::integer_t:
-                return static_cast<float>(object.var_.integer_data_cast()->value());
-
-            case jsoncons::value_type::uinteger_t:
-                return static_cast<float>(object.var_.uinteger_data_cast()->value());
-
-            case jsoncons::value_type::bool_t:
-                return object.var_.bool_data_cast()->value() ? 1.0f : 0.0f;
-
-            default:
-                return defaultValue;
-            };
-        }
-
-        Math::Float2 Convert(Object const &object, Math::Float2 const &defaultValue)
-        {
-			if (object.is_empty() || object.is_null())
-			{
-				return defaultValue;
-			}
-
-			if (object.is_array() && object.size() == 2)
-            {
-                return Math::Float2(
-                    Convert(object.at(0), defaultValue.x),
-                    Convert(object.at(1), defaultValue.y));
-            }
-
-            return defaultValue;
-        }
-
-        Math::Float3 Convert(Object const &object, Math::Float3 const &defaultValue)
-        {
-			if (object.is_empty() || object.is_null())
-			{
-				return defaultValue;
-			}
-
-			if (object.is_array() && object.size() == 3)
-            {
-                return Math::Float3(
-                    Convert(object.at(0), defaultValue.x),
-                    Convert(object.at(1), defaultValue.y),
-                    Convert(object.at(2), defaultValue.z));
-            }
-
-            return defaultValue;
-        }
-
-        Math::Float4 Convert(Object const &object, Math::Float4 const &defaultValue)
-        {
-			if (object.is_empty() || object.is_null())
-			{
-				return defaultValue;
-			}
-
-			if (object.is_array())
-            {
-                if (object.size() == 3)
+                stream << "{ ";
+                bool writtenPrevious = false;
+                for (auto &index : data)
                 {
-                    return Math::Float4(
-                        Convert(object.at(0), defaultValue.x),
-                        Convert(object.at(1), defaultValue.y),
-                        Convert(object.at(2), defaultValue.z),
-                        defaultValue.z);
-                }
-                else if (object.size() == 4)
-                {
-                    return Math::Float4(
-                        Convert(object.at(0), defaultValue.x),
-                        Convert(object.at(1), defaultValue.y),
-                        Convert(object.at(2), defaultValue.z),
-                        Convert(object.at(3), defaultValue.w));
-                }
-            }
-
-            return defaultValue;
-        }
-
-        Math::Quaternion Convert(Object const &object, Math::Quaternion const &defaultValue)
-        {
-			if (object.is_empty() || object.is_null())
-			{
-				return defaultValue;
-			}
-
-			if (object.is_array())
-            {
-                if (object.size() == 3)
-                {
-                    float pitch = Convert(object.at(0), Math::Infinity);
-                    float yaw = Convert(object.at(1), Math::Infinity);
-                    float roll = Convert(object.at(2), Math::Infinity);
-                    if (pitch != Math::Infinity && yaw != Math::Infinity && roll != Math::Infinity)
+                    stream << "\"" << index.first << "\": ";
+                    SaveJSON(index.second, stream);
+                    if (writtenPrevious)
                     {
-                        return Math::Quaternion::MakeEulerRotation(pitch, yaw, roll);
+                        stream << ", ";
                     }
+
+                    writtenPrevious = true;
                 }
-                else if (object.size() == 4)
-                {
-                    return Math::Quaternion(
-                        Convert(object.at(0), defaultValue.x),
-                        Convert(object.at(1), defaultValue.y),
-                        Convert(object.at(2), defaultValue.z),
-                        Convert(object.at(3), defaultValue.w));
-                }
-            }
 
-            return defaultValue;
-        }
-
-        Object Load(FileSystem::Path const &filePath)
-        {
-            std::string object(FileSystem::Load(filePath, String::Empty));
-            std::istringstream dataStream(object);
-            jsoncons::json_decoder<Object> decoder;
-            jsoncons::json_reader reader(dataStream, decoder);
-
-            std::error_code errorCode;
-            reader.read(errorCode);
-            if (errorCode)
-            {
-                LockedWrite{std::cerr} << errorCode.message() << " at line " << reader.line_number() << ", and column " << reader.column_number();
-                return EmptyObject;
+                stream << "}";
             }
             else
             {
-                return decoder.get_result();
+                stream << data;
             }
+        });
+    }
+
+    void JSON::load(FileSystem::Path const &filePath)
+    {
+        std::string object(FileSystem::Load(filePath, String::Empty));
+        std::istringstream dataStream(object);
+        jsoncons::json_decoder<jsoncons::json> decoder;
+        jsoncons::json_reader reader(dataStream, decoder);
+
+        std::error_code errorCode;
+        reader.read(errorCode);
+        if (errorCode)
+        {
+            LockedWrite{ std::cerr } << errorCode.message() << " at line " << reader.line_number() << ", and column " << reader.column_number();
         }
-    }; // namespace JSON
+        else
+        {
+            LoadJSON(*this, decoder.get_result());
+        }
+    }
+
+    void JSON::save(FileSystem::Path const &filePath)
+    {
+        std::stringstream stream;
+        SaveJSON(*this, stream);
+        FileSystem::Save(filePath, stream.str());
+    }
+
+    JSON const &JSON::get(size_t index) const
+    {
+        if (auto value = std::get_if<Array>(&data))
+        {
+            return value->at(index);
+        }
+        else
+        {
+            return Empty;
+        }
+    }
+
+    JSON const &JSON::get(std::string_view name) const
+    {
+        if (auto value = std::get_if<Object>(&data))
+        {
+            return value->at(name.data());
+        }
+        else
+        {
+            return Empty;
+        }
+    }
+
+    JSON &JSON::operator [] (size_t index)
+    {
+        if (!is<Array>())
+        {
+            data = EmptyArray;
+        }
+
+        return as<Array>(EmptyArray)[index];
+    }
+
+    JSON &JSON::operator [] (std::string_view name)
+    {
+        if (!is<Object>())
+        {
+            data = EmptyObject;
+        }
+
+        return as<Object>(EmptyObject)[name.data()];
+    }
 }; // namespace Gek

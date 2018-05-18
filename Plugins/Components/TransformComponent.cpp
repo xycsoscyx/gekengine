@@ -18,13 +18,13 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(Components::Transform const * const data, JSON::Object &componentData) const
+        void save(Components::Transform const * const data, JSON &componentData) const
         {
 			componentData["position"] = JSON::Array({ data->position.x, data->position.y, data->position.z });
 			componentData["rotation"] = JSON::Array({ data->rotation.x, data->rotation.y, data->rotation.z, data->rotation.w });
         }
 
-        void load(Components::Transform * const data, JSON::Reference componentData)
+        void load(Components::Transform * const data, JSON &componentData)
         {
             data->position = parse(componentData.get("position"), Math::Float3::Zero);
             data->rotation = parse(componentData.get("rotation"), Math::Quaternion::Identity);

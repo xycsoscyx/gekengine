@@ -261,7 +261,7 @@ namespace Gek
                 bool multisampleEnable = false;
                 bool antialiasedLineEnable = false;
 
-                void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
+                void load(JSON &object, JSON const &configs = JSON::Empty);
                 size_t getHash(void) const;
             };
 

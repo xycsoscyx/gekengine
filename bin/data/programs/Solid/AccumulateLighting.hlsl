@@ -29,7 +29,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     const float3x3 viewBasis = float3x3(inputPixel.tangent, inputPixel.biTangent, inputPixel.normal);
 
     float3 surfaceNormal = ConvertNormal(Resources::normal.Sample(Global::TextureSampler, inputPixel.texCoord).xy);
-    surfaceNormal = normalize(inputPixel.isFrontFacing ? surfaceNormal : -surfaceNormal);
+    surfaceNormal = (inputPixel.isFrontFacing ? surfaceNormal : -surfaceNormal);
     surfaceNormal = mul(surfaceNormal, viewBasis);
 
     float3 materialAlbedo = albedo.rgb;

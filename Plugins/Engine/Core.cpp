@@ -27,9 +27,9 @@ namespace Gek
             bool windowActive = false;
             bool engineRunning = false;
 
-            JSON::Object configuration;
-            JSON::Object shadersSettings;
-            JSON::Object filtersSettings;
+            JSON configuration;
+            JSON shadersSettings;
+            JSON filtersSettings;
             bool changedVisualOptions = false;
 
             Video::DisplayModeList displayModeList;
@@ -92,6 +92,9 @@ namespace Gek
                 window->onMouseMovement.connect(this, &Core::onMouseMovement);
 
                 configuration = JSON::Load(getContext()->findDataPath("config.json"s));
+
+                JSON::Mine mine;
+                mine.load(getContext()->findDataPath("config.json"s));
 
                 HRESULT resultValue = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
                 if (FAILED(resultValue))
@@ -205,9 +208,7 @@ namespace Gek
 
                 getContext()->stopProfiler();
 
-#ifndef _DEBUG
                 JSON::Reference(configuration).save(getContext()->getCachePath("config.json"s));
-#endif
                 CoUninitialize();
             }
 
@@ -405,6 +406,10 @@ namespace Gek
                         changeShader("glass", "Fresnel");
                         resources->reload();
                         break;
+
+                    case Window::Key::F5:
+                        resources->reload();
+                        break;
                     };
                 }
 
@@ -575,7 +580,7 @@ namespace Gek
             {
                 if (dock->BeginTab("Visual", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
                 {
-                    auto showOptions = [&](std::string_view group, JSON::Object &settings) -> void
+                    auto showOptions = [&](std::string_view group, JSON &settings) -> void
                     {
                         if (!settings.is_object())
                         {
@@ -593,8 +598,8 @@ namespace Gek
                                     continue;
                                 }
 
-                                std::function<void(std::string_view, JSON::Object &)> showOptions;
-                                showOptions = [&](std::string_view groupName, JSON::Object &groupValues) -> void
+                                std::function<void(std::string_view, JSON &)> showOptions;
+                                showOptions = [&](std::string_view groupName, JSON &groupValues) -> void
                                 {
                                     if (ImGui::TreeNodeEx(groupName.data(), ImGuiTreeNodeFlags_Framed))
                                     {
@@ -968,11 +973,11 @@ namespace Gek
 
             JSON::Reference getOption(std::string_view system, std::string_view name) const
             {
-				JSON::Object::string_view_type jsonSystem(system.data());
+				JSON::string_view_type jsonSystem(system.data());
 				if (configuration.has_key(jsonSystem))
 				{
 					auto &systemConfiguration = configuration.get(jsonSystem);
-					JSON::Object::string_view_type jsonName(name.data());
+					JSON::string_view_type jsonName(name.data());
 					if (systemConfiguration.has_key(jsonName))
 					{
 						return systemConfiguration.get(jsonName);
@@ -982,7 +987,7 @@ namespace Gek
 				return JSON::EmptyObject;
             }
 
-            void setOption(std::string_view system, std::string_view name, JSON::Object &&value)
+            void setOption(std::string_view system, std::string_view name, JSON &&value)
             {
 				configuration[system.data()][name.data()] = std::move(value);
             }
