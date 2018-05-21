@@ -47,5 +47,12 @@ namespace Gek
         bool SliderAngle2(std::string_view label, float v_rad[2], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
         bool SliderAngle3(std::string_view label, float v_rad[3], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
         bool SliderAngle4(std::string_view label, float v_rad[4], float v_degrees_min = -360.0f, float v_degrees_max = +360.0f);
+
+        bool Input(std::string_view label, bool *value);
+        bool Input(std::string_view label, int32_t *value);
+        bool Input(std::string_view label, uint32_t *value);
+        bool Input(std::string_view label, int64_t *value);
+        bool Input(std::string_view label, uint64_t *value);
+        bool Input(std::string_view label, float *value);
     }; // namespace UI
 }; // namespace Gek

@@ -177,7 +177,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                             node["file"] = textureName;
                             if (mapType == "albedo")
                             {
-                                node["flags"] = "sRGB";
+                                node["flags"] = "sRGB"s;
                             }
 
                             dataNode[mapType] = node;
@@ -188,18 +188,18 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
                         JSON shaderNode;
                         shaderNode["data"] = dataNode;
-                        if (!renderState.is_null())
+                        if (!renderState.empty())
                         {
                             shaderNode["renderState"] = renderState;
                         }
 
                         if (fileMap.count("clarity") > 0)
                         {
-                            shaderNode["default"] = "glass";
+                            shaderNode["default"] = "glass"s;
                         }
                         else
                         {
-                            shaderNode["default"] = "solid";
+                            shaderNode["default"] = "solid"s;
                         }
 
                         JSON materialNode;

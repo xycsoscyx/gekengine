@@ -1117,7 +1117,7 @@ namespace Gek
 
 			void queueCamera(Math::Float4x4 const &viewMatrix, float fieldOfView, float aspectRatio, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget, std::string const &forceShader)
 			{
-				if (core->getOption("render"s, "invertedDepthBuffer"s).convert(true))
+				if (core->getOption("render"s, "invertedDepthBuffer"s).as(true))
 				{
 					queueCamera(viewMatrix, Math::Float4x4::MakePerspective(fieldOfView, aspectRatio, farClip, nearClip), nearClip, farClip, name, cameraTarget, forceShader);
 				}
@@ -1156,7 +1156,7 @@ namespace Gek
 					EngineConstantData engineConstantData;
 					engineConstantData.frameTime = frameTime;
 					engineConstantData.worldTime = 0.0f;
-					engineConstantData.invertedDepthBuffer = (core->getOption("render"s, "invertedDepthBuffer"s).convert(true) ? 1 : 0);
+					engineConstantData.invertedDepthBuffer = (core->getOption("render"s, "invertedDepthBuffer"s).as(true) ? 1 : 0);
 					videoDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
 					Video::Device::Context *videoContext = videoDevice->getDefaultContext();
 					while (cameraQueue.try_pop(currentCamera))
@@ -1578,7 +1578,7 @@ namespace Gek
 							ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5.0f, 10.0f));
 							if (ImGui::BeginMenu("Render"))
 							{
-								auto invertedDepthBuffer = core->getOption("render"s, "invertedDepthBuffer"s).convert(true);
+								auto invertedDepthBuffer = core->getOption("render"s, "invertedDepthBuffer"s).as(true);
 								if (ImGui::MenuItem("Inverted Depth Buffer", "CTRL+I", &invertedDepthBuffer))
 								{
 									core->setOption("render"s, "invertedDepthBuffer"s, invertedDepthBuffer);

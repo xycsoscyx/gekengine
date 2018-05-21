@@ -28,8 +28,8 @@ namespace Gek
             wink::signal<wink::slot<void(void)>> onInitialized;
             wink::signal<wink::slot<void(void)>> onShutdown;
 
-            virtual JSON::Reference getOption(std::string_view system, std::string_view name) const = 0;
-            virtual void setOption(std::string_view system, std::string_view name, JSON::Object &&value) = 0;
+            virtual JSON getOption(std::string_view system, std::string_view name) const = 0;
+            virtual void setOption(std::string_view system, std::string_view name, JSON &&value) = 0;
             virtual void deleteOption(std::string_view system, std::string_view name) = 0;
 
             virtual Plugin::Population * getPopulation(void) const = 0;

@@ -50,10 +50,10 @@ namespace Gek
 
         void load(Components::FirstPersonCamera * const data, JSON &componentData)
         {
-            data->fieldOfView = Math::DegreesToRadians(parse(componentData.get("fieldOfView"), 90.0f));
-            data->nearClip = parse(componentData.get("nearClip"), 1.0f);
-            data->farClip = parse(componentData.get("farClip"), 100.0f);
-            data->target = parse(componentData.get("target"), String::Empty);
+            data->fieldOfView = Math::DegreesToRadians(evaluate(componentData.get("fieldOfView"), 90.0f));
+            data->nearClip = evaluate(componentData.get("nearClip"), 1.0f);
+            data->farClip = evaluate(componentData.get("farClip"), 100.0f);
+            data->target = evaluate(componentData.get("target"), String::Empty);
         }
 
         // Edit::Component
@@ -180,7 +180,7 @@ namespace Gek
         {
             assert(renderer);
 
-			bool editorActive = core->getOption("editor", "active").convert(false);
+			bool editorActive = core->getOption("editor", "active").as(false);
 			if (frameTime > 0.0f && !editorActive)
 			{
 				parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void

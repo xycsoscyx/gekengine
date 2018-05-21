@@ -29,16 +29,31 @@ namespace Gek
         static const JSON Empty;
 
     private:
-        std::variant<bool, int64_t, uint64_t, float, std::string, Array, Object> data;
+        std::variant<bool, int32_t, uint32_t, int64_t, uint64_t, float, std::string, Array, Object> data;
 
     public:
+        JSON(void)
+        {
+        }
+
+        template <typename TYPE>
+        JSON(TYPE newData)
+            : data(newData)
+        {
+        }
+
         void load(FileSystem::Path const &filePath);
         void save(FileSystem::Path const &filePath);
 
         template <typename FUNCTION>
-        void visit(FUNCTION function) const
+        auto visit(FUNCTION function) const
         {
-            std::visit(function, data);
+            return std::visit(function, data);
+        }
+
+        bool empty(void) const
+        {
+            return (data.index() == std::variant_npos);
         }
 
         template <typename TYPE>
@@ -69,5 +84,16 @@ namespace Gek
 
         JSON &operator [] (size_t index);
         JSON &operator [] (std::string_view name);
+
+        int32_t evaluate(ShuntingYard &shuntingYard, int32_t defaultValue) const;
+        uint32_t evaluate(ShuntingYard &shuntingYard, uint32_t defaultValue) const;
+        int64_t evaluate(ShuntingYard &shuntingYard, int64_t defaultValue) const;
+        uint64_t evaluate(ShuntingYard &shuntingYard, uint64_t defaultValue) const;
+        float evaluate(ShuntingYard &shuntingYard, float defaultValue) const;
+        Math::Float2 evaluate(ShuntingYard &shuntingYard, Math::Float2 const &defaultValue) const;
+        Math::Float3 evaluate(ShuntingYard &shuntingYard, Math::Float3 const &defaultValue) const;
+        Math::Float4 evaluate(ShuntingYard &shuntingYard, Math::Float4 const &defaultValue) const;
+        Math::Quaternion evaluate(ShuntingYard &shuntingYard, Math::Quaternion const &defaultValue) const;
+        std::string evaluate(ShuntingYard &shuntingYard, std::string const &defaultValue) const;
     };
 }; // namespace Gek

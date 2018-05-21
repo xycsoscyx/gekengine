@@ -405,11 +405,12 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         }
         else if (filePath.isFile())
         {
-            JSON::Instance materialNode = JSON::Load(filePath);
+            JSON materialNode;
+            materialNode.load(filePath);
             auto shaderNode = materialNode.get("shader");
             auto dataNode = shaderNode.get("data");
             auto albedoNode = dataNode.get("albedo");
-            std::string albedoPath(albedoNode.get("file").convert(String::Empty));
+            std::string albedoPath(albedoNode.get("file").as(String::Empty));
             std::string materialName(String::GetLower(filePath.withoutExtension().getString().substr(materialsPath.size() + 1)));
             diffuseToMaterialMap[albedoPath] = materialName;
         }

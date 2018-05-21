@@ -110,7 +110,7 @@ namespace Gek
                 ShuntingYard shuntingYard(population->getShuntingYard());
 				static auto evaluate = [&](JSON::Reference data, float defaultValue) -> float
 				{
-                    return data.parse(shuntingYard, defaultValue);
+                    return data.evaluate(shuntingYard, defaultValue);
 				};
 				
                 passList.clear();
@@ -119,8 +119,9 @@ namespace Gek
                 auto backBuffer = videoDevice->getBackBuffer();
                 auto &backBufferDescription = backBuffer->getDescription();
 
-                const JSON::Instance shaderNode = JSON::Load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", shaderName).withExtension(".json")));
-                outputResource = shaderNode.get("output").convert(String::Empty);
+                JSON shaderNode;
+                shaderNode.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", shaderName).withExtension(".json")));
+                outputResource = shaderNode.get("output").as(String::Empty);
                 auto globalOptions = shaderNode.get("options").getObject();
                 auto engineOptions = core->getOption("shaders", shaderName);
                 for (auto &enginePair : engineOptions.getMembers())
@@ -132,10 +133,11 @@ namespace Gek
                 {
                     if (globalPair.name() == "#import")
                     {
-                        auto importName = JSON::Reference(globalPair.value()).convert(String::Empty);
+                        auto importName = JSON::Reference(globalPair.value()).as(String::Empty);
                         globalOptions.erase(globalPair.name());
 
-                        const JSON::Instance importOptions = JSON::Load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", importName).withExtension(".json")));
+                        JSON importOptions;
+                        importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", importName).withExtension(".json")));
                         for (auto &importPair : importOptions.getMembers())
                         {
                             globalOptions[importPair.name()] = importPair.value();
@@ -146,7 +148,7 @@ namespace Gek
                 drawOrder = shaderNode.get("requires").getArray().size();
                 for (auto &requires : shaderNode.get("requires").getArray())
                 {
-                    auto shaderHandle = resources->getShader(JSON::Reference(requires).convert(String::Empty));
+                    auto shaderHandle = resources->getShader(JSON::Reference(requires).as(String::Empty));
                     auto shader = resources->getShader(shaderHandle);
                     if (shader)
                     {
@@ -159,8 +161,8 @@ namespace Gek
                 for (auto &baseElementNode : shaderNode.get("input").getArray())
                 {
                     JSON::Reference elementNode(baseElementNode);
-                    std::string name(elementNode.get("name").convert(String::Empty));
-                    std::string system(String::GetLower(elementNode.get("system").convert(String::Empty)));
+                    std::string name(elementNode.get("name").as(String::Empty));
+                    std::string system(String::GetLower(elementNode.get("system").as(String::Empty)));
                     if (system == "isfrontfacing")
                     {
                         inputData += String::Format("    uint {} : SV_IsFrontFace;\r\n", name);
@@ -171,9 +173,9 @@ namespace Gek
                     }
                     else
                     {
-                        Video::Format format = Video::GetFormat(elementNode.get("format").convert(String::Empty));
-                        uint32_t count = elementNode.get("count").convert(1);
-                        auto semantic = Video::InputElement::GetSemantic(elementNode.get("semantic").convert(String::Empty));
+                        Video::Format format = Video::GetFormat(elementNode.get("format").as(String::Empty));
+                        uint32_t count = elementNode.get("count").as(1);
+                        auto semantic = Video::InputElement::GetSemantic(elementNode.get("semantic").as(String::Empty));
                         auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)];
                         semanticIndexList[static_cast<uint8_t>(semantic)] += count;
 
@@ -248,14 +250,14 @@ namespace Gek
                     JSON::Reference textureNode(baseTextureNode.value());
                     if (textureNode.has("file"))
                     {
-                        std::string fileName(textureNode.get("file").convert(String::Empty));
-                        uint32_t flags = getTextureLoadFlags(textureNode.get("flags").convert(String::Empty));
+                        std::string fileName(textureNode.get("file").as(String::Empty));
+                        uint32_t flags = getTextureLoadFlags(textureNode.get("flags").as(String::Empty));
                         resource = resources->loadTexture(fileName, flags);
                     }
                     else
                     {
                         Video::Texture::Description description(backBufferDescription);
-                        description.format = Video::GetFormat(textureNode.get("format").convert(String::Empty));
+                        description.format = Video::GetFormat(textureNode.get("format").as(String::Empty));
                         auto &size = textureNode.get("size");
                         if (size.isFloat())
                         {
@@ -278,8 +280,8 @@ namespace Gek
                             };
                         }
 
-                        description.sampleCount = textureNode.get("sampleCount").convert(1);
-                        description.flags = getTextureFlags(textureNode.get("flags").convert(String::Empty));
+                        description.sampleCount = textureNode.get("sampleCount").as(1);
+                        description.flags = getTextureFlags(textureNode.get("flags").as(String::Empty));
                         description.mipMapCount = evaluate(textureNode.get("mipmaps"), 1);
                         resource = resources->createTexture(textureName, description, true);
                     }
@@ -316,11 +318,11 @@ namespace Gek
 
                     Video::Buffer::Description description;
                     description.count = evaluate(bufferValue.get("count"), 0);
-                    description.flags = getBufferFlags(bufferValue.get("flags").convert(String::Empty));
+                    description.flags = getBufferFlags(bufferValue.get("flags").as(String::Empty));
                     if (bufferValue.has("format"))
                     {
                         description.type = Video::Buffer::Type::Raw;
-                        description.format = Video::GetFormat(bufferValue.get("format").convert(String::Empty));
+                        description.format = Video::GetFormat(bufferValue.get("format").as(String::Empty));
                     }
                     else
                     {
@@ -332,7 +334,7 @@ namespace Gek
                     if (resource)
                     {
                         resourceMap[bufferName] = resource;
-                        if (bufferValue.get("byteaddress").convert(false))
+                        if (bufferValue.get("byteaddress").as(false))
                         {
                             resourceSemanticsMap[bufferName] = "ByteAddressBuffer";
                         }
@@ -341,7 +343,7 @@ namespace Gek
                             auto description = resources->getBufferDescription(resource);
                             if (description != nullptr)
                             {
-                                auto structure = bufferValue.get("structure").convert(String::Empty);
+                                auto structure = bufferValue.get("structure").as(String::Empty);
                                 resourceSemanticsMap[bufferName] += String::Format("Buffer<{}>", structure.empty() ? getFormatSemantic(description->format) : structure);
                             }
                         }
@@ -357,8 +359,8 @@ namespace Gek
                     for (JSON::Reference data : materialNode.get("data").getArray())
                     {
                         Material::Initializer initializer;
-                        initializer.name = data.get("name").convert(String::Empty);
-                        initializer.fallback = resources->createPattern(data.get("pattern").convert(String::Empty), data.get("parameters"));
+                        initializer.name = data.get("name").as(String::Empty);
+                        initializer.fallback = resources->createPattern(data.get("pattern").as(String::Empty), data.get("parameters"));
                         materialData.initializerList.push_back(initializer);
                     }
 
@@ -374,19 +376,19 @@ namespace Gek
                 {
                     PassData &pass = *passData++;
                     JSON::Reference passNode(basePassNode);
-                    std::string entryPoint(passNode.get("entry").convert(String::Empty));
-                    auto programName = passNode.get("program").convert(String::Empty);
+                    std::string entryPoint(passNode.get("entry").as(String::Empty));
+                    auto programName = passNode.get("program").as(String::Empty);
                     pass.name = programName;
 
-                    auto passMaterial = passNode.get("material").convert(String::Empty);
-                    pass.lighting = passNode.get("lighting").convert(false);
+                    auto passMaterial = passNode.get("material").as(String::Empty);
+                    pass.lighting = passNode.get("lighting").as(false);
                     pass.materialHash = GetHash(passMaterial);
                     lightingRequired |= pass.lighting;
 
                     if (passNode.has("enable"))
                     {
                         auto options = std::make_shared<JSON::Reference>(globalOptions);
-                        auto enableOption = passNode.get("enable").convert(String::Empty);
+                        auto enableOption = passNode.get("enable").as(String::Empty);
                         for (auto &group : String::Split(enableOption, ':'))
                         {
                             options = std::make_shared<JSON::Reference>(options->get(group));
@@ -429,7 +431,7 @@ namespace Gek
                                     std::vector<std::string> optionList;
                                     for (JSON::Reference choice : option.get("options").getArray())
                                     {
-                                        auto optionName = choice.convert(String::Empty);
+                                        auto optionName = choice.as(String::Empty);
                                         optionsData += indent + String::Format("    static const int {} = {};\r\n", optionName, optionValue++);
                                         optionList.push_back(optionName);
                                     }
@@ -438,7 +440,7 @@ namespace Gek
                                     auto &selectionNode = option.get("selection");
                                     if (selectionNode.isString())
                                     {
-                                        auto selectedName = selectionNode.convert(String::Empty);
+                                        auto selectedName = selectionNode.as(String::Empty);
                                         auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string const &choice) -> bool
                                         {
                                             return (selectedName == choice);
@@ -451,7 +453,7 @@ namespace Gek
                                     }
                                     else
                                     {
-                                        selection = selectionNode.convert(0);
+                                        selection = selectionNode.as(0ULL);
                                     }
 
                                     optionsData += indent + String::Format("    static const int Selection = {};\r\n", selection);
@@ -475,28 +477,28 @@ namespace Gek
                                 {
                                 case 1:
                                     optionsData += indent + String::Format("static const float {} = {};\r\n", optionName,
-                                        JSON::Reference(optionValue[0]).convert(0.0f));
+                                        JSON::Reference(optionValue[0]).as(0.0f));
                                     break;
 
                                 case 2:
                                     optionsData += indent + String::Format("static const float2 {} = float2({}, {});\r\n", optionName,
-                                        JSON::Reference(optionValue[0]).convert(0.0f),
-                                        JSON::Reference(optionValue[1]).convert(0.0f));
+                                        JSON::Reference(optionValue[0]).as(0.0f),
+                                        JSON::Reference(optionValue[1]).as(0.0f));
                                     break;
 
                                 case 3:
                                     optionsData += indent + String::Format("static const float3 {} = float3({}, {}, {});\r\n", optionName,
-                                        JSON::Reference(optionValue[0]).convert(0.0f),
-                                        JSON::Reference(optionValue[1]).convert(0.0f),
-                                        JSON::Reference(optionValue[2]).convert(0.0f));
+                                        JSON::Reference(optionValue[0]).as(0.0f),
+                                        JSON::Reference(optionValue[1]).as(0.0f),
+                                        JSON::Reference(optionValue[2]).as(0.0f));
                                     break;
 
                                 case 4:
                                     optionsData += indent + String::Format("static const float4 {} = float4({}, {}, {}, {})\r\n", optionName,
-                                        JSON::Reference(optionValue[0]).convert(0.0f),
-                                        JSON::Reference(optionValue[1]).convert(0.0f),
-                                        JSON::Reference(optionValue[2]).convert(0.0f),
-                                        JSON::Reference(optionValue[3]).convert(0.0f));
+                                        JSON::Reference(optionValue[0]).as(0.0f),
+                                        JSON::Reference(optionValue[1]).as(0.0f),
+                                        JSON::Reference(optionValue[2]).as(0.0f),
+                                        JSON::Reference(optionValue[3]).as(0.0f));
                                     break;
                                 };
                             }
@@ -504,15 +506,15 @@ namespace Gek
                             {
                                 if (optionValue.is_bool())
                                 {
-                                    optionsData += indent + String::Format("static const bool {} = {};\r\n", optionName, option.convert(false));
+                                    optionsData += indent + String::Format("static const bool {} = {};\r\n", optionName, option.as(false));
                                 }
                                 else if (optionValue.is_integer())
                                 {
-                                    optionsData += indent + String::Format("static const int {} = {};\r\n", optionName, option.convert(0));
+                                    optionsData += indent + String::Format("static const int {} = {};\r\n", optionName, option.as(0ULL));
                                 }
                                 else
                                 {
-                                    optionsData += indent + String::Format("static const float {} = {};\r\n", optionName, option.convert(0.0f));
+                                    optionsData += indent + String::Format("static const float {} = {};\r\n", optionName, option.as(0.0f));
                                 }
                             }
                         }
@@ -532,7 +534,7 @@ namespace Gek
                             "\r\n", optionsData);
                     }
 
-                    std::string mode(String::GetLower(passNode.get("mode").convert(String::Empty)));
+                    std::string mode(String::GetLower(passNode.get("mode").as(String::Empty)));
                     if (mode == "forward")
                     {
                         pass.mode = Pass::Mode::Forward;
@@ -626,10 +628,10 @@ namespace Gek
                         if (passNode.has("depthStyle"s))
                         {
                             auto &depthStyleNode = passNode.get("depthStyle"s);
-                            auto camera = String::GetLower(depthStyleNode.get("camera"s).convert("perspective"s));
+                            auto camera = String::GetLower(depthStyleNode.get("camera"s).as("perspective"s));
                             if (camera == "perspective"s)
                             {
-                                auto invertedDepthBuffer = core->getOption("render"s, "invertedDepthBuffer"s).convert(true);
+                                auto invertedDepthBuffer = core->getOption("render"s, "invertedDepthBuffer"s).as(true);
 
                                 depthStateInformation.enable = true;
                                 depthStateInformation.writeMask = Video::DepthState::Write::All;
@@ -642,7 +644,7 @@ namespace Gek
                                     depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
                                 }
 
-                                auto clear = depthStyleNode.get("clear"s).convert(false);
+                                auto clear = depthStyleNode.get("clear"s).as(false);
                                 if (clear)
                                 {
                                     pass.clearDepthValue = (invertedDepthBuffer ? 0.0f : 1.0f);
@@ -654,7 +656,7 @@ namespace Gek
                         {
                             auto &depthStateNode = passNode.get("depthState"s);
                             depthStateInformation.load(depthStateNode, passOptions);
-                            pass.clearDepthValue = depthStateNode.get("clear"s).convert(Math::Infinity);
+                            pass.clearDepthValue = depthStateNode.get("clear"s).as(Math::Infinity);
                             if (pass.clearDepthValue != Math::Infinity)
                             {
                                 pass.clearDepthFlags |= Video::ClearFlags::Depth;
@@ -663,7 +665,7 @@ namespace Gek
 
 						if (depthStateInformation.enable)
 						{
-                            auto depthBuffer = passNode.get("depthBuffer").convert(String::Empty);
+                            auto depthBuffer = passNode.get("depthBuffer").as(String::Empty);
 							auto depthBufferSearch = resourceMap.find(depthBuffer);
                             if (depthBufferSearch != std::end(resourceMap))
                             {
@@ -693,8 +695,8 @@ namespace Gek
                         if (resourceSearch != std::end(resourceMap))
                         {
                             JSON::Reference clearTargetNode(baseClearTargetNode.value());
-                            auto clearType = getClearType(clearTargetNode.get("type").convert(String::Empty));
-                            auto clearValue = clearTargetNode.get("value").convert(String::Empty);
+                            auto clearType = getClearType(clearTargetNode.get("type").as(String::Empty));
+                            auto clearValue = clearTargetNode.get("value").as(String::Empty);
                             pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(clearType, clearValue)));
                         }
                         else
@@ -706,7 +708,7 @@ namespace Gek
                     for (auto &baseGenerateMipMapsNode : passNode.get("generateMipMaps").getArray())
                     {
                         JSON::Reference generateMipMapNode(baseGenerateMipMapsNode);
-                        auto resourceName = generateMipMapNode.convert(String::Empty);
+                        auto resourceName = generateMipMapNode.as(String::Empty);
                         auto resourceSearch = resourceMap.find(resourceName);
                         if (resourceSearch != std::end(resourceMap))
                         {
@@ -725,7 +727,7 @@ namespace Gek
                         if (nameSearch != std::end(resourceMap))
                         {
                             JSON::Reference copyNode(baseCopyNode.value());
-                            auto sourceResourceName = copyNode.convert(String::Empty);
+                            auto sourceResourceName = copyNode.as(String::Empty);
                             auto valueSearch = resourceMap.find(sourceResourceName);
                             if (valueSearch != std::end(resourceMap))
                             {
@@ -749,7 +751,7 @@ namespace Gek
                         if (nameSearch != std::end(resourceMap))
                         {
                             JSON::Reference resolveNode(baseResolveNode.value());
-                            auto sourceResourceName = resolveNode.convert(String::Empty);
+                            auto sourceResourceName = resolveNode.as(String::Empty);
                             auto valueSearch = resourceMap.find(sourceResourceName);
                             if (valueSearch != std::end(resourceMap))
                             {

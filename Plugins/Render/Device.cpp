@@ -138,7 +138,7 @@ namespace Gek
 			return (result == std::end(data) ? ComparisonFunction::Always : result->second);
 		}
 
-		void RasterizerStateInformation::load(JSON::Reference object)
+		void RasterizerStateInformation::load(JSON const &object)
         {
 			auto getFillMode = [](std::string const &string) -> auto
 			{
@@ -163,16 +163,16 @@ namespace Gek
 				return (result == std::end(data) ? CullMode::Back : result->second);
 			};
 
-            fillMode = getFillMode(object.get("fillMode").convert("Solid"s));
-            cullMode = getCullMode(object.get("cullMode").convert("Back"s));
-            frontCounterClockwise = object.get("frontCounterClockwise").convert(false);
-            depthBias = object.get("depthBias").convert(0);
-            depthBiasClamp = object.get("depthBiasClamp").convert(0.0f);
-            slopeScaledDepthBias = object.get("slopeScaledDepthBias").convert(0.0f);
-            depthClipEnable = object.get("depthClipEnable").convert(true);
-            scissorEnable = object.get("scissorEnable").convert(false);
-            multisampleEnable = object.get("multisampleEnable").convert(false);
-            antialiasedLineEnable = object.get("antialiasedLineEnable").convert(false);
+            fillMode = getFillMode(object.get("fillMode").as("Solid"s));
+            cullMode = getCullMode(object.get("cullMode").as("Back"s));
+            frontCounterClockwise = object.get("frontCounterClockwise").as(false);
+            depthBias = object.get("depthBias").as(0);
+            depthBiasClamp = object.get("depthBiasClamp").as(0.0f);
+            slopeScaledDepthBias = object.get("slopeScaledDepthBias").as(0.0f);
+            depthClipEnable = object.get("depthClipEnable").as(true);
+            scissorEnable = object.get("scissorEnable").as(false);
+            multisampleEnable = object.get("multisampleEnable").as(false);
+            antialiasedLineEnable = object.get("antialiasedLineEnable").as(false);
         }
 
         size_t RasterizerStateInformation::getHash(void) const
@@ -180,7 +180,7 @@ namespace Gek
             return GetHash(fillMode, cullMode, frontCounterClockwise, depthBias, depthBiasClamp, slopeScaledDepthBias, depthClipEnable, scissorEnable, multisampleEnable, antialiasedLineEnable);
         }
 
-        void DepthStateInformation::StencilStateInformation::load(JSON::Reference object)
+        void DepthStateInformation::StencilStateInformation::load(JSON const &object)
         {
 			auto getOperation = [](std::string const &string) -> auto
 			{
@@ -198,10 +198,10 @@ namespace Gek
 				return (result == std::end(data) ? Operation::Zero : result->second);
 			};
 
-            failOperation = getOperation(object.get("failOperation").convert("Keep"s));
-            depthFailOperation = getOperation(object.get("depthFailOperation").convert("Keep"s));
-            passOperation = getOperation(object.get("passOperation").convert("Keep"s));
-            comparisonFunction = getComparisonFunction(object.get("comparisonFunction").convert("Always"s));
+            failOperation = getOperation(object.get("failOperation").as("Keep"s));
+            depthFailOperation = getOperation(object.get("depthFailOperation").as("Keep"s));
+            passOperation = getOperation(object.get("passOperation").as("Keep"s));
+            comparisonFunction = getComparisonFunction(object.get("comparisonFunction").as("Always"s));
         }
 
         size_t DepthStateInformation::StencilStateInformation::getHash(void) const
@@ -209,7 +209,7 @@ namespace Gek
             return GetHash(failOperation, depthFailOperation, passOperation, comparisonFunction);
         }
 
-        void DepthStateInformation::load(JSON::Reference object)
+        void DepthStateInformation::load(JSON const &object)
         {
 			auto getWriteMask = [](std::string const &string) -> auto
 			{
@@ -222,12 +222,12 @@ namespace Gek
 				return (result == std::end(data) ? Write::All : result->second);
 			};
 
-			enable = object.get("enable").convert(false);
-            writeMask = getWriteMask(object.get("writeMask").convert("All"s));
-            comparisonFunction = getComparisonFunction(object.get("comparisonFunction").convert("Always"s));
-            stencilEnable = object.get("stencilEnable").convert(false);
-			stencilReadMask = object.get("stencilReadMask").convert(0);
-			stencilWriteMask = object.get("stencilWriteMask").convert(0);
+			enable = object.get("enable").as(false);
+            writeMask = getWriteMask(object.get("writeMask").as("All"s));
+            comparisonFunction = getComparisonFunction(object.get("comparisonFunction").as("Always"s));
+            stencilEnable = object.get("stencilEnable").as(false);
+			stencilReadMask = object.get("stencilReadMask").as(0);
+			stencilWriteMask = object.get("stencilWriteMask").as(0);
 			stencilFrontState.load(object.get("stencilFrontState"));
 			stencilBackState.load(object.get("stencilBackState"));
 		}
@@ -239,7 +239,7 @@ namespace Gek
                 CombineHashes(stencilFrontState.getHash(), stencilBackState.getHash()));
         }
 
-        void BlendStateInformation::TargetStateInformation::load(JSON::Reference object)
+        void BlendStateInformation::TargetStateInformation::load(JSON const &object)
         {
 			auto GetSource = [](std::string const &string) -> Source
 			{
@@ -281,14 +281,14 @@ namespace Gek
 				return (result == std::end(data) ? Operation::Add : result->second);
 			};
 
-			enable = object.get("enable").convert(false);
-            colorSource = GetSource(object.get("colorSource").convert("One"s));
-            colorDestination = GetSource(object.get("colorDestination").convert("One"s));
-            colorOperation = getOperation(object.get("colorOperation").convert("Add"s));
-            alphaSource = GetSource(object.get("alphaSource").convert("One"s));
-            alphaDestination = GetSource(object.get("alphaDestination").convert("One"s));
-            alphaOperation = getOperation(object.get("alphaOperation").convert("Add"s));
-            std::string writeMask(String::GetLower(object.get("writeMask").convert("RGBA"s)));
+			enable = object.get("enable").as(false);
+            colorSource = GetSource(object.get("colorSource").as("One"s));
+            colorDestination = GetSource(object.get("colorDestination").as("One"s));
+            colorOperation = getOperation(object.get("colorOperation").as("Add"s));
+            alphaSource = GetSource(object.get("alphaSource").as("One"s));
+            alphaDestination = GetSource(object.get("alphaDestination").as("One"s));
+            alphaOperation = getOperation(object.get("alphaOperation").as("Add"s));
+            std::string writeMask(String::GetLower(object.get("writeMask").as("RGBA"s)));
             if (writeMask.empty())
             {
                 this->writeMask = Mask::RGBA;
@@ -323,12 +323,12 @@ namespace Gek
             return GetHash(enable, colorSource, colorDestination, colorOperation, alphaSource, alphaDestination, alphaOperation, writeMask);
         }
 
-        void BlendStateInformation::load(JSON::Reference object)
+        void BlendStateInformation::load(JSON const &object)
         {
-            alphaToCoverage = object.get("alphaToCoverage").convert(false);
-            unifiedBlendState = object.get("unifiedBlendState").convert(true);
+            alphaToCoverage = object.get("alphaToCoverage").as(false);
+            unifiedBlendState = object.get("unifiedBlendState").as(true);
 
-            auto targetStates = object.get("targetStates").getArray();
+            auto targetStates = object.get("targetStates").as(JSON::EmptyArray);
             size_t targetCount = std::min(targetStates.size(), targetStateList.size());
             for (size_t target = 0; target < targetCount; ++target)
             {
@@ -347,7 +347,7 @@ namespace Gek
             return hash;
         }
 
-        void SamplerStateInformation::load(JSON::Reference object)
+        void SamplerStateInformation::load(JSON const &object)
         {
 			auto getFilterMode = [](std::string const &string) -> FilterMode
 			{
@@ -408,16 +408,18 @@ namespace Gek
 				return (result == std::end(data) ? AddressMode::Clamp : result->second);
 			};
 
-            filterMode = getFilterMode(object.get("filterMode").convert("AllPoint"s));
-            addressModeU = getAddressMode(object.get("addressModeU").convert("Clamp"s));
-            addressModeV = getAddressMode(object.get("addressModeV").convert("Clamp"s));
-            addressModeW = getAddressMode(object.get("addressModeW").convert("Clamp"s));
-            mipLevelBias = object.get("mipLevelBias").convert(0.0f);
-            maximumAnisotropy = object.get("maximumAnisotropy").convert(1);
-            comparisonFunction = getComparisonFunction(object.get("comparisonFunction").convert("Never"s));
-            minimumMipLevel = object.get("minimumMipLevel").convert(0.0f);
-            maximumMipLevel = object.get("maximumMipLevel").convert(Math::Infinity);
-            borderColor = object.get("borderColor").convert(Math::Float4::Zero);;
+            filterMode = getFilterMode(object.get("filterMode").as("AllPoint"s));
+            addressModeU = getAddressMode(object.get("addressModeU").as("Clamp"s));
+            addressModeV = getAddressMode(object.get("addressModeV").as("Clamp"s));
+            addressModeW = getAddressMode(object.get("addressModeW").as("Clamp"s));
+            mipLevelBias = object.get("mipLevelBias").as(0.0f);
+            maximumAnisotropy = object.get("maximumAnisotropy").as(1);
+            comparisonFunction = getComparisonFunction(object.get("comparisonFunction").as("Never"s));
+            minimumMipLevel = object.get("minimumMipLevel").as(0.0f);
+            maximumMipLevel = object.get("maximumMipLevel").as(Math::Infinity);
+
+            // TZTODO
+            //borderColor = object.get("borderColor").as(Math::Float4::Zero);
         }
 
         size_t SamplerStateInformation::getHash(void) const

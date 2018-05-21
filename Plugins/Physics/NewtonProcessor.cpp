@@ -472,7 +472,7 @@ namespace Gek
 
 				GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Newton"sv, "Update"sv, Profiler::EmptyArguments)
 				{
-					bool editorActive = core->getOption("editor", "active").convert(false);
+					bool editorActive = core->getOption("editor", "active").as(false);
 					if (frameTime > 0.0f && !editorActive)
 					{
 						static constexpr float StepTime = (1.0f / 120.0f);
@@ -523,16 +523,18 @@ namespace Gek
                 else
                 {
                     surfaceIndexMap[hash] = 0;
-                    JSON::Instance materialNode = JSON::Load(getContext()->findDataPath(FileSystem::CombinePaths("materials", surfaceName).withExtension(".json")));
-                    if (materialNode.getObject().has_member("surface"))
+
+                    JSON materialNode;
+                    materialNode.load(getContext()->findDataPath(FileSystem::CombinePaths("materials", surfaceName).withExtension(".json")));
+                    auto surfaceNode = materialNode.get("surface");
+                    if (!surfaceNode.empty())
                     {
                         Surface surface;
-                        auto surfaceNode = materialNode.get("surface");
-                        surface.ghost = surfaceNode.get("ghost").convert(surface.ghost);
-                        surface.staticFriction = surfaceNode.get("static_friction").convert(surface.staticFriction);
-                        surface.kineticFriction = surfaceNode.get("kinetic_friction").convert(surface.kineticFriction);
-                        surface.elasticity = surfaceNode.get("elasticity").convert(surface.elasticity);
-                        surface.softness = surfaceNode.get("softness").convert(surface.softness);
+                        surface.ghost = surfaceNode.get("ghost").as(surface.ghost);
+                        surface.staticFriction = surfaceNode.get("static_friction").as(surface.staticFriction);
+                        surface.kineticFriction = surfaceNode.get("kinetic_friction").as(surface.kineticFriction);
+                        surface.elasticity = surfaceNode.get("elasticity").as(surface.elasticity);
+                        surface.softness = surfaceNode.get("softness").as(surface.softness);
 
                         surfaceIndex = surfaceList.size();
                         surfaceList.push_back(surface);

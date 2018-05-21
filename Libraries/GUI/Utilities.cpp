@@ -280,5 +280,56 @@ namespace Gek
 			drawList->AddCircleFilled(ImVec2(cursorPosition.x + radius + t * (width - radius * 2.0f), cursorPosition.y + radius), radius - 1.5f, IM_COL32(255, 255, 255, 255));
 			return changed;
 		}
-	}; // namespace UI
+
+        bool Input(std::string_view label, bool *value)
+        {
+            return ImGui::Checkbox(label.data(), value);
+        }
+
+        bool Input(std::string_view label, int32_t *value)
+        {
+            return ImGui::InputInt(label.data(), value);
+        }
+
+        bool Input(std::string_view label, uint32_t *value)
+        {
+            int32_t simplifiedValue = *value;
+            bool changed = ImGui::InputInt(label.data(), &simplifiedValue);
+            if (changed)
+            {
+                *value = simplifiedValue;
+            }
+
+            return changed;
+        }
+
+        bool Input(std::string_view label, int64_t *value)
+        {
+            int32_t simplifiedValue = *value;
+            bool changed = ImGui::InputInt(label.data(), &simplifiedValue);
+            if (changed)
+            {
+                *value = simplifiedValue;
+            }
+
+            return changed;
+        }
+
+        bool Input(std::string_view label, uint64_t *value)
+        {
+            int32_t simplifiedValue = *value;
+            bool changed = ImGui::InputInt(label.data(), &simplifiedValue);
+            if (changed)
+            {
+                *value = simplifiedValue;
+            }
+
+            return changed;
+        }
+
+        bool Input(std::string_view label, float *value)
+        {
+            return ImGui::InputFloat(label.data(), value);
+        }
+}; // namespace UI
 }; // namespace Gek

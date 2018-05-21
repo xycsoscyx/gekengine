@@ -20,6 +20,7 @@
 #include <unordered_map>
 #include <functional>
 #include <memory>
+#include <array>
 
 namespace Gek
 {
@@ -261,7 +262,7 @@ namespace Gek
                 bool multisampleEnable = false;
                 bool antialiasedLineEnable = false;
 
-                void load(JSON &object, JSON const &configs = JSON::Empty);
+                void load(JSON const &object, JSON const &configs = JSON::Empty);
                 size_t getHash(void) const;
             };
 
@@ -303,7 +304,7 @@ namespace Gek
                     Operation passOperation = Operation::Keep;
                     ComparisonFunction comparisonFunction = ComparisonFunction::Always;
 
-                    void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
+                    void load(JSON const &object, JSON const &configs = JSON::Empty);
                     size_t getHash(void) const;
                 };
 
@@ -316,7 +317,7 @@ namespace Gek
                 StencilState stencilFrontState;
                 StencilState stencilBackState;
 
-                void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
+                void load(JSON const &object, JSON const &configs = JSON::Empty);
                 size_t getHash(void) const;
             };
 
@@ -388,7 +389,7 @@ namespace Gek
                     Operation alphaOperation = Operation::Add;
                     uint8_t writeMask = Mask::RGBA;
 
-                    void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
+                    void load(JSON const &object, JSON const &configs = JSON::Empty);
                     size_t getHash(void) const;
                 };
 
@@ -403,7 +404,7 @@ namespace Gek
                     return targetStates[index];
                 }
 
-                void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
+                void load(JSON const &object, JSON const &configs = JSON::Empty);
                 size_t getHash(void) const;
             };
 
@@ -480,7 +481,7 @@ namespace Gek
                 float minimumMipLevel = 0.0f;
                 float maximumMipLevel = Math::Infinity;
 
-                void load(JSON::Reference object, JSON::Reference const &configs = JSON::EmptyObject);
+                void load(JSON const &object, JSON const &configs = JSON::Empty);
                 size_t getHash(void) const;
             };
 

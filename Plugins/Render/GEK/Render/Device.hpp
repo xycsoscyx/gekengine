@@ -17,6 +17,7 @@
 #include <unordered_map>
 #include <functional>
 #include <memory>
+#include <array>
 
 #ifdef _WINDLL
 #   define DLL_API __declspec(dllexport)
@@ -216,7 +217,7 @@ namespace Gek
             bool multisampleEnable = false;
             bool antialiasedLineEnable = false;
 
-            void load(JSON::Reference object);
+            void load(JSON const &object);
             size_t getHash(void) const;
         };
 
@@ -247,7 +248,7 @@ namespace Gek
                 Operation passOperation = Operation::Keep;
                 ComparisonFunction comparisonFunction = ComparisonFunction::Always;
 
-                void load(JSON::Reference object);
+                void load(JSON const &object);
                 size_t getHash(void) const;
             };
 
@@ -260,7 +261,7 @@ namespace Gek
             StencilStateInformation stencilFrontState;
             StencilStateInformation stencilBackState;
 
-            void load(JSON::Reference object);
+            void load(JSON const &object);
             size_t getHash(void) const;
         };
 
@@ -320,7 +321,7 @@ namespace Gek
                 Operation alphaOperation = Operation::Add;
                 uint8_t writeMask = Mask::RGBA;
 
-                void load(JSON::Reference object);
+                void load(JSON const &object);
                 size_t getHash(void) const;
             };
 
@@ -328,7 +329,7 @@ namespace Gek
             bool unifiedBlendState = true;
             std::array<TargetStateInformation, 8> targetStateList;
 
-            void load(JSON::Reference object);
+            void load(JSON const &object);
             size_t getHash(void) const;
         };
 
@@ -394,7 +395,7 @@ namespace Gek
             float minimumMipLevel = 0.0f;
             float maximumMipLevel = Math::Infinity;
 
-            void load(JSON::Reference object);
+            void load(JSON const &object);
             size_t getHash(void) const;
         };
 

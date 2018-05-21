@@ -22,12 +22,12 @@ namespace Gek
             // Plugin::Component
             void save(Components::Physical const * const data, JSON &componentData) const
             {
-                componentData.set("mass", data->mass);
+                componentData["mass"] = data->mass;
             }
 
             void load(Components::Physical * const data, JSON &componentData)
             {
-                data->mass = parse(componentData.get("mass"), 0.0f);
+                data->mass = evaluate(componentData.get("mass"), 0.0f);
             }
 
             // Edit::Component

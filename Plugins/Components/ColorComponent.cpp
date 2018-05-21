@@ -30,7 +30,7 @@ namespace Gek
 
         void load(Components::Color * const data, JSON &componentData)
         {
-            data->value = parse(componentData, Math::Float4::White);
+            data->value = evaluate(componentData, Math::Float4::White);
         }
 
         // Edit::Component

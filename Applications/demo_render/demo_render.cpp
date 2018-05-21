@@ -158,7 +158,7 @@ namespace Gek
 				displayModeStringList.push_back(displayModeString);
 			}
 
-            setDisplayMode(configuration.get("display").get("mode").as<uint32_t>(preferredDisplayMode));
+            setDisplayMode(configuration.get("display").get("mode").as(preferredDisplayMode));
 
 			gui->renderQueue = renderDevice->createQueue(0);
 
@@ -331,7 +331,7 @@ namespace Gek
 			};
 
 			window->setVisibility(true);
-            setFullScreen(configuration.get("display").get("fullScreen").as<bool>(false));
+            setFullScreen(configuration.get("display").get("fullScreen").as(false));
 			engineRunning = true;
 			windowActive = true;
 		}
@@ -787,7 +787,7 @@ namespace Gek
 					break;
 
 				case Window::Key::F1:
-                    configuration["editor"]["active"] = !configuration.get("editor").get("active").as<bool>(false);
+                    configuration["editor"]["active"] = !configuration.get("editor").get("active").as(false);
 					break;
 				};
 			}

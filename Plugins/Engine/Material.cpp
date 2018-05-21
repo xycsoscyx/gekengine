@@ -32,9 +32,10 @@ namespace Gek
             {
                 assert(resources);
 
-                JSON::Instance materialNode = JSON::Load(getContext()->findDataPath(FileSystem::CombinePaths("materials", materialName).withExtension(".json")));
+                JSON materialNode;
+                materialNode.load(getContext()->findDataPath(FileSystem::CombinePaths("materials", materialName).withExtension(".json")));
                 auto &shaderNode = materialNode.get("shader");
-                auto shaderName = shaderNode.get("default").convert(String::Empty);
+                auto shaderName = shaderNode.get("default").as(String::Empty);
                 ShaderHandle shaderHandle = resources->getShader(shaderName, materialHandle);
                 Engine::Shader *shader = resources->getShader(shaderHandle);
                 if (shader)
@@ -54,13 +55,13 @@ namespace Gek
                             auto &resourceNode = dataNode.get(initializer.name);
                             if (resourceNode.has("file"))
                             {
-                                auto fileName = resourceNode.get("file").convert(String::Empty);
-                                uint32_t flags = getTextureLoadFlags(resourceNode.get("flags").convert(String::Empty));
+                                auto fileName = resourceNode.get("file").as(String::Empty);
+                                uint32_t flags = getTextureLoadFlags(resourceNode.get("flags").as(String::Empty));
                                 resourceHandle = resources->loadTexture(fileName, flags);
                             }
                             else if (resourceNode.has("source"))
                             {
-                                resourceHandle = resources->getResourceHandle(resourceNode.get("source").convert(String::Empty));
+                                resourceHandle = resources->getResourceHandle(resourceNode.get("source").as(String::Empty));
                             }
 
                             if (!resourceHandle)

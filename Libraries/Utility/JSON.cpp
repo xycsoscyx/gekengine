@@ -185,4 +185,174 @@ namespace Gek
 
         return as<Object>(EmptyObject)[name.data()];
     }
+
+    int32_t JSON::evaluate(ShuntingYard &shuntingYard, int32_t defaultValue) const
+    {
+        return visit([&](auto && data) -> int32_t
+        {
+            using TYPE = std::decay_t<decltype(data)>;
+            if constexpr (std::is_same_v<TYPE, std::string>)
+            {
+                return shuntingYard.evaluate(data).value_or(defaultValue);
+            }
+            else if constexpr (std::is_same_v<TYPE, Object> ||
+                std::is_same_v<TYPE, Array>)
+            {
+                return defaultValue;
+            }
+            else
+            {
+                return data;
+            }
+        });
+    }
+
+    uint32_t JSON::evaluate(ShuntingYard &shuntingYard, uint32_t defaultValue) const
+    {
+        return visit([&](auto && data) -> uint32_t
+        {
+            using TYPE = std::decay_t<decltype(data)>;
+            if constexpr (std::is_same_v<TYPE, std::string>)
+            {
+                return shuntingYard.evaluate(data).value_or(defaultValue);
+            }
+            else if constexpr (std::is_same_v<TYPE, Object> ||
+                std::is_same_v<TYPE, Array>)
+            {
+                return defaultValue;
+            }
+            else
+            {
+                return data;
+            }
+        });
+    }
+
+    float JSON::evaluate(ShuntingYard &shuntingYard, float defaultValue) const
+    {
+        return visit([&](auto && data) -> float
+        {
+            using TYPE = std::decay_t<decltype(data)>;
+            if constexpr (std::is_same_v<TYPE, std::string>)
+            {
+                return shuntingYard.evaluate(data).value_or(defaultValue);
+            }
+            else if constexpr (std::is_same_v<TYPE, Object> ||
+                std::is_same_v<TYPE, Array>)
+            {
+                return defaultValue;
+            }
+            else
+            {
+                return data;
+            }
+        });
+    }
+
+    Math::Float2 JSON::evaluate(ShuntingYard &shuntingYard, Math::Float2 const &defaultValue) const
+    {
+        auto data = as(EmptyArray);
+        switch (data.size())
+        {
+        case 1:
+            return Math::Float2(data[0].evaluate(shuntingYard, defaultValue.x));
+
+        default:
+            return Math::Float2(
+                data[0].evaluate(shuntingYard, defaultValue.x),
+                data[1].evaluate(shuntingYard, defaultValue.y));
+        };
+    }
+
+    Math::Float3 JSON::evaluate(ShuntingYard &shuntingYard, Math::Float3 const &defaultValue) const
+    {
+        auto data = as(EmptyArray);
+        switch (data.size())
+        {
+        case 1:
+            return Math::Float3(data[0].evaluate(shuntingYard, defaultValue.x));
+
+        default:
+            return Math::Float3(
+                data[0].evaluate(shuntingYard, defaultValue.x),
+                data[1].evaluate(shuntingYard, defaultValue.y),
+                data[2].evaluate(shuntingYard, defaultValue.z));
+        };
+    }
+
+    Math::Float4 JSON::evaluate(ShuntingYard &shuntingYard, Math::Float4 const &defaultValue) const
+    {
+        auto data = as(EmptyArray);
+        switch (data.size())
+        {
+        case 1:
+            return Math::Float4(data[0].evaluate(shuntingYard, defaultValue.x));
+
+        case 3:
+            return Math::Float4(
+                data[0].evaluate(shuntingYard, defaultValue.x),
+                data[1].evaluate(shuntingYard, defaultValue.y),
+                data[2].evaluate(shuntingYard, defaultValue.z),
+                defaultValue.w);
+
+        default:
+            return Math::Float4(
+                data[0].evaluate(shuntingYard, defaultValue.x),
+                data[1].evaluate(shuntingYard, defaultValue.y),
+                data[2].evaluate(shuntingYard, defaultValue.z),
+                data[3].evaluate(shuntingYard, defaultValue.w));
+        };
+    }
+
+    Math::Quaternion JSON::evaluate(ShuntingYard &shuntingYard, Math::Quaternion const &defaultValue) const
+    {
+        auto data = as(EmptyArray);
+        switch (data.size())
+        {
+        case 3:
+            if (true)
+            {
+                float pitch = data[0].evaluate(shuntingYard, Math::Infinity);
+                float yaw = data[1].evaluate(shuntingYard, Math::Infinity);
+                float roll = data[2].evaluate(shuntingYard, Math::Infinity);
+                if (pitch != Math::Infinity && yaw != Math::Infinity && roll != Math::Infinity)
+                {
+                    return Math::Quaternion::MakeEulerRotation(pitch, yaw, roll);
+                }
+
+                return defaultValue;
+            }
+
+        case 4:
+            return Math::Quaternion(
+                data[0].evaluate(shuntingYard, defaultValue.x),
+                data[1].evaluate(shuntingYard, defaultValue.y),
+                data[2].evaluate(shuntingYard, defaultValue.z),
+                data[3].evaluate(shuntingYard, defaultValue.w));
+
+        default:
+            return defaultValue;
+        };
+    }
+
+    std::string JSON::evaluate(ShuntingYard &shuntingYard, std::string const &defaultValue) const
+    {
+        return visit([&](auto && data) -> std::string
+        {
+            using TYPE = std::decay_t<decltype(data)>;
+            if constexpr (std::is_same_v<TYPE, std::string>)
+            {
+                return data;
+            }
+            else if constexpr (std::is_same_v<TYPE, JSON::Array> || 
+                               std::is_same_v<TYPE, JSON::Object>)
+            {
+                return defaultValue;
+            }
+            else
+            {
+                return String::Format("{}", data);
+            }
+        });
+    }
 }; // namespace Gek

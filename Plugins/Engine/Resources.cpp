@@ -1015,29 +1015,29 @@ namespace Gek
                     switch (parameters.getArray().size())
                     {
                     case 1:
-                        data.push_back(parameters.at(0).convert(255));
+                        data.push_back(parameters.at(0).as(255));
                         description.format = Video::Format::R8_UNORM;
                         break;
 
                     case 2:
-                        data.push_back(parameters.at(0).convert(255));
-                        data.push_back(parameters.at(1).convert(255));
+                        data.push_back(parameters.at(0).as(255));
+                        data.push_back(parameters.at(1).as(255));
                         description.format = Video::Format::R8G8_UNORM;
                         break;
 
                     case 3:
-                        data.push_back(parameters.at(0).convert(255));
-                        data.push_back(parameters.at(1).convert(255));
-                        data.push_back(parameters.at(2).convert(255));
+                        data.push_back(parameters.at(0).as(255));
+                        data.push_back(parameters.at(1).as(255));
+                        data.push_back(parameters.at(2).as(255));
                         data.push_back(0);
                         description.format = Video::Format::R8G8B8A8_UNORM;
                         break;
 
                     case 4:
-                        data.push_back(parameters.at(0).convert(255));
-                        data.push_back(parameters.at(1).convert(255));
-                        data.push_back(parameters.at(2).convert(255));
-                        data.push_back(parameters.at(3).convert(255));
+                        data.push_back(parameters.at(0).as(255));
+                        data.push_back(parameters.at(1).as(255));
+                        data.push_back(parameters.at(2).as(255));
+                        data.push_back(parameters.at(3).as(255));
                         description.format = Video::Format::R8G8B8A8_UNORM;
                         break;
 
@@ -1052,7 +1052,7 @@ namespace Gek
                                     uint8_t quarters[4];
                                 };
 
-                                value = parameters.convert(1.0f);
+                                value = parameters.as(1.0f);
                                 data.push_back(quarters[0]);
                                 data.push_back(quarters[1]);
                                 data.push_back(quarters[2]);
@@ -1061,7 +1061,7 @@ namespace Gek
                             }
                             else
                             {
-                                data.push_back(parameters.convert(255));
+                                data.push_back(parameters.as(255));
                                 description.format = Video::Format::R8_UNORM;
                             }
                         }
@@ -1075,7 +1075,7 @@ namespace Gek
                         uint8_t quarters[4];
                     };
 
-                    Math::Float3 normal = parameters.convert(Math::Float3::Zero);
+                    Math::Float3 normal = parameters.as(Math::Float3::Zero);
 
                     Float16Compressor compressor;
                     halves[0] = compressor.compress(normal.x);
@@ -1089,7 +1089,7 @@ namespace Gek
                 }
                 else if (lowerPattern == "system")
                 {
-                    std::string type(String::GetLower(parameters.convert(String::Empty)));
+                    std::string type(String::GetLower(parameters.as(String::Empty)));
                     if (type == "debug")
                     {
                         data.push_back(255);    data.push_back(0);      data.push_back(255);    data.push_back(255);
@@ -1111,7 +1111,7 @@ namespace Gek
                 }
 
                 description.flags = Video::Texture::Flags::Resource;
-                std::string name(String::Format("{}:{}", pattern, parameters.convert(String::Empty)));
+                std::string name(String::Format("{}:{}", pattern, parameters.as(String::Empty)));
                 auto hash = GetHash(name);
 
                 auto resource = dynamicCache.getHandle(hash, 0, [this, name, description, data = move(data)](ResourceHandle)->Video::TexturePtr

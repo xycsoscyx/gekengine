@@ -49,8 +49,8 @@ namespace Gek
             virtual Hash getIdentifier(void) const = 0;
 
             virtual std::unique_ptr<Data> create(void) = 0;
-            virtual void save(Data const * const data, JSON::Object &componentData) const = 0;
-            virtual void load(Data * const data, JSON::Reference componentData) = 0;
+            virtual void save(Data const * const data, JSON &componentData) const = 0;
+            virtual void load(Data * const data, JSON const &componentData) = 0;
         };
     }; // namespace Plugin
 }; // namespace Gek

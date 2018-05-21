@@ -19,16 +19,16 @@ namespace Gek
         // Plugin::Component
         void save(Components::PointLight const * const data, JSON &componentData) const
         {
-            componentData.set("range", data->range);
-            componentData.set("radius", data->radius);
-            componentData.set("intensity", data->intensity);
+            componentData["range"] = data->range;
+            componentData["radius"] = data->radius;
+            componentData["intensity"] = data->intensity;
         }
 
         void load(Components::PointLight * const data, JSON &componentData)
         {
-            data->range = parse(componentData.get("range"), 0.0f);
-            data->radius = parse(componentData.get("radius"), 0.0f);
-            data->intensity = parse(componentData.get("intensity"), 0.0f);
+            data->range = evaluate(componentData.get("range"), 0.0f);
+            data->radius = evaluate(componentData.get("radius"), 0.0f);
+            data->intensity = evaluate(componentData.get("intensity"), 0.0f);
             LockedWrite{ std::cout } << "Range: " << data->range << ", Radius: " << data->radius << ", Intensity: " << data->intensity;
         }
 
@@ -73,22 +73,22 @@ namespace Gek
         // Plugin::Component
         void save(Components::SpotLight const * const data, JSON &componentData) const
         {
-            componentData.set("range", data->range);
-            componentData.set("radius", data->radius);
-            componentData.set("intensity", data->intensity);
-            componentData.set("innerAngle", Math::RadiansToDegrees(std::acos(data->innerAngle) * 2.0f));
-            componentData.set("outerAngle", Math::RadiansToDegrees(std::acos(data->outerAngle) * 2.0f));
-            componentData.set("coneFalloff", data->coneFalloff);
+            componentData["range"] = data->range;
+            componentData["radius"] = data->radius;
+            componentData["intensity"] = data->intensity;
+            componentData["innerAngle"] = Math::RadiansToDegrees(std::acos(data->innerAngle) * 2.0f);
+            componentData["outerAngle"] = Math::RadiansToDegrees(std::acos(data->outerAngle) * 2.0f);
+            componentData["coneFalloff"] = data->coneFalloff;
         }
 
         void load(Components::SpotLight * const data, JSON &componentData)
         {
-            data->range = parse(componentData.get("range"), 0.0f);
-            data->radius = parse(componentData.get("radius"), 0.0f);
-            data->intensity = parse(componentData.get("intensity"), 0.0f);
-            data->innerAngle = std::cos(Math::DegreesToRadians(parse(componentData.get("innerAngle"), 0.0f)));
-            data->outerAngle = std::cos(Math::DegreesToRadians(parse(componentData.get("outerAngle"), 0.0f)));
-            data->coneFalloff = parse(componentData.get("coneFalloff"), 0.0f);
+            data->range = evaluate(componentData.get("range"), 0.0f);
+            data->radius = evaluate(componentData.get("radius"), 0.0f);
+            data->intensity = evaluate(componentData.get("intensity"), 0.0f);
+            data->innerAngle = std::cos(Math::DegreesToRadians(evaluate(componentData.get("innerAngle"), 0.0f)));
+            data->outerAngle = std::cos(Math::DegreesToRadians(evaluate(componentData.get("outerAngle"), 0.0f)));
+            data->coneFalloff = evaluate(componentData.get("coneFalloff"), 0.0f);
         }
 
         // Edit::Component
@@ -147,12 +147,12 @@ namespace Gek
         // Plugin::Component
         void save(Components::DirectionalLight const * const data, JSON &componentData) const
         {
-            componentData.set("intensity", data->intensity);
+            componentData["intensity"] = data->intensity;
         }
 
         void load(Components::DirectionalLight * const data, JSON &componentData)
         {
-            data->intensity = parse(componentData.get("intensity"), 0.0f);
+            data->intensity = evaluate(componentData.get("intensity"), 0.0f);
         }
 
         // Edit::Component
