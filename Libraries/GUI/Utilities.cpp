@@ -331,5 +331,10 @@ namespace Gek
         {
             return ImGui::InputFloat(label.data(), value);
         }
+
+        bool Input(std::string_view label, std::string *value)
+        {
+            return InputString(label, *value);
+        }
 }; // namespace UI
 }; // namespace Gek

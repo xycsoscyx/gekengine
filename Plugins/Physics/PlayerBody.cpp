@@ -9,6 +9,7 @@
 #include "GEK/Newton/Base.hpp"
 #include <algorithm>
 #include <memory>
+#include <array>
 
 #include <Newton.h>
 

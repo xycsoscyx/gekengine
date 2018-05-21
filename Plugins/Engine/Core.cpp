@@ -612,34 +612,44 @@ namespace Gek
                                                 using TYPE = std::decay_t<decltype(visitedData)>;
                                                 if constexpr (std::is_same_v<TYPE, JSON::Object>)
                                                 {
-                                                    auto selectorOptions = visitedData.get("options");
-                                                    if (selectorOptions.is<JSON::Object>())
+                                                    auto optionsSearch = visitedData.find("options");
+                                                    if (optionsSearch == visitedData.end())
+                                                    {
+                                                        return String::Empty;
+                                                    }
+
+                                                    auto optionsNode = optionsSearch->second;
+                                                    if (optionsNode.is<JSON::Object>())
                                                     {
                                                         std::vector<std::string> optionList;
-                                                        for (auto choice : selectorOptions.as(JSON::EmptyArray))
+                                                        for (auto choice : optionsNode.as(JSON::EmptyArray))
                                                         {
                                                             optionList.push_back(choice.as(String::Empty));
                                                         }
 
                                                         int selection = 0;
-                                                        auto &selectionNode = visitedData.get("selection");
-                                                        if (selectionNode.is<std::string>())
+                                                        auto &selectorSearch = visitedData.find("selection");
+                                                        if (selectorSearch != visitedData.end())
                                                         {
-                                                            auto selectedName = selectionNode.as(String::Empty);
-                                                            auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string_view choice) -> bool
+                                                            auto selectionNode = selectorSearch->second;
+                                                            if (selectionNode.is<std::string>())
                                                             {
-                                                                return (selectedName == choice);
-                                                            });
+                                                                auto selectedName = selectionNode.as(String::Empty);
+                                                                auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string_view choice) -> bool
+                                                                {
+                                                                    return (selectedName == choice);
+                                                                });
 
-                                                            if (optionsSearch != std::end(optionList))
-                                                            {
-                                                                selection = std::distance(std::begin(optionList), optionsSearch);
-                                                                visitedData["selection"] = selection;
+                                                                if (optionsSearch != std::end(optionList))
+                                                                {
+                                                                    selection = std::distance(std::begin(optionList), optionsSearch);
+                                                                    visitedData["selection"] = selection;
+                                                                }
                                                             }
-                                                        }
-                                                        else
-                                                        {
-                                                            selection = selectionNode.as(0ULL);
+                                                            else
+                                                            {
+                                                                selection = selectionNode.as(0ULL);
+                                                            }
                                                         }
 
                                                         if (ImGui::Combo(label.data(), &selection, [](void *userData, int index, char const **outputText) -> bool
@@ -727,8 +737,8 @@ namespace Gek
                                                 }
                                                 else
                                                 {
-                                                    bool value = option.as(false);
-                                                    if (GUI::Input(label, &visitedData))
+                                                    auto value = visitedData;
+                                                    if (UI::Input(label, &value))
                                                     {
                                                         optionValue = value;
                                                         changedVisualOptions = true;

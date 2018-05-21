@@ -54,5 +54,6 @@ namespace Gek
         bool Input(std::string_view label, int64_t *value);
         bool Input(std::string_view label, uint64_t *value);
         bool Input(std::string_view label, float *value);
+        bool Input(std::string_view label, std::string *value);
     }; // namespace UI
 }; // namespace Gek

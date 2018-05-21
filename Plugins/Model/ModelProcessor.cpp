@@ -57,7 +57,7 @@ namespace Gek
 
         void load(Components::Model * const data, JSON &componentData)
         {
-            data->name = parse(componentData, String::Empty);
+            data->name = evaluate(componentData, String::Empty);
         }
 
         // Edit::Component
