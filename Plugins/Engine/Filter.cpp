@@ -79,18 +79,6 @@ namespace Gek
             {
                 LockedWrite{ std::cout } << "Loading filter: " << filterName;
 				
-                ShuntingYard shuntingYard(population->getShuntingYard());
-                auto options = core->getOption("filters", filterName);
-                for (auto &value : options.as(JSON::EmptyObject))
-                {
-                    shuntingYard.setVariable(value.first, value.second.as(0.0f));
-                }
-
-                static auto evaluate = [&](JSON const &data, float defaultValue) -> float
-                {
-                    return data.evaluate(shuntingYard, defaultValue);
-                };
-
                 passList.clear();
 
                 std::unordered_map<std::string, ResourceHandle> resourceMap;
@@ -104,37 +92,43 @@ namespace Gek
                 JSON filterNode;
                 filterNode.load(getContext()->findDataPath(FileSystem::CombinePaths("filters", filterName).withExtension(".json")));
 
-                auto globalOptions = filterNode.get("options");
-                auto engineOptions = core->getOption("filters", filterName);
-                for (auto &enginePair : engineOptions.as(JSON::EmptyObject))
+                ShuntingYard shuntingYard(population->getShuntingYard());
+                auto coreFiltersNode = core->getOption("filters", filterName);
+                for (auto &coreValuePair : coreFiltersNode.as(JSON::EmptyObject))
                 {
-                    globalOptions[enginePair.first] = enginePair.second;
+                    shuntingYard.setVariable(coreValuePair.first, coreValuePair.second.as(0.0f));
                 }
 
-                for (auto &globalPair : globalOptions.as(JSON::EmptyObject))
+                auto filterOptionsNode = filterNode.get("options");
+                for (auto &coreValuePair : coreFiltersNode.as(JSON::EmptyObject))
                 {
-                    if (globalPair.first == "#import")
+                    filterOptionsNode[coreValuePair.first] = coreValuePair.second;
+                }
+
+                for (auto &filterValuePair : filterOptionsNode.as(JSON::EmptyObject))
+                {
+                    if (filterValuePair.first == "#import")
                     {
-                        auto importName = globalPair.second.as(String::Empty);
-                        globalOptions.as(JSON::EmptyObject).erase(globalPair.first);
+                        auto importName = filterValuePair.second.as(String::Empty);
+                        filterOptionsNode.as(JSON::EmptyObject).erase(filterValuePair.first);
 
                         JSON importOptions;
                         importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", importName).withExtension(".json")));
                         for (auto &importPair : importOptions.as(JSON::EmptyObject))
                         {
-                            globalOptions[importPair.first] = importPair.second;
+                            filterOptionsNode[importPair.first] = importPair.second;
                         }
                     }
                 }
 
-                for (auto &requires : filterNode.get("requires").as(JSON::EmptyArray))
+                for (auto &requiredNode : filterNode.get("requires").as(JSON::EmptyArray))
                 {
-                    resources->getShader(requires.as(String::Empty), MaterialHandle());
+                    resources->getShader(requiredNode.as(String::Empty), MaterialHandle());
                 }
 
-                for (auto &baseTextureNode : filterNode.get("textures").as(JSON::EmptyObject))
+                for (auto &rootTexturesPair : filterNode.get("textures").as(JSON::EmptyObject))
                 {
-                    std::string textureName(baseTextureNode.first);
+                    std::string textureName(rootTexturesPair.first);
                     if (resourceMap.count(textureName) > 0)
                     {
                         LockedWrite{ std::cout } << "Texture name same as already listed resource: " << textureName;
@@ -142,42 +136,46 @@ namespace Gek
                     }
 
                     ResourceHandle resource;
-                    auto textureNode = baseTextureNode.second.as(JSON::EmptyObject);
-                    if (textureNode.has("file"))
+                    auto textureNode = rootTexturesPair.second;
+                    auto textureMap = textureNode.as(JSON::EmptyObject);
+                    if (textureMap.count("file"))
                     {
                         std::string fileName(textureNode.get("file").as(String::Empty));
                         uint32_t flags = getTextureLoadFlags(textureNode.get("flags").as(String::Empty));
                         resource = resources->loadTexture(fileName, flags);
                     }
-                    else if (textureNode.has("format"))
+                    else if (textureMap.count("format"))
                     {
                         Video::Texture::Description description(backBufferDescription);
                         description.format = Video::GetFormat(textureNode.get("format").as(String::Empty));
                         auto &size = textureNode.get("size");
-                        if (size.isFloat())
+                        size.visit([&](auto && visitedValue) -> void
                         {
-                            description.width = evaluate(size, 1);
-                        }
-                        else
-                        {
-                            auto &sizeArray = size.as(JSON::EmptyArray);
-                            switch (sizeArray.size())
+                            using TYPE = std::decay_t<decltype(visitedData)>;
+                            if constexpr (std::is_same_v<TYPE, JSON::Array>)
                             {
-                            case 3:
-                                description.depth = evaluate(size.at(2), 1);
+                                switch (visitedData.size())
+                                {
+                                case 3:
+                                    description.depth = evaluate(visitedData.at(2), 1);
 
-                            case 2:
-                                description.height = evaluate(size.at(1), 1);
+                                case 2:
+                                    description.height = evaluate(visitedData.at(1), 1);
 
-                            case 1:
-                                description.width = evaluate(size.at(0), 1);
-                                break;
-                            };
-                        }
+                                case 1:
+                                    description.width = evaluate(visitedData.at(0), 1);
+                                    break;
+                                };
+                            }
+                            else
+                            {
+                                description.width = evaluate(size, 1);
+                            }
+                        });
 
                         description.sampleCount = textureNode.get("sampleCount").as(1);
                         description.flags = getTextureFlags(textureNode.get("flags").as(String::Empty));
-                        description.mipMapCount = evaluate(textureNode.get("mipmaps"), 1);
+                        description.mipMapCount = textureNode.get("mipmaps").evaluate(shuntingYard, 1);
                         resource = resources->createTexture(textureName, description, true);
                     }
 
@@ -209,10 +207,10 @@ namespace Gek
                         continue;
                     }
 
-                    JSON::Reference bufferValue(baseBufferNode.second);
+                    auto &bufferValue = baseBufferNode.second;
 
                     Video::Buffer::Description description;
-                    description.count = evaluate(bufferValue.get("count"), 0);
+                    description.count = bufferValue.get("count").evaluate(shuntingYard, 0);
                     description.flags = getBufferFlags(bufferValue.get("flags").as(String::Empty));
                     if (bufferValue.has("format"))
                     {
@@ -222,7 +220,7 @@ namespace Gek
                     else
                     {
                         description.type = Video::Buffer::Type::Structured;
-                        description.stride = evaluate(bufferValue.get("stride"), 0);
+                        description.stride = bufferValue.get("stride").evaluate(shuntingYard, 0);
                     }
 
                     auto resource = resources->createBuffer(bufferName, description, true);
@@ -251,7 +249,7 @@ namespace Gek
                 for (auto &basePassNode : passesNode.as(JSON::EmptyArray))
                 {
                     PassData &pass = *passData++;
-                    JSON::Reference passNode(basePassNode);
+                    JSON passNode = basePassNode;
                     std::string entryPoint(passNode.get("entry").as(String::Empty));
                     auto programName = passNode.get("program").as(String::Empty);
                     pass.name = programName;
@@ -259,14 +257,14 @@ namespace Gek
                     if (passNode.has("enable"))
                     {
                         auto enableOption = passNode.get("enable").as(String::Empty);
-                        pass.enabled = JSON::Reference(globalOptions).get(enableOption).as(true);
+                        pass.enabled = filterOptionsNode.get(enableOption).as(true);
                         if (!pass.enabled)
                         {
                             continue;
                         }
                     }
 
-                    JSON passOptions(globalOptions);
+                    JSON passOptions(filterOptionsNode);
                     if (passNode.has("options"))
                     {
                         auto overrideOptions = passNode.get("options");
@@ -276,15 +274,15 @@ namespace Gek
                         }
                     }
 
-                    std::function<std::string(JSON::Reference)> addOptions;
-                    addOptions = [&](JSON::Reference options) -> std::string
+                    std::function<std::string(JSON const &)> addOptions;
+                    addOptions = [&](JSON const &options) -> std::string
                     {
                         std::string optionsData;
                         for (auto &optionPair : options.as(JSON::EmptyObject))
                         {
                             auto optionName = optionPair.first;
                             auto &optionValue = optionPair.second;
-                            JSON::Reference option(optionValue);
+                            JSON option = optionValue;
                             if (optionValue.is_object())
                             {
                                 if (option.has("options"))
@@ -294,7 +292,7 @@ namespace Gek
 
                                     uint32_t optionValue = 0;
                                     std::vector<std::string> optionList;
-                                    for (JSON::Reference choice : option.get("options").as(JSON::EmptyArray))
+                                    for (JSON choice : option.get("options").as(JSON::EmptyArray))
                                     {
                                         auto optionName = choice.as(String::Empty);
                                         optionsData += String::Format("        static const int {} = {};\r\n", optionName, optionValue++);
@@ -344,28 +342,28 @@ namespace Gek
                                 {
                                 case 1:
                                     optionsData += String::Format("    static const float {} = {};\r\n", optionName,
-                                        JSON::Reference(optionValue[0]).as(0.0f));
+                                        optionValue[0]).as(0.0f));
                                     break;
 
                                 case 2:
                                     optionsData += String::Format("    static const float2 {} = float2({}, {});\r\n", optionName,
-                                        JSON::Reference(optionValue[0]).as(0.0f),
-                                        JSON::Reference(optionValue[1]).as(0.0f));
+                                        optionValue[0].as(0.0f),
+                                        optionValue[1].as(0.0f));
                                     break;
 
                                 case 3:
                                     optionsData += String::Format("    static const float3 {} = float3({}, {}, {});\r\n", optionName,
-                                        JSON::Reference(optionValue[0]).as(0.0f),
-                                        JSON::Reference(optionValue[1]).as(0.0f),
-                                        JSON::Reference(optionValue[2]).as(0.0f));
+                                        optionValue[0].as(0.0f),
+                                        optionValue[1].as(0.0f),
+                                        optionValue[2].as(0.0f));
                                     break;
 
                                 case 4:
                                     optionsData += String::Format("    static const float4 {} = float4({}, {}, {}, {})\r\n", optionName,
-                                        JSON::Reference(optionValue[0]).as(0.0f),
-                                        JSON::Reference(optionValue[1]).as(0.0f),
-                                        JSON::Reference(optionValue[2]).as(0.0f),
-                                        JSON::Reference(optionValue[3]).as(0.0f));
+                                        optionValue[0].as(0.0f),
+                                        optionValue[1].as(0.0f),
+                                        optionValue[2].as(0.0f),
+                                        optionValue[3].as(0.0f));
                                     break;
                                 };
                             }
@@ -416,16 +414,16 @@ namespace Gek
                         auto &dispatch = passNode.get("dispatch");
                         if (dispatch.isFloat())
                         {
-                            pass.dispatchWidth = pass.dispatchHeight = pass.dispatchDepth = evaluate(dispatch, 1);
+                            pass.dispatchWidth = pass.dispatchHeight = pass.dispatchDepth = dispatch.evaluate(shuntingYard, 1);
                         }
                         else
                         {
                             auto &dispatchArray = dispatch.as(JSON::EmptyArray);
                             if (dispatchArray.size() == 3)
                             {
-                                pass.dispatchWidth = evaluate(dispatch.at(0), 1);
-                                pass.dispatchHeight = evaluate(dispatch.at(1), 1);
-                                pass.dispatchDepth = evaluate(dispatch.at(2), 1);
+                                pass.dispatchWidth = dispatch.at(0).evaluate(shuntingYard, 1);
+                                pass.dispatchHeight = dispatch.at(1).evaluate(shuntingYard, 1);
+                                pass.dispatchDepth = dispatch.at(2).evaluate(shuntingYard, 1);
                             }
                         }
                     }
@@ -497,7 +495,7 @@ namespace Gek
                         auto resourceSearch = resourceMap.find(resourceName);
                         if (resourceSearch != std::end(resourceMap))
                         {
-                            JSON::Reference clearTargetNode(baseClearTargetNode.second);
+                            JSON clearTargetNode(baseClearTargetNode.second);
                             auto clearType = getClearType(clearTargetNode.get("type").as(String::Empty));
                             auto clearValue = clearTargetNode.get("value").as(String::Empty);
                             pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(clearType, clearValue)));
@@ -510,7 +508,7 @@ namespace Gek
 
                     for (auto &baseGenerateMipMapsNode : passNode.get("generateMipMaps").as(JSON::EmptyArray))
                     {
-                        JSON::Reference generateMipMapNode(baseGenerateMipMapsNode);
+                        JSON generateMipMapNode(baseGenerateMipMapsNode);
                         auto resourceName = generateMipMapNode.as(String::Empty);
                         auto resourceSearch = resourceMap.find(resourceName);
                         if (resourceSearch != std::end(resourceMap))
@@ -529,7 +527,7 @@ namespace Gek
                         auto nameSearch = resourceMap.find(targetResourceName);
                         if (nameSearch != std::end(resourceMap))
                         {
-                            JSON::Reference copyNode(baseCopyNode.second);
+                            JSON copyNode(baseCopyNode.second);
                             auto sourceResourceName = copyNode.as(String::Empty);
                             auto valueSearch = resourceMap.find(sourceResourceName);
                             if (valueSearch != std::end(resourceMap))
@@ -553,7 +551,7 @@ namespace Gek
                         auto nameSearch = resourceMap.find(targetResourceName);
                         if (nameSearch != std::end(resourceMap))
                         {
-                            JSON::Reference resolveNode(baseResolveNode.second);
+                            JSON resolveNode(baseResolveNode.second);
                             auto sourceResourceName = resolveNode.as(String::Empty);
                             auto valueSearch = resourceMap.find(sourceResourceName);
                             if (valueSearch != std::end(resourceMap))
@@ -647,7 +645,7 @@ namespace Gek
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
 				}
 
-				core->setOption("filters", filterName, std::move(globalOptions));
+				core->setOption("filters", filterName, std::move(filterOptionsNode));
 				LockedWrite{ std::cout } << "Filter loaded successfully: " << filterName;
 			}
 
