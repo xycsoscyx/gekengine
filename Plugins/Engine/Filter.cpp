@@ -246,17 +246,16 @@ namespace Gek
                 auto &passesNode = filterNode.get("passes");
                 passList.resize(passesNode.as(JSON::EmptyArray).size());
                 auto passData = std::begin(passList);
-                for (auto &basePassNode : passesNode.as(JSON::EmptyArray))
+                for (auto &passNode : passesNode.as(JSON::EmptyArray))
                 {
                     PassData &pass = *passData++;
-                    JSON passNode = basePassNode;
                     std::string entryPoint(passNode.get("entry").as(String::Empty));
                     auto programName = passNode.get("program").as(String::Empty);
                     pass.name = programName;
 
-                    if (passNode.has("enable"))
+                    auto enableOption = passNode.get("enable").as(String::Empty);
+                    if (!enableOption.empty())
                     {
-                        auto enableOption = passNode.get("enable").as(String::Empty);
                         pass.enabled = filterOptionsNode.get(enableOption).as(true);
                         if (!pass.enabled)
                         {
@@ -265,13 +264,9 @@ namespace Gek
                     }
 
                     JSON passOptions(filterOptionsNode);
-                    if (passNode.has("options"))
+                    for (auto &overridePair : passNode.get("options").as(JSON::EmptyObject))
                     {
-                        auto overrideOptions = passNode.get("options");
-                        for (auto &overridePair : overrideOptions.as(JSON::EmptyObject))
-                        {
-                            passOptions[overridePair.first] = overridePair.second;
-                        }
+                        passOptions[overridePair.first] = overridePair.second;
                     }
 
                     std::function<std::string(JSON const &)> addOptions;
@@ -281,107 +276,106 @@ namespace Gek
                         for (auto &optionPair : options.as(JSON::EmptyObject))
                         {
                             auto optionName = optionPair.first;
-                            auto &optionValue = optionPair.second;
-                            JSON option = optionValue;
-                            if (optionValue.is_object())
+                            auto &optionNode = optionPair.second;
+                            optionNode.visit([&](auto && visitedData)
                             {
-                                if (option.has("options"))
+                                using TYPE = std::decay_t<decltype(visitedData)>;
+                                if constexpr (std::is_same_v<TYPE, JSON::Object>)
                                 {
-                                    optionsData += String::Format("    namespace {}\r\n", optionName);
-                                    optionsData += String::Format("    {\r\n");
-
-                                    uint32_t optionValue = 0;
-                                    std::vector<std::string> optionList;
-                                    for (JSON choice : option.get("options").as(JSON::EmptyArray))
+                                    if (visitedData.count("options"))
                                     {
-                                        auto optionName = choice.as(String::Empty);
-                                        optionsData += String::Format("        static const int {} = {};\r\n", optionName, optionValue++);
-                                        optionList.push_back(optionName);
-                                    }
+                                        optionsData += String::Format("    namespace {}\r\n", optionName);
+                                        optionsData += String::Format("    {\r\n");
 
-                                    int selection = 0;
-                                    auto &selectionNode = option.get("selection");
-                                    if (selectionNode.isString())
-                                    {
-                                        auto selectedName = selectionNode.as(String::Empty);
-                                        auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string const &choice) -> bool
+                                        std::vector<std::string> choices;
+                                        for (auto &choice : optionNode.get("options").as(JSON::EmptyArray))
                                         {
-                                            return (selectedName == choice);
-                                        });
-
-                                        if (optionsSearch != std::end(optionList))
-                                        {
-                                            selection = std::distance(std::begin(optionList), optionsSearch);
+                                            auto name = choice.as(String::Empty);
+                                            optionsData += String::Format("        static const int {} = {};\r\n", name, choices.size());
+                                            choices.push_back(optionName);
                                         }
+
+                                        int selection = 0;
+                                        auto &selectionNode = optionNode.get("selection");
+                                        if (selectionNode.isString())
+                                        {
+                                            auto selectedName = selectionNode.as(String::Empty);
+                                            auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string const &choice) -> bool
+                                            {
+                                                return (selectedName == choice);
+                                            });
+
+                                            if (optionsSearch != std::end(optionList))
+                                            {
+                                                selection = std::distance(std::begin(optionList), optionsSearch);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            selection = selectionNode.as(0ULL);
+                                        }
+
+                                        optionsData += String::Format("        static const int Selection = {};\r\n", selection);
+                                        optionsData += String::Format("    };\r\n");
                                     }
                                     else
                                     {
-                                        selection = selectionNode.as(0ULL);
+                                        auto optionData = addOptions(option);
+                                        if (!optionData.empty())
+                                        {
+                                            optionsData += String::Format(
+                                                "namespace {}\r\n" \
+                                                "{\r\n" \
+                                                "{}" \
+                                                "};\r\n" \
+                                                "\r\n", optionName, optionData);
+                                        }
                                     }
-
-                                    optionsData += String::Format("        static const int Selection = {};\r\n", selection);
-                                    optionsData += String::Format("    };\r\n");
                                 }
-                                else
+                                else if constexpr (std::is_same_v<TYPE, JSON::Array>)
                                 {
-                                    auto optionData = addOptions(option);
-                                    if (!optionData.empty())
+                                    switch (visitedData.size())
                                     {
-                                        optionsData += String::Format(
-                                            "namespace {}\r\n" \
-                                            "{\r\n" \
-                                            "{}" \
-                                            "};\r\n" \
-                                            "\r\n", optionName, optionData);
-                                    }
+                                    case 1:
+                                        optionsData += String::Format("    static const float {} = {};\r\n", optionName,
+                                            visitedData[0].as(0.0f));
+                                        break;
+
+                                    case 2:
+                                        optionsData += String::Format("    static const float2 {} = float2({}, {});\r\n", optionName,
+                                            visitedData[0].as(0.0f),
+                                            visitedData[1].as(0.0f));
+                                        break;
+
+                                    case 3:
+                                        optionsData += String::Format("    static const float3 {} = float3({}, {}, {});\r\n", optionName,
+                                            visitedData[0].as(0.0f),
+                                            visitedData[1].as(0.0f),
+                                            visitedData[2].as(0.0f));
+                                        break;
+
+                                    case 4:
+                                        optionsData += String::Format("    static const float4 {} = float4({}, {}, {}, {})\r\n", optionName,
+                                            visitedData[0].as(0.0f),
+                                            visitedData[1].as(0.0f),
+                                            visitedData[2].as(0.0f),
+                                            visitedData[3].as(0.0f));
+                                        break;
+                                    };
                                 }
-                            }
-                            else if (optionValue.is_array())
-                            {
-                                switch (optionValue.size())
+                                else if constexpr (std::is_same_v<TYPE, JSON::bool>)
                                 {
-                                case 1:
-                                    optionsData += String::Format("    static const float {} = {};\r\n", optionName,
-                                        optionValue[0]).as(0.0f));
-                                    break;
-
-                                case 2:
-                                    optionsData += String::Format("    static const float2 {} = float2({}, {});\r\n", optionName,
-                                        optionValue[0].as(0.0f),
-                                        optionValue[1].as(0.0f));
-                                    break;
-
-                                case 3:
-                                    optionsData += String::Format("    static const float3 {} = float3({}, {}, {});\r\n", optionName,
-                                        optionValue[0].as(0.0f),
-                                        optionValue[1].as(0.0f),
-                                        optionValue[2].as(0.0f));
-                                    break;
-
-                                case 4:
-                                    optionsData += String::Format("    static const float4 {} = float4({}, {}, {}, {})\r\n", optionName,
-                                        optionValue[0].as(0.0f),
-                                        optionValue[1].as(0.0f),
-                                        optionValue[2].as(0.0f),
-                                        optionValue[3].as(0.0f));
-                                    break;
-                                };
-                            }
-                            else
-                            {
-                                if (optionValue.is_bool())
-                                {
-                                    optionsData += String::Format("    static const bool {} = {};\r\n", optionName, option.as(false));
+                                    optionsData += String::Format("    static const bool {} = {};\r\n", optionName, visitedData);
                                 }
-                                else if (optionValue.is_integer())
+                                else if constexpr (std::is_same_v<TYPE, JSON::float>)
                                 {
-                                    optionsData += String::Format("    static const int {} = {};\r\n", optionName, option.as(0ULL));
+                                    optionsData += String::Format("    static const float {} = {};\r\n", optionName, visitedData);
                                 }
                                 else
                                 {
-                                    optionsData += String::Format("    static const float {} = {};\r\n", optionName, option.as(0.0f));
+                                    optionsData += String::Format("    static const int {} = {};\r\n", optionName, visitedData);
                                 }
-                            }
+                            });
                         }
 
                         return optionsData;
@@ -411,21 +405,25 @@ namespace Gek
 
                     if (pass.mode == Pass::Mode::Compute)
                     {
-                        auto &dispatch = passNode.get("dispatch");
-                        if (dispatch.isFloat())
+                        auto &dispatchNode = passNode.get("dispatch");
+                        dispatchNode.visit([&](auto && visitedData)
                         {
-                            pass.dispatchWidth = pass.dispatchHeight = pass.dispatchDepth = dispatch.evaluate(shuntingYard, 1);
-                        }
-                        else
-                        {
-                            auto &dispatchArray = dispatch.as(JSON::EmptyArray);
-                            if (dispatchArray.size() == 3)
+                            using TYPE = std::decay_t<decltype(visitedData)>;
+                            if constexpr (std::is_same_v<TYPE, JSON::Array>)
                             {
-                                pass.dispatchWidth = dispatch.at(0).evaluate(shuntingYard, 1);
-                                pass.dispatchHeight = dispatch.at(1).evaluate(shuntingYard, 1);
-                                pass.dispatchDepth = dispatch.at(2).evaluate(shuntingYard, 1);
+                                if (visitedData.size() == 3)
+                                {
+                                    pass.dispatchWidth = visitedData.at(0).evaluate(shuntingYard, 1);
+                                    pass.dispatchHeight = visitedData.at(1).evaluate(shuntingYard, 1);
+                                    pass.dispatchDepth = visitedData.at(2).evaluate(shuntingYard, 1);
+                                }
                             }
-                        }
+                            else
+                            {
+                                pass.dispatchWidth = pass.dispatchHeight = pass.dispatchDepth = dispatchNode.evaluate(shuntingYard, 1);
+                            }
+
+                        });
                     }
                     else
                     {
