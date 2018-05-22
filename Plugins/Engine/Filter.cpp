@@ -104,37 +104,37 @@ namespace Gek
                 JSON filterNode;
                 filterNode.load(getContext()->findDataPath(FileSystem::CombinePaths("filters", filterName).withExtension(".json")));
 
-                auto globalOptions = filterNode.get("options").getObject();
+                auto globalOptions = filterNode.get("options");
                 auto engineOptions = core->getOption("filters", filterName);
-                for (auto &enginePair : engineOptions.getMembers())
+                for (auto &enginePair : engineOptions.as(JSON::EmptyObject))
                 {
-                    globalOptions[enginePair.name()] = enginePair.value();
+                    globalOptions[enginePair.first] = enginePair.second;
                 }
 
-                for (auto &globalPair : globalOptions.members())
+                for (auto &globalPair : globalOptions.as(JSON::EmptyObject))
                 {
-                    if (globalPair.name() == "#import")
+                    if (globalPair.first == "#import")
                     {
-                        auto importName = JSON::Reference(globalPair.value()).as(String::Empty);
-                        globalOptions.erase(globalPair.name());
+                        auto importName = globalPair.second.as(String::Empty);
+                        globalOptions.as(JSON::EmptyObject).erase(globalPair.first);
 
                         JSON importOptions;
                         importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", importName).withExtension(".json")));
-                        for (auto &importPair : importOptions.getMembers())
+                        for (auto &importPair : importOptions.as(JSON::EmptyObject))
                         {
-                            globalOptions[importPair.name()] = importPair.value();
+                            globalOptions[importPair.first] = importPair.second;
                         }
                     }
                 }
 
-                for (auto &requires : filterNode.get("requires").getArray())
+                for (auto &requires : filterNode.get("requires").as(JSON::EmptyArray))
                 {
-                    resources->getShader(JSON::Reference(requires).as(String::Empty), MaterialHandle());
+                    resources->getShader(requires.as(String::Empty), MaterialHandle());
                 }
 
-                for (auto &baseTextureNode : filterNode.get("textures").getMembers())
+                for (auto &baseTextureNode : filterNode.get("textures").as(JSON::EmptyObject))
                 {
-                    std::string textureName(baseTextureNode.name());
+                    std::string textureName(baseTextureNode.first);
                     if (resourceMap.count(textureName) > 0)
                     {
                         LockedWrite{ std::cout } << "Texture name same as already listed resource: " << textureName;
@@ -142,7 +142,7 @@ namespace Gek
                     }
 
                     ResourceHandle resource;
-                    JSON::Reference textureNode(baseTextureNode.value());
+                    auto textureNode = baseTextureNode.second.as(JSON::EmptyObject);
                     if (textureNode.has("file"))
                     {
                         std::string fileName(textureNode.get("file").as(String::Empty));
@@ -160,7 +160,7 @@ namespace Gek
                         }
                         else
                         {
-                            auto &sizeArray = size.getArray();
+                            auto &sizeArray = size.as(JSON::EmptyArray);
                             switch (sizeArray.size())
                             {
                             case 3:
@@ -200,16 +200,16 @@ namespace Gek
                     }
                 }
 
-                for (auto &baseBufferNode : filterNode.get("buffers").getMembers())
+                for (auto &baseBufferNode : filterNode.get("buffers").as(JSON::EmptyObject))
                 {
-                    std::string bufferName(baseBufferNode.name());
+                    std::string bufferName(baseBufferNode.first);
                     if (resourceMap.count(bufferName) > 0)
                     {
                         LockedWrite{ std::cout } << "Texture name same as already listed resource: " << bufferName;
                         continue;
                     }
 
-                    JSON::Reference bufferValue(baseBufferNode.value());
+                    JSON::Reference bufferValue(baseBufferNode.second);
 
                     Video::Buffer::Description description;
                     description.count = evaluate(bufferValue.get("count"), 0);
@@ -246,9 +246,9 @@ namespace Gek
                 }
 
                 auto &passesNode = filterNode.get("passes");
-                passList.resize(passesNode.getArray().size());
+                passList.resize(passesNode.as(JSON::EmptyArray).size());
                 auto passData = std::begin(passList);
-                for (auto &basePassNode : passesNode.getArray())
+                for (auto &basePassNode : passesNode.as(JSON::EmptyArray))
                 {
                     PassData &pass = *passData++;
                     JSON::Reference passNode(basePassNode);
@@ -270,9 +270,9 @@ namespace Gek
                     if (passNode.has("options"))
                     {
                         auto overrideOptions = passNode.get("options");
-                        for (auto &overridePair : overrideOptions.getMembers())
+                        for (auto &overridePair : overrideOptions.as(JSON::EmptyObject))
                         {
-                            passOptions[overridePair.name()] = overridePair.value();
+                            passOptions[overridePair.first] = overridePair.second;
                         }
                     }
 
@@ -280,10 +280,10 @@ namespace Gek
                     addOptions = [&](JSON::Reference options) -> std::string
                     {
                         std::string optionsData;
-                        for (auto &optionPair : options.getMembers())
+                        for (auto &optionPair : options.as(JSON::EmptyObject))
                         {
-                            auto optionName = optionPair.name();
-                            auto &optionValue = optionPair.value();
+                            auto optionName = optionPair.first;
+                            auto &optionValue = optionPair.second;
                             JSON::Reference option(optionValue);
                             if (optionValue.is_object())
                             {
@@ -294,7 +294,7 @@ namespace Gek
 
                                     uint32_t optionValue = 0;
                                     std::vector<std::string> optionList;
-                                    for (JSON::Reference choice : option.get("options").getArray())
+                                    for (JSON::Reference choice : option.get("options").as(JSON::EmptyArray))
                                     {
                                         auto optionName = choice.as(String::Empty);
                                         optionsData += String::Format("        static const int {} = {};\r\n", optionName, optionValue++);
@@ -420,7 +420,7 @@ namespace Gek
                         }
                         else
                         {
-                            auto &dispatchArray = dispatch.getArray();
+                            auto &dispatchArray = dispatch.as(JSON::EmptyArray);
                             if (dispatchArray.size() == 3)
                             {
                                 pass.dispatchWidth = evaluate(dispatch.at(0), 1);
@@ -491,13 +491,13 @@ namespace Gek
                         pass.blendState = resources->createBlendState(blendStateInformation);
                     }
 
-                    for (auto &baseClearTargetNode : passNode.get("clear").getMembers())
+                    for (auto &baseClearTargetNode : passNode.get("clear").as(JSON::EmptyObject))
                     {
-                        auto resourceName = baseClearTargetNode.name();
+                        auto resourceName = baseClearTargetNode.first;
                         auto resourceSearch = resourceMap.find(resourceName);
                         if (resourceSearch != std::end(resourceMap))
                         {
-                            JSON::Reference clearTargetNode(baseClearTargetNode.value());
+                            JSON::Reference clearTargetNode(baseClearTargetNode.second);
                             auto clearType = getClearType(clearTargetNode.get("type").as(String::Empty));
                             auto clearValue = clearTargetNode.get("value").as(String::Empty);
                             pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(clearType, clearValue)));
@@ -508,7 +508,7 @@ namespace Gek
                         }
                     }
 
-                    for (auto &baseGenerateMipMapsNode : passNode.get("generateMipMaps").getArray())
+                    for (auto &baseGenerateMipMapsNode : passNode.get("generateMipMaps").as(JSON::EmptyArray))
                     {
                         JSON::Reference generateMipMapNode(baseGenerateMipMapsNode);
                         auto resourceName = generateMipMapNode.as(String::Empty);
@@ -523,13 +523,13 @@ namespace Gek
                         }
                     }
 
-                    for (auto &baseCopyNode : passNode.get("copy").getMembers())
+                    for (auto &baseCopyNode : passNode.get("copy").as(JSON::EmptyObject))
                     {
-                        auto targetResourceName = baseCopyNode.name();
+                        auto targetResourceName = baseCopyNode.first;
                         auto nameSearch = resourceMap.find(targetResourceName);
                         if (nameSearch != std::end(resourceMap))
                         {
-                            JSON::Reference copyNode(baseCopyNode.value());
+                            JSON::Reference copyNode(baseCopyNode.second);
                             auto sourceResourceName = copyNode.as(String::Empty);
                             auto valueSearch = resourceMap.find(sourceResourceName);
                             if (valueSearch != std::end(resourceMap))
@@ -547,13 +547,13 @@ namespace Gek
                         }
                     }
 
-                    for (auto &baseResolveNode : passNode.get("resolve").getMembers())
+                    for (auto &baseResolveNode : passNode.get("resolve").as(JSON::EmptyObject))
                     {
-                        auto targetResourceName = baseResolveNode.name();
+                        auto targetResourceName = baseResolveNode.first;
                         auto nameSearch = resourceMap.find(targetResourceName);
                         if (nameSearch != std::end(resourceMap))
                         {
-                            JSON::Reference resolveNode(baseResolveNode.value());
+                            JSON::Reference resolveNode(baseResolveNode.second);
                             auto sourceResourceName = resolveNode.as(String::Empty);
                             auto valueSearch = resourceMap.find(sourceResourceName);
                             if (valueSearch != std::end(resourceMap))

@@ -643,7 +643,7 @@ namespace Gek
                                                                 if (optionsSearch != std::end(optionList))
                                                                 {
                                                                     selection = std::distance(std::begin(optionList), optionsSearch);
-                                                                    visitedData["selection"] = selection;
+                                                                    optionValue.as(JSON::EmptyObject)["selection"] = selection;
                                                                 }
                                                             }
                                                             else
@@ -664,7 +664,7 @@ namespace Gek
                                                             return false;
                                                         }, &optionList, optionList.size(), 10))
                                                         {
-                                                            visitedData["selection"] = selection;
+                                                            optionValue.as(JSON::EmptyObject)["selection"] = selection;
                                                             changedVisualOptions = true;
                                                         }
                                                     }

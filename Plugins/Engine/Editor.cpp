@@ -354,7 +354,7 @@ namespace Gek
                             std::vector<Plugin::Population::Component> componentList;
                             if (createNamedEntity && !entityName.empty())
                             {
-                                componentList.push_back(std::make_pair("Name", entityName));
+                                componentList.push_back(std::make_pair("Name", JSON(entityName)));
                             }
 
                             population->createEntity(componentList);

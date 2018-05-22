@@ -26,7 +26,7 @@ namespace Gek
 
         GEK_INTERFACE(Population)
         {
-            using Component = std::pair<std::string, JSON::Object>;
+            using Component = std::pair<std::string, JSON>;
 
             struct Action
             {
