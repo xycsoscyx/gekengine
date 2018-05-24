@@ -53,13 +53,14 @@ namespace Gek
                         {
                             ResourceHandle resourceHandle;
                             auto &resourceNode = dataNode.get(initializer.name);
-                            if (resourceNode.has("file"))
+                            auto &resourceObject = resourceNode.as(JSON::EmptyObject);
+                            if (resourceObject.count("file"))
                             {
                                 auto fileName = resourceNode.get("file").as(String::Empty);
                                 uint32_t flags = getTextureLoadFlags(resourceNode.get("flags").as(String::Empty));
                                 resourceHandle = resources->loadTexture(fileName, flags);
                             }
-                            else if (resourceNode.has("source"))
+                            else if (resourceObject.count("source"))
                             {
                                 resourceHandle = resources->getResourceHandle(resourceNode.get("source").as(String::Empty));
                             }

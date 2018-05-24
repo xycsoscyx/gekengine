@@ -149,7 +149,7 @@ namespace Gek
                         Video::Texture::Description description(backBufferDescription);
                         description.format = Video::GetFormat(textureNode.get("format").as(String::Empty));
                         auto &size = textureNode.get("size");
-                        size.visit([&](auto && visitedValue) -> void
+                        size.visit([&](auto && visitedData) -> void
                         {
                             using TYPE = std::decay_t<decltype(visitedData)>;
                             if constexpr (std::is_same_v<TYPE, JSON::Array>)
@@ -157,19 +157,19 @@ namespace Gek
                                 switch (visitedData.size())
                                 {
                                 case 3:
-                                    description.depth = evaluate(visitedData.at(2), 1);
+                                    description.depth = visitedData.at(2).evaluate(shuntingYard, 1);
 
                                 case 2:
-                                    description.height = evaluate(visitedData.at(1), 1);
+                                    description.height = visitedData.at(1).evaluate(shuntingYard, 1);
 
                                 case 1:
-                                    description.width = evaluate(visitedData.at(0), 1);
+                                    description.width = visitedData.at(0).evaluate(shuntingYard, 1);
                                     break;
                                 };
                             }
                             else
                             {
-                                description.width = evaluate(size, 1);
+                                description.width = size.evaluate(shuntingYard, 1);
                             }
                         });
 
@@ -198,36 +198,37 @@ namespace Gek
                     }
                 }
 
-                for (auto &baseBufferNode : filterNode.get("buffers").as(JSON::EmptyObject))
+                for (auto &bufferPair : filterNode.get("buffers").as(JSON::EmptyObject))
                 {
-                    std::string bufferName(baseBufferNode.first);
+                    std::string bufferName(bufferPair.first);
                     if (resourceMap.count(bufferName) > 0)
                     {
                         LockedWrite{ std::cout } << "Texture name same as already listed resource: " << bufferName;
                         continue;
                     }
 
-                    auto &bufferValue = baseBufferNode.second;
+                    auto &bufferNode = bufferPair.second;
+                    auto &bufferObject = bufferNode.as(JSON::EmptyObject);
 
                     Video::Buffer::Description description;
-                    description.count = bufferValue.get("count").evaluate(shuntingYard, 0);
-                    description.flags = getBufferFlags(bufferValue.get("flags").as(String::Empty));
-                    if (bufferValue.has("format"))
+                    description.count = bufferNode.get("count").evaluate(shuntingYard, 0);
+                    description.flags = getBufferFlags(bufferNode.get("flags").as(String::Empty));
+                    if (bufferObject.count("format"))
                     {
                         description.type = Video::Buffer::Type::Raw;
-                        description.format = Video::GetFormat(bufferValue.get("format").as(String::Empty));
+                        description.format = Video::GetFormat(bufferNode.get("format").as(String::Empty));
                     }
                     else
                     {
                         description.type = Video::Buffer::Type::Structured;
-                        description.stride = bufferValue.get("stride").evaluate(shuntingYard, 0);
+                        description.stride = bufferNode.get("stride").evaluate(shuntingYard, 0);
                     }
 
                     auto resource = resources->createBuffer(bufferName, description, true);
                     if (resource)
                     {
                         resourceMap[bufferName] = resource;
-                        if (bufferValue.get("byteaddress").as(false))
+                        if (bufferNode.get("byteaddress").as(false))
                         {
                             resourceSemanticsMap[bufferName] = "ByteAddressBuffer";
                         }
@@ -236,7 +237,7 @@ namespace Gek
                             auto description = resources->getBufferDescription(resource);
                             if (description != nullptr)
                             {
-                                auto structure = bufferValue.get("structure").as(String::Empty);
+                                auto structure = bufferNode.get("structure").as(String::Empty);
                                 resourceSemanticsMap[bufferName] += String::Format("Buffer<{}>", structure.empty() ? getFormatSemantic(description->format) : structure);
                             }
                         }
@@ -297,17 +298,17 @@ namespace Gek
 
                                         int selection = 0;
                                         auto &selectionNode = optionNode.get("selection");
-                                        if (selectionNode.isString())
+                                        if (selectionNode.is<std::string>())
                                         {
                                             auto selectedName = selectionNode.as(String::Empty);
-                                            auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string const &choice) -> bool
+                                            auto optionsSearch = std::find_if(std::begin(choices), std::end(choices), [selectedName](std::string const &choice) -> bool
                                             {
                                                 return (selectedName == choice);
                                             });
 
-                                            if (optionsSearch != std::end(optionList))
+                                            if (optionsSearch != std::end(choices))
                                             {
-                                                selection = std::distance(std::begin(optionList), optionsSearch);
+                                                selection = std::distance(std::begin(choices), optionsSearch);
                                             }
                                         }
                                         else
@@ -320,7 +321,7 @@ namespace Gek
                                     }
                                     else
                                     {
-                                        auto optionData = addOptions(option);
+                                        auto optionData = addOptions(optionNode);
                                         if (!optionData.empty())
                                         {
                                             optionsData += String::Format(
@@ -363,11 +364,11 @@ namespace Gek
                                         break;
                                     };
                                 }
-                                else if constexpr (std::is_same_v<TYPE, JSON::bool>)
+                                else if constexpr (std::is_same_v<TYPE, bool>)
                                 {
                                     optionsData += String::Format("    static const bool {} = {};\r\n", optionName, visitedData);
                                 }
-                                else if constexpr (std::is_same_v<TYPE, JSON::float>)
+                                else if constexpr (std::is_same_v<TYPE, float>)
                                 {
                                     optionsData += String::Format("    static const float {} = {};\r\n", optionName, visitedData);
                                 }

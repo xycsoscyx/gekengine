@@ -963,9 +963,9 @@ namespace Gek
                 return configuration.get(system).get(name);
             }
 
-            void setOption(std::string_view system, std::string_view name, JSON &&value)
+            void setOption(std::string_view system, std::string_view name, JSON const &value)
             {
-				configuration[system][name] = std::move(value);
+				configuration[system][name] = value;
             }
 
             void deleteOption(std::string_view system, std::string_view name)

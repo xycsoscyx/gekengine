@@ -182,24 +182,34 @@ namespace Gek
         return (flags | Video::Buffer::Flags::Resource);
     }
 
-    std::unordered_map<std::string, std::string> getAliasedMap(JSON::Reference parent, std::string const &name)
+    std::unordered_map<std::string, std::string> getAliasedMap(JSON const &parent, std::string const &name)
     {
         std::unordered_map<std::string, std::string> aliasedMap;
-        auto &object = parent.get(name);
-        for (auto &element : object.getArray())
+        for (auto &elementNode : parent.get(name).as(JSON::EmptyArray))
         {
-            if (element.is_string())
+            elementNode.visit([&](auto && visitedData)
             {
-                std::string name(element.as_string());
-                aliasedMap[name] = name;
-            }
-            else if (element.is_object() && !element.empty())
-            {
-                auto &member = element.begin_members();
-                std::string name(member->name());
-                std::string value(member->value().as_string());
-                aliasedMap[name] = value;
-            }
+                using TYPE = std::decay_t<decltype(visitedData)>;
+                if constexpr (std::is_same_v<TYPE, std::string>)
+                {
+                    aliasedMap[name] = visitedData;
+                }
+                else if constexpr (std::is_same_v<TYPE, JSON::Object>)
+                {
+                    auto firstMember = visitedData.begin();
+                    auto &aliasName = firstMember->first;
+                    auto &aliasNode = firstMember->second;
+                    aliasNode.visit([&](auto && aliasData)
+                    {
+                        using TYPE = std::decay_t<decltype(visitedData)>;
+                        if constexpr (!std::is_same_v<TYPE, JSON::Array> &&
+                            !std::is_same_v<TYPE, JSON::Object>)
+                        {
+                            aliasedMap[aliasName] = String::Format("{}", aliasData);
+                        }
+                    });
+                }
+            });
         }
 
         return aliasedMap;

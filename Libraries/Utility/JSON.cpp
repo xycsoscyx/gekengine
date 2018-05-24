@@ -142,6 +142,60 @@ namespace Gek
         FileSystem::Save(filePath, stream.str());
     }
 
+    std::string JSON::getString(void) const
+    {
+        return visit([&](auto && data) -> std::string
+        {
+            std::stringstream stream;
+            using TYPE = std::decay_t<decltype(data)>;
+            if constexpr (std::is_same_v<TYPE, std::string>)
+            {
+                stream << "\"" << data << "\"";
+            }
+            else if constexpr (std::is_same_v<TYPE, JSON::Array>)
+            {
+                stream << "[ ";
+                bool writtenPrevious = false;
+                for (auto &index : data)
+                {
+                    stream << index.getString();
+                    if (writtenPrevious)
+                    {
+                        stream << ", ";
+                    }
+
+                    writtenPrevious = true;
+                }
+
+                stream << "]";
+            }
+            else if constexpr (std::is_same_v<TYPE, JSON::Object>)
+            {
+                stream << "{ ";
+                bool writtenPrevious = false;
+                for (auto &index : data)
+                {
+                    stream << "\"" << index.first << "\": ";
+                    stream << index.second.getString();
+                    if (writtenPrevious)
+                    {
+                        stream << ", ";
+                    }
+
+                    writtenPrevious = true;
+                }
+
+                stream << "}";
+            }
+            else
+            {
+                stream << data;
+            }
+
+            return stream.str();
+        });
+    }
+
     JSON const &JSON::get(size_t index) const
     {
         if (auto value = std::get_if<Array>(&data))
@@ -210,6 +264,48 @@ namespace Gek
     uint32_t JSON::evaluate(ShuntingYard &shuntingYard, uint32_t defaultValue) const
     {
         return visit([&](auto && data) -> uint32_t
+        {
+            using TYPE = std::decay_t<decltype(data)>;
+            if constexpr (std::is_same_v<TYPE, std::string>)
+            {
+                return shuntingYard.evaluate(data).value_or(defaultValue);
+            }
+            else if constexpr (std::is_same_v<TYPE, Object> ||
+                std::is_same_v<TYPE, Array>)
+            {
+                return defaultValue;
+            }
+            else
+            {
+                return data;
+            }
+        });
+    }
+
+    int64_t JSON::evaluate(ShuntingYard &shuntingYard, int64_t defaultValue) const
+    {
+        return visit([&](auto && data) -> int64_t
+        {
+            using TYPE = std::decay_t<decltype(data)>;
+            if constexpr (std::is_same_v<TYPE, std::string>)
+            {
+                return shuntingYard.evaluate(data).value_or(defaultValue);
+            }
+            else if constexpr (std::is_same_v<TYPE, Object> ||
+                std::is_same_v<TYPE, Array>)
+            {
+                return defaultValue;
+            }
+            else
+            {
+                return data;
+            }
+        });
+    }
+
+    uint64_t JSON::evaluate(ShuntingYard &shuntingYard, uint64_t defaultValue) const
+    {
+        return visit([&](auto && data) -> uint64_t
         {
             using TYPE = std::decay_t<decltype(data)>;
             if constexpr (std::is_same_v<TYPE, std::string>)

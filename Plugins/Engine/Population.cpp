@@ -242,57 +242,59 @@ namespace Gek
 
                     auto templatesNode = worldNode.get("Templates");
                     auto &populationNode = worldNode.get("Population");
-                    auto &populationArray = populationNode.getArray();
+                    auto &populationArray = populationNode.as(JSON::EmptyArray);
                     LockedWrite{ std::cout } << "Found " << populationArray.size() << " Entity Definitions";
                     for (auto const &entityNode : populationArray)
                     {
                         uint32_t count = 1;
                         std::vector<Component> entityComponentList;
-                        if (entityNode.has_member("Template"))
+                        auto &entityObject = entityNode.as(JSON::EmptyObject);
+                        if (entityObject.count("Template"))
                         {
                             std::string templateName;
-                            auto &entityTemplateNode = entityNode["Template"];
-                            if (entityTemplateNode.is_string())
+                            auto &entityTemplateNode = entityNode.get("Template");
+                            auto &entityTemplateObject = entityTemplateNode.as(JSON::EmptyObject);
+                            if (entityTemplateNode.is<std::string>())
                             {
-                                templateName = entityTemplateNode.as_string();
+                                templateName = entityTemplateNode.as(String::Empty);
                             }
                             else
                             {
-                                if (entityTemplateNode.has_member("Base"))
+                                if (entityTemplateObject.count("Base"))
                                 {
-                                    templateName = entityTemplateNode.get("Base").as_string();
+                                    templateName = entityTemplateNode.get("Base").as(String::Empty);
                                 }
 
-                                if (entityTemplateNode.has_member("Count"))
+                                if (entityTemplateObject.count("Count"))
                                 {
-                                    count = entityTemplateNode.get("Count").as_integer();
+                                    count = entityTemplateNode.get("Count").as(0);
                                 }
                             }
 
                             auto &templateNode = templatesNode.get(templateName);
-                            for (auto const &componentNode : templateNode.getMembers())
+                            for (auto const &componentPair : templateNode.as(JSON::EmptyObject))
                             {
-                                entityComponentList.push_back(std::make_pair(componentNode.name(), componentNode.value()));
+                                entityComponentList.push_back(std::make_pair(componentPair.first, componentPair.second));
                             }
                         }
 
-                        for (auto const &componentNode : entityNode.members())
+                        for (auto const &componentPair : entityNode.as(JSON::EmptyObject))
                         {
                             auto componentSearch = std::find_if(std::begin(entityComponentList), std::end(entityComponentList), [&](Component const &componentData) -> bool
                             {
-                                return (componentData.first == componentNode.name());
+                                return (componentData.first == componentPair.first);
                             });
 
                             if (componentSearch == std::end(entityComponentList))
                             {
-                                entityComponentList.push_back(std::make_pair(componentNode.name(), componentNode.value()));
+                                entityComponentList.push_back(std::make_pair(componentPair.first, componentPair.second));
                             }
                             else
                             {
                                 auto &componentData = (*componentSearch);
-                                for (auto const &attribute : componentNode.value().members())
+                                for (auto const &attribute : componentPair.second.as(JSON::EmptyObject))
                                 {
-                                    componentData.second[attribute.name()] = attribute.value();
+                                    componentData.second[attribute.first] = attribute.second;
                                 }
                             }
                         }

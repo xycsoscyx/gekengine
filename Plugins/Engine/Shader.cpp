@@ -318,27 +318,28 @@ namespace Gek
                         continue;
                     }
 
-                    JSON bufferValue = buffersPair.second;
+                    auto &bufferNode = buffersPair.second;
+                    auto &bufferObject = bufferNode.as(JSON::EmptyObject);
 
                     Video::Buffer::Description description;
-                    description.count = bufferValue.get("count").evaluate(shuntingYard, 0);
-                    description.flags = getBufferFlags(bufferValue.get("flags").as(String::Empty));
-                    if (bufferValue.has("format"))
+                    description.count = bufferNode.get("count").evaluate(shuntingYard, 0);
+                    description.flags = getBufferFlags(bufferNode.get("flags").as(String::Empty));
+                    if (bufferObject.count("format"))
                     {
                         description.type = Video::Buffer::Type::Raw;
-                        description.format = Video::GetFormat(bufferValue.get("format").as(String::Empty));
+                        description.format = Video::GetFormat(bufferNode.get("format").as(String::Empty));
                     }
                     else
                     {
                         description.type = Video::Buffer::Type::Structured;
-                        description.stride = bufferValue.get("stride").evaluate(shuntingYard, 0);
+                        description.stride = bufferNode.get("stride").evaluate(shuntingYard, 0);
                     }
 
                     auto resource = resources->createBuffer(bufferName, description, true);
                     if (resource)
                     {
                         resourceMap[bufferName] = resource;
-                        if (bufferValue.get("byteaddress").as(false))
+                        if (bufferNode.get("byteaddress").as(false))
                         {
                             resourceSemanticsMap[bufferName] = "ByteAddressBuffer";
                         }
@@ -347,7 +348,7 @@ namespace Gek
                             auto description = resources->getBufferDescription(resource);
                             if (description != nullptr)
                             {
-                                auto structure = bufferValue.get("structure").as(String::Empty);
+                                auto structure = bufferNode.get("structure").as(String::Empty);
                                 resourceSemanticsMap[bufferName] += String::Format("Buffer<{}>", structure.empty() ? getFormatSemantic(description->format) : structure);
                             }
                         }
@@ -378,6 +379,8 @@ namespace Gek
                 auto passData = std::begin(passList);
                 for (auto &passNode : passesNode.as(JSON::EmptyArray))
                 {
+                    auto &passObject = passNode.as(JSON::EmptyObject);
+
                     PassData &pass = *passData++;
                     std::string entryPoint(passNode.get("entry").as(String::Empty));
                     auto programName = passNode.get("program").as(String::Empty);
@@ -498,11 +501,11 @@ namespace Gek
                                         break;
                                     };
                                 }
-                                else if constexpr (std::is_same_v<TYPE, JSON::bool>)
+                                else if constexpr (std::is_same_v<TYPE, bool>)
                                 {
                                     optionsData += String::Format("    static const bool {} = {};\r\n", optionName, visitedData);
                                 }
-                                else if constexpr (std::is_same_v<TYPE, JSON::float>)
+                                else if constexpr (std::is_same_v<TYPE, float>)
                                 {
                                     optionsData += String::Format("    static const float {} = {};\r\n", optionName, visitedData);
                                 }
@@ -622,7 +625,7 @@ namespace Gek
                         }
 
                         Video::DepthState::Description depthStateInformation;
-                        if (passNode.has("depthStyle"s))
+                        if (passObject.count("depthStyle"s))
                         {
                             auto &depthStyleNode = passNode.get("depthStyle"s);
                             auto camera = String::GetLower(depthStyleNode.get("camera"s).as("perspective"s));
@@ -870,7 +873,7 @@ namespace Gek
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
 				}
 
-				core->setOption("shaders", shaderName, std::move(shaderOptionsNode));
+				core->setOption("shaders", shaderName, shaderOptionsNode);
 				LockedWrite{ std::cout } << "Shader loaded successfully: " << shaderName;
 			}
 

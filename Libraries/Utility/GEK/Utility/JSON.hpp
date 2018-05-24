@@ -45,6 +45,8 @@ namespace Gek
         void load(FileSystem::Path const &filePath);
         void save(FileSystem::Path const &filePath);
 
+        std::string getString(void) const;
+
         template <typename FUNCTION>
         auto visit(FUNCTION function) const
         {
@@ -73,12 +75,6 @@ namespace Gek
             return defaultValue;
         }
 
-        template <typename TYPE>
-        TYPE & operator = (TYPE value)
-        {
-            return std::get<TYPE>(data = value);
-        }
-
         JSON const &get(size_t index) const;
         JSON const &get(std::string_view name) const;
 
@@ -97,3 +93,21 @@ namespace Gek
         std::string evaluate(ShuntingYard &shuntingYard, std::string const &defaultValue) const;
     };
 }; // namespace Gek
+
+namespace std
+{
+    inline std::string to_string(Gek::JSON const &data)
+    {
+        return data.getString();
+    }
+
+    inline std::string to_string(Gek::JSON::Array const &data)
+    {
+        return Gek::JSON(data).getString();
+    }
+
+    inline std::string to_string(Gek::JSON::Object const &data)
+    {
+        return Gek::JSON(data).getString();
+    }
+};
