@@ -53,6 +53,23 @@ namespace Gek
             return std::visit(function, data);
         }
 
+        template <typename TYPE>
+        auto scalar(void) const
+        {
+            return visit([&](auto && value) -> TYPE
+            {
+                using TYPE = std::decay_t<decltype(data)>;
+                if constexpr (std::is_same_v<TYPE, Object> || std::is_same_v<TYPE, Array>)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return value;
+                }
+            });
+        }
+
         bool empty(void) const
         {
             return (data.index() == std::variant_npos);

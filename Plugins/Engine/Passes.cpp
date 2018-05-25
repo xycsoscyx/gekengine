@@ -201,7 +201,7 @@ namespace Gek
                     auto &aliasNode = firstMember->second;
                     aliasNode.visit([&](auto && aliasData)
                     {
-                        using TYPE = std::decay_t<decltype(visitedData)>;
+                        using TYPE = std::decay_t<decltype(aliasData)>;
                         if constexpr (!std::is_same_v<TYPE, JSON::Array> &&
                             !std::is_same_v<TYPE, JSON::Object>)
                         {

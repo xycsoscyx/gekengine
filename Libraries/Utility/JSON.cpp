@@ -9,13 +9,14 @@ namespace Gek
     const JSON::Object JSON::EmptyObject = JSON::Object();
     const JSON JSON::Empty = JSON();
 
-    void LoadJSON(JSON &value, jsoncons::json const &object)
+    JSON LoadJSON(jsoncons::json const &object)
     {
         if (object.is_empty() || object.is_null())
         {
-            return;
+            return JSON::Empty;
         }
 
+        JSON value;
         switch (object.type_id())
         {
         case jsoncons::value_type::small_string_t:
@@ -40,29 +41,25 @@ namespace Gek
             break;
 
         case jsoncons::value_type::array_t:
-            if (true)
+            value = JSON::Array(object.size());
+            for (size_t index = 0; index < object.size(); ++index)
             {
-                auto &data = value = JSON::Array(object.size());
-                for (size_t index = 0; index < object.size(); ++index)
-                {
-                    LoadJSON(data[index], object[index]);
-                }
+                value[index] = LoadJSON(object[index]);
             }
 
             break;
 
         case jsoncons::value_type::object_t:
-            if (true)
+            value = JSON::Object();
+            for (auto &pair : object.members())
             {
-                auto &data = value = JSON::Object();
-                for (auto &pair : object.members())
-                {
-                    LoadJSON(data[pair.name()], pair.value());
-                }
+                value[pair.name()] = LoadJSON(pair.value());
             }
 
             break;
         };
+
+        return value;
     }
 
     void SaveJSON(JSON const &value, std::stringstream &stream)
@@ -131,7 +128,7 @@ namespace Gek
         }
         else
         {
-            LoadJSON(*this, decoder.get_result());
+            *this = LoadJSON(decoder.get_result());
         }
     }
 
@@ -212,7 +209,15 @@ namespace Gek
     {
         if (auto value = std::get_if<Object>(&data))
         {
-            return value->at(name.data());
+            auto search = value->find(name.data());
+            if (search == std::end(*value))
+            {
+                return Empty;
+            }
+            else
+            {
+                return search->second;
+            }
         }
         else
         {
@@ -227,7 +232,7 @@ namespace Gek
             data = EmptyArray;
         }
 
-        return as<Array>(EmptyArray)[index];
+        return std::get<Array>(data)[index];
     }
 
     JSON &JSON::operator [] (std::string_view name)
@@ -237,7 +242,7 @@ namespace Gek
             data = EmptyObject;
         }
 
-        return as<Object>(EmptyObject)[name.data()];
+        return std::get<Object>(data)[name.data()];
     }
 
     int32_t JSON::evaluate(ShuntingYard &shuntingYard, int32_t defaultValue) const

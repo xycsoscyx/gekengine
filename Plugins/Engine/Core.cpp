@@ -607,15 +607,15 @@ namespace Gek
                                             ImGui::Text(optionName.data());
                                             ImGui::SameLine();
                                             ImGui::PushItemWidth(-1.0f);
-                                            optionValue.visit([&](auto && visitedData) -> std::string
+                                            optionValue.visit([&](auto && visitedData)
                                             {
                                                 using TYPE = std::decay_t<decltype(visitedData)>;
                                                 if constexpr (std::is_same_v<TYPE, JSON::Object>)
                                                 {
                                                     auto optionsSearch = visitedData.find("options");
-                                                    if (optionsSearch == visitedData.end())
+                                                    if (optionsSearch != visitedData.end())
                                                     {
-                                                        return String::Empty;
+                                                        return;
                                                     }
 
                                                     auto optionsNode = optionsSearch->second;
@@ -970,8 +970,12 @@ namespace Gek
 
             void deleteOption(std::string_view system, std::string_view name)
             {
-                // TZTODO
-                //configuration.get(system).as(JSON::EmptyObject).erase(name);
+                auto &groupNode = configuration.get(system).as(JSON::EmptyObject);
+                auto search = groupNode.find(name.data());
+                if (search != std::end(groupNode))
+                {
+                    groupNode.erase(search);
+                }
             }
 
             Window * getWindow(void) const

@@ -1004,7 +1004,7 @@ namespace Gek
                 return ResourceHandle();
             }
 
-            ResourceHandle createPattern(std::string_view pattern, JSON::Reference parameters)
+            ResourceHandle createPattern(std::string_view pattern, JSON const &parameters)
             {
                 auto lowerPattern = String::GetLower(pattern);
 
@@ -1012,58 +1012,51 @@ namespace Gek
                 Video::Texture::Description description;
                 if (lowerPattern == "color")
                 {
-                    switch (parameters.getArray().size())
+                    auto parametersArray = parameters.as(JSON::EmptyArray);
+                    switch (parametersArray.size())
                     {
                     case 1:
-                        data.push_back(parameters.at(0).as(255));
+                        data.push_back(parametersArray.at(0).as(255));
                         description.format = Video::Format::R8_UNORM;
                         break;
 
                     case 2:
-                        data.push_back(parameters.at(0).as(255));
-                        data.push_back(parameters.at(1).as(255));
+                        data.push_back(parametersArray.at(0).as(255));
+                        data.push_back(parametersArray.at(1).as(255));
                         description.format = Video::Format::R8G8_UNORM;
                         break;
 
                     case 3:
-                        data.push_back(parameters.at(0).as(255));
-                        data.push_back(parameters.at(1).as(255));
-                        data.push_back(parameters.at(2).as(255));
+                        data.push_back(parametersArray.at(0).as(255));
+                        data.push_back(parametersArray.at(1).as(255));
+                        data.push_back(parametersArray.at(2).as(255));
                         data.push_back(0);
                         description.format = Video::Format::R8G8B8A8_UNORM;
                         break;
 
                     case 4:
-                        data.push_back(parameters.at(0).as(255));
-                        data.push_back(parameters.at(1).as(255));
-                        data.push_back(parameters.at(2).as(255));
-                        data.push_back(parameters.at(3).as(255));
+                        data.push_back(parametersArray.at(0).as(255));
+                        data.push_back(parametersArray.at(1).as(255));
+                        data.push_back(parametersArray.at(2).as(255));
+                        data.push_back(parametersArray.at(3).as(255));
                         description.format = Video::Format::R8G8B8A8_UNORM;
                         break;
 
                     default:
                         if (true)
                         {
-                            if (parameters.isFloat())
+                            union
                             {
-                                union
-                                {
-                                    float value;
-                                    uint8_t quarters[4];
-                                };
+                                float value;
+                                uint8_t quarters[4];
+                            };
 
-                                value = parameters.as(1.0f);
-                                data.push_back(quarters[0]);
-                                data.push_back(quarters[1]);
-                                data.push_back(quarters[2]);
-                                data.push_back(quarters[3]);
-                                description.format = Video::Format::R32_FLOAT;
-                            }
-                            else
-                            {
-                                data.push_back(parameters.as(255));
-                                description.format = Video::Format::R8_UNORM;
-                            }
+                            value = parameters.evaluate(shuntingYard, 1.0f);
+                            data.push_back(quarters[0]);
+                            data.push_back(quarters[1]);
+                            data.push_back(quarters[2]);
+                            data.push_back(quarters[3]);
+                            description.format = Video::Format::R32_FLOAT;
                         }
                     };
                 }
@@ -1075,7 +1068,7 @@ namespace Gek
                         uint8_t quarters[4];
                     };
 
-                    Math::Float3 normal = parameters.as(Math::Float3::Zero);
+                    Math::Float3 normal = parameters.evaluate(shuntingYard, Math::Float3::Zero);
 
                     Float16Compressor compressor;
                     halves[0] = compressor.compress(normal.x);
@@ -1537,10 +1530,8 @@ namespace Gek
 					};
 
 					information = videoDevice->compileProgram(type, name, uncompiledPath, uncompiledData, entryFunction, onInclude);
-#ifndef _DEBUG
 					FileSystem::Save(uncompiledPath, information.uncompiledData);
 					FileSystem::Save(compiledPath, information.compiledData);
-#endif
 				}
 				else
 				{

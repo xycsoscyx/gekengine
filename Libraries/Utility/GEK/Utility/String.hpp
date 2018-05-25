@@ -97,7 +97,7 @@ namespace Gek
             while (formatting && *formatting)
             {
                 char currentCharacter = *formatting++;
-                if ((currentCharacter == '{') && formatting && *formatting)
+                if (currentCharacter == '{')
                 {
                     char nextCharacter = *formatting++;
                     if (nextCharacter == '{')

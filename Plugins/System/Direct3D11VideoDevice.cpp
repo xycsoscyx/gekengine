@@ -2607,9 +2607,9 @@ namespace Gek
                 static const std::unordered_map<Video::Program::Type, std::string_view> D3DTypeMap =
                 {
                     { Video::Program::Type::Compute, "cs_5_0"sv, },
-                { Video::Program::Type::Geometry, "gs_5_0"sv, },
-                { Video::Program::Type::Vertex, "vs_5_0"sv, },
-                { Video::Program::Type::Pixel, "ps_5_0"sv, },
+                    { Video::Program::Type::Geometry, "gs_5_0"sv, },
+                    { Video::Program::Type::Vertex, "vs_5_0"sv, },
+                    { Video::Program::Type::Pixel, "ps_5_0"sv, },
                 };
 
                 static const std::vector<uint8_t> EmptyBuffer;

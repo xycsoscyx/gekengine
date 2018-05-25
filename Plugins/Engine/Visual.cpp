@@ -38,9 +38,8 @@ namespace Gek
 				std::vector<Video::InputElement> elementList;
 
                 uint32_t inputIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
-                for (auto &baseElementNode : visualNode.get("input").getArray())
+                for (auto &elementNode : visualNode.get("input").as(JSON::EmptyArray))
                 {
-                    JSON::Reference elementNode(baseElementNode);
                     std::string elementName(elementNode.get("name").as(String::Empty));
                     std::string systemType(String::GetLower(elementNode.get("system").as(String::Empty)));
                     if (systemType == "instanceindex")
@@ -63,7 +62,7 @@ namespace Gek
                         element.source = Video::InputElement::GetSource(elementNode.get("source").as(String::Empty));
                         element.sourceIndex = elementNode.get("sourceIndex").as(0ULL);
 
-                        uint32_t count = elementNode.get("count").as(1);
+                        uint32_t count = elementNode.get("count").scalar<uint32_t>();
                         auto semanticIndex = inputIndexList[static_cast<uint8_t>(element.semantic)];
                         inputIndexList[static_cast<uint8_t>(element.semantic)] += count;
 
@@ -77,9 +76,8 @@ namespace Gek
 
 				std::string outputVertexData;
 				uint32_t outputIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
-				for (auto &baseElementNode : visualNode.get("output").getArray())
+				for (auto &elementNode : visualNode.get("output").as(JSON::EmptyArray))
 				{
-                    JSON::Reference elementNode(baseElementNode);
                     std::string elementName(elementNode.get("name").as(String::Empty));
                     Video::Format format = Video::GetFormat(elementNode.get("format").as(String::Empty));
 					auto semantic = Video::InputElement::GetSemantic(elementNode.get("semantic").as(String::Empty));

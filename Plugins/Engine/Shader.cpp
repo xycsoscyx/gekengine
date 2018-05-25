@@ -410,7 +410,7 @@ namespace Gek
                     std::function<std::string(JSON const &)> addOptions;
                     addOptions = [&](JSON const & options) -> std::string
                     {
-                        std::string optionsData;
+                        std::string outerData;
                         for (auto &optionPair : options.as(JSON::EmptyObject))
                         {
                             auto optionName = optionPair.first;
@@ -422,30 +422,30 @@ namespace Gek
                                 {
                                     if (visitedData.count("options"))
                                     {
-                                        optionsData += String::Format("    namespace {}\r\n", optionName);
-                                        optionsData += String::Format("    {\r\n");
+                                        outerData += String::Format("    namespace {}\r\n", optionName);
+                                        outerData += String::Format("    {\r\n");
 
                                         std::vector<std::string> choices;
                                         for (auto &choice : optionNode.get("options").as(JSON::EmptyArray))
                                         {
                                             auto name = choice.as(String::Empty);
-                                            optionsData += String::Format("        static const int {} = {};\r\n", name, choices.size());
+                                            outerData += String::Format("        static const int {} = {};\r\n", name, choices.size());
                                             choices.push_back(optionName);
                                         }
 
                                         int selection = 0;
                                         auto &selectionNode = optionNode.get("selection");
-                                        if (selectionNode.isString())
+                                        if (selectionNode.is<std::string>())
                                         {
                                             auto selectedName = selectionNode.as(String::Empty);
-                                            auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string const &choice) -> bool
+                                            auto optionsSearch = std::find_if(std::begin(choices), std::end(choices), [selectedName](std::string const &choice) -> bool
                                             {
                                                 return (selectedName == choice);
                                             });
 
-                                            if (optionsSearch != std::end(optionList))
+                                            if (optionsSearch != std::end(choices))
                                             {
-                                                selection = std::distance(std::begin(optionList), optionsSearch);
+                                                selection = std::distance(std::begin(choices), optionsSearch);
                                             }
                                         }
                                         else
@@ -453,20 +453,20 @@ namespace Gek
                                             selection = selectionNode.as(0ULL);
                                         }
 
-                                        optionsData += String::Format("        static const int Selection = {};\r\n", selection);
-                                        optionsData += String::Format("    };\r\n");
+                                        outerData += String::Format("        static const int Selection = {};\r\n", selection);
+                                        outerData += String::Format("    };\r\n");
                                     }
                                     else
                                     {
-                                        auto optionData = addOptions(option);
-                                        if (!optionData.empty())
+                                        auto innerData = addOptions(optionNode);
+                                        if (!innerData.empty())
                                         {
-                                            optionsData += String::Format(
+                                            outerData += String::Format(
                                                 "namespace {}\r\n" \
                                                 "{\r\n" \
                                                 "{}" \
                                                 "};\r\n" \
-                                                "\r\n", optionName, optionData);
+                                                "\r\n", optionName, innerData);
                                         }
                                     }
                                 }
@@ -475,25 +475,25 @@ namespace Gek
                                     switch (visitedData.size())
                                     {
                                     case 1:
-                                        optionsData += String::Format("    static const float {} = {};\r\n", optionName,
+                                        outerData += String::Format("    static const float {} = {};\r\n", optionName,
                                             visitedData[0].as(0.0f));
                                         break;
 
                                     case 2:
-                                        optionsData += String::Format("    static const float2 {} = float2({}, {});\r\n", optionName,
+                                        outerData += String::Format("    static const float2 {} = float2({}, {});\r\n", optionName,
                                             visitedData[0].as(0.0f),
                                             visitedData[1].as(0.0f));
                                         break;
 
                                     case 3:
-                                        optionsData += String::Format("    static const float3 {} = float3({}, {}, {});\r\n", optionName,
+                                        outerData += String::Format("    static const float3 {} = float3({}, {}, {});\r\n", optionName,
                                             visitedData[0].as(0.0f),
                                             visitedData[1].as(0.0f),
                                             visitedData[2].as(0.0f));
                                         break;
 
                                     case 4:
-                                        optionsData += String::Format("    static const float4 {} = float4({}, {}, {}, {})\r\n", optionName,
+                                        outerData += String::Format("    static const float4 {} = float4({}, {}, {}, {})\r\n", optionName,
                                             visitedData[0].as(0.0f),
                                             visitedData[1].as(0.0f),
                                             visitedData[2].as(0.0f),
@@ -503,19 +503,20 @@ namespace Gek
                                 }
                                 else if constexpr (std::is_same_v<TYPE, bool>)
                                 {
-                                    optionsData += String::Format("    static const bool {} = {};\r\n", optionName, visitedData);
+                                    outerData += String::Format("    static const bool {} = {};\r\n", optionName, visitedData);
                                 }
                                 else if constexpr (std::is_same_v<TYPE, float>)
                                 {
-                                    optionsData += String::Format("    static const float {} = {};\r\n", optionName, visitedData);
+                                    outerData += String::Format("    static const float {} = {};\r\n", optionName, visitedData);
                                 }
+                                else
                                 {
-                                    optionsData += String::Format("    static const int {} = {};\r\n", optionName, visitedData);
+                                    outerData += String::Format("    static const int {} = {};\r\n", optionName, visitedData);
                                 }
                             });
                         }
 
-                        return optionsData;
+                        return outerData;
                     };
 
                     std::string engineData;

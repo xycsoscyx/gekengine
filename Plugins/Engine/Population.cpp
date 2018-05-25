@@ -319,7 +319,7 @@ namespace Gek
 
             void save(std::string const &populationName)
             {
-                JSON population = JSON::EmptyArray;
+                auto population = JSON::Array();
                 for (auto const &entity : entityList)
                 {
                     JSON entityData = JSON::EmptyObject;
@@ -347,13 +347,13 @@ namespace Gek
                         }
                     });
 
-                    population.add(entityData);
+                    population.push_back(entityData);
                 }
 
                 JSON scene;
                 scene["Population"] = population;
                 scene["Seed"] = shuntingYard.getRandomSeed();
-                JSON::Reference(scene).save(getContext()->getCachePath(FileSystem::CombinePaths("scenes", populationName).withExtension(".json")));
+                scene.save(getContext()->getCachePath(FileSystem::CombinePaths("scenes", populationName).withExtension(".json")));
             }
 
             Plugin::Entity *createEntity(std::vector<Component> const &componentList)
