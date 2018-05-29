@@ -28,14 +28,14 @@ namespace Gek
         {
             float strength;
 
-            void save(Xml::Leaf &componentData) const
+            void save(Xml::Leaf &exportData) const
             {
-                componentData.attributes[L"strength"] = strength;
+                exportData.attributes[L"strength"] = strength;
             }
 
-            void load(const Xml::Leaf &componentData)
+            void load(const Xml::Leaf &importData)
             {
-                strength = loadAttribute(componentData, L"strength", 10.0f);
+                strength = loadAttribute(importData, L"strength", 10.0f);
             }
         };
     }; // namespace Components

@@ -18,16 +18,16 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(Components::Transform const * const data, JSON &componentData) const
+        void save(Components::Transform const * const data, JSON &exportData) const
         {
-			componentData["position"] = JSON::Array({ data->position.x, data->position.y, data->position.z });
-			componentData["rotation"] = JSON::Array({ data->rotation.x, data->rotation.y, data->rotation.z, data->rotation.w });
+			exportData["position"] = JSON::Array({ data->position.x, data->position.y, data->position.z });
+			exportData["rotation"] = JSON::Array({ data->rotation.x, data->rotation.y, data->rotation.z, data->rotation.w });
         }
 
-        void load(Components::Transform * const data, JSON &componentData)
+        void load(Components::Transform * const data, JSON const &importData)
         {
-            data->position = evaluate(componentData.get("position"), Math::Float3::Zero);
-            data->rotation = evaluate(componentData.get("rotation"), Math::Quaternion::Identity);
+            data->position = evaluate(importData.get("position"), Math::Float3::Zero);
+            data->rotation = evaluate(importData.get("rotation"), Math::Quaternion::Identity);
             LockedWrite{ std::cout } << "Position: [" << data->position.x << ", " << data->position.y << ", " << data->position.z << "]";
 		}
 

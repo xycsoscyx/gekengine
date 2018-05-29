@@ -89,44 +89,61 @@ namespace Gek
                 depthState = resources->createDepthState(Video::DepthState::Description());
                 renderState = resources->createRenderState(Video::RenderState::Description());
 
-                JSON filterNode;
-                filterNode.load(getContext()->findDataPath(FileSystem::CombinePaths("filters", filterName).withExtension(".json")));
+                JSON rootNode;
+                rootNode.load(getContext()->findDataPath(FileSystem::CombinePaths("filters", filterName).withExtension(".json")));
 
                 ShuntingYard shuntingYard(population->getShuntingYard());
-                auto coreFiltersNode = core->getOption("filters", filterName);
-                for (auto &coreValuePair : coreFiltersNode.as(JSON::EmptyObject))
+                auto &coreOptionsNode = core->getOption("filters", filterName);
+                for (auto &coreValuePair : coreOptionsNode.as(JSON::EmptyObject))
                 {
                     shuntingYard.setVariable(coreValuePair.first, coreValuePair.second.as(0.0f));
                 }
 
-                auto filterOptionsNode = filterNode.get("options");
-                for (auto &coreValuePair : coreFiltersNode.as(JSON::EmptyObject))
+                auto &rootOptionsNode = rootNode.get("options");
+                auto &rootOptionsObject = rootOptionsNode.as(JSON::EmptyObject);
+                for (auto &coreValuePair : coreOptionsNode.as(JSON::EmptyObject))
                 {
-                    filterOptionsNode[coreValuePair.first] = coreValuePair.second;
+                    rootOptionsObject[coreValuePair.first] = coreValuePair.second;
                 }
 
-                for (auto &filterValuePair : filterOptionsNode.as(JSON::EmptyObject))
+                auto importSearch = rootOptionsObject.find("#import");
+                if (importSearch != std::end(rootOptionsObject))
                 {
-                    if (filterValuePair.first == "#import")
+                    importSearch->second.visit([&](auto && visitedData)
                     {
-                        auto importName = filterValuePair.second.as(String::Empty);
-                        filterOptionsNode.as(JSON::EmptyObject).erase(filterValuePair.first);
-
-                        JSON importOptions;
-                        importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", importName).withExtension(".json")));
-                        for (auto &importPair : importOptions.as(JSON::EmptyObject))
+                        using TYPE = std::decay_t<decltype(visitedData)>;
+                        if constexpr (std::is_same_v<TYPE, std::string>)
                         {
-                            filterOptionsNode[importPair.first] = importPair.second;
+                            JSON importOptions;
+                            importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", visitedData).withExtension(".json")));
+                            for (auto &importPair : importOptions.as(JSON::EmptyObject))
+                            {
+                                rootOptionsObject[importPair.first] = importPair.second;
+                            }
                         }
-                    }
+                        else if constexpr (std::is_same_v<TYPE, JSON::Array>)
+                        {
+                            for (auto &importName : visitedData)
+                            {
+                                JSON importOptions;
+                                importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", importName.as(String::Empty)).withExtension(".json")));
+                                for (auto &importPair : importOptions.as(JSON::EmptyObject))
+                                {
+                                    rootOptionsObject[importPair.first] = importPair.second;
+                                }
+                            }
+                        }
+                    });
+
+                    rootOptionsObject.erase(importSearch);
                 }
 
-                for (auto &requiredNode : filterNode.get("requires").as(JSON::EmptyArray))
+                for (auto &requiredNode : rootNode.get("requires").as(JSON::EmptyArray))
                 {
                     resources->getShader(requiredNode.as(String::Empty), MaterialHandle());
                 }
 
-                for (auto &rootTexturesPair : filterNode.get("textures").as(JSON::EmptyObject))
+                for (auto &rootTexturesPair : rootNode.get("textures").as(JSON::EmptyObject))
                 {
                     std::string textureName(rootTexturesPair.first);
                     if (resourceMap.count(textureName) > 0)
@@ -198,7 +215,7 @@ namespace Gek
                     }
                 }
 
-                for (auto &bufferPair : filterNode.get("buffers").as(JSON::EmptyObject))
+                for (auto &bufferPair : rootNode.get("buffers").as(JSON::EmptyObject))
                 {
                     std::string bufferName(bufferPair.first);
                     if (resourceMap.count(bufferName) > 0)
@@ -244,7 +261,7 @@ namespace Gek
                     }
                 }
 
-                auto &passesNode = filterNode.get("passes");
+                auto &passesNode = rootNode.get("passes");
                 passList.resize(passesNode.as(JSON::EmptyArray).size());
                 auto passData = std::begin(passList);
                 for (auto &passNode : passesNode.as(JSON::EmptyArray))
@@ -257,14 +274,14 @@ namespace Gek
                     auto enableOption = passNode.get("enable").as(String::Empty);
                     if (!enableOption.empty())
                     {
-                        pass.enabled = filterOptionsNode.get(enableOption).as(true);
+                        pass.enabled = rootOptionsNode.get(enableOption).as(true);
                         if (!pass.enabled)
                         {
                             continue;
                         }
                     }
 
-                    JSON passOptions(filterOptionsNode);
+                    JSON passOptions(rootOptionsNode);
                     for (auto &overridePair : passNode.get("options").as(JSON::EmptyObject))
                     {
                         passOptions[overridePair.first] = overridePair.second;
@@ -644,7 +661,7 @@ namespace Gek
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
 				}
 
-				core->setOption("filters", filterName, std::move(filterOptionsNode));
+				core->setOption("filters", filterName, std::move(rootOptionsNode));
 				LockedWrite{ std::cout } << "Filter loaded successfully: " << filterName;
 			}
 

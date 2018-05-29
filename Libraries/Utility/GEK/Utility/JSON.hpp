@@ -29,7 +29,7 @@ namespace Gek
         static const JSON Empty;
 
     private:
-        std::variant<bool, int32_t, uint32_t, int64_t, uint64_t, float, std::string, Array, Object> data;
+        std::variant<std::nullptr_t, bool, int32_t, uint32_t, int64_t, uint64_t, float, std::string, Array, Object> data;
 
     public:
         JSON(void)
@@ -48,31 +48,31 @@ namespace Gek
         std::string getString(void) const;
 
         template <typename FUNCTION>
-        auto visit(FUNCTION function) const
+        constexpr auto visit(FUNCTION && function) const
         {
             return std::visit(function, data);
         }
 
-        template <typename TYPE>
-        auto scalar(void) const
+        template <typename TARGET_TYPE>
+        constexpr TARGET_TYPE scalar(TARGET_TYPE defaultValue) const
         {
-            return visit([&](auto && value) -> TYPE
+            return empty() ? defaultValue : visit([&](auto && visitedData) -> TARGET_TYPE
             {
-                using TYPE = std::decay_t<decltype(data)>;
-                if constexpr (std::is_same_v<TYPE, Object> || std::is_same_v<TYPE, Array>)
+                using SOURCE_TYPE = std::decay_t<decltype(visitedData)>;
+                if constexpr (std::is_convertible<SOURCE_TYPE, TARGET_TYPE>::value)
                 {
-                    return 0;
+                    return TARGET_TYPE(visitedData);
                 }
                 else
                 {
-                    return value;
+                    return defaultValue;
                 }
             });
         }
 
         bool empty(void) const
         {
-            return (data.index() == std::variant_npos);
+            return std::holds_alternative<std::nullptr_t>(data);
         }
 
         template <typename TYPE>
@@ -90,6 +90,17 @@ namespace Gek
             }
 
             return defaultValue;
+        }
+
+        template <typename TYPE>
+        TYPE &get(void)
+        {
+            if (!is<TYPE>())
+            {
+                data = TYPE();
+            }
+
+            return std::get<TYPE>(data);
         }
 
         JSON const &get(size_t index) const;

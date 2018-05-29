@@ -26,7 +26,8 @@ namespace Gek
 
         GEK_INTERFACE(Population)
         {
-            using Component = std::pair<std::string, JSON>;
+            using EntityDefinition = std::unordered_map<std::string, JSON>;
+            using ComponentDefinition = EntityDefinition::value_type;
 
             struct Action
             {
@@ -72,9 +73,10 @@ namespace Gek
             virtual void load(std::string const &populationName) = 0;
             virtual void save(std::string const &populationName) = 0;
 
-            virtual Plugin::Entity *createEntity(const std::vector<Component> &componentList = std::vector<Component>()) = 0;
+            virtual Plugin::Entity *createEntity(EntityDefinition const &definition) = 0;
             virtual void killEntity(Plugin::Entity * const entity) = 0;
-            virtual void addComponent(Plugin::Entity * const entity, Component const &componentData) = 0;
+
+            virtual void addComponent(Plugin::Entity * const entity, ComponentDefinition const &definition) = 0;
             virtual void removeComponent(Plugin::Entity * const entity, Hash type) = 0;
 
             virtual void listEntities(std::function<void(Plugin::Entity * const entity)> onEntity) const = 0;

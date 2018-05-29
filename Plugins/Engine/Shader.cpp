@@ -114,41 +114,57 @@ namespace Gek
                 auto backBuffer = videoDevice->getBackBuffer();
                 auto &backBufferDescription = backBuffer->getDescription();
 
-                JSON shaderNode;
-                shaderNode.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", shaderName).withExtension(".json")));
-                outputResource = shaderNode.get("output").as(String::Empty);
+                JSON rootNode;
+                rootNode.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", shaderName).withExtension(".json")));
+                outputResource = rootNode.get("output").as(String::Empty);
 
                 ShuntingYard shuntingYard(population->getShuntingYard());
-                auto &coreShadersNode = core->getOption("shaders", shaderName);
-                for (auto &coreValuePair : coreShadersNode.as(JSON::EmptyObject))
+                auto &coreOptionsNode = core->getOption("shaders", shaderName);
+                for (const auto &coreValuePair : coreOptionsNode.as(JSON::EmptyObject))
                 {
                     shuntingYard.setVariable(coreValuePair.first, coreValuePair.second.as(0.0f));
                 }
 
-                auto &shaderOptionsNode = shaderNode.get("options");
-                auto &shaderOptionsMap = shaderOptionsNode.as(JSON::EmptyObject);
-                for (auto &coreValuePair : coreShadersNode.as(JSON::EmptyObject))
+                auto &rootOptionsNode = rootNode.get("options");
+                auto &rootOptionsObject = rootOptionsNode.as(JSON::EmptyObject);
+                for (const auto &coreValuePair : coreOptionsNode.as(JSON::EmptyObject))
                 {
-                    shaderOptionsMap[coreValuePair.first] = coreValuePair.second;
+                    rootOptionsObject[coreValuePair.first] = coreValuePair.second;
                 }
 
-                auto importSearch = shaderOptionsMap.find("import");
-                if (importSearch != shaderOptionsMap.end())
+                auto importSearch = rootOptionsObject.find("#import");
+                if (importSearch != std::end(rootOptionsObject))
                 {
-                    for (auto &importName : importSearch->second.as(JSON::EmptyArray))
+                    importSearch->second.visit([&](auto && visitedData)
                     {
-                        JSON importOptions;
-                        importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", importName.as(String::Empty)).withExtension(".json")));
-                        for (auto &importPair : importOptions.as(JSON::EmptyObject))
+                        using TYPE = std::decay_t<decltype(visitedData)>;
+                        if constexpr (std::is_same_v<TYPE, std::string>)
                         {
-                            shaderOptionsMap[importPair.first] = importPair.second;
+                            JSON importOptions;
+                            importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", visitedData).withExtension(".json")));
+                            for (auto &importPair : importOptions.as(JSON::EmptyObject))
+                            {
+                                rootOptionsObject[importPair.first] = importPair.second;
+                            }
                         }
-                    }
+                        else if constexpr (std::is_same_v<TYPE, JSON::Array>)
+                        {
+                            for (auto &importName : visitedData)
+                            {
+                                JSON importOptions;
+                                importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", importName.as(String::Empty)).withExtension(".json")));
+                                for (auto &importPair : importOptions.as(JSON::EmptyObject))
+                                {
+                                    rootOptionsObject[importPair.first] = importPair.second;
+                                }
+                            }
+                        }
+                    });
 
-                    shaderOptionsMap.erase(importSearch);
+                    rootOptionsObject.erase(importSearch);
                 }
 
-                auto requiredShadesrArray = shaderNode.get("requires").as(JSON::EmptyArray);
+                auto requiredShadesrArray = rootNode.get("requires").as(JSON::EmptyArray);
                 drawOrder = requiredShadesrArray.size();
                 for (auto &requiredShaderNode : requiredShadesrArray)
                 {
@@ -162,7 +178,7 @@ namespace Gek
 
 				std::string inputData;
                 uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
-                for (auto &elementNode : shaderNode.get("input").as(JSON::EmptyArray))
+                for (auto &elementNode : rootNode.get("input").as(JSON::EmptyArray))
                 {
                     std::string name(elementNode.get("name").as(String::Empty));
                     std::string system(String::GetLower(elementNode.get("system").as(String::Empty)));
@@ -240,7 +256,7 @@ namespace Gek
 
                 std::unordered_map<std::string, ResourceHandle> resourceMap;
                 std::unordered_map<std::string, std::string> resourceSemanticsMap;
-                for (auto &texturesPair : shaderNode.get("textures").as(JSON::EmptyObject))
+                for (auto &texturesPair : rootNode.get("textures").as(JSON::EmptyObject))
                 {
                     std::string textureName(texturesPair.first);
                     if (resourceMap.count(textureName) > 0)
@@ -309,7 +325,7 @@ namespace Gek
                     }
                 }
 
-                for (auto &buffersPair : shaderNode.get("buffers").as(JSON::EmptyObject))
+                for (auto &buffersPair : rootNode.get("buffers").as(JSON::EmptyObject))
                 {
                     std::string bufferName(buffersPair.first);
                     if (resourceMap.count(bufferName) > 0)
@@ -355,7 +371,7 @@ namespace Gek
                     }
                 }
 
-                auto materialsNode = shaderNode.get("materials");
+                auto materialsNode = rootNode.get("materials");
                 for (auto &materialPair : materialsNode.as(JSON::EmptyObject))
                 {
                     auto materialName = materialPair.first;
@@ -370,11 +386,11 @@ namespace Gek
                     }
 
                     Video::RenderState::Description renderStateInformation;
-                    renderStateInformation.load(materialNode.get("renderState"), shaderOptionsNode);
+                    renderStateInformation.load(materialNode.get("renderState"), rootOptionsNode);
                     materialData.renderState = resources->createRenderState(renderStateInformation);
                 }
 
-                auto passesNode = shaderNode.get("passes");
+                auto passesNode = rootNode.get("passes");
                 passList.resize(passesNode.as(JSON::EmptyArray).size());
                 auto passData = std::begin(passList);
                 for (auto &passNode : passesNode.as(JSON::EmptyArray))
@@ -394,14 +410,14 @@ namespace Gek
                     auto enableOption = passNode.get("enable").as(String::Empty);
                     if (!enableOption.empty())
                     {
-                        pass.enabled = shaderOptionsNode.get(enableOption).as(true);
+                        pass.enabled = rootOptionsNode.get(enableOption).as(true);
                         if (!pass.enabled)
                         {
                             continue;
                         }
                     }
 
-                    JSON passOptions(shaderOptionsNode);
+                    JSON passOptions(rootOptionsNode);
                     for (auto &overridePair : passNode.get("options").as(JSON::EmptyObject))
                     {
                         passOptions[overridePair.first] = overridePair.second;
@@ -874,7 +890,7 @@ namespace Gek
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
 				}
 
-				core->setOption("shaders", shaderName, shaderOptionsNode);
+				core->setOption("shaders", shaderName, rootOptionsNode);
 				LockedWrite{ std::cout } << "Shader loaded successfully: " << shaderName;
 			}
 
@@ -1025,12 +1041,12 @@ namespace Gek
                 : public Material
             {
             public:
-                Shader *shaderNode;
+                Shader *rootNode;
                 Shader::MaterialMap::iterator current, end;
 
             public:
-                MaterialImplementation(Shader *shaderNode, Shader::MaterialMap::iterator current, Shader::MaterialMap::iterator end)
-                    : shaderNode(shaderNode)
+                MaterialImplementation(Shader *rootNode, Shader::MaterialMap::iterator current, Shader::MaterialMap::iterator end)
+                    : rootNode(rootNode)
                     , current(current)
                     , end(end)
                 {
@@ -1039,7 +1055,7 @@ namespace Gek
                 Iterator next(void)
                 {
                     auto next = current;
-                    return Iterator(++next == end ? nullptr : new MaterialImplementation(shaderNode, next, end));
+                    return Iterator(++next == end ? nullptr : new MaterialImplementation(rootNode, next, end));
                 }
 
 				Hash getIdentifier(void) const
@@ -1068,13 +1084,13 @@ namespace Gek
             {
             public:
                 Video::Device::Context *videoContext;
-                Shader *shaderNode;
+                Shader *rootNode;
                 Shader::PassList::iterator current, end;
 
             public:
-                PassImplementation(Video::Device::Context *videoContext, Shader *shaderNode, Shader::PassList::iterator current, Shader::PassList::iterator end)
+                PassImplementation(Video::Device::Context *videoContext, Shader *rootNode, Shader::PassList::iterator current, Shader::PassList::iterator end)
                     : videoContext(videoContext)
-                    , shaderNode(shaderNode)
+                    , rootNode(rootNode)
                     , current(current)
                     , end(end)
                 {
@@ -1083,17 +1099,17 @@ namespace Gek
                 Iterator next(void)
                 {
                     auto next = current;
-                    return Iterator(++next == end ? nullptr : new PassImplementation(videoContext, shaderNode, next, end));
+                    return Iterator(++next == end ? nullptr : new PassImplementation(videoContext, rootNode, next, end));
                 }
 
                 Mode prepare(void)
                 {
-                    return shaderNode->preparePass(videoContext, (*current));
+                    return rootNode->preparePass(videoContext, (*current));
                 }
 
                 void clear(void)
                 {
-                    shaderNode->clearPass(videoContext, (*current));
+                    rootNode->clearPass(videoContext, (*current));
                 }
 
                 bool isEnabled(void) const

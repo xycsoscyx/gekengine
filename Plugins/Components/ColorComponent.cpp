@@ -23,14 +23,14 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(Components::Color const * const data, JSON &componentData) const
+        void save(Components::Color const * const data, JSON &exportData) const
         {
-			componentData = JSON::Array({ data->value.x, data->value.y, data->value.z, data->value.w });
+			exportData = JSON::Array({ data->value.x, data->value.y, data->value.z, data->value.w });
         }
 
-        void load(Components::Color * const data, JSON &componentData)
+        void load(Components::Color * const data, JSON const &importData)
         {
-            data->value = evaluate(componentData, Math::Float4::White);
+            data->value = evaluate(importData, Math::Float4::White);
         }
 
         // Edit::Component

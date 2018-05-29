@@ -64,18 +64,18 @@ namespace Gek
 
     void SaveJSON(JSON const &value, std::stringstream &stream)
     {
-        value.visit([&](auto && data)
+        value.visit([&](auto && visitedData)
         {
-            using TYPE = std::decay_t<decltype(data)>;
+            using TYPE = std::decay_t<decltype(visitedData)>;
             if constexpr (std::is_same_v<TYPE, std::string>)
             {
-                stream << "\"" << data << "\"";
+                stream << "\"" << visitedData << "\"";
             }
             else if constexpr (std::is_same_v<TYPE, JSON::Array>)
             {
                 stream << "[ ";
                 bool writtenPrevious = false;
-                for (auto &index : data)
+                for (auto &index : visitedData)
                 {
                     SaveJSON(index, stream);
                     if (writtenPrevious)
@@ -92,7 +92,7 @@ namespace Gek
             {
                 stream << "{ ";
                 bool writtenPrevious = false;
-                for (auto &index : data)
+                for (auto &index : visitedData)
                 {
                     stream << "\"" << index.first << "\": ";
                     SaveJSON(index.second, stream);
@@ -106,9 +106,9 @@ namespace Gek
 
                 stream << "}";
             }
-            else
+            else if constexpr (!std::is_same_v<TYPE, std::nullptr_t>)
             {
-                stream << data;
+                stream << visitedData;
             }
         });
     }
@@ -141,19 +141,19 @@ namespace Gek
 
     std::string JSON::getString(void) const
     {
-        return visit([&](auto && data) -> std::string
+        return visit([&](auto && visitedData) -> std::string
         {
             std::stringstream stream;
-            using TYPE = std::decay_t<decltype(data)>;
+            using TYPE = std::decay_t<decltype(visitedData)>;
             if constexpr (std::is_same_v<TYPE, std::string>)
             {
-                stream << "\"" << data << "\"";
+                stream << "\"" << visitedData << "\"";
             }
             else if constexpr (std::is_same_v<TYPE, JSON::Array>)
             {
                 stream << "[ ";
                 bool writtenPrevious = false;
-                for (auto &index : data)
+                for (auto &index : visitedData)
                 {
                     stream << index.getString();
                     if (writtenPrevious)
@@ -170,7 +170,7 @@ namespace Gek
             {
                 stream << "{ ";
                 bool writtenPrevious = false;
-                for (auto &index : data)
+                for (auto &index : visitedData)
                 {
                     stream << "\"" << index.first << "\": ";
                     stream << index.second.getString();
@@ -184,9 +184,9 @@ namespace Gek
 
                 stream << "}";
             }
-            else
+            else if constexpr (!std::is_same_v<TYPE, std::nullptr_t>)
             {
-                stream << data;
+                stream << visitedData;
             }
 
             return stream.str();
@@ -247,106 +247,116 @@ namespace Gek
 
     int32_t JSON::evaluate(ShuntingYard &shuntingYard, int32_t defaultValue) const
     {
-        return visit([&](auto && data) -> int32_t
+        return visit([&](auto && visitedData) -> int32_t
         {
-            using TYPE = std::decay_t<decltype(data)>;
+            using TYPE = std::decay_t<decltype(visitedData)>;
             if constexpr (std::is_same_v<TYPE, std::string>)
             {
-                return shuntingYard.evaluate(data).value_or(defaultValue);
+                return shuntingYard.evaluate(visitedData).value_or(defaultValue);
             }
             else if constexpr (std::is_same_v<TYPE, Object> ||
                 std::is_same_v<TYPE, Array>)
             {
                 return defaultValue;
             }
-            else
+            else if constexpr (!std::is_same_v<TYPE, std::nullptr_t>)
             {
-                return data;
+                return visitedData;
             }
+
+            return defaultValue;
         });
     }
 
     uint32_t JSON::evaluate(ShuntingYard &shuntingYard, uint32_t defaultValue) const
     {
-        return visit([&](auto && data) -> uint32_t
+        return visit([&](auto && visitedData) -> uint32_t
         {
-            using TYPE = std::decay_t<decltype(data)>;
+            using TYPE = std::decay_t<decltype(visitedData)>;
             if constexpr (std::is_same_v<TYPE, std::string>)
             {
-                return shuntingYard.evaluate(data).value_or(defaultValue);
+                return shuntingYard.evaluate(visitedData).value_or(defaultValue);
             }
             else if constexpr (std::is_same_v<TYPE, Object> ||
                 std::is_same_v<TYPE, Array>)
             {
                 return defaultValue;
             }
-            else
+            else if constexpr (!std::is_same_v<TYPE, std::nullptr_t>)
             {
-                return data;
+                return visitedData;
             }
+
+            return defaultValue;
         });
     }
 
     int64_t JSON::evaluate(ShuntingYard &shuntingYard, int64_t defaultValue) const
     {
-        return visit([&](auto && data) -> int64_t
+        return visit([&](auto && visitedData) -> int64_t
         {
-            using TYPE = std::decay_t<decltype(data)>;
+            using TYPE = std::decay_t<decltype(visitedData)>;
             if constexpr (std::is_same_v<TYPE, std::string>)
             {
-                return shuntingYard.evaluate(data).value_or(defaultValue);
+                return shuntingYard.evaluate(visitedData).value_or(defaultValue);
             }
             else if constexpr (std::is_same_v<TYPE, Object> ||
                 std::is_same_v<TYPE, Array>)
             {
                 return defaultValue;
             }
-            else
+            else if constexpr (!std::is_same_v<TYPE, std::nullptr_t>)
             {
-                return data;
+                return visitedData;
             }
+
+            return defaultValue;
         });
     }
 
     uint64_t JSON::evaluate(ShuntingYard &shuntingYard, uint64_t defaultValue) const
     {
-        return visit([&](auto && data) -> uint64_t
+        return visit([&](auto && visitedData) -> uint64_t
         {
-            using TYPE = std::decay_t<decltype(data)>;
+            using TYPE = std::decay_t<decltype(visitedData)>;
             if constexpr (std::is_same_v<TYPE, std::string>)
             {
-                return shuntingYard.evaluate(data).value_or(defaultValue);
+                return shuntingYard.evaluate(visitedData).value_or(defaultValue);
             }
             else if constexpr (std::is_same_v<TYPE, Object> ||
                 std::is_same_v<TYPE, Array>)
             {
                 return defaultValue;
             }
-            else
+            else if constexpr (!std::is_same_v<TYPE, std::nullptr_t>)
             {
-                return data;
+                return visitedData;
             }
+
+            return defaultValue;
         });
     }
 
     float JSON::evaluate(ShuntingYard &shuntingYard, float defaultValue) const
     {
-        return visit([&](auto && data) -> float
+        return visit([&](auto && visitedData) -> float
         {
-            using TYPE = std::decay_t<decltype(data)>;
+            using TYPE = std::decay_t<decltype(visitedData)>;
             if constexpr (std::is_same_v<TYPE, std::string>)
             {
-                return shuntingYard.evaluate(data).value_or(defaultValue);
+                return shuntingYard.evaluate(visitedData).value_or(defaultValue);
             }
             else if constexpr (std::is_same_v<TYPE, Object> ||
                 std::is_same_v<TYPE, Array>)
             {
                 return defaultValue;
             }
-            else
+            else if constexpr (!std::is_same_v<TYPE, std::nullptr_t>)
             {
-                return data;
+                return visitedData;
             }
+
+            return defaultValue;
         });
     }
 
@@ -373,11 +383,14 @@ namespace Gek
         case 1:
             return Math::Float3(data[0].evaluate(shuntingYard, defaultValue.x));
 
-        default:
+        case 3:
             return Math::Float3(
                 data[0].evaluate(shuntingYard, defaultValue.x),
                 data[1].evaluate(shuntingYard, defaultValue.y),
                 data[2].evaluate(shuntingYard, defaultValue.z));
+
+        default:
+            return defaultValue;
         };
     }
 
@@ -396,12 +409,15 @@ namespace Gek
                 data[2].evaluate(shuntingYard, defaultValue.z),
                 defaultValue.w);
 
-        default:
+        case 4:
             return Math::Float4(
                 data[0].evaluate(shuntingYard, defaultValue.x),
                 data[1].evaluate(shuntingYard, defaultValue.y),
                 data[2].evaluate(shuntingYard, defaultValue.z),
                 data[3].evaluate(shuntingYard, defaultValue.w));
+
+        default:
+            return defaultValue;
         };
     }
 
@@ -438,22 +454,24 @@ namespace Gek
 
     std::string JSON::evaluate(ShuntingYard &shuntingYard, std::string const &defaultValue) const
     {
-        return visit([&](auto && data) -> std::string
+        return visit([&](auto && visitedData) -> std::string
         {
-            using TYPE = std::decay_t<decltype(data)>;
+            using TYPE = std::decay_t<decltype(visitedData)>;
             if constexpr (std::is_same_v<TYPE, std::string>)
             {
-                return data;
+                return visitedData;
             }
             else if constexpr (std::is_same_v<TYPE, JSON::Array> || 
                                std::is_same_v<TYPE, JSON::Object>)
             {
                 return defaultValue;
             }
-            else
+            else if constexpr (!std::is_same_v<TYPE, std::nullptr_t>)
             {
-                return String::Format("{}", data);
+                return String::Format("{}", visitedData);
             }
+
+            return defaultValue;
         });
     }
 }; // namespace Gek

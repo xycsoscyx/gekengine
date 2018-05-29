@@ -309,8 +309,8 @@ namespace Gek
                     ImGui::PopItemWidth();
 
                     std::set<Plugin::Entity *> deleteEntitySet;
-                    auto &entityList = population->getEntityList();
-                    auto entityCount = entityList.size();
+                    auto &registry = population->getRegistry();
+                    auto entityCount = registry.size();
 
                     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.5f, 0.0f, 1.0f));
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.75f, 0.0f, 1.0f));
@@ -351,13 +351,13 @@ namespace Gek
                         ImGui::Spacing();
                         if (ImGui::Button("Create", ImVec2(50.0f, 25.0f)))
                         {
-                            std::vector<Plugin::Population::Component> componentList;
+                            Plugin::Population::EntityDefinition definition;
                             if (createNamedEntity && !entityName.empty())
                             {
-                                componentList.push_back(std::make_pair("Name", JSON(entityName)));
+                                definition["Name"] = JSON(entityName);
                             }
 
-                            population->createEntity(componentList);
+                            population->createEntity(definition);
                             ImGui::CloseCurrentPopup();
                         }
 
@@ -380,7 +380,7 @@ namespace Gek
                         {
                             for (auto entityIndex = clipper.DisplayStart; entityIndex < clipper.DisplayEnd; ++entityIndex)
                             {
-                                auto entitySearch = std::begin(entityList);
+                                auto entitySearch = std::begin(registry);
                                 std::advance(entitySearch, entityIndex);
                                 auto entity = entitySearch->get();
 
@@ -444,8 +444,8 @@ namespace Gek
                                     ImGui::Spacing();
                                     ImGui::Spacing();
 
-                                    auto const &componentMap = population->getComponentMap();
-                                    auto componentCount = componentMap.size();
+                                    auto const &availableComponents = population->getAvailableComponents();
+                                    auto componentCount = availableComponents.size();
                                     if (ImGui::ListBoxHeader("##Components", componentCount, 10))
                                     {
                                         ImGuiListClipper clipper(componentCount, ImGui::GetTextLineHeightWithSpacing());
@@ -453,13 +453,13 @@ namespace Gek
                                         {
                                             for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
                                             {
-                                                auto componentSearch = std::begin(componentMap);
+                                                auto componentSearch = std::begin(availableComponents);
                                                 std::advance(componentSearch, componentIndex);
 												std::string componentName(componentSearch->second->getName());
                                                 if (ImGui::Selectable(componentName.data(), (selectedComponent == componentIndex)))
                                                 {
-                                                    auto componentData = std::make_pair(componentName, JSON::EmptyObject);
-                                                    population->addComponent(entity, componentData);
+                                                    auto componentDefintion = std::make_pair(componentName, JSON::EmptyObject);
+                                                    population->addComponent(entity, componentDefintion);
                                                     ImGui::CloseCurrentPopup();
                                                 }
                                             }
@@ -482,12 +482,12 @@ namespace Gek
                                     if (editEntity)
                                     {
                                         std::set<Hash> deleteComponentSet;
-                                        auto const &entityComponentMap = editEntity->getComponentMap();
-                                        for (auto &componentSearch : entityComponentMap)
+                                        auto const &entityComponents = editEntity->getComponents();
+                                        for (auto &componentSearch : entityComponents)
                                         {
                                             Edit::Component *component = population->getComponent(componentSearch.first);
-                                            Plugin::Component::Data *componentData = componentSearch.second.get();
-                                            if (component && componentData)
+                                            Plugin::Component::Data *componentDefintion = componentSearch.second.get();
+                                            if (component && componentDefintion)
                                             {
                                                 ImGui::PushID(component->getIdentifier());
                                                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.0f, 0.0f, 1.0f));
@@ -524,7 +524,7 @@ namespace Gek
                                                 ImGui::SameLine();
                                                 if (ImGui::TreeNodeEx(component->getName().data(), ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
                                                 {
-                                                    if (component->onUserInterface(ImGui::GetCurrentContext(), entity, componentData))
+                                                    if (component->onUserInterface(ImGui::GetCurrentContext(), entity, componentDefintion))
                                                     {
                                                         onModified(entity, componentSearch.first);
                                                     }

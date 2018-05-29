@@ -20,14 +20,14 @@ namespace Gek
             }
 
             // Plugin::Component
-            void save(Components::Physical const * const data, JSON &componentData) const
+            void save(Components::Physical const * const data, JSON &exportData) const
             {
-                componentData["mass"] = data->mass;
+                exportData["mass"] = data->mass;
             }
 
-            void load(Components::Physical * const data, JSON &componentData)
+            void load(Components::Physical * const data, JSON const &importData)
             {
-                data->mass = evaluate(componentData.get("mass"), 0.0f);
+                data->mass = evaluate(importData.get("mass"), 0.0f);
             }
 
             // Edit::Component

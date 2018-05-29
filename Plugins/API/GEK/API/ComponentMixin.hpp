@@ -56,17 +56,17 @@ namespace Gek
                 return object.evaluate(population->getShuntingYard(), defaultValue);
             }
 
-            virtual void save(COMPONENT const * const component, JSON &componentData) const { };
-            virtual void load(COMPONENT * const component, JSON const &componentData) { };
+            virtual void save(COMPONENT const * const component, JSON &exportData) const { };
+            virtual void load(COMPONENT * const component, JSON const &importData) { };
 
-            void save(Plugin::Component::Data const * const component, JSON &componentData) const
+            void save(Plugin::Component::Data const * const component, JSON &exportData) const
             {
-                save(static_cast<COMPONENT const * const>(component), componentData);
+                save(static_cast<COMPONENT const * const>(component), exportData);
             }
 
-            void load(Plugin::Component::Data * const component, JSON const &componentData)
+            void load(Plugin::Component::Data * const component, JSON const &importData)
             {
-                load(static_cast<COMPONENT * const>(component), componentData);
+                load(static_cast<COMPONENT * const>(component), importData);
             }
 
             bool editorElement(std::string_view const &text, std::function<bool(void)> &&element)

@@ -24,8 +24,8 @@ namespace Gek
         {
             virtual ~Entity(void) = default;
 
-            using ComponentMap = std::unordered_map<Hash, std::unique_ptr<Plugin::Component::Data>>;
-            virtual ComponentMap &getComponentMap(void) = 0;
+            using Components = std::unordered_map<Hash, std::unique_ptr<Plugin::Component::Data>>;
+            virtual Components &getComponents(void) = 0;
         };
 
         GEK_INTERFACE(Component)
@@ -41,11 +41,11 @@ namespace Gek
         {
             virtual ~Population(void) = default;
 
-            using ComponentMap = std::unordered_map<Hash, Plugin::ComponentPtr>;
-            virtual ComponentMap &getComponentMap(void) = 0;
+            using AvailableComponents = std::unordered_map<Hash, Plugin::ComponentPtr>;
+            virtual AvailableComponents &getAvailableComponents(void) = 0;
 
-            using EntityList = std::list<Plugin::EntityPtr>;
-            virtual EntityList &getEntityList(void) = 0;
+            using Registry = std::list<Plugin::EntityPtr>;
+            virtual Registry &getRegistry(void) = 0;
 
             virtual Edit::Component *getComponent(Hash type) = 0;
         };

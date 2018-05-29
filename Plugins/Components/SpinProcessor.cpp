@@ -34,11 +34,11 @@ namespace Gek
 		}
 
 		// Plugin::Component
-		void save(Components::Spin const * const data, JSON &componentData) const
+		void save(Components::Spin const * const data, JSON &exportData) const
 		{
 		}
 
-		void load(Components::Spin * const data, JSON &componentData)
+		void load(Components::Spin * const data, JSON const &importData)
 		{
 			data->torque.x = population->getShuntingYard().evaluate("random(-pi,pi)").value_or(0.0f);
 			data->torque.y = population->getShuntingYard().evaluate("random(-pi,pi)").value_or(0.0f);

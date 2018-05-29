@@ -19,14 +19,14 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(Components::Name const * const data, JSON &componentData) const
+        void save(Components::Name const * const data, JSON &exportData) const
         {
-            componentData = data->name;
+            exportData = data->name;
         }
 
-        void load(Components::Name * const data, JSON &componentData)
+        void load(Components::Name * const data, JSON const &importData)
         {
-            data->name = componentData.as(String::Empty);
+            data->name = importData.as(String::Empty);
         }
 
         // Edit::Component

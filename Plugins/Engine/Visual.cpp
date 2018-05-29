@@ -62,7 +62,7 @@ namespace Gek
                         element.source = Video::InputElement::GetSource(elementNode.get("source").as(String::Empty));
                         element.sourceIndex = elementNode.get("sourceIndex").as(0ULL);
 
-                        uint32_t count = elementNode.get("count").scalar<uint32_t>();
+                        uint32_t count = elementNode.get("count").scalar(1ULL);
                         auto semanticIndex = inputIndexList[static_cast<uint8_t>(element.semantic)];
                         inputIndexList[static_cast<uint8_t>(element.semantic)] += count;
 
@@ -81,7 +81,7 @@ namespace Gek
                     std::string elementName(elementNode.get("name").as(String::Empty));
                     Video::Format format = Video::GetFormat(elementNode.get("format").as(String::Empty));
 					auto semantic = Video::InputElement::GetSemantic(elementNode.get("semantic").as(String::Empty));
-                    uint32_t count = elementNode.get("count").as(1);
+                    uint32_t count = elementNode.get("count").scalar<uint32_t>(1);
                     auto semanticIndex = outputIndexList[static_cast<uint8_t>(semantic)];
                     outputIndexList[static_cast<uint8_t>(semantic)] += count;
                     outputVertexData += String::Format("    {} {} : {}{};\r\n", getFormatSemantic(format, count), elementName, videoDevice->getSemanticMoniker(semantic), semanticIndex);
