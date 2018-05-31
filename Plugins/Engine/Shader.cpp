@@ -138,7 +138,7 @@ namespace Gek
                     importSearch->second.visit([&](auto && visitedData)
                     {
                         using TYPE = std::decay_t<decltype(visitedData)>;
-                        if constexpr (std::is_same_v<TYPE, std::string>)
+                        if (std::is_same_v<TYPE, std::string>)
                         {
                             JSON importOptions;
                             importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", visitedData).withExtension(".json")));
@@ -147,7 +147,7 @@ namespace Gek
                                 rootOptionsObject[importPair.first] = importPair.second;
                             }
                         }
-                        else if constexpr (std::is_same_v<TYPE, JSON::Array>)
+                        else if (std::is_same_v<TYPE, JSON::Array>)
                         {
                             for (auto &importName : visitedData)
                             {
@@ -434,7 +434,7 @@ namespace Gek
                             optionNode.visit([&](auto && visitedData)
                             {
                                 using TYPE = std::decay_t<decltype(visitedData)>;
-                                if constexpr (std::is_same_v<TYPE, JSON::Object>)
+                                if (std::is_same_v<TYPE, JSON::Object>)
                                 {
                                     if (visitedData.count("options"))
                                     {
@@ -486,7 +486,7 @@ namespace Gek
                                         }
                                     }
                                 }
-                                else if constexpr (std::is_same_v<TYPE, JSON::Array>)
+                                else if (std::is_same_v<TYPE, JSON::Array>)
                                 {
                                     switch (visitedData.size())
                                     {
@@ -517,11 +517,11 @@ namespace Gek
                                         break;
                                     };
                                 }
-                                else if constexpr (std::is_same_v<TYPE, bool>)
+                                else if (std::is_same_v<TYPE, bool>)
                                 {
                                     outerData += String::Format("    static const bool {} = {};\r\n", optionName, visitedData);
                                 }
-                                else if constexpr (std::is_same_v<TYPE, float>)
+                                else if (std::is_same_v<TYPE, float>)
                                 {
                                     outerData += String::Format("    static const float {} = {};\r\n", optionName, visitedData);
                                 }
@@ -567,7 +567,7 @@ namespace Gek
                         dispatchNode.visit([&](auto && visitedData)
                         {
                             using TYPE = std::decay_t<decltype(visitedData)>;
-                            if constexpr (std::is_same_v<TYPE, JSON::Array>)
+                            if (std::is_same_v<TYPE, JSON::Array>)
                             {
                                 if (visitedData.size() == 3)
                                 {

@@ -16,6 +16,32 @@
 #include "GEK/Utility/ShuntingYard.hpp"
 #include <variant>
 
+template <class... Fs>
+struct overload;
+
+template <class F0, class... Frest>
+struct overload<F0, Frest...> : F0, overload<Frest...>
+{
+    overload(F0 f0, Frest... rest) : F0(f0), overload<Frest...>(rest...) {}
+
+    using F0::operator();
+    using overload<Frest...>::operator();
+};
+
+template <class F0>
+struct overload<F0> : F0
+{
+    overload(F0 f0) : F0(f0) {}
+
+    using F0::operator();
+};
+
+template <class... Fs>
+auto make_visitor(Fs... fs)
+{
+    return overload<Fs...>(fs...);
+}
+
 namespace Gek
 {
     class JSON
@@ -47,10 +73,16 @@ namespace Gek
 
         std::string getString(void) const;
 
-        template <typename FUNCTION>
-        constexpr auto visit(FUNCTION && function) const
+        template <class... Fs>
+        auto visit(Fs... fs)
         {
-            return std::visit(function, data);
+            return std::visit(overload<Fs...>(fs...), data);
+        }
+
+        template <class... Fs>
+        auto visit(Fs... fs) const
+        {
+            return std::visit(overload<Fs...>(fs...), data);
         }
 
         template <typename TARGET_TYPE>
@@ -59,7 +91,7 @@ namespace Gek
             return empty() ? defaultValue : visit([&](auto && visitedData) -> TARGET_TYPE
             {
                 using SOURCE_TYPE = std::decay_t<decltype(visitedData)>;
-                if constexpr (std::is_convertible<SOURCE_TYPE, TARGET_TYPE>::value)
+                if (std::is_convertible<SOURCE_TYPE, TARGET_TYPE>::value)
                 {
                     return TARGET_TYPE(visitedData);
                 }

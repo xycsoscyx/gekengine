@@ -190,11 +190,11 @@ namespace Gek
             elementNode.visit([&](auto && visitedData)
             {
                 using TYPE = std::decay_t<decltype(visitedData)>;
-                if constexpr (std::is_same_v<TYPE, std::string>)
+                if (std::is_same_v<TYPE, std::string>)
                 {
                     aliasedMap[name] = visitedData;
                 }
-                else if constexpr (std::is_same_v<TYPE, JSON::Object>)
+                else if (std::is_same_v<TYPE, JSON::Object>)
                 {
                     auto firstMember = visitedData.begin();
                     auto &aliasName = firstMember->first;
@@ -202,7 +202,7 @@ namespace Gek
                     aliasNode.visit([&](auto && aliasData)
                     {
                         using TYPE = std::decay_t<decltype(aliasData)>;
-                        if constexpr (!std::is_same_v<TYPE, JSON::Array> &&
+                        if (!std::is_same_v<TYPE, JSON::Array> &&
                             !std::is_same_v<TYPE, JSON::Object>)
                         {
                             aliasedMap[aliasName] = String::Format("{}", aliasData);

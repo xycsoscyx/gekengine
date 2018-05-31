@@ -569,41 +569,43 @@ namespace Gek
             {
                 if (dock->BeginTab("Visual", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
                 {
-                    auto showOptions = [&](std::string_view group, JSON &settings) -> void
+                    auto showGroup = [&](std::string_view groupName, JSON &groupNode) -> void
                     {
-                        settings.visit([&](auto && visitedSettingsData)
+                        groupNode.visit([&](auto && groupObject)
                         {
-                            using TYPE = std::decay_t<decltype(visitedSettingsData)>;
-                            if constexpr (std::is_same_v<TYPE, JSON::Object>)
+                            using TYPE = std::decay_t<decltype(groupObject)>;
+                            if (std::is_same_v<TYPE, JSON::Object>)
                             {
-                                if (ImGui::TreeNodeEx(group.data(), ImGuiTreeNodeFlags_Framed))
+                                if (ImGui::TreeNodeEx(groupName.data(), ImGuiTreeNodeFlags_Framed))
                                 {
-                                    for (auto &groupPair : visitedSettingsData)
+                                    for (auto &settingPair : groupObject)
                                     {
-                                        groupPair.second.visit([&](auto && visitedGroupData)
+                                        auto &settingName = settingPair.first;
+                                        auto &settingNode = settingPair.second;
+                                        settingNode.visit([&](auto && visitedGroupData)
                                         {
                                             using TYPE = std::decay_t<decltype(visitedGroupData)>;
-                                            if constexpr (std::is_same_v<TYPE, JSON::Object>)
+                                            if (std::is_same_v<TYPE, JSON::Object>)
                                             {
-                                                std::function<void(std::string_view, JSON &)> showOptions;
-                                                showOptions = [&](std::string_view groupName, JSON &groupValues) -> void
+                                                std::function<void(std::string_view, JSON &)> showSetting;
+                                                showSetting = [&](std::string_view settingName, JSON &settingNode) -> void
                                                 {
-                                                    if (ImGui::TreeNodeEx(groupName.data(), ImGuiTreeNodeFlags_Framed))
+                                                    if (ImGui::TreeNodeEx(settingName.data(), ImGuiTreeNodeFlags_Framed))
                                                     {
-                                                        for (auto &optionPair : groupValues.as(JSON::EmptyObject))
+                                                        for (auto &optionPair : settingNode.as(JSON::EmptyObject))
                                                         {
-                                                            auto optionName = optionPair.first;
-                                                            auto &optionValue = optionPair.second;
+                                                            auto &optionName = optionPair.first;
+                                                            auto &optionNode = optionPair.second;
 
-                                                            auto label(String::Format("##{}{}", groupName, optionName));
+                                                            auto label(String::Format("##{}{}", settingName, optionName));
 
                                                             ImGui::Text(optionName.data());
                                                             ImGui::SameLine();
                                                             ImGui::PushItemWidth(-1.0f);
-                                                            optionValue.visit([&](auto && visitedData)
+                                                            optionNode.visit([&](auto && visitedData)
                                                             {
                                                                 using TYPE = std::decay_t<decltype(visitedData)>;
-                                                                if constexpr (std::is_same_v<TYPE, JSON::Object>)
+                                                                if (std::is_same_v<TYPE, JSON::Object>)
                                                                 {
                                                                     auto optionsSearch = visitedData.find("options");
                                                                     if (optionsSearch != visitedData.end())
@@ -636,7 +638,7 @@ namespace Gek
                                                                                 if (optionsSearch != std::end(optionList))
                                                                                 {
                                                                                     selection = std::distance(std::begin(optionList), optionsSearch);
-                                                                                    optionValue.as(JSON::EmptyObject)["selection"] = selection;
+                                                                                    optionNode.as(JSON::EmptyObject)["selection"] = selection;
                                                                                 }
                                                                             }
                                                                             else
@@ -657,16 +659,16 @@ namespace Gek
                                                                             return false;
                                                                         }, &optionList, optionList.size(), 10))
                                                                         {
-                                                                            optionValue.as(JSON::EmptyObject)["selection"] = selection;
+                                                                            optionNode.as(JSON::EmptyObject)["selection"] = selection;
                                                                             changedVisualOptions = true;
                                                                         }
                                                                     }
                                                                     else
                                                                     {
-                                                                        showOptions(optionName, optionValue);
+                                                                        showSetting(optionName, optionNode);
                                                                     }
                                                                 }
-                                                                else if constexpr (std::is_same_v<TYPE, JSON::Array>)
+                                                                else if (std::is_same_v<TYPE, JSON::Array>)
                                                                 {
                                                                     switch (visitedData.size())
                                                                     {
@@ -676,7 +678,7 @@ namespace Gek
                                                                             float data = visitedData[0].as(0.0f);
                                                                             if (ImGui::InputFloat(label.data(), &data))
                                                                             {
-                                                                                optionValue = data;
+                                                                                optionNode = data;
                                                                                 changedVisualOptions = true;
                                                                             }
                                                                         }();
@@ -690,7 +692,7 @@ namespace Gek
                                                                                 visitedData[1].as(0.0f));
                                                                             if (ImGui::InputFloat2(label.data(), data.data))
                                                                             {
-                                                                                optionValue = JSON::Array({ data.x, data.y });
+                                                                                optionNode = JSON::Array({ data.x, data.y });
                                                                                 changedVisualOptions = true;
                                                                             }
                                                                         }();
@@ -705,7 +707,7 @@ namespace Gek
                                                                                 visitedData[2].as(0.0f));
                                                                             if (ImGui::InputFloat3(label.data(), data.data))
                                                                             {
-                                                                                optionValue = JSON::Array({ data.x, data.y, data.z });
+                                                                                optionNode = JSON::Array({ data.x, data.y, data.z });
                                                                                 changedVisualOptions = true;
                                                                             }
                                                                         }();
@@ -721,19 +723,19 @@ namespace Gek
                                                                                 visitedData[3].as(0.0f));
                                                                             if (ImGui::InputFloat4(label.data(), data.data))
                                                                             {
-                                                                                optionValue = JSON::Array({ data.x, data.y, data.z, data.w });
+                                                                                optionNode = JSON::Array({ data.x, data.y, data.z, data.w });
                                                                                 changedVisualOptions = true;
                                                                             }
                                                                         }();
                                                                         break;
                                                                     };
                                                                 }
-                                                                else if constexpr (!std::is_same_v<TYPE, std::nullptr_t>)
+                                                                else if (!std::is_same_v<TYPE, std::nullptr_t>)
                                                                 {
                                                                     auto value = visitedData;
                                                                     if (UI::Input(label, &value))
                                                                     {
-                                                                        optionValue = value;
+                                                                        optionNode = value;
                                                                         changedVisualOptions = true;
                                                                     }
                                                                 }
@@ -746,7 +748,7 @@ namespace Gek
                                                     }
                                                 };
 
-                                                showOptions(groupPair.first, groupPair.second);
+                                                showSetting(settingName, settingNode);
                                             }
                                         });
                                     }
@@ -757,8 +759,8 @@ namespace Gek
                         });
                     };
 
-                    showOptions("shaders", shadersSettings);
-                    showOptions("filters", filtersSettings);
+                    showGroup("shaders", shadersSettings);
+                    showGroup("filters", filtersSettings);
                 }
 
                 dock->EndTab();

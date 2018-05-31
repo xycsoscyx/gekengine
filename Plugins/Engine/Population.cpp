@@ -287,14 +287,14 @@ namespace Gek
                             componentPair.second.visit([&](auto && visitedData)
                             {
                                 using TYPE = std::decay_t<decltype(visitedData)>;
-                                if constexpr (std::is_same_v<TYPE, JSON::Object>)
+                                if (std::is_same_v<TYPE, JSON::Object>)
                                 {
                                     for (auto const &attribute : visitedData)
                                     {
                                         componentDefiniti9on[attribute.first] = attribute.second;
                                     }
                                 }
-                                else if constexpr (!std::is_same_v<TYPE, std::nullptr_t>)
+                                else if (!std::is_same_v<TYPE, std::nullptr_t>)
                                 {
                                     componentDefiniti9on = visitedData;
                                 }
