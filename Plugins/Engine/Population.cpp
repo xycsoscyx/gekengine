@@ -284,20 +284,17 @@ namespace Gek
                         for (auto const &componentPair : entityObject)
                         {
                             auto &componentDefiniti9on = entityDefinition[componentPair.first];
-                            componentPair.second.visit([&](auto && visitedData)
+                            componentPair.second.visit(
+                                [&](JSON::Object const &visitedData)
                             {
-                                using TYPE = std::decay_t<decltype(visitedData)>;
-                                if (std::is_same_v<TYPE, JSON::Object>)
+                                for (auto const &attribute : visitedData)
                                 {
-                                    for (auto const &attribute : visitedData)
-                                    {
-                                        componentDefiniti9on[attribute.first] = attribute.second;
-                                    }
+                                    componentDefiniti9on[attribute.first] = attribute.second;
                                 }
-                                else if (!std::is_same_v<TYPE, std::nullptr_t>)
-                                {
-                                    componentDefiniti9on = visitedData;
-                                }
+                            },
+                                [&](auto const &visitedData)
+                            {
+                                componentDefiniti9on = visitedData;
                             });
                         }
 

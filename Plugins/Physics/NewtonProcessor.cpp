@@ -527,7 +527,7 @@ namespace Gek
                     JSON materialNode;
                     materialNode.load(getContext()->findDataPath(FileSystem::CombinePaths("materials", surfaceName).withExtension(".json")));
                     auto surfaceNode = materialNode.get("surface");
-                    if (!surfaceNode.empty())
+                    if (surfaceNode.is<JSON::Object>())
                     {
                         Surface surface;
                         surface.ghost = surfaceNode.get("ghost").as(surface.ghost);

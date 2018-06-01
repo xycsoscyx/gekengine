@@ -67,12 +67,12 @@ namespace Gek
 
         virtual ~ContextRegistration(void) = default;
 
-        Context * const getContext(void) const
+        virtual Context * const getContext(void) const
         {
             return context;
         }
 
-        Profiler * const getProfiler(void) const
+        virtual Profiler * const getProfiler(void) const
         {
             return context->getProfiler();
         }

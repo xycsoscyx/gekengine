@@ -187,28 +187,30 @@ namespace Gek
         std::unordered_map<std::string, std::string> aliasedMap;
         for (auto &elementNode : parent.get(name).as(JSON::EmptyArray))
         {
-            elementNode.visit([&](auto && visitedData)
+            elementNode.visit(
+                [&](std::string const &visitedData)
             {
-                using TYPE = std::decay_t<decltype(visitedData)>;
-                if (std::is_same_v<TYPE, std::string>)
+                aliasedMap[name] = visitedData;
+            },
+                [&](JSON::Object const &visitedData)
+            {
+                auto firstMember = visitedData.begin();
+                auto &aliasName = firstMember->first;
+                auto &aliasNode = firstMember->second;
+                aliasNode.visit(
+                    [&](JSON::Object const &visitedData)
                 {
-                    aliasedMap[name] = visitedData;
-                }
-                else if (std::is_same_v<TYPE, JSON::Object>)
+                },
+                    [&](JSON::Array const &visitedData)
                 {
-                    auto firstMember = visitedData.begin();
-                    auto &aliasName = firstMember->first;
-                    auto &aliasNode = firstMember->second;
-                    aliasNode.visit([&](auto && aliasData)
-                    {
-                        using TYPE = std::decay_t<decltype(aliasData)>;
-                        if (!std::is_same_v<TYPE, JSON::Array> &&
-                            !std::is_same_v<TYPE, JSON::Object>)
-                        {
-                            aliasedMap[aliasName] = String::Format("{}", aliasData);
-                        }
-                    });
-                }
+                },
+                    [&](auto const &aliasedData)
+                {
+                    aliasedMap[aliasName] = String::Format("{}", aliasedData);
+                });
+            },
+                [&](auto const &)
+            {
             });
         }
 

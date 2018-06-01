@@ -188,7 +188,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
                         JSON shaderNode;
                         shaderNode["data"] = dataNode;
-                        if (!renderState.empty())
+                        if (renderState.is<JSON::Object>())
                         {
                             shaderNode["renderState"] = renderState;
                         }

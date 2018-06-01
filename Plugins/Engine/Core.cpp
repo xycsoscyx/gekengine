@@ -345,7 +345,7 @@ namespace Gek
                         auto &selectionNode = optionNode["selection"];
                         auto &optionsNode = optionNode["options"];
 
-                        uint32_t selection = selectionNode.as(0ULL);
+                        uint32_t selection = selectionNode.as(0U);
                         selection = (selection % optionsNode.as(JSON::EmptyArray).size());
 
                         LockedWrite{ std::cout } << shaderName << ": " << optionName << " changed to " << optionsNode[selection].as(String::Empty);
@@ -571,191 +571,188 @@ namespace Gek
                 {
                     auto showGroup = [&](std::string_view groupName, JSON &groupNode) -> void
                     {
-                        groupNode.visit([&](auto && groupObject)
+                        groupNode.visit(
+                            [&](JSON::Object &groupObject)
                         {
-                            using TYPE = std::decay_t<decltype(groupObject)>;
-                            if (std::is_same_v<TYPE, JSON::Object>)
+                            if (ImGui::TreeNodeEx(groupName.data(), ImGuiTreeNodeFlags_Framed))
                             {
-                                if (ImGui::TreeNodeEx(groupName.data(), ImGuiTreeNodeFlags_Framed))
+                                for (auto &settingPair : groupObject)
                                 {
-                                    for (auto &settingPair : groupObject)
+                                    auto &settingName = settingPair.first;
+                                    auto &settingNode = settingPair.second;
+                                    settingNode.visit(
+                                        [&](JSON::Object &visitedGroupData)
                                     {
-                                        auto &settingName = settingPair.first;
-                                        auto &settingNode = settingPair.second;
-                                        settingNode.visit([&](auto && visitedGroupData)
+                                        std::function<void(std::string_view, JSON &)> showSetting;
+                                        showSetting = [&](std::string_view settingName, JSON &settingNode) -> void
                                         {
-                                            using TYPE = std::decay_t<decltype(visitedGroupData)>;
-                                            if (std::is_same_v<TYPE, JSON::Object>)
+                                            if (ImGui::TreeNodeEx(settingName.data(), ImGuiTreeNodeFlags_Framed))
                                             {
-                                                std::function<void(std::string_view, JSON &)> showSetting;
-                                                showSetting = [&](std::string_view settingName, JSON &settingNode) -> void
+                                                for (auto &optionPair : settingNode.as(JSON::EmptyObject))
                                                 {
-                                                    if (ImGui::TreeNodeEx(settingName.data(), ImGuiTreeNodeFlags_Framed))
+                                                    auto &optionName = optionPair.first;
+                                                    auto &optionNode = optionPair.second;
+
+                                                    auto label(String::Format("##{}{}", settingName, optionName));
+
+                                                    ImGui::Text(optionName.data());
+                                                    ImGui::SameLine();
+                                                    ImGui::PushItemWidth(-1.0f);
+                                                    optionNode.visit(
+                                                        [&](JSON::Object &visitedData)
                                                     {
-                                                        for (auto &optionPair : settingNode.as(JSON::EmptyObject))
+                                                        auto optionsSearch = visitedData.find("options");
+                                                        if (optionsSearch != visitedData.end())
                                                         {
-                                                            auto &optionName = optionPair.first;
-                                                            auto &optionNode = optionPair.second;
-
-                                                            auto label(String::Format("##{}{}", settingName, optionName));
-
-                                                            ImGui::Text(optionName.data());
-                                                            ImGui::SameLine();
-                                                            ImGui::PushItemWidth(-1.0f);
-                                                            optionNode.visit([&](auto && visitedData)
-                                                            {
-                                                                using TYPE = std::decay_t<decltype(visitedData)>;
-                                                                if (std::is_same_v<TYPE, JSON::Object>)
-                                                                {
-                                                                    auto optionsSearch = visitedData.find("options");
-                                                                    if (optionsSearch != visitedData.end())
-                                                                    {
-                                                                        return;
-                                                                    }
-
-                                                                    auto optionsNode = optionsSearch->second;
-                                                                    if (optionsNode.is<JSON::Object>())
-                                                                    {
-                                                                        std::vector<std::string> optionList;
-                                                                        for (auto choice : optionsNode.as(JSON::EmptyArray))
-                                                                        {
-                                                                            optionList.push_back(choice.as(String::Empty));
-                                                                        }
-
-                                                                        int selection = 0;
-                                                                        auto &selectorSearch = visitedData.find("selection");
-                                                                        if (selectorSearch != visitedData.end())
-                                                                        {
-                                                                            auto selectionNode = selectorSearch->second;
-                                                                            if (selectionNode.is<std::string>())
-                                                                            {
-                                                                                auto selectedName = selectionNode.as(String::Empty);
-                                                                                auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string_view choice) -> bool
-                                                                                {
-                                                                                    return (selectedName == choice);
-                                                                                });
-
-                                                                                if (optionsSearch != std::end(optionList))
-                                                                                {
-                                                                                    selection = std::distance(std::begin(optionList), optionsSearch);
-                                                                                    optionNode.as(JSON::EmptyObject)["selection"] = selection;
-                                                                                }
-                                                                            }
-                                                                            else
-                                                                            {
-                                                                                selection = selectionNode.as(0ULL);
-                                                                            }
-                                                                        }
-
-                                                                        if (ImGui::Combo(label.data(), &selection, [](void *userData, int index, char const **outputText) -> bool
-                                                                        {
-                                                                            auto &optionList = *(std::vector<std::string> *)userData;
-                                                                            if (index >= 0 && index < optionList.size())
-                                                                            {
-                                                                                *outputText = optionList[index].data();
-                                                                                return true;
-                                                                            }
-
-                                                                            return false;
-                                                                        }, &optionList, optionList.size(), 10))
-                                                                        {
-                                                                            optionNode.as(JSON::EmptyObject)["selection"] = selection;
-                                                                            changedVisualOptions = true;
-                                                                        }
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        showSetting(optionName, optionNode);
-                                                                    }
-                                                                }
-                                                                else if (std::is_same_v<TYPE, JSON::Array>)
-                                                                {
-                                                                    switch (visitedData.size())
-                                                                    {
-                                                                    case 1:
-                                                                        [&](void) -> void
-                                                                        {
-                                                                            float data = visitedData[0].as(0.0f);
-                                                                            if (ImGui::InputFloat(label.data(), &data))
-                                                                            {
-                                                                                optionNode = data;
-                                                                                changedVisualOptions = true;
-                                                                            }
-                                                                        }();
-                                                                        break;
-
-                                                                    case 2:
-                                                                        [&](void) -> void
-                                                                        {
-                                                                            Math::Float2 data(
-                                                                                visitedData[0].as(0.0f),
-                                                                                visitedData[1].as(0.0f));
-                                                                            if (ImGui::InputFloat2(label.data(), data.data))
-                                                                            {
-                                                                                optionNode = JSON::Array({ data.x, data.y });
-                                                                                changedVisualOptions = true;
-                                                                            }
-                                                                        }();
-                                                                        break;
-
-                                                                    case 3:
-                                                                        [&](void) -> void
-                                                                        {
-                                                                            Math::Float3 data(
-                                                                                visitedData[0].as(0.0f),
-                                                                                visitedData[1].as(0.0f),
-                                                                                visitedData[2].as(0.0f));
-                                                                            if (ImGui::InputFloat3(label.data(), data.data))
-                                                                            {
-                                                                                optionNode = JSON::Array({ data.x, data.y, data.z });
-                                                                                changedVisualOptions = true;
-                                                                            }
-                                                                        }();
-                                                                        break;
-
-                                                                    case 4:
-                                                                        [&](void) -> void
-                                                                        {
-                                                                            Math::Float4 data(
-                                                                                visitedData[0].as(0.0f),
-                                                                                visitedData[1].as(0.0f),
-                                                                                visitedData[2].as(0.0f),
-                                                                                visitedData[3].as(0.0f));
-                                                                            if (ImGui::InputFloat4(label.data(), data.data))
-                                                                            {
-                                                                                optionNode = JSON::Array({ data.x, data.y, data.z, data.w });
-                                                                                changedVisualOptions = true;
-                                                                            }
-                                                                        }();
-                                                                        break;
-                                                                    };
-                                                                }
-                                                                else if (!std::is_same_v<TYPE, std::nullptr_t>)
-                                                                {
-                                                                    auto value = visitedData;
-                                                                    if (UI::Input(label, &value))
-                                                                    {
-                                                                        optionNode = value;
-                                                                        changedVisualOptions = true;
-                                                                    }
-                                                                }
-                                                            });
-
-                                                            ImGui::PopItemWidth();
+                                                            return;
                                                         }
 
-                                                        ImGui::TreePop();
-                                                    }
-                                                };
+                                                        auto optionsNode = optionsSearch->second;
+                                                        if (optionsNode.is<JSON::Object>())
+                                                        {
+                                                            std::vector<std::string> optionList;
+                                                            for (auto choice : optionsNode.as(JSON::EmptyArray))
+                                                            {
+                                                                optionList.push_back(choice.as(String::Empty));
+                                                            }
 
-                                                showSetting(settingName, settingNode);
+                                                            int selection = 0;
+                                                            auto &selectorSearch = visitedData.find("selection");
+                                                            if (selectorSearch != visitedData.end())
+                                                            {
+                                                                auto selectionNode = selectorSearch->second;
+                                                                if (selectionNode.is<std::string>())
+                                                                {
+                                                                    auto selectedName = selectionNode.as(String::Empty);
+                                                                    auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string_view choice) -> bool
+                                                                    {
+                                                                        return (selectedName == choice);
+                                                                    });
+
+                                                                    if (optionsSearch != std::end(optionList))
+                                                                    {
+                                                                        selection = std::distance(std::begin(optionList), optionsSearch);
+                                                                        optionNode.as(JSON::EmptyObject)["selection"] = selection;
+                                                                    }
+                                                                }
+                                                                else
+                                                                {
+                                                                    selection = selectionNode.as(0U);
+                                                                }
+                                                            }
+
+                                                            if (ImGui::Combo(label.data(), &selection, [](void *userData, int index, char const **outputText) -> bool
+                                                            {
+                                                                auto &optionList = *(std::vector<std::string> *)userData;
+                                                                if (index >= 0 && index < optionList.size())
+                                                                {
+                                                                    *outputText = optionList[index].data();
+                                                                    return true;
+                                                                }
+
+                                                                return false;
+                                                            }, &optionList, optionList.size(), 10))
+                                                            {
+                                                                optionNode.as(JSON::EmptyObject)["selection"] = selection;
+                                                                changedVisualOptions = true;
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            showSetting(optionName, optionNode);
+                                                        }
+                                                    },
+                                                        [&](JSON::Array &visitedData)
+                                                    {
+                                                        switch (visitedData.size())
+                                                        {
+                                                        case 1:
+                                                            [&](void) -> void
+                                                            {
+                                                                float data = visitedData[0].as(0.0f);
+                                                                if (ImGui::InputFloat(label.data(), &data))
+                                                                {
+                                                                    optionNode = data;
+                                                                    changedVisualOptions = true;
+                                                                }
+                                                            }();
+                                                            break;
+
+                                                        case 2:
+                                                            [&](void) -> void
+                                                            {
+                                                                Math::Float2 data(
+                                                                    visitedData[0].as(0.0f),
+                                                                    visitedData[1].as(0.0f));
+                                                                if (ImGui::InputFloat2(label.data(), data.data))
+                                                                {
+                                                                    optionNode = JSON::Array({ data.x, data.y });
+                                                                    changedVisualOptions = true;
+                                                                }
+                                                            }();
+                                                            break;
+
+                                                        case 3:
+                                                            [&](void) -> void
+                                                            {
+                                                                Math::Float3 data(
+                                                                    visitedData[0].as(0.0f),
+                                                                    visitedData[1].as(0.0f),
+                                                                    visitedData[2].as(0.0f));
+                                                                if (ImGui::InputFloat3(label.data(), data.data))
+                                                                {
+                                                                    optionNode = JSON::Array({ data.x, data.y, data.z });
+                                                                    changedVisualOptions = true;
+                                                                }
+                                                            }();
+                                                            break;
+
+                                                        case 4:
+                                                            [&](void) -> void
+                                                            {
+                                                                Math::Float4 data(
+                                                                    visitedData[0].as(0.0f),
+                                                                    visitedData[1].as(0.0f),
+                                                                    visitedData[2].as(0.0f),
+                                                                    visitedData[3].as(0.0f));
+                                                                if (ImGui::InputFloat4(label.data(), data.data))
+                                                                {
+                                                                    optionNode = JSON::Array({ data.x, data.y, data.z, data.w });
+                                                                    changedVisualOptions = true;
+                                                                }
+                                                            }();
+                                                            break;
+                                                        };
+                                                    },
+                                                        [&](auto const &visitedData)
+                                                    {
+                                                        auto value = visitedData;
+                                                        if (UI::Input(label, &value))
+                                                        {
+                                                            optionNode = value;
+                                                            changedVisualOptions = true;
+                                                        }
+                                                    });
+
+                                                    ImGui::PopItemWidth();
+                                                }
+
+                                                ImGui::TreePop();
                                             }
-                                        });
-                                    }
+                                        };
 
-                                    ImGui::TreePop();
+                                        showSetting(settingName, settingNode);
+                                    },
+                                        [&](auto visitedData)
+                                    {
+                                    });
                                 }
+
+                                ImGui::TreePop();
                             }
+                        },
+                        [&](auto visitedData)
+                        {
                         });
                     };
 

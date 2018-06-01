@@ -192,123 +192,6 @@ namespace Gek
         return std::get<Object>(data)[name.data()];
     }
 
-    int32_t JSON::evaluate(ShuntingYard &shuntingYard, int32_t defaultValue) const
-    {
-        return visit(
-            [&](std::string const &visitedData)
-        {
-            return shuntingYard.evaluate(visitedData).value_or(defaultValue);
-        },
-            [&](Object const &visitedData)
-        {
-            return defaultValue;
-        },
-            [&](Array const &visitedData)
-        {
-            return defaultValue;
-        },
-            [&](std::nullptr_t const &visitedData)
-        {
-            return defaultValue;
-        },
-            [&](auto && visitedData)
-        {
-            return visitedData;
-        });
-    }
-
-    uint32_t JSON::evaluate(ShuntingYard &shuntingYard, uint32_t defaultValue) const
-    {
-        return visit([&](auto && visitedData) -> uint32_t
-        {
-            using TYPE = std::decay_t<decltype(visitedData)>;
-            if (std::is_same_v<TYPE, std::string>)
-            {
-                return shuntingYard.evaluate(visitedData).value_or(defaultValue);
-            }
-            else if (std::is_same_v<TYPE, Object> ||
-                std::is_same_v<TYPE, Array>)
-            {
-                return defaultValue;
-            }
-            else if (!std::is_same_v<TYPE, std::nullptr_t>)
-            {
-                return visitedData;
-            }
-
-            return defaultValue;
-        });
-    }
-
-    int64_t JSON::evaluate(ShuntingYard &shuntingYard, int64_t defaultValue) const
-    {
-        return visit([&](auto && visitedData) -> int64_t
-        {
-            using TYPE = std::decay_t<decltype(visitedData)>;
-            if (std::is_same_v<TYPE, std::string>)
-            {
-                return shuntingYard.evaluate(visitedData).value_or(defaultValue);
-            }
-            else if (std::is_same_v<TYPE, Object> ||
-                std::is_same_v<TYPE, Array>)
-            {
-                return defaultValue;
-            }
-            else if (!std::is_same_v<TYPE, std::nullptr_t>)
-            {
-                return visitedData;
-            }
-
-            return defaultValue;
-        });
-    }
-
-    uint64_t JSON::evaluate(ShuntingYard &shuntingYard, uint64_t defaultValue) const
-    {
-        return visit([&](auto && visitedData) -> uint64_t
-        {
-            using TYPE = std::decay_t<decltype(visitedData)>;
-            if (std::is_same_v<TYPE, std::string>)
-            {
-                return shuntingYard.evaluate(visitedData).value_or(defaultValue);
-            }
-            else if (std::is_same_v<TYPE, Object> ||
-                std::is_same_v<TYPE, Array>)
-            {
-                return defaultValue;
-            }
-            else if (!std::is_same_v<TYPE, std::nullptr_t>)
-            {
-                return visitedData;
-            }
-
-            return defaultValue;
-        });
-    }
-
-    float JSON::evaluate(ShuntingYard &shuntingYard, float defaultValue) const
-    {
-        return visit([&](auto && visitedData) -> float
-        {
-            using TYPE = std::decay_t<decltype(visitedData)>;
-            if (std::is_same_v<TYPE, std::string>)
-            {
-                return shuntingYard.evaluate(visitedData).value_or(defaultValue);
-            }
-            else if (std::is_same_v<TYPE, Object> ||
-                std::is_same_v<TYPE, Array>)
-            {
-                return defaultValue;
-            }
-            else if (!std::is_same_v<TYPE, std::nullptr_t>)
-            {
-                return visitedData;
-            }
-
-            return defaultValue;
-        });
-    }
-
     Math::Float2 JSON::evaluate(ShuntingYard &shuntingYard, Math::Float2 const &defaultValue) const
     {
         auto data = as(EmptyArray);
@@ -403,24 +286,22 @@ namespace Gek
 
     std::string JSON::evaluate(ShuntingYard &shuntingYard, std::string const &defaultValue) const
     {
-        return visit([&](auto && visitedData) -> std::string
+        return visit(
+            [&](std::string const &visitedData)
         {
-            using TYPE = std::decay_t<decltype(visitedData)>;
-            if (std::is_same_v<TYPE, std::string>)
-            {
-                return visitedData;
-            }
-            else if (std::is_same_v<TYPE, JSON::Array> ||
-                std::is_same_v<TYPE, JSON::Object>)
-            {
-                return defaultValue;
-            }
-            else if (!std::is_same_v<TYPE, std::nullptr_t>)
-            {
-                return String::Format("{}", visitedData);
-            }
-
+            return visitedData;
+        },
+            [&](Object const &visitedData)
+        {
             return defaultValue;
+        },
+            [&](Array const &visitedData)
+        {
+            return defaultValue;
+        },
+            [&](auto const &visitedData)
+        {
+            return String::Format("{}", visitedData);
         });
     }
 }; // namespace Gek

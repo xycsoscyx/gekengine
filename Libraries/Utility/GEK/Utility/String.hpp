@@ -22,11 +22,6 @@ using namespace std::string_view_literals; // enables s-suffix for std::string l
 
 namespace std
 {
-    inline std::string to_string(std::nullptr_t const &none)
-    {
-        return ""s;
-    }
-
     inline std::string to_string(std::string const &string)
     {
         return string;

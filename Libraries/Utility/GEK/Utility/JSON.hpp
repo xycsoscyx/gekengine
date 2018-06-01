@@ -36,10 +36,29 @@ struct overload<F0> : F0
     using F0::operator();
 };
 
-template <class... Fs>
-auto make_visitor(Fs... fs)
+__inline bool value_or_default(bool const &value, bool defaultValue)
 {
-    return overload<Fs...>(fs...);
+    return value;
+}
+
+template <typename SOURCE_TYPE>
+bool value_or_default(SOURCE_TYPE const &value, bool defaultValue)
+{
+    return defaultValue;
+}
+
+template <typename SOURCE_TYPE, typename TARGET_TYPE>
+typename std::enable_if<std::is_convertible<SOURCE_TYPE, TARGET_TYPE>::value, TARGET_TYPE>::type
+value_or_default(SOURCE_TYPE const &value, TARGET_TYPE defaultValue)
+{
+    return value;
+}
+
+template <typename SOURCE_TYPE, typename TARGET_TYPE>
+typename std::enable_if<!std::is_convertible<SOURCE_TYPE, TARGET_TYPE>::value, TARGET_TYPE>::type
+value_or_default(SOURCE_TYPE const &value, TARGET_TYPE defaultValue)
+{
+    return defaultValue;
 }
 
 namespace Gek
@@ -55,7 +74,7 @@ namespace Gek
         static const JSON Empty;
 
     private:
-        std::variant<std::nullptr_t, bool, int32_t, uint32_t, int64_t, uint64_t, float, std::string, Array, Object> data;
+        std::variant<bool, int32_t, uint32_t, int64_t, uint64_t, float, std::string, Array, Object> data;
 
     public:
         JSON(void)
@@ -83,28 +102,6 @@ namespace Gek
         auto visit(Fs... fs) const
         {
             return std::visit(overload<Fs...>(fs...), data);
-        }
-
-        template <typename TARGET_TYPE>
-        constexpr TARGET_TYPE scalar(TARGET_TYPE defaultValue) const
-        {
-            return empty() ? defaultValue : visit([&](auto && visitedData) -> TARGET_TYPE
-            {
-                using SOURCE_TYPE = std::decay_t<decltype(visitedData)>;
-                if (std::is_convertible<SOURCE_TYPE, TARGET_TYPE>::value)
-                {
-                    return TARGET_TYPE(visitedData);
-                }
-                else
-                {
-                    return defaultValue;
-                }
-            });
-        }
-
-        bool empty(void) const
-        {
-            return std::holds_alternative<std::nullptr_t>(data);
         }
 
         template <typename TYPE>
@@ -141,11 +138,38 @@ namespace Gek
         JSON &operator [] (size_t index);
         JSON &operator [] (std::string_view name);
 
-        int32_t evaluate(ShuntingYard &shuntingYard, int32_t defaultValue) const;
-        uint32_t evaluate(ShuntingYard &shuntingYard, uint32_t defaultValue) const;
-        int64_t evaluate(ShuntingYard &shuntingYard, int64_t defaultValue) const;
-        uint64_t evaluate(ShuntingYard &shuntingYard, uint64_t defaultValue) const;
-        float evaluate(ShuntingYard &shuntingYard, float defaultValue) const;
+        template <typename TARGET_TYPE>
+        constexpr TARGET_TYPE convert(TARGET_TYPE defaultValue) const
+        {
+            return visit(
+                [&](auto const &visitedData) -> TARGET_TYPE
+            {
+                return value_or_default(visitedData, defaultValue);
+            });
+        }
+
+        template <typename TYPE>
+        TYPE evaluate(ShuntingYard &shuntingYard, TYPE defaultValue) const
+        {
+            return visit(
+                [&](std::string const &visitedData) -> TYPE
+            {
+                return shuntingYard.evaluate(visitedData).value_or(defaultValue);
+            },
+                [&](Object const &visitedData) -> TYPE
+            {
+                return defaultValue;
+            },
+                [&](Array const &visitedData) -> TYPE
+            {
+                return defaultValue;
+            },
+                [&](auto && visitedData) -> TYPE
+            {
+                return visitedData;
+            });
+        }
+
         Math::Float2 evaluate(ShuntingYard &shuntingYard, Math::Float2 const &defaultValue) const;
         Math::Float3 evaluate(ShuntingYard &shuntingYard, Math::Float3 const &defaultValue) const;
         Math::Float4 evaluate(ShuntingYard &shuntingYard, Math::Float4 const &defaultValue) const;
