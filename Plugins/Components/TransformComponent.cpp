@@ -26,8 +26,8 @@ namespace Gek
 
         void load(Components::Transform * const data, JSON const &importData)
         {
-            data->position = evaluate(importData.get("position"), Math::Float3::Zero);
-            data->rotation = evaluate(importData.get("rotation"), Math::Quaternion::Identity);
+            data->position = evaluate(importData.getMember("position"), Math::Float3::Zero);
+            data->rotation = evaluate(importData.getMember("rotation"), Math::Quaternion::Identity);
             LockedWrite{ std::cout } << "Position: [" << data->position.x << ", " << data->position.y << ", " << data->position.z << "]";
 		}
 

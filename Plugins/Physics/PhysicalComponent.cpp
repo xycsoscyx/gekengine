@@ -27,7 +27,7 @@ namespace Gek
 
             void load(Components::Physical * const data, JSON const &importData)
             {
-                data->mass = evaluate(importData.get("mass"), 0.0f);
+                data->mass = evaluate(importData.getMember("mass"), 0.0f);
             }
 
             // Edit::Component

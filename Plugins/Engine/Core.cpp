@@ -137,7 +137,7 @@ namespace Gek
                     displayModeStringList.push_back(displayModeString);
                 }
 
-				setDisplayMode(getOption("display"s, "mode"s).as(preferredDisplayMode));
+				setDisplayMode(getOption("display"s, "mode"s).asType(preferredDisplayMode));
 
                 population = getContext()->createClass<Engine::Population>("Engine::Population", (Engine::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Engine::Core *)this);
@@ -188,7 +188,7 @@ namespace Gek
                 engineRunning = true;
 
                 window->setVisibility(true);
-				setFullScreen(getOption("display"s, "fullScreen"s).as(false));
+				setFullScreen(getOption("display"s, "fullScreen"s).asType(false));
 				LockedWrite{ std::cout } << "Starting engine";
                 window->readEvents();
             }
@@ -345,10 +345,10 @@ namespace Gek
                         auto &selectionNode = optionNode["selection"];
                         auto &optionsNode = optionNode["options"];
 
-                        uint32_t selection = selectionNode.as(0U);
-                        selection = (selection % optionsNode.as(JSON::EmptyArray).size());
+                        uint32_t selection = selectionNode.asType(0U);
+                        selection = (selection % optionsNode.asType(JSON::EmptyArray).size());
 
-                        LockedWrite{ std::cout } << shaderName << ": " << optionName << " changed to " << optionsNode[selection].as(String::Empty);
+                        LockedWrite{ std::cout } << shaderName << ": " << optionName << " changed to " << optionsNode[selection].asType(String::Empty);
 
                         optionNode["selection"] = selection;
 					};
@@ -520,8 +520,8 @@ namespace Gek
                         {
                             showSettings = true;
                             next = previous = current;
-                            shadersSettings = configuration.get("shaders");
-                            filtersSettings = configuration.get("filters");
+                            shadersSettings = configuration.getMember("shaders");
+                            filtersSettings = configuration.getMember("filters");
                             changedVisualOptions = false;
                         }
 
@@ -588,7 +588,7 @@ namespace Gek
                                         {
                                             if (ImGui::TreeNodeEx(settingName.data(), ImGuiTreeNodeFlags_Framed))
                                             {
-                                                for (auto &optionPair : settingNode.as(JSON::EmptyObject))
+                                                for (auto &optionPair : settingNode.asType(JSON::EmptyObject))
                                                 {
                                                     auto &optionName = optionPair.first;
                                                     auto &optionNode = optionPair.second;
@@ -608,12 +608,12 @@ namespace Gek
                                                         }
 
                                                         auto optionsNode = optionsSearch->second;
-                                                        if (optionsNode.is<JSON::Object>())
+                                                        if (optionsNode.isType<JSON::Object>())
                                                         {
                                                             std::vector<std::string> optionList;
-                                                            for (auto choice : optionsNode.as(JSON::EmptyArray))
+                                                            for (auto choice : optionsNode.asType(JSON::EmptyArray))
                                                             {
-                                                                optionList.push_back(choice.as(String::Empty));
+                                                                optionList.push_back(choice.asType(String::Empty));
                                                             }
 
                                                             int selection = 0;
@@ -621,9 +621,9 @@ namespace Gek
                                                             if (selectorSearch != visitedData.end())
                                                             {
                                                                 auto selectionNode = selectorSearch->second;
-                                                                if (selectionNode.is<std::string>())
+                                                                if (selectionNode.isType<std::string>())
                                                                 {
-                                                                    auto selectedName = selectionNode.as(String::Empty);
+                                                                    auto selectedName = selectionNode.asType(String::Empty);
                                                                     auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string_view choice) -> bool
                                                                     {
                                                                         return (selectedName == choice);
@@ -632,12 +632,12 @@ namespace Gek
                                                                     if (optionsSearch != std::end(optionList))
                                                                     {
                                                                         selection = std::distance(std::begin(optionList), optionsSearch);
-                                                                        optionNode.as(JSON::EmptyObject)["selection"] = selection;
+                                                                        optionNode.asType(JSON::EmptyObject)["selection"] = selection;
                                                                     }
                                                                 }
                                                                 else
                                                                 {
-                                                                    selection = selectionNode.as(0U);
+                                                                    selection = selectionNode.asType(0U);
                                                                 }
                                                             }
 
@@ -653,7 +653,7 @@ namespace Gek
                                                                 return false;
                                                             }, &optionList, optionList.size(), 10))
                                                             {
-                                                                optionNode.as(JSON::EmptyObject)["selection"] = selection;
+                                                                optionNode.asType(JSON::EmptyObject)["selection"] = selection;
                                                                 changedVisualOptions = true;
                                                             }
                                                         }
@@ -669,7 +669,7 @@ namespace Gek
                                                         case 1:
                                                             [&](void) -> void
                                                             {
-                                                                float data = visitedData[0].as(0.0f);
+                                                                float data = visitedData[0].asType(0.0f);
                                                                 if (ImGui::InputFloat(label.data(), &data))
                                                                 {
                                                                     optionNode = data;
@@ -682,8 +682,8 @@ namespace Gek
                                                             [&](void) -> void
                                                             {
                                                                 Math::Float2 data(
-                                                                    visitedData[0].as(0.0f),
-                                                                    visitedData[1].as(0.0f));
+                                                                    visitedData[0].asType(0.0f),
+                                                                    visitedData[1].asType(0.0f));
                                                                 if (ImGui::InputFloat2(label.data(), data.data))
                                                                 {
                                                                     optionNode = JSON::Array({ data.x, data.y });
@@ -696,9 +696,9 @@ namespace Gek
                                                             [&](void) -> void
                                                             {
                                                                 Math::Float3 data(
-                                                                    visitedData[0].as(0.0f),
-                                                                    visitedData[1].as(0.0f),
-                                                                    visitedData[2].as(0.0f));
+                                                                    visitedData[0].asType(0.0f),
+                                                                    visitedData[1].asType(0.0f),
+                                                                    visitedData[2].asType(0.0f));
                                                                 if (ImGui::InputFloat3(label.data(), data.data))
                                                                 {
                                                                     optionNode = JSON::Array({ data.x, data.y, data.z });
@@ -711,10 +711,10 @@ namespace Gek
                                                             [&](void) -> void
                                                             {
                                                                 Math::Float4 data(
-                                                                    visitedData[0].as(0.0f),
-                                                                    visitedData[1].as(0.0f),
-                                                                    visitedData[2].as(0.0f),
-                                                                    visitedData[3].as(0.0f));
+                                                                    visitedData[0].asType(0.0f),
+                                                                    visitedData[1].asType(0.0f),
+                                                                    visitedData[2].asType(0.0f),
+                                                                    visitedData[3].asType(0.0f));
                                                                 if (ImGui::InputFloat4(label.data(), data.data))
                                                                 {
                                                                     optionNode = JSON::Array({ data.x, data.y, data.z, data.w });
@@ -956,7 +956,7 @@ namespace Gek
 
             JSON getOption(std::string_view system, std::string_view name) const
             {
-                return configuration.get(system).get(name);
+                return configuration.getMember(system).getMember(name);
             }
 
             void setOption(std::string_view system, std::string_view name, JSON const &value)
@@ -966,7 +966,7 @@ namespace Gek
 
             void deleteOption(std::string_view system, std::string_view name)
             {
-                auto &groupNode = configuration.get(system).as(JSON::EmptyObject);
+                auto &groupNode = configuration.getMember(system).asType(JSON::EmptyObject);
                 auto search = groupNode.find(name.data());
                 if (search != std::end(groupNode))
                 {

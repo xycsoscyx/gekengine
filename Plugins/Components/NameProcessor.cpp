@@ -26,7 +26,7 @@ namespace Gek
 
         void load(Components::Name * const data, JSON const &importData)
         {
-            data->name = importData.as(String::Empty);
+            data->name = importData.asType(String::Empty);
         }
 
         // Edit::Component

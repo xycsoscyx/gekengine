@@ -34,17 +34,17 @@ namespace Gek
 
                 JSON materialNode;
                 materialNode.load(getContext()->findDataPath(FileSystem::CombinePaths("materials", materialName).withExtension(".json")));
-                auto &shaderNode = materialNode.get("shader");
-                auto shaderName = shaderNode.get("default").as(String::Empty);
+                auto &shaderNode = materialNode.getMember("shader");
+                auto shaderName = shaderNode.getMember("default").asType(String::Empty);
                 ShaderHandle shaderHandle = resources->getShader(shaderName, materialHandle);
                 Engine::Shader *shader = resources->getShader(shaderHandle);
                 if (shader)
                 {
                     Video::RenderState::Description renderStateInformation;
-                    renderStateInformation.load(shaderNode.get("renderState"));
+                    renderStateInformation.load(shaderNode.getMember("renderState"));
                     renderState = resources->createRenderState(renderStateInformation);
 
-                    auto &dataNode = shaderNode.get("data");
+                    auto &dataNode = shaderNode.getMember("data");
                     for (auto material = shader->begin(); material; material = material->next())
                     {
                         auto materialName = material->getName();
@@ -52,17 +52,17 @@ namespace Gek
                         for (auto &initializer : material->getInitializerList())
                         {
                             ResourceHandle resourceHandle;
-                            auto &resourceNode = dataNode.get(initializer.name);
-                            auto &resourceObject = resourceNode.as(JSON::EmptyObject);
+                            auto &resourceNode = dataNode.getMember(initializer.name);
+                            auto &resourceObject = resourceNode.asType(JSON::EmptyObject);
                             if (resourceObject.count("file"))
                             {
-                                auto fileName = resourceNode.get("file").as(String::Empty);
-                                uint32_t flags = getTextureLoadFlags(resourceNode.get("flags").as(String::Empty));
+                                auto fileName = resourceNode.getMember("file").asType(String::Empty);
+                                uint32_t flags = getTextureLoadFlags(resourceNode.getMember("flags").asType(String::Empty));
                                 resourceHandle = resources->loadTexture(fileName, flags);
                             }
                             else if (resourceObject.count("source"))
                             {
-                                resourceHandle = resources->getResourceHandle(resourceNode.get("source").as(String::Empty));
+                                resourceHandle = resources->getResourceHandle(resourceNode.getMember("source").asType(String::Empty));
                             }
 
                             if (!resourceHandle)

@@ -89,11 +89,11 @@ namespace Gek
     std::string JSON::getString(void) const
     {
         return visit(
-            [&](std::string const  &visitedData)
+            [](std::string const  &visitedData)
         {
             return String::Format("\"{}\"", visitedData);
         },
-            [&](JSON::Array const &visitedData)
+            [](JSON::Array const &visitedData)
         {
             std::stringstream stream;
 
@@ -113,7 +113,7 @@ namespace Gek
             stream << "]";
             return stream.str();
         },
-            [&](JSON::Object const &visitedData)
+            [](JSON::Object const &visitedData)
         {
             std::stringstream stream;
 
@@ -134,13 +134,13 @@ namespace Gek
             stream << "}";
             return stream.str();
         },
-            [&](auto && visitedData)
+            [](auto && visitedData)
         {
             return String::Format("{}", visitedData);
         });
     }
 
-    JSON const &JSON::get(size_t index) const
+    JSON const &JSON::getIndex(size_t index) const
     {
         if (auto value = std::get_if<Array>(&data))
         {
@@ -152,7 +152,7 @@ namespace Gek
         }
     }
 
-    JSON const &JSON::get(std::string_view name) const
+    JSON const &JSON::getMember(std::string_view name) const
     {
         if (auto value = std::get_if<Object>(&data))
         {
@@ -174,7 +174,7 @@ namespace Gek
 
     JSON &JSON::operator [] (size_t index)
     {
-        if (!is<Array>())
+        if (!isType<Array>())
         {
             data = EmptyArray;
         }
@@ -184,7 +184,7 @@ namespace Gek
 
     JSON &JSON::operator [] (std::string_view name)
     {
-        if (!is<Object>())
+        if (!isType<Object>())
         {
             data = EmptyObject;
         }
@@ -194,11 +194,11 @@ namespace Gek
 
     Math::Float2 JSON::evaluate(ShuntingYard &shuntingYard, Math::Float2 const &defaultValue) const
     {
-        auto data = as(EmptyArray);
+        auto data = asType(EmptyArray);
         switch (data.size())
         {
         case 1:
-            return Math::Float2(data[0].evaluate(shuntingYard, defaultValue.x));
+            return Math::Float2(data[0].evaluate(shuntingYard, 0.0f));
 
         default:
             return Math::Float2(
@@ -209,11 +209,11 @@ namespace Gek
 
     Math::Float3 JSON::evaluate(ShuntingYard &shuntingYard, Math::Float3 const &defaultValue) const
     {
-        auto data = as(EmptyArray);
+        auto data = asType(EmptyArray);
         switch (data.size())
         {
         case 1:
-            return Math::Float3(data[0].evaluate(shuntingYard, defaultValue.x));
+            return Math::Float3(data[0].evaluate(shuntingYard, 0.0f));
 
         case 3:
             return Math::Float3(
@@ -228,11 +228,11 @@ namespace Gek
 
     Math::Float4 JSON::evaluate(ShuntingYard &shuntingYard, Math::Float4 const &defaultValue) const
     {
-        auto data = as(EmptyArray);
+        auto data = asType(EmptyArray);
         switch (data.size())
         {
         case 1:
-            return Math::Float4(data[0].evaluate(shuntingYard, defaultValue.x));
+            return Math::Float4(data[0].evaluate(shuntingYard, 0.0f));
 
         case 3:
             return Math::Float4(
@@ -255,7 +255,7 @@ namespace Gek
 
     Math::Quaternion JSON::evaluate(ShuntingYard &shuntingYard, Math::Quaternion const &defaultValue) const
     {
-        auto data = as(EmptyArray);
+        auto data = asType(EmptyArray);
         switch (data.size())
         {
         case 3:
@@ -287,21 +287,21 @@ namespace Gek
     std::string JSON::evaluate(ShuntingYard &shuntingYard, std::string const &defaultValue) const
     {
         return visit(
-            [&](std::string const &visitedData)
+            [](std::string const &visitedData)
         {
             return visitedData;
         },
-            [&](Object const &visitedData)
+            [defaultValue](Object const &visitedData)
         {
             return defaultValue;
         },
-            [&](Array const &visitedData)
+            [defaultValue](Array const &visitedData)
         {
             return defaultValue;
         },
-            [&](auto const &visitedData)
+            [defaultValue](auto const &visitedData)
         {
-            return String::Format("{}", visitedData);
+            return String::Format("{}", value_or_default(visitedData, defaultValue));
         });
     }
 }; // namespace Gek

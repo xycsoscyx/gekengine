@@ -16,55 +16,79 @@
 #include "GEK/Utility/ShuntingYard.hpp"
 #include <variant>
 
-template <class... Fs>
-struct overload;
-
-template <class F0, class... Frest>
-struct overload<F0, Frest...> : F0, overload<Frest...>
-{
-    overload(F0 f0, Frest... rest) : F0(f0), overload<Frest...>(rest...) {}
-
-    using F0::operator();
-    using overload<Frest...>::operator();
-};
-
-template <class F0>
-struct overload<F0> : F0
-{
-    overload(F0 f0) : F0(f0) {}
-
-    using F0::operator();
-};
-
-__inline bool value_or_default(bool const &value, bool defaultValue)
-{
-    return value;
-}
-
-template <typename SOURCE_TYPE>
-bool value_or_default(SOURCE_TYPE const &value, bool defaultValue)
-{
-    return defaultValue;
-}
-
-template <typename SOURCE_TYPE, typename TARGET_TYPE>
-typename std::enable_if<std::is_convertible<SOURCE_TYPE, TARGET_TYPE>::value, TARGET_TYPE>::type
-value_or_default(SOURCE_TYPE const &value, TARGET_TYPE defaultValue)
-{
-    return value;
-}
-
-template <typename SOURCE_TYPE, typename TARGET_TYPE>
-typename std::enable_if<!std::is_convertible<SOURCE_TYPE, TARGET_TYPE>::value, TARGET_TYPE>::type
-value_or_default(SOURCE_TYPE const &value, TARGET_TYPE defaultValue)
-{
-    return defaultValue;
-}
-
 namespace Gek
 {
+    __inline bool value_or_default(bool const &value, bool defaultValue)
+    {
+        return value;
+    }
+
+    template <typename SOURCE_TYPE>
+    bool value_or_default(SOURCE_TYPE const &value, bool defaultValue)
+    {
+        return defaultValue;
+    }
+
+    template <typename SOURCE_TYPE, typename TARGET_TYPE>
+    typename std::enable_if<std::is_convertible<SOURCE_TYPE, TARGET_TYPE>::value, TARGET_TYPE>::type
+        value_or_default(SOURCE_TYPE const &value, TARGET_TYPE defaultValue)
+    {
+        return value;
+    }
+
+    template <typename SOURCE_TYPE, typename TARGET_TYPE>
+    typename std::enable_if<!std::is_convertible<SOURCE_TYPE, TARGET_TYPE>::value, TARGET_TYPE>::type
+        value_or_default(SOURCE_TYPE const &value, TARGET_TYPE defaultValue)
+    {
+        return defaultValue;
+    }
+
     class JSON
     {
+    private:
+        struct EmptyData
+        {
+        };
+
+        template <class... Fs>
+        struct overload
+        {
+            template <typename RETURN>
+            RETURN operator()(EmptyData const &)
+            {
+                return RETURN();
+            }
+        };
+
+        template <class F0, class... Frest>
+        struct overload<F0, Frest...> : F0, overload<Frest...>
+        {
+            overload(F0 f0, Frest... rest) : F0(f0), overload<Frest...>(rest...) {}
+
+            using F0::operator();
+            using overload<Frest...>::operator();
+
+            template <typename RETURN>
+            RETURN operator()(EmptyData const &)
+            {
+                return RETURN();
+            }
+        };
+
+        template <class F0>
+        struct overload<F0> : F0
+        {
+            overload(F0 f0) : F0(f0) {}
+
+            using F0::operator();
+
+            template <typename RETURN>
+            RETURN operator()(EmptyData const &)
+            {
+                return RETURN();
+            }
+        };
+
     public:
         using Array = std::vector<JSON>;
         using Object = std::unordered_map<std::string, JSON>;
@@ -74,7 +98,7 @@ namespace Gek
         static const JSON Empty;
 
     private:
-        std::variant<bool, int32_t, uint32_t, int64_t, uint64_t, float, std::string, Array, Object> data;
+        std::variant<EmptyData, bool, int32_t, uint32_t, int64_t, uint64_t, float, std::string, Array, Object> data;
 
     public:
         JSON(void)
@@ -105,13 +129,13 @@ namespace Gek
         }
 
         template <typename TYPE>
-        bool is(void) const
+        bool isType(void) const
         {
             return std::holds_alternative<TYPE>(data);
         }
 
         template <typename TYPE>
-        TYPE as(TYPE defaultValue) const
+        TYPE asType(TYPE defaultValue) const
         {
             if (auto value = std::get_if<TYPE>(&data))
             {
@@ -122,9 +146,9 @@ namespace Gek
         }
 
         template <typename TYPE>
-        TYPE &get(void)
+        TYPE &makeType(void)
         {
-            if (!is<TYPE>())
+            if (!isType<TYPE>())
             {
                 data = TYPE();
             }
@@ -132,17 +156,17 @@ namespace Gek
             return std::get<TYPE>(data);
         }
 
-        JSON const &get(size_t index) const;
-        JSON const &get(std::string_view name) const;
-
+        JSON const &getIndex(size_t index) const;
         JSON &operator [] (size_t index);
+
+        JSON const &getMember(std::string_view name) const;
         JSON &operator [] (std::string_view name);
 
         template <typename TARGET_TYPE>
         constexpr TARGET_TYPE convert(TARGET_TYPE defaultValue) const
         {
             return visit(
-                [&](auto const &visitedData) -> TARGET_TYPE
+                [](auto const &visitedData) -> TARGET_TYPE
             {
                 return value_or_default(visitedData, defaultValue);
             });
@@ -152,21 +176,21 @@ namespace Gek
         TYPE evaluate(ShuntingYard &shuntingYard, TYPE defaultValue) const
         {
             return visit(
-                [&](std::string const &visitedData) -> TYPE
+                [&shuntingYard, defaultValue](std::string const &visitedData) -> TYPE
             {
                 return shuntingYard.evaluate(visitedData).value_or(defaultValue);
             },
-                [&](Object const &visitedData) -> TYPE
+                [defaultValue](Object const &visitedData) -> TYPE
             {
                 return defaultValue;
             },
-                [&](Array const &visitedData) -> TYPE
+                [defaultValue](Array const &visitedData) -> TYPE
             {
                 return defaultValue;
             },
-                [&](auto && visitedData) -> TYPE
+                [defaultValue](auto && visitedData) -> TYPE
             {
-                return visitedData;
+                return value_or_default(visitedData, defaultValue);
             });
         }
 

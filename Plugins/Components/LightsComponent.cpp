@@ -26,9 +26,9 @@ namespace Gek
 
         void load(Components::PointLight * const data, JSON const &importData)
         {
-            data->range = evaluate(importData.get("range"), 0.0f);
-            data->radius = evaluate(importData.get("radius"), 0.0f);
-            data->intensity = evaluate(importData.get("intensity"), 0.0f);
+            data->range = evaluate(importData.getMember("range"), 0.0f);
+            data->radius = evaluate(importData.getMember("radius"), 0.0f);
+            data->intensity = evaluate(importData.getMember("intensity"), 0.0f);
             LockedWrite{ std::cout } << "Range: " << data->range << ", Radius: " << data->radius << ", Intensity: " << data->intensity;
         }
 
@@ -83,12 +83,12 @@ namespace Gek
 
         void load(Components::SpotLight * const data, JSON const &importData)
         {
-            data->range = evaluate(importData.get("range"), 0.0f);
-            data->radius = evaluate(importData.get("radius"), 0.0f);
-            data->intensity = evaluate(importData.get("intensity"), 0.0f);
-            data->innerAngle = std::cos(Math::DegreesToRadians(evaluate(importData.get("innerAngle"), 0.0f)));
-            data->outerAngle = std::cos(Math::DegreesToRadians(evaluate(importData.get("outerAngle"), 0.0f)));
-            data->coneFalloff = evaluate(importData.get("coneFalloff"), 0.0f);
+            data->range = evaluate(importData.getMember("range"), 0.0f);
+            data->radius = evaluate(importData.getMember("radius"), 0.0f);
+            data->intensity = evaluate(importData.getMember("intensity"), 0.0f);
+            data->innerAngle = std::cos(Math::DegreesToRadians(evaluate(importData.getMember("innerAngle"), 0.0f)));
+            data->outerAngle = std::cos(Math::DegreesToRadians(evaluate(importData.getMember("outerAngle"), 0.0f)));
+            data->coneFalloff = evaluate(importData.getMember("coneFalloff"), 0.0f);
         }
 
         // Edit::Component
@@ -152,7 +152,7 @@ namespace Gek
 
         void load(Components::DirectionalLight * const data, JSON const &importData)
         {
-            data->intensity = evaluate(importData.get("intensity"), 0.0f);
+            data->intensity = evaluate(importData.getMember("intensity"), 0.0f);
         }
 
         // Edit::Component

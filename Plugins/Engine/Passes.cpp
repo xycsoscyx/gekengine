@@ -185,7 +185,7 @@ namespace Gek
     std::unordered_map<std::string, std::string> getAliasedMap(JSON const &parent, std::string const &name)
     {
         std::unordered_map<std::string, std::string> aliasedMap;
-        for (auto &elementNode : parent.get(name).as(JSON::EmptyArray))
+        for (auto &elementNode : parent.getMember(name).asType(JSON::EmptyArray))
         {
             elementNode.visit(
                 [&](std::string const &visitedData)

@@ -2290,7 +2290,11 @@ namespace Gek
             Video::BufferPtr createBuffer(const Video::Buffer::Description &description, const void *data)
             {
                 assert(d3dDevice);
-                assert(description.count > 0);
+
+                if (description.count == 0)
+                {
+                    return nullptr;
+                }
 
                 uint32_t stride = description.stride;
                 if (description.format != Video::Format::Unknown)
@@ -2506,8 +2510,11 @@ namespace Gek
 
             Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, Video::Program::Information const &information)
             {
-                assert(!information.compiledData.empty());
-                assert(information.type == Video::Program::Type::Vertex);
+                if (information.compiledData.empty() ||
+                    information.type != Video::Program::Type::Vertex)
+                {
+                    return nullptr;
+                }
 
                 uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
                 std::vector<D3D11_INPUT_ELEMENT_DESC> d3dElementList;
@@ -2590,9 +2597,14 @@ namespace Gek
             Video::Program::Information compileProgram(Video::Program::Type type, std::string_view name, FileSystem::Path const &debugPath, std::string_view uncompiledProgram, std::string_view entryFunction, std::function<bool(Video::IncludeType, std::string_view, void const **data, uint32_t *size)> &&onInclude)
             {
                 assert(d3dDevice);
-                assert(!name.empty());
-                assert(!uncompiledProgram.empty());
-                assert(!entryFunction.empty());
+
+                Video::Program::Information information;
+                    if (name.empty() ||
+                    uncompiledProgram.empty() ||
+                    entryFunction.empty())
+                {
+                    return information;
+                }
 
                 uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
@@ -2613,13 +2625,10 @@ namespace Gek
                 };
 
                 static const std::vector<uint8_t> EmptyBuffer;
-                Video::Program::Information compiled =
-                {
-                    type,
-                    debugPath,
-                    uncompiledProgram.data(),
-                    EmptyBuffer
-                };
+                information.type = type;
+                information.debugPath = debugPath;
+                information.uncompiledData = uncompiledProgram;
+                information.compiledData = EmptyBuffer;
 
                 auto typeSearch = D3DTypeMap.find(type);
                 if (typeSearch != std::end(D3DTypeMap))
@@ -2641,18 +2650,22 @@ namespace Gek
                     else
                     {
                         uint8_t *data = (uint8_t *)d3dShaderBlob->GetBufferPointer();
-                        compiled.compiledData.assign(data, (data + d3dShaderBlob->GetBufferSize()));
+                        information.compiledData.assign(data, (data + d3dShaderBlob->GetBufferSize()));
                     }
                 }
 
-                return compiled;
+                return information;
             }
 
             template <class D3DTYPE, class TYPE, typename RETURN, typename CLASS, typename... PARAMETERS>
             Video::ProgramPtr createProgram(Video::Program::Information const &information, RETURN(__stdcall CLASS::*function)(PARAMETERS...))
             {
-                assert(!information.compiledData.empty());
                 assert(function);
+
+                if (information.compiledData.empty())
+                {
+                    return nullptr;
+                }
 
                 CComPtr<D3DTYPE> d3dShader;
                 HRESULT resultValue = (d3dDevice->*function)(information.compiledData.data(), information.compiledData.size(), nullptr, &d3dShader);
@@ -2689,10 +2702,14 @@ namespace Gek
             Video::TexturePtr createTexture(const Video::Texture::Description &description, const void *data)
             {
                 assert(d3dDevice);
-                assert(description.format != Video::Format::Unknown);
-                assert(description.width != 0);
-                assert(description.height != 0);
-                assert(description.depth != 0);
+
+                if (description.format == Video::Format::Unknown ||
+                    description.width == 0 ||
+                    description.height == 0 ||
+                    description.depth == 0)
+                {
+                    return nullptr;
+                }
 
                 uint32_t bindFlags = 0;
                 if (description.flags & Video::Texture::Flags::RenderTarget)

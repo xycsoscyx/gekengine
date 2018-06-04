@@ -599,7 +599,11 @@ namespace Gek
             Video::TexturePtr loadTextureData(FileSystem::Path const &filePath, std::string_view textureName, uint32_t flags)
             {
                 auto texture = videoDevice->loadTexture(filePath, flags);
-                texture->setName(textureName);
+                if (texture)
+                {
+                    texture->setName(textureName);
+                }
+
                 return texture;
             }
 
@@ -1012,33 +1016,33 @@ namespace Gek
                 Video::Texture::Description description;
                 if (lowerPattern == "color")
                 {
-                    auto parametersArray = parameters.as(JSON::EmptyArray);
+                    auto parametersArray = parameters.asType(JSON::EmptyArray);
                     switch (parametersArray.size())
                     {
                     case 1:
-                        data.push_back(parametersArray.at(0).as(255));
+                        data.push_back(parametersArray.at(0).asType(255));
                         description.format = Video::Format::R8_UNORM;
                         break;
 
                     case 2:
-                        data.push_back(parametersArray.at(0).as(255));
-                        data.push_back(parametersArray.at(1).as(255));
+                        data.push_back(parametersArray.at(0).asType(255));
+                        data.push_back(parametersArray.at(1).asType(255));
                         description.format = Video::Format::R8G8_UNORM;
                         break;
 
                     case 3:
-                        data.push_back(parametersArray.at(0).as(255));
-                        data.push_back(parametersArray.at(1).as(255));
-                        data.push_back(parametersArray.at(2).as(255));
+                        data.push_back(parametersArray.at(0).asType(255));
+                        data.push_back(parametersArray.at(1).asType(255));
+                        data.push_back(parametersArray.at(2).asType(255));
                         data.push_back(0);
                         description.format = Video::Format::R8G8B8A8_UNORM;
                         break;
 
                     case 4:
-                        data.push_back(parametersArray.at(0).as(255));
-                        data.push_back(parametersArray.at(1).as(255));
-                        data.push_back(parametersArray.at(2).as(255));
-                        data.push_back(parametersArray.at(3).as(255));
+                        data.push_back(parametersArray.at(0).asType(255));
+                        data.push_back(parametersArray.at(1).asType(255));
+                        data.push_back(parametersArray.at(2).asType(255));
+                        data.push_back(parametersArray.at(3).asType(255));
                         description.format = Video::Format::R8G8B8A8_UNORM;
                         break;
 
@@ -1082,7 +1086,7 @@ namespace Gek
                 }
                 else if (lowerPattern == "system")
                 {
-                    std::string type(String::GetLower(parameters.as(String::Empty)));
+                    std::string type(String::GetLower(parameters.asType(String::Empty)));
                     if (type == "debug")
                     {
                         data.push_back(255);    data.push_back(0);      data.push_back(255);    data.push_back(255);
@@ -1104,14 +1108,18 @@ namespace Gek
                 }
 
                 description.flags = Video::Texture::Flags::Resource;
-                std::string name(String::Format("{}:{}", pattern, parameters.as(String::Empty)));
+                std::string name(String::Format("{}:{}", pattern, parameters.asType(String::Empty)));
                 auto hash = GetHash(name);
 
                 auto resource = dynamicCache.getHandle(hash, 0, [this, name, description, data = move(data)](ResourceHandle)->Video::TexturePtr
 				{
 					auto texture = videoDevice->createTexture(description, data.data());
-					texture->setName(name);
-					return texture;
+                    if (texture)
+                    {
+                        texture->setName(name);
+                    }
+
+                    return texture;
 				}, false);
 
                 if (resource.first)
@@ -1134,8 +1142,12 @@ namespace Gek
                 auto resource = dynamicCache.getHandle(hash, parameters, [this, textureName = std::string(textureName), description](ResourceHandle)->Video::TexturePtr
 				{
 					auto texture = videoDevice->createTexture(description);
-					texture->setName(textureName);
-					return texture;
+                    if (texture)
+                    {
+                        texture->setName(textureName);
+                    }
+
+                    return texture;
 				}, flags);
 
                 if (resource.first)
@@ -1160,8 +1172,12 @@ namespace Gek
                 auto resource = dynamicCache.getHandle(hash, parameters, [this, bufferName = std::string(bufferName), description](ResourceHandle)->Video::BufferPtr
 				{
 					auto buffer = videoDevice->createBuffer(description);
-					buffer->setName(bufferName);
-					return buffer;
+                    if (buffer)
+                    {
+                        buffer->setName(bufferName);
+                    }
+
+                    return buffer;
 				}, flags);
 
 				if (resource.first)
@@ -1187,7 +1203,11 @@ namespace Gek
                 auto resource = dynamicCache.getHandle(hash, parameters, [this, bufferName = std::string(bufferName), description, staticData = move(staticData)](ResourceHandle)->Video::BufferPtr
                 {
                     auto buffer = videoDevice->createBuffer(description, (void *)staticData.data());
-                    buffer->setName(bufferName);
+                    if (buffer)
+                    {
+                        buffer->setName(bufferName);
+                    }
+
                     return buffer;
                 }, flags);
 
@@ -1548,8 +1568,12 @@ namespace Gek
 				{
 					auto compiledData = getProgramInformation(type, name, entryFunction, engineData);
 					auto program = videoDevice->createProgram(compiledData);
-					program->setName(String::Format("{}:{}", name, entryFunction));
-					return program;
+                    if (program)
+                    {
+                        program->setName(String::Format("{}:{}", name, entryFunction));
+                    }
+
+                    return program;
 				});
 
 				return staticProgramCache.getResource(handle);
@@ -1561,8 +1585,12 @@ namespace Gek
 				{
 					auto compiledData = getProgramInformation(type, name, entryFunction, engineData);
 					auto program = videoDevice->createProgram(compiledData);
-					program->setName(String::Format("{}:{}", name, entryFunction));
-					return program;
+                    if (program)
+                    {
+                        program->setName(String::Format("{}:{}", name, entryFunction));
+                    }
+
+                    return program;
 				});
 			}
 
