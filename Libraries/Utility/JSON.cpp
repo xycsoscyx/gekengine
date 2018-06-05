@@ -301,7 +301,7 @@ namespace Gek
         },
             [defaultValue](auto const &visitedData)
         {
-            return String::Format("{}", value_or_default(visitedData, defaultValue));
+            return String::Format("{}", GetValueOrDefault(visitedData, defaultValue));
         });
     }
 }; // namespace Gek

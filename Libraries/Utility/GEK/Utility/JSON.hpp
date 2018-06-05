@@ -14,34 +14,127 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/ShuntingYard.hpp"
+#include <type_traits>
+#include <functional>
 #include <variant>
 
 namespace Gek
 {
-    __inline bool value_or_default(bool const &value, bool defaultValue)
+    __inline bool GetValueOrDefault(bool const &value, bool defaultValue)
     {
         return value;
     }
 
     template <typename SOURCE_TYPE>
-    bool value_or_default(SOURCE_TYPE const &value, bool defaultValue)
+    bool GetValueOrDefault(SOURCE_TYPE const &value, bool defaultValue)
     {
         return defaultValue;
     }
 
     template <typename SOURCE_TYPE, typename TARGET_TYPE>
     typename std::enable_if<std::is_convertible<SOURCE_TYPE, TARGET_TYPE>::value, TARGET_TYPE>::type
-        value_or_default(SOURCE_TYPE const &value, TARGET_TYPE defaultValue)
+        GetValueOrDefault(SOURCE_TYPE const &value, TARGET_TYPE defaultValue)
     {
         return value;
     }
 
     template <typename SOURCE_TYPE, typename TARGET_TYPE>
     typename std::enable_if<!std::is_convertible<SOURCE_TYPE, TARGET_TYPE>::value, TARGET_TYPE>::type
-        value_or_default(SOURCE_TYPE const &value, TARGET_TYPE defaultValue)
+        GetValueOrDefault(SOURCE_TYPE const &value, TARGET_TYPE defaultValue)
     {
         return defaultValue;
     }
+
+    template <class... FUNCTIONS>
+    struct Overload
+    {
+    };
+
+    template <class FIRST_FUNCTION, class... ADDITIONAL_FUNCTIONS>
+    struct Overload<FIRST_FUNCTION, ADDITIONAL_FUNCTIONS...> : FIRST_FUNCTION, Overload<ADDITIONAL_FUNCTIONS...>
+    {
+        Overload(FIRST_FUNCTION firstFunction, ADDITIONAL_FUNCTIONS... additionalFunctions)
+            : FIRST_FUNCTION(firstFunction)
+            , Overload<ADDITIONAL_FUNCTIONS...>(additionalFunctions...)
+        {
+        }
+
+        using FIRST_FUNCTION::operator();
+        using Overload<ADDITIONAL_FUNCTIONS...>::operator();
+    };
+
+    template <class FUNCTION>
+    struct Overload<FUNCTION>
+        : FUNCTION
+    {
+        Overload(FUNCTION function)
+            : FUNCTION(function)
+        {
+        }
+
+        using FUNCTION::operator();
+    };
+
+    template<typename> struct FunctionTraits;
+
+    template <typename FUNCTION>
+    struct FunctionTraits
+        : public FunctionTraits<decltype(&FUNCTION::operator())>
+    {
+    };
+
+    template <typename CLASS_TYPE, typename RETURN_TYPE, typename... ARGUMENTS>
+    struct FunctionTraits<RETURN_TYPE(CLASS_TYPE::*)(ARGUMENTS...) const>
+    {
+        typedef RETURN_TYPE ReturnType;
+
+        template <std::size_t INDEX>
+        using Argument = typename std::tuple_element<INDEX, std::tuple<ARGUMENTS...>>::type;
+        static const std::size_t Arity = sizeof...(ARGUMENTS);
+    };
+
+    template <typename RETURN_TYPE, typename... ARGUMENTS  >
+    struct FunctionTraits<RETURN_TYPE(ARGUMENTS...)>
+    {
+        constexpr static const std::size_t Arity = sizeof...(ARGUMENTS);
+        using ReturnType = RETURN_TYPE;
+    };
+
+    template <typename RETURN_TYPE, typename... ARGUMENTS>
+    struct FunctionTraits<RETURN_TYPE(ARGUMENTS...) const >
+        : FunctionTraits<RETURN_TYPE(ARGUMENTS...)>
+    {
+    };
+
+    template <typename RETURN_TYPE, typename... ARGUMENTS>
+    struct FunctionTraits<RETURN_TYPE(ARGUMENTS...) & >
+        : FunctionTraits<RETURN_TYPE(ARGUMENTS...)>
+    {
+    };
+
+    template <typename RETURN_TYPE, typename... ARGUMENTS>
+    struct FunctionTraits<RETURN_TYPE(ARGUMENTS...) const & >
+        : FunctionTraits<RETURN_TYPE(ARGUMENTS...)>
+    {
+    };
+
+    template <typename RETURN_TYPE, typename... ARGUMENTS>
+    struct FunctionTraits<RETURN_TYPE(ARGUMENTS...) && >
+        : FunctionTraits<RETURN_TYPE(ARGUMENTS...)>
+    {
+    };
+
+    template <typename RETURN_TYPE, typename... ARGUMENTS>
+    struct FunctionTraits<RETURN_TYPE(ARGUMENTS...) const && >
+        : FunctionTraits<RETURN_TYPE(ARGUMENTS...)>
+    {
+    };
+
+    template <class FIRST_FUNCTION, class... ADDITIONAL_FUNCTIONS>
+    struct GetFirstReturnType
+    {
+        using ReturnType = typename FunctionTraits<FIRST_FUNCTION>::ReturnType;
+    };
 
     class JSON
     {
@@ -50,44 +143,17 @@ namespace Gek
         {
         };
 
-        template <class... Fs>
-        struct overload
+        template <class... FUNCTIONS>
+        auto visitWithEmpty(FUNCTIONS... functions)
         {
-            template <typename RETURN>
-            RETURN operator()(EmptyData const &)
-            {
-                return RETURN();
-            }
-        };
+            return std::visit(Overload<FUNCTIONS...>(functions...), data);
+        }
 
-        template <class F0, class... Frest>
-        struct overload<F0, Frest...> : F0, overload<Frest...>
+        template <class... FUNCTIONS>
+        auto visitWithEmpty(FUNCTIONS... functions) const
         {
-            overload(F0 f0, Frest... rest) : F0(f0), overload<Frest...>(rest...) {}
-
-            using F0::operator();
-            using overload<Frest...>::operator();
-
-            template <typename RETURN>
-            RETURN operator()(EmptyData const &)
-            {
-                return RETURN();
-            }
-        };
-
-        template <class F0>
-        struct overload<F0> : F0
-        {
-            overload(F0 f0) : F0(f0) {}
-
-            using F0::operator();
-
-            template <typename RETURN>
-            RETURN operator()(EmptyData const &)
-            {
-                return RETURN();
-            }
-        };
+            return std::visit(Overload<FUNCTIONS...>(functions...), data);
+        }
 
     public:
         using Array = std::vector<JSON>;
@@ -116,16 +182,18 @@ namespace Gek
 
         std::string getString(void) const;
 
-        template <class... Fs>
-        auto visit(Fs... fs)
+        template <class... FUNCTIONS>
+        auto visit(FUNCTIONS&&... functions)
         {
-            return std::visit(overload<Fs...>(fs...), data);
+            using ReturnType = typename GetFirstReturnType<FUNCTIONS...>::ReturnType;
+            return visitWithEmpty(functions..., [&](EmptyData const &) -> ReturnType { return ReturnType(); });
         }
 
-        template <class... Fs>
-        auto visit(Fs... fs) const
+        template <class... FUNCTIONS>
+        auto visit(FUNCTIONS&&... functions) const
         {
-            return std::visit(overload<Fs...>(fs...), data);
+            using ReturnType = typename GetFirstReturnType<FUNCTIONS...>::ReturnType;
+            return visitWithEmpty(functions..., [&](EmptyData const &) -> ReturnType { return ReturnType(); });
         }
 
         template <typename TYPE>
@@ -163,12 +231,12 @@ namespace Gek
         JSON &operator [] (std::string_view name);
 
         template <typename TARGET_TYPE>
-        constexpr TARGET_TYPE convert(TARGET_TYPE defaultValue) const
+        TARGET_TYPE convert(TARGET_TYPE defaultValue) const
         {
             return visit(
-                [](auto const &visitedData) -> TARGET_TYPE
+                [defaultValue](auto const &visitedData) -> TARGET_TYPE
             {
-                return value_or_default(visitedData, defaultValue);
+                return GetValueOrDefault(visitedData, defaultValue);
             });
         }
 
@@ -190,7 +258,7 @@ namespace Gek
             },
                 [defaultValue](auto && visitedData) -> TYPE
             {
-                return value_or_default(visitedData, defaultValue);
+                return GetValueOrDefault(visitedData, defaultValue);
             });
         }
 
