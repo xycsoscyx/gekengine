@@ -86,7 +86,7 @@
     "output": "finalBuffer",
     "options": {
         "#import":  "Lighting.json",
-        "AmbientOcclusion::": {
+        "AmbientOcclusion": {
             "Enable": false,
             "Radius": 1.0,
             "TapCount": 24,
@@ -151,7 +151,7 @@
                 "gaussianBuffer"
             ],
             "options": {
-                "AmbientOcclusion::": {
+                "AmbientOcclusion": {
                     "BlurAxis": [ 1, 0 ]
                 }
             }
@@ -168,7 +168,7 @@
                 "ambientBuffer"
             ],
             "options": {
-                "AmbientOcclusion::": {
+                "AmbientOcclusion": {
                     "BlurAxis": [ 0, 1 ]
                 }
             }

@@ -272,10 +272,28 @@ namespace Gek
                         }
                     }
 
-                    JSON passOptions(rootOptionsNode);
+                    JSON passOptions(std::cref(rootOptionsNode).get());
                     for (auto &overridePair : passNode.getMember("options"sv).asType(JSON::EmptyObject))
                     {
-                        passOptions[overridePair.first] = overridePair.second;
+                        std::function<void(JSON &, std::string_view, JSON const &)> insertOptions;
+                        insertOptions = [&](JSON &options, std::string_view name, JSON const &node) -> void
+                        {
+                            node.visit(
+                                [&](JSON::Object const &object)
+                            {
+                                auto &localOptions = options[name];
+                                for (auto &objectPair : object)
+                                {
+                                    insertOptions(localOptions, objectPair.first, objectPair.second);
+                                }
+                            },
+                                [&](auto const &value)
+                            {
+                                options[name] = String::Format("{}", value);
+                            });
+                        };
+
+                        insertOptions(passOptions, overridePair.first, overridePair.second);
                     }
 
                     std::function<std::string(JSON const &)> addOptions;
