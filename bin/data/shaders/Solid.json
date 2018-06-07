@@ -86,7 +86,7 @@
     "output": "finalBuffer",
     "options": {
         "#import":  "Lighting.json",
-        "AmbientOcclusion": {
+        "AmbientOcclusion::": {
             "Enable": false,
             "Radius": 1.0,
             "TapCount": 24,
@@ -128,7 +128,7 @@
             ]
         },
         {
-            "enable": "AmbientOcclusion:Enable",
+            "enable": "AmbientOcclusion:::Enable",
             "program": "AmbientCalculation",
             "entry": "mainPixelProgram",
             "resources": [
@@ -140,7 +140,7 @@
             ]
         },
         {
-            "enable": "AmbientOcclusion:Enable",
+            "enable": "AmbientOcclusion:::Enable",
             "program": "AmbientBlur",
             "entry": "mainPixelProgram",
             "resources": [
@@ -151,13 +151,13 @@
                 "gaussianBuffer"
             ],
             "options": {
-                "AmbientOcclusion": {
+                "AmbientOcclusion::": {
                     "BlurAxis": [ 1, 0 ]
                 }
             }
         },
         {
-            "enable": "AmbientOcclusion:Enable",
+            "enable": "AmbientOcclusion:::Enable",
             "program": "AmbientBlur",
             "entry": "mainPixelProgram",
             "resources": [
@@ -168,13 +168,13 @@
                 "ambientBuffer"
             ],
             "options": {
-                "AmbientOcclusion": {
+                "AmbientOcclusion::": {
                     "BlurAxis": [ 0, 1 ]
                 }
             }
         },
         {
-            "enable": "AmbientOcclusion:Enable",
+            "enable": "AmbientOcclusion:::Enable",
             "program": "AmbientLighting",
             "entry": "mainPixelProgram",
             "resources": [

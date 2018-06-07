@@ -26,11 +26,11 @@ namespace Gek
         {
 			static const std::unordered_map<std::string, Semantic> data =
 			{
-				{ "position", Semantic::Position },
-				{ "tangent", Semantic::Tangent },
-				{ "bitangent", Semantic::BiTangent },
-				{ "normal", Semantic::Normal },
-				{ "color", Semantic::Color },
+				{ "position"s, Semantic::Position },
+				{ "tangent"s, Semantic::Tangent },
+				{ "bitangent"s, Semantic::BiTangent },
+				{ "normal"s, Semantic::Normal },
+				{ "color"s, Semantic::Color },
 			};
 
 			auto result = data.find(String::GetLower(string));
@@ -46,7 +46,7 @@ namespace Gek
         {
 			static const std::unordered_map<std::string, Source> data =
 			{
-				{ "instance", Source::Instance },
+				{ "instance"s, Source::Instance },
 			};
 
 			auto result = data.find(String::GetLower(string));
@@ -62,59 +62,59 @@ namespace Gek
 		{
 			static const std::unordered_map<std::string, Format> data =
 			{
-				{ "R32G32B32A32_FLOAT", Format::R32G32B32A32_FLOAT },
-				{ "R16G16B16A16_FLOAT", Format::R16G16B16A16_FLOAT },
-				{ "R32G32B32_FLOAT", Format::R32G32B32_FLOAT },
-				{ "R11G11B10_FLOAT", Format::R11G11B10_FLOAT },
-				{ "R32G32_FLOAT", Format::R32G32_FLOAT },
-				{ "R16G16_FLOAT", Format::R16G16_FLOAT },
-				{ "R32_FLOAT", Format::R32_FLOAT },
-				{ "R16_FLOAT", Format::R16_FLOAT },
+				{ "R32G32B32A32_FLOAT"s, Format::R32G32B32A32_FLOAT },
+				{ "R16G16B16A16_FLOAT"s, Format::R16G16B16A16_FLOAT },
+				{ "R32G32B32_FLOAT"s, Format::R32G32B32_FLOAT },
+				{ "R11G11B10_FLOAT"s, Format::R11G11B10_FLOAT },
+				{ "R32G32_FLOAT"s, Format::R32G32_FLOAT },
+				{ "R16G16_FLOAT"s, Format::R16G16_FLOAT },
+				{ "R32_FLOAT"s, Format::R32_FLOAT },
+				{ "R16_FLOAT"s, Format::R16_FLOAT },
 
-				{ "R32G32B32A32_UINT", Format::R32G32B32A32_UINT },
-				{ "R16G16B16A16_UINT", Format::R16G16B16A16_UINT },
-				{ "R10G10B10A2_UINT", Format::R10G10B10A2_UINT },
-				{ "R8G8B8A8_UINT", Format::R8G8B8A8_UINT },
-				{ "R32G32B32_UINT", Format::R32G32B32_UINT },
-				{ "R32G32_UINT", Format::R32G32_UINT },
-				{ "R16G16_UINT", Format::R16G16_UINT },
-				{ "R8G8_UINT", Format::R8G8_UINT },
-				{ "R32_UINT", Format::R32_UINT },
-				{ "R16_UINT", Format::R16_UINT },
-				{ "R8_UINT", Format::R8_UINT },
+				{ "R32G32B32A32_UINT"s, Format::R32G32B32A32_UINT },
+				{ "R16G16B16A16_UINT"s, Format::R16G16B16A16_UINT },
+				{ "R10G10B10A2_UINT"s, Format::R10G10B10A2_UINT },
+				{ "R8G8B8A8_UINT"s, Format::R8G8B8A8_UINT },
+				{ "R32G32B32_UINT"s, Format::R32G32B32_UINT },
+				{ "R32G32_UINT"s, Format::R32G32_UINT },
+				{ "R16G16_UINT"s, Format::R16G16_UINT },
+				{ "R8G8_UINT"s, Format::R8G8_UINT },
+				{ "R32_UINT"s, Format::R32_UINT },
+				{ "R16_UINT"s, Format::R16_UINT },
+				{ "R8_UINT"s, Format::R8_UINT },
 
-				{ "R32G32B32A32_INT", Format::R32G32B32A32_INT },
-				{ "R16G16B16A16_INT", Format::R16G16B16A16_INT },
-				{ "R8G8B8A8_INT", Format::R8G8B8A8_INT },
-				{ "R32G32B32_INT", Format::R32G32B32_INT },
-				{ "R32G32_INT", Format::R32G32_INT },
-				{ "R16G16_INT", Format::R16G16_INT },
-				{ "R8G8_INT", Format::R8G8_INT },
-				{ "R32_INT", Format::R32_INT },
-				{ "R16_INT", Format::R16_INT },
-				{ "R8_INT", Format::R8_INT },
+				{ "R32G32B32A32_INT"s, Format::R32G32B32A32_INT },
+				{ "R16G16B16A16_INT"s, Format::R16G16B16A16_INT },
+				{ "R8G8B8A8_INT"s, Format::R8G8B8A8_INT },
+				{ "R32G32B32_INT"s, Format::R32G32B32_INT },
+				{ "R32G32_INT"s, Format::R32G32_INT },
+				{ "R16G16_INT"s, Format::R16G16_INT },
+				{ "R8G8_INT"s, Format::R8G8_INT },
+				{ "R32_INT"s, Format::R32_INT },
+				{ "R16_INT"s, Format::R16_INT },
+				{ "R8_INT"s, Format::R8_INT },
 
-				{ "R16G16B16A16_UNORM", Format::R16G16B16A16_UNORM },
-				{ "R10G10B10A2_UNORM", Format::R10G10B10A2_UNORM },
-				{ "R8G8B8A8_UNORM", Format::R8G8B8A8_UNORM },
-				{ "R8G8B8A8_UNORM_SRGB", Format::R8G8B8A8_UNORM_SRGB },
-				{ "R16G16_UNORM", Format::R16G16_UNORM },
-				{ "R8G8_UNORM", Format::R8G8_UNORM },
-				{ "R16_UNORM", Format::R16_UNORM },
-				{ "R8_UNORM", Format::R8_UNORM },
+				{ "R16G16B16A16_UNORM"s, Format::R16G16B16A16_UNORM },
+				{ "R10G10B10A2_UNORM"s, Format::R10G10B10A2_UNORM },
+				{ "R8G8B8A8_UNORM"s, Format::R8G8B8A8_UNORM },
+				{ "R8G8B8A8_UNORM_SRGB"s, Format::R8G8B8A8_UNORM_SRGB },
+				{ "R16G16_UNORM"s, Format::R16G16_UNORM },
+				{ "R8G8_UNORM"s, Format::R8G8_UNORM },
+				{ "R16_UNORM"s, Format::R16_UNORM },
+				{ "R8_UNORM"s, Format::R8_UNORM },
 
-				{ "R16G16B16A16_NORM", Format::R16G16B16A16_NORM },
-				{ "R8G8B8A8_NORM", Format::R8G8B8A8_NORM },
-				{ "R16G16_NORM", Format::R16G16_NORM },
-				{ "R8G8_NORM", Format::R8G8_NORM },
-				{ "R16_NORM", Format::R16_NORM },
-				{ "R8_NORM", Format::R8_NORM },
+				{ "R16G16B16A16_NORM"s, Format::R16G16B16A16_NORM },
+				{ "R8G8B8A8_NORM"s, Format::R8G8B8A8_NORM },
+				{ "R16G16_NORM"s, Format::R16G16_NORM },
+				{ "R8G8_NORM"s, Format::R8G8_NORM },
+				{ "R16_NORM"s, Format::R16_NORM },
+				{ "R8_NORM"s, Format::R8_NORM },
 
-				{ "D32_FLOAT_S8X24_UINT", Format::D32_FLOAT_S8X24_UINT },
-				{ "D24_UNORM_S8_UINT", Format::D24_UNORM_S8_UINT },
+				{ "D32_FLOAT_S8X24_UINT"s, Format::D32_FLOAT_S8X24_UINT },
+				{ "D24_UNORM_S8_UINT"s, Format::D24_UNORM_S8_UINT },
 
-				{ "D32_FLOAT", Format::D32_FLOAT },
-				{ "D16_UNORM", Format::D16_UNORM },
+				{ "D32_FLOAT"s, Format::D32_FLOAT },
+				{ "D16_UNORM"s, Format::D16_UNORM },
 			};
 
 			auto result = data.find(String::GetUpper(string));
@@ -125,13 +125,13 @@ namespace Gek
 		{
 			static const std::unordered_map<std::string, ComparisonFunction> data =
 			{
-				{ "never", ComparisonFunction::Never },
-				{ "equal", ComparisonFunction::Equal },
-				{ "notequal", ComparisonFunction::NotEqual },
-				{ "less", ComparisonFunction::Less },
-				{ "lessequal", ComparisonFunction::LessEqual },
-				{ "greater", ComparisonFunction::Greater },
-				{ "greaterequal", ComparisonFunction::GreaterEqual },
+				{ "never"s, ComparisonFunction::Never },
+				{ "equal"s, ComparisonFunction::Equal },
+				{ "notequal"s, ComparisonFunction::NotEqual },
+				{ "less"s, ComparisonFunction::Less },
+				{ "lessequal"s, ComparisonFunction::LessEqual },
+				{ "greater"s, ComparisonFunction::Greater },
+				{ "greaterequal"s, ComparisonFunction::GreaterEqual },
 			};
 
 			auto result = data.find(String::GetLower(string));
@@ -144,7 +144,7 @@ namespace Gek
 			{
 				static const std::unordered_map<std::string, FillMode> data =
 				{
-					{ "wireframe", FillMode::WireFrame },
+					{ "wireframe"s, FillMode::WireFrame },
 				};
 
 				auto result = data.find(String::GetLower(string));
@@ -155,24 +155,24 @@ namespace Gek
 			{
 				static const std::unordered_map<std::string, CullMode> data =
 				{
-					{ "none", CullMode::None },
-					{ "front", CullMode::Front },
+					{ "none"s, CullMode::None },
+					{ "front"s, CullMode::Front },
 				};
 
 				auto result = data.find(String::GetLower(string));
 				return (result == std::end(data) ? CullMode::Back : result->second);
 			};
 
-            fillMode = getFillMode(object.getMember("fillMode").asType("Solid"s));
-            cullMode = getCullMode(object.getMember("cullMode").asType("Back"s));
-            frontCounterClockwise = object.getMember("frontCounterClockwise").asType(false);
-            depthBias = object.getMember("depthBias").asType(0);
-            depthBiasClamp = object.getMember("depthBiasClamp").asType(0.0f);
-            slopeScaledDepthBias = object.getMember("slopeScaledDepthBias").asType(0.0f);
-            depthClipEnable = object.getMember("depthClipEnable").asType(true);
-            scissorEnable = object.getMember("scissorEnable").asType(false);
-            multisampleEnable = object.getMember("multisampleEnable").asType(false);
-            antialiasedLineEnable = object.getMember("antialiasedLineEnable").asType(false);
+            fillMode = getFillMode(object.getMember("fillMode"sv).convert("Solid"s));
+            cullMode = getCullMode(object.getMember("cullMode"sv).convert("Back"s));
+            frontCounterClockwise = object.getMember("frontCounterClockwise"sv).convert(false);
+            depthBias = object.getMember("depthBias"sv).convert(0);
+            depthBiasClamp = object.getMember("depthBiasClamp"sv).convert(0.0f);
+            slopeScaledDepthBias = object.getMember("slopeScaledDepthBias"sv).convert(0.0f);
+            depthClipEnable = object.getMember("depthClipEnable"sv).convert(true);
+            scissorEnable = object.getMember("scissorEnable"sv).convert(false);
+            multisampleEnable = object.getMember("multisampleEnable"sv).convert(false);
+            antialiasedLineEnable = object.getMember("antialiasedLineEnable"sv).convert(false);
         }
 
         size_t RasterizerStateInformation::getHash(void) const
@@ -186,22 +186,22 @@ namespace Gek
 			{
 				static const std::unordered_map<std::string, Operation> data =
 				{
-					{ "replace", Operation::Replace },
-					{ "invert", Operation::Invert },
-					{ "increase", Operation::Increase },
-					{ "increasesaturated", Operation::IncreaseSaturated },
-					{ "decrease", Operation::Decrease },
-					{ "decreasesaturated", Operation::DecreaseSaturated },
+					{ "replace"s, Operation::Replace },
+					{ "invert"s, Operation::Invert },
+					{ "increase"s, Operation::Increase },
+					{ "increasesaturated"s, Operation::IncreaseSaturated },
+					{ "decrease"s, Operation::Decrease },
+					{ "decreasesaturated"s, Operation::DecreaseSaturated },
 				};
 
 				auto result = data.find(String::GetLower(string));
 				return (result == std::end(data) ? Operation::Zero : result->second);
 			};
 
-            failOperation = getOperation(object.getMember("failOperation").asType("Keep"s));
-            depthFailOperation = getOperation(object.getMember("depthFailOperation").asType("Keep"s));
-            passOperation = getOperation(object.getMember("passOperation").asType("Keep"s));
-            comparisonFunction = getComparisonFunction(object.getMember("comparisonFunction").asType("Always"s));
+            failOperation = getOperation(object.getMember("failOperation"sv).convert("Keep"s));
+            depthFailOperation = getOperation(object.getMember("depthFailOperation"sv).convert("Keep"s));
+            passOperation = getOperation(object.getMember("passOperation"sv).convert("Keep"s));
+            comparisonFunction = getComparisonFunction(object.getMember("comparisonFunction"sv).convert("Always"s));
         }
 
         size_t DepthStateInformation::StencilStateInformation::getHash(void) const
@@ -215,21 +215,21 @@ namespace Gek
 			{
 				static const std::unordered_map<std::string, Write> data =
 				{
-					{ "zero", Write::Zero },
+					{ "zero"s, Write::Zero },
 				};
 
 				auto result = data.find(String::GetLower(string));
 				return (result == std::end(data) ? Write::All : result->second);
 			};
 
-			enable = object.getMember("enable").asType(false);
-            writeMask = getWriteMask(object.getMember("writeMask").asType("All"s));
-            comparisonFunction = getComparisonFunction(object.getMember("comparisonFunction").asType("Always"s));
-            stencilEnable = object.getMember("stencilEnable").asType(false);
-			stencilReadMask = object.getMember("stencilReadMask").asType(0);
-			stencilWriteMask = object.getMember("stencilWriteMask").asType(0);
-			stencilFrontState.load(object.getMember("stencilFrontState"));
-			stencilBackState.load(object.getMember("stencilBackState"));
+			enable = object.getMember("enable"sv).convert(false);
+            writeMask = getWriteMask(object.getMember("writeMask"sv).convert("All"s));
+            comparisonFunction = getComparisonFunction(object.getMember("comparisonFunction"sv).convert("Always"s));
+            stencilEnable = object.getMember("stencilEnable"sv).convert(false);
+			stencilReadMask = object.getMember("stencilReadMask"sv).convert(0);
+			stencilWriteMask = object.getMember("stencilWriteMask"sv).convert(0);
+			stencilFrontState.load(object.getMember("stencilFrontState"sv));
+			stencilBackState.load(object.getMember("stencilBackState"sv));
 		}
 
         size_t DepthStateInformation::getHash(void) const
@@ -245,22 +245,22 @@ namespace Gek
 			{
 				static const std::unordered_map<std::string, Source> data =
 				{
-					{ "zero", Source::Zero },
-					{ "blendfactor", Source::BlendFactor },
-					{ "inverseblendfactor", Source::InverseBlendFactor },
-					{ "sourcecolor", Source::SourceColor },
-					{ "inversesourcecolor", Source::InverseSourceColor },
-					{ "sourcealpha", Source::SourceAlpha },
-					{ "inversesourcealpha", Source::InverseSourceAlpha },
-					{ "sourcealphasaturated", Source::SourceAlphaSaturated },
-					{ "destinationcolor", Source::DestinationColor },
-					{ "inversedestinationcolor", Source::InverseDestinationColor },
-					{ "destinationalpha", Source::DestinationAlpha },
-					{ "inversedestinationalpha", Source::InverseDestinationAlpha },
-					{ "secondarysourcecolor", Source::SecondarySourceColor },
-					{ "inversesecondarysourcecolor", Source::InverseSecondarySourceColor },
-					{ "secondarysourcealpha", Source::SecondarySourceAlpha },
-					{ "inversesecondarysourcealpha", Source::InverseSecondarySourceAlpha },
+					{ "zero"s, Source::Zero },
+					{ "blendfactor"s, Source::BlendFactor },
+					{ "inverseblendfactor"s, Source::InverseBlendFactor },
+					{ "sourcecolor"s, Source::SourceColor },
+					{ "inversesourcecolor"s, Source::InverseSourceColor },
+					{ "sourcealpha"s, Source::SourceAlpha },
+					{ "inversesourcealpha"s, Source::InverseSourceAlpha },
+					{ "sourcealphasaturated"s, Source::SourceAlphaSaturated },
+					{ "destinationcolor"s, Source::DestinationColor },
+					{ "inversedestinationcolor"s, Source::InverseDestinationColor },
+					{ "destinationalpha"s, Source::DestinationAlpha },
+					{ "inversedestinationalpha"s, Source::InverseDestinationAlpha },
+					{ "secondarysourcecolor"s, Source::SecondarySourceColor },
+					{ "inversesecondarysourcecolor"s, Source::InverseSecondarySourceColor },
+					{ "secondarysourcealpha"s, Source::SecondarySourceAlpha },
+					{ "inversesecondarysourcealpha"s, Source::InverseSecondarySourceAlpha },
 				};
 
 				auto result = data.find(String::GetLower(string));
@@ -271,24 +271,24 @@ namespace Gek
 			{
 				static const std::unordered_map<std::string, Operation> data =
 				{
-					{ "subtract", Operation::Subtract },
-					{ "teversesubtract", Operation::ReverseSubtract },
-					{ "minimum", Operation::Minimum },
-					{ "maximum", Operation::Maximum },
+					{ "subtract"s, Operation::Subtract },
+					{ "teversesubtract"s, Operation::ReverseSubtract },
+					{ "minimum"s, Operation::Minimum },
+					{ "maximum"s, Operation::Maximum },
 				};
 
 				auto result = data.find(String::GetLower(string));
 				return (result == std::end(data) ? Operation::Add : result->second);
 			};
 
-			enable = object.getMember("enable").asType(false);
-            colorSource = GetSource(object.getMember("colorSource").asType("One"s));
-            colorDestination = GetSource(object.getMember("colorDestination").asType("One"s));
-            colorOperation = getOperation(object.getMember("colorOperation").asType("Add"s));
-            alphaSource = GetSource(object.getMember("alphaSource").asType("One"s));
-            alphaDestination = GetSource(object.getMember("alphaDestination").asType("One"s));
-            alphaOperation = getOperation(object.getMember("alphaOperation").asType("Add"s));
-            std::string writeMask(String::GetLower(object.getMember("writeMask").asType("RGBA"s)));
+			enable = object.getMember("enable"sv).convert(false);
+            colorSource = GetSource(object.getMember("colorSource"sv).convert("One"s));
+            colorDestination = GetSource(object.getMember("colorDestination"sv).convert("One"s));
+            colorOperation = getOperation(object.getMember("colorOperation"sv).convert("Add"s));
+            alphaSource = GetSource(object.getMember("alphaSource"sv).convert("One"s));
+            alphaDestination = GetSource(object.getMember("alphaDestination"sv).convert("One"s));
+            alphaOperation = getOperation(object.getMember("alphaOperation"sv).convert("Add"s));
+            std::string writeMask(String::GetLower(object.getMember("writeMask"sv).convert("RGBA"s)));
             if (writeMask.empty())
             {
                 this->writeMask = Mask::RGBA;
@@ -325,10 +325,10 @@ namespace Gek
 
         void BlendStateInformation::load(JSON const &object)
         {
-            alphaToCoverage = object.getMember("alphaToCoverage").asType(false);
-            unifiedBlendState = object.getMember("unifiedBlendState").asType(true);
+            alphaToCoverage = object.getMember("alphaToCoverage"sv).convert(false);
+            unifiedBlendState = object.getMember("unifiedBlendState"sv).convert(true);
 
-            auto targetStates = object.getMember("targetStates").asType(JSON::EmptyArray);
+            auto targetStates = object.getMember("targetStates"sv).asType(JSON::EmptyArray);
             size_t targetCount = std::min(targetStates.size(), targetStateList.size());
             for (size_t target = 0; target < targetCount; ++target)
             {
@@ -353,41 +353,41 @@ namespace Gek
 			{
 				static const std::unordered_map<std::string, FilterMode> data =
 				{
-					{ "minificationmagnificationpointmipmaplinear", FilterMode::MinificationMagnificationPointMipMapLinear },
-					{ "minificationpointmagnificationlinearmipmappoint", FilterMode::MinificationPointMagnificationLinearMipMapPoint },
-					{ "minificationpointmagnificationmipmaplinear", FilterMode::MinificationPointMagnificationMipMapLinear },
-					{ "minificationlinearmagnificationmipmappoint", FilterMode::MinificationLinearMagnificationMipMapPoint },
-					{ "minificationlinearmagnificationpointmipmaplinear", FilterMode::MinificationLinearMagnificationPointMipMapLinear },
-					{ "minificationmagnificationlinearmipmappoint", FilterMode::MinificationMagnificationLinearMipMapPoint },
-					{ "minificationmagnificationmipmaplinear", FilterMode::MinificationMagnificationMipMapLinear },
-					{ "anisotropic", FilterMode::Anisotropic },
-					{ "comparisonminificationmagnificationmipmappoint", FilterMode::ComparisonMinificationMagnificationMipMapPoint },
-					{ "comparisonminificationmagnificationpointmipmaplinear", FilterMode::ComparisonMinificationMagnificationPointMipMapLinear },
-					{ "comparisonminificationpointmagnificationlinearmipmappoint", FilterMode::ComparisonMinificationPointMagnificationLinearMipMapPoint },
-					{ "comparisonminificationpointmagnificationmipmaplinear", FilterMode::ComparisonMinificationPointMagnificationMipMapLinear },
-					{ "comparisonminificationlinearmagnificationmipmappoint", FilterMode::ComparisonMinificationLinearMagnificationMipMapPoint },
-					{ "comparisonminificationlinearmagnificationpointmipmaplinear", FilterMode::ComparisonMinificationLinearMagnificationPointMipMapLinear },
-					{ "comparisonminificationmagnificationlinearmipmappoint", FilterMode::ComparisonMinificationMagnificationLinearMipMapPoint },
-					{ "comparisonminificationmagnificationmipmaplinear", FilterMode::ComparisonMinificationMagnificationMipMapLinear },
-					{ "comparisonanisotropic", FilterMode::ComparisonAnisotropic },
-					{ "minimumminificationmagnificationmipmappoint", FilterMode::MinimumMinificationMagnificationMipMapPoint },
-					{ "minimumminificationmagnificationpointmipmaplinear", FilterMode::MinimumMinificationMagnificationPointMipMapLinear },
-					{ "minimumminificationpointmagnificationlinearmipmappoint", FilterMode::MinimumMinificationPointMagnificationLinearMipMapPoint },
-					{ "minimumminificationpointmagnificationmipmaplinear", FilterMode::MinimumMinificationPointMagnificationMipMapLinear },
-					{ "minimumminificationlinearmagnificationmipmappoint", FilterMode::MinimumMinificationLinearMagnificationMipMapPoint },
-					{ "minimumminificationlinearmagnificationpointmipmaplinear", FilterMode::MinimumMinificationLinearMagnificationPointMipMapLinear },
-					{ "minimumminificationmagnificationlinearmipmappoint", FilterMode::MinimumMinificationMagnificationLinearMipMapPoint },
-					{ "minimumminificationmagnificationmipmaplinear", FilterMode::MinimumMinificationMagnificationMipMapLinear },
-					{ "minimumanisotropic", FilterMode::MinimumAnisotropic },
-					{ "maximumminificationmagnificationmipmappoint", FilterMode::MaximumMinificationMagnificationMipMapPoint },
-					{ "maximumminificationmagnificationpointmipmaplinear", FilterMode::MaximumMinificationMagnificationPointMipMapLinear },
-					{ "maximumminificationpointmagnificationlinearmipmappoint", FilterMode::MaximumMinificationPointMagnificationLinearMipMapPoint },
-					{ "maximumminificationpointmagnificationmipmaplinear", FilterMode::MaximumMinificationPointMagnificationMipMapLinear },
-					{ "maximumminificationlinearmagnificationmipmappoint", FilterMode::MaximumMinificationLinearMagnificationMipMapPoint },
-					{ "maximumminificationlinearmagnificationpointmipmaplinear", FilterMode::MaximumMinificationLinearMagnificationPointMipMapLinear },
-					{ "maximumminificationmagnificationlinearmipmappoint", FilterMode::MaximumMinificationMagnificationLinearMipMapPoint },
-					{ "maximumminificationmagnificationmipmaplinear", FilterMode::MaximumMinificationMagnificationMipMapLinear },
-					{ "maximumanisotropic", FilterMode::MaximumAnisotropic },
+					{ "minificationmagnificationpointmipmaplinear"s, FilterMode::MinificationMagnificationPointMipMapLinear },
+					{ "minificationpointmagnificationlinearmipmappoint"s, FilterMode::MinificationPointMagnificationLinearMipMapPoint },
+					{ "minificationpointmagnificationmipmaplinear"s, FilterMode::MinificationPointMagnificationMipMapLinear },
+					{ "minificationlinearmagnificationmipmappoint"s, FilterMode::MinificationLinearMagnificationMipMapPoint },
+					{ "minificationlinearmagnificationpointmipmaplinear"s, FilterMode::MinificationLinearMagnificationPointMipMapLinear },
+					{ "minificationmagnificationlinearmipmappoint"s, FilterMode::MinificationMagnificationLinearMipMapPoint },
+					{ "minificationmagnificationmipmaplinear"s, FilterMode::MinificationMagnificationMipMapLinear },
+					{ "anisotropic"s, FilterMode::Anisotropic },
+					{ "comparisonminificationmagnificationmipmappoint"s, FilterMode::ComparisonMinificationMagnificationMipMapPoint },
+					{ "comparisonminificationmagnificationpointmipmaplinear"s, FilterMode::ComparisonMinificationMagnificationPointMipMapLinear },
+					{ "comparisonminificationpointmagnificationlinearmipmappoint"s, FilterMode::ComparisonMinificationPointMagnificationLinearMipMapPoint },
+					{ "comparisonminificationpointmagnificationmipmaplinear"s, FilterMode::ComparisonMinificationPointMagnificationMipMapLinear },
+					{ "comparisonminificationlinearmagnificationmipmappoint"s, FilterMode::ComparisonMinificationLinearMagnificationMipMapPoint },
+					{ "comparisonminificationlinearmagnificationpointmipmaplinear"s, FilterMode::ComparisonMinificationLinearMagnificationPointMipMapLinear },
+					{ "comparisonminificationmagnificationlinearmipmappoint"s, FilterMode::ComparisonMinificationMagnificationLinearMipMapPoint },
+					{ "comparisonminificationmagnificationmipmaplinear"s, FilterMode::ComparisonMinificationMagnificationMipMapLinear },
+					{ "comparisonanisotropic"s, FilterMode::ComparisonAnisotropic },
+					{ "minimumminificationmagnificationmipmappoint"s, FilterMode::MinimumMinificationMagnificationMipMapPoint },
+					{ "minimumminificationmagnificationpointmipmaplinear"s, FilterMode::MinimumMinificationMagnificationPointMipMapLinear },
+					{ "minimumminificationpointmagnificationlinearmipmappoint"s, FilterMode::MinimumMinificationPointMagnificationLinearMipMapPoint },
+					{ "minimumminificationpointmagnificationmipmaplinear"s, FilterMode::MinimumMinificationPointMagnificationMipMapLinear },
+					{ "minimumminificationlinearmagnificationmipmappoint"s, FilterMode::MinimumMinificationLinearMagnificationMipMapPoint },
+					{ "minimumminificationlinearmagnificationpointmipmaplinear"s, FilterMode::MinimumMinificationLinearMagnificationPointMipMapLinear },
+					{ "minimumminificationmagnificationlinearmipmappoint"s, FilterMode::MinimumMinificationMagnificationLinearMipMapPoint },
+					{ "minimumminificationmagnificationmipmaplinear"s, FilterMode::MinimumMinificationMagnificationMipMapLinear },
+					{ "minimumanisotropic"s, FilterMode::MinimumAnisotropic },
+					{ "maximumminificationmagnificationmipmappoint"s, FilterMode::MaximumMinificationMagnificationMipMapPoint },
+					{ "maximumminificationmagnificationpointmipmaplinear"s, FilterMode::MaximumMinificationMagnificationPointMipMapLinear },
+					{ "maximumminificationpointmagnificationlinearmipmappoint"s, FilterMode::MaximumMinificationPointMagnificationLinearMipMapPoint },
+					{ "maximumminificationpointmagnificationmipmaplinear"s, FilterMode::MaximumMinificationPointMagnificationMipMapLinear },
+					{ "maximumminificationlinearmagnificationmipmappoint"s, FilterMode::MaximumMinificationLinearMagnificationMipMapPoint },
+					{ "maximumminificationlinearmagnificationpointmipmaplinear"s, FilterMode::MaximumMinificationLinearMagnificationPointMipMapLinear },
+					{ "maximumminificationmagnificationlinearmipmappoint"s, FilterMode::MaximumMinificationMagnificationLinearMipMapPoint },
+					{ "maximumminificationmagnificationmipmaplinear"s, FilterMode::MaximumMinificationMagnificationMipMapLinear },
+					{ "maximumanisotropic"s, FilterMode::MaximumAnisotropic },
 				};
 
 				auto result = data.find(String::GetLower(string));
@@ -398,28 +398,26 @@ namespace Gek
 			{
 				static const std::unordered_map<std::string, AddressMode> data =
 				{
-					{ "wrap", AddressMode::Wrap },
-					{ "mirror", AddressMode::Mirror },
-					{ "mirroronce", AddressMode::MirrorOnce },
-					{ "border", AddressMode::Border },
+					{ "wrap"s, AddressMode::Wrap },
+					{ "mirror"s, AddressMode::Mirror },
+					{ "mirroronce"s, AddressMode::MirrorOnce },
+					{ "border"s, AddressMode::Border },
 				};
 
 				auto result = data.find(String::GetLower(string));
 				return (result == std::end(data) ? AddressMode::Clamp : result->second);
 			};
 
-            filterMode = getFilterMode(object.getMember("filterMode").asType("AllPoint"s));
-            addressModeU = getAddressMode(object.getMember("addressModeU").asType("Clamp"s));
-            addressModeV = getAddressMode(object.getMember("addressModeV").asType("Clamp"s));
-            addressModeW = getAddressMode(object.getMember("addressModeW").asType("Clamp"s));
-            mipLevelBias = object.getMember("mipLevelBias").asType(0.0f);
-            maximumAnisotropy = object.getMember("maximumAnisotropy").asType(1);
-            comparisonFunction = getComparisonFunction(object.getMember("comparisonFunction").asType("Never"s));
-            minimumMipLevel = object.getMember("minimumMipLevel").asType(0.0f);
-            maximumMipLevel = object.getMember("maximumMipLevel").asType(Math::Infinity);
-
-            // TZTODO
-            //borderColor = object.get("borderColor").as(Math::Float4::Zero);
+            filterMode = getFilterMode(object.getMember("filterMode"sv).convert("AllPoint"s));
+            addressModeU = getAddressMode(object.getMember("addressModeU"sv).convert("Clamp"s));
+            addressModeV = getAddressMode(object.getMember("addressModeV"sv).convert("Clamp"s));
+            addressModeW = getAddressMode(object.getMember("addressModeW"sv).convert("Clamp"s));
+            mipLevelBias = object.getMember("mipLevelBias"sv).convert(0.0f);
+            maximumAnisotropy = object.getMember("maximumAnisotropy"sv).convert(1);
+            comparisonFunction = getComparisonFunction(object.getMember("comparisonFunction"sv).convert("Never"s));
+            minimumMipLevel = object.getMember("minimumMipLevel"sv).convert(0.0f);
+            maximumMipLevel = object.getMember("maximumMipLevel"sv).convert(Math::Infinity);
+            borderColor = object.getMember("borderColor"sv).evaluate(ShuntingYard(), Math::Float4::Zero);
         }
 
         size_t SamplerStateInformation::getHash(void) const

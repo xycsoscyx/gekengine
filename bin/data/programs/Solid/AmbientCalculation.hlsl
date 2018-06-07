@@ -65,7 +65,7 @@ float getAmbientObscurance(float2 texCoord, float3 surfacePosition, float3 surfa
 
     // [Boulotaur2024] yes branching is bad but choice is good...
     [branch]
-    switch (Options::AmbientOcclusionFalloff::Selection)
+    switch (Options::AmbientOcclusion::Falloff::Selection)
     {
 	case Options::AmbientOcclusion::Falloff::HighQuality:
         if (true)
@@ -73,21 +73,21 @@ float getAmbientObscurance(float2 texCoord, float3 surfacePosition, float3 surfa
             // Addition from http://graphics.cs.williams.edu/papers/DeepGBuffer13/	
             // Epsilon inside the sqrt for rsqrt operation
             const float falloff = max(1.0 - deltaAngle * (1.0 / Options::AmbientOcclusion::RadiusSquared), 0.0);
-            return (falloff * max((normalAngle - Options::AmbientOcclusion::Bias) * rsqrt(Options::AmbientOcclusionEpsilon + deltaAngle), 0.0));
+            return (falloff * max((normalAngle - Options::AmbientOcclusion::Bias) * rsqrt(Options::AmbientOcclusion::Epsilon + deltaAngle), 0.0));
         }
 
     case Options::AmbientOcclusion::Falloff::HPG12:
         // A: From the HPG12 paper
         // Note large Options::AmbientOcclusion::Epsilon to avoid overdarkening withcracks
-        return (float(deltaAngle < Options::AmbientOcclusion::RadiusSquared) * max((normalAngle - Options::AmbientOcclusion::Bias) * rcp(Options::AmbientOcclusionEpsilon + deltaAngle), 0.0) * Options::AmbientOcclusion::RadiusSquared * 0.6);
+        return (float(deltaAngle < Options::AmbientOcclusion::RadiusSquared) * max((normalAngle - Options::AmbientOcclusion::Bias) * rcp(Options::AmbientOcclusion::Epsilon + deltaAngle), 0.0) * Options::AmbientOcclusion::RadiusSquared * 0.6);
 
     case Options::AmbientOcclusion::Falloff::Smooth:
         if (true)
         {
             // B: Smoother transition to zero (lowers contrast, smoothing out corners). [Recommended]
-            const float falloff = max(Options::AmbientOcclusionRadiusSquared - deltaAngle, 0.0);
-            return (pow(falloff, 3.0) * max((normalAngle - Options::AmbientOcclusion::Bias) * rcp(Options::AmbientOcclusionEpsilon + deltaAngle), 0.0));
-            // / (Options::AmbientOcclusionEpsilon + deltaAngle) (optimization by BartWronski)
+            const float falloff = max(Options::AmbientOcclusion::RadiusSquared - deltaAngle, 0.0);
+            return (pow(falloff, 3.0) * max((normalAngle - Options::AmbientOcclusion::Bias) * rcp(Options::AmbientOcclusion::Epsilon + deltaAngle), 0.0));
+            // / (Options::AmbientOcclusion::Epsilon + deltaAngle) (optimization by BartWronski)
         }
 
     case Options::AmbientOcclusion::Falloff::Medium:
@@ -125,9 +125,9 @@ float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         totalOcclusion += getAmbientObscurance(inputPixel.texCoord, surfacePosition, surfaceNormal, diskRadius, tapIndex, randomPatternRotationAngle);
     }
 
-    totalOcclusion /= pow(Options::AmbientOcclusionRadiusCubed, 2.0);
+    totalOcclusion /= pow(Options::AmbientOcclusion::RadiusCubed, 2.0);
 
-    if (Options::AmbientOcclusionFalloff::Selection == Options::AmbientOcclusion::Falloff::HighQuality)
+    if (Options::AmbientOcclusion::Falloff::Selection == Options::AmbientOcclusion::Falloff::HighQuality)
     {
         // Addition from http://graphics.cs.williams.edu/papers/DeepGBuffer13/
         totalOcclusion = pow(max(0.0, 1.0 - sqrt(totalOcclusion * (3.0 / Options::AmbientOcclusion::TapCount))), Options::AmbientOcclusion::Intensity);

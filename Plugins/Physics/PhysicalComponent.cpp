@@ -22,12 +22,12 @@ namespace Gek
             // Plugin::Component
             void save(Components::Physical const * const data, JSON &exportData) const
             {
-                exportData["mass"] = data->mass;
+                exportData["mass"sv] = data->mass;
             }
 
             void load(Components::Physical * const data, JSON const &importData)
             {
-                data->mass = evaluate(importData.getMember("mass"), 0.0f);
+                data->mass = evaluate(importData.getMember("mass"sv), 0.0f);
             }
 
             // Edit::Component
@@ -38,7 +38,7 @@ namespace Gek
 
                 auto &physicalComponent = *dynamic_cast<Components::Physical *>(data);
 
-                changed |= editorElement("Mass", [&](void) -> bool
+                changed |= editorElement("Mass"sv, [&](void) -> bool
                 {
                     return ImGui::InputFloat("##mass", &physicalComponent.mass, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 });

@@ -158,7 +158,7 @@ namespace Gek
 				displayModeStringList.push_back(displayModeString);
 			}
 
-            setDisplayMode(configuration.getMember("display").getMember("mode").asType(preferredDisplayMode));
+            setDisplayMode(configuration.getMember("display"sv).getMember("mode"sv).convert(preferredDisplayMode));
 
 			gui->renderQueue = renderDevice->createQueue(0);
 
@@ -289,18 +289,18 @@ namespace Gek
 			gui->context = ImGui::CreateContext();
 			ImGui::Initialize(gui->context);
 			auto fontPath = getContext()->findDataPath("fonts"sv);
-			imGuiIo.Fonts->AddFontFromFileTTF(FileSystem::CombinePaths(fontPath, "Ruda-Bold.ttf").getString().data(), 14.0f);
+			imGuiIo.Fonts->AddFontFromFileTTF(FileSystem::CombinePaths(fontPath, "Ruda-Bold.ttf"sv).getString().data(), 14.0f);
 
 			ImFontConfig fontConfig;
 			fontConfig.MergeMode = true;
 
 			fontConfig.GlyphOffset.y = 1.0f;
 			const ImWchar fontAwesomeRanges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-			imGuiIo.Fonts->AddFontFromFileTTF(FileSystem::CombinePaths(fontPath, "fontawesome-webfont.ttf").getString().data(), 16.0f, &fontConfig, fontAwesomeRanges);
+			imGuiIo.Fonts->AddFontFromFileTTF(FileSystem::CombinePaths(fontPath, "fontawesome-webfont.ttf"sv).getString().data(), 16.0f, &fontConfig, fontAwesomeRanges);
 
 			fontConfig.GlyphOffset.y = 3.0f;
 			const ImWchar googleIconRanges[] = { ICON_MIN_MD, ICON_MAX_MD, 0 };
-			imGuiIo.Fonts->AddFontFromFileTTF(FileSystem::CombinePaths(fontPath, "MaterialIcons-Regular.ttf").getString().data(), 16.0f, &fontConfig, googleIconRanges);
+			imGuiIo.Fonts->AddFontFromFileTTF(FileSystem::CombinePaths(fontPath, "MaterialIcons-Regular.ttf"sv).getString().data(), 16.0f, &fontConfig, googleIconRanges);
 
 			imGuiIo.Fonts->Build();
 
@@ -331,7 +331,7 @@ namespace Gek
 			};
 
 			window->setVisibility(true);
-            setFullScreen(configuration.getMember("display").getMember("fullScreen").asType(false));
+            setFullScreen(configuration.getMember("display"sv).getMember("fullScreen"sv).convert(false));
 			engineRunning = true;
 			windowActive = true;
 		}
@@ -354,7 +354,7 @@ namespace Gek
 			if (current.fullScreen != requestFullScreen)
 			{
 				current.fullScreen = requestFullScreen;
-				configuration["display"]["fullScreen"] = requestFullScreen;
+				configuration["display"sv]["fullScreen"sv] = requestFullScreen;
 				if (requestFullScreen)
 				{
 					window->move(Math::Int2::Zero);
@@ -381,7 +381,7 @@ namespace Gek
 				if (requestDisplayMode < displayModeList.size())
 				{
 					current.mode = requestDisplayMode;
-					configuration["display"]["mode"] = requestDisplayMode;
+					configuration["display"sv]["mode"sv] = requestDisplayMode;
 					renderDevice->setDisplayMode(displayModeData);
 					window->move();
 					return true;
@@ -787,7 +787,7 @@ namespace Gek
 					break;
 
 				case Window::Key::F1:
-                    configuration["editor"]["active"] = !configuration.getMember("editor").getMember("active").asType(false);
+                    configuration["editor"sv]["active"sv] = !configuration.getMember("editor"sv).getMember("active"sv).convert(false);
 					break;
 				};
 			}

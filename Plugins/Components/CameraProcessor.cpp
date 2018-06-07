@@ -50,10 +50,10 @@ namespace Gek
 
         void load(Components::FirstPersonCamera * const data, JSON const &importData)
         {
-            data->fieldOfView = Math::DegreesToRadians(evaluate(importData.getMember("fieldOfView"), 90.0f));
-            data->nearClip = evaluate(importData.getMember("nearClip"), 1.0f);
-            data->farClip = evaluate(importData.getMember("farClip"), 100.0f);
-            data->target = evaluate(importData.getMember("target"), String::Empty);
+            data->fieldOfView = Math::DegreesToRadians(evaluate(importData.getMember("fieldOfView"sv), 90.0f));
+            data->nearClip = evaluate(importData.getMember("nearClip"sv), 1.0f);
+            data->farClip = evaluate(importData.getMember("farClip"sv), 100.0f);
+            data->target = evaluate(importData.getMember("target"sv), String::Empty);
         }
 
         // Edit::Component
@@ -64,17 +64,17 @@ namespace Gek
 
             auto &firstPersonCameraComponent = *dynamic_cast<Components::FirstPersonCamera *>(data);
 
-            changed |= editorElement("Field of View", [&](void) -> bool
+            changed |= editorElement("Field of View"sv, [&](void) -> bool
             {
                 return ImGui::SliderAngle("##fieldOfView", &firstPersonCameraComponent.fieldOfView, 0.0f, 180.0f);
             });
 
-            changed |= editorElement("Clip Range", [&](void) -> bool
+            changed |= editorElement("Clip Range"sv, [&](void) -> bool
             {
                 return ImGui::DragFloatRange2("##clipRange", &firstPersonCameraComponent.nearClip, &firstPersonCameraComponent.farClip);
             });
 
-            changed |= editorElement("Target", [&](void) -> bool
+            changed |= editorElement("Target"sv, [&](void) -> bool
             {
                 return UI::InputString("##target", firstPersonCameraComponent.target, ImGuiInputTextFlags_EnterReturnsTrue);
             });
@@ -180,7 +180,7 @@ namespace Gek
         {
             assert(renderer);
 
-			bool editorActive = core->getOption("editor", "active").asType(false);
+			bool editorActive = core->getOption("editor", "active").convert(false);
 			if (frameTime > 0.0f && !editorActive)
 			{
 				parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void

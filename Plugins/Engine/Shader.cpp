@@ -116,13 +116,13 @@ namespace Gek
 
                 JSON rootNode;
                 rootNode.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", shaderName).withExtension(".json")));
-                outputResource = rootNode.getMember("output").asType(String::Empty);
+                outputResource = rootNode.getMember("output"sv).convert(String::Empty);
 
                 ShuntingYard shuntingYard(population->getShuntingYard());
                 auto &coreOptionsNode = core->getOption("shaders", shaderName);
                 for (const auto &coreValuePair : coreOptionsNode.asType(JSON::EmptyObject))
                 {
-                    shuntingYard.setVariable(coreValuePair.first, coreValuePair.second.asType(0.0f));
+                    shuntingYard.setVariable(coreValuePair.first, coreValuePair.second.convert(0.0f));
                 }
 
                 auto &rootOptionsNode = rootNode["options"];
@@ -136,21 +136,21 @@ namespace Gek
                 if (importSearch != std::end(rootOptionsObject))
                 {
                     importSearch->second.visit(
-                        [&](std::string const &visitedData)
+                        [&](std::string const &importName)
                     {
                         JSON importOptions;
-                        importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", visitedData).withExtension(".json")));
+                        importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", importName).withExtension(".json")));
                         for (auto &importPair : importOptions.asType(JSON::EmptyObject))
                         {
                             rootOptionsObject[importPair.first] = importPair.second;
                         }
                     },
-                        [&](JSON::Array const &visitedData)
+                        [&](JSON::Array const &importArray)
                     {
-                        for (auto &importName : visitedData)
+                        for (auto &importName : importArray)
                         {
                             JSON importOptions;
-                            importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", importName.asType(String::Empty)).withExtension(".json")));
+                            importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", importName.convert(String::Empty)).withExtension(".json")));
                             for (auto &importPair : importOptions.asType(JSON::EmptyObject))
                             {
                                 rootOptionsObject[importPair.first] = importPair.second;
@@ -164,11 +164,11 @@ namespace Gek
                     rootOptionsObject.erase(importSearch);
                 }
 
-                auto requiredShadesrArray = rootNode.getMember("requires").asType(JSON::EmptyArray);
+                auto requiredShadesrArray = rootNode.getMember("requires"sv).asType(JSON::EmptyArray);
                 drawOrder = requiredShadesrArray.size();
                 for (auto &requiredShaderNode : requiredShadesrArray)
                 {
-                    auto shaderHandle = resources->getShader(requiredShaderNode.asType(String::Empty));
+                    auto shaderHandle = resources->getShader(requiredShaderNode.convert(String::Empty));
                     auto shader = resources->getShader(shaderHandle);
                     if (shader)
                     {
@@ -178,10 +178,10 @@ namespace Gek
 
 				std::string inputData;
                 uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
-                for (auto &elementNode : rootNode.getMember("input").asType(JSON::EmptyArray))
+                for (auto &elementNode : rootNode.getMember("input"sv).asType(JSON::EmptyArray))
                 {
-                    std::string name(elementNode.getMember("name").asType(String::Empty));
-                    std::string system(String::GetLower(elementNode.getMember("system").asType(String::Empty)));
+                    std::string name(elementNode.getMember("name"sv).convert(String::Empty));
+                    std::string system(String::GetLower(elementNode.getMember("system"sv).convert(String::Empty)));
                     if (system == "isfrontfacing")
                     {
                         inputData += String::Format("    uint {} : SV_IsFrontFace;\r\n", name);
@@ -192,9 +192,9 @@ namespace Gek
                     }
                     else
                     {
-                        Video::Format format = Video::GetFormat(elementNode.getMember("format").asType(String::Empty));
-                        uint32_t count = elementNode.getMember("count").asType(1);
-                        auto semantic = Video::InputElement::GetSemantic(elementNode.getMember("semantic").asType(String::Empty));
+                        Video::Format format = Video::GetFormat(elementNode.getMember("format"sv).convert(String::Empty));
+                        uint32_t count = elementNode.getMember("count").convert(1);
+                        auto semantic = Video::InputElement::GetSemantic(elementNode.getMember("semantic"sv).convert(String::Empty));
                         auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)];
                         semanticIndexList[static_cast<uint8_t>(semantic)] += count;
 
@@ -256,7 +256,7 @@ namespace Gek
 
                 std::unordered_map<std::string, ResourceHandle> resourceMap;
                 std::unordered_map<std::string, std::string> resourceSemanticsMap;
-                for (auto &texturesPair : rootNode.getMember("textures").asType(JSON::EmptyObject))
+                for (auto &texturesPair : rootNode.getMember("textures"sv).asType(JSON::EmptyObject))
                 {
                     std::string textureName(texturesPair.first);
                     if (resourceMap.count(textureName) > 0)
@@ -270,15 +270,15 @@ namespace Gek
                     auto &textureMap = textureNode.asType(JSON::EmptyObject);
                     if (textureMap.count("file"))
                     {
-                        std::string fileName(textureNode.getMember("file").asType(String::Empty));
-                        uint32_t flags = getTextureLoadFlags(textureNode.getMember("flags").asType(String::Empty));
+                        std::string fileName(textureNode.getMember("file"sv).convert(String::Empty));
+                        uint32_t flags = getTextureLoadFlags(textureNode.getMember("flags"sv).convert(String::Empty));
                         resource = resources->loadTexture(fileName, flags);
                     }
                     else
                     {
                         Video::Texture::Description description(backBufferDescription);
-                        description.format = Video::GetFormat(textureNode.getMember("format").asType(String::Empty));
-                        auto &sizeNode = textureNode.getMember("size");
+                        description.format = Video::GetFormat(textureNode.getMember("format"sv).convert(String::Empty));
+                        auto &sizeNode = textureNode.getMember("size"sv);
                         if (sizeNode.isType<float>())
                         {
                             description.width = sizeNode.evaluate(shuntingYard, 1);
@@ -300,9 +300,9 @@ namespace Gek
                             };
                         }
 
-                        description.sampleCount = textureNode.getMember("sampleCount").asType(1);
-                        description.flags = getTextureFlags(textureNode.getMember("flags").asType(String::Empty));
-                        description.mipMapCount = textureNode.getMember("mipmaps").evaluate(shuntingYard, 1);
+                        description.sampleCount = textureNode.getMember("sampleCount"sv).convert(1);
+                        description.flags = getTextureFlags(textureNode.getMember("flags"sv).convert(String::Empty));
+                        description.mipMapCount = textureNode.getMember("mipmaps"sv).evaluate(shuntingYard, 1);
                         resource = resources->createTexture(textureName, description, true);
                     }
 
@@ -325,7 +325,7 @@ namespace Gek
                     }
                 }
 
-                for (auto &buffersPair : rootNode.getMember("buffers").asType(JSON::EmptyObject))
+                for (auto &buffersPair : rootNode.getMember("buffers"sv).asType(JSON::EmptyObject))
                 {
                     std::string bufferName(buffersPair.first);
                     if (resourceMap.count(bufferName) > 0)
@@ -338,24 +338,24 @@ namespace Gek
                     auto &bufferObject = bufferNode.asType(JSON::EmptyObject);
 
                     Video::Buffer::Description description;
-                    description.count = bufferNode.getMember("count").evaluate(shuntingYard, 0);
-                    description.flags = getBufferFlags(bufferNode.getMember("flags").asType(String::Empty));
+                    description.count = bufferNode.getMember("count"sv).evaluate(shuntingYard, 0);
+                    description.flags = getBufferFlags(bufferNode.getMember("flags"sv).convert(String::Empty));
                     if (bufferObject.count("format"))
                     {
                         description.type = Video::Buffer::Type::Raw;
-                        description.format = Video::GetFormat(bufferNode.getMember("format").asType(String::Empty));
+                        description.format = Video::GetFormat(bufferNode.getMember("format"sv).convert(String::Empty));
                     }
                     else
                     {
                         description.type = Video::Buffer::Type::Structured;
-                        description.stride = bufferNode.getMember("stride").evaluate(shuntingYard, 0);
+                        description.stride = bufferNode.getMember("stride"sv).evaluate(shuntingYard, 0);
                     }
 
                     auto resource = resources->createBuffer(bufferName, description, true);
                     if (resource)
                     {
                         resourceMap[bufferName] = resource;
-                        if (bufferNode.getMember("byteaddress").asType(false))
+                        if (bufferNode.getMember("byteaddress"sv).convert(false))
                         {
                             resourceSemanticsMap[bufferName] = "ByteAddressBuffer";
                         }
@@ -364,33 +364,33 @@ namespace Gek
                             auto description = resources->getBufferDescription(resource);
                             if (description != nullptr)
                             {
-                                auto structure = bufferNode.getMember("structure").asType(String::Empty);
+                                auto structure = bufferNode.getMember("structure"sv).convert(String::Empty);
                                 resourceSemanticsMap[bufferName] += String::Format("Buffer<{}>", structure.empty() ? getFormatSemantic(description->format) : structure);
                             }
                         }
                     }
                 }
 
-                auto materialsNode = rootNode.getMember("materials");
+                auto materialsNode = rootNode.getMember("materials"sv);
                 for (auto &materialPair : materialsNode.asType(JSON::EmptyObject))
                 {
                     auto materialName = materialPair.first;
                     auto &materialData = materialMap[materialName];
                     auto materialNode = materialPair.second;
-                    for (auto data : materialNode.getMember("data").asType(JSON::EmptyArray))
+                    for (auto data : materialNode.getMember("data"sv).asType(JSON::EmptyArray))
                     {
                         Material::Initializer initializer;
-                        initializer.name = data.getMember("name").asType(String::Empty);
-                        initializer.fallback = resources->createPattern(data.getMember("pattern").asType(String::Empty), data.getMember("parameters"));
+                        initializer.name = data.getMember("name"sv).convert(String::Empty);
+                        initializer.fallback = resources->createPattern(data.getMember("pattern"sv).convert(String::Empty), data.getMember("parameters"sv));
                         materialData.initializerList.push_back(initializer);
                     }
 
                     Video::RenderState::Description renderStateInformation;
-                    renderStateInformation.load(materialNode.getMember("renderState"), rootOptionsNode);
+                    renderStateInformation.load(materialNode.getMember("renderState"sv), rootOptionsNode);
                     materialData.renderState = resources->createRenderState(renderStateInformation);
                 }
 
-                auto passesNode = rootNode.getMember("passes");
+                auto passesNode = rootNode.getMember("passes"sv);
                 passList.resize(passesNode.asType(JSON::EmptyArray).size());
                 auto passData = std::begin(passList);
                 for (auto &passNode : passesNode.asType(JSON::EmptyArray))
@@ -398,29 +398,47 @@ namespace Gek
                     auto &passObject = passNode.asType(JSON::EmptyObject);
 
                     PassData &pass = *passData++;
-                    std::string entryPoint(passNode.getMember("entry").asType(String::Empty));
-                    auto programName = passNode.getMember("program").asType(String::Empty);
+                    std::string entryPoint(passNode.getMember("entry"sv).convert(String::Empty));
+                    auto programName = passNode.getMember("program").convert(String::Empty);
                     pass.name = programName;
 
-                    auto passMaterial = passNode.getMember("material").asType(String::Empty);
-                    pass.lighting = passNode.getMember("lighting").asType(false);
+                    auto passMaterial = passNode.getMember("material"sv).convert(String::Empty);
+                    pass.lighting = passNode.getMember("lighting"sv).convert(false);
                     pass.materialHash = GetHash(passMaterial);
                     lightingRequired |= pass.lighting;
 
-                    auto enableOption = passNode.getMember("enable").asType(String::Empty);
+                    auto enableOption = passNode.getMember("enable"sv).convert(String::Empty);
                     if (!enableOption.empty())
                     {
-                        pass.enabled = rootOptionsNode.getMember(enableOption).asType(true);
+                        pass.enabled = rootOptionsNode.getMember(enableOption).convert(true);
                         if (!pass.enabled)
                         {
                             continue;
                         }
                     }
 
-                    JSON passOptions(rootOptionsNode);
-                    for (auto &overridePair : passNode.getMember("options").asType(JSON::EmptyObject))
+                    JSON passOptions(std::cref(rootOptionsNode).get());
+                    for (auto &overridePair : passNode.getMember("options"sv).asType(JSON::EmptyObject))
                     {
-                        passOptions[overridePair.first] = overridePair.second;
+                        std::function<void(JSON &, std::string_view, JSON const &)> insertOptions;
+                        insertOptions = [&](JSON &options, std::string_view name, JSON const &node) -> void
+                        {
+                            node.visit(
+                                [&](JSON::Object const &object)
+                            {
+                                auto &localOptions = options[name];
+                                for (auto &objectPair : object)
+                                {
+                                    insertOptions(localOptions, objectPair.first, objectPair.second);
+                                }
+                            },
+                                [&](auto const &value)
+                            {
+                                options[name] = String::Format("{}", value);
+                            });
+                        };
+
+                        insertOptions(passOptions, overridePair.first, overridePair.second);
                     }
 
                     std::function<std::string(JSON const &)> addOptions;
@@ -432,26 +450,26 @@ namespace Gek
                             auto optionName = optionPair.first;
                             auto &optionNode = optionPair.second;
                             optionNode.visit(
-                                [&](JSON::Object const &visitedData)
+                                [&](JSON::Object const &optionObject)
                             {
-                                if (visitedData.count("options"))
+                                if (optionObject.count("options"))
                                 {
                                     outerData += String::Format("    namespace {}\r\n", optionName);
                                     outerData += String::Format("    {\r\n");
 
                                     std::vector<std::string> choices;
-                                    for (auto &choice : optionNode.getMember("options").asType(JSON::EmptyArray))
+                                    for (auto &choice : optionNode.getMember("options"sv).asType(JSON::EmptyArray))
                                     {
-                                        auto name = choice.asType(String::Empty);
+                                        auto name = choice.convert(String::Empty);
                                         outerData += String::Format("        static const int {} = {};\r\n", name, choices.size());
                                         choices.push_back(optionName);
                                     }
 
                                     int selection = 0;
-                                    auto &selectionNode = optionNode.getMember("selection");
+                                    auto &selectionNode = optionNode.getMember("selection"sv);
                                     if (selectionNode.isType<std::string>())
                                     {
-                                        auto selectedName = selectionNode.asType(String::Empty);
+                                        auto selectedName = selectionNode.convert(String::Empty);
                                         auto optionsSearch = std::find_if(std::begin(choices), std::end(choices), [selectedName](std::string const &choice) -> bool
                                         {
                                             return (selectedName == choice);
@@ -464,7 +482,7 @@ namespace Gek
                                     }
                                     else
                                     {
-                                        selection = selectionNode.asType(0U);
+                                        selection = selectionNode.convert(0U);
                                     }
 
                                     outerData += String::Format("        static const int Selection = {};\r\n", selection);
@@ -484,48 +502,51 @@ namespace Gek
                                     }
                                 }
                             },
-                                [&](JSON::Array const &visitedData)
+                                [&](JSON::Array const &optionArray)
                             {
-                                switch (visitedData.size())
+                                switch (optionArray.size())
                                 {
                                 case 1:
                                     outerData += String::Format("    static const float {} = {};\r\n", optionName,
-                                        visitedData[0].asType(0.0f));
+                                        optionArray[0].convert(0.0f));
                                     break;
 
                                 case 2:
                                     outerData += String::Format("    static const float2 {} = float2({}, {});\r\n", optionName,
-                                        visitedData[0].asType(0.0f),
-                                        visitedData[1].asType(0.0f));
+                                        optionArray[0].convert(0.0f),
+                                        optionArray[1].convert(0.0f));
                                     break;
 
                                 case 3:
                                     outerData += String::Format("    static const float3 {} = float3({}, {}, {});\r\n", optionName,
-                                        visitedData[0].asType(0.0f),
-                                        visitedData[1].asType(0.0f),
-                                        visitedData[2].asType(0.0f));
+                                        optionArray[0].convert(0.0f),
+                                        optionArray[1].convert(0.0f),
+                                        optionArray[2].convert(0.0f));
                                     break;
 
                                 case 4:
                                     outerData += String::Format("    static const float4 {} = float4({}, {}, {}, {})\r\n", optionName,
-                                        visitedData[0].asType(0.0f),
-                                        visitedData[1].asType(0.0f),
-                                        visitedData[2].asType(0.0f),
-                                        visitedData[3].asType(0.0f));
+                                        optionArray[0].convert(0.0f),
+                                        optionArray[1].convert(0.0f),
+                                        optionArray[2].convert(0.0f),
+                                        optionArray[3].convert(0.0f));
                                     break;
                                 };
                             },
-                                [&](bool visitedData)
+                                [&](std::nullptr_t const &)
                             {
-                                outerData += String::Format("    static const bool {} = {};\r\n", optionName, visitedData);
                             },
-                                [&](float visitedData)
+                                [&](bool optionBoolean)
                             {
-                                outerData += String::Format("    static const float {} = {};\r\n", optionName, visitedData);
+                                outerData += String::Format("    static const bool {} = {};\r\n", optionName, optionBoolean);
                             },
-                                [&](auto const &visitedData)
+                                [&](float optionFloat)
                             {
-                                outerData += String::Format("    static const int {} = {};\r\n", optionName, visitedData);
+                                outerData += String::Format("    static const float {} = {};\r\n", optionName, optionFloat);
+                            },
+                                [&](auto const &optionValue)
+                            {
+                                outerData += String::Format("    static const int {} = {};\r\n", optionName, optionValue);
                             });
                         }
 
@@ -544,7 +565,7 @@ namespace Gek
                             "\r\n", optionsData);
                     }
 
-                    std::string mode(String::GetLower(passNode.getMember("mode").asType(String::Empty)));
+                    std::string mode(String::GetLower(passNode.getMember("mode"sv).convert(String::Empty)));
                     if (mode == "forward")
                     {
                         pass.mode = Pass::Mode::Forward;
@@ -560,7 +581,7 @@ namespace Gek
 
                     if (pass.mode == Pass::Mode::Compute)
                     {
-                        auto &dispatchNode = passNode.getMember("dispatch");
+                        auto &dispatchNode = passNode.getMember("dispatch"sv);
                         if (dispatchNode.isType<JSON::Array>())
                         {
                             auto &dispatchArray = dispatchNode.asType(JSON::EmptyArray);
@@ -600,7 +621,7 @@ namespace Gek
 
                         std::string outputData;
                         uint32_t currentStage = 0;
-                        std::unordered_map<std::string, std::string> renderTargetsMap = getAliasedMap(passNode, "targets");
+                        std::unordered_map<std::string, std::string> renderTargetsMap = getAliasedMap(passNode.getMember("targets"sv));
                         if (!renderTargetsMap.empty())
                         {
                             for (auto &renderTarget : renderTargetsMap)
@@ -635,13 +656,13 @@ namespace Gek
                         }
 
                         Video::DepthState::Description depthStateInformation;
-                        if (passObject.count("depthStyle"s))
+                        if (passObject.count("depthStyle"))
                         {
-                            auto &depthStyleNode = passNode.getMember("depthStyle"s);
-                            auto camera = String::GetLower(depthStyleNode.getMember("camera"s).asType("perspective"s));
-                            if (camera == "perspective"s)
+                            auto &depthStyleNode = passNode.getMember("depthStyle"sv);
+                            auto camera = String::GetLower(depthStyleNode.getMember("camera"sv).convert("perspective"sv));
+                            if (camera == "perspective"sv)
                             {
-                                auto invertedDepthBuffer = core->getOption("render"s, "invertedDepthBuffer"s).asType(true);
+                                auto invertedDepthBuffer = core->getOption("render"sv, "invertedDepthBuffer"sv).convert(true);
 
                                 depthStateInformation.enable = true;
                                 depthStateInformation.writeMask = Video::DepthState::Write::All;
@@ -654,7 +675,7 @@ namespace Gek
                                     depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
                                 }
 
-                                auto clear = depthStyleNode.getMember("clear"s).asType(false);
+                                auto clear = depthStyleNode.getMember("clear"sv).convert(false);
                                 if (clear)
                                 {
                                     pass.clearDepthValue = (invertedDepthBuffer ? 0.0f : 1.0f);
@@ -664,9 +685,9 @@ namespace Gek
                         }
                         else
                         {
-                            auto &depthStateNode = passNode.getMember("depthState"s);
+                            auto &depthStateNode = passNode.getMember("depthState"sv);
                             depthStateInformation.load(depthStateNode, passOptions);
-                            pass.clearDepthValue = depthStateNode.getMember("clear"s).asType(Math::Infinity);
+                            pass.clearDepthValue = depthStateNode.getMember("clear"sv).convert(Math::Infinity);
                             if (pass.clearDepthValue != Math::Infinity)
                             {
                                 pass.clearDepthFlags |= Video::ClearFlags::Depth;
@@ -675,7 +696,7 @@ namespace Gek
 
 						if (depthStateInformation.enable)
 						{
-                            auto depthBuffer = passNode.getMember("depthBuffer").asType(String::Empty);
+                            auto depthBuffer = passNode.getMember("depthBuffer"sv).convert(String::Empty);
 							auto depthBufferSearch = resourceMap.find(depthBuffer);
                             if (depthBufferSearch != std::end(resourceMap))
                             {
@@ -688,25 +709,25 @@ namespace Gek
                         }
 
                         Video::BlendState::Description blendStateInformation;
-                        blendStateInformation.load(passNode.getMember("blendState"), passOptions);
+                        blendStateInformation.load(passNode.getMember("blendState"sv), passOptions);
 
                         Video::RenderState::Description renderStateInformation;
-                        renderStateInformation.load(passNode.getMember("renderState"), passOptions);
+                        renderStateInformation.load(passNode.getMember("renderState"sv), passOptions);
 
                         pass.depthState = resources->createDepthState(depthStateInformation);
                         pass.blendState = resources->createBlendState(blendStateInformation);
                         pass.renderState = resources->createRenderState(renderStateInformation);
                     }
 
-                    for (auto &baseClearTargetNode : passNode.getMember("clear").asType(JSON::EmptyObject))
+                    for (auto &baseClearTargetNode : passNode.getMember("clear"sv).asType(JSON::EmptyObject))
                     {
                         auto resourceName = baseClearTargetNode.first;
                         auto resourceSearch = resourceMap.find(resourceName);
                         if (resourceSearch != std::end(resourceMap))
                         {
                             JSON clearTargetNode(baseClearTargetNode.second);
-                            auto clearType = getClearType(clearTargetNode.getMember("type").asType(String::Empty));
-                            auto clearValue = clearTargetNode.getMember("value").asType(String::Empty);
+                            auto clearType = getClearType(clearTargetNode.getMember("type"sv).convert(String::Empty));
+                            auto clearValue = clearTargetNode.getMember("value"sv).convert(String::Empty);
                             pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(clearType, clearValue)));
                         }
                         else
@@ -715,10 +736,10 @@ namespace Gek
                         }
                     }
 
-                    for (auto &baseGenerateMipMapsNode : passNode.getMember("generateMipMaps").asType(JSON::EmptyArray))
+                    for (auto &baseGenerateMipMapsNode : passNode.getMember("generateMipMaps"sv).asType(JSON::EmptyArray))
                     {
                         JSON generateMipMapNode(baseGenerateMipMapsNode);
-                        auto resourceName = generateMipMapNode.asType(String::Empty);
+                        auto resourceName = generateMipMapNode.convert(String::Empty);
                         auto resourceSearch = resourceMap.find(resourceName);
                         if (resourceSearch != std::end(resourceMap))
                         {
@@ -730,14 +751,14 @@ namespace Gek
                         }
                     }
 
-                    for (auto &baseCopyNode : passNode.getMember("copy").asType(JSON::EmptyObject))
+                    for (auto &baseCopyNode : passNode.getMember("copy"sv).asType(JSON::EmptyObject))
                     {
                         auto targetResourceName = baseCopyNode.first;
                         auto nameSearch = resourceMap.find(targetResourceName);
                         if (nameSearch != std::end(resourceMap))
                         {
                             JSON copyNode(baseCopyNode.second);
-                            auto sourceResourceName = copyNode.asType(String::Empty);
+                            auto sourceResourceName = copyNode.convert(String::Empty);
                             auto valueSearch = resourceMap.find(sourceResourceName);
                             if (valueSearch != std::end(resourceMap))
                             {
@@ -754,14 +775,14 @@ namespace Gek
                         }
                     }
 
-                    for (auto &baseResolveNode : passNode.getMember("resolve").asType(JSON::EmptyObject))
+                    for (auto &baseResolveNode : passNode.getMember("resolve"sv).asType(JSON::EmptyObject))
                     {
                         auto targetResourceName = baseResolveNode.first;
                         auto nameSearch = resourceMap.find(targetResourceName);
                         if (nameSearch != std::end(resourceMap))
                         {
                             JSON resolveNode(baseResolveNode.second);
-                            auto sourceResourceName = resolveNode.asType(String::Empty);
+                            auto sourceResourceName = resolveNode.convert(String::Empty);
                             auto valueSearch = resourceMap.find(sourceResourceName);
                             if (valueSearch != std::end(resourceMap))
                             {
@@ -817,7 +838,7 @@ namespace Gek
                         }
                     }
 
-                    std::unordered_map<std::string, std::string> resourceAliasMap = getAliasedMap(passNode, "resources");
+                    std::unordered_map<std::string, std::string> resourceAliasMap = getAliasedMap(passNode.getMember("resources"sv));
                     for (auto &resourcePair : resourceAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);
@@ -851,7 +872,7 @@ namespace Gek
                         nextUnorderedStage = pass.renderTargetList.size();
                     }
 
-                    std::unordered_map<std::string, std::string> unorderedAccessAliasMap = getAliasedMap(passNode, "unorderedAccess");
+                    std::unordered_map<std::string, std::string> unorderedAccessAliasMap = getAliasedMap(passNode.getMember("unorderedAccess"sv));
                     for (auto &resourcePair : unorderedAccessAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);

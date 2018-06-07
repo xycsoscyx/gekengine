@@ -472,7 +472,7 @@ namespace Gek
 
 				GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Newton"sv, "Update"sv, Profiler::EmptyArguments)
 				{
-					bool editorActive = core->getOption("editor", "active").asType(false);
+					bool editorActive = core->getOption("editor", "active").convert(false);
 					if (frameTime > 0.0f && !editorActive)
 					{
 						static constexpr float StepTime = (1.0f / 120.0f);
@@ -526,15 +526,15 @@ namespace Gek
 
                     JSON materialNode;
                     materialNode.load(getContext()->findDataPath(FileSystem::CombinePaths("materials", surfaceName).withExtension(".json")));
-                    auto surfaceNode = materialNode.getMember("surface");
+                    auto surfaceNode = materialNode.getMember("surface"sv);
                     if (surfaceNode.isType<JSON::Object>())
                     {
                         Surface surface;
-                        surface.ghost = surfaceNode.getMember("ghost").asType(surface.ghost);
-                        surface.staticFriction = surfaceNode.getMember("static_friction").asType(surface.staticFriction);
-                        surface.kineticFriction = surfaceNode.getMember("kinetic_friction").asType(surface.kineticFriction);
-                        surface.elasticity = surfaceNode.getMember("elasticity").asType(surface.elasticity);
-                        surface.softness = surfaceNode.getMember("softness").asType(surface.softness);
+                        surface.ghost = surfaceNode.getMember("ghost"sv).convert(surface.ghost);
+                        surface.staticFriction = surfaceNode.getMember("static_friction"sv).convert(surface.staticFriction);
+                        surface.kineticFriction = surfaceNode.getMember("kinetic_friction"sv).convert(surface.kineticFriction);
+                        surface.elasticity = surfaceNode.getMember("elasticity"sv).convert(surface.elasticity);
+                        surface.softness = surfaceNode.getMember("softness"sv).convert(surface.softness);
 
                         surfaceIndex = surfaceList.size();
                         surfaceList.push_back(surface);

@@ -1020,29 +1020,29 @@ namespace Gek
                     switch (parametersArray.size())
                     {
                     case 1:
-                        data.push_back(parametersArray.at(0).asType(255));
+                        data.push_back(parametersArray.at(0).convert(255));
                         description.format = Video::Format::R8_UNORM;
                         break;
 
                     case 2:
-                        data.push_back(parametersArray.at(0).asType(255));
-                        data.push_back(parametersArray.at(1).asType(255));
+                        data.push_back(parametersArray.at(0).convert(255));
+                        data.push_back(parametersArray.at(1).convert(255));
                         description.format = Video::Format::R8G8_UNORM;
                         break;
 
                     case 3:
-                        data.push_back(parametersArray.at(0).asType(255));
-                        data.push_back(parametersArray.at(1).asType(255));
-                        data.push_back(parametersArray.at(2).asType(255));
+                        data.push_back(parametersArray.at(0).convert(255));
+                        data.push_back(parametersArray.at(1).convert(255));
+                        data.push_back(parametersArray.at(2).convert(255));
                         data.push_back(0);
                         description.format = Video::Format::R8G8B8A8_UNORM;
                         break;
 
                     case 4:
-                        data.push_back(parametersArray.at(0).asType(255));
-                        data.push_back(parametersArray.at(1).asType(255));
-                        data.push_back(parametersArray.at(2).asType(255));
-                        data.push_back(parametersArray.at(3).asType(255));
+                        data.push_back(parametersArray.at(0).convert(255));
+                        data.push_back(parametersArray.at(1).convert(255));
+                        data.push_back(parametersArray.at(2).convert(255));
+                        data.push_back(parametersArray.at(3).convert(255));
                         description.format = Video::Format::R8G8B8A8_UNORM;
                         break;
 
@@ -1086,7 +1086,7 @@ namespace Gek
                 }
                 else if (lowerPattern == "system")
                 {
-                    std::string type(String::GetLower(parameters.asType(String::Empty)));
+                    std::string type(String::GetLower(parameters.convert(String::Empty)));
                     if (type == "debug")
                     {
                         data.push_back(255);    data.push_back(0);      data.push_back(255);    data.push_back(255);
@@ -1108,7 +1108,7 @@ namespace Gek
                 }
 
                 description.flags = Video::Texture::Flags::Resource;
-                std::string name(String::Format("{}:{}", pattern, parameters.asType(String::Empty)));
+                std::string name(String::Format("{}:{}", pattern, parameters.convert(String::Empty)));
                 auto hash = GetHash(name);
 
                 auto resource = dynamicCache.getHandle(hash, 0, [this, name, description, data = move(data)](ResourceHandle)->Video::TexturePtr

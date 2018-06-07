@@ -38,10 +38,10 @@ namespace Gek
 				std::vector<Video::InputElement> elementList;
 
                 uint32_t inputIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
-                for (auto &elementNode : visualNode.getMember("input").asType(JSON::EmptyArray))
+                for (auto &elementNode : visualNode.getMember("input"sv).asType(JSON::EmptyArray))
                 {
-                    std::string elementName(elementNode.getMember("name").asType(String::Empty));
-                    std::string systemType(String::GetLower(elementNode.getMember("system").asType(String::Empty)));
+                    std::string elementName(elementNode.getMember("name"sv).convert(String::Empty));
+                    std::string systemType(String::GetLower(elementNode.getMember("system"sv).convert(String::Empty)));
                     if (systemType == "instanceindex")
                     {
                         inputVertexData += String::Format("    uint {} : SV_InstanceId;\r\n", elementName);
@@ -57,12 +57,12 @@ namespace Gek
                     else
                     {
                         Video::InputElement element;
-                        element.format = Video::GetFormat(elementNode.getMember("format").asType(String::Empty));
-                        element.semantic = Video::InputElement::GetSemantic(elementNode.getMember("semantic").asType(String::Empty));
-                        element.source = Video::InputElement::GetSource(elementNode.getMember("source").asType(String::Empty));
-                        element.sourceIndex = elementNode.getMember("sourceIndex").asType(0U);
+                        element.format = Video::GetFormat(elementNode.getMember("format"sv).convert(String::Empty));
+                        element.semantic = Video::InputElement::GetSemantic(elementNode.getMember("semantic"sv).convert(String::Empty));
+                        element.source = Video::InputElement::GetSource(elementNode.getMember("source"sv).convert(String::Empty));
+                        element.sourceIndex = elementNode.getMember("sourceIndex"sv).convert(0U);
 
-                        uint32_t count = elementNode.getMember("count").convert(1U);
+                        uint32_t count = elementNode.getMember("count"sv).convert(1U);
                         auto semanticIndex = inputIndexList[static_cast<uint8_t>(element.semantic)];
                         inputIndexList[static_cast<uint8_t>(element.semantic)] += count;
 
@@ -76,11 +76,11 @@ namespace Gek
 
 				std::string outputVertexData;
 				uint32_t outputIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
-				for (auto &elementNode : visualNode.getMember("output").asType(JSON::EmptyArray))
+				for (auto &elementNode : visualNode.getMember("output"sv).asType(JSON::EmptyArray))
 				{
-                    std::string elementName(elementNode.getMember("name").asType(String::Empty));
-                    Video::Format format = Video::GetFormat(elementNode.getMember("format").asType(String::Empty));
-					auto semantic = Video::InputElement::GetSemantic(elementNode.getMember("semantic").asType(String::Empty));
+                    std::string elementName(elementNode.getMember("name"sv).convert(String::Empty));
+                    Video::Format format = Video::GetFormat(elementNode.getMember("format"sv).convert(String::Empty));
+					auto semantic = Video::InputElement::GetSemantic(elementNode.getMember("semantic"sv).convert(String::Empty));
                     uint32_t count = elementNode.getMember("count").convert(1U);
                     auto semanticIndex = outputIndexList[static_cast<uint8_t>(semantic)];
                     outputIndexList[static_cast<uint8_t>(semantic)] += count;
@@ -106,9 +106,9 @@ namespace Gek
 					"    return outputVertex;\r\n" \
 					"}\r\n", inputVertexData, outputVertexData);
 
-                auto vertexNode = visualNode.getMember("vertex");
-                std::string vertexEntry(vertexNode.getMember("entry").asType(String::Empty));
-                std::string vertexProgram(vertexNode.getMember("program").asType(String::Empty));
+                auto vertexNode = visualNode.getMember("vertex"sv);
+                std::string vertexEntry(vertexNode.getMember("entry"sv).convert(String::Empty));
+                std::string vertexProgram(vertexNode.getMember("program"sv).convert(String::Empty));
                 std::string vertexFileName(FileSystem::CombinePaths(visualName, vertexProgram).withExtension(".hlsl").getString());
 				this->vertexProgram = resources->getProgram(Video::Program::Type::Vertex, vertexFileName, vertexEntry, engineData);
                 if (!elementList.empty() && this->vertexProgram)
@@ -116,9 +116,9 @@ namespace Gek
 					inputLayout = videoDevice->createInputLayout(elementList, this->vertexProgram->getInformation());
 				}
 
-                auto geometryNode = visualNode.getMember("geometry");
-                std::string geometryEntry(geometryNode.getMember("entry").asType(String::Empty));
-                std::string geometryProgram(geometryNode.getMember("program").asType(String::Empty));
+                auto geometryNode = visualNode.getMember("geometry"sv);
+                std::string geometryEntry(geometryNode.getMember("entry"sv).convert(String::Empty));
+                std::string geometryProgram(geometryNode.getMember("program"sv).convert(String::Empty));
                 if (!geometryEntry.empty() && !geometryProgram.empty())
                 {
                     std::string geometryFileName(FileSystem::CombinePaths(visualName, geometryProgram).withExtension(".hlsl").getString());

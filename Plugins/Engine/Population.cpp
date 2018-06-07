@@ -238,10 +238,10 @@ namespace Gek
 
                     JSON worldNode;
                     worldNode.load(getContext()->findDataPath(FileSystem::CombinePaths("scenes", populationName).withExtension(".json")));
-                    shuntingYard.setRandomSeed(worldNode.getMember("Seed").asType(uint32_t(std::time(nullptr) & 0xFFFFFFFF)));
+                    shuntingYard.setRandomSeed(worldNode.getMember("Seed"sv).convert(uint32_t(std::time(nullptr) & 0xFFFFFFFF)));
 
-                    auto templatesNode = worldNode.getMember("Templates");
-                    auto &populationNode = worldNode.getMember("Population");
+                    auto templatesNode = worldNode.getMember("Templates"sv);
+                    auto &populationNode = worldNode.getMember("Population"sv);
                     auto &populationArray = populationNode.asType(JSON::EmptyArray);
                     LockedWrite{ std::cout } << "Found " << populationArray.size() << " Entity Definitions";
                     for (auto const &entityNode : populationArray)
@@ -253,22 +253,22 @@ namespace Gek
                         if (templateSearch != std::end(entityObject))
                         {
                             std::string templateName;
-                            auto &entityTemplateNode = entityNode.getMember("Template");
+                            auto &entityTemplateNode = entityNode.getMember("Template"sv);
                             auto &entityTemplateObject = entityTemplateNode.asType(JSON::EmptyObject);
                             if (entityTemplateNode.isType<std::string>())
                             {
-                                templateName = entityTemplateNode.asType(String::Empty);
+                                templateName = entityTemplateNode.convert(String::Empty);
                             }
                             else
                             {
                                 if (entityTemplateObject.count("Base"))
                                 {
-                                    templateName = entityTemplateNode.getMember("Base").asType(String::Empty);
+                                    templateName = entityTemplateNode.getMember("Base"sv).convert(String::Empty);
                                 }
 
                                 if (entityTemplateObject.count("Count"))
                                 {
-                                    count = entityTemplateNode.getMember("Count").asType(0);
+                                    count = entityTemplateNode.getMember("Count"sv).convert(0);
                                 }
                             }
 
@@ -285,11 +285,11 @@ namespace Gek
                         {
                             auto &componentDefiniti9on = entityDefinition[componentPair.first];
                             componentPair.second.visit(
-                                [&](JSON::Object const &visitedData)
+                                [&](JSON::Object const &componentObject)
                             {
-                                for (auto const &attribute : visitedData)
+                                for (auto const &attributePair : componentObject)
                                 {
-                                    componentDefiniti9on[attribute.first] = attribute.second;
+                                    componentDefiniti9on[attributePair.first] = attributePair.second;
                                 }
                             },
                                 [&](auto const &visitedData)

@@ -20,13 +20,16 @@
 
 namespace Gek
 {
-    __inline bool GetValueOrDefault(bool const &value, bool defaultValue)
+    __inline bool GetValueOrDefault(std::string const &value, bool defaultValue)
     {
-        return value;
+        std::istringstream stream(String::GetLower(value));
+        bool result = defaultValue;
+        stream >> std::boolalpha >> result;
+        return result;
     }
 
-    template <typename SOURCE_TYPE>
-    bool GetValueOrDefault(SOURCE_TYPE const &value, bool defaultValue)
+    template <typename TARGET_TYPE>
+    TARGET_TYPE GetValueOrDefault(std::nullptr_t const &, TARGET_TYPE defaultValue)
     {
         return defaultValue;
     }
@@ -75,86 +78,8 @@ namespace Gek
         using FUNCTION::operator();
     };
 
-    template<typename> struct FunctionTraits;
-
-    template <typename FUNCTION>
-    struct FunctionTraits
-        : public FunctionTraits<decltype(&FUNCTION::operator())>
-    {
-    };
-
-    template <typename CLASS_TYPE, typename RETURN_TYPE, typename... ARGUMENTS>
-    struct FunctionTraits<RETURN_TYPE(CLASS_TYPE::*)(ARGUMENTS...) const>
-    {
-        typedef RETURN_TYPE ReturnType;
-
-        template <std::size_t INDEX>
-        using Argument = typename std::tuple_element<INDEX, std::tuple<ARGUMENTS...>>::type;
-        static const std::size_t Arity = sizeof...(ARGUMENTS);
-    };
-
-    template <typename RETURN_TYPE, typename... ARGUMENTS  >
-    struct FunctionTraits<RETURN_TYPE(ARGUMENTS...)>
-    {
-        constexpr static const std::size_t Arity = sizeof...(ARGUMENTS);
-        using ReturnType = RETURN_TYPE;
-    };
-
-    template <typename RETURN_TYPE, typename... ARGUMENTS>
-    struct FunctionTraits<RETURN_TYPE(ARGUMENTS...) const >
-        : FunctionTraits<RETURN_TYPE(ARGUMENTS...)>
-    {
-    };
-
-    template <typename RETURN_TYPE, typename... ARGUMENTS>
-    struct FunctionTraits<RETURN_TYPE(ARGUMENTS...) & >
-        : FunctionTraits<RETURN_TYPE(ARGUMENTS...)>
-    {
-    };
-
-    template <typename RETURN_TYPE, typename... ARGUMENTS>
-    struct FunctionTraits<RETURN_TYPE(ARGUMENTS...) const & >
-        : FunctionTraits<RETURN_TYPE(ARGUMENTS...)>
-    {
-    };
-
-    template <typename RETURN_TYPE, typename... ARGUMENTS>
-    struct FunctionTraits<RETURN_TYPE(ARGUMENTS...) && >
-        : FunctionTraits<RETURN_TYPE(ARGUMENTS...)>
-    {
-    };
-
-    template <typename RETURN_TYPE, typename... ARGUMENTS>
-    struct FunctionTraits<RETURN_TYPE(ARGUMENTS...) const && >
-        : FunctionTraits<RETURN_TYPE(ARGUMENTS...)>
-    {
-    };
-
-    template <class FIRST_FUNCTION, class... ADDITIONAL_FUNCTIONS>
-    struct GetFirstReturnType
-    {
-        using ReturnType = typename FunctionTraits<FIRST_FUNCTION>::ReturnType;
-    };
-
     class JSON
     {
-    private:
-        struct EmptyData
-        {
-        };
-
-        template <class... FUNCTIONS>
-        auto visitWithEmpty(FUNCTIONS... functions)
-        {
-            return std::visit(Overload<FUNCTIONS...>(functions...), data);
-        }
-
-        template <class... FUNCTIONS>
-        auto visitWithEmpty(FUNCTIONS... functions) const
-        {
-            return std::visit(Overload<FUNCTIONS...>(functions...), data);
-        }
-
     public:
         using Array = std::vector<JSON>;
         using Object = std::unordered_map<std::string, JSON>;
@@ -164,10 +89,15 @@ namespace Gek
         static const JSON Empty;
 
     private:
-        std::variant<EmptyData, bool, int32_t, uint32_t, int64_t, uint64_t, float, std::string, Array, Object> data;
+        std::variant<std::nullptr_t, bool, int32_t, uint32_t, int64_t, uint64_t, float, std::string, Array, Object> data;
 
     public:
         JSON(void)
+        {
+        }
+
+        JSON(JSON const &node)
+            : data(node.data)
         {
         }
 
@@ -185,15 +115,13 @@ namespace Gek
         template <class... FUNCTIONS>
         auto visit(FUNCTIONS&&... functions)
         {
-            using ReturnType = typename GetFirstReturnType<FUNCTIONS...>::ReturnType;
-            return visitWithEmpty(functions..., [&](EmptyData const &) -> ReturnType { return ReturnType(); });
+            return std::visit(Overload<FUNCTIONS...>(functions...), data);
         }
 
         template <class... FUNCTIONS>
         auto visit(FUNCTIONS&&... functions) const
         {
-            using ReturnType = typename GetFirstReturnType<FUNCTIONS...>::ReturnType;
-            return visitWithEmpty(functions..., [&](EmptyData const &) -> ReturnType { return ReturnType(); });
+            return std::visit(Overload<FUNCTIONS...>(functions...), data);
         }
 
         template <typename TYPE>
@@ -272,6 +200,11 @@ namespace Gek
 
 namespace std
 {
+    inline std::string to_string(std::nullptr_t const &)
+    {
+        return "null"s;
+    }
+
     inline std::string to_string(Gek::JSON const &data)
     {
         return data.getString();
