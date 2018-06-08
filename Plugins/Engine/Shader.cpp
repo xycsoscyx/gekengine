@@ -432,9 +432,9 @@ namespace Gek
                                     insertOptions(localOptions, objectPair.first, objectPair.second);
                                 }
                             },
-                                [&](auto const &value)
+                            [&](auto const &value)
                             {
-                                options[name] = String::Format("{}", value);
+                                options[name] = value;
                             });
                         };
 
@@ -462,7 +462,7 @@ namespace Gek
                                     {
                                         auto name = choice.convert(String::Empty);
                                         outerData += String::Format("        static const int {} = {};\r\n", name, choices.size());
-                                        choices.push_back(optionName);
+                                        choices.push_back(name);
                                     }
 
                                     int selection = 0;

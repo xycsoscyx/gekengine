@@ -592,7 +592,8 @@ namespace Gek
                 newtonEntity->onSetTransform(matrixData, threadHandle);
             }
 
-            static int newtonOnAABBOverlap(const NewtonMaterial* const material, const NewtonBody* const body0, const NewtonBody* const body1, int threadHandle)
+            static int newtonOnAABBOverlap(const NewtonJoint* const contact, dFloat timestep, int threadIndex)
+            //static int newtonOnAABBOverlap(const NewtonMaterial* const material, const NewtonBody* const body0, const NewtonBody* const body1, int threadHandle)
             {
                 return 1;
             }

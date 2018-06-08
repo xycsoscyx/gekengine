@@ -19,28 +19,28 @@ namespace Gek
         JSON value;
         switch (object.type_id())
         {
-        case jsoncons::value_type::small_string_t:
-        case jsoncons::value_type::string_t:
+        case jsoncons::json_type_tag::small_string_t:
+        case jsoncons::json_type_tag::string_t:
             value = object.as_string();
             break;
 
-        case jsoncons::value_type::bool_t:
+        case jsoncons::json_type_tag::bool_t:
             value = object.as_bool();
             break;
 
-        case jsoncons::value_type::double_t:
+        case jsoncons::json_type_tag::double_t:
             value = float(object.as_double());
             break;
 
-        case jsoncons::value_type::integer_t:
+        case jsoncons::json_type_tag::integer_t:
             value = object.as_integer();
             break;
 
-        case jsoncons::value_type::uinteger_t:
+        case jsoncons::json_type_tag::uinteger_t:
             value = object.as_uinteger();
             break;
 
-        case jsoncons::value_type::array_t:
+        case jsoncons::json_type_tag::array_t:
             value = JSON::Array(object.size());
             for (size_t index = 0; index < object.size(); ++index)
             {
@@ -49,7 +49,7 @@ namespace Gek
 
             break;
 
-        case jsoncons::value_type::object_t:
+        case jsoncons::json_type_tag::object_t:
             value = JSON::Object();
             for (auto &pair : object.members())
             {
@@ -64,20 +64,23 @@ namespace Gek
 
     void JSON::load(FileSystem::Path const &filePath)
     {
-        std::string object(FileSystem::Load(filePath, String::Empty));
-        std::istringstream dataStream(object);
-        jsoncons::json_decoder<jsoncons::json> decoder;
-        jsoncons::json_reader reader(dataStream, decoder);
+        if (filePath.isFile())
+        {
+            std::string object(FileSystem::Load(filePath, String::Empty));
+            std::istringstream dataStream(object);
+            jsoncons::json_decoder<jsoncons::json> decoder;
+            jsoncons::json_reader reader(dataStream, decoder);
 
-        std::error_code errorCode;
-        reader.read(errorCode);
-        if (errorCode)
-        {
-            LockedWrite{ std::cerr } << errorCode.message() << " at line " << reader.line_number() << ", and column " << reader.column_number();
-        }
-        else
-        {
-            *this = GetFromJSON(decoder.get_result());
+            std::error_code errorCode;
+            reader.read(errorCode);
+            if (errorCode)
+            {
+                LockedWrite{ std::cerr } << errorCode.message() << " at line " << reader.line_number() << ", and column " << reader.column_number() << ", in " << filePath.getString();
+            }
+            else
+            {
+                *this = GetFromJSON(decoder.get_result());
+            }
         }
     }
 
@@ -101,12 +104,12 @@ namespace Gek
             bool writtenPrevious = false;
             for (auto &index : visitedData)
             {
-                stream << index.getString();
                 if (writtenPrevious)
                 {
                     stream << ", ";
                 }
 
+                stream << index.getString();
                 writtenPrevious = true;
             }
 
@@ -121,13 +124,13 @@ namespace Gek
             bool writtenPrevious = false;
             for (auto &index : visitedData)
             {
-                stream << "\"" << index.first << "\": ";
-                stream << index.second.getString();
                 if (writtenPrevious)
                 {
                     stream << ", ";
                 }
 
+                stream << "\"" << index.first << "\": ";
+                stream << index.second.getString();
                 writtenPrevious = true;
             }
 

@@ -20,78 +20,79 @@ namespace Gek
             return oldValue;
         }
 
-		struct ImGuiStyleVarInfo
-		{
-			ImGuiDataType   Type;
-			ImU32           Offset;
-			void*           GetVarPtr(ImGuiStyle* style) const { return (void*)((unsigned char*)style + Offset); }
-		};
+        struct ImGuiStyleVarInfo
+        {
+            ImGuiDataType   Type;
+            ImU32           Count;
+            ImU32           Offset;
+            void*           GetVarPtr(ImGuiStyle* style) const { return (void*)((unsigned char*)style + Offset); }
+        };
 
-		static const ImGuiStyleVarInfo ImGuiStyleVariableInformation[] =
-		{
-			{ ImGuiDataType_Float,  (ImU32)IM_OFFSETOF(ImGuiStyle, Alpha) },                // ImGuiStyleVar_Alpha
-			{ ImGuiDataType_Float2, (ImU32)IM_OFFSETOF(ImGuiStyle, WindowPadding) },        // ImGuiStyleVar_WindowPadding
-			{ ImGuiDataType_Float,  (ImU32)IM_OFFSETOF(ImGuiStyle, WindowRounding) },       // ImGuiStyleVar_WindowRounding
-			{ ImGuiDataType_Float,  (ImU32)IM_OFFSETOF(ImGuiStyle, WindowBorderSize) },     // ImGuiStyleVar_WindowBorderSize
-			{ ImGuiDataType_Float2, (ImU32)IM_OFFSETOF(ImGuiStyle, WindowMinSize) },        // ImGuiStyleVar_WindowMinSize
-			{ ImGuiDataType_Float2, (ImU32)IM_OFFSETOF(ImGuiStyle, WindowTitleAlign) },     // ImGuiStyleVar_WindowTitleAlign
-			{ ImGuiDataType_Float,  (ImU32)IM_OFFSETOF(ImGuiStyle, ChildRounding) },        // ImGuiStyleVar_ChildRounding
-			{ ImGuiDataType_Float,  (ImU32)IM_OFFSETOF(ImGuiStyle, ChildBorderSize) },      // ImGuiStyleVar_ChildBorderSize
-			{ ImGuiDataType_Float,  (ImU32)IM_OFFSETOF(ImGuiStyle, PopupRounding) },        // ImGuiStyleVar_PopupRounding
-			{ ImGuiDataType_Float,  (ImU32)IM_OFFSETOF(ImGuiStyle, PopupBorderSize) },      // ImGuiStyleVar_PopupBorderSize
-			{ ImGuiDataType_Float2, (ImU32)IM_OFFSETOF(ImGuiStyle, FramePadding) },         // ImGuiStyleVar_FramePadding
-			{ ImGuiDataType_Float,  (ImU32)IM_OFFSETOF(ImGuiStyle, FrameRounding) },        // ImGuiStyleVar_FrameRounding
-			{ ImGuiDataType_Float,  (ImU32)IM_OFFSETOF(ImGuiStyle, FrameBorderSize) },      // ImGuiStyleVar_FrameBorderSize
-			{ ImGuiDataType_Float2, (ImU32)IM_OFFSETOF(ImGuiStyle, ItemSpacing) },          // ImGuiStyleVar_ItemSpacing
-			{ ImGuiDataType_Float2, (ImU32)IM_OFFSETOF(ImGuiStyle, ItemInnerSpacing) },     // ImGuiStyleVar_ItemInnerSpacing
-			{ ImGuiDataType_Float,  (ImU32)IM_OFFSETOF(ImGuiStyle, IndentSpacing) },        // ImGuiStyleVar_IndentSpacing
-			{ ImGuiDataType_Float,  (ImU32)IM_OFFSETOF(ImGuiStyle, ScrollbarSize) },        // ImGuiStyleVar_ScrollbarSize
-			{ ImGuiDataType_Float,  (ImU32)IM_OFFSETOF(ImGuiStyle, ScrollbarRounding) },    // ImGuiStyleVar_ScrollbarRounding
-			{ ImGuiDataType_Float,  (ImU32)IM_OFFSETOF(ImGuiStyle, GrabMinSize) },          // ImGuiStyleVar_GrabMinSize
-			{ ImGuiDataType_Float,  (ImU32)IM_OFFSETOF(ImGuiStyle, GrabRounding) },         // ImGuiStyleVar_GrabRounding
-			{ ImGuiDataType_Float2, (ImU32)IM_OFFSETOF(ImGuiStyle, ButtonTextAlign) },      // ImGuiStyleVar_ButtonTextAlign
-		};
+        static const ImGuiStyleVarInfo GStyleVarInfo[] =
+        {
+            { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, Alpha) },              // ImGuiStyleVar_Alpha
+            { ImGuiDataType_Float, 2, (ImU32)IM_OFFSETOF(ImGuiStyle, WindowPadding) },      // ImGuiStyleVar_WindowPadding
+            { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, WindowRounding) },     // ImGuiStyleVar_WindowRounding
+            { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, WindowBorderSize) },   // ImGuiStyleVar_WindowBorderSize
+            { ImGuiDataType_Float, 2, (ImU32)IM_OFFSETOF(ImGuiStyle, WindowMinSize) },      // ImGuiStyleVar_WindowMinSize
+            { ImGuiDataType_Float, 2, (ImU32)IM_OFFSETOF(ImGuiStyle, WindowTitleAlign) },   // ImGuiStyleVar_WindowTitleAlign
+            { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, ChildRounding) },      // ImGuiStyleVar_ChildRounding
+            { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, ChildBorderSize) },    // ImGuiStyleVar_ChildBorderSize
+            { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, PopupRounding) },      // ImGuiStyleVar_PopupRounding
+            { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, PopupBorderSize) },    // ImGuiStyleVar_PopupBorderSize
+            { ImGuiDataType_Float, 2, (ImU32)IM_OFFSETOF(ImGuiStyle, FramePadding) },       // ImGuiStyleVar_FramePadding
+            { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, FrameRounding) },      // ImGuiStyleVar_FrameRounding
+            { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, FrameBorderSize) },    // ImGuiStyleVar_FrameBorderSize
+            { ImGuiDataType_Float, 2, (ImU32)IM_OFFSETOF(ImGuiStyle, ItemSpacing) },        // ImGuiStyleVar_ItemSpacing
+            { ImGuiDataType_Float, 2, (ImU32)IM_OFFSETOF(ImGuiStyle, ItemInnerSpacing) },   // ImGuiStyleVar_ItemInnerSpacing
+            { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, IndentSpacing) },      // ImGuiStyleVar_IndentSpacing
+            { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, ScrollbarSize) },      // ImGuiStyleVar_ScrollbarSize
+            { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, ScrollbarRounding) },  // ImGuiStyleVar_ScrollbarRounding
+            { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, GrabMinSize) },        // ImGuiStyleVar_GrabMinSize
+            { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, GrabRounding) },       // ImGuiStyleVar_GrabRounding
+            { ImGuiDataType_Float, 2, (ImU32)IM_OFFSETOF(ImGuiStyle, ButtonTextAlign) },    // ImGuiStyleVar_ButtonTextAlign
+        };
 
-		static ImGuiStyleVarInfo const * GetStyleVarInfo(ImGuiStyleVar index)
-		{
-			IM_ASSERT(index >= 0 && index < ImGuiStyleVar_Count_);
-			IM_ASSERT(IM_ARRAYSIZE(ImGuiStyleVariableInformation) == ImGuiStyleVar_Count_);
-			return &ImGuiStyleVariableInformation[index];
-		}
+        static const ImGuiStyleVarInfo* GetStyleVarInfo(ImGuiStyleVar idx)
+        {
+            IM_ASSERT(idx >= 0 && idx < ImGuiStyleVar_COUNT);
+            IM_ASSERT(IM_ARRAYSIZE(GStyleVarInfo) == ImGuiStyleVar_COUNT);
+            return &GStyleVarInfo[idx];
+        }
 
-		float PushStyleVar(ImGuiStyleVar index, float newValue)
-		{
-			const ImGuiStyleVarInfo* variableInformation = GetStyleVarInfo(index);
-			if (variableInformation->Type == ImGuiDataType_Float)
-			{
-				ImGuiContext& imGuiContext = *GImGui;
-				float* activeValue = (float*)variableInformation->GetVarPtr(&imGuiContext.Style);
-				auto oldValue = *activeValue;
-				imGuiContext.StyleModifiers.push_back(ImGuiStyleMod(index, *activeValue));
-				*activeValue = newValue;
-				return oldValue;
-			}
+        float PushStyleVar(ImGuiStyleVar index, float newValue)
+        {
+            const ImGuiStyleVarInfo* variableInformation = GetStyleVarInfo(index);
+            if (variableInformation->Type == ImGuiDataType_Float && variableInformation->Count == 1)
+            {
+                ImGuiContext& imGuiContext = *GImGui;
+                float* activeValue = (float*)variableInformation->GetVarPtr(&imGuiContext.Style);
+                auto oldValue = *activeValue;
+                imGuiContext.StyleModifiers.push_back(ImGuiStyleMod(index, *activeValue));
+                *activeValue = newValue;
+                return oldValue;
+            }
 
-			IM_ASSERT(0); // Called function with wrong-type? Variable is not a float.
-			return float();
-		}
+            IM_ASSERT(0); // Called function with wrong-type? Variable is not a float.
+            return float();
+        }
 
-		ImVec2 PushStyleVar(ImGuiStyleVar index, const ImVec2& newValue)
-		{
-			const ImGuiStyleVarInfo* variableInformation = GetStyleVarInfo(index);
-			if (variableInformation->Type == ImGuiDataType_Float2)
-			{
-				ImGuiContext& imGuiContext = *GImGui;
-				ImVec2* activeValue = (ImVec2*)variableInformation->GetVarPtr(&imGuiContext.Style);
-				auto oldValue = *activeValue;
-				imGuiContext.StyleModifiers.push_back(ImGuiStyleMod(index, *activeValue));
-				*activeValue = newValue;
-				return oldValue;
-			}
+        ImVec2 PushStyleVar(ImGuiStyleVar index, const ImVec2& newValue)
+        {
+            const ImGuiStyleVarInfo* variableInformation = GetStyleVarInfo(index);
+            if (variableInformation->Type == ImGuiDataType_Float && variableInformation->Count == 2)
+            {
+                ImGuiContext& imGuiContext = *GImGui;
+                ImVec2* activeValue = (ImVec2*)variableInformation->GetVarPtr(&imGuiContext.Style);
+                auto oldValue = *activeValue;
+                imGuiContext.StyleModifiers.push_back(ImGuiStyleMod(index, *activeValue));
+                *activeValue = newValue;
+                return oldValue;
+            }
 
-			IM_ASSERT(0); // Called function with wrong-type? Variable is not a ImVec2.
-			return ImVec2();
-		}
+            IM_ASSERT(0); // Called function with wrong-type? Variable is not a ImVec2.
+            return ImVec2();
+        }
 
         bool InputString(std::string_view label, std::string &string, ImGuiInputTextFlags flags, ImGuiTextEditCallback callback, void *userData)
         {
@@ -236,50 +237,50 @@ namespace Gek
             return isChanged;
         }
 
-		bool ToggleButton(char const *label, bool *state)
-		{
-			ImVec2 cursorPosition = ImGui::GetCursorScreenPos();
-			ImDrawList* drawList = ImGui::GetWindowDrawList();
+        bool ToggleButton(char const *label, bool *state)
+        {
+            ImVec2 cursorPosition = ImGui::GetCursorScreenPos();
+            ImDrawList* drawList = ImGui::GetWindowDrawList();
 
-			float height = ImGui::GetItemRectSize().y;
-			float width = height * 1.55f;
-			float radius = height * 0.50f;
+            float height = ImGui::GetItemRectSize().y;
+            float width = height * 1.55f;
+            float radius = height * 0.50f;
 
-			ImGui::InvisibleButton(label, ImVec2(width, height));
-			bool changed = ImGui::IsItemClicked();
-			if (changed)
-			{
-				*state = !*state;
-			}
+            ImGui::InvisibleButton(label, ImVec2(width, height));
+            bool changed = ImGui::IsItemClicked();
+            if (changed)
+            {
+                *state = !*state;
+            }
 
-			float t = *state ? 1.0f : 0.0f;
+            float t = *state ? 1.0f : 0.0f;
 
-			ImGuiContext& context = *GImGui;
-			float ANIM_SPEED = 0.08f;
-			/*if (context.LastActiveId == context.CurrentWindow->GetID(label)) && context.LastActiveIdTimer < ANIM_SPEED)
-			{
-				float t_anim = ImSaturate(context.LastActiveIdTimer / ANIM_SPEED);
-				t = *state ? (t_anim) : (1.0f - t_anim);
-			}*/
+            ImGuiContext& context = *GImGui;
+            float ANIM_SPEED = 0.08f;
+            /*if (context.LastActiveId == context.CurrentWindow->GetID(label)) && context.LastActiveIdTimer < ANIM_SPEED)
+            {
+                float t_anim = ImSaturate(context.LastActiveIdTimer / ANIM_SPEED);
+                t = *state ? (t_anim) : (1.0f - t_anim);
+            }*/
 
-			ImU32 col_bg;
-			if (ImGui::IsItemHovered())
-			{
-				static const auto UnClicked = Math::Float4(0.78f, 0.78f, 0.78f, 1.0f);
-				static const auto Clicked = Math::Float4(0.64f, 0.83f, 0.34f, 1.0f);
-				col_bg = ImGui::GetColorU32(*(ImVec4 *)&Math::Blend(UnClicked, Clicked, t));
-			}
-			else
-			{
-				static const auto UnClicked = Math::Float4(0.85f, 0.85f, 0.85f, 1.0f);
-				static const auto Clicked = Math::Float4(0.56f, 0.83f, 0.26f, 1.0f);
-				col_bg = ImGui::GetColorU32(*(ImVec4 *)&Math::Blend(UnClicked, Clicked, t));
-			}
+            ImU32 col_bg;
+            if (ImGui::IsItemHovered())
+            {
+                static const auto UnClicked = Math::Float4(0.78f, 0.78f, 0.78f, 1.0f);
+                static const auto Clicked = Math::Float4(0.64f, 0.83f, 0.34f, 1.0f);
+                col_bg = ImGui::GetColorU32(*(ImVec4 *)&Math::Blend(UnClicked, Clicked, t));
+            }
+            else
+            {
+                static const auto UnClicked = Math::Float4(0.85f, 0.85f, 0.85f, 1.0f);
+                static const auto Clicked = Math::Float4(0.56f, 0.83f, 0.26f, 1.0f);
+                col_bg = ImGui::GetColorU32(*(ImVec4 *)&Math::Blend(UnClicked, Clicked, t));
+            }
 
-			drawList->AddRectFilled(cursorPosition, ImVec2(cursorPosition.x + width, cursorPosition.y + height), col_bg, height * 0.5f);
-			drawList->AddCircleFilled(ImVec2(cursorPosition.x + radius + t * (width - radius * 2.0f), cursorPosition.y + radius), radius - 1.5f, IM_COL32(255, 255, 255, 255));
-			return changed;
-		}
+            drawList->AddRectFilled(cursorPosition, ImVec2(cursorPosition.x + width, cursorPosition.y + height), col_bg, height * 0.5f);
+            drawList->AddCircleFilled(ImVec2(cursorPosition.x + radius + t * (width - radius * 2.0f), cursorPosition.y + radius), radius - 1.5f, IM_COL32(255, 255, 255, 255));
+            return changed;
+        }
 
         bool Input(std::string_view label, bool *value)
         {
@@ -336,5 +337,5 @@ namespace Gek
         {
             return InputString(label, *value);
         }
-}; // namespace UI
+    }; // namespace UI
 }; // namespace Gek
