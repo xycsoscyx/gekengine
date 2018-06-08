@@ -28,8 +28,8 @@ namespace Gek
             bool engineRunning = false;
 
             JSON configuration;
-            JSON shadersSettings;
-            JSON filtersSettings;
+            JSON::Object shadersSettings;
+            JSON::Object filtersSettings;
             bool changedVisualOptions = false;
 
             Video::DisplayModeList displayModeList;
@@ -520,8 +520,8 @@ namespace Gek
                         {
                             showSettings = true;
                             next = previous = current;
-                            shadersSettings = configuration.getMember("shaders"sv);
-                            filtersSettings = configuration.getMember("filters"sv);
+                            shadersSettings = configuration["shaders"sv].makeType<JSON::Object>();
+                            filtersSettings = configuration["filters"sv].makeType<JSON::Object>();
                             changedVisualOptions = false;
                         }
 
@@ -569,193 +569,183 @@ namespace Gek
             {
                 if (dock->BeginTab("Visual", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
                 {
-                    auto showGroup = [&](std::string_view groupName, JSON &groupNode) -> void
+                    std::function<void(JSON::Object &)> showSetting;
+                    showSetting = [&](JSON::Object &settingNode) -> void
                     {
-                        groupNode.visit(
-                            [&](JSON::Object &groupObject)
+                        for (auto &optionPair : settingNode)
                         {
-                            if (ImGui::TreeNodeEx(groupName.data(), ImGuiTreeNodeFlags_Framed))
+                            auto &optionName = optionPair.first;
+                            auto &optionNode = optionPair.second;
+                            auto label(String::Format("##{}{}", optionName, optionName));
+                            optionNode.visit(
+                                [&](JSON::Object &optionObject)
                             {
-                                for (auto &settingPair : groupObject)
+                                auto optionsSearch = optionObject.find("options");
+                                if (optionsSearch != optionObject.end())
                                 {
-                                    if (settingPair.second.isType<JSON::Object>())
+                                    auto optionsNode = optionsSearch->second;
+                                    if (optionsNode.isType<JSON::Array>())
                                     {
-                                        std::function<void(std::string_view, JSON &)> showSetting;
-                                        showSetting = [&](std::string_view settingName, JSON &settingNode) -> void
+                                        std::vector<std::string> optionList;
+                                        for (auto choice : optionsNode.asType(JSON::EmptyArray))
                                         {
-                                            if (ImGui::TreeNodeEx(settingName.data(), ImGuiTreeNodeFlags_Framed))
+                                            optionList.push_back(choice.convert(String::Empty));
+                                        }
+
+                                        int selection = 0;
+                                        auto &selectorSearch = optionObject.find("selection");
+                                        if (selectorSearch != optionObject.end())
+                                        {
+                                            auto selectionNode = selectorSearch->second;
+                                            if (selectionNode.isType<std::string>())
                                             {
-                                                for (auto &optionPair : settingNode.asType(JSON::EmptyObject))
+                                                auto selectedName = selectionNode.convert(String::Empty);
+                                                auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string_view choice) -> bool
                                                 {
-                                                    auto &optionName = optionPair.first;
-                                                    auto &optionNode = optionPair.second;
+                                                    return (selectedName == choice);
+                                                });
 
-                                                    auto label(String::Format("##{}{}", settingName, optionName));
-
-                                                    ImGui::Text(optionName.data());
-                                                    ImGui::SameLine();
-                                                    ImGui::PushItemWidth(-1.0f);
-                                                    optionNode.visit(
-                                                        [&](JSON::Object &optionObject)
-                                                    {
-                                                        auto optionsSearch = optionObject.find("options");
-                                                        if (optionsSearch != optionObject.end())
-                                                        {
-                                                            return;
-                                                        }
-
-                                                        auto optionsNode = optionsSearch->second;
-                                                        if (optionsNode.isType<JSON::Array>())
-                                                        {
-                                                            std::vector<std::string> optionList;
-                                                            for (auto choice : optionsNode.asType(JSON::EmptyArray))
-                                                            {
-                                                                optionList.push_back(choice.convert(String::Empty));
-                                                            }
-
-                                                            int selection = 0;
-                                                            auto &selectorSearch = optionObject.find("selection");
-                                                            if (selectorSearch != optionObject.end())
-                                                            {
-                                                                auto selectionNode = selectorSearch->second;
-                                                                if (selectionNode.isType<std::string>())
-                                                                {
-                                                                    auto selectedName = selectionNode.convert(String::Empty);
-                                                                    auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string_view choice) -> bool
-                                                                    {
-                                                                        return (selectedName == choice);
-                                                                    });
-
-                                                                    if (optionsSearch != std::end(optionList))
-                                                                    {
-                                                                        selection = std::distance(std::begin(optionList), optionsSearch);
-                                                                        optionNode.makeType<JSON::Object>()["selection"] = selection;
-                                                                    }
-                                                                }
-                                                                else
-                                                                {
-                                                                    selection = selectionNode.convert(0U);
-                                                                }
-                                                            }
-
-                                                            if (ImGui::Combo(label.data(), &selection, [](void *userData, int index, char const **outputText) -> bool
-                                                            {
-                                                                auto &optionList = *(std::vector<std::string> *)userData;
-                                                                if (index >= 0 && index < optionList.size())
-                                                                {
-                                                                    *outputText = optionList[index].data();
-                                                                    return true;
-                                                                }
-
-                                                                return false;
-                                                            }, &optionList, optionList.size(), 10))
-                                                            {
-                                                                optionNode.makeType<JSON::Object>()["selection"] = selection;
-                                                                changedVisualOptions = true;
-                                                            }
-                                                        }
-                                                        else
-                                                        {
-                                                            showSetting(optionName, optionNode);
-                                                        }
-                                                    },
-                                                        [&](JSON::Array &optionArray)
-                                                    {
-                                                        switch (optionArray.size())
-                                                        {
-                                                        case 1:
-                                                            [&](void) -> void
-                                                            {
-                                                                float data = optionArray[0].convert(0.0f);
-                                                                if (ImGui::InputFloat(label.data(), &data))
-                                                                {
-                                                                    optionNode = data;
-                                                                    changedVisualOptions = true;
-                                                                }
-                                                            }();
-                                                            break;
-
-                                                        case 2:
-                                                            [&](void) -> void
-                                                            {
-                                                                Math::Float2 data(
-                                                                    optionArray[0].convert(0.0f),
-                                                                    optionArray[1].convert(0.0f));
-                                                                if (ImGui::InputFloat2(label.data(), data.data))
-                                                                {
-                                                                    optionNode = JSON::Array({ data.x, data.y });
-                                                                    changedVisualOptions = true;
-                                                                }
-                                                            }();
-                                                            break;
-
-                                                        case 3:
-                                                            [&](void) -> void
-                                                            {
-                                                                Math::Float3 data(
-                                                                    optionArray[0].convert(0.0f),
-                                                                    optionArray[1].convert(0.0f),
-                                                                    optionArray[2].convert(0.0f));
-                                                                if (ImGui::InputFloat3(label.data(), data.data))
-                                                                {
-                                                                    optionNode = JSON::Array({ data.x, data.y, data.z });
-                                                                    changedVisualOptions = true;
-                                                                }
-                                                            }();
-                                                            break;
-
-                                                        case 4:
-                                                            [&](void) -> void
-                                                            {
-                                                                Math::Float4 data(
-                                                                    optionArray[0].convert(0.0f),
-                                                                    optionArray[1].convert(0.0f),
-                                                                    optionArray[2].convert(0.0f),
-                                                                    optionArray[3].convert(0.0f));
-                                                                if (ImGui::InputFloat4(label.data(), data.data))
-                                                                {
-                                                                    optionNode = JSON::Array({ data.x, data.y, data.z, data.w });
-                                                                    changedVisualOptions = true;
-                                                                }
-                                                            }();
-                                                            break;
-                                                        };
-                                                    },
-                                                        [&](std::nullptr_t const &)
-                                                    {
-                                                    },
-                                                        [&](auto const &optionValue)
-                                                    {
-                                                        auto value = optionValue;
-                                                        if (UI::Input(label, &value))
-                                                        {
-                                                            optionNode = value;
-                                                            changedVisualOptions = true;
-                                                        }
-                                                    });
-
-                                                    ImGui::PopItemWidth();
+                                                if (optionsSearch != std::end(optionList))
+                                                {
+                                                    selection = std::distance(std::begin(optionList), optionsSearch);
+                                                    optionNode.makeType<JSON::Object>()["selection"] = selection;
                                                 }
+                                            }
+                                            else
+                                            {
+                                                selection = selectionNode.convert(0U);
+                                            }
+                                        }
 
-                                                ImGui::TreePop();
+                                        ImGui::Text(optionName.data());
+                                        ImGui::SameLine();
+                                        ImGui::PushItemWidth(-1.0f);
+                                        if (ImGui::Combo(label.data(), &selection, [](void *userData, int index, char const **outputText) -> bool
+                                        {
+                                            auto &optionList = *(std::vector<std::string> *)userData;
+                                            if (index >= 0 && index < optionList.size())
+                                            {
+                                                *outputText = optionList[index].data();
+                                                return true;
                                             }
 
-                                        };
+                                            return false;
+                                        }, &optionList, optionList.size(), 10))
+                                        {
+                                            optionNode.makeType<JSON::Object>()["selection"] = selection;
+                                            changedVisualOptions = true;
+                                        }
 
-                                        showSetting(settingPair.first, settingPair.second);
+                                        ImGui::PopItemWidth();
                                     }
                                 }
+                                else
+                                {
+                                    if (ImGui::TreeNodeEx(optionName.data(), ImGuiTreeNodeFlags_Framed))
+                                    {
+                                        showSetting(optionObject);
+                                        ImGui::TreePop();
+                                    }
+                                }
+                            },
+                                [&](JSON::Array &optionArray)
+                            {
+                                ImGui::Text(optionName.data());
+                                ImGui::SameLine();
+                                ImGui::PushItemWidth(-1.0f);
+                                switch (optionArray.size())
+                                {
+                                case 1:
+                                    [&](void) -> void
+                                    {
+                                        float data = optionArray[0].convert(0.0f);
+                                        if (ImGui::InputFloat(label.data(), &data))
+                                        {
+                                            optionNode = data;
+                                            changedVisualOptions = true;
+                                        }
+                                    }();
+                                    break;
 
-                                ImGui::TreePop();
-                            }
-                        },
-                        [&](auto const &)
-                        {
-                        });
+                                case 2:
+                                    [&](void) -> void
+                                    {
+                                        Math::Float2 data(
+                                            optionArray[0].convert(0.0f),
+                                            optionArray[1].convert(0.0f));
+                                        if (ImGui::InputFloat2(label.data(), data.data))
+                                        {
+                                            optionNode = JSON::Array({ data.x, data.y });
+                                            changedVisualOptions = true;
+                                        }
+                                    }();
+                                    break;
+
+                                case 3:
+                                    [&](void) -> void
+                                    {
+                                        Math::Float3 data(
+                                            optionArray[0].convert(0.0f),
+                                            optionArray[1].convert(0.0f),
+                                            optionArray[2].convert(0.0f));
+                                        if (ImGui::InputFloat3(label.data(), data.data))
+                                        {
+                                            optionNode = JSON::Array({ data.x, data.y, data.z });
+                                            changedVisualOptions = true;
+                                        }
+                                    }();
+                                    break;
+
+                                case 4:
+                                    [&](void) -> void
+                                    {
+                                        Math::Float4 data(
+                                            optionArray[0].convert(0.0f),
+                                            optionArray[1].convert(0.0f),
+                                            optionArray[2].convert(0.0f),
+                                            optionArray[3].convert(0.0f));
+                                        if (ImGui::InputFloat4(label.data(), data.data))
+                                        {
+                                            optionNode = JSON::Array({ data.x, data.y, data.z, data.w });
+                                            changedVisualOptions = true;
+                                        }
+                                    }();
+                                    break;
+                                };
+
+                                ImGui::PopItemWidth();
+                            },
+                                [&](std::nullptr_t const &)
+                            {
+                            },
+                                [&](auto const &optionValue)
+                            {
+                                ImGui::Text(optionName.data());
+                                ImGui::SameLine();
+                                ImGui::PushItemWidth(-1.0f);
+                                auto value = optionValue;
+                                if (UI::Input(label, &value))
+                                {
+                                    optionNode = value;
+                                    changedVisualOptions = true;
+                                }
+
+                                ImGui::PopItemWidth();
+                            });
+                        }
                     };
 
-                    showGroup("shaders", shadersSettings);
-                    showGroup("filters", filtersSettings);
+                    if (ImGui::TreeNodeEx("Shaders", ImGuiTreeNodeFlags_Framed))
+                    {
+                        showSetting(shadersSettings);
+                        ImGui::TreePop();
+                    }
+
+                    if (ImGui::TreeNodeEx("Filters", ImGuiTreeNodeFlags_Framed))
+                    {
+                        showSetting(filtersSettings);
+                        ImGui::TreePop();
+                    }
                 }
 
                 dock->EndTab();
