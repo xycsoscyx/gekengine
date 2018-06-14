@@ -268,7 +268,15 @@ namespace Gek
                     auto enableOption = passNode.getMember("enable"sv).convert(String::Empty);
                     if (!enableOption.empty())
                     {
-                        pass.enabled = rootOptionsNode.getMember(enableOption).convert(true);
+                        String::Replace(enableOption, "::", "|");
+                        auto nameList = String::Split(enableOption, '|');
+                        const JSON *nameNode = &rootOptionsNode;
+                        for (auto &name : nameList)
+                        {
+                            nameNode = &nameNode->getMember(name);
+                        }
+
+                        pass.enabled = nameNode->convert(true);
                         if (!pass.enabled)
                         {
                             continue;

@@ -128,7 +128,7 @@
             ]
         },
         {
-            "enable": "AmbientOcclusion:::Enable",
+            "enable": "AmbientOcclusion::Enable",
             "program": "AmbientCalculation",
             "entry": "mainPixelProgram",
             "resources": [
@@ -140,7 +140,7 @@
             ]
         },
         {
-            "enable": "AmbientOcclusion:::Enable",
+            "enable": "AmbientOcclusion::Enable",
             "program": "AmbientBlur",
             "entry": "mainPixelProgram",
             "resources": [
@@ -157,7 +157,7 @@
             }
         },
         {
-            "enable": "AmbientOcclusion:::Enable",
+            "enable": "AmbientOcclusion::Enable",
             "program": "AmbientBlur",
             "entry": "mainPixelProgram",
             "resources": [
@@ -174,7 +174,7 @@
             }
         },
         {
-            "enable": "AmbientOcclusion:::Enable",
+            "enable": "AmbientOcclusion::Enable",
             "program": "AmbientLighting",
             "entry": "mainPixelProgram",
             "resources": [
