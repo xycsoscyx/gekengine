@@ -93,13 +93,13 @@ namespace Gek
                 rootNode.load(getContext()->findDataPath(FileSystem::CombinePaths("filters", filterName).withExtension(".json")));
 
                 ShuntingYard shuntingYard(population->getShuntingYard());
-                auto &coreOptionsNode = core->getOption("filters", filterName);
+                const auto &coreOptionsNode = core->getOption("filters", filterName);
                 for (auto &coreValuePair : coreOptionsNode.asType(JSON::EmptyObject))
                 {
                     shuntingYard.setVariable(coreValuePair.first, coreValuePair.second.convert(0.0f));
                 }
 
-                auto &rootOptionsNode = rootNode.getMember("options"sv);
+                auto rootOptionsNode = rootNode.getMember("options"sv);
                 auto &rootOptionsObject = rootOptionsNode.asType(JSON::EmptyObject);
                 for (auto &coreValuePair : coreOptionsNode.asType(JSON::EmptyObject))
                 {
@@ -109,26 +109,29 @@ namespace Gek
                 auto importSearch = rootOptionsObject.find("#import");
                 if (importSearch != std::end(rootOptionsObject))
                 {
-                    importSearch->second.visit(
-                        [&](std::string const &importName)
+                    auto importExternal = [&](std::string_view importName) -> void
                     {
                         JSON importOptions;
                         importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", importName).withExtension(".json")));
                         for (auto &importPair : importOptions.asType(JSON::EmptyObject))
                         {
-                            rootOptionsObject[importPair.first] = importPair.second;
+                            if (rootOptionsObject.count(importPair.first) == 0)
+                            {
+                                rootOptionsObject[importPair.first] = importPair.second;
+                            }
                         }
+                    };
+
+                    importSearch->second.visit(
+                        [&](std::string const &importName)
+                    {
+                        importExternal(importName);
                     },
                         [&](JSON::Array const &importArray)
                     {
                         for (auto &importName : importArray)
                         {
-                            JSON importOptions;
-                            importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", importName.convert(String::Empty)).withExtension(".json")));
-                            for (auto &importPair : importOptions.asType(JSON::EmptyObject))
-                            {
-                                rootOptionsObject[importPair.first] = importPair.second;
-                            }
+                            importExternal(importName.convert(String::Empty));
                         }
                     },
                         [&](auto const &)

@@ -346,7 +346,7 @@ namespace Gek
                         auto &optionsArray = optionNode["options"].makeType<JSON::Array>();
 
                         uint32_t selection = selectionNode.convert(0U);
-                        selection = (selection % optionsArray.size());
+                        selection = (++selection % optionsArray.size());
 
                         LockedWrite{ std::cout } << shaderName << ": " << optionName << " changed to " << optionsArray[selection].convert(String::Empty);
 

@@ -106,7 +106,6 @@ namespace Gek
             void reload(void)
             {
                 LockedWrite{ std::cout } << "Loading shader: " << shaderName;
-
 			
                 passList.clear();
                 materialMap.clear();
@@ -119,13 +118,13 @@ namespace Gek
                 outputResource = rootNode.getMember("output"sv).convert(String::Empty);
 
                 ShuntingYard shuntingYard(population->getShuntingYard());
-                auto &coreOptionsNode = core->getOption("shaders", shaderName);
+                const auto &coreOptionsNode = core->getOption("shaders", shaderName);
                 for (const auto &coreValuePair : coreOptionsNode.asType(JSON::EmptyObject))
                 {
                     shuntingYard.setVariable(coreValuePair.first, coreValuePair.second.convert(0.0f));
                 }
 
-                auto &rootOptionsNode = rootNode["options"];
+                auto rootOptionsNode = rootNode["options"];
                 auto &rootOptionsObject = rootOptionsNode.makeType<JSON::Object>();
                 for (const auto &coreValuePair : coreOptionsNode.asType(JSON::EmptyObject))
                 {
@@ -135,26 +134,29 @@ namespace Gek
                 auto importSearch = rootOptionsObject.find("#import");
                 if (importSearch != std::end(rootOptionsObject))
                 {
-                    importSearch->second.visit(
-                        [&](std::string const &importName)
+                    auto importExternal = [&](std::string_view importName) -> void
                     {
                         JSON importOptions;
                         importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", importName).withExtension(".json")));
                         for (auto &importPair : importOptions.asType(JSON::EmptyObject))
                         {
-                            rootOptionsObject[importPair.first] = importPair.second;
+                            if (rootOptionsObject.count(importPair.first) == 0)
+                            {
+                                rootOptionsObject[importPair.first] = importPair.second;
+                            }
                         }
+                    };
+
+                    importSearch->second.visit(
+                        [&](std::string const &importName)
+                    {
+                        importExternal(importName);
                     },
                         [&](JSON::Array const &importArray)
                     {
                         for (auto &importName : importArray)
                         {
-                            JSON importOptions;
-                            importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", importName.convert(String::Empty)).withExtension(".json")));
-                            for (auto &importPair : importOptions.asType(JSON::EmptyObject))
-                            {
-                                rootOptionsObject[importPair.first] = importPair.second;
-                            }
+                            importExternal(importName.convert(String::Empty));
                         }
                     },
                         [&](auto const &)
@@ -164,6 +166,7 @@ namespace Gek
                     rootOptionsObject.erase(importSearch);
                 }
 
+                core->setOption("shaders", shaderName, rootOptionsNode);
                 auto requiredShadesrArray = rootNode.getMember("requires"sv).asType(JSON::EmptyArray);
                 drawOrder = requiredShadesrArray.size();
                 for (auto &requiredShaderNode : requiredShadesrArray)
@@ -904,7 +907,6 @@ namespace Gek
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
 				}
 
-				core->setOption("shaders", shaderName, rootOptionsNode);
 				LockedWrite{ std::cout } << "Shader loaded successfully: " << shaderName;
 			}
 
