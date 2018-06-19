@@ -40,38 +40,33 @@ struct LightData
 
     float getNormalDistributionBeckmann(void)
     {
-        float materialAlphaSquared = square(materialAlpha);
         float NdotHSquared = square(NdotH);
         float NdotHCubed = square(NdotHSquared);
-        return (1.0 / (Math::Pi * materialAlphaSquared * NdotHCubed)) *
-            exp((NdotHSquared - 1.0) / (materialAlphaSquared * NdotHSquared));
+        return saturate((1.0 / (Math::Pi * materialAlpha * NdotHCubed)) * exp((NdotHSquared - 1.0) / (materialAlpha * NdotHSquared)));
     }
 
     float getNormalDistributionGaussian(void)
     {
-        float materialAlphaSquared = square(materialAlpha);
         float thetaH = acos(NdotH);
-        return exp(-thetaH * thetaH / materialAlphaSquared);
+        return exp(-thetaH * thetaH / materialAlpha);
     }
 
     float getNormalDistributionGGX(void)
     {
-        float materialAlphaSquared = square(materialAlpha);
         float NdotHSquared = square(NdotH);
         float TangentNdotHSquared = (1.0 - NdotHSquared) / NdotHSquared;
-        return Math::ReciprocalPi * square(materialRoughness / (NdotHSquared * (materialAlphaSquared + TangentNdotHSquared)));
+        return Math::ReciprocalPi * square(materialRoughness / (NdotHSquared * (materialAlpha + TangentNdotHSquared)));
     }
 
     float getNormalDistributionTrowbridgeReitz(void)
     {
-        float materialAlphaSquared = square(materialAlpha);
         float NdotHSquared = square(NdotH);
-        return materialAlphaSquared / (Math::Pi * square(NdotHSquared * (materialAlphaSquared - 1.0) + 1.0));
+        return materialAlpha / (Math::Pi * square(NdotHSquared * (materialAlpha - 1.0) + 1.0));
     }
 
-    float3 getNormalDistribution(void)
+    float getNormalDistribution(void)
     {
-        float3 normalDistribution;
+        float normalDistribution;
         switch (Options::BRDF::NormalDistribution::Selection)
         {
         case Options::BRDF::NormalDistribution::Beckmann:
@@ -91,7 +86,7 @@ struct LightData
             break;
 
         default:
-            normalDistribution = 0;
+            normalDistribution = 0.0;
             break;
         };
 
@@ -115,8 +110,8 @@ struct LightData
 
     float getGeometricShadowingDuer(void)
     {
-        float3 LplusV = normalize(lightDirection + viewDirection);
-        return dot(LplusV, LplusV) * pow(dot(LplusV, surfaceNormal), 4.0);
+        float3 LplusV = (lightDirection + viewDirection);
+        return dot(LplusV, LplusV) * pow(dot(LplusV, surfaceNormal), -4.0);
     }
 
     float getGeometricShadowingNeumann(void)
@@ -132,15 +127,15 @@ struct LightData
     float getGeometricShadowingModifiedKelemen(void)
     {
         static const float SqureRoot2OverPi = 0.797884560802865; // SqureRoot2OverPi = sqrt(2 / Pi)
-        float modifiedmaterialAlphaSquared = materialRoughness * materialRoughness * SqureRoot2OverPi;
-        float gH = NdotV * modifiedmaterialAlphaSquared + (1.0 - modifiedmaterialAlphaSquared);
+        float k = materialAlpha * SqureRoot2OverPi;
+        float gH = NdotV * k + (1.0 - k);
         return (square(gH) * NdotL);
     }
 
     float getGeometricShadowingCookTorrence(void)
     {
-        float NdotVProduct = (2.0 * (NdotH * NdotV)) / VdotH;
-        float NdotLProduct = (2.0 * (NdotH * NdotL)) / VdotH;
+        float NdotVProduct = 2.0 * NdotH * NdotV / VdotH;
+        float NdotLProduct = 2.0 * NdotH * NdotL / VdotH;
         return min(1.0, min(NdotVProduct, NdotLProduct));
     }
 
@@ -151,48 +146,43 @@ struct LightData
 
     float getGeometricShadowingKurt(void)
     {
-        return (VdotH * pow(NdotL * NdotV, materialRoughness)) / NdotL * NdotV;
+        return NdotL * NdotV / (VdotH * pow(NdotL * NdotV, materialRoughness));
     }
 
     float getGeometricShadowingWalterEtAl(float angle)
     {
-        float materialAlphaSquared = square(materialAlpha);
         float angleSquared = square(angle);
-        return 2.0 / (1.0 + sqrt(1.0 + materialAlphaSquared * (1.0 - angleSquared) / angleSquared));
+        return 2.0 / (1.0 + sqrt(1.0 + materialRoughness * (1.0 - angleSquared) / angleSquared));
     }
 
     float getGeometricShadowingBeckman(float angle)
     {
         float angleSquared = square(angle);
-        float c = angle / (materialAlpha * sqrt(1.0 - angleSquared));
-        float cSquared = square(c);
-        return c < 1.6 ? (((3.535 * c) + (2.181 * cSquared)) / (1.0 + (2.276 * c) + (2.577 * cSquared))) : 1.0;
+        float calulation = (NdotL) / (materialAlpha * sqrt(1 - angleSquared));
+        return calulation < 1.6 ? (((3.535 * calulation) + (2.181 * calulation * calulation)) / (1 + (2.276 * calulation) + (2.577 * calulation * calulation))) : 1.0;
     }
 
     float getGeometricShadowingGGX(float angle)
     {
-        float materialAlphaSquared = square(materialAlpha);
-        return (2.0 * angle) / (angle + sqrt(materialAlphaSquared + ((1.0 - materialAlphaSquared) * square(angle))));
+        float angleSquared = square(angle);
+        return (2.0 * angle) / (angle + sqrt(materialAlpha + (1.0 - materialAlpha) * angleSquared));
     }
 
     float getGeometricShadowingSchlick(float angle)
     {
-        float materialAlphaSquared = square(materialAlpha);
-        return angle / ((angle * (1.0 - materialAlphaSquared)) + materialAlphaSquared);
+        return angle / (angle * (1.0 - materialAlpha) + materialAlpha);
     }
 
     float getGeometricShadowingSchlickBeckman(float angle)
     {
-        static const float SquareRootTwoOverPi = sqrt(2.0 / Math::Pi);
-        float materialAlphaSquared = square(materialAlpha);
-        float k = materialAlphaSquared * SquareRootTwoOverPi;
-        return angle / ((angle * (1.0 - k)) + k);
+        float k = materialAlpha * 0.797884560802865;
+        return angle / (angle * (1.0 - k) + k);
     }
 
     float getGeometricShadowingSchlickGGX(float angle)
     {
-        float k = materialAlpha / 2.0;
-        return angle / ((angle * (1.0 - k)) + k);
+        float k = materialRoughness / 2.0;
+        return angle / (angle * (1.0 - k) + k);
     }
 
     float getGeometricShadowing(void)
@@ -272,15 +262,22 @@ struct LightData
         return geometricShadowing;
     }
 
+    float SchlickFresnel(float i)
+    {
+        float x = clamp(1.0 - i, 0.0, 1.0);
+        float x2 = x * x;
+        return x2 * x2*x;
+    }
+
     float3 getFresnelSchlick(void)
     {
-        return specularRadiance + (1.0 - specularRadiance) * pow(LdotH, 5.0);
+        return specularRadiance + (1.0 - specularRadiance) * SchlickFresnel(LdotH);
     }
 
     float3 getFresnelSphericalGaussian(void)
     {
-        float gaussianPower = ((-5.55473 * LdotH) - 6.98316) * LdotH;
-        return specularRadiance + (1.0 - specularRadiance) * pow(2.0, gaussianPower);
+        float power = ((-5.55473 * LdotH) - 6.98316) * LdotH;
+        return specularRadiance + (1.0 - specularRadiance) * pow(2.0, power);
     }
 
     float3 getFresnel(void)
@@ -318,13 +315,41 @@ struct LightData
         }
     }
 
+    float MixFunction(float i, float j, float x)
+    {
+        return  j * x + i * (1.0 - x);
+    }
+
+    float2 MixFunction(float2 i, float2 j, float x)
+    {
+        return  j * x + i * (1.0h - x);
+    }
+
+    float3 MixFunction(float3 i, float3 j, float x)
+    {
+        return  j * x + i * (1.0h - x);
+    }
+
+    float MixFunction(float4 i, float4 j, float x)
+    {
+        return  j * x + i * (1.0h - x);
+    }
+
+    float F0(void)
+    {
+        // Diffuse fresnel
+        float FresnelLight = SchlickFresnel(NdotL);
+        float FresnelView = SchlickFresnel(NdotV);
+        float FresnelDiffuse90 = 0.5 + 2.0 * LdotH * LdotH * materialRoughness;
+        return MixFunction(1.0, FresnelDiffuse90, FresnelLight) * MixFunction(1.0, FresnelDiffuse90, FresnelView);
+    }
+    
     float3 getIrradiance(float3 _lightDirection, float3 _lightRadiance, float _attenuation)
     {
         lightDirection = _lightDirection;
         lightReflectDirection = reflect(-lightDirection, surfaceNormal);
         lightRadiance = _lightRadiance;
         attenuation = _attenuation;
-        specularRadiance = lerp(lightRadiance, lightRadiance * materialAlbedo, materialMetallic);
         float3 halfDirection = normalize(viewDirection + lightDirection);
         NdotL = saturate(dot(surfaceNormal, lightDirection));
         NdotH = saturate(dot(surfaceNormal, halfDirection));
@@ -332,6 +357,12 @@ struct LightData
         LdotH = saturate(dot(lightDirection, halfDirection));
         LdotV = saturate(dot(lightDirection, viewDirection));
         RdotV = saturate(dot(lightReflectDirection, viewDirection));
+
+        diffuseRadiance = materialAlbedo * (1.0 - materialMetallic);
+        float f0 = F0();
+        diffuseRadiance *= f0;
+
+        specularRadiance = lerp(lightRadiance, materialAlbedo, materialMetallic * 0.5);
 
         switch (Options::BRDF::Debug::Selection)
         {
@@ -350,17 +381,13 @@ struct LightData
 
         float lambert = getLambert();
 
-        float3 diffuseRadiance = lerp(materialAlbedo, 0.0, materialMetallic);
-        float3 diffuseIrradiance = (diffuseRadiance * Math::InversePi);
-
-        float3 specularIrradiance = ((getNormalDistribution() * getGeometricShadowing() * getFresnel()) / (4.0 * NdotV * NdotL));
-
-        /* Maintain energy conservation:
+        float3 specular = ((getNormalDistribution() * getGeometricShadowing() * getFresnel()) / (4.0 * NdotL * NdotV));
+        /* 
+            Maintain energy conservation:
             Energy conservation is a restriction on the reflection model that requires that the total amount of reflected light cannot be more than the incoming light.
             http://www.rorydriscoll.com/2009/01/25/energy-conservation-in-games/
         */
-        diffuseIrradiance *= (1.0 - specularIrradiance);
-        return (diffuseIrradiance + specularIrradiance) * lambert * attenuation;
+        return (diffuseRadiance + specular) * lambert * attenuation;
     }
 };
 
