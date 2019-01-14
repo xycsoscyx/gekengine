@@ -105,7 +105,6 @@ namespace Gek
                 assert(core);
                 assert(newtonWorld);
 
-                NewtonSetSolverModel(newtonWorld, 4);
                 NewtonWorldSetUserData(newtonWorld, static_cast<Newton::World *>(this));
 
                 newtonListener = NewtonWorldAddListener(newtonWorld, "__gek_pre_listener__", this);
@@ -563,7 +562,7 @@ namespace Gek
                     {
                         auto updatePair = static_cast<std::pair<Newton::Entity *, float> *>(userData);
                         updatePair->first->onPreUpdate(updatePair->second, threadIndex);
-                    }, &updatePair);
+                    }, &updatePair, "PreUpdateWorld");
                 }
 
                 NewtonSyncThreadJobs(processor->newtonWorld);
@@ -580,7 +579,7 @@ namespace Gek
                     {
                         auto updatePair = static_cast<std::pair<Newton::Entity *, float> *>(userData);
                         updatePair->first->onPostUpdate(updatePair->second, threadIndex);
-                    }, &updatePair);
+                    }, &updatePair, "PostUpdateWorld");
                 }
 
                 NewtonSyncThreadJobs(processor->newtonWorld);

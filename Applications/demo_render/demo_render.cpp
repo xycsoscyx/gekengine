@@ -263,32 +263,31 @@ namespace Gek
 			samplerStateInformation.addressModeW = Render::SamplerStateInformation::AddressMode::Clamp;
 			gui->samplerState = renderDevice->createSamplerState(samplerStateInformation, "ImGui::Sampler");
 
-			dock = std::make_unique<UI::Dock::WorkSpace>();
-
-			ImGuiIO &imGuiIo = ImGui::GetIO();
-			imGuiIo.KeyMap[ImGuiKey_Tab] = VK_TAB;
-			imGuiIo.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
-			imGuiIo.KeyMap[ImGuiKey_RightArrow] = VK_RIGHT;
-			imGuiIo.KeyMap[ImGuiKey_UpArrow] = VK_UP;
-			imGuiIo.KeyMap[ImGuiKey_DownArrow] = VK_DOWN;
-			imGuiIo.KeyMap[ImGuiKey_PageUp] = VK_PRIOR;
-			imGuiIo.KeyMap[ImGuiKey_PageDown] = VK_NEXT;
-			imGuiIo.KeyMap[ImGuiKey_Home] = VK_HOME;
-			imGuiIo.KeyMap[ImGuiKey_End] = VK_END;
-			imGuiIo.KeyMap[ImGuiKey_Delete] = VK_DELETE;
-			imGuiIo.KeyMap[ImGuiKey_Backspace] = VK_BACK;
-			imGuiIo.KeyMap[ImGuiKey_Enter] = VK_RETURN;
-			imGuiIo.KeyMap[ImGuiKey_Escape] = VK_ESCAPE;
-			imGuiIo.KeyMap[ImGuiKey_A] = 'A';
-			imGuiIo.KeyMap[ImGuiKey_C] = 'C';
-			imGuiIo.KeyMap[ImGuiKey_V] = 'V';
-			imGuiIo.KeyMap[ImGuiKey_X] = 'X';
-			imGuiIo.KeyMap[ImGuiKey_Y] = 'Y';
-			imGuiIo.KeyMap[ImGuiKey_Z] = 'Z';
-
 			gui->context = ImGui::CreateContext();
 			ImGui::Initialize(gui->context);
-			auto fontPath = getContext()->findDataPath("fonts"sv);
+
+            ImGuiIO &imGuiIo = ImGui::GetIO();
+            imGuiIo.KeyMap[ImGuiKey_Tab] = VK_TAB;
+            imGuiIo.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
+            imGuiIo.KeyMap[ImGuiKey_RightArrow] = VK_RIGHT;
+            imGuiIo.KeyMap[ImGuiKey_UpArrow] = VK_UP;
+            imGuiIo.KeyMap[ImGuiKey_DownArrow] = VK_DOWN;
+            imGuiIo.KeyMap[ImGuiKey_PageUp] = VK_PRIOR;
+            imGuiIo.KeyMap[ImGuiKey_PageDown] = VK_NEXT;
+            imGuiIo.KeyMap[ImGuiKey_Home] = VK_HOME;
+            imGuiIo.KeyMap[ImGuiKey_End] = VK_END;
+            imGuiIo.KeyMap[ImGuiKey_Delete] = VK_DELETE;
+            imGuiIo.KeyMap[ImGuiKey_Backspace] = VK_BACK;
+            imGuiIo.KeyMap[ImGuiKey_Enter] = VK_RETURN;
+            imGuiIo.KeyMap[ImGuiKey_Escape] = VK_ESCAPE;
+            imGuiIo.KeyMap[ImGuiKey_A] = 'A';
+            imGuiIo.KeyMap[ImGuiKey_C] = 'C';
+            imGuiIo.KeyMap[ImGuiKey_V] = 'V';
+            imGuiIo.KeyMap[ImGuiKey_X] = 'X';
+            imGuiIo.KeyMap[ImGuiKey_Y] = 'Y';
+            imGuiIo.KeyMap[ImGuiKey_Z] = 'Z';
+
+            auto fontPath = getContext()->findDataPath("fonts"sv);
 			imGuiIo.Fonts->AddFontFromFileTTF(FileSystem::CombinePaths(fontPath, "Ruda-Bold.ttf"sv).getString().data(), 14.0f);
 
 			ImFontConfig fontConfig;
@@ -329,6 +328,8 @@ namespace Gek
 				Core *core = static_cast<Core *>(imGuiIo.UserData);
 				core->renderDrawData(drawData);
 			};
+
+            dock = std::make_unique<UI::Dock::WorkSpace>();
 
 			window->setVisibility(true);
             setFullScreen(configuration.getMember("display"sv).getMember("fullScreen"sv).convert(false));
