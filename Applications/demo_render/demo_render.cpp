@@ -316,7 +316,7 @@ namespace Gek
 
 			imGuiIo.Fonts->TexID = reinterpret_cast<ImTextureID>(&gui->fontTexture);
 
-			ImGui::ResetStyle(ImGuiStyle_OSXInverse);
+			ImGui::ResetStyle(ImGuiStyle_Design);
 			auto &style = ImGui::GetStyle();
 			style.WindowPadding.x = style.WindowPadding.y;
 			style.FramePadding.x = style.FramePadding.y;
@@ -772,7 +772,7 @@ namespace Gek
 				{
 				case Window::Key::Escape:
 					enableInterfaceControl = !enableInterfaceControl;
-					imGuiIo.MouseDrawCursor = false;// enableInterfaceControl;
+					imGuiIo.MouseDrawCursor = enableInterfaceControl;
 					if (enableInterfaceControl)
 					{
 						auto client = window->getClientRectangle();

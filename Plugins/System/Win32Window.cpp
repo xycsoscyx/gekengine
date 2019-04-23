@@ -93,6 +93,7 @@ namespace Gek
                             {
                                 Cursor cursor = Cursor::None;
                                 window->onSetCursor(cursor);
+
                                 if (cursor == Cursor::None)
                                 {
                                     auto cursor = window->getCursorPosition();

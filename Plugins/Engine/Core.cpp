@@ -357,7 +357,7 @@ namespace Gek
                     {
 					case Window::Key::Escape:
                         enableInterfaceControl = !enableInterfaceControl;
-                        imGuiIo.MouseDrawCursor = false;// enableInterfaceControl;
+                        imGuiIo.MouseDrawCursor = enableInterfaceControl;
                         if (enableInterfaceControl)
                         {
                             auto client = window->getClientRectangle();

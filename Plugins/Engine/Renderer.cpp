@@ -702,7 +702,7 @@ namespace Gek
 					renderer->renderUI(drawData);
 				};
 
-				ImGui::ResetStyle(ImGuiStyle_OSXInverse);
+				ImGui::ResetStyle(ImGuiStyle_EdinBlack);
 				auto &style = ImGui::GetStyle();
 				style.WindowPadding.x = style.WindowPadding.y;
 				style.FramePadding.x = style.FramePadding.y;
