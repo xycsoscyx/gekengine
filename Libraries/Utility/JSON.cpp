@@ -11,13 +11,13 @@ namespace Gek
 
     JSON GetFromJSON(jsoncons::json const &object)
     {
-        if (object.is_empty() || object.is_null())
+        if (object.empty() || object.is_null())
         {
             return JSON::Empty;
         }
 
         JSON value;
-        switch (object.get_storage_type())
+        switch (object.type())
         {
         case jsoncons::storage_type::short_string_val:
         case jsoncons::storage_type::long_string_val:
@@ -38,7 +38,7 @@ namespace Gek
             break;
 
         case jsoncons::storage_type::uint64_val:
-            value = object.as_uinteger();
+            value = object.as<uint64_t>();
             break;
 
         case jsoncons::storage_type::array_val:
@@ -52,9 +52,9 @@ namespace Gek
 
         case jsoncons::storage_type::object_val:
             value = JSON::Object();
-            for (auto &pair : object.members())
+            for (auto &pair : object.object_range())
             {
-                value[pair.name()] = GetFromJSON(pair.value());
+                value[pair.key()] = GetFromJSON(pair.value());
             }
 
             break;
@@ -76,7 +76,7 @@ namespace Gek
             reader.read(errorCode);
             if (errorCode)
             {
-                LockedWrite{ std::cerr } << errorCode.message() << " at line " << reader.line_number() << ", and column " << reader.column_number() << ", in " << filePath.getString();
+                LockedWrite{ std::cerr } << errorCode.message() << " at line " << reader.line() << ", and column " << reader.column() << ", in " << filePath.getString();
             }
             else
             {

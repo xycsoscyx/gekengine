@@ -636,7 +636,7 @@ namespace Gek
 
                 if (showResources)
                 {
-                    ImGui::SetNextWindowSize(ImVec2(500.0f, 350.0f), ImGuiSetCond_Once);
+                    ImGui::SetNextWindowSize(ImVec2(500.0f, 350.0f), ImGuiCond_Once);
                     if (ImGui::Begin("Resources"))
                     {
                         showProgramCache();

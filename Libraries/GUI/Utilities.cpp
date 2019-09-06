@@ -163,9 +163,9 @@ namespace Gek
 
             ImVec2 position = window->DC.CursorPos;
             // Try to vertically align buttons that are smaller/have no padding so that text baseline matches (bit hacky, since it shouldn't be a flag)
-            if ((flags & ImGuiButtonFlags_AlignTextBaseLine) && style.FramePadding.y < window->DC.CurrentLineTextBaseOffset)
+            if ((flags & ImGuiButtonFlags_AlignTextBaseLine) && style.FramePadding.y < window->DC.CurrLineTextBaseOffset)
             {
-                position.y += window->DC.CurrentLineTextBaseOffset - style.FramePadding.y;
+                position.y += window->DC.CurrLineTextBaseOffset - style.FramePadding.y;
             }
 
             ImVec2 size = ImGui::CalcItemSize(requestedSize, labelSize.x + style.FramePadding.x * 2.0f, labelSize.y + style.FramePadding.y * 2.0f);
