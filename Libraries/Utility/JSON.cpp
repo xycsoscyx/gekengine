@@ -1,7 +1,7 @@
+#include <jsoncons/json.hpp>
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/Context.hpp"
-#include <jsoncons/json.hpp>
 
 namespace Gek
 {
@@ -26,15 +26,15 @@ namespace Gek
             break;
 
         case jsoncons::storage_type::bool_val:
-            value = object.as_bool();
+            value = object.as<bool>();
             break;
 
         case jsoncons::storage_type::double_val:
-            value = float(object.as_double());
+            value = object.as<float>();
             break;
 
         case jsoncons::storage_type::int64_val:
-            value = object.as_integer();
+            value = object.as<int64_t>();
             break;
 
         case jsoncons::storage_type::uint64_val:

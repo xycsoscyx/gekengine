@@ -1560,14 +1560,14 @@ namespace Gek
 					GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Render"sv, "Prepare User Interface"sv, Profiler::EmptyArguments)
 					{
 						ImGuiIO &imGuiIo = ImGui::GetIO();
-						imGuiIo.DeltaTime = frameTime;
+						imGuiIo.DeltaTime = (1.0f / 60.0f);
 
 						auto backBuffer = videoDevice->getBackBuffer();
 						uint32_t width = backBuffer->getDescription().width;
 						uint32_t height = backBuffer->getDescription().height;
 						imGuiIo.DisplaySize = ImVec2(float(width), float(height));
 
-						ImGui::NewFrame();
+                        ImGui::NewFrame();
 						onShowUserInterface();
 						auto mainMenu = ImGui::FindWindowByName("##MainMenuBar");
 						auto mainMenuShowing = (mainMenu ? mainMenu->Active : false);

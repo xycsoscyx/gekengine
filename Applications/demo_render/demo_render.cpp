@@ -339,10 +339,10 @@ namespace Gek
 
 		~Core(void)
 		{
-			gui = nullptr;
 			ImGui::GetIO().Fonts->TexID = 0;
 			ImGui::DestroyContext(gui->context);
 
+            gui = nullptr;
 			renderDevice = nullptr;
 			window = nullptr;
 			context = nullptr;
