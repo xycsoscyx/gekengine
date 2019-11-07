@@ -633,7 +633,7 @@ namespace Gek
                 {
                     Tab *destinationDock = getTabAtPosition(ImGui::GetIO().MousePos);
 
-                    ImGui::Begin("##draggingOverlay", nullptr, ImVec2(0, 0), 0.f,
+                    ImGui::Begin("##draggingOverlay", nullptr,
                         ImGuiWindowFlags_Tooltip | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove |
                         ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings |
                         ImGuiWindowFlags_AlwaysAutoResize);
@@ -1166,7 +1166,7 @@ namespace Gek
                         ImGui::SetNextWindowPos(tab.position);
                         ImGui::SetNextWindowSize(tab.size);
 						ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
-                        bool ret = ImGui::Begin(label.data(), opened, tab.size, -1.0f, ImGuiWindowFlags_NoCollapse | extraFlags);
+                        bool ret = ImGui::Begin(label.data(), opened, ImGuiWindowFlags_NoCollapse | extraFlags);
                         endAction = EndAction::End;
                         tab.position = ImGui::GetWindowPos();
                         tab.size = ImGui::GetWindowSize();

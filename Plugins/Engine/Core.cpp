@@ -755,9 +755,10 @@ namespace Gek
             {
                 if (showSettings)
                 {
+                    auto &io = ImGui::GetIO();
                     auto &style = ImGui::GetStyle();
-                    ImGui::SetNextWindowPosCenter();
-					if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+                    ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+                    if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
                     {
                         dock->Begin("##Settings", ImVec2(500.0f, 350.0f), true);
                         showDisplay();
@@ -807,8 +808,10 @@ namespace Gek
             {
                 if (showModeChange)
                 {
-                    ImGui::SetNextWindowPosCenter();
-					if (ImGui::Begin("Keep Display Mode", &showModeChange, ImVec2(225.0f, 0.0f), -1.0f, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+                    auto &io = ImGui::GetIO();
+                    ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+                    ImGui::SetNextWindowSize(ImVec2(225.0f, 0.0f));
+                    if (ImGui::Begin("Keep Display Mode", &showModeChange, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
                     {
                         ImGui::Text("Keep Display Mode?");
 
@@ -843,8 +846,9 @@ namespace Gek
             {
                 if (showLoadMenu)
                 {
-                    ImGui::SetNextWindowPosCenter();
-					if (ImGui::Begin("Load", &showLoadMenu, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+                    auto &io = ImGui::GetIO();
+                    ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+                    if (ImGui::Begin("Load", &showLoadMenu, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
                     {
                         auto &style = ImGui::GetStyle();
                         std::vector<std::string> scenes;
@@ -908,8 +912,10 @@ namespace Gek
             {
                 if (showResetDialog)
                 {
-                    ImGui::SetNextWindowPosCenter();
-					if (ImGui::Begin("Reset?", &showResetDialog, ImVec2(225.0f, 0.0f), -1.0f, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+                    auto &io = ImGui::GetIO();
+                    ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+                    ImGui::SetNextWindowSize(ImVec2(225.0f, 0.0f));
+                    if (ImGui::Begin("Reset?", &showResetDialog, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
                     {
                         ImGui::Text("Reset Scene?");
 

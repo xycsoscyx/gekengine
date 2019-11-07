@@ -808,7 +808,7 @@ namespace Gek
 
             void showResourceValue(std::string_view text, std::string_view label, std::string &value)
             {
-                ImGui::AlignFirstTextHeightToWidgets();
+                ImGui::AlignTextToFramePadding();
                 ImGui::Text(text.data());
                 ImGui::SameLine();
                 ImGui::PushItemWidth(-1.0f);

@@ -17,31 +17,31 @@ namespace Gek
         }
 
         JSON value;
-        switch (object.type())
+        switch (object.kind())
         {
-        case jsoncons::storage_type::short_string_val:
-        case jsoncons::storage_type::long_string_val:
-        case jsoncons::storage_type::byte_string_val:
+        case jsoncons::value_kind::short_string_value:
+        case jsoncons::value_kind::long_string_value:
+        case jsoncons::value_kind::byte_string_value:
             value = object.as_string();
             break;
 
-        case jsoncons::storage_type::bool_val:
+        case jsoncons::value_kind::bool_value:
             value = object.as<bool>();
             break;
 
-        case jsoncons::storage_type::double_val:
+        case jsoncons::value_kind::double_value:
             value = object.as<float>();
             break;
 
-        case jsoncons::storage_type::int64_val:
+        case jsoncons::value_kind::int64_value:
             value = object.as<int64_t>();
             break;
 
-        case jsoncons::storage_type::uint64_val:
+        case jsoncons::value_kind::uint64_value:
             value = object.as<uint64_t>();
             break;
 
-        case jsoncons::storage_type::array_val:
+        case jsoncons::value_kind::array_value:
             value = JSON::Array(object.size());
             for (size_t index = 0; index < object.size(); ++index)
             {
@@ -50,7 +50,7 @@ namespace Gek
 
             break;
 
-        case jsoncons::storage_type::object_val:
+        case jsoncons::value_kind::object_value:
             value = JSON::Object();
             for (auto &pair : object.object_range())
             {

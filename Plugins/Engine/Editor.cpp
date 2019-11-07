@@ -611,7 +611,7 @@ namespace Gek
                 ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 				auto oldWindowPadding = UI::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-				if (ImGui::Begin("Editor", nullptr, editorSize, 1.0f, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
+				if (ImGui::Begin("Editor", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
                 {
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, oldWindowPadding);
                     dock->Begin("##Editor", (UI::GetWindowContentRegionSize()), true, ImVec2(10.0f, 10.0f));

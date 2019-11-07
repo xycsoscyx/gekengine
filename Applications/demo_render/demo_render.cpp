@@ -450,8 +450,8 @@ namespace Gek
 		{
 			if (showSettings)
 			{
-				auto &style = ImGui::GetStyle();
-				ImGui::SetNextWindowPosCenter();
+                auto &io = ImGui::GetIO();
+                ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 				if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
 				{
 					dock->Begin("##Settings", ImVec2(500.0f, 350.0f), true);
@@ -460,7 +460,8 @@ namespace Gek
 
 					ImGui::Dummy(ImVec2(0.0f, 3.0f));
 
-					auto size = UI::GetWindowContentRegionSize();
+                    auto &style = ImGui::GetStyle();
+                    auto size = UI::GetWindowContentRegionSize();
 					float buttonPositionX = (size.x - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
 					ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
 
@@ -494,9 +495,11 @@ namespace Gek
 		{
 			if (showModeChange)
 			{
-				ImGui::SetNextWindowPosCenter();
-				ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
-				if (ImGui::Begin("Keep Display Mode", &showModeChange, ImVec2(225.0f, 0.0f), -1.0f, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+                auto &io = ImGui::GetIO();
+                ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+                ImGui::SetNextWindowSize(ImVec2(225.0f, 0.0f));
+                ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+				if (ImGui::Begin("Keep Display Mode", &showModeChange, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
 				{
 					ImGui::Text("Keep Display Mode?");
 
@@ -555,7 +558,7 @@ namespace Gek
 
 				ImGui::NewFrame();
 				ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-				ImGui::Begin("GEK Engine", nullptr, ImVec2(0, 0), 0.0f, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
+				ImGui::Begin("GEK Engine", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
 				if (windowActive)
 				{
 					onShowUserInterface();

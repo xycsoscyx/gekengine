@@ -225,7 +225,8 @@ namespace Gek
                     if (!currentDrawList)
                     {
                         ImGuiIO &imGuiIO = ImGui::GetIO();
-                        ImGui::Begin("gizmo", NULL, imGuiIO.DisplaySize, 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus);
+                        ImGui::SetNextWindowSize(imGuiIO.DisplaySize);
+                        ImGui::Begin("gizmo", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus);
                         currentDrawList = ImGui::GetWindowDrawList();
                         ImGui::End();
                     }
