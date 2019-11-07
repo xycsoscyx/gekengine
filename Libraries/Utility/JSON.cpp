@@ -138,7 +138,7 @@ namespace Gek
                 writtenPrevious = true;
             }
 
-            stream << "]";
+            stream << (std::empty(visitedData) ? "]" : " ]");
             return stream.str();
         },
             [](JSON::Object const &visitedData)
@@ -159,7 +159,7 @@ namespace Gek
                 writtenPrevious = true;
             }
 
-            stream << "}";
+            stream << (std::empty(visitedData) ? "}" : " }");
             return stream.str();
         },
             [](auto && visitedData)
