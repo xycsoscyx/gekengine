@@ -72,7 +72,7 @@ namespace Gek
             bool editorElement(std::string_view const &text, std::function<bool(void)> &&element)
             {
                 ImGui::AlignTextToFramePadding();
-                ImGui::TextUnformatted(&text.front(), &text.back());
+                ImGui::TextUnformatted(&*std::begin(text), &*std::end(text));
                 ImGui::SameLine();
                 ImGui::PushItemWidth(-1.0f);
                 bool changed = element();

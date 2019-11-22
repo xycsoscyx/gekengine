@@ -508,6 +508,54 @@ namespace Gek
             {
                 if (dock->BeginTab("Display", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
                 {
+                    static const std::vector<std::string_view> styleList = {
+                        "Default Classic"sv,
+                        "Default Dark"sv,
+                        "Default Light"sv,
+                        "Gray"sv,        // (mine) This is the default theme of my main.cpp demo.
+                        "Light"sv,       // (mine)
+                        "Black Codz01"sv, // Posted by @codz01 here: https://github.com/ocornut/imgui/issues/707 (hope I can use it)
+                        "Dark Codz01"sv,  // Posted by @codz01 here: https://github.com/ocornut/imgui/issues/707 (hope I can use it)
+                        "Gray Codz01"sv,  // Posted by @codz01 here: https://github.com/ocornut/imgui/issues/1607 (hope I can use it)
+                        "Purple"sv,      // Posted by @fallrisk here: https://github.com/ocornut/imgui/issues/1607  (hope I can use it)
+                        "Cherry"sv,      // Posted by @r-lyeh here: https://github.com/ocornut/imgui/issues/707 (hope I can use it)
+                        "Dark Opaque"sv,  // (mine)
+                        "Soft"sv,        // Posted by @olekristensen here: https://github.com/ocornut/imgui/issues/539 (hope I can use it)
+                        "Edin Black"sv,   // Posted (via image) by edin_p in the screenshot section of Dear ImGui
+                        "Edin White"sv,   // Posted (via image) by edin_p in the screenshot section of Dear ImGui
+                        "Maya"sv,        // Posted by @ongamex here https://gist.github.com/ongamex/4ee36fb23d6c527939d0f4ba72144d29
+                        "Light Green"sv,  // Posted by @ebachard here: https://github.com/ocornut/imgui/pull/1776 (hope I can use it)
+                        "Design"sv,      // Posted by @usernameiwantedwasalreadytaken here: https://github.com/ocornut/imgui/issues/707 (hope I can use it)
+                        "Dracula"sv,     // Posted by @ice1000 here: https://github.com/ocornut/imgui/issues/707 (hope I can use it)
+                        "Greenish"sv,    // Posted by @dertseha here: https://github.com/ocornut/imgui/issues/1902 (hope I can use it)
+                        "C64"sv,         // Posted by @Nullious here: https://gist.github.com/Nullious/2d598963b346c49fa4500ca16b8e5c67 (hope I can use it)
+                        "Photo Store"sv,  // Posted by @Derydoca here: https://github.com/ocornut/imgui/issues/707 (hope I can use it)
+                        "Corporate Grey Flat"sv,   // Posted by @malamanteau here: https://github.com/ocornut/imgui/issues/707 (hope I can use it)
+                        "Corporate Grey Framed"sv, // Posted by @malamanteau here: https://github.com/ocornut/imgui/issues/707 (hope I can use it)
+                        "Visual Dark"sv, // Posted by @mnurzia here: https://github.com/ocornut/imgui/issues/2529 (hope I can use it)
+                        "Dark Opaque Inverse"sv,
+                        "Gray Codz01 Inverse"sv,
+                        "Purple Inverse"sv,
+                        "Light Green Inverse"sv,
+                        "Design Inverse"sv,
+                    };
+
+                    int selectedStyle = 0;
+                    if (ImGui::Combo("Theme", &selectedStyle, [](void *userData, int index, char const **outputText) -> bool
+                    {
+                        auto &styleList = *(std::vector<std::string_view> *)userData;
+                        if (index >= 0 && index < styleList.size())
+                        {
+                            *outputText = styleList[index].data();
+                            return true;
+                        }
+
+                        return false;
+                    }, (void *)&styleList, styleList.size(), 10))
+                    {
+                        ImGui::ResetStyle(selectedStyle);
+                    }
+
                     auto &style = ImGui::GetStyle();
                     ImGui::PushItemWidth(-1.0f);
                     ImGui::ListBox("##DisplayMode", &next.mode, [](void *data, int index, const char **text) -> bool
