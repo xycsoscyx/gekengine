@@ -20,6 +20,7 @@
 #include "GEK/Components/Name.hpp"
 #include "GEK/Model/Base.hpp"
 #include <concurrent_vector.h>
+#include <imgui_internal.h>
 #include <ppl.h>
 #include <set>
 

@@ -25,6 +25,7 @@
 #include <concurrent_unordered_set.h>
 #include <concurrent_queue.h>
 #include <concurrent_vector.h>
+#include <imgui_internal.h>
 #include <ppl.h>
 
 class Float16Compressor

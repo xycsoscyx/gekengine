@@ -1,4 +1,5 @@
 #include "GEK/GUI/Dock.hpp"
+#include <imgui_internal.h>
 
 namespace Gek
 {

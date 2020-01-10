@@ -1,5 +1,6 @@
 #include "GEK/GUI/Gizmo.hpp"
 #include "GEK/Shapes/Plane.hpp"
+#include <imgui_internal.h>
 
 namespace Gek
 {

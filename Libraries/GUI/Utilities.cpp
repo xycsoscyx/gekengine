@@ -151,8 +151,9 @@ namespace Gek
             return isClicked;
         }
 
-        void TextFrame(std::string_view label, ImVec2 const &requestedSize, ImGuiButtonFlags flags, ImU32 const *frameColor, ImVec4 const *textColor)
+        void TextFrame(std::string_view label, ImVec2 const &requestedSize, ImU32 const *frameColor, ImVec4 const *textColor)
         {
+            ImGuiButtonFlags flags = 0;
             ImGuiWindow *window = ImGui::GetCurrentWindow();
             if (window->SkipItems)
             {
