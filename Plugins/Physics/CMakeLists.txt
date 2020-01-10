@@ -11,7 +11,7 @@ add_library(${ProjectID} SHARED ${SOURCES} ${HEADERS})
 
 target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
-target_link_libraries(${ProjectID} signals newton Math Shapes Utility GUI API Components Model)
+target_link_libraries(${ProjectID} newton Math Shapes Utility GUI API Components Model)
 
 set_target_properties(${ProjectID}
     PROPERTIES

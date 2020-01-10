@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.5.2)
 
 project (GEKEngine)
 
-
 if(MSVC)
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 	add_definitions(-D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_ITERATOR_DEBUG_LEVEL=0)
@@ -15,21 +14,29 @@ if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
 endif()
 
+if (WIN32)
+  set(CMAKE_SHARED_LIBRARY_PREFIX "")
+endif ()
+
 add_definitions(/wd4305 /wd4800 /wd4244 /wd4099 -DNOMINMAX)
 add_definitions(-D_USE_MATH_DEFINES)
 
-add_subdirectory("External")
+include_directories("${CMAKE_SOURCE_DIR}/External/Wink-Signals")
 
-add_definitions(-DNO_IMGUITOOLBAR)
-add_definitions(-DNO_IMGUIPANELMANAGER)
-add_definitions(-DNO_IMGUISTRING)
-add_definitions(-DNO_IMGUIHELPER)
-add_definitions(-DNO_IMGUIFILESYSTEM)
-add_definitions(-DNO_IMGUICODEEDITOR)
-add_definitions(-DNO_IMGUILISTVIEW)
-add_definitions(-DNO_IMGUINODEGRAPHEDITOR)
-add_definitions(-DIMGUI_INCLUDE_IMGUI_USER_H -DIMGUI_INCLUDE_IMGUI_USER_INL)
-add_definitions(-DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_DEFINE_PLACEMENT_NEW)
+SET(ASSIMP_BUILD_IFC_IMPORTER False CACHE BOOL "" FORCE)
+SET(ASSIMP_BUILD_ASSIMP_TOOLS False CACHE BOOL "" FORCE)
+SET(ASSIMP_BUILD_ASSIMP_VIEW False CACHE BOOL "" FORCE)
+SET(ASSIMP_BUILD_TESTS False CACHE BOOL "" FORCE)
+SET(ASSIMP_INSTALL_PDB False CACHE BOOL "" FORCE)
+add_subdirectory("External/Assimp")
+
+if(WIN32)
+    add_subdirectory("External/DirectXTex")
+endif()
+
+add_subdirectory("External/jsoncons")
+
+add_subdirectory("External/newton-dynamics")
 
 message(WARNING "Silencing C++17 old allocator members deprecation warning")
 add_definitions(-D_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING)
