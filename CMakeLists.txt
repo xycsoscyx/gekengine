@@ -18,8 +18,43 @@ if (WIN32)
   set(CMAKE_SHARED_LIBRARY_PREFIX "")
 endif ()
 
-add_definitions(/wd4305 /wd4800 /wd4244 /wd4099 /wd4574 -DNOMINMAX)
-add_definitions(-D_USE_MATH_DEFINES)
+add_definitions(/wd4305) # 
+add_definitions(/wd4800) # 
+add_definitions(/wd4244) # 
+add_definitions(/wd4099) # 
+add_definitions(/wd4574) # 
+add_definitions(/wd4146) # unary minus operator applied to unsigned type, result still unsigned
+add_definitions(/wd4101) # unreferenced local variable
+add_definitions(/wd4005) # macro redefinition
+add_definitions(/wd4820) # bytes padding added after data member
+add_definitions(/wd4625) # copy constructor was implicitly defined as deleted
+add_definitions(/wd4626) # assignment operator was implicitly defined as deleted
+add_definitions(/wd5026) # move constructor was implicitly defined as deleted
+add_definitions(/wd5027) # move assignment operator was implicitly defined as deleted
+add_definitions(/wd4365) # conversion mismatch
+add_definitions(/wd4312) # conversion to greater size
+add_definitions(/wd4189) # local variable is initialized but not referenced
+add_definitions(/wd4061) # enumerator in switch of enum is not explicitly handled by a case label
+add_definitions(/wd4062) # enumerator in switch of enum is not handled
+add_definitions(/wd4571) # Informational: catch(...) semantics changed since Visual C++ 7.1; structured exceptions (SEH) are no longer caught
+add_definitions(/wd5039) # pointer or reference to potentially throwing function passed to extern C function under -EHc. Undefined behavior may occur if this function throws an exception.
+add_definitions(/wd4668) # not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+add_definitions(/wd4702) # unreachable code
+add_definitions(/wd4710) # function not inlined
+add_definitions(/wd4711) # function selected for automatic inline expansion
+add_definitions(/wd4774) # format string expected in argument is not a string literal
+add_definitions(/wd4777) # format string requires an argument of type, but variadic argument has type
+add_definitions(/wd5045) # Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+add_definitions(-D_USE_MATH_DEFINES -DNOMINMAX)
+
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4006")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4221")
+
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4006")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4221")
+
+set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /ignore:4006")
+set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /ignore:4221")
 
 include_directories("${CMAKE_SOURCE_DIR}/External/Wink-Signals")
 
@@ -30,12 +65,14 @@ SET(ASSIMP_BUILD_TESTS False CACHE BOOL "" FORCE)
 SET(ASSIMP_INSTALL_PDB False CACHE BOOL "" FORCE)
 add_subdirectory("External/Assimp")
 
-if(WIN32)
-    add_subdirectory("External/DirectXTex")
-endif()
+add_subdirectory("External/DirectXTex")
 
+SET(BUILD_TESTS False CACHE BOOL "" FORCE)
 add_subdirectory("External/jsoncons")
 
+SET(NEWTON_BUILD_SANDBOX_DEMOS False CACHE BOOL "" FORCE)
+SET(NEWTON_BUILD_PROFILER False CACHE BOOL "" FORCE)
+#SET(NEWTON_STATIC_RUNTIME_LIBRARIES False CACHE BOOL "" FORCE)
 add_subdirectory("External/newton-dynamics")
 
 message(WARNING "Silencing C++17 old allocator members deprecation warning")

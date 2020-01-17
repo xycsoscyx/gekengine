@@ -8,6 +8,7 @@
 #include "GEK/GUI/Utilities.hpp"
 #include "GEK/GUI/Dock.hpp"
 #include <concurrent_unordered_map.h>
+#include <imgui_internal.h>
 #include <Windows.h>
 
 using namespace Gek;
@@ -264,7 +265,6 @@ namespace Gek
 			gui->samplerState = renderDevice->createSamplerState(samplerStateInformation, "ImGui::Sampler");
 
 			gui->context = ImGui::CreateContext();
-			ImGui::Initialize(gui->context);
 
             ImGuiIO &imGuiIo = ImGui::GetIO();
             imGuiIo.KeyMap[ImGuiKey_Tab] = VK_TAB;
