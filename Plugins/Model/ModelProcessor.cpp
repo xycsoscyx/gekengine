@@ -33,6 +33,26 @@
 
 namespace Gek
 {
+    class Unpacker
+    {
+    private:
+        uint8_t *buffer;
+
+    public:
+        Unpacker(uint8_t *buffer)
+            : buffer(buffer)
+        {
+        }
+
+        template <typename TYPE>
+        TYPE const *readBlock(size_t count)
+        {
+            TYPE *data = reinterpret_cast<TYPE *>(buffer);
+            buffer += (sizeof(TYPE) * count);
+            return data;
+        }
+    };
+
     GEK_CONTEXT_USER(Model, Plugin::Population *)
         , public Plugin::ComponentMixin<Components::Model, Edit::Component>
     {
@@ -375,7 +395,7 @@ namespace Gek
                                 group.boundingBox.extend(model.boundingBox.minimum);
                                 group.boundingBox.extend(model.boundingBox.maximum);
                                 model.meshList.resize(header->meshCount);
-                                uint8_t *bufferData = (uint8_t *)&header->meshList[header->meshCount];
+                                Unpacker unpacker((uint8_t *)&header->meshList[header->meshCount]);
                                 for (uint32_t meshIndex = 0; meshIndex < header->meshCount; ++meshIndex)
                                 {
                                     Header::Mesh &meshHeader = header->meshList[meshIndex];
@@ -387,31 +407,25 @@ namespace Gek
                                     indexBufferDescription.format = Video::Format::R16_UINT;
                                     indexBufferDescription.count = (meshHeader.faceCount * 3);
                                     indexBufferDescription.type = Video::Buffer::Type::Index;
-                                    mesh.indexBuffer = resources->createBuffer(String::Format("model:{}.{}.{}:indices", meshIndex, fileName, name), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
-                                    bufferData += (sizeof(Face) * meshHeader.faceCount);
+                                    mesh.indexBuffer = resources->createBuffer(String::Format("model:{}.{}.{}:indices", meshIndex, fileName, name), indexBufferDescription, unpacker.readBlock<Face>(meshHeader.faceCount));
 
                                     Video::Buffer::Description vertexBufferDescription;
                                     vertexBufferDescription.stride = sizeof(Math::Float3);
                                     vertexBufferDescription.count = meshHeader.vertexCount;
                                     vertexBufferDescription.type = Video::Buffer::Type::Vertex;
-                                    mesh.vertexBufferList[0] = resources->createBuffer(String::Format("model:{}.{}.{}:positions", meshIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                    bufferData += (sizeof(Math::Float3) * meshHeader.vertexCount);
+                                    mesh.vertexBufferList[0] = resources->createBuffer(String::Format("model:{}.{}.{}:positions", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
 
                                     vertexBufferDescription.stride = sizeof(Math::Float2);
-                                    mesh.vertexBufferList[1] = resources->createBuffer(String::Format("model:{}.{}.{}:texcoords", meshIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
-                                    bufferData += (sizeof(Math::Float2) * meshHeader.vertexCount);
+                                    mesh.vertexBufferList[1] = resources->createBuffer(String::Format("model:{}.{}.{}:texcoords", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float2>(meshHeader.vertexCount));
 
                                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    mesh.vertexBufferList[2] = resources->createBuffer(String::Format("model:{}.{}.{}:tangents", meshIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                    bufferData += (sizeof(Math::Float3) * meshHeader.vertexCount);
+                                    mesh.vertexBufferList[2] = resources->createBuffer(String::Format("model:{}.{}.{}:tangents", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
 
                                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    mesh.vertexBufferList[3] = resources->createBuffer(String::Format("model:{}.{}.{}:bitangents", meshIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                    bufferData += (sizeof(Math::Float3) * meshHeader.vertexCount);
+                                    mesh.vertexBufferList[3] = resources->createBuffer(String::Format("model:{}.{}.{}:bitangents", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
 
                                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    mesh.vertexBufferList[4] = resources->createBuffer(String::Format("model:{}.{}.{}:normals", meshIndex, fileName, name), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                    bufferData += (sizeof(Math::Float3) * meshHeader.vertexCount);
+                                    mesh.vertexBufferList[4] = resources->createBuffer(String::Format("model:{}.{}.{}:normals", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
 
                                     mesh.indexCount = indexBufferDescription.count;
                                 }
