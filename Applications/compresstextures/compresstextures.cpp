@@ -185,7 +185,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 
 	if (FAILED(resultValue))
 	{
-		LockedWrite{ std::cerr } << "Unable to compress image";
+		LockedWrite{ std::cerr } << "Unable to compress image: ";
         return;
     }
 
@@ -212,7 +212,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	ContextPtr context(Context::Create(searchPathList));
 	if (context)
 	{
-		context->setCachePath(cachePath);
+        context->startProfiler(String::Empty);
+        context->setCachePath(cachePath);
 
 		wchar_t gekDataPath[MAX_PATH + 1] = L"\0";
 		if (GetEnvironmentVariable(L"gek_data_path", gekDataPath, MAX_PATH) > 0)

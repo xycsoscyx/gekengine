@@ -33,6 +33,8 @@ namespace Gek
             Left = 0,
             Middle,
             Right,
+            Forward,
+            Back,
         };
 
         struct Description

@@ -65,6 +65,7 @@ SET(ASSIMP_BUILD_TESTS False CACHE BOOL "" FORCE)
 SET(ASSIMP_INSTALL_PDB False CACHE BOOL "" FORCE)
 add_subdirectory("External/Assimp")
 
+add_definitions(-D_OPENMP)
 add_subdirectory("External/DirectXTex")
 
 SET(BUILD_TESTS False CACHE BOOL "" FORCE)

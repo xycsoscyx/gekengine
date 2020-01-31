@@ -68,6 +68,7 @@ namespace Gek
                             break;
 
                         case WM_LBUTTONDOWN:
+                        case WM_LBUTTONDBLCLK:
                             window->onMouseClicked(Window::Button::Left, true);
                             break;
 
@@ -76,6 +77,7 @@ namespace Gek
                             break;
 
                         case WM_RBUTTONDOWN:
+                        case WM_RBUTTONDBLCLK:
                             window->onMouseClicked(Window::Button::Right, true);
                             break;
 
@@ -84,12 +86,22 @@ namespace Gek
                             break;
 
                         case WM_MBUTTONDOWN:
+                        case WM_MBUTTONDBLCLK:
                             window->onMouseClicked(Window::Button::Middle, true);
                             break;
 
                         case WM_MBUTTONUP:
                             window->onMouseClicked(Window::Button::Middle, false);
                             break;
+
+                        case WM_XBUTTONDOWN:
+                        case WM_XBUTTONDBLCLK:
+                            window->onMouseClicked(wParam & XBUTTON1 ? Window::Button::Forward : Window::Button::Back, true);
+                            return true;
+
+                        case WM_XBUTTONUP:
+                            window->onMouseClicked(wParam & XBUTTON1 ? Window::Button::Forward : Window::Button::Back, false);
+                            return true;
 
                         case WM_MOUSEWHEEL:
                             window->onMouseWheel(float(GET_WHEEL_DELTA_WPARAM(wParam)) / float(WHEEL_DELTA));

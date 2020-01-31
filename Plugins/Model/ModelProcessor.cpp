@@ -92,15 +92,25 @@ namespace Gek
             {
                 if (modelList.empty())
                 {
-                    modelsPath.findFiles([&](FileSystem::Path const &filePath) -> bool
+                    std::function<bool(FileSystem::Path const &)> searchDirectory;
+                    searchDirectory = ([&](FileSystem::Path const &filePath) -> bool
                     {
                         if (filePath.isDirectory())
                         {
-                            modelList.push_back(filePath.getFileName());
+                            filePath.findFiles(searchDirectory);
+                        }
+                        else if (filePath.getExtension() == ".gek")
+                        {
+                            auto modelPath = filePath.getParentPath().getString();
+                            String::Replace(modelPath, modelsPath.getString(), "");
+                            modelList.push_back(modelPath.substr(1));
+                            return false;
                         }
 
                         return true;
                     });
+
+                    modelsPath.findFiles(searchDirectory);
                 }
 
                 if (modelComponent.name.empty())

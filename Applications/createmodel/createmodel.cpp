@@ -412,6 +412,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             auto albedoNode = dataNode.getMember("albedo");
             std::string albedoPath(albedoNode.getMember("file").convert(String::Empty));
             std::string materialName(String::GetLower(filePath.withoutExtension().getString().substr(materialsPath.size() + 1)));
+            std::cout << albedoPath << ": " << materialName << std::endl;
             diffuseToMaterialMap[albedoPath] = materialName;
         }
 
@@ -463,7 +464,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         if (materialAlebedoSearch == std::end(diffuseToMaterialMap))
         {
             LockedWrite{ std::cerr } << "! Unable to find material for albedo: " << albedoName;
-            return diffuse;
+            return sourceName.withoutExtension().getString();
         }
 
         return materialAlebedoSearch->second;

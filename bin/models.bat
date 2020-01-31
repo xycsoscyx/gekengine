@@ -5,4 +5,6 @@
 .\debug\createmodel -source gargoyle.fbx -flipCoords -unitsinfoot:100
 .\debug\createmodel -source sponza.fbx -flipCoords -smoothAngle:75 -unitsinfoot:20
 
+.\debug\createmodel -source "weapons\triple shotgun.obj" -flipCoords -smoothAngle:75 -unitsinfoot:20
+
 pause
