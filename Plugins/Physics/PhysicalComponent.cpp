@@ -40,7 +40,7 @@ namespace Gek
 
                 changed |= editorElement("Mass"sv, [&](void) -> bool
                 {
-                    return ImGui::InputFloat("##mass", &physicalComponent.mass, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                    return ImGui::InputFloat("##mass", &physicalComponent.mass, 1.0f, 10.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 });
 
                 ImGui::SetCurrentContext(nullptr);

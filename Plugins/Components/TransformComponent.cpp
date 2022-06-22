@@ -43,17 +43,17 @@ namespace Gek
 
             changed |= editorElement("Position"sv, [&](void) -> bool
             {
-                return ImGui::InputFloat3("##position", transformComponent.position.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                return ImGui::InputFloat3("##position", transformComponent.position.data, "%.4f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             });
 
             changed |= editorElement("Rotation"sv, [&](void) -> bool
             {
-                return ImGui::InputFloat4("##rotation", transformComponent.rotation.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                return ImGui::InputFloat4("##rotation", transformComponent.rotation.data, "%.4f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             });
 
             changed |= editorElement("Scale"sv, [&](void) -> bool
             {
-                return ImGui::InputFloat3("##scale", transformComponent.scale.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                return ImGui::InputFloat3("##scale", transformComponent.scale.data, "%.4f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             });
 
             ImGui::SetCurrentContext(nullptr);

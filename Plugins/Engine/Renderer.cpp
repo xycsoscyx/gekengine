@@ -294,7 +294,7 @@ namespace Gek
 
 				void cull(Math::SIMD::Frustum const &frustum, Hash identifier)
 				{
-					const auto entityCount = entityList.size();
+					const int entityCount = entityList.size();
 					auto buffer = (entityCount % 4);
 					buffer = (buffer ? (4 - buffer) : buffer);
 					auto bufferedEntityCount = (entityCount + buffer);
@@ -305,7 +305,7 @@ namespace Gek
 						shapeZPositionList.resize(bufferedEntityCount);
 						shapeRadiusList.resize(bufferedEntityCount);
 
-						concurrency::parallel_for(0ULL, entityCount, [&](size_t entityIndex) -> void
+						concurrency::parallel_for(0, entityCount, [&](size_t entityIndex) -> void
 						{
 							auto entity = entityList[entityIndex];
 							auto &transformComponent = entity->getComponent<Components::Transform>();
@@ -696,12 +696,6 @@ namespace Gek
 				imGuiIo.Fonts->TexID = static_cast<ImTextureID>(gui.fontTexture.get());
 
 				imGuiIo.UserData = this;
-				imGuiIo.RenderDrawListsFn = [](ImDrawData *drawData)
-				{
-					ImGuiIO &imGuiIo = ImGui::GetIO();
-					Renderer *renderer = static_cast<Renderer *>(imGuiIo.UserData);
-					renderer->renderUI(drawData);
-				};
 
 				ImGui::ResetStyle(ImGuiStyle_GrayCodz01);
 				auto &style = ImGui::GetStyle();
@@ -750,7 +744,7 @@ namespace Gek
 				{
 					Video::Buffer::Description vertexBufferDescription;
 					vertexBufferDescription.stride = sizeof(ImDrawVert);
-					vertexBufferDescription.count = drawData->TotalVtxCount;
+					vertexBufferDescription.count = drawData->TotalVtxCount + 5000;
 					vertexBufferDescription.type = Video::Buffer::Type::Vertex;
 					vertexBufferDescription.flags = Video::Buffer::Flags::Mappable;
 					gui.vertexBuffer = videoDevice->createBuffer(vertexBufferDescription);
@@ -760,7 +754,7 @@ namespace Gek
 				if (!gui.indexBuffer || gui.indexBuffer->getDescription().count < uint32_t(drawData->TotalIdxCount))
 				{
 					Video::Buffer::Description vertexBufferDescription;
-					vertexBufferDescription.count = drawData->TotalIdxCount;
+					vertexBufferDescription.count = drawData->TotalIdxCount + 10000;
 					vertexBufferDescription.type = Video::Buffer::Type::Index;
 					vertexBufferDescription.flags = Video::Buffer::Flags::Mappable;
 					switch (sizeof(ImDrawIdx))
@@ -1596,8 +1590,9 @@ namespace Gek
 
 					GEK_VIDEO_PROFILER_BEGIN_SCOPE(videoDevice, "Draw User Interface"sv, 0)
 					{
-						ImGui::Render();
-					} GEK_VIDEO_PROFILER_END_SCOPE();
+                        ImGui::Render();
+                        renderUI(ImGui::GetDrawData());
+                    } GEK_VIDEO_PROFILER_END_SCOPE();
 
 					videoDevice->present(true);
 

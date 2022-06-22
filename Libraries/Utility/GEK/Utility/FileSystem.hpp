@@ -86,7 +86,7 @@ namespace Gek
 			if (filePath.isFile())
 			{
 				CONTAINER buffer;
-                auto fileSize = filePath.getFileSize();
+                std::uintmax_t fileSize = filePath.getFileSize();
                 auto size = (limitReadSize == 0 ? fileSize : std::min(fileSize, limitReadSize));
 				if (size > 0)
 				{

@@ -4,10 +4,9 @@
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/System/VideoDevice.hpp"
 #include "GEK/System/Window.hpp"
+#include <DirectXTex.h>
 #include <algorithm>
 #include <map>
-
-#include <DirectXTex.h>
 
 using namespace Gek;
 
@@ -38,21 +37,11 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 	{
 		load = [](std::vector<uint8_t> const &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromTGAMemory(buffer.data(), buffer.size(), nullptr, image); };
 	}
-	else if (extension == ".png")
-	{
-		load = [](std::vector<uint8_t> const &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_PNG, nullptr, image); };
-	}
-	else if (extension == ".bmp")
-	{
-		load = [](std::vector<uint8_t> const &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_BMP, nullptr, image); };
-	}
-	else if (extension == ".jpg" || extension == ".jpeg")
-	{
-		load = [](std::vector<uint8_t> const &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, nullptr, image); };
-	}
-	else if (extension == ".tif" || extension == ".tiff")
-	{
-		load = [](std::vector<uint8_t> const &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_TIFF, nullptr, image); };
+    else if (extension == ".png" || extension == ".bmp" ||
+             extension == ".jpg" || extension == ".jpeg" ||
+             extension == ".tif" || extension == ".tiff")
+    {
+		load = [](std::vector<uint8_t> const &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_FLAGS_NONE, nullptr, image); };
 	}
 	/*
 		else if (extension == ".dds")
@@ -78,7 +67,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 	}
 
 	bool useDevice = false;
-	uint32_t flags = ::DirectX::TEX_COMPRESS_PARALLEL;
+	auto flags = ::DirectX::TEX_COMPRESS_PARALLEL;
 	DXGI_FORMAT outputFormat = DXGI_FORMAT_UNKNOWN;
 	std::string textureName(String::GetLower(inputFilePath.withoutExtension().getString()));
 	if (String::EndsWith(textureName, "basecolor") ||
@@ -177,7 +166,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 	{
 		// Hardware accelerated compression only works with BC7 format
 		resultValue = ::DirectX::Compress((ID3D11Device *)device->getDevice(), image.GetImages(), image.GetImageCount(), image.GetMetadata(), outputFormat, flags, 0.5f, output);
-	}
+    }
 	else
 	{
 		resultValue = ::DirectX::Compress(image.GetImages(), image.GetImageCount(), image.GetMetadata(), outputFormat, flags, 0.5f, output);

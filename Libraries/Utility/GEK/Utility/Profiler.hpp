@@ -16,8 +16,6 @@
 #include <variant>
 #include <chrono>
 
-#define GEK_PROFILER_ENABLED
-
 namespace Gek
 {
 	class Profiler

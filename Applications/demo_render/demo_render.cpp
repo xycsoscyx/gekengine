@@ -322,12 +322,6 @@ namespace Gek
 			style.FramePadding.x = style.FramePadding.y;
 
 			imGuiIo.UserData = this;
-			imGuiIo.RenderDrawListsFn = [](ImDrawData *drawData)
-			{
-				ImGuiIO &imGuiIo = ImGui::GetIO();
-				Core *core = static_cast<Core *>(imGuiIo.UserData);
-				core->renderDrawData(drawData);
-			};
 
             dock = std::make_unique<UI::Dock::WorkSpace>();
 
@@ -575,7 +569,9 @@ namespace Gek
 				ImGui::End();
 
 				ImGui::Render();
-				renderDevice->present(false);
+                renderDrawData(ImGui::GetDrawData());
+
+                renderDevice->present(false);
 			};
 		}
 
@@ -586,7 +582,7 @@ namespace Gek
 			{
 				Render::BufferDescription vertexBufferDescription;
 				vertexBufferDescription.stride = sizeof(ImDrawVert);
-				vertexBufferDescription.count = drawData->TotalVtxCount;
+				vertexBufferDescription.count = drawData->TotalVtxCount + 5000;
 				vertexBufferDescription.type = Render::BufferDescription::Type::Vertex;
 				vertexBufferDescription.flags = Render::BufferDescription::Flags::Mappable;
 				gui->vertexBuffer = renderDevice->createBuffer(vertexBufferDescription);
@@ -595,7 +591,7 @@ namespace Gek
 			if (!gui->indexBuffer || renderDevice->getBufferDescription(gui->indexBuffer)->count < uint32_t(drawData->TotalIdxCount))
 			{
 				Render::BufferDescription vertexBufferDescription;
-				vertexBufferDescription.count = drawData->TotalIdxCount;
+				vertexBufferDescription.count = drawData->TotalIdxCount + 10000;
 				vertexBufferDescription.type = Render::BufferDescription::Type::Index;
 				vertexBufferDescription.flags = Render::BufferDescription::Flags::Mappable;
 				switch (sizeof(ImDrawIdx))

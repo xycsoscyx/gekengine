@@ -53,22 +53,22 @@ namespace Gek
 
                 changed |= editorElement("Height"sv, [&](void) -> bool
                 {
-                    return ImGui::InputFloat("##height", &playerComponent.height, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                    return ImGui::InputFloat("##height", &playerComponent.height, 1.0f, 10.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 });
 
                 changed |= editorElement("Outer Radius"sv, [&](void) -> bool
                 {
-                    return ImGui::InputFloat("##outerRadius", &playerComponent.outerRadius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                    return ImGui::InputFloat("##outerRadius", &playerComponent.outerRadius, 1.0f, 10.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 });
 
                 changed |= editorElement("Inner Radius"sv, [&](void) -> bool
                 {
-                    return ImGui::InputFloat("##innerRadius", &playerComponent.innerRadius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                    return ImGui::InputFloat("##innerRadius", &playerComponent.innerRadius, 1.0f, 10.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 });
 
                 changed |= editorElement("Stair Step"sv, [&](void) -> bool
                 {
-                    return ImGui::InputFloat("##stairStep", &playerComponent.stairStep, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                    return ImGui::InputFloat("##stairStep", &playerComponent.stairStep, 1.0f, 10.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 });
 
                 ImGui::SetCurrentContext(nullptr);

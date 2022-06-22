@@ -2583,12 +2583,12 @@ namespace Gek
                     return 1;
                 }
 
-                HRESULT Close(LPCVOID pData)
+                STDMETHOD(Close)(LPCVOID pData)
                 {
                     return S_OK;
                 }
 
-                HRESULT Open(D3D_INCLUDE_TYPE includeType, char const *fileName, void const *parentData, void const **data, uint32_t *size)
+                STDMETHOD(Open)(D3D_INCLUDE_TYPE includeType, char const *fileName, void const *parentData, void const **data, uint32_t *size)
                 {
                     return function(includeType == D3D_INCLUDE_LOCAL ? Video::IncludeType::Local : Video::IncludeType::Global, fileName, data, size) ? S_OK : E_FAIL;
                 }
@@ -2930,27 +2930,17 @@ namespace Gek
                 std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
                 if (extension == ".dds")
                 {
-                    load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromDDSMemory(buffer.data(), buffer.size(), 0, nullptr, image); };
+                    load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromDDSMemory(buffer.data(), buffer.size(), ::DirectX::DDS_FLAGS_NONE, nullptr, image); };
                 }
                 else if (extension == ".tga")
                 {
                     load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromTGAMemory(buffer.data(), buffer.size(), nullptr, image); };
                 }
-                else if (extension == ".png")
+                else if (extension == ".png" || extension == ".bmp" ||
+                         extension == ".jpg" || extension == ".jpeg" ||
+                         extension == ".tif" || extension == ".tiff")
                 {
-                    load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_PNG, nullptr, image); };
-                }
-                else if (extension == ".bmp")
-                {
-                    load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_BMP, nullptr, image); };
-                }
-                else if (extension == ".jpg" || extension == ".jpeg")
-                {
-                    load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, nullptr, image); };
-                }
-                else if (extension == ".tif" || extension == ".tiff")
-                {
-                    load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_TIFF, nullptr, image); };
+                    load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_FLAGS_NONE, nullptr, image); };
                 }
 
                 if (!load)
@@ -3004,23 +2994,14 @@ namespace Gek
             {
                 HRESULT resultValue = E_FAIL;
                 ::DirectX::ScratchImage image;
-                if (FAILED(resultValue = ::DirectX::LoadFromDDSMemory(buffer, size, 0, nullptr, image)))
+                if (FAILED(resultValue = ::DirectX::LoadFromDDSMemory(buffer, size, ::DirectX::DDS_FLAGS_NONE, nullptr, image)))
                 {
                     if (FAILED(resultValue = ::DirectX::LoadFromTGAMemory(buffer, size, nullptr, image)))
                     {
-                        if (FAILED(resultValue = ::DirectX::LoadFromWICMemory(buffer, size, ::DirectX::WIC_CODEC_PNG, nullptr, image)))
+                        if (FAILED(resultValue = ::DirectX::LoadFromWICMemory(buffer, size, ::DirectX::WIC_FLAGS_NONE, nullptr, image)))
                         {
-                            if (FAILED(resultValue = ::DirectX::LoadFromWICMemory(buffer, size, ::DirectX::WIC_CODEC_BMP, nullptr, image)))
-                            {
-                                if (FAILED(resultValue = ::DirectX::LoadFromWICMemory(buffer, size, ::DirectX::WIC_CODEC_JPEG, nullptr, image)))
-                                {
-                                    if (FAILED(resultValue = ::DirectX::LoadFromWICMemory(buffer, size, ::DirectX::WIC_CODEC_TIFF, nullptr, image)))
-                                    {
-                                        LockedWrite{ std::cerr } << "Unable to load image from texture file";
-                                        return nullptr;
-                                    }
-                                }
-                            }
+                            LockedWrite{ std::cerr } << "Unable to load image from texture file";
+                            return nullptr;
                         }
                     }
                 }
@@ -3056,27 +3037,17 @@ namespace Gek
                 std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::TexMetadata &)> getMetadata;
                 if (extension == ".dds")
                 {
-                    getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromDDSMemory(buffer.data(), buffer.size(), 0, metadata); };
+                    getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromDDSMemory(buffer.data(), buffer.size(), ::DirectX::DDS_FLAGS_NONE, metadata); };
                 }
                 else if (extension == ".tga")
                 {
                     getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromTGAMemory(buffer.data(), buffer.size(), metadata); };
                 }
-                else if (extension == ".png")
+                else if (extension == ".png" || extension == ".bmp" ||
+                         extension == ".jpg" || extension == ".jpeg" ||
+                         extension == ".tif" || extension == ".tiff")
                 {
-                    getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_PNG, metadata); };
-                }
-                else if (extension == ".bmp")
-                {
-                    getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_BMP, metadata); };
-                }
-                else if (extension == ".jpg" || extension == ".jpeg")
-                {
-                    getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, metadata); };
-                }
-                else if (extension == ".tif" || extension == ".tiff")
-                {
-                    getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_TIFF, metadata); };
+                    getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_FLAGS_NONE, metadata); };
                 }
 
                 static const Texture::Description EmptyDescription;

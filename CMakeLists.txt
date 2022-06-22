@@ -74,7 +74,7 @@ add_subdirectory("External/jsoncons")
 SET(NEWTON_BUILD_SANDBOX_DEMOS False CACHE BOOL "" FORCE)
 SET(NEWTON_BUILD_PROFILER False CACHE BOOL "" FORCE)
 #SET(NEWTON_STATIC_RUNTIME_LIBRARIES False CACHE BOOL "" FORCE)
-add_subdirectory("External/newton-dynamics")
+add_subdirectory("External/newton-dynamics/newton-3.14")
 
 message(WARNING "Silencing C++17 old allocator members deprecation warning")
 add_definitions(-D_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING)

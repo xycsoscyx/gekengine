@@ -70,7 +70,7 @@ namespace Gek
                 ImGuiContext& imGuiContext = *GImGui;
                 float* activeValue = (float*)variableInformation->GetVarPtr(&imGuiContext.Style);
                 auto oldValue = *activeValue;
-                imGuiContext.StyleModifiers.push_back(ImGuiStyleMod(index, *activeValue));
+                imGuiContext.StyleVarStack.push_back(ImGuiStyleMod(index, *activeValue));
                 *activeValue = newValue;
                 return oldValue;
             }
@@ -87,7 +87,7 @@ namespace Gek
                 ImGuiContext& imGuiContext = *GImGui;
                 ImVec2* activeValue = (ImVec2*)variableInformation->GetVarPtr(&imGuiContext.Style);
                 auto oldValue = *activeValue;
-                imGuiContext.StyleModifiers.push_back(ImGuiStyleMod(index, *activeValue));
+                imGuiContext.StyleVarStack.push_back(ImGuiStyleMod(index, *activeValue));
                 *activeValue = newValue;
                 return oldValue;
             }
@@ -96,7 +96,7 @@ namespace Gek
             return ImVec2();
         }
 
-        bool InputString(std::string_view label, std::string &string, ImGuiInputTextFlags flags, ImGuiTextEditCallback callback, void *userData)
+        bool InputString(std::string_view label, std::string &string, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void *userData)
         {
             char text[256];
             strcpy(text, string.data());

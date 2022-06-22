@@ -291,7 +291,7 @@ namespace Gek
                     switch (currentGizmoOperation)
                     {
                     case UI::Gizmo::Operation::Translate:
-                        ImGui::InputFloat3("##snapTranslation", gizmoSnapPosition.data, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                        ImGui::InputFloat3("##snapTranslation", gizmoSnapPosition.data, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                         break;
 
                     case UI::Gizmo::Operation::Rotate:
@@ -299,11 +299,11 @@ namespace Gek
                         break;
 
                     case UI::Gizmo::Operation::Scale:
-                        ImGui::InputFloat("##gizmoSnapScale", &gizmoSnapScale, (1.0f / 10.0f), 1.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                        ImGui::InputFloat("##gizmoSnapScale", &gizmoSnapScale, (1.0f / 10.0f), 1.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                         break;
 
                     case UI::Gizmo::Operation::Bounds:
-                        ImGui::InputFloat3("##snapBounds", gizmoSnapBounds.data, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                        ImGui::InputFloat3("##snapBounds", gizmoSnapBounds.data, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                         break;
                     };
 
@@ -603,8 +603,8 @@ namespace Gek
                 if (mainMenuShowing)
                 {
                     auto &style = ImGui::GetStyle();
-                    editorSize.y -= ImGui::GetItemsLineHeightWithSpacing() - style.ItemSpacing.y;
-                    editorPosition.y += ImGui::GetItemsLineHeightWithSpacing() - style.ItemSpacing.y;
+                    editorSize.y -= ImGui::GetFrameHeightWithSpacing() - style.ItemSpacing.y;
+                    editorPosition.y += ImGui::GetFrameHeightWithSpacing() - style.ItemSpacing.y;
                 }
 
                 ImGui::SetNextWindowSize(editorSize);

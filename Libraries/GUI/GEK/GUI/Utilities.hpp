@@ -24,7 +24,7 @@ namespace Gek
         float PushStyleVar(ImGuiStyleVar idx, float val);
         ImVec2 PushStyleVar(ImGuiStyleVar idx, ImVec2 const &val);
 
-        bool InputString(std::string_view label, std::string &string, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = nullptr, void* user_data = nullptr);
+        bool InputString(std::string_view label, std::string &string, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void* user_data = nullptr);
 
         bool CheckButton(std::string_view label, bool *storedState = nullptr, ImVec2 const &size = ImVec2(0.0f, 0.0f));
         bool CheckButton(std::string_view label, bool state, ImVec2 const &size = ImVec2(0.0f, 0.0f));

@@ -42,17 +42,17 @@ namespace Gek
 
             changed |= editorElement("Range"sv, [&](void) -> bool
             {
-                return ImGui::InputFloat("##range", &lightComponent.range, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                return ImGui::InputFloat("##range", &lightComponent.range, 1.0f, 10.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             });
             
             changed |= editorElement("Radius"sv, [&](void) -> bool
             {
-                return ImGui::InputFloat("##radius", &lightComponent.radius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                return ImGui::InputFloat("##radius", &lightComponent.radius, 1.0f, 10.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             });
             
             changed |= editorElement("Intensity"sv, [&](void) -> bool
             {
-                return ImGui::InputFloat("##intensity", &lightComponent.intensity, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                return ImGui::InputFloat("##intensity", &lightComponent.intensity, 1.0f, 10.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             });
 
             ImGui::SetCurrentContext(nullptr);
@@ -101,17 +101,17 @@ namespace Gek
 
             changed |= editorElement("Range"sv, [&](void) -> bool
             {
-                return ImGui::InputFloat("##range", &lightComponent.range, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                return ImGui::InputFloat("##range", &lightComponent.range, 1.0f, 10.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             });
 
             changed |= editorElement("Radius"sv, [&](void) -> bool
             {
-                return ImGui::InputFloat("##radius", &lightComponent.radius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                return ImGui::InputFloat("##radius", &lightComponent.radius, 1.0f, 10.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             });
 
             changed |= editorElement("Intensity"sv, [&](void) -> bool
             {
-                return ImGui::InputFloat("##intensity", &lightComponent.intensity, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                return ImGui::InputFloat("##intensity", &lightComponent.intensity, 1.0f, 10.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             });
 
             changed |= editorElement("Inner Angle"sv, [&](void) -> bool
@@ -126,7 +126,7 @@ namespace Gek
 
             changed |= editorElement("Cone Falloff"sv, [&](void) -> bool
             {
-                return ImGui::InputFloat("##coneFalloff", &lightComponent.coneFalloff, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                return ImGui::InputFloat("##coneFalloff", &lightComponent.coneFalloff, 1.0f, 10.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             });
 
             ImGui::SetCurrentContext(nullptr);
@@ -165,7 +165,7 @@ namespace Gek
 
             changed |= editorElement("Intensity"sv, [&](void) -> bool
             {
-                return ImGui::InputFloat("##intensity", &lightComponent.intensity, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                return ImGui::InputFloat("##intensity", &lightComponent.intensity, 1.0f, 10.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             });
 
             ImGui::SetCurrentContext(nullptr);

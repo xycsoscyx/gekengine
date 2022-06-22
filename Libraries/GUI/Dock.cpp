@@ -859,7 +859,7 @@ namespace Gek
                                 nextParentTab = dockedTab;
                             }
 
-                            if (ImGui::IsItemActive() && ImGui::IsMouseDragging())
+                            if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
                             {
                                 if (!(dockedTab->extraFlags & ImGuiWindowFlags_NoMove))
                                 {

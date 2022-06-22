@@ -27,7 +27,7 @@ SET(NEWTON_BUILD_SANDBOX_DEMOS False CACHE BOOL "" FORCE)
 SET(NEWTON_BUILD_PROFILER False CACHE BOOL "" FORCE)
 SET(NEWTON_STATIC_RUNTIME_LIBRARIES False CACHE BOOL "" FORCE)
 add_subdirectory("newton-dynamics")
-target_include_directories(newton PUBLIC "${CMAKE_CURRENT_LIST_DIR}/newton-dynamics/sdk/dgNewton")
+target_include_directories(newton PUBLIC "${CMAKE_CURRENT_LIST_DIR}/newton-dynamics/newton-3.14/sdk/dgNewton")
 
 project(imgui_gek)
 add_definitions(-DNO_IMGUITOOLBAR)
