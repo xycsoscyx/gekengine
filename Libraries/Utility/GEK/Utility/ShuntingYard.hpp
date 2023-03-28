@@ -91,7 +91,6 @@ namespace Gek
             Operand(Token const &token);
             Operand(Token const &token, Operation *operation);
             Operand(Token const &token, Function *function);
-
         };
 
         using TokenList = std::vector<Token>;
@@ -127,7 +126,7 @@ namespace Gek
 
     private:
         Operand getOperand(Token const &token);
-		bool insertToken(TokenList &infixTokenList, Token &token);
+		bool insertToken(TokenList &infixTokenList, Token &&token);
         std::optional<TokenList> convertExpressionToInfix(std::string const &expression);
         std::optional<OperandList> convertInfixToReversePolishNotation(TokenList const &infixTokenList);
         std::optional<float> evaluateReversePolishNotation(OperandList const &rpnOperandList);

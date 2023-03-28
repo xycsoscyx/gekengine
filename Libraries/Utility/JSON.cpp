@@ -1,7 +1,9 @@
-#include <jsoncons/json.hpp>
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/Context.hpp"
+#include "nlohmann/json.hpp"
+
+using json = nlohmann::json;
 
 namespace Gek
 {
@@ -9,7 +11,7 @@ namespace Gek
     const JSON::Object JSON::EmptyObject = JSON::Object();
     const JSON JSON::Empty = JSON();
 
-    JSON GetFromJSON(jsoncons::json const &object)
+    JSON GetFromJSON(json &object)
     {
         if (object.empty() || object.is_null())
         {
@@ -20,27 +22,27 @@ namespace Gek
         switch (object.type())
         {
         //case jsoncons::json_type::byte_string_value:
-        case jsoncons::json_type::string_value:
-            value = object.as_string();
+        case json::value_t::string:
+            value = object.get<std::string>();
             break;
 
-        case jsoncons::json_type::bool_value:
-            value = object.as<bool>();
+        case json::value_t::boolean:
+            value = object.get<bool>();
             break;
 
-        case jsoncons::json_type::double_value:
-            value = object.as<float>();
+        case json::value_t::number_float:
+            value = object.get<float>();
             break;
 
-        case jsoncons::json_type::int64_value:
-            value = object.as<int64_t>();
+        case json::value_t::number_integer:
+            value = object.get<int64_t>();
             break;
 
-        case jsoncons::json_type::uint64_value:
-            value = object.as<uint64_t>();
+        case json::value_t::number_unsigned:
+            value = object.get<uint64_t>();
             break;
 
-        case jsoncons::json_type::array_value:
+        case json::value_t::array:
             value = JSON::Array(object.size());
             for (size_t index = 0; index < object.size(); ++index)
             {
@@ -49,9 +51,9 @@ namespace Gek
 
             break;
 
-        case jsoncons::json_type::object_value:
+        case json::value_t::object:
             value = JSON::Object();
-            for (auto &pair : object.object_range())
+            for (auto &pair : object.items())
             {
                 value[pair.key()] = GetFromJSON(pair.value());
             }
@@ -67,21 +69,12 @@ namespace Gek
         if (filePath.isFile())
         {
             std::string object(FileSystem::Load(filePath, String::Empty));
-            std::istringstream dataStream(object);
-            jsoncons::json_decoder<jsoncons::json> decoder;
-            jsoncons::json_reader reader(dataStream, decoder);
-
-            std::error_code errorCode;
-            reader.read(errorCode);
-            if (errorCode)
+            if (!object.empty())
             {
-                LockedWrite{ std::cerr } << errorCode.message() << " at line " << reader.line() << ", and column " << reader.column() << ", in " << filePath.getString();
+                auto json = json::parse(object);
+                *this = GetFromJSON(json);
             }
-            else
-            {
-                *this = GetFromJSON(decoder.get_result());
-            }
-        }
+         }
     }
 
     void JSON::save(FileSystem::Path const &filePath)
@@ -118,7 +111,7 @@ namespace Gek
         return visit(
             [](std::string const &visitedData)
         {
-            return String::Format("\"{}\"", escapeJsonString(visitedData));
+            return std::format("\"{}\"", escapeJsonString(visitedData));
         },
             [](JSON::Array const &visitedData)
         {
@@ -163,7 +156,7 @@ namespace Gek
         },
             [](auto && visitedData)
         {
-            return String::Format("{}", visitedData);
+            return std::format("{}", visitedData);
         });
     }
 
@@ -328,7 +321,7 @@ namespace Gek
         },
             [defaultValue](auto const &visitedData)
         {
-            return String::Format("{}", GetValueOrDefault(visitedData, defaultValue));
+            return std::format("{}", GetValueOrDefault(visitedData, defaultValue));
         });
     }
 }; // namespace Gek

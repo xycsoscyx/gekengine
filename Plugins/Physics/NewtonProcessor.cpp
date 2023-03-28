@@ -6,7 +6,6 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/Hash.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include "GEK/Utility/Profiler.hpp"
 #include "GEK/API/Core.hpp"
 #include "GEK/API/Processor.hpp"
 #include "GEK/API/Population.hpp"
@@ -469,21 +468,18 @@ namespace Gek
                 assert(population);
                 assert(newtonWorld);
 
-				GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Newton"sv, "Update"sv, Profiler::EmptyArguments)
+				bool editorActive = core->getOption("editor", "active").convert(false);
+				if (frameTime > 0.0f && !editorActive)
 				{
-					bool editorActive = core->getOption("editor", "active").convert(false);
-					if (frameTime > 0.0f && !editorActive)
+					static constexpr float StepTime = (1.0f / 120.0f);
+					while (frameTime > 0.0f)
 					{
-						static constexpr float StepTime = (1.0f / 120.0f);
-						while (frameTime > 0.0f)
-						{
-							NewtonUpdate(newtonWorld, std::min(frameTime, StepTime));
-							frameTime -= StepTime;
-						};
+						NewtonUpdate(newtonWorld, std::min(frameTime, StepTime));
+						frameTime -= StepTime;
+					};
 
-						NewtonWaitForUpdateToFinish(newtonWorld);
-					}
-				} GEK_PROFILER_END_SCOPE();
+					NewtonWaitForUpdateToFinish(newtonWorld);
+				}
             }
 
             // Newton::Entity

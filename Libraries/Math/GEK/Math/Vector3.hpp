@@ -69,8 +69,8 @@ namespace Gek
             }
 
             Vector3(TYPE2 const &xy, TYPE z) noexcept
-                : x(vector.x)
-                , y(vector.y)
+                : x(xy.x)
+                , y(xy.y)
                 , z(z)
             {
             }

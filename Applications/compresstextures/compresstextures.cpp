@@ -201,7 +201,6 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	ContextPtr context(Context::Create(searchPathList));
 	if (context)
 	{
-        context->startProfiler(String::Empty);
         context->setCachePath(cachePath);
 
 		wchar_t gekDataPath[MAX_PATH + 1] = L"\0";

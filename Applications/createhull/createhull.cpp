@@ -4,7 +4,6 @@
 #include "GEK/Shapes/AlignedBox.hpp"
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/String.hpp"
-#include "GEK/Utility/JSON.hpp"
 #include <algorithm>
 #include <vector>
 

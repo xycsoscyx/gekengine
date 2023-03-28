@@ -3,7 +3,6 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/Utility/Profiler.hpp"
 #include "GEK/System/VideoDevice.hpp"
 #include "GEK/System/Window.hpp"
 #include <d3dcompiler.h>
@@ -1778,41 +1777,13 @@ namespace Gek
             Video::Device::ContextPtr defaultContext;
             Video::TargetPtr backBuffer;
 
-            struct BufferedQuery
-            {
-                Video::QueryPtr queries[2];
-            };
-
-            struct BlockQuery
-            {
-                std::string_view name;
-                Profiler::TimeFormat startTimes[2];
-                BufferedQuery begin, end;
-            };
-
-            BufferedQuery disjointTimeStamp;
-            using EventMap = std::unordered_map<Hash, BlockQuery>;
-            concurrency::critical_section criticalSection;
-            EventMap eventMap;
-
-            Hash renderProcessIdentifier;
-            Hash renderThreadIdentifier;
-            int currentQueryFrame = 0;
-            int currentCollectFrame = -1;
-            std::array<std::vector<EventMap::value_type *>, 2> frameEventList;
-
         public:
             Device(Gek::Context *context, Window *window, Video::Device::Description deviceDescription)
                 : ContextRegistration(context)
                 , window(window)
                 , isChildWindow(GetParent((HWND)window->getBaseWindow()) != nullptr)
-                , renderProcessIdentifier(Hash(this))
-                , renderThreadIdentifier(Hash(this))
             {
                 assert(window);
-
-                GEK_PROFILER_SET_THREAD_NAME(getProfiler(), renderThreadIdentifier, "Render Thread"sv);
-                GEK_PROFILER_SET_THREAD_SORT_INDEX(getProfiler(), renderThreadIdentifier, 100);
 
                 UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG
@@ -1873,36 +1844,11 @@ namespace Gek
 #endif
 
                 defaultContext = std::make_unique<Context>(d3dDeviceContext);
-                disjointTimeStamp.queries[0] = createQuery(Video::Query::Type::DisjointTimeStamp);
-                disjointTimeStamp.queries[1] = createQuery(Video::Query::Type::DisjointTimeStamp);
 
-                auto query = createQuery(Video::Query::Type::TimeStamp);
-                defaultContext->begin(disjointTimeStamp.queries[0].get());
-                defaultContext->end(query.get());
-                defaultContext->end(disjointTimeStamp.queries[0].get());
-
-                Video::Query::DisjointTimeStamp disjointResult;
-                defaultContext->getData(disjointTimeStamp.queries[0].get(), &disjointResult, sizeof(Video::Query::DisjointTimeStamp), true);
-                if (!disjointResult.isDisjoint)
-                {
-                    double frequency = (1.0 / double(disjointResult.frequency));
-
-                    uint64_t eventTime;
-                    if (defaultContext->getData(query.get(), &eventTime, sizeof(uint64_t)) == Video::Query::Status::Ready)
-                    {
-                        auto timeStamp = std::chrono::duration<double>(double(eventTime) * frequency);
-                        auto timeFormat = std::chrono::duration_cast<Profiler::TimeFormat>(timeStamp);
-                        getContext()->synchronizeClock(renderProcessIdentifier, renderThreadIdentifier, timeFormat);
-                    }
-                }
             }
 
             ~Device(void)
             {
-                disjointTimeStamp.queries[0] = nullptr;
-                disjointTimeStamp.queries[1] = nullptr;
-                eventMap.clear();
-
                 setFullScreenState(false);
 
                 backBuffer = nullptr;
@@ -2071,8 +2017,10 @@ namespace Gek
                 }
             }
 
+            std::mutex backBufferMutex;
             Video::Target * const getBackBuffer(void)
             {
+                backBufferMutex.lock();
                 if (!backBuffer)
                 {
                     CComPtr<ID3D11Texture2D> d3dRenderTarget;
@@ -2103,9 +2051,11 @@ namespace Gek
                     description.width = textureDescription.Width;
                     description.height = textureDescription.Height;
                     description.format = DirectX::GetFormat(textureDescription.Format);
-                    backBuffer = std::make_unique<TargetViewTexture>(CComQIPtr<ID3D11Resource>(d3dRenderTarget), d3dRenderTargetView, d3dShaderResourceView, description);
+                    auto d3dRenderTargetResource = CComQIPtr<ID3D11Resource>(d3dRenderTarget);
+                    backBuffer = std::make_unique<TargetViewTexture>(d3dRenderTargetResource, d3dRenderTargetView, d3dShaderResourceView, description);
                 }
 
+                backBufferMutex.unlock();
                 return backBuffer.get();
             }
 
@@ -2640,7 +2590,8 @@ namespace Gek
 
                     CComPtr<ID3DBlob> d3dShaderBlob;
                     CComPtr<ID3DBlob> d3dCompilerErrors;
-                    HRESULT resultValue = D3DCompile(uncompiledProgram.data(), (uncompiledProgram.size() + 1), name.data(), nullptr, &Include(std::move(onInclude)), entryFunction.data(), typeSearch->second.data(), flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+                    Include includes(std::move(onInclude));
+                    HRESULT resultValue = D3DCompile(uncompiledProgram.data(), (uncompiledProgram.size() + 1), name.data(), nullptr, &includes, entryFunction.data(), typeSearch->second.data(), flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                     if (FAILED(resultValue) || !d3dShaderBlob)
                     {
                         _com_error error(resultValue);
@@ -3096,99 +3047,6 @@ namespace Gek
                 assert(dxgiSwapChain);
 
                 dxgiSwapChain->Present(waitForVerticalSync ? 1 : 0, 0);
-            }
-
-            void beginProfilerBlock(void)
-            {
-                defaultContext->begin(disjointTimeStamp.queries[currentQueryFrame].get());
-                beginProfilerEvent("Video Frame"sv, Hash(this));
-            }
-
-            void beginProfilerEvent(std::string_view name, Hash eventIdentifier)
-            {
-                while (!criticalSection.try_lock())
-                {
-                    Sleep(1);
-                };
-
-                auto eventInsert = eventMap.insert({ eventIdentifier, BlockQuery() });
-                auto &eventSearch = eventInsert.first;
-                auto &eventData = eventSearch->second;
-                if (eventInsert.second)
-                {
-                    eventData.name = name;
-                    eventData.begin.queries[0] = createQuery(Video::Query::Type::TimeStamp);
-                    eventData.begin.queries[1] = createQuery(Video::Query::Type::TimeStamp);
-                    eventData.end.queries[0] = createQuery(Video::Query::Type::TimeStamp);
-                    eventData.end.queries[1] = createQuery(Video::Query::Type::TimeStamp);
-                }
-
-                criticalSection.unlock();
-                eventData.startTimes[currentQueryFrame] = Profiler::GetProfilerTime();
-                defaultContext->end(eventData.begin.queries[currentQueryFrame].get());
-            }
-
-            void endProfilerEvent(std::string_view name, Hash eventIdentifier)
-            {
-                while (!criticalSection.try_lock())
-                {
-                    Sleep(1);
-                };
-
-                criticalSection.unlock();
-                auto eventSearch = eventMap.find(eventIdentifier);
-                if (eventSearch == std::end(eventMap))
-                {
-                }
-                else
-                {
-                    auto eventData = &(*eventSearch);
-                    frameEventList[currentQueryFrame].push_back(eventData);
-                    defaultContext->end(eventData->second.end.queries[currentQueryFrame].get());
-                }
-            }
-
-            void endProfilerBlock(void)
-            {
-                endProfilerEvent("Video Frame"sv, Hash(this));
-
-                defaultContext->end(disjointTimeStamp.queries[currentQueryFrame].get());
-                ++currentQueryFrame &= 1;
-
-                if (currentCollectFrame < 0)
-                {
-                    // Haven't run enough frames yet to have data
-                    currentCollectFrame = 0;
-                    return;
-                }
-
-                int currentFrame = currentCollectFrame;
-                ++currentCollectFrame &= 1;
-
-                // Wait for data
-                Video::Query::DisjointTimeStamp disjointResult;
-                defaultContext->getData(disjointTimeStamp.queries[currentFrame].get(), &disjointResult, sizeof(Video::Query::DisjointTimeStamp), true);
-                if (disjointResult.isDisjoint)
-                {
-                    return;
-                }
-
-                double frequency = (1.0 / double(disjointResult.frequency));
-                for (auto &eventSearch : frameEventList[currentFrame])
-                {
-                    auto &eventData = eventSearch->second;
-                    uint64_t eventStartTime, eventEndTime;
-                    if (defaultContext->getData(eventData.begin.queries[currentFrame].get(), &eventStartTime, sizeof(uint64_t)) == Video::Query::Status::Ready &&
-                        defaultContext->getData(eventData.end.queries[currentFrame].get(), &eventEndTime, sizeof(uint64_t)) == Video::Query::Status::Ready)
-                    {
-                        auto startTime = std::chrono::duration<double>(double(eventStartTime) * frequency);
-                        auto endTime = std::chrono::duration<double>(double(eventEndTime) * frequency);
-                        auto duration = std::chrono::duration_cast<Profiler::TimeFormat>(endTime - startTime);
-                        getProfiler()->addEvent(renderProcessIdentifier, renderThreadIdentifier, __FILE__, eventData.name, std::chrono::duration_cast<Profiler::TimeFormat>(startTime), duration, 'X', eventSearch->first, Profiler::EmptyArguments);
-                    }
-                }
-
-                frameEventList[currentFrame].clear();
             }
         };
 

@@ -562,7 +562,7 @@ namespace Gek
         using PipelineStateHandle = Handle<uint8_t, __LINE__>;
         using SamplerStateHandle = Handle<uint8_t, __LINE__>;
         using ResourceHandle = Handle<uint32_t, __LINE__>;
-        using QueueHandle = Handle<uint16_t, __LINE__>;
+        using QueueHandle = Handle<uint32_t, __LINE__>;
 
         GEK_INTERFACE(Device)
         {

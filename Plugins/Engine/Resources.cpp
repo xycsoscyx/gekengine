@@ -105,48 +105,66 @@ namespace Gek
     {
         static ShuntingYard shuntingYard;
 
-        template <class HANDLE, typename TYPE>
+        template <typename HANDLE, typename TYPE>
         class ResourceCache
         {
         public:
             using TypePtr = std::shared_ptr<TYPE>;
+            using AtomicPtr = std::atomic<TypePtr>;
             using ResourceHandleMap = concurrency::concurrent_unordered_map<std::size_t, HANDLE>;
-            using ResourceMap = concurrency::concurrent_unordered_map<HANDLE, TypePtr>;
+            using ResourceMap = concurrency::concurrent_unordered_map<HANDLE, AtomicPtr>;
+            using ResourceType = ResourceMap::value_type;
+            using HandleType = HANDLE;
 
         private:
             uint32_t validationIdentifier = 0;
             uint32_t nextIdentifier = 0;
 
         protected:
-			ThreadPool<5> &loadPool;
-			ResourceHandleMap resourceHandleMap;
+            ThreadPool& loadPool;
+            ResourceHandleMap resourceHandleMap;
             ResourceMap resourceMap;
 
         public:
-            ResourceCache(ThreadPool<5> &loadPool)
+            ResourceCache(ThreadPool& loadPool)
                 : loadPool(loadPool)
             {
             }
 
             virtual ~ResourceCache(void) = default;
 
-            ResourceMap &getResourceMap(void)
+            void forEachResource(std::function<void(HandleType, TypePtr)> onResource)
             {
-                return resourceMap;
+                for (auto& resourcePair : resourceMap)
+                {
+                    onResource(resourcePair.first, resourcePair.second.load());
+                }
             }
 
-            virtual void clear(void)
+            virtual void clearExtra(void)
             {
+            }
+
+            void clear(void)
+            {
+                clearExtra();
                 validationIdentifier = nextIdentifier;
                 resourceHandleMap.clear();
                 resourceMap.clear();
             }
 
-			void setResource(HANDLE handle, TypePtr const &data)
+            void setResource(HANDLE handle, TypePtr &&data)
             {
-                auto &resourceSearch = resourceMap.insert(std::make_pair(handle, nullptr));
-                auto &atomicResource = resourceSearch.first->second;
-                std::atomic_exchange(&atomicResource, data);
+                TypePtr blankObject;
+                auto resourceSearch = resourceMap.insert(std::make_pair(handle, blankObject));
+                resourceSearch.first->second.store(data);
+            }
+
+            Task scheduleResource(HANDLE handle, std::function<TypePtr(HandleType)> &&load)
+            {
+                auto localLoad = std::move(load);
+                co_await loadPool.schedule();
+                setResource(handle, localLoad(handle));
             }
 
             virtual TYPE * const getResource(HANDLE handle) const
@@ -156,7 +174,7 @@ namespace Gek
                     auto resourceSearch = resourceMap.find(handle);
                     if (resourceSearch != std::end(resourceMap))
                     {
-                        return resourceSearch->second.get();
+                        return resourceSearch->second.load().get();
                     }
                 }
 
@@ -169,32 +187,33 @@ namespace Gek
             }
         };
 
-        template <class HANDLE, typename TYPE>
+        template <typename HANDLE, typename TYPE>
         class GeneralResourceCache
             : public ResourceCache<HANDLE, TYPE>
         {
+            using TypePtr = ResourceCache<HANDLE, TYPE>::TypePtr;
+            using HandleType = ResourceCache<HANDLE, TYPE>::HandleType;
+
         private:
             concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
 
         public:
-            GeneralResourceCache(ThreadPool<5> &loadPool)
-                : ResourceCache(loadPool)
+            GeneralResourceCache(ThreadPool &loadPool)
+                : ResourceCache<HANDLE, TYPE>(loadPool)
             {
             }
 
-            void clear(void)
+            void clearExtra(void)
             {
                 requestedLoadSet.clear();
-                ResourceCache::clear();
             }
 
-			template <typename FUNCTOR>
-            std::pair<bool, HANDLE> getHandle(std::size_t hash, FUNCTOR &&load)
+            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::function<TypePtr(HandleType)> &&load)
             {
                 if (requestedLoadSet.count(hash) > 0)
                 {
-                    auto resourceSearch = resourceHandleMap.find(hash);
-                    if (resourceSearch != std::end(resourceHandleMap))
+                    auto resourceSearch = this->resourceHandleMap.find(hash);
+                    if (resourceSearch != std::end(this->resourceHandleMap))
                     {
                         return std::make_pair(false, resourceSearch->second);
                     }
@@ -202,13 +221,9 @@ namespace Gek
                 else
                 {
                     requestedLoadSet.insert(hash);
-                    HANDLE handle = getNextHandle();
-                    resourceHandleMap[hash] = handle;
-					loadPool.enqueueAndDetach([this, handle, load = std::move(load)](void) -> void
-                    {
-                        setResource(handle, load(handle));
-                    }, __FILE__, __LINE__);
-
+                    HANDLE handle = this->getNextHandle();
+                    this->resourceHandleMap[hash] = handle;
+                    this->scheduleResource(handle, std::move(load));
                     return std::make_pair(true, handle);
                 }
 
@@ -219,8 +234,8 @@ namespace Gek
             {
                 if (requestedLoadSet.count(hash) > 0)
                 {
-                    auto resourceSearch = resourceHandleMap.find(hash);
-                    if (resourceSearch != std::end(resourceHandleMap))
+                    auto resourceSearch = this->resourceHandleMap.find(hash);
+                    if (resourceSearch != std::end(this->resourceHandleMap))
                     {
                         return resourceSearch->second;
                     }
@@ -230,60 +245,58 @@ namespace Gek
             }
         };
 
-        template <class HANDLE, typename TYPE>
+        template <typename HANDLE, typename TYPE>
         class DynamicResourceCache
             : public ResourceCache<HANDLE, TYPE>
         {
+            using TypePtr = ResourceCache<HANDLE, TYPE>::TypePtr;
+            using HandleType = ResourceCache<HANDLE, TYPE>::HandleType;
+
         private:
             concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
             concurrency::concurrent_unordered_map<HANDLE, std::size_t> loadParameters;
 
         public:
-            DynamicResourceCache(ThreadPool<5> &loadPool)
-                : ResourceCache(loadPool)
+            DynamicResourceCache(ThreadPool &loadPool)
+                : ResourceCache<HANDLE, TYPE>(loadPool)
             {
             }
 
-            void clear(void)
+            void clearExtra(void)
             {
                 loadParameters.clear();
                 requestedLoadSet.clear();
-                ResourceCache::clear();
             }
 
             void setHandle(std::size_t hash, HANDLE handle, TypePtr data)
             {
                 requestedLoadSet.insert(hash);
-                resourceHandleMap[hash] = handle;
-                setResource(handle, data);
+                this->resourceHandleMap[hash] = handle;
+                this->setResource(handle, data);
             }
 
-			template <typename FUNCTOR>
-			std::pair<bool, HANDLE> getHandle(std::size_t hash, std::size_t parameters, FUNCTOR &&load, uint32_t flags)
+            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::size_t parameters, std::function<TypePtr(HandleType)> &&load, uint32_t flags)
             {
                 HANDLE handle;
                 if (requestedLoadSet.count(hash) > 0)
                 {
-                    auto resourceSearch = resourceHandleMap.find(hash);
-                    if (resourceSearch != std::end(resourceHandleMap))
+                    auto resourceSearch = this->resourceHandleMap.find(hash);
+                    if (resourceSearch != std::end(this->resourceHandleMap))
                     {
                         HANDLE handle = resourceSearch->second;
-                        if (!(flags & Resources::Flags::LoadFromCache))
+                        if (!(flags & Plugin::Resources::Flags::LoadFromCache))
                         {
                             auto loadParametersSearch = loadParameters.find(handle);
                             if (loadParametersSearch == std::end(loadParameters) || loadParametersSearch->second != parameters)
                             {
                                 loadParameters[handle] = parameters;
-                                if (flags & Resources::Flags::LoadImmediately)
+                                if (flags & Plugin::Resources::Flags::LoadImmediately)
                                 {
-                                    setResource(handle, load(handle));
+                                    this->setResource(handle, load(handle));
                                 }
                                 else
                                 {
-									loadPool.enqueueAndDetach([this, handle, load](void) -> void
-                                    {
-										setResource(handle, load(handle));
-                                    }, __FILE__, __LINE__);
+                                    this->scheduleResource(handle, std::move(load));
                                 }
 
                                 return std::make_pair(true, handle);
@@ -296,19 +309,16 @@ namespace Gek
                 else
                 {
                     requestedLoadSet.insert(hash);
-                    HANDLE handle = getNextHandle();
-                    resourceHandleMap[hash] = handle;
+                    HANDLE handle = this->getNextHandle();
+                    this->resourceHandleMap[hash] = handle;
                     loadParameters[handle] = parameters;
-                    if (flags & Resources::Flags::LoadImmediately)
+                    if (flags & Plugin::Resources::Flags::LoadImmediately)
                     {
-                        setResource(handle, load(handle));
+                        this->setResource(handle, load(handle));
                     }
                     else
                     {
-						loadPool.enqueueAndDetach([this, handle, load](void) -> void
-                        {
-							setResource(handle, load(handle));
-                        }, __FILE__, __LINE__);
+                        this->scheduleResource(handle, std::move(load));
                     }
 
                     return std::make_pair(true, handle);
@@ -321,8 +331,8 @@ namespace Gek
             {
                 if (requestedLoadSet.count(hash) > 0)
                 {
-                    auto resourceSearch = resourceHandleMap.find(hash);
-                    if (resourceSearch != std::end(resourceHandleMap))
+                    auto resourceSearch = this->resourceHandleMap.find(hash);
+                    if (resourceSearch != std::end(this->resourceHandleMap))
                     {
                         return resourceSearch->second;
                     }
@@ -332,37 +342,35 @@ namespace Gek
             }
         };
 
-        template <class HANDLE, typename TYPE>
+        template <typename HANDLE, typename TYPE>
         class ProgramResourceCache
             : public ResourceCache<HANDLE, TYPE>
         {
+            using TypePtr = ResourceCache<HANDLE, TYPE>::TypePtr;
+            using HandleType = ResourceCache<HANDLE, TYPE>::HandleType;
+
         public:
-            ProgramResourceCache(ThreadPool<5> &loadPool)
-                : ResourceCache(loadPool)
+            ProgramResourceCache(ThreadPool &loadPool)
+                : ResourceCache<HANDLE, TYPE>(loadPool)
             {
             }
 
-			template <typename FUNCTOR>
-            HANDLE getHandle(FUNCTOR &&load)
+            HANDLE getHandle(std::function<TypePtr(HandleType)> &&load)
             {
                 HANDLE handle;
-                handle = getNextHandle();
-				loadPool.enqueueAndDetach([this, handle, load](void) -> void
-                {
-                    setResource(handle, load(handle));
-                }, __FILE__, __LINE__);
-
+                handle = this->getNextHandle();
+                this->scheduleResource(handle, std::move(load));
                 return handle;
             }
         };
 
-		template <class HANDLE, typename TYPE>
+		template <typename HANDLE, typename TYPE>
 		class StaticProgramResourceCache
 			: public ResourceCache<HANDLE, TYPE>
 		{
 		public:
-			StaticProgramResourceCache(ThreadPool<5> &loadPool)
-				: ResourceCache(loadPool)
+			StaticProgramResourceCache(ThreadPool &loadPool)
+				: ResourceCache<HANDLE, TYPE>(loadPool)
 			{
 			}
 
@@ -370,30 +378,33 @@ namespace Gek
 			HANDLE getHandle(FUNCTOR &&load)
 			{
 				HANDLE handle;
-				handle = getNextHandle();
-				setResource(handle, load(handle));
+				handle = this->getNextHandle();
+                this->setResource(handle, load(handle));
 				return handle;
 			}
 		};
 
-		template <class HANDLE, typename TYPE>
+		template <typename HANDLE, typename TYPE>
         class ReloadResourceCache
             : public ResourceCache<HANDLE, TYPE>
         {
+            using TypePtr = ResourceCache<HANDLE, TYPE>::TypePtr;
+            using HandleType = ResourceCache<HANDLE, TYPE>::HandleType;
+
         private:
             concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
 
         public:
-            ReloadResourceCache(ThreadPool<5> &loadPool)
-                : ResourceCache(loadPool)
+            ReloadResourceCache(ThreadPool &loadPool)
+                : ResourceCache<HANDLE, TYPE>(loadPool)
             {
             }
 
             void reload(void)
             {
-                for (auto &resourceSearch : resourceMap)
+                for (auto &resourceSearch : this->resourceMap)
                 {
-                    auto &resource = std::atomic_load(&resourceSearch.second);
+                    auto resource = resourceSearch.second.load();
                     if (resource)
                     {
                         resource->reload();
@@ -401,20 +412,18 @@ namespace Gek
                 }
             }
 
-            void clear(void)
+            void clearExtra(void)
             {
                 requestedLoadSet.clear();
-                ResourceCache::clear();
             }
 
-			template <typename FUNCTOR>
-            std::pair<bool, HANDLE> getHandle(std::size_t hash, FUNCTOR &&load)
+            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::function<TypePtr(HandleType)> &&load)
             {
                 HANDLE handle;
                 if (requestedLoadSet.count(hash) > 0)
                 {
-                    auto resourceSearch = resourceHandleMap.find(hash);
-                    if (resourceSearch != std::end(resourceHandleMap))
+                    auto resourceSearch = this->resourceHandleMap.find(hash);
+                    if (resourceSearch != std::end(this->resourceHandleMap))
                     {
                         return std::make_pair(false, resourceSearch->second);
                     }
@@ -422,9 +431,9 @@ namespace Gek
                 else
                 {
                     requestedLoadSet.insert(hash);
-                    HANDLE handle = getNextHandle();
-                    resourceHandleMap[hash] = handle;
-                    setResource(handle, load(handle));
+                    HANDLE handle = this->getNextHandle();
+                    this->resourceHandleMap[hash] = handle;
+                    this->setResource(handle, load(handle));
                     return std::make_pair(true, handle);
                 }
 
@@ -435,8 +444,8 @@ namespace Gek
             {
                 if (requestedLoadSet.count(hash) > 0)
                 {
-                    auto resourceSearch = resourceHandleMap.find(hash);
-                    if (resourceSearch != std::end(resourceHandleMap))
+                    auto resourceSearch = this->resourceHandleMap.find(hash);
+                    if (resourceSearch != std::end(this->resourceHandleMap))
                     {
                         return resourceSearch->second;
                     }
@@ -524,7 +533,7 @@ namespace Gek
             Video::Device *videoDevice = nullptr;
             Plugin::Renderer *renderer = nullptr;
 
-            ThreadPool<5> loadPool;
+            ThreadPool loadPool;
             std::recursive_mutex shaderMutex;
 
 			StaticProgramResourceCache<ProgramHandle, Video::Program> staticProgramCache;
@@ -557,7 +566,7 @@ namespace Gek
 
                 bool operator = (bool state)
                 {
-                    this->state = state;
+                    Validate::state = state;
                     return state;
                 }
             };
@@ -580,6 +589,7 @@ namespace Gek
                 , renderStateCache(loadPool)
                 , depthStateCache(loadPool)
                 , blendStateCache(loadPool)
+                , loadPool(5)
             {
                 assert(core);
                 assert(videoDevice);
@@ -660,15 +670,12 @@ namespace Gek
 				auto lowerName = String::GetLower(name);
 				if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_Framed))
 				{
-					auto &resourceMap = cache.getResourceMap();
-					for (auto &resourcePair : resourceMap)
+                    cache.forEachResource([&](CACHE::HandleType handle, CACHE::TypePtr object) -> void
 					{
-						auto handle = resourcePair.first;
-						auto &object = resourcePair.second;
 						std::string nodeName(object->getName());
 						if (nodeName.empty())
 						{
-							nodeName = String::Format("{}_{}", lowerName, static_cast<uint64_t>(handle.identifier));
+							nodeName = std::format("{}_{}", lowerName, static_cast<uint64_t>(handle.identifier));
 						}
 
 						if (ImGui::TreeNodeEx(nodeName.data(), ImGuiTreeNodeFlags_Framed))
@@ -676,34 +683,32 @@ namespace Gek
 							onObject(object);
 							ImGui::TreePop();
 						}
-					}
+					});
 
 					ImGui::TreePop();
 				}
 			}
 
-			template <typename CACHE, typename FUNCTOR>
-			void showVideoResourceMap(CACHE &cache, std::string_view name, FUNCTOR &&onObject)
+			template <typename HANDLE, typename TYPE, typename FUNCTOR>
+			void showVideoResourceMap(ResourceCache<HANDLE, TYPE> *cache, std::string_view name, FUNCTOR &&onObject)
             {
                 if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_Framed))
                 {
                     auto lowerName = String::GetLower(name);
-                    std::unordered_map<std::string_view, std::vector<CACHE::ResourceMap::value_type>> typeDataMap;
-                    auto &resourceMap = cache.getResourceMap();
-                    for (auto &resourcePair : resourceMap)
+                    std::unordered_map<std::string_view, std::vector<std::pair<HANDLE, std::shared_ptr<TYPE>>>> typeDataMap;
+                    cache->forEachResource([&](ResourceCache<HANDLE, TYPE>::HandleType handle, ResourceCache<HANDLE, TYPE>::TypePtr object) -> void
                     {
-                        auto &object = resourcePair.second;
 						if (dynamic_cast<Video::Target *>(object.get()))
 						{
-							typeDataMap["Target"sv].push_back(resourcePair);
+							typeDataMap["Target"sv].push_back(std::make_pair(handle, object));
 						}
 						else if (dynamic_cast<Video::Texture *>(object.get()))
 						{
-							typeDataMap["Texture"sv].push_back(resourcePair);
+							typeDataMap["Texture"sv].push_back(std::make_pair(handle, object));
 						}
 						else if (dynamic_cast<Video::Buffer *>(object.get()))
 						{
-							typeDataMap["Buffer"sv].push_back(resourcePair);
+							typeDataMap["Buffer"sv].push_back(std::make_pair(handle, object));
 						}
 						else
 						{
@@ -721,11 +726,11 @@ namespace Gek
 								auto typeSearch = ProgramTypeMap.find(program->getInformation().type);
 								if (typeSearch != std::end(ProgramTypeMap))
 								{
-									typeDataMap[typeSearch->second].push_back(resourcePair);
+									typeDataMap[typeSearch->second].push_back(std::make_pair(handle, object));
 								}
 							}
 						}
-					}
+					});
 
                     for (auto &typePair : typeDataMap)
                     {
@@ -735,7 +740,7 @@ namespace Gek
                             {
                                 auto handle = resourcePair.first;
                                 auto &object = resourcePair.second;
-                                auto nodeName = String::Format("{} - {}", static_cast<uint64_t>(handle.identifier), (object->getName().empty() ? lowerName : object->getName()));
+                                auto nodeName = std::format("{} - {}", static_cast<uint64_t>(handle.identifier), (object->getName().empty() ? lowerName : object->getName()));
                                 if (ImGui::TreeNodeEx(nodeName.data(), ImGuiTreeNodeFlags_Framed))
                                 {
                                     onObject(object);
@@ -776,20 +781,20 @@ namespace Gek
             {
 				if (ImGui::TreeNodeEx("Programs", ImGuiTreeNodeFlags_Framed))
 				{
-					showVideoResourceMap(staticProgramCache, "Global"s, [&](auto &object) -> void
+					showVideoResourceMap(&staticProgramCache, "Global"s, [&](auto &object) -> void
 					{
-						auto &information = object->getInformation();
-						auto &pathString = information.debugPath.getString();
+						auto information = object->getInformation();
+						auto pathString = information.debugPath.getString();
 						ImGui::PushItemWidth(-1.0f);
 						ImGui::InputText("##path", const_cast<char *>(pathString.data()), pathString.size(), ImGuiInputTextFlags_ReadOnly);
 						ImGui::InputTextMultiline("##data", const_cast<char *>(information.uncompiledData.data()), information.uncompiledData.size(), ImVec2(-1.0f, 500.0f), ImGuiInputTextFlags_ReadOnly);
 						ImGui::PopItemWidth();
 					});
 
-					showVideoResourceMap(programCache, "Local"s, [&](auto &object) -> void
+					showVideoResourceMap(&programCache, "Local"s, [&](auto &object) -> void
 					{
-						auto &information = object->getInformation();
-						auto &pathString = information.debugPath.getString();
+						auto information = object->getInformation();
+						auto pathString = information.debugPath.getString();
 						ImGui::PushItemWidth(-1.0f);
 						ImGui::InputText("##path", const_cast<char *>(pathString.data()), pathString.size(), ImGuiInputTextFlags_ReadOnly);
 						ImGui::InputTextMultiline("##data", const_cast<char *>(information.uncompiledData.data()), information.uncompiledData.size(), ImVec2(-1.0f, 500.0f), ImGuiInputTextFlags_ReadOnly);
@@ -807,19 +812,19 @@ namespace Gek
 				});
             }
 
-            void showResourceValue(std::string_view text, std::string_view label, std::string &value)
+            void showResourceValue(std::string_view text, std::string_view label, const std::string &value)
             {
                 ImGui::AlignTextToFramePadding();
                 ImGui::Text(text.data());
                 ImGui::SameLine();
                 ImGui::PushItemWidth(-1.0f);
-                UI::InputString(label.data(), value, ImGuiInputTextFlags_ReadOnly);
+                UI::InputString(label.data(), value, 0);
                 ImGui::PopItemWidth();
             }
 
             void showDynamicCache(void)
             {
-                showVideoResourceMap(dynamicCache, "Resources"s, [&](auto &object) -> void
+                showVideoResourceMap(&dynamicCache, "Resources"s, [&](auto &object) -> void
                 {
 					if (dynamic_cast<Video::Texture *>(object.get()))
                     {
@@ -954,18 +959,18 @@ namespace Gek
             VisualHandle loadVisual(std::string_view visualName)
             {
                 auto hash = GetHash(visualName);
-                return visualCache.getHandle(hash, [this, visualName = std::string(visualName)](VisualHandle)->Engine::VisualPtr
+                return visualCache.getHandle(hash, [context = getContext(), videoDevice = videoDevice, resources = dynamic_cast<Engine::Resources *>(this), visualName = std::string(visualName)](VisualHandle)->Engine::VisualPtr
 				{
-					return getContext()->createClass<Engine::Visual>("Engine::Visual", videoDevice, (Engine::Resources *)this, visualName);
+					return context->createClass<Engine::Visual>("Engine::Visual", videoDevice, resources, visualName);
 				}).second;
             }
 
             MaterialHandle loadMaterial(std::string_view materialName)
             {
                 auto hash = GetHash(materialName);
-                return materialCache.getHandle(hash, [this, materialName = std::string(materialName)](MaterialHandle handle)->Engine::MaterialPtr
+                return materialCache.getHandle(hash, [context = getContext(), videoDevice = videoDevice, resources = dynamic_cast<Engine::Resources*>(this), materialName = std::string(materialName)](MaterialHandle handle)->Engine::MaterialPtr
 				{
-					return getContext()->createClass<Engine::Material>("Engine::Material", (Engine::Resources *)this, materialName, handle);
+					return context->createClass<Engine::Material>("Engine::Material", resources, materialName, handle);
 				}).second;
             }
 
@@ -1015,6 +1020,7 @@ namespace Gek
 
                 std::vector<uint8_t> data;
                 Video::Texture::Description description;
+                std::string parameterString;
                 if (lowerPattern == "color")
                 {
                     auto parametersArray = parameters.asType(JSON::EmptyArray);
@@ -1023,12 +1029,14 @@ namespace Gek
                     case 1:
                         data.push_back(parametersArray.at(0).convert(255));
                         description.format = Video::Format::R8_UNORM;
+                        parameterString = std::format("[{}]", data[0]);
                         break;
 
                     case 2:
                         data.push_back(parametersArray.at(0).convert(255));
                         data.push_back(parametersArray.at(1).convert(255));
                         description.format = Video::Format::R8G8_UNORM;
+                        parameterString = std::format("[{}, {}]", data[0], data[1]);
                         break;
 
                     case 3:
@@ -1037,6 +1045,7 @@ namespace Gek
                         data.push_back(parametersArray.at(2).convert(255));
                         data.push_back(0);
                         description.format = Video::Format::R8G8B8A8_UNORM;
+                        parameterString = std::format("[{}, {}, {}]", data[0], data[1], data[2]);
                         break;
 
                     case 4:
@@ -1045,6 +1054,7 @@ namespace Gek
                         data.push_back(parametersArray.at(2).convert(255));
                         data.push_back(parametersArray.at(3).convert(255));
                         description.format = Video::Format::R8G8B8A8_UNORM;
+                        parameterString = std::format("[{}, {}, {}, {}]", data[0], data[1], data[2], data[3]);
                         break;
 
                     default:
@@ -1062,6 +1072,7 @@ namespace Gek
                             data.push_back(quarters[2]);
                             data.push_back(quarters[3]);
                             description.format = Video::Format::R32_FLOAT;
+                            parameterString = std::format("[{}, {}, {}, {}]", data[0], data[1], data[2], data[3]);
                         }
                     };
                 }
@@ -1082,7 +1093,6 @@ namespace Gek
                     data.push_back(quarters[1]);
                     data.push_back(quarters[2]);
                     data.push_back(quarters[3]);
-
                     description.format = Video::Format::R16G16_FLOAT;
                 }
                 else if (lowerPattern == "system")
@@ -1109,7 +1119,7 @@ namespace Gek
                 }
 
                 description.flags = Video::Texture::Flags::Resource;
-                std::string name(String::Format("{}:{}", pattern, parameters.convert(String::Empty)));
+                std::string name(std::format("{}:{}", pattern, parameters.convert(String::Empty)));
                 auto hash = GetHash(name);
 
                 auto resource = dynamicCache.getHandle(hash, 0, [this, name, description, data = move(data)](ResourceHandle)->Video::TexturePtr
@@ -1486,8 +1496,8 @@ namespace Gek
 
 				auto hash = GetHash(name, uncompiledData, engineData);
 				auto cachePath = getContext()->getCachePath(FileSystem::CombinePaths("programs", name));
-				auto uncompiledPath(cachePath.withExtension(String::Format(".{}.hlsl", hash)));
-				auto compiledPath(cachePath.withExtension(String::Format(".{}.bin", hash)));
+				auto uncompiledPath(cachePath.withExtension(std::format(".{}.hlsl", hash)));
+				auto compiledPath(cachePath.withExtension(std::format(".{}.bin", hash)));
 				Video::Program::Information information =
 				{
 					type
@@ -1571,7 +1581,7 @@ namespace Gek
 					auto program = videoDevice->createProgram(compiledData);
                     if (program)
                     {
-                        program->setName(String::Format("{}:{}", name, entryFunction));
+                        program->setName(std::format("{}:{}", name, entryFunction));
                     }
 
                     return program;
@@ -1588,7 +1598,7 @@ namespace Gek
 					auto program = videoDevice->createProgram(compiledData);
                     if (program)
                     {
-                        program->setName(String::Format("{}:{}", name, entryFunction));
+                        program->setName(std::format("{}:{}", name, entryFunction));
                     }
 
                     return program;
@@ -1711,7 +1721,7 @@ namespace Gek
                 if (drawPrimitiveValid)
                 {
                     auto material = materialCache.getResource(handle);
-                    if (drawPrimitiveValid =( material != nullptr))
+                    if (drawPrimitiveValid = (material != nullptr))
                     {
                         auto data = material->getData(pass->getMaterialHash());
                         if (drawPrimitiveValid = (data != nullptr))

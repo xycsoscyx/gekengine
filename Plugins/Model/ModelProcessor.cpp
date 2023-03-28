@@ -7,7 +7,6 @@
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/Allocator.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/Utility/Profiler.hpp"
 #include "GEK/System/VideoDevice.hpp"
 #include "GEK/API/Core.hpp"
 #include "GEK/API/Processor.hpp"
@@ -267,7 +266,7 @@ namespace Gek
 
         VisualHandle visual;
         Video::BufferPtr instanceBuffer;
-        ThreadPool<5> loadPool;
+        ThreadPool loadPool;
 
         concurrency::concurrent_unordered_map<std::size_t, Group> groupMap;
 
@@ -295,6 +294,7 @@ namespace Gek
             , population(core->getPopulation())
             , resources(core->getResources())
             , renderer(core->getRenderer())
+            , loadPool(5)
         {
             assert(core);
             assert(videoDevice);
@@ -324,6 +324,128 @@ namespace Gek
             instanceBuffer->setName("model:instances");
         }
 
+        Task scheduleLoadData(std::string name, FileSystem::Path filePath, ModelProcessor::Group &group, ModelProcessor::Group::Model &model)
+        {
+            co_await loadPool.schedule();
+
+            auto fileName(filePath.getFileName());
+
+            static const std::vector<uint8_t> EmptyBuffer;
+            std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
+
+            Header* header = (Header*)buffer.data();
+            if (buffer.size() < (sizeof(Header) + (sizeof(Header::Mesh) * header->meshCount)))
+            {
+                LockedWrite{ std::cerr } << "Model file too small to contain mesh headers: " << filePath.getString();
+                co_return;
+            }
+
+            LockedWrite{ std::cout } << "Group " << name << ", loading model " << fileName << ": " << header->meshCount << " meshes";
+
+            model.boundingBox = header->boundingBox;
+            group.boundingBox.extend(model.boundingBox.minimum);
+            group.boundingBox.extend(model.boundingBox.maximum);
+            model.meshList.resize(header->meshCount);
+            Unpacker unpacker((uint8_t*)&header->meshList[header->meshCount]);
+            for (uint32_t meshIndex = 0; meshIndex < header->meshCount; ++meshIndex)
+            {
+                Header::Mesh& meshHeader = header->meshList[meshIndex];
+                Group::Model::Mesh& mesh = model.meshList[meshIndex];
+
+                mesh.material = resources->loadMaterial(meshHeader.material);
+
+                Video::Buffer::Description indexBufferDescription;
+                indexBufferDescription.format = Video::Format::R16_UINT;
+                indexBufferDescription.count = (meshHeader.faceCount * 3);
+                indexBufferDescription.type = Video::Buffer::Type::Index;
+                mesh.indexBuffer = resources->createBuffer(std::format("model:{}.{}.{}:indices", meshIndex, fileName, name), indexBufferDescription, unpacker.readBlock<Face>(meshHeader.faceCount));
+
+                Video::Buffer::Description vertexBufferDescription;
+                vertexBufferDescription.stride = sizeof(Math::Float3);
+                vertexBufferDescription.count = meshHeader.vertexCount;
+                vertexBufferDescription.type = Video::Buffer::Type::Vertex;
+                mesh.vertexBufferList[0] = resources->createBuffer(std::format("model:{}.{}.{}:positions", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
+
+                vertexBufferDescription.stride = sizeof(Math::Float2);
+                mesh.vertexBufferList[1] = resources->createBuffer(std::format("model:{}.{}.{}:texcoords", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float2>(meshHeader.vertexCount));
+
+                vertexBufferDescription.stride = sizeof(Math::Float3);
+                mesh.vertexBufferList[2] = resources->createBuffer(std::format("model:{}.{}.{}:tangents", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
+
+                vertexBufferDescription.stride = sizeof(Math::Float3);
+                mesh.vertexBufferList[3] = resources->createBuffer(std::format("model:{}.{}.{}:bitangents", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
+
+                vertexBufferDescription.stride = sizeof(Math::Float3);
+                mesh.vertexBufferList[4] = resources->createBuffer(std::format("model:{}.{}.{}:normals", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
+
+                mesh.indexCount = indexBufferDescription.count;
+            }
+
+            LockedWrite{ std::cout } << "Group " << name << ", mesh " << fileName << " successfully loaded";
+        }
+
+        Task scheduleLoadGroup(std::string name, ModelProcessor::Group &group)
+        {
+            LockedWrite{ std::cout } << "Queueing group for load: " << name;
+
+            co_await loadPool.schedule();
+
+            std::vector<FileSystem::Path> modelPathList;
+            auto groupPath(getContext()->findDataPath(FileSystem::CombinePaths("models", name)));
+            groupPath.findFiles([&](FileSystem::Path const& filePath) -> bool
+            {
+                std::string fileName(filePath.getString());
+                if (filePath.isFile() && String::GetLower(filePath.getExtension()) == ".gek")
+                {
+                    static const std::vector<uint8_t> EmptyBuffer;
+                    std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer, sizeof(Header)));
+                    if (buffer.size() < sizeof(Header))
+                    {
+                        LockedWrite{ std::cerr } << "Model file too small to contain header: " << fileName;
+                        return true;
+                    }
+
+                    Header* header = (Header*)buffer.data();
+                    if (header->identifier != *(uint32_t*)"GEKX")
+                    {
+                        LockedWrite{ std::cerr } << "Unknown model file identifier encountered (requires: GEKX, has: " << header->identifier << "): " << fileName;
+                        return true;
+                    }
+
+                    if (header->type != 0)
+                    {
+                        LockedWrite{ std::cerr } << "Unsupported model type encountered (requires: 0, has: " << header->type << "): " << fileName;
+                        return true;
+                    }
+
+                    if (header->version != 8)
+                    {
+                        LockedWrite{ std::cerr } << "Unsupported model version encountered (requires: 8, has: " << header->version << "): " << fileName;
+                        return true;
+                    }
+
+                    modelPathList.push_back(filePath);
+                }
+
+                return true;
+            });
+
+            if (modelPathList.empty())
+            {
+                LockedWrite{ std::cerr } << "No models found for group: " << name;
+            }
+
+            group.modelList.resize(modelPathList.size());
+            for (size_t modelIndex = 0; modelIndex < modelPathList.size(); ++modelIndex)
+            {
+                auto& model = group.modelList[modelIndex];
+                auto& filePath = modelPathList[modelIndex];
+                scheduleLoadData(name, filePath, group, model);
+            }
+
+            LockedWrite{ std::cout } << "Group " << name << " successfully queued";
+        }
+
         void addEntity(Plugin::Entity * const entity)
         {
             EntityProcessor::addEntity(entity, [&](bool isNewInsert, auto &data, auto &modelComponent, auto &transformComponent) -> void
@@ -332,120 +454,7 @@ namespace Gek
                 auto pair = groupMap.insert(std::make_pair(GetHash(modelComponent.name), BlankGroup));
                 if (pair.second)
                 {
-                    LockedWrite{ std::cout } << "Queueing group for load: " << modelComponent.name;
-                    loadPool.enqueueAndDetach([this, name = modelComponent.name, &group = pair.first->second](void) -> void
-                    {
-                        std::vector<FileSystem::Path> modelPathList;
-                        auto groupPath(getContext()->findDataPath(FileSystem::CombinePaths("models", name)));
-                        groupPath.findFiles([&](FileSystem::Path const &filePath) -> bool
-                        {
-                            std::string fileName(filePath.getString());
-                            if (filePath.isFile() && String::GetLower(filePath.getExtension()) == ".gek")
-                            {
-                                static const std::vector<uint8_t> EmptyBuffer;
-                                std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer, sizeof(Header)));
-                                if (buffer.size() < sizeof(Header))
-                                {
-                                    LockedWrite{ std::cerr } << "Model file too small to contain header: " << fileName;
-                                    return true;
-                                }
-
-                                Header *header = (Header *)buffer.data();
-                                if (header->identifier != *(uint32_t *)"GEKX")
-                                {
-                                    LockedWrite{ std::cerr } << "Unknown model file identifier encountered (requires: GEKX, has: " << header->identifier << "): " << fileName;
-                                    return true;
-                                }
-
-                                if (header->type != 0)
-                                {
-                                    LockedWrite{ std::cerr } << "Unsupported model type encountered (requires: 0, has: " << header->type << "): " << fileName;
-                                    return true;
-                                }
-
-                                if (header->version != 8)
-                                {
-                                    LockedWrite{ std::cerr } << "Unsupported model version encountered (requires: 8, has: " << header->version << "): " << fileName;
-                                    return true;
-                                }
-
-                                modelPathList.push_back(filePath);
-                            }
-
-                            return true;
-                        });
-
-                        if (modelPathList.empty())
-                        {
-                            LockedWrite{ std::cerr } << "No models found for group: " << name;
-                        }
-
-                        group.modelList.resize(modelPathList.size());
-                        for (size_t modelIndex = 0; modelIndex < modelPathList.size(); ++modelIndex)
-                        {
-                            auto &model = group.modelList[modelIndex];
-                            auto &filePath = modelPathList[modelIndex];
-                            loadPool.enqueueAndDetach([this, name = name, filePath, &group, &model](void) -> void
-                            {
-                                auto fileName(filePath.getFileName());
-
-                                static const std::vector<uint8_t> EmptyBuffer;
-                                std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
-
-                                Header *header = (Header *)buffer.data();
-                                if (buffer.size() < (sizeof(Header) + (sizeof(Header::Mesh) * header->meshCount)))
-                                {
-                                    LockedWrite{ std::cerr } << "Model file too small to contain mesh headers: " << filePath.getString();
-                                    return;
-                                }
-
-                                LockedWrite{ std::cout } << "Group " << name << ", loading model " << fileName << ": " << header->meshCount << " meshes";
-
-                                model.boundingBox = header->boundingBox;
-                                group.boundingBox.extend(model.boundingBox.minimum);
-                                group.boundingBox.extend(model.boundingBox.maximum);
-                                model.meshList.resize(header->meshCount);
-                                Unpacker unpacker((uint8_t *)&header->meshList[header->meshCount]);
-                                for (uint32_t meshIndex = 0; meshIndex < header->meshCount; ++meshIndex)
-                                {
-                                    Header::Mesh &meshHeader = header->meshList[meshIndex];
-                                    Group::Model::Mesh &mesh = model.meshList[meshIndex];
-
-                                    mesh.material = resources->loadMaterial(meshHeader.material);
-
-                                    Video::Buffer::Description indexBufferDescription;
-                                    indexBufferDescription.format = Video::Format::R16_UINT;
-                                    indexBufferDescription.count = (meshHeader.faceCount * 3);
-                                    indexBufferDescription.type = Video::Buffer::Type::Index;
-                                    mesh.indexBuffer = resources->createBuffer(String::Format("model:{}.{}.{}:indices", meshIndex, fileName, name), indexBufferDescription, unpacker.readBlock<Face>(meshHeader.faceCount));
-
-                                    Video::Buffer::Description vertexBufferDescription;
-                                    vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    vertexBufferDescription.count = meshHeader.vertexCount;
-                                    vertexBufferDescription.type = Video::Buffer::Type::Vertex;
-                                    mesh.vertexBufferList[0] = resources->createBuffer(String::Format("model:{}.{}.{}:positions", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
-
-                                    vertexBufferDescription.stride = sizeof(Math::Float2);
-                                    mesh.vertexBufferList[1] = resources->createBuffer(String::Format("model:{}.{}.{}:texcoords", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float2>(meshHeader.vertexCount));
-
-                                    vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    mesh.vertexBufferList[2] = resources->createBuffer(String::Format("model:{}.{}.{}:tangents", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
-
-                                    vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    mesh.vertexBufferList[3] = resources->createBuffer(String::Format("model:{}.{}.{}:bitangents", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
-
-                                    vertexBufferDescription.stride = sizeof(Math::Float3);
-                                    mesh.vertexBufferList[4] = resources->createBuffer(String::Format("model:{}.{}.{}:normals", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
-
-                                    mesh.indexCount = indexBufferDescription.count;
-                                }
-
-                                LockedWrite{ std::cout } << "Group " << name << ", mesh " << fileName << " successfully loaded";
-                            }, __FILE__, __LINE__);
-                        }
-
-                        LockedWrite{ std::cout } << "Group " << name << " successfully queued";
-                    }, __FILE__, __LINE__);
+                    scheduleLoadGroup(modelComponent.name, pair.first->second);
                 }
 
                 data.group = &pair.first->second;
@@ -533,204 +542,183 @@ namespace Gek
         {
             assert(renderer);
 
-			GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Models"sv, "Update"sv, Profiler::EmptyArguments)
+			// Cull by entity/group
+			const auto entityCount = getEntityCount();
+			auto buffer = (entityCount % 4);
+			buffer = (buffer ? (4 - buffer) : buffer);
+			const auto bufferedEntityCount = (entityCount + buffer);
+			halfSizeXList.resize(bufferedEntityCount);
+			halfSizeYList.resize(bufferedEntityCount);
+			halfSizeZList.resize(bufferedEntityCount);
+			for (auto &elementList : transformList)
 			{
-				// Cull by entity/group
-				const auto entityCount = getEntityCount();
-				auto buffer = (entityCount % 4);
-				buffer = (buffer ? (4 - buffer) : buffer);
-				const auto bufferedEntityCount = (entityCount + buffer);
-				halfSizeXList.resize(bufferedEntityCount);
-				halfSizeYList.resize(bufferedEntityCount);
-				halfSizeZList.resize(bufferedEntityCount);
-				for (auto &elementList : transformList)
+				elementList.resize(bufferedEntityCount);
+			}
+
+			entityDataList.clear();
+			entityDataList.reserve(entityCount);
+			parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
+			{
+				auto group = data.group;
+				auto matrix(transformComponent.getMatrix());
+				matrix.translation.xyz += group->boundingBox.getCenter();
+				auto halfSize(group->boundingBox.getHalfSize() * transformComponent.scale);
+
+				auto entityInsert = entityDataList.push_back(std::make_tuple(entity, &data, 0));
+				auto entityIndex = std::get<2>(*entityInsert) = std::distance(std::begin(entityDataList), entityInsert);
+
+				halfSizeXList[entityIndex] = halfSize.x;
+				halfSizeYList[entityIndex] = halfSize.y;
+				halfSizeZList[entityIndex] = halfSize.z;
+				for (size_t element = 0; element < 16; ++element)
 				{
-					elementList.resize(bufferedEntityCount);
+					transformList[element][entityIndex] = matrix.data[element];
+				}
+			});
+
+			visibilityList.resize(bufferedEntityCount);
+			Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedEntityCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
+
+			// Cull by model inside group
+			const auto modelCount = std::accumulate(std::begin(entityDataList), std::end(entityDataList), 0U, [this](auto count, auto const &entitySearch) -> auto
+			{
+				if (visibilityList[std::get<2>(entitySearch)])
+				{
+					auto data = std::get<1>(entitySearch);
+					count += data->group->modelList.size();
 				}
 
-				entityDataList.clear();
-				entityDataList.reserve(entityCount);
-				GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Models"sv, "Collect Entities"sv, Profiler::EmptyArguments)
+				return count;
+			});
+
+			buffer = (modelCount % 4);
+			buffer = (buffer ? (4 - buffer) : buffer);
+			const auto bufferedModelCount = (modelCount + buffer);
+			halfSizeXList.resize(bufferedModelCount);
+			halfSizeYList.resize(bufferedModelCount);
+			halfSizeZList.resize(bufferedModelCount);
+			for (auto &elementList : transformList)
+			{
+				elementList.resize(bufferedModelCount);
+			}
+
+			entityModelList.clear();
+			entityModelList.reserve(bufferedModelCount);
+			concurrency::parallel_for_each(std::begin(entityDataList), std::end(entityDataList), [&](auto &entitySearch) -> void
+			{
+				auto entityDataIndex = std::get<2>(entitySearch);
+				if (visibilityList[entityDataIndex])
 				{
-					parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
+					auto entity = std::get<0>(entitySearch);
+					auto data = std::get<1>(entitySearch);
+					auto group = data->group;
+
+					auto &transformComponent = entity->getComponent<Components::Transform>();
+					auto matrix(transformComponent.getMatrix());
+
+					concurrency::parallel_for_each(std::begin(group->modelList), std::end(group->modelList), [&](Group::Model const &model) -> void
 					{
-						auto group = data.group;
-						auto matrix(transformComponent.getMatrix());
-						matrix.translation.xyz += group->boundingBox.getCenter();
 						auto halfSize(group->boundingBox.getHalfSize() * transformComponent.scale);
+						auto center = Math::Float4x4::MakeTranslation(model.boundingBox.getCenter());
 
-						auto entityInsert = entityDataList.push_back(std::make_tuple(entity, &data, 0));
-						auto entityIndex = std::get<2>(*entityInsert) = std::distance(std::begin(entityDataList), entityInsert);
+						auto entityInsert = entityModelList.push_back(std::make_tuple(entity, &model, 0));
+						auto entityModelIndex = std::get<2>(*entityInsert) = std::distance(std::begin(entityModelList), entityInsert);
 
-						halfSizeXList[entityIndex] = halfSize.x;
-						halfSizeYList[entityIndex] = halfSize.y;
-						halfSizeZList[entityIndex] = halfSize.z;
+						halfSizeXList[entityModelIndex] = halfSize.x;
+						halfSizeYList[entityModelIndex] = halfSize.y;
+						halfSizeZList[entityModelIndex] = halfSize.z;
 						for (size_t element = 0; element < 16; ++element)
 						{
-							transformList[element][entityIndex] = matrix.data[element];
+							transformList[element][entityModelIndex] = (matrix.data[element] + center.data[element]);
 						}
 					});
-				} GEK_PROFILER_END_SCOPE();
+				}
+			});
 
-				visibilityList.resize(bufferedEntityCount);
-				GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Models"sv, "Cull Entities"sv, Profiler::EmptyArguments)
-				{
-					Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedEntityCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
-				} GEK_PROFILER_END_SCOPE();
+			visibilityList.resize(bufferedModelCount);
+			Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedModelCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
 
-				// Cull by model inside group
-				const auto modelCount = std::accumulate(std::begin(entityDataList), std::end(entityDataList), 0U, [this](auto count, auto const &entitySearch) -> auto
+			concurrency::parallel_for_each(std::begin(entityModelList), std::end(entityModelList), [&](auto &entitySearch) -> void
+			{
+				if (visibilityList[std::get<2>(entitySearch)])
 				{
-					if (visibilityList[std::get<2>(entitySearch)])
+					auto entity = std::get<0>(entitySearch);
+					auto model = std::get<1>(entitySearch);
+
+					auto &transformComponent = entity->getComponent<Components::Transform>();
+					auto modelViewMatrix(transformComponent.getScaledMatrix() * viewMatrix);
+
+					concurrency::parallel_for_each(std::begin(model->meshList), std::end(model->meshList), [&](Group::Model::Mesh const &mesh) -> void
 					{
-						auto data = std::get<1>(entitySearch);
-						count += data->group->modelList.size();
+						auto &meshMap = renderList[mesh.material];
+						auto &instanceList = meshMap[&mesh];
+						instanceList.push_back(modelViewMatrix);
+					});
+				}
+			});
+
+			size_t maximumInstanceCount = 0;
+			concurrency::parallel_for_each(std::begin(renderList), std::end(renderList), [&](auto &materialPair) -> void
+			{
+				const auto material = materialPair.first;
+				auto &materialMap = materialPair.second;
+
+				size_t materialInstanceCount = 0;
+				for (auto const &materialPair : materialMap)
+				{
+					const auto material = materialPair.first;
+					auto const &materialInstanceList = materialPair.second;
+					materialInstanceCount += materialInstanceList.size();
+				}
+
+				std::vector<DrawData> drawDataList(materialMap.size());
+				std::vector<Math::Float4x4> instanceList(materialInstanceCount);
+				for (auto &levelPair : materialMap)
+				{
+					auto level = levelPair.first;
+					if (level)
+					{
+						auto &levelInstanceList = levelPair.second;
+						drawDataList.push_back(DrawData(instanceList.size(), levelInstanceList.size(), level));
+						instanceList.insert(std::end(instanceList), std::begin(levelInstanceList), std::end(levelInstanceList));
+						levelInstanceList.clear();
 					}
-
-					return count;
-				});
-
-				buffer = (modelCount % 4);
-				buffer = (buffer ? (4 - buffer) : buffer);
-				const auto bufferedModelCount = (modelCount + buffer);
-				halfSizeXList.resize(bufferedModelCount);
-				halfSizeYList.resize(bufferedModelCount);
-				halfSizeZList.resize(bufferedModelCount);
-				for (auto &elementList : transformList)
-				{
-					elementList.resize(bufferedModelCount);
 				}
 
-				entityModelList.clear();
-				entityModelList.reserve(bufferedModelCount);
-				GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Models"sv, "Collect Models"sv, Profiler::EmptyArguments)
+				InterlockedExchange(&maximumInstanceCount, std::max(maximumInstanceCount, instanceList.size()));
+				renderer->queueDrawCall(visual, material, std::move([this, drawDataList = move(drawDataList), instanceList = move(instanceList)](Video::Device::Context *videoContext) -> void
 				{
-					concurrency::parallel_for_each(std::begin(entityDataList), std::end(entityDataList), [&](auto &entitySearch) -> void
+					Math::Float4x4 *instanceData = nullptr;
+					if (videoDevice->mapBuffer(instanceBuffer.get(), instanceData))
 					{
-						auto entityDataIndex = std::get<2>(entitySearch);
-						if (visibilityList[entityDataIndex])
+						std::copy(std::begin(instanceList), std::end(instanceList), instanceData);
+						videoDevice->unmapBuffer(instanceBuffer.get());
+						videoContext->setVertexBufferList({ instanceBuffer.get() }, 5);
+						for (auto const &drawData : drawDataList)
 						{
-							auto entity = std::get<0>(entitySearch);
-							auto data = std::get<1>(entitySearch);
-							auto group = data->group;
-
-							auto &transformComponent = entity->getComponent<Components::Transform>();
-							auto matrix(transformComponent.getMatrix());
-
-							concurrency::parallel_for_each(std::begin(group->modelList), std::end(group->modelList), [&](Group::Model const &model) -> void
+							if (drawData.data)
 							{
-								auto halfSize(group->boundingBox.getHalfSize() * transformComponent.scale);
-								auto center = Math::Float4x4::MakeTranslation(model.boundingBox.getCenter());
-
-								auto entityInsert = entityModelList.push_back(std::make_tuple(entity, &model, 0));
-								auto entityModelIndex = std::get<2>(*entityInsert) = std::distance(std::begin(entityModelList), entityInsert);
-
-								halfSizeXList[entityModelIndex] = halfSize.x;
-								halfSizeYList[entityModelIndex] = halfSize.y;
-								halfSizeZList[entityModelIndex] = halfSize.z;
-								for (size_t element = 0; element < 16; ++element)
-								{
-									transformList[element][entityModelIndex] = (matrix.data[element] + center.data[element]);
-								}
-							});
-						}
-					});
-				} GEK_PROFILER_END_SCOPE();
-
-				visibilityList.resize(bufferedModelCount);
-				GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Models"sv, "Cull Models"sv, Profiler::EmptyArguments)
-				{
-					Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedModelCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
-				} GEK_PROFILER_END_SCOPE();
-
-				GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Models"sv, "Bin Models"sv, Profiler::EmptyArguments)
-				{
-					concurrency::parallel_for_each(std::begin(entityModelList), std::end(entityModelList), [&](auto &entitySearch) -> void
-					{
-						if (visibilityList[std::get<2>(entitySearch)])
-						{
-							auto entity = std::get<0>(entitySearch);
-							auto model = std::get<1>(entitySearch);
-
-							auto &transformComponent = entity->getComponent<Components::Transform>();
-							auto modelViewMatrix(transformComponent.getScaledMatrix() * viewMatrix);
-
-							concurrency::parallel_for_each(std::begin(model->meshList), std::end(model->meshList), [&](Group::Model::Mesh const &mesh) -> void
-							{
-								auto &meshMap = renderList[mesh.material];
-								auto &instanceList = meshMap[&mesh];
-								instanceList.push_back(modelViewMatrix);
-							});
-						}
-					});
-				} GEK_PROFILER_END_SCOPE();
-
-				size_t maximumInstanceCount = 0;
-				GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Models"sv, "Queue Models"sv, Profiler::EmptyArguments)
-				{
-					concurrency::parallel_for_each(std::begin(renderList), std::end(renderList), [&](auto &materialPair) -> void
-					{
-						const auto material = materialPair.first;
-						auto &materialMap = materialPair.second;
-
-						size_t materialInstanceCount = 0;
-						for (auto const &materialPair : materialMap)
-						{
-							const auto material = materialPair.first;
-							auto const &materialInstanceList = materialPair.second;
-							materialInstanceCount += materialInstanceList.size();
-						}
-
-						std::vector<DrawData> drawDataList(materialMap.size());
-						std::vector<Math::Float4x4> instanceList(materialInstanceCount);
-						for (auto &levelPair : materialMap)
-						{
-							auto level = levelPair.first;
-							if (level)
-							{
-								auto &levelInstanceList = levelPair.second;
-								drawDataList.push_back(DrawData(instanceList.size(), levelInstanceList.size(), level));
-								instanceList.insert(std::end(instanceList), std::begin(levelInstanceList), std::end(levelInstanceList));
-								levelInstanceList.clear();
+								auto &level = *drawData.data;
+								resources->setVertexBufferList(videoContext, level.vertexBufferList, 0);
+								resources->setIndexBuffer(videoContext, level.indexBuffer, 0);
+								resources->drawInstancedIndexedPrimitive(videoContext, drawData.instanceCount, drawData.instanceStart, level.indexCount, 0, 0);
 							}
 						}
+					}
+				}));
+			});
 
-						InterlockedExchange(&maximumInstanceCount, std::max(maximumInstanceCount, instanceList.size()));
-						renderer->queueDrawCall(visual, material, std::move([this, drawDataList = move(drawDataList), instanceList = move(instanceList)](Video::Device::Context *videoContext) -> void
-						{
-							Math::Float4x4 *instanceData = nullptr;
-							if (videoDevice->mapBuffer(instanceBuffer.get(), instanceData))
-							{
-								std::copy(std::begin(instanceList), std::end(instanceList), instanceData);
-								videoDevice->unmapBuffer(instanceBuffer.get());
-								videoContext->setVertexBufferList({ instanceBuffer.get() }, 5);
-								for (auto const &drawData : drawDataList)
-								{
-									if (drawData.data)
-									{
-										auto &level = *drawData.data;
-										resources->setVertexBufferList(videoContext, level.vertexBufferList, 0);
-										resources->setIndexBuffer(videoContext, level.indexBuffer, 0);
-										resources->drawInstancedIndexedPrimitive(videoContext, drawData.instanceCount, drawData.instanceStart, level.indexCount, 0, 0);
-									}
-								}
-							}
-						}));
-					});
-				} GEK_PROFILER_END_SCOPE();
-
-				if (instanceBuffer->getDescription().count < maximumInstanceCount)
-				{
-					instanceBuffer = nullptr;
-					Video::Buffer::Description instanceDescription;
-					instanceDescription.stride = sizeof(Math::Float4x4);
-					instanceDescription.count = maximumInstanceCount;
-					instanceDescription.type = Video::Buffer::Type::Vertex;
-					instanceDescription.flags = Video::Buffer::Flags::Mappable;
-					instanceBuffer = videoDevice->createBuffer(instanceDescription);
-					instanceBuffer->setName("model:instances"sv);
-				}
-			} GEK_PROFILER_END_SCOPE();
+			if (instanceBuffer->getDescription().count < maximumInstanceCount)
+			{
+				instanceBuffer = nullptr;
+				Video::Buffer::Description instanceDescription;
+				instanceDescription.stride = sizeof(Math::Float4x4);
+				instanceDescription.count = maximumInstanceCount;
+				instanceDescription.type = Video::Buffer::Type::Vertex;
+				instanceDescription.flags = Video::Buffer::Flags::Mappable;
+				instanceBuffer = videoDevice->createBuffer(instanceDescription);
+				instanceBuffer->setName("model:instances"sv);
+			}
 		}
 	};
 

@@ -658,9 +658,14 @@ namespace Gek
                 dataMap.erase(handle);
             }
 
-            void set(HANDLE handle, CComPtr<TYPE> &data)
+            void set(HANDLE handle, CComPtr<TYPE>& data)
             {
                 dataMap[handle] = data;
+            }
+
+            void clear(HANDLE handle)
+            {
+                dataMap[handle] = nullptr;
             }
 
             TYPE * get(HANDLE handle)
@@ -679,11 +684,6 @@ namespace Gek
             std::unordered_map<size_t, HANDLE> hashMap;
 
         public:
-            void remove(HANDLE handle)
-            {
-                DataCache::remove(handle);
-            }
-
             HANDLE insert(size_t hash, std::function<CComPtr<TYPE>(HANDLE)> &&onLoadRequired)
             {
                 auto hashSearch = hashMap.find(hash);
@@ -692,9 +692,10 @@ namespace Gek
                     return hashSearch->second;
                 }
 
-                auto handle(InterlockedIncrement(&nextHandle));
+                HANDLE handle = InterlockedIncrement(&nextHandle);
                 hashMap[hash] = handle;
-                set(handle, onLoadRequired(handle));
+                auto data = onLoadRequired(handle);
+                this->set(handle, data);
                 return handle;
             }
         };
@@ -709,8 +710,8 @@ namespace Gek
         public:
             HANDLE insert(CComPtr<TYPE> &data)
             {
-                auto handle(InterlockedIncrement(&nextHandle));
-                set(handle, data);
+                HANDLE handle = InterlockedIncrement(&nextHandle);
+                this->set(handle, data);
                 return handle;
             }
         };
@@ -1362,7 +1363,7 @@ namespace Gek
                 {
                     std::string semantic = DirectX::VertexSemanticList[static_cast<uint8_t>(vertexElement.semantic)].data();
                     std::string format = DirectX::getFormatSemantic(vertexElement.format);
-                    shader += String::Format("    {} {} : {}{};\r\n", format, vertexElement.name, semantic, vertexSemanticIndexList[static_cast<uint8_t>(vertexElement.semantic)]++);
+                    shader += std::format("    {} {} : {}{};\r\n", format, vertexElement.name, semantic, vertexSemanticIndexList[static_cast<uint8_t>(vertexElement.semantic)]++);
                 }
 
                 shader.append("};\r\n\r\nstruct Pixel\r\n{\r\n");
@@ -1371,7 +1372,7 @@ namespace Gek
                 {
                     std::string semantic = DirectX::PixelSemanticList[static_cast<uint8_t>(pixelElement.semantic)].data();
                     std::string format = DirectX::getFormatSemantic(pixelElement.format);
-                    shader += String::Format("    {} {} : {}{};\r\n", format, pixelElement.name, semantic, pixelSemanticIndexList[static_cast<uint8_t>(pixelElement.semantic)]++);
+                    shader += std::format("    {} {} : {}{};\r\n", format, pixelElement.name, semantic, pixelSemanticIndexList[static_cast<uint8_t>(pixelElement.semantic)]++);
                 }
 
                 shader.append("};\r\n\r\nstruct Output\r\n{\r\n");
@@ -1379,7 +1380,7 @@ namespace Gek
                 for (auto const &renderTarget : pipelineStateInformation.renderTargetList)
                 {
                     std::string format = DirectX::getFormatSemantic(renderTarget.format);
-                    shader += String::Format("    {} {} : SV_TARGET{};\r\n", format, renderTarget.name, renderTargetIndex++);
+                    shader += std::format("    {} {} : SV_TARGET{};\r\n", format, renderTarget.name, renderTargetIndex++);
                 }
 
                 shader.append("};\r\n\r\n");
@@ -1399,7 +1400,7 @@ namespace Gek
                 flags |= D3DCOMPILE_SKIP_VALIDATION;
                 flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif
-                auto fullShader(String::Format("{}{}", header, shader));
+                auto fullShader(std::format("{}{}", header, shader));
 
                 CComPtr<ID3DBlob> d3dShaderBlob;
                 CComPtr<ID3DBlob> d3dCompilerErrors;
@@ -1511,7 +1512,7 @@ namespace Gek
                 assert(d3dDeviceContext);
                 assert(dxgiSwapChain);
 
-                renderTargetViewCache.set(SwapChain, CComPtr<ID3D11RenderTargetView>(nullptr));
+                renderTargetViewCache.clear(SwapChain);
                 d3dDeviceContext->ClearState();
 
                 HRESULT resultValue = dxgiSwapChain->SetFullscreenState(fullScreen, nullptr);
@@ -1534,7 +1535,7 @@ namespace Gek
             {
                 assert(dxgiSwapChain);
 
-                renderTargetViewCache.set(SwapChain, CComPtr<ID3D11RenderTargetView>(nullptr));
+                renderTargetViewCache.clear(SwapChain);
                 d3dDeviceContext->ClearState();
 
                 DXGI_MODE_DESC description;
@@ -1558,7 +1559,7 @@ namespace Gek
             {
                 assert(dxgiSwapChain);
 
-                renderTargetViewCache.set(SwapChain, CComPtr<ID3D11RenderTargetView>(nullptr));
+                renderTargetViewCache.clear(SwapChain);
                 d3dDeviceContext->ClearState();
 
                 HRESULT resultValue = dxgiSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);

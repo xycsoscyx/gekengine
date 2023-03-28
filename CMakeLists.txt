@@ -18,11 +18,11 @@ if (WIN32)
   set(CMAKE_SHARED_LIBRARY_PREFIX "")
 endif ()
 
-add_definitions(/wd4305) # 
-add_definitions(/wd4800) # 
-add_definitions(/wd4244) # 
-add_definitions(/wd4099) # 
-add_definitions(/wd4574) # 
+add_definitions(/wd4305) #
+add_definitions(/wd4800) #
+add_definitions(/wd4244) #
+add_definitions(/wd4099) #
+add_definitions(/wd4574) #
 add_definitions(/wd4146) # unary minus operator applied to unsigned type, result still unsigned
 add_definitions(/wd4101) # unreferenced local variable
 add_definitions(/wd4005) # macro redefinition
@@ -46,6 +46,8 @@ add_definitions(/wd4774) # format string expected in argument is not a string li
 add_definitions(/wd4777) # format string requires an argument of type, but variadic argument has type
 add_definitions(/wd5045) # Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
 add_definitions(-D_USE_MATH_DEFINES -DNOMINMAX)
+add_definitions(/await:strict) # Enable coroutines
+add_definitions(/std:c++latest) # Enable std::format
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4006")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4221")
@@ -57,6 +59,7 @@ set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /ignore:4006")
 set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /ignore:4221")
 
 include_directories("${CMAKE_SOURCE_DIR}/External/Wink-Signals")
+include_directories("${CMAKE_SOURCE_DIR}/External/json/single_include")
 
 SET(ASSIMP_BUILD_IFC_IMPORTER False CACHE BOOL "" FORCE)
 SET(ASSIMP_BUILD_ASSIMP_TOOLS False CACHE BOOL "" FORCE)
@@ -67,9 +70,6 @@ add_subdirectory("External/Assimp")
 
 add_definitions(-D_OPENMP)
 add_subdirectory("External/DirectXTex")
-
-SET(BUILD_TESTS False CACHE BOOL "" FORCE)
-add_subdirectory("External/jsoncons")
 
 SET(NEWTON_BUILD_SANDBOX_DEMOS False CACHE BOOL "" FORCE)
 SET(NEWTON_BUILD_PROFILER False CACHE BOOL "" FORCE)

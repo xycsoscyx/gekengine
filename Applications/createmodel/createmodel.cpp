@@ -92,7 +92,7 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
         model.name = inputNode->mName.C_Str();
 		if (model.name.empty())
 		{
-			model.name = String::Format("model_{}", modelList.size());
+			model.name = std::format("model_{}", modelList.size());
 		}
 
 		LockedWrite{ std::cout } << "Found Assimp Model: " << inputNode->mName.C_Str();

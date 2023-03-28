@@ -12,6 +12,7 @@
 #include "GEK/API/Population.hpp"
 #include <concurrent_unordered_map.h>
 #include <new>
+#include <imgui.h>
 
 namespace Gek
 {

@@ -1,5 +1,4 @@
 ﻿#include "GEK/Utility/ContextUser.hpp"
-#include "GEK/Utility/Profiler.hpp"
 #include "GEK/API/ComponentMixin.hpp"
 #include "GEK/API/Core.hpp"
 #include "GEK/API/Processor.hpp"
@@ -132,7 +131,7 @@ namespace Gek
                     description.width = backBuffer->getDescription().width;
                     description.height = backBuffer->getDescription().height;
                     description.flags = Video::Texture::Flags::RenderTarget | Video::Texture::Flags::Resource;
-                    data.target = resources->createTexture(String::Format("camera:{}", cameraComponent.target), description);
+                    data.target = resources->createTexture(std::format("camera:{}", cameraComponent.target), description);
                 }
             });
         }
@@ -193,7 +192,7 @@ namespace Gek
 
 					if (name.empty())
 					{
-						name = String::Format("camera_{}", *reinterpret_cast<int *>(entity));
+						name = std::format("camera_{}", *reinterpret_cast<int *>(entity));
 					}
 
 					auto viewMatrix(transformComponent.getMatrix().getInverse());

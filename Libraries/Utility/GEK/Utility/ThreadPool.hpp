@@ -7,8 +7,11 @@
 /// Last Changed: $Date: 2016-10-13 13:29:45 -0700 (Thu, 13 Oct 2016) $
 #pragma once
 
-#include <future>
+#include "GEK/Utility/String.hpp"
 #include <concurrent_queue.h>
+#include <coroutine>
+#include <future>
+#include <iostream>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -16,20 +19,51 @@
 
 namespace Gek
 {
-    // https://github.com/progschj/ThreadPool
-    template <size_t threadCount = 1>
+    struct TaskPromise;
+
+    class Task
+    {
+    public:
+        struct promise_type
+        {
+            Task get_return_object() noexcept
+            {
+                return { };
+            };
+
+            std::suspend_never initial_suspend() const noexcept
+            {
+                return { };
+            }
+
+            std::suspend_never final_suspend() const noexcept
+            {
+                return { };
+            }
+
+            void return_void() noexcept
+            {
+            }
+
+            void unhandled_exception() noexcept
+            {
+                LockedWrite{ std::cerr } << "Unhandled Exception Occurred";
+            }
+        };
+    };
+
     class ThreadPool final
     {
 		using Lock = std::unique_lock<std::mutex>;
 	
 	private:
+        uint32_t threadCount;
         std::vector<std::thread> workerList;
-		using Task = std::tuple<std::function<void()>, char const *, size_t>;
-        concurrency::concurrent_queue<Task> taskQueue;
+        concurrency::concurrent_queue<std::coroutine_handle<void>> coroutineQueue;
 
-		std::mutex mutex;
+        std::mutex mutex;
         std::condition_variable condition;
-		std::atomic<bool> stop = false;
+        std::atomic<bool> stop = false;
 
 	private:
         void create(void)
@@ -39,10 +73,8 @@ namespace Gek
             workerList.reserve(threadCount);
             for (size_t count = 0; count < threadCount; ++count)
             {
-				static size_t lastTaskLine = 0;
-				static char const *lastTaskName = nullptr;
-				// Worker execution loop
-                workerList.emplace_back([this](void) -> void
+                // Worker execution loop
+                workerList.emplace_back([&](void) -> void
                 {
 #ifdef _WIN32
                     CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
@@ -51,27 +83,27 @@ namespace Gek
                     {
 						// Wait for additional work signal
                         // Wait to be notified of work
-                        condition.wait(Lock(mutex), [this](void) -> bool
+
+                        Lock lock(mutex);
+                        condition.wait(lock, [&](void) -> bool
                         {
-                            return stop.load() || !taskQueue.empty();
+                            return stop.load() || !coroutineQueue.empty();
                         });
 
                         // If stopping and no work remains, exit the work loop and thread
-                        if (stop.load() && taskQueue.empty())
+                        if (stop.load() && coroutineQueue.empty())
                         {
                             break;
                         }
 
 						// Task to execute
-						Task task;
+                        std::coroutine_handle<void> coroutine;
 						
-						// Dequeue the next task
-						if (taskQueue.try_pop(task))
+						// Dequeue the next Task
+						if (coroutineQueue.try_pop(coroutine))
 						{
 							// Execute
-							lastTaskName = std::get<1>(task);
-							lastTaskLine = std::get<2>(task);
-							std::get<0>(task)();
+                            coroutine.resume();
 						}
 					};
 
@@ -82,8 +114,20 @@ namespace Gek
             }
         }
 
+        void enqueue(std::coroutine_handle<void> coroutine)
+        {
+            if (stop.load())
+            {
+                return;
+            }
+
+            coroutineQueue.push(coroutine);
+            condition.notify_one();
+        }
+
     public:
-        ThreadPool(void)
+        ThreadPool(uint32_t threadCount)
+            : threadCount(threadCount)
         {
             create();
         }
@@ -100,25 +144,30 @@ namespace Gek
 		ThreadPool& operator= (ThreadPool const &) = delete;
         ThreadPool& operator= (ThreadPool const &&) = delete;
 
+        void join(void)
+        {
+            [this](void)
+            {
+                while (!coroutineQueue.empty())
+                {
+                    std::coroutine_handle<> coroutine;
+                    if (coroutineQueue.try_pop(coroutine))
+                    {
+                        coroutine();
+                    }
+                };
+            } ();
+        }
+
         void drain(bool executePendingTasks = false)
         {
 			if (executePendingTasks)
 			{
-				[this](void)
-				{
-					while (!taskQueue.empty())
-					{
-						Task task;
-						if (taskQueue.try_pop(task))
-						{
-							std::get<0>(task)();
-						}
-					};
-				} ();
+                join();
 			}
 			else
 			{
-				taskQueue.clear();
+				coroutineQueue.clear();
 			}
 
             if (!workerList.empty())
@@ -136,44 +185,38 @@ namespace Gek
             }
         }
         
-        void ThreadPool::reset(void)
+        void reset(void)
         {
             drain();
             create();
         }
 
-        template<typename FUNCTION>
-        auto enqueue(FUNCTION&& function, char const *fileName = nullptr, size_t line = 0) -> std::future<typename std::result_of<FUNCTION(void)>::type>
+        auto schedule()
         {
-            using ReturnType = typename std::result_of<FUNCTION(void)>::type;
-            using PackagedTask = std::packaged_task<ReturnType()>;
-
-            auto task = std::make_shared<PackagedTask>(std::forward<FUNCTION>(function));
-            std::future<ReturnType> result = task->get_future();
-
-			if (stop.load())
-			{
-                return result;
-            }
-
-            taskQueue.push(std::make_tuple([task]()
+            struct Awaiter
             {
-                (*task)();
-            }, fileName, line));
-            condition.notify_one();
-            return result;
-        }
+                ThreadPool *threadPool;
 
-        template<typename FUNCTION>
-        void enqueueAndDetach(FUNCTION&& function, char const *fileName = nullptr, size_t line = 0)
-        {
-            if (stop.load())
-            {
-				return;
-            }
+                constexpr bool await_ready() const noexcept
+                {
+                    return false;
+                }
+                
+                constexpr void await_resume() const noexcept
+                {
+                }
 
-            taskQueue.push(std::make_tuple(std::forward<FUNCTION>(function), fileName, line));
-            condition.notify_one();
+                void await_suspend(std::coroutine_handle<> coroutine) const noexcept
+                {
+                    threadPool->enqueue(coroutine);
+                }
+
+                void return_void() noexcept
+                {
+                }
+            };
+
+            return Awaiter{ this };
         }
     };
 }; // namespace Gek

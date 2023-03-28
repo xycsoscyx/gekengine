@@ -8,7 +8,7 @@
 #pragma once
 
 #include "GEK/Utility/String.hpp"
-#include <experimental\filesystem>
+#include <filesystem>
 #include <functional>
 #include <algorithm>
 #include <vector>
@@ -20,10 +20,10 @@ namespace Gek
 		struct Path
 		{
         private:
-            std::experimental::filesystem::path data;
+            std::filesystem::path data;
 
         private:
-            Path(std::experimental::filesystem::path const &path);
+            Path(std::filesystem::path const &path);
 
         public:
 			Path(void);
@@ -71,13 +71,13 @@ namespace Gek
         template <typename... PARAMETERS>
         Path CombinePaths(PARAMETERS const & ... nameList)
         {
-            return String::Join({ nameList... }, static_cast<char>(std::experimental::filesystem::path::preferred_separator));
+            return String::Join({ nameList... }, static_cast<char>(std::filesystem::path::preferred_separator));
         }
 
         template <typename... PARAMETERS>
         Path CombinePaths(Path const &rootDirectory, PARAMETERS const &... nameList)
         {
-            return String::Join({ rootDirectory.getString(), nameList... }, static_cast<char>(std::experimental::filesystem::path::preferred_separator));
+            return String::Join({ rootDirectory.getString(), nameList... }, static_cast<char>(std::filesystem::path::preferred_separator));
         }
 
         template <typename CONTAINER>

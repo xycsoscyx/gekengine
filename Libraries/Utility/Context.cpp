@@ -18,9 +18,6 @@ namespace Gek
         std::set<std::string> dataPathList;
 		std::string cachePath;
 
-        std::unique_ptr<Profiler> profiler;
-		Profiler::TimeFormat clockSynchronizationTime;
-
 	public:
         ContextImplementation(std::vector<FileSystem::Path> const &pluginSearchList)
         {
@@ -83,28 +80,6 @@ namespace Gek
         }
 
         // Context
-        void startProfiler(std::string_view output)
-        {
-            profiler = std::make_unique<Profiler>(output);
-            clockSynchronizationTime = Profiler::GetProfilerTime();
-            //addEvent(0, getCurrentThreadIdentifier(), "__metadata"sv, "clock_sync"sv, clockSynchronizationTime, Profiler::EmptyTime, 'c', 0, { { "sync_id"sv, "context_clock_sync"sv } });
-        }
-
-        void stopProfiler(void)
-        {
-            profiler = nullptr;
-        }
-
-        Profiler * const getProfiler(void) const
-        {
-            return profiler.get();
-        }
-
-        void synchronizeClock(Hash processIdentifier, Hash threadIdentifier, Profiler::TimeFormat time)
-		{
-			//addEvent(processIdentifier, threadIdentifier, "__metadata"sv, "clock_sync"sv, time, Profiler::EmptyTime, 'c', 0, { { "sync_id"sv, "context_clock_sync2"sv }, { "issue_ts"sv, (Profiler::GetProfilerTime() - time).count() } });
-		}
-
 		void setCachePath(FileSystem::Path const &path)
 		{
 			cachePath = path.getString();

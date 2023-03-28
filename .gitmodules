@@ -13,12 +13,12 @@
 [submodule "external/newton-dynamics"]
 	path = External/newton-dynamics
 	url = https://github.com/MADEAPPS/newton-dynamics.git
-[submodule "external/jsoncons"]
-	path = External/jsoncons
-	url = https://github.com/danielaparker/jsoncons.git
 [submodule "External/imgui-addons"]
 	path = External/imgui-addons
 	url = https://github.com/Flix01/imgui.git
 [submodule "External/Wink-Signals"]
 	path = External/Wink-Signals
 	url = https://github.com/miguelmartin75/Wink-Signals.git
+[submodule "External/json"]
+	path = External/json
+	url = https://github.com/nlohmann/json.git

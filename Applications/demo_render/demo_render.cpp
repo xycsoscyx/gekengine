@@ -128,7 +128,7 @@ namespace Gek
             for (auto const &displayMode : displayModeList)
 			{
 				auto currentDisplayMode = displayModeStringList.size();
-				std::string displayModeString(String::Format("{}x{}, {}hz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
+				std::string displayModeString(std::format("{}x{}, {}hz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
 				switch (displayMode.aspectRatio)
 				{
 				case Render::DisplayMode::AspectRatio::_4x3:
@@ -517,7 +517,7 @@ namespace Gek
 						setFullScreen(previous.fullScreen);
 					}
 
-					ImGui::Text(String::Format("(Revert in {} seconds)", uint32_t(modeChangeTimer)).data());
+					ImGui::Text(std::format("(Revert in {} seconds)", uint32_t(modeChangeTimer)).data());
 				}
 
 				ImGui::PopStyleVar();

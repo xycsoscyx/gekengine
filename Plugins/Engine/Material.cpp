@@ -53,7 +53,7 @@ namespace Gek
                         {
                             ResourceHandle resourceHandle;
                             auto &resourceNode = dataNode.getMember(initializer.name);
-                            auto &resourceObject = resourceNode.asType(JSON::EmptyObject);
+                            const auto &resourceObject = resourceNode.asType(JSON::EmptyObject);
                             if (resourceObject.count("file"))
                             {
                                 auto fileName = resourceNode.getMember("file"sv).convert(String::Empty);

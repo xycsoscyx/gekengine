@@ -7,6 +7,8 @@
 /// Last Changed: $Date$
 #pragma once
 
+#include <stdexcept>
+
 namespace Gek
 {
     template <typename TYPE, std::size_t ALIGNMENT = sizeof(TYPE)>

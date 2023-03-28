@@ -3,7 +3,6 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/Utility/Profiler.hpp"
 #include "GEK/API/Processor.hpp"
 #include "GEK/API/Entity.hpp"
 #include "GEK/API/Component.hpp"
@@ -95,7 +94,7 @@ namespace Gek
             std::unordered_map<Hash, std::string> componentNameTypeMap;
             AvailableComponents availableComponents;
 
-            ThreadPool<1> workerPool;
+            ThreadPool workerPool;
             concurrency::concurrent_queue<std::function<void(void)>> entityQueue;
             Registry registry;
 
@@ -105,6 +104,7 @@ namespace Gek
             Population(Context *context, Engine::Core *core)
                 : ContextRegistration(context)
                 , core(core)
+                , workerPool(1)
             {
                 assert(core);
 
@@ -186,32 +186,29 @@ namespace Gek
 
             void update(float frameTime)
             {
-				GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Population"sv, "Update"sv, Profiler::EmptyArguments)
+				if (frameTime == 0.0f)
 				{
-					if (frameTime == 0.0f)
+					actionQueue.clear();
+				}
+				else
+				{
+					Action action;
+					while (actionQueue.try_pop(action))
 					{
-						actionQueue.clear();
-					}
-					else
-					{
-						Action action;
-						while (actionQueue.try_pop(action))
-						{
-							onAction(action);
-						};
-					}
-
-					for (auto &slot : onUpdate)
-					{
-						slot.second(frameTime);
-					}
-
-					std::function<void(void)> entityAction;
-					while (entityQueue.try_pop(entityAction))
-					{
-						entityAction();
+						onAction(action);
 					};
-				} GEK_PROFILER_END_SCOPE();
+				}
+
+				for (auto &slot : onUpdate)
+				{
+					slot.second(frameTime);
+				}
+
+				std::function<void(void)> entityAction;
+				while (entityQueue.try_pop(entityAction))
+				{
+					entityAction();
+				};
             }
 
             void action(Action const &action)
@@ -219,98 +216,113 @@ namespace Gek
                 actionQueue.push(action);
             }
 
-            void reset(void)
+            void fullReset(void)
             {
-                workerPool.enqueueAndDetach([this](void) -> void
-                {
-                    actionQueue.clear();
-                    onReset();
-                    registry.clear();
-                }, __FILE__, __LINE__);
+                actionQueue.clear();
+                onReset();
+                registry.clear();
             }
 
-            void load(std::string const &populationName)
+            Task scheduleReset(void)
             {
-                reset();
-                workerPool.enqueueAndDetach([this, populationName](void) -> void
+                co_await workerPool.schedule();
+                fullReset();
+            }
+
+            void reset(void)
+            {
+                scheduleReset();
+            }
+
+            Task scheduleLoad(std::string const& _populationName)
+            {
+                std::string populationName(_populationName);
+                fullReset();
+                workerPool.join();
+
+                co_await workerPool.schedule();
+
+                LockedWrite{ std::cout } << "Loading population: " << populationName;
+
+                JSON worldNode;
+                worldNode.load(getContext()->findDataPath(FileSystem::CombinePaths("scenes", populationName).withExtension(".json")));
+                shuntingYard.setRandomSeed(worldNode.getMember("Seed"sv).convert(uint32_t(std::time(nullptr) & 0xFFFFFFFF)));
+
+                auto templatesNode = worldNode.getMember("Templates"sv);
+                auto populationNode = worldNode.getMember("Population"sv);
+                auto populationArray = populationNode.asType(JSON::EmptyArray);
+                LockedWrite{ std::cout } << "Found " << populationArray.size() << " Entity Definitions";
+                for (auto const& entityNode : populationArray)
                 {
-                    LockedWrite{ std::cout } << "Loading population: " << populationName;
-
-                    JSON worldNode;
-                    worldNode.load(getContext()->findDataPath(FileSystem::CombinePaths("scenes", populationName).withExtension(".json")));
-                    shuntingYard.setRandomSeed(worldNode.getMember("Seed"sv).convert(uint32_t(std::time(nullptr) & 0xFFFFFFFF)));
-
-                    auto templatesNode = worldNode.getMember("Templates"sv);
-                    auto &populationNode = worldNode.getMember("Population"sv);
-                    auto &populationArray = populationNode.asType(JSON::EmptyArray);
-                    LockedWrite{ std::cout } << "Found " << populationArray.size() << " Entity Definitions";
-                    for (auto const &entityNode : populationArray)
+                    uint32_t count = 1;
+                    EntityDefinition entityDefinition;
+                    auto entityObject = entityNode.asType(JSON::EmptyObject);
+                    auto templateSearch = entityObject.find("Template");
+                    if (templateSearch != std::end(entityObject))
                     {
-                        uint32_t count = 1;
-                        EntityDefinition entityDefinition;
-                        auto &entityObject = entityNode.asType(JSON::EmptyObject);
-                        auto templateSearch = entityObject.find("Template");
-                        if (templateSearch != std::end(entityObject))
+                        std::string templateName;
+                        auto entityTemplateNode = entityNode.getMember("Template"sv);
+                        auto entityTemplateObject = entityTemplateNode.asType(JSON::EmptyObject);
+                        if (entityTemplateNode.isType<std::string>())
                         {
-                            std::string templateName;
-                            auto &entityTemplateNode = entityNode.getMember("Template"sv);
-                            auto &entityTemplateObject = entityTemplateNode.asType(JSON::EmptyObject);
-                            if (entityTemplateNode.isType<std::string>())
+                            templateName = entityTemplateNode.convert(String::Empty);
+                        }
+                        else
+                        {
+                            if (entityTemplateObject.count("Base"))
                             {
-                                templateName = entityTemplateNode.convert(String::Empty);
-                            }
-                            else
-                            {
-                                if (entityTemplateObject.count("Base"))
-                                {
-                                    templateName = entityTemplateNode.getMember("Base"sv).convert(String::Empty);
-                                }
-
-                                if (entityTemplateObject.count("Count"))
-                                {
-                                    count = entityTemplateNode.getMember("Count"sv).convert(0);
-                                }
+                                templateName = entityTemplateNode.getMember("Base"sv).convert(String::Empty);
                             }
 
-                            auto &templateNode = templatesNode.getMember(templateName);
-                            for (auto const &componentPair : templateNode.asType(JSON::EmptyObject))
+                            if (entityTemplateObject.count("Count"))
                             {
-                                entityDefinition[componentPair.first] = componentPair.second;
+                                count = entityTemplateNode.getMember("Count"sv).convert(0);
                             }
-
-                            entityObject.erase(templateSearch);
                         }
 
-                        for (auto const &componentPair : entityObject)
+                        auto& templateNode = templatesNode.getMember(templateName);
+                        for (auto const& componentPair : templateNode.asType(JSON::EmptyObject))
                         {
-                            auto &componentDefiniti9on = entityDefinition[componentPair.first];
-                            componentPair.second.visit(
-                                [&](JSON::Object const &componentObject)
+                            entityDefinition[componentPair.first] = componentPair.second;
+                        }
+
+                        entityObject.erase(templateSearch);
+                    }
+
+                    for (auto const& componentPair : entityObject)
+                    {
+                        auto& componentDefiniti9on = entityDefinition[componentPair.first];
+                        componentPair.second.visit(
+                            [&](JSON::Object const& componentObject)
                             {
-                                for (auto const &attributePair : componentObject)
+                                for (auto const& attributePair : componentObject)
                                 {
                                     componentDefiniti9on[attributePair.first] = attributePair.second;
                                 }
                             },
-                                [&](auto const &visitedData)
+                            [&](auto const& visitedData)
                             {
                                 componentDefiniti9on = visitedData;
                             });
+                    }
+
+                    while (count-- > 0)
+                    {
+                        auto populationEntity = new Entity();
+                        for (auto const& componentDefiniti9on : entityDefinition)
+                        {
+                            addComponent(populationEntity, componentDefiniti9on);
                         }
 
-                        while (count-- > 0)
-                        {
-                            auto populationEntity = new Entity();
-                            for (auto const &componentDefiniti9on : entityDefinition)
-                            {
-                                addComponent(populationEntity, componentDefiniti9on);
-                            }
+                        auto entity = dynamic_cast<Plugin::Entity*>(populationEntity);
+                        queueEntity(entity);
+                    };
+                }
+            }
 
-                            auto entity = dynamic_cast<Plugin::Entity *>(populationEntity);
-                            queueEntity(entity);
-                        };
-                    }
-                }, __FILE__, __LINE__);
+            void load(std::string const& populationName)
+            {
+                scheduleLoad(populationName);
             }
 
             void save(std::string const &populationName)

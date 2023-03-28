@@ -14,6 +14,7 @@
 #include <sstream>
 #include <codecvt>
 #include <string>
+#include <format>
 #include <vector>
 #include <ppl.h>
 
@@ -84,47 +85,6 @@ namespace Gek
         std::string Join(std::initializer_list<std::string_view> list, char delimiter, bool initialDelimiter = false);
 
         std::vector<std::string> Split(std::string_view string, char delimiter, bool clearSpaces = true);
-
-		inline char const *Format(char const *string)
-        {
-            return string;
-        }
-
-        template<typename TYPE, typename... PARAMETERS>
-        std::string Format(char const *formatting, TYPE const &value, PARAMETERS... arguments)
-        {
-            std::string result;
-            while (formatting && *formatting)
-            {
-                char currentCharacter = *formatting++;
-                if (currentCharacter == '{')
-                {
-                    char nextCharacter = *formatting++;
-                    if (nextCharacter == '{')
-                    {
-                        // {{ escapes to {
-                        result.append(1U, nextCharacter);
-                    }
-                    else if (nextCharacter == '}')
-                    {
-                        // {}, print next argument
-                        return (result + std::to_string(value) + Format(formatting, arguments...));
-                    }
-                    else
-                    {
-                        // {X, just print both
-						result.append(1U, currentCharacter);
-						result.append(1U, nextCharacter);
-                    }
-                }
-                else
-                {
-                    result.append(1U, currentCharacter);
-                }
-            };
-
-            return result;
-        }
 
         bool Replace(std::string &string, std::string_view searchFor, std::string_view replaceWith);
 

@@ -209,7 +209,9 @@ namespace Gek
                                 viewMatrix.translation.xyz = position;
                                 viewMatrix.invert();
 
-                                if (isObjectInFrustum(Shapes::Frustum(viewMatrix * projectionMatrix), Shapes::OrientedBox(matrix, boundingBox)))
+                                auto projectedMatrix = Shapes::Frustum(viewMatrix * projectionMatrix);
+                                auto orientedBox = Shapes::OrientedBox(matrix, boundingBox);
+                                if (isObjectInFrustum(projectedMatrix, orientedBox))
                                 {
                                     Math::Float4x4 deltaMatrix;
                                     auto size = ImGui::GetItemRectSize();
@@ -259,25 +261,25 @@ namespace Gek
                     ImGui::BulletText("Alignment ");
                     ImGui::SameLine();
                     auto width = (ImGui::GetContentRegionAvailWidth() - style.ItemSpacing.x) * 0.5f;
-                    UI::RadioButton(ICON_FA_USER_O " Entity", &currentGizmoAlignment, UI::Gizmo::Alignment::Local, ImVec2(width, 0.0f));
+                    UI::RadioButton(std::format("{} Entity", (const char*)ICON_FA_USER_O), &currentGizmoAlignment, UI::Gizmo::Alignment::Local, ImVec2(width, 0.0f));
                     ImGui::SameLine();
-                    UI::RadioButton(ICON_FA_GLOBE " World", &currentGizmoAlignment, UI::Gizmo::Alignment::World, ImVec2(width, 0.0f));
+                    UI::RadioButton(std::format("{} World", (const char*)ICON_FA_GLOBE), &currentGizmoAlignment, UI::Gizmo::Alignment::World, ImVec2(width, 0.0f));
 
                     ImGui::BulletText("Operation ");
                     ImGui::SameLine();
                     width = (ImGui::GetContentRegionAvailWidth() - style.ItemSpacing.x * 3.0f) / 4.0f;
-                    UI::RadioButton(ICON_FA_ARROWS " Move", &currentGizmoOperation, UI::Gizmo::Operation::Translate, ImVec2(width, 0.0f));
+                    UI::RadioButton(std::format("{} Move", (const char*)ICON_FA_ARROWS), &currentGizmoOperation, UI::Gizmo::Operation::Translate, ImVec2(width, 0.0f));
                     ImGui::SameLine();
-                    UI::RadioButton(ICON_FA_REPEAT " Rotate", &currentGizmoOperation, UI::Gizmo::Operation::Rotate, ImVec2(width, 0.0f));
+                    UI::RadioButton(std::format("{} Rotate", (const char*)ICON_FA_REPEAT), &currentGizmoOperation, UI::Gizmo::Operation::Rotate, ImVec2(width, 0.0f));
                     ImGui::SameLine();
-                    UI::RadioButton(ICON_FA_SEARCH " Scale", &currentGizmoOperation, UI::Gizmo::Operation::Scale, ImVec2(width, 0.0f));
+                    UI::RadioButton(std::format("{} Scale", (const char*)ICON_FA_SEARCH), &currentGizmoOperation, UI::Gizmo::Operation::Scale, ImVec2(width, 0.0f));
                     ImGui::SameLine();
-                    UI::RadioButton(ICON_FA_SEARCH " Bounds", &currentGizmoOperation, UI::Gizmo::Operation::Bounds, ImVec2(width, 0.0f));
+                    UI::RadioButton(std::format("{} Bounds", (const char*)ICON_FA_SEARCH), &currentGizmoOperation, UI::Gizmo::Operation::Bounds, ImVec2(width, 0.0f));
 
                     ImGui::BulletText("Bounding Axis ");
                     ImGui::SameLine();
                     width = (ImGui::GetContentRegionAvailWidth() - style.ItemSpacing.x * 3.0f) / 4.0f;
-                    UI::RadioButton(ICON_FA_SEARCH " Auto", &currentGizmoAxis, UI::Gizmo::LockAxis::Automatic, ImVec2(width, 0.0f));
+                    UI::RadioButton(std::format("{} Auto", (const char*)ICON_FA_SEARCH), &currentGizmoAxis, UI::Gizmo::LockAxis::Automatic, ImVec2(width, 0.0f));
                     ImGui::SameLine();
                     UI::RadioButton(" X ", &currentGizmoAxis, UI::Gizmo::LockAxis::X, ImVec2(width, 0.0f));
                     ImGui::SameLine();
@@ -285,7 +287,7 @@ namespace Gek
                     ImGui::SameLine();
                     UI::RadioButton(" Z ", &currentGizmoAxis, UI::Gizmo::LockAxis::Z, ImVec2(width, 0.0f));
 
-                    UI::CheckButton(ICON_FA_MAGNET " Snap", &useGizmoSnap);
+                    UI::CheckButton(std::format("{} Snap", (const char*)ICON_FA_MAGNET), &useGizmoSnap);
                     ImGui::SameLine();
                     ImGui::PushItemWidth(-1.0f);
                     switch (currentGizmoOperation)
@@ -316,7 +318,7 @@ namespace Gek
                     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.5f, 0.0f, 1.0f));
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.75f, 0.0f, 1.0f));
                     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
-                    if (ImGui::Button(ICON_FA_USER_PLUS))
+                    if (ImGui::Button((const char *)ICON_FA_USER_PLUS))
                     {
                         ImGui::OpenPopup("NewEntity");
                         createNamedEntity = true;
@@ -373,7 +375,7 @@ namespace Gek
 
                     ImGui::PopStyleVar();
                     ImGui::SameLine();
-                    UI::TextFrame(String::Format("Population: {}", entityCount), ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f));
+                    UI::TextFrame(std::format("Population: {}", entityCount), ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f));
                     if (ImGui::BeginChildFrame(665, ImVec2(-1.0f, -1.0f)))
                     {
                         ImGuiListClipper clipper(entityCount);
@@ -392,14 +394,14 @@ namespace Gek
                                 }
                                 else
                                 {
-                                    name = String::Format("entity_{}", entityIndex);
+                                    name = std::format("entity_{}", entityIndex);
                                 }
 
                                 ImGui::PushID(entityIndex);
                                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.0f, 0.0f, 1.0f));
                                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.0f, 0.0f, 1.0f));
                                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-                                if (ImGui::Button(ICON_FA_USER_TIMES))
+                                if (ImGui::Button((const char*)ICON_FA_USER_TIMES))
                                 {
                                     ImGui::OpenPopup("ConfirmEntityDelete");
                                 }
@@ -430,7 +432,7 @@ namespace Gek
                                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.5f, 0.0f, 1.0f));
                                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.75f, 0.0f, 1.0f));
                                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
-                                if (ImGui::Button(ICON_FA_PLUS_CIRCLE))
+                                if (ImGui::Button((const char*)ICON_FA_PLUS_CIRCLE))
                                 {
                                     selectedComponent = 0;
                                     ImGui::OpenPopup("AddComponent");
@@ -494,7 +496,7 @@ namespace Gek
                                                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.0f, 0.0f, 1.0f));
                                                 ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.0f, 0.0f, 1.0f));
                                                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-                                                if (ImGui::Button(ICON_FA_MINUS_CIRCLE))
+                                                if (ImGui::Button((const char*)ICON_FA_MINUS_CIRCLE))
                                                 {
                                                     ImGui::OpenPopup("ConfirmComponentDelete");
                                                 }

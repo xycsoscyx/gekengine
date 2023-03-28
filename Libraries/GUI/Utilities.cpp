@@ -46,6 +46,7 @@ namespace Gek
             { ImGuiDataType_Float, 2, (ImU32)IM_OFFSETOF(ImGuiStyle, ItemSpacing) },        // ImGuiStyleVar_ItemSpacing
             { ImGuiDataType_Float, 2, (ImU32)IM_OFFSETOF(ImGuiStyle, ItemInnerSpacing) },   // ImGuiStyleVar_ItemInnerSpacing
             { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, IndentSpacing) },      // ImGuiStyleVar_IndentSpacing
+            { ImGuiDataType_Float, 2, (ImU32)IM_OFFSETOF(ImGuiStyle, CellPadding) },        // ImGuiStyleVar_CellPadding
             { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, ScrollbarSize) },      // ImGuiStyleVar_ScrollbarSize
             { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, ScrollbarRounding) },  // ImGuiStyleVar_ScrollbarRounding
             { ImGuiDataType_Float, 1, (ImU32)IM_OFFSETOF(ImGuiStyle, GrabMinSize) },        // ImGuiStyleVar_GrabMinSize
@@ -96,7 +97,15 @@ namespace Gek
             return ImVec2();
         }
 
-        bool InputString(std::string_view label, std::string &string, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void *userData)
+        bool InputString(std::string_view label, const std::string &string, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* userData)
+        {
+            char text[256];
+            strcpy(text, string.data());
+            ImGui::InputText(label.data(), text, 255, flags | ImGuiInputTextFlags_ReadOnly, callback, userData);
+            return false;
+        }
+
+        bool InputString(std::string_view label, std::string &string, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* userData)
         {
             char text[256];
             strcpy(text, string.data());
@@ -271,13 +280,15 @@ namespace Gek
             {
                 static const auto UnClicked = Math::Float4(0.78f, 0.78f, 0.78f, 1.0f);
                 static const auto Clicked = Math::Float4(0.64f, 0.83f, 0.34f, 1.0f);
-                col_bg = ImGui::GetColorU32(*(ImVec4 *)&Math::Blend(UnClicked, Clicked, t));
+                auto blended = Math::Blend(UnClicked, Clicked, t);
+                col_bg = ImGui::GetColorU32(*(ImVec4 *)&blended);
             }
             else
             {
                 static const auto UnClicked = Math::Float4(0.85f, 0.85f, 0.85f, 1.0f);
                 static const auto Clicked = Math::Float4(0.56f, 0.83f, 0.26f, 1.0f);
-                col_bg = ImGui::GetColorU32(*(ImVec4 *)&Math::Blend(UnClicked, Clicked, t));
+                auto blended = Math::Blend(UnClicked, Clicked, t);
+                col_bg = ImGui::GetColorU32(*(ImVec4 *)&blended);
             }
 
             drawList->AddRectFilled(cursorPosition, ImVec2(cursorPosition.x + width, cursorPosition.y + height), col_bg, height * 0.5f);

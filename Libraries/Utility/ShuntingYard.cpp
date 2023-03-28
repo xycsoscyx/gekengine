@@ -292,7 +292,7 @@ namespace Gek
         case TokenType::BinaryOperation:
             if (true)
             {
-                auto &operationSearch = operationsMap.find(token.string);
+                const auto &operationSearch = operationsMap.find(token.string);
                 if (operationSearch == std::end(operationsMap))
                 {
                     return Operand();
@@ -305,7 +305,7 @@ namespace Gek
         case TokenType::Function:
             if (true)
             {
-                auto &functionSearch = functionsMap.find(token.string);
+                const auto &functionSearch = functionsMap.find(token.string);
                 if (functionSearch == std::end(functionsMap))
                 {
                     return Operand();
@@ -324,7 +324,7 @@ namespace Gek
         return Operand();
     }
 
-	bool ShuntingYard::insertToken(TokenList &infixTokenList, Token &token)
+	bool ShuntingYard::insertToken(TokenList &infixTokenList, Token &&token)
     {
         if (!infixTokenList.empty())
         {
@@ -393,7 +393,7 @@ namespace Gek
         TokenList infixTokenList;
         auto insertWord = [&](void)
         {
-            auto variableSearch = variableMap.find(runningToken);
+            const auto &variableSearch = variableMap.find(runningToken);
             if (variableSearch != std::end(variableMap))
             {
                 insertToken(infixTokenList, Token(&variableSearch->second));

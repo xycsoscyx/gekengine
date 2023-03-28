@@ -1,7 +1,6 @@
 ﻿#include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/Timer.hpp"
-#include "GEK/Utility/Profiler.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/GUI/Utilities.hpp"
 #include "GEK/GUI/Dock.hpp"
@@ -65,11 +64,6 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(_window)
             {
-                getContext()->startProfiler(String::Empty);
-				GEK_PROFILER_SET_PROCESS_NAME(getProfiler(), 0, "GEK Engine"sv);
-				GEK_PROFILER_SET_THREAD_NAME(getProfiler(), 0, "Main Thread"sv);
-				GEK_PROFILER_SET_THREAD_SORT_INDEX(getProfiler(), 0, 0);
-
 				LockedWrite{ std::cout } << "Starting GEK Engine";
 
                 if (!window)
@@ -117,7 +111,7 @@ namespace Gek
                 for (auto const &displayMode : displayModeList)
                 {
                     auto currentDisplayMode = displayModeStringList.size();
-                    std::string displayModeString(String::Format("{}x{}, {}hz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
+                    std::string displayModeString(std::format("{}x{}, {}hz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
                     switch (displayMode.aspectRatio)
                     {
                     case Video::DisplayMode::AspectRatio::_4x3:
@@ -203,8 +197,6 @@ namespace Gek
                 population = nullptr;
                 videoDevice = nullptr;
                 window = nullptr;
-
-                getContext()->stopProfiler();
 
                 configuration.save(getContext()->getCachePath("config.json"s));
                 CoUninitialize();
@@ -586,7 +578,7 @@ namespace Gek
                         {
                             auto &optionName = optionPair.first;
                             auto &optionNode = optionPair.second;
-                            auto label(String::Format("##{}{}", optionName, optionName));
+                            auto label(std::format("##{}{}", optionName, optionName));
                             optionNode.visit(
                                 [&](JSON::Object &optionObject)
                             {
@@ -603,7 +595,7 @@ namespace Gek
                                         }
 
                                         int selection = 0;
-                                        auto &selectorSearch = optionObject.find("selection");
+                                        const auto &selectorSearch = optionObject.find("selection");
                                         if (selectorSearch != optionObject.end())
                                         {
                                             auto selectionNode = selectorSearch->second;
@@ -845,7 +837,7 @@ namespace Gek
                             setFullScreen(previous.fullScreen);
                         }
 
-                        ImGui::Text(String::Format("(Revert in {} seconds)", uint32_t(modeChangeTimer)).data());
+                        ImGui::Text(std::format("(Revert in {} seconds)", uint32_t(modeChangeTimer)).data());
                     }
 
 					ImGui::End();
@@ -971,7 +963,7 @@ namespace Gek
 
             void deleteOption(std::string_view system, std::string_view name)
             {
-                auto &groupNode = configuration.getMember(system).asType(JSON::EmptyObject);
+                auto groupNode = configuration.getMember(system).asType(JSON::EmptyObject);
                 auto search = groupNode.find(name.data());
                 if (search != std::end(groupNode))
                 {
@@ -1024,41 +1016,39 @@ namespace Gek
 
             bool update(void)
             {
-				GEK_PROFILER_BEGIN_SCOPE(getProfiler(), 0, 0, "Core"sv, "Update"sv, Profiler::EmptyArguments)
+				window->readEvents();
+
+				timer.update();
+
+				// Read keyboard modifiers inputs
+				ImGuiIO &imGuiIo = ImGui::GetIO();
+				imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+				imGuiIo.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+				imGuiIo.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+				imGuiIo.KeySuper = false;
+				// imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
+				// imGuiIo.MousePos : filled by WM_MOUSEMOVE events
+				// imGuiIo.MouseDown : filled by WM_*BUTTON* events
+				// imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
+
+				if (windowActive)
 				{
-					window->readEvents();
-
-					timer.update();
-
-					// Read keyboard modifiers inputs
-					ImGuiIO &imGuiIo = ImGui::GetIO();
-					imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-					imGuiIo.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-					imGuiIo.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
-					imGuiIo.KeySuper = false;
-					// imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
-					// imGuiIo.MousePos : filled by WM_MOUSEMOVE events
-					// imGuiIo.MouseDown : filled by WM_*BUTTON* events
-					// imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
-
-					if (windowActive)
+					float frameTime = timer.getUpdateTime();
+					modeChangeTimer -= frameTime;
+					if (enableInterfaceControl)
 					{
-						float frameTime = timer.getUpdateTime();
-						modeChangeTimer -= frameTime;
-						if (enableInterfaceControl)
-						{
-							population->update(0.0f);
-						}
-						else
-						{
-							population->update(frameTime);
-							auto rectangle = window->getScreenRectangle();
-							window->setCursorPosition(Math::Int2(
-								int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
-								int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
-						}
+						population->update(0.0f);
 					}
-				} GEK_PROFILER_END_SCOPE();
+					else
+					{
+						population->update(frameTime);
+						auto rectangle = window->getScreenRectangle();
+						window->setCursorPosition(Math::Int2(
+							int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
+							int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
+					}
+				}
+
                 return engineRunning;
             }
         };

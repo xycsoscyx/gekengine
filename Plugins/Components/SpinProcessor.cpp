@@ -1,5 +1,4 @@
 ﻿#include "GEK/Utility/ContextUser.hpp"
-#include "GEK/Utility/Profiler.hpp"
 #include "GEK/API/ComponentMixin.hpp"
 #include "GEK/API/Core.hpp"
 #include "GEK/API/Processor.hpp"

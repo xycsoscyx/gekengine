@@ -9,7 +9,6 @@
 
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
-#include "GEK/Utility/Profiler.hpp"
 #include "GEK/Utility/Hash.hpp"
 #include <functional>
 #include <typeindex>
@@ -29,12 +28,6 @@ namespace Gek
         static ContextPtr Create(std::vector<FileSystem::Path> const &pluginSearchList);
 
         virtual ~Context(void) = default;
-
-        virtual void startProfiler(std::string_view output) = 0;
-        virtual void stopProfiler(void) = 0;
-        virtual Profiler * const getProfiler(void) const = 0;
-
-		virtual void synchronizeClock(Hash processIdentifier, Hash threadIdentifier, Profiler::TimeFormat time) = 0;
 
 		virtual void setCachePath(FileSystem::Path const &path) = 0;
 		virtual FileSystem::Path getCachePath(FileSystem::Path const &path) = 0;

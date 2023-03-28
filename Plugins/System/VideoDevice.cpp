@@ -727,7 +727,9 @@ namespace Gek
             comparisonFunction = getComparisonFunction(object.getMember("comparisonFunction"sv).convert("Never"s));
             minimumMipLevel = object.getMember("minimumMipLevel"sv).convert(0.0f);
             maximumMipLevel = object.getMember("maximumMipLevel"sv).convert(Math::Infinity);
-            borderColor = object.getMember("borderColor"sv).evaluate(ShuntingYard(), Math::Float4::White);
+
+            static ShuntingYard EmptyYard;
+            borderColor = object.getMember("borderColor"sv).evaluate(EmptyYard, Math::Float4::White);
         }
 
         size_t SamplerState::Description::getHash(void) const

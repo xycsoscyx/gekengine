@@ -836,7 +836,7 @@ namespace Gek
                     bool isTabClosed = false;
 
                     ImGui::SetCursorScreenPos(tab.position);
-                    if (ImGui::BeginChild(String::Format("tabs_{}", tab.identifier).data(), size, true))
+                    if (ImGui::BeginChild(std::format("tabs_{}", tab.identifier).data(), size, true))
                     {
                         Tab *dockedTab = &tab;
                         ImDrawList *drawList = ImGui::GetWindowDrawList();

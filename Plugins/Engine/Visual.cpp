@@ -44,15 +44,15 @@ namespace Gek
                     std::string systemType(String::GetLower(elementNode.getMember("system"sv).convert(String::Empty)));
                     if (systemType == "instanceindex")
                     {
-                        inputVertexData += String::Format("    uint {} : SV_InstanceId;\r\n", elementName);
+                        inputVertexData += std::format("    uint {} : SV_InstanceId;\r\n", elementName);
                     }
                     else if (systemType == "vertexindex")
                     {
-                        inputVertexData += String::Format("    uint {} : SV_VertexId;\r\n", elementName);
+                        inputVertexData += std::format("    uint {} : SV_VertexId;\r\n", elementName);
                     }
                     else if (systemType == "isfrontfacing")
                     {
-                        inputVertexData += String::Format("    uint {} : SV_IsFrontFace;\r\n", elementName);
+                        inputVertexData += std::format("    uint {} : SV_IsFrontFace;\r\n", elementName);
                     }
                     else
                     {
@@ -66,7 +66,7 @@ namespace Gek
                         auto semanticIndex = inputIndexList[static_cast<uint8_t>(element.semantic)];
                         inputIndexList[static_cast<uint8_t>(element.semantic)] += count;
 
-                        inputVertexData += String::Format("    {} {} : {}{};\r\n", getFormatSemantic(element.format, count), elementName, videoDevice->getSemanticMoniker(element.semantic), semanticIndex);
+                        inputVertexData += std::format("    {} {} : {}{};\r\n", getFormatSemantic(element.format, count), elementName, videoDevice->getSemanticMoniker(element.semantic), semanticIndex);
                         while (count-- > 0)
                         {
                             elementList.push_back(element);
@@ -84,27 +84,27 @@ namespace Gek
                     uint32_t count = elementNode.getMember("count").convert(1U);
                     auto semanticIndex = outputIndexList[static_cast<uint8_t>(semantic)];
                     outputIndexList[static_cast<uint8_t>(semantic)] += count;
-                    outputVertexData += String::Format("    {} {} : {}{};\r\n", getFormatSemantic(format, count), elementName, videoDevice->getSemanticMoniker(semantic), semanticIndex);
+                    outputVertexData += std::format("    {} {} : {}{};\r\n", getFormatSemantic(format, count), elementName, videoDevice->getSemanticMoniker(semantic), semanticIndex);
 				}
 
 				std::string engineData;
-				engineData += String::Format(
-					"struct InputVertex\r\n" \
-					"{\r\n" \
-					"{}" \
-					"};\r\n" \
-					"\r\n" \
-					"struct OutputVertex\r\n" \
-					"{\r\n" \
-					"    float4 projected : SV_POSITION;\r\n" \
-					"{}" \
-					"};\r\n" \
-					"\r\n" \
-					"OutputVertex getProjection(OutputVertex outputVertex)\r\n" \
-					"{\r\n" \
-					"    outputVertex.projected = mul(Camera::ProjectionMatrix, float4(outputVertex.position, 1.0));\r\n" \
-					"    return outputVertex;\r\n" \
-					"}\r\n", inputVertexData, outputVertexData);
+                engineData +=
+                    "struct InputVertex\r\n" \
+                    "{\r\n"
+                    + inputVertexData +
+                    "};\r\n" \
+                    "\r\n" \
+                    "struct OutputVertex\r\n" \
+                    "{\r\n" \
+                    "    float4 projected : SV_POSITION;\r\n"
+                    + outputVertexData +
+                    "};\r\n" \
+                    "\r\n" \
+                    "OutputVertex getProjection(OutputVertex outputVertex)\r\n" \
+                    "{\r\n" \
+                    "    outputVertex.projected = mul(Camera::ProjectionMatrix, float4(outputVertex.position, 1.0));\r\n" \
+                    "    return outputVertex;\r\n" \
+                    "}\r\n";
 
                 auto vertexNode = visualNode.getMember("vertex"sv);
                 std::string vertexEntry(vertexNode.getMember("entry"sv).convert(String::Empty));
