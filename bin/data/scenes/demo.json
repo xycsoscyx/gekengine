@@ -47,22 +47,6 @@
         },
 
         {
-            "Transform": {
-                "position": [ -30, 0, 0 ],
-                "rotation": [ 0, "pi/2", 0 ]
-            },
-            "Model": "flamingo"
-        },
-
-        {
-            "Transform": {
-                "position": [ 30, 0, 0 ],
-                "rotation": [ 0, "(pi/2)*3", 0 ]
-            },
-            "Model": "gargoyle"
-        },
-
-        {
             "Name": "player",
             "Transform": {
                 "position": [ 0, 20, 0 ],
@@ -98,7 +82,7 @@
             "PointLight": {
                 "radius": 2.0,
                 "range": 50.0,
-                "intensity": 0.0
+                "intensity": 5.0
             },
             "Color": [ 1, 0, 0 ]
         },
@@ -110,7 +94,7 @@
             "PointLight": {
                 "radius": 2.0,
                 "range": 50.0,
-                "intensity": 0.0
+                "intensity": 5.0
             },
             "Color": [ 0, 1, 0 ]
         },
@@ -122,7 +106,7 @@
             "PointLight": {
                 "radius": 2.0,
                 "range": 50.0,
-                "intensity": 0.0
+                "intensity": 5.0
             },
             "Color": [ 0, 0, 1 ]
         },
@@ -134,7 +118,7 @@
             "PointLight": {
                 "radius": 2.0,
                 "range": 50.0,
-                "intensity": 0.0
+                "intensity": 5.0
             },
             "Color": [ 1, 0, 1 ]
         },
@@ -142,21 +126,21 @@
         {
             "Template": {
                 "Base": "BasicCube",
-                "Count": 0
+                "Count": 10
             }
         },
 
         {
             "Template": {
                 "Base": "BasicPointLight",
-                "Count": 0
+                "Count": 10
             }
         },
 
         {
             "Template": {
                 "Base": "BasicSpotLight",
-                "Count": 0
+                "Count": 10
             }
         }
     ]

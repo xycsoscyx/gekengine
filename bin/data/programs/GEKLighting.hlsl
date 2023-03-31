@@ -324,8 +324,8 @@ class LightingData
         LdotH = saturate(dot(lightDirection, halfDirection));
         LdotV = saturate(dot(lightDirection, viewDirection));
         RdotV = saturate(dot(lightReflectDirection, viewDirection));
-        float3 diffuseRadiance =  (diffuseContribution * F0());
-        specularContribution = lerp(materialAlbedo, materialAlbedo, materialMetallic * 0.5);
+        float3 diffuseRadiance = (diffuseContribution * F0());
+        specularContribution = materialAlbedo;
 
         switch (Options::BRDF::Debug::Selection)
         {
@@ -360,7 +360,7 @@ class LightingData
             http://www.rorydriscoll.com/2009/01/25/energy-conservation-in-games/
         */
         float lambert = getLambert(lightDirection);
-        return (diffuseRadiance + specularRadiance) * attenuation * lambert;
+        return (diffuseRadiance + specularRadiance) * lightRadiance * attenuation * lambert;
     }
 };
 
@@ -369,6 +369,12 @@ float getFalloff(const float distance, const float range)
     float denominator = (pow(distance, 2.0) + 1.0);
     float attenuation = pow((distance / range), 4.0);
     return (pow(saturate(1.0 - attenuation), 2.0) / denominator);
+}
+
+float getSpotFactor(float3 lightDataDirection, float3 lightDirection, float innerAngle, float outerAngle, float coneFalloff)
+{
+    float rho = max(0.0, (dot(lightDataDirection, -lightDirection)));
+    return pow(max(0.0, (rho - outerAngle) / (innerAngle - outerAngle)), coneFalloff);
 }
 
 uint getClusterOffset(const float2 screenPosition, const float surfaceDepth)
@@ -440,8 +446,10 @@ float3 getSurfaceIrradiance(const float2 screenCoord, const float3 surfacePositi
         float3 closestPoint = (lightRay + (centerToRay * max(0.0, (lightData.radius / length(centerToRay)))));
         float lightDistance = length(closestPoint);
         float3 lightDirection = normalize(closestPoint);
+
         float attenuation = getFalloff(lightDistance, lightData.range);
-        surfaceIrradiance += data.getIrradiance(lightDirection, lightData.radiance, attenuation);
+
+        surfaceIrradiance += max(0, data.getIrradiance(lightDirection, lightData.radiance, attenuation));
     };
 
     while (indexOffset < spotLightEnd)
@@ -452,10 +460,11 @@ float3 getSurfaceIrradiance(const float2 screenCoord, const float3 surfacePositi
         float3 lightRay = (lightData.position - surfacePosition);
         float lightDistance = length(lightRay);
         float3 lightDirection = (lightRay / lightDistance);
-        float rho = max(0.0, (dot(lightData.direction, -lightDirection)));
-        float spotFactor = pow(max(0.0, (rho - lightData.outerAngle) / (lightData.innerAngle - lightData.outerAngle)), lightData.coneFalloff);
-        float attenuation = (getFalloff(lightDistance, lightData.range) * spotFactor);
-        surfaceIrradiance += data.getIrradiance(lightDirection, lightData.radiance, attenuation);
+
+        float attenuation = getFalloff(lightDistance, lightData.range);
+        attenuation *= getSpotFactor(lightData.direction, lightDirection, lightData.innerAngle, lightData.outerAngle, lightData.coneFalloff);
+
+        surfaceIrradiance += max(0, data.getIrradiance(lightDirection, lightData.radiance, attenuation));
     };
 
     return surfaceIrradiance;
