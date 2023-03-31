@@ -1,7 +1,5 @@
 project (External)
 
-set_property(GLOBAL PROPERTY FOLDER "External")
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/External")
 include(FindDirectX)
 include(FindWindowsSDK)
@@ -51,31 +49,3 @@ target_include_directories(signals INTERFACE "${CMAKE_CURRENT_LIST_DIR}/Wink-Sig
 project(nlohmann_json)
 add_library(nlohmann_json INTERFACE)
 target_include_directories(nlohmann_json INTERFACE "${CMAKE_CURRENT_LIST_DIR}/json/single_include")
-
-set_property(TARGET IrrXML PROPERTY FOLDER "External/Assimp")
-set_property(TARGET zlibstatic PROPERTY FOLDER "External/Assimp")
-set_property(TARGET assimp PROPERTY FOLDER "External/Assimp")
-set_property(TARGET uninstall PROPERTY FOLDER "External/Assimp")
-set_property(TARGET zlib PROPERTY FOLDER "External/Assimp")
-if(WIN32)
-    set_property(TARGET UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTY FOLDER "External/Assimp")
-endif()
-
-set_property(TARGET dAnimation PROPERTY FOLDER "External/Newton")
-set_property(TARGET dContainers PROPERTY FOLDER "External/Newton")
-set_property(TARGET dCustomJoints PROPERTY FOLDER "External/Newton")
-set_property(TARGET dgCore PROPERTY FOLDER "External/Newton")
-set_property(TARGET dgNewtonAvx PROPERTY FOLDER "External/Newton")
-set_property(TARGET dgPhysics PROPERTY FOLDER "External/Newton")
-set_property(TARGET dMath PROPERTY FOLDER "External/Newton")
-set_property(TARGET dNewton PROPERTY FOLDER "External/Newton")
-set_property(TARGET dScene PROPERTY FOLDER "External/Newton")
-set_property(TARGET dVehicle PROPERTY FOLDER "External/Newton")
-set_property(TARGET newton PROPERTY FOLDER "External/Newton")
-set_property(TARGET tinyxml PROPERTY FOLDER "External/Newton")
-
-set_property(TARGET imgui_gek PROPERTY FOLDER "External/ImGui")
-
-if(WIN32)
-    set_property(TARGET DirectXTex PROPERTY FOLDER "External/DirectXTex")
-endif()
