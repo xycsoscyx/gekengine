@@ -6,7 +6,6 @@
 #include "GEK/Render/Window.hpp"
 #include "GEK/Render/Device.hpp"
 #include "GEK/GUI/Utilities.hpp"
-#include "GEK/GUI/Dock.hpp"
 #include <concurrent_unordered_map.h>
 #include <imgui_internal.h>
 #include <Windows.h>
@@ -65,7 +64,6 @@ namespace Gek
 		};
 
 		std::unique_ptr<GUI> gui = std::make_unique<GUI>();
-		std::unique_ptr<UI::Dock::WorkSpace> dock;
 
 		bool showCursor = false;
 
@@ -316,14 +314,12 @@ Output mainPixelProgram(in Pixel input)
 
 			imGuiIo.Fonts->TexID = reinterpret_cast<ImTextureID>(&gui->fontTexture);
 
-			ImGui::ResetStyle(ImGuiStyle_Design);
+			//ImGui::ResetStyle(ImGuiStyle_Design);
 			auto &style = ImGui::GetStyle();
 			style.WindowPadding.x = style.WindowPadding.y;
 			style.FramePadding.x = style.FramePadding.y;
 
 			imGuiIo.UserData = this;
-
-            dock = std::make_unique<UI::Dock::WorkSpace>();
 
 			window->setVisibility(true);
             setFullScreen(configuration.getMember("display"sv).getMember("fullScreen"sv).convert(false));
@@ -420,7 +416,7 @@ Output mainPixelProgram(in Pixel input)
 
 		void showDisplay(void)
 		{
-			if (dock->BeginTab("Display", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
+			if (ImGui::BeginTabItem("Display", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
 			{
 				auto &style = ImGui::GetStyle();
 				ImGui::PushItemWidth(-1.0f);
@@ -435,9 +431,8 @@ Output mainPixelProgram(in Pixel input)
 				ImGui::PopItemWidth();
 				ImGui::Spacing();
 				ImGui::Checkbox("FullScreen", &next.fullScreen);
+				ImGui::EndTabItem();
 			}
-
-			dock->EndTab();
 		}
 
 		void showSettingsWindow(void)
@@ -448,9 +443,11 @@ Output mainPixelProgram(in Pixel input)
                 ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 				if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
 				{
-					dock->Begin("##Settings", ImVec2(500.0f, 350.0f), true);
-					showDisplay();
-					dock->End();
+					if (ImGui::BeginTabBar("##Settings"))
+					{
+						showDisplay();
+						ImGui::EndTabBar();
+					}
 
 					ImGui::Dummy(ImVec2(0.0f, 3.0f));
 

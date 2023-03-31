@@ -685,7 +685,6 @@ float4 main(PixelInput input) : SV_Target
 
 				imGuiIo.UserData = this;
 
-				ImGui::ResetStyle(ImGuiStyle_PurpleInverse);
 				auto &style = ImGui::GetStyle();
 				style.WindowPadding.x = style.WindowPadding.y;
 				style.FramePadding.x = style.FramePadding.y;

@@ -12,7 +12,7 @@ namespace Gek
         , public Plugin::ComponentMixin<Components::Color, Edit::Component>
     {
     private:
-        int currentMode = ImGuiColorEditFlags_RGB;
+        int currentMode = ImGuiColorEditFlags_DisplayRGB;
         bool useHDR = false;
 
     public:
@@ -44,10 +44,10 @@ namespace Gek
             UI::CheckButton("  Allow HDR  ", &useHDR);
             ImGui::SameLine();
             auto &style = ImGui::GetStyle();
-            float width = (ImGui::GetContentRegionAvailWidth() - style.ItemSpacing.x * 1.0f) / 2.0f;
-            UI::RadioButton("RGB", &currentMode, (int)ImGuiColorEditFlags_RGB, ImVec2(width, 0.0f));
+            float width = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x * 1.0f) / 2.0f;
+            UI::RadioButton("RGB", &currentMode, (int)ImGuiColorEditFlags_DisplayRGB, ImVec2(width, 0.0f));
             ImGui::SameLine();
-            UI::RadioButton("HSV", &currentMode, (int)ImGuiColorEditFlags_HSV, ImVec2(width, 0.0f));
+            UI::RadioButton("HSV", &currentMode, (int)ImGuiColorEditFlags_DisplayHSV, ImVec2(width, 0.0f));
 
             ImGui::PushItemWidth(-1.0f);
             changed |= ImGui::ColorPicker4("##color", colorComponent.value.data, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_Float | currentMode | (useHDR ? ImGuiColorEditFlags_HDR : 0));

@@ -830,7 +830,7 @@ namespace Gek
                     {
                         auto texture = dynamic_cast<Video::Texture *>(object.get());
                         auto const &description = texture->getDescription();
-                        float width = ImGui::GetContentRegionAvailWidth();
+                        float width = ImGui::GetContentRegionAvail().x;
                         float ratio = (width / float(description.width));
                         float height = (float(description.height) * ratio);
                         showResourceValue("Format", "##format", Video::GetFormat(description.format));

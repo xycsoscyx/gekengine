@@ -13,9 +13,6 @@
 [submodule "external/newton-dynamics"]
 	path = External/newton-dynamics
 	url = https://github.com/MADEAPPS/newton-dynamics.git
-[submodule "External/imgui-addons"]
-	path = External/imgui-addons
-	url = https://github.com/Flix01/imgui.git
 [submodule "External/Wink-Signals"]
 	path = External/Wink-Signals
 	url = https://github.com/miguelmartin75/Wink-Signals.git

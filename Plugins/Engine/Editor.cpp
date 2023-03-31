@@ -5,7 +5,6 @@
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/GUI/Utilities.hpp"
-#include "GEK/GUI/Dock.hpp"
 #include "GEK/GUI/Gizmo.hpp"
 #include "GEK/Engine/Core.hpp"
 #include "GEK/API/Component.hpp"
@@ -39,7 +38,6 @@ namespace Gek
             Plugin::Renderer *renderer = nullptr;
             Gek::Processor::Model *modelProcessor = nullptr;
 
-            std::unique_ptr<UI::Dock::WorkSpace> dock;
             std::unique_ptr<UI::Gizmo::WorkSpace> gizmo;
             Video::TexturePtr dockPanelIcon;
 
@@ -83,7 +81,7 @@ namespace Gek
 
                 core->setOption("editor", "active", false);
 
-                if (!ImGui::TabWindow::DockPanelIconTextureID)
+                /*if (!ImGui::TabWindow::DockPanelIconTextureID)
                 {
 					int width = 0, height = 0;
 					ImVector<unsigned char> imageData;
@@ -96,9 +94,8 @@ namespace Gek
 					description.height = height;
 					dockPanelIcon = renderer->getVideoDevice()->createTexture(description, imageData.Data);
                     ImGui::TabWindow::DockPanelIconTextureID = dynamic_cast<ImTextureID>(dockPanelIcon.get());
-                }
+                }*/
 
-                dock = std::make_unique<UI::Dock::WorkSpace>();
                 gizmo = std::make_unique<UI::Gizmo::WorkSpace>();
                 core->onInitialized.connect(this, &Editor::onInitialized);
                 core->onShutdown.connect(this, &Editor::onShutdown);
@@ -152,7 +149,7 @@ namespace Gek
             void showScene(void)
             {
                 auto &imGuiIo = ImGui::GetIO();
-				if (dock->BeginTab("Scene", &showSceneDock, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+				if (ImGui::Begin("Scene", &showSceneDock, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
                 {
                     cameraSize = UI::GetWindowContentRegionSize();
 
@@ -248,26 +245,25 @@ namespace Gek
                     }
                 }
 
-                dock->EndTab();
+                ImGui::End();
             }
 
             void showPopulation(void)
             {
                 auto &imGuiIo = ImGui::GetIO();
                 auto &style = ImGui::GetStyle();
-                dock->SetNextLocation(UI::Dock::Location::Right);
-                if (dock->BeginTab("Population", &showPopulationDock, 0, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
+                if (ImGui::Begin("Population", &showPopulationDock, 0))//, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
                 {
                     ImGui::BulletText("Alignment ");
                     ImGui::SameLine();
-                    auto width = (ImGui::GetContentRegionAvailWidth() - style.ItemSpacing.x) * 0.5f;
+                    auto width = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x) * 0.5f;
                     UI::RadioButton(std::format("{} Entity", (const char*)ICON_FA_USER_O), &currentGizmoAlignment, UI::Gizmo::Alignment::Local, ImVec2(width, 0.0f));
                     ImGui::SameLine();
                     UI::RadioButton(std::format("{} World", (const char*)ICON_FA_GLOBE), &currentGizmoAlignment, UI::Gizmo::Alignment::World, ImVec2(width, 0.0f));
 
                     ImGui::BulletText("Operation ");
                     ImGui::SameLine();
-                    width = (ImGui::GetContentRegionAvailWidth() - style.ItemSpacing.x * 3.0f) / 4.0f;
+                    width = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x * 3.0f) / 4.0f;
                     UI::RadioButton(std::format("{} Move", (const char*)ICON_FA_ARROWS), &currentGizmoOperation, UI::Gizmo::Operation::Translate, ImVec2(width, 0.0f));
                     ImGui::SameLine();
                     UI::RadioButton(std::format("{} Rotate", (const char*)ICON_FA_REPEAT), &currentGizmoOperation, UI::Gizmo::Operation::Rotate, ImVec2(width, 0.0f));
@@ -278,7 +274,7 @@ namespace Gek
 
                     ImGui::BulletText("Bounding Axis ");
                     ImGui::SameLine();
-                    width = (ImGui::GetContentRegionAvailWidth() - style.ItemSpacing.x * 3.0f) / 4.0f;
+                    width = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x * 3.0f) / 4.0f;
                     UI::RadioButton(std::format("{} Auto", (const char*)ICON_FA_SEARCH), &currentGizmoAxis, UI::Gizmo::LockAxis::Automatic, ImVec2(width, 0.0f));
                     ImGui::SameLine();
                     UI::RadioButton(" X ", &currentGizmoAxis, UI::Gizmo::LockAxis::X, ImVec2(width, 0.0f));
@@ -378,7 +374,8 @@ namespace Gek
                     UI::TextFrame(std::format("Population: {}", entityCount), ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f));
                     if (ImGui::BeginChildFrame(665, ImVec2(-1.0f, -1.0f)))
                     {
-                        ImGuiListClipper clipper(entityCount);
+                        ImGuiListClipper clipper;
+                        clipper.Begin(entityCount);
                         while (clipper.Step())
                         {
                             for (auto entityIndex = clipper.DisplayStart; entityIndex < clipper.DisplayEnd; ++entityIndex)
@@ -477,7 +474,7 @@ namespace Gek
                                 ImGui::PopStyleVar();
                                 ImGui::PopID();
                                 ImGui::SameLine();
-                                ImGui::SetNextTreeNodeOpen(selectedEntity == entity);
+                                ImGui::SetNextItemOpen(selectedEntity == entity);
                                 if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_Framed))
                                 {
                                     selectedEntity = dynamic_cast<Edit::Entity *>(entity);
@@ -564,9 +561,10 @@ namespace Gek
 
                         population->killEntity(entity);
                     }
+
                 }
 
-                dock->EndTab();
+                ImGui::End();
             }
 
             void onShowUserInterface(void)
@@ -609,20 +607,19 @@ namespace Gek
                     editorPosition.y += ImGui::GetFrameHeightWithSpacing() - style.ItemSpacing.y;
                 }
 
+                ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+
                 ImGui::SetNextWindowSize(editorSize);
                 ImGui::SetNextWindowPos(editorPosition);
                 ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-				auto oldWindowPadding = UI::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+                auto oldWindowPadding = ImGui::GetStyle().WindowPadding;
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 				if (ImGui::Begin("Editor", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
                 {
                     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, oldWindowPadding);
-                    dock->Begin("##Editor", (UI::GetWindowContentRegionSize()), true, ImVec2(10.0f, 10.0f));
-
                     showScene();
                     showPopulation();
-
-                    dock->End();
                     ImGui::PopStyleVar(1);
                 }
 

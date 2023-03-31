@@ -3,7 +3,6 @@
 #include "GEK/Utility/Timer.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/GUI/Utilities.hpp"
-#include "GEK/GUI/Dock.hpp"
 #include "GEK/API/Renderer.hpp"
 #include "GEK/API/Processor.hpp"
 #include "GEK/Engine/Core.hpp"
@@ -56,8 +55,6 @@ namespace Gek
             Engine::ResourcesPtr resources;
             std::vector<Plugin::ProcessorPtr> processorList;
             Engine::PopulationPtr population;
-
-            std::unique_ptr<UI::Dock::WorkSpace> dock;
 
         public:
             Core(Context *context, Window *_window)
@@ -155,7 +152,6 @@ namespace Gek
                 }
 
                 onInitialized.emit();
-                dock = std::make_unique<UI::Dock::WorkSpace>();
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 imGuiIo.KeyMap[ImGuiKey_Tab] = VK_TAB;
@@ -190,7 +186,6 @@ namespace Gek
 
             ~Core(void)
             {
-                dock = nullptr;
                 processorList.clear();
                 renderer = nullptr;
                 resources = nullptr;
@@ -234,6 +229,7 @@ namespace Gek
                     LockedWrite{ std::cout } << "Setting display mode: " << displayModeData.width << "x" << displayModeData.height;
                     if (requestDisplayMode < displayModeList.size())
                     {
+                        next.mode = requestDisplayMode;
                         current.mode = requestDisplayMode;
 						setOption("display"s, "mode"s, requestDisplayMode);
                         videoDevice->setDisplayMode(displayModeData);
@@ -501,57 +497,10 @@ namespace Gek
 
             void showDisplay(void)
             {
-                if (dock->BeginTab("Display", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
+                if (ImGui::BeginTabItem("Display", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
                 {
-                    static const std::vector<std::string_view> styleList = {
-                        "Default Classic"sv,
-                        "Default Dark"sv,
-                        "Default Light"sv,
-                        "Gray"sv,        // (mine) This is the default theme of my main.cpp demo.
-                        "Light"sv,       // (mine)
-                        "Black Codz01"sv, // Posted by @codz01 here: https://github.com/ocornut/imgui/issues/707 (hope I can use it)
-                        "Dark Codz01"sv,  // Posted by @codz01 here: https://github.com/ocornut/imgui/issues/707 (hope I can use it)
-                        "Gray Codz01"sv,  // Posted by @codz01 here: https://github.com/ocornut/imgui/issues/1607 (hope I can use it)
-                        "Purple"sv,      // Posted by @fallrisk here: https://github.com/ocornut/imgui/issues/1607  (hope I can use it)
-                        "Cherry"sv,      // Posted by @r-lyeh here: https://github.com/ocornut/imgui/issues/707 (hope I can use it)
-                        "Dark Opaque"sv,  // (mine)
-                        "Soft"sv,        // Posted by @olekristensen here: https://github.com/ocornut/imgui/issues/539 (hope I can use it)
-                        "Edin Black"sv,   // Posted (via image) by edin_p in the screenshot section of Dear ImGui
-                        "Edin White"sv,   // Posted (via image) by edin_p in the screenshot section of Dear ImGui
-                        "Maya"sv,        // Posted by @ongamex here https://gist.github.com/ongamex/4ee36fb23d6c527939d0f4ba72144d29
-                        "Light Green"sv,  // Posted by @ebachard here: https://github.com/ocornut/imgui/pull/1776 (hope I can use it)
-                        "Design"sv,      // Posted by @usernameiwantedwasalreadytaken here: https://github.com/ocornut/imgui/issues/707 (hope I can use it)
-                        "Dracula"sv,     // Posted by @ice1000 here: https://github.com/ocornut/imgui/issues/707 (hope I can use it)
-                        "Greenish"sv,    // Posted by @dertseha here: https://github.com/ocornut/imgui/issues/1902 (hope I can use it)
-                        "C64"sv,         // Posted by @Nullious here: https://gist.github.com/Nullious/2d598963b346c49fa4500ca16b8e5c67 (hope I can use it)
-                        "Photo Store"sv,  // Posted by @Derydoca here: https://github.com/ocornut/imgui/issues/707 (hope I can use it)
-                        "Corporate Grey Flat"sv,   // Posted by @malamanteau here: https://github.com/ocornut/imgui/issues/707 (hope I can use it)
-                        "Corporate Grey Framed"sv, // Posted by @malamanteau here: https://github.com/ocornut/imgui/issues/707 (hope I can use it)
-                        "Visual Dark"sv, // Posted by @mnurzia here: https://github.com/ocornut/imgui/issues/2529 (hope I can use it)
-                        "Dark Opaque Inverse"sv,
-                        "Gray Codz01 Inverse"sv,
-                        "Purple Inverse"sv,
-                        "Light Green Inverse"sv,
-                        "Design Inverse"sv,
-                    };
+                    ImGui::ShowStyleSelector("style");
 
-                    int selectedStyle = 0;
-                    if (ImGui::Combo("Theme", &selectedStyle, [](void *userData, int index, char const **outputText) -> bool
-                    {
-                        auto &styleList = *(std::vector<std::string_view> *)userData;
-                        if (index >= 0 && index < styleList.size())
-                        {
-                            *outputText = styleList[index].data();
-                            return true;
-                        }
-
-                        return false;
-                    }, (void *)&styleList, styleList.size(), 10))
-                    {
-                        ImGui::ResetStyle(selectedStyle);
-                    }
-
-                    auto &style = ImGui::GetStyle();
                     ImGui::PushItemWidth(-1.0f);
                     ImGui::ListBox("##DisplayMode", &next.mode, [](void *data, int index, const char **text) -> bool
                     {
@@ -564,14 +513,13 @@ namespace Gek
                     ImGui::PopItemWidth();
                     ImGui::Spacing();
                     ImGui::Checkbox("FullScreen", &next.fullScreen);
+                    ImGui::EndTabItem();
                 }
-
-                dock->EndTab();
             }
 
             void showVisual(void)
             {
-                if (dock->BeginTab("Visual", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
+                if (ImGui::BeginTabItem("Visual", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings))
                 {
                     std::function<void(JSON::Object &)> showSetting;
                     showSetting = [&](JSON::Object &settingNode) -> void
@@ -750,9 +698,9 @@ namespace Gek
                         showSetting(filtersSettings);
                         ImGui::TreePop();
                     }
-                }
 
-                dock->EndTab();
+                    ImGui::EndTabItem();
+                }
             }
 
             void showSettingsWindow(void)
@@ -762,12 +710,14 @@ namespace Gek
                     auto &io = ImGui::GetIO();
                     auto &style = ImGui::GetStyle();
                     ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-                    if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+                    if (ImGui::Begin("Settings", &showSettings, 0))
                     {
-                        dock->Begin("##Settings", ImVec2(500.0f, 350.0f), true);
-                        showDisplay();
-                        showVisual();
-                        dock->End();
+                        if (ImGui::BeginTabBar("##Settings"))
+                        {
+                            showDisplay();
+                            showVisual();
+                            ImGui::EndTabBar();
+                        }
 
                         ImGui::Dummy(ImVec2(0.0f, 3.0f));
 

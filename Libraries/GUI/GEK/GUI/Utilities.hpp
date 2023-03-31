@@ -20,10 +20,6 @@ namespace Gek
     {
         ImVec2 GetWindowContentRegionSize();
 
-        ImVec4 PushStyleColor(ImGuiCol idx, ImVec4 const &col);
-        float PushStyleVar(ImGuiStyleVar idx, float val);
-        ImVec2 PushStyleVar(ImGuiStyleVar idx, ImVec2 const &val);
-
         bool InputString(std::string_view label, const std::string &string, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void* user_data = nullptr);
         bool InputString(std::string_view label, std::string &string, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void* user_data = nullptr);
 
