@@ -52,6 +52,8 @@ namespace Gek
 				float padding2;
 			};
 
+			static_assert(sizeof(DirectionalLightData) == 32);
+
 			struct PointLightData
 			{
 				Math::Float3 radiance;
@@ -59,6 +61,8 @@ namespace Gek
 				Math::Float3 position;
 				float range;
 			};
+
+			static_assert(sizeof(PointLightData) == 32);
 
 			struct SpotLightData
 			{
@@ -74,6 +78,8 @@ namespace Gek
 				float padding2;
 			};
 
+			static_assert(sizeof(SpotLightData) == 64);
+
 			struct EngineConstantData
 			{
 				float worldTime;
@@ -81,6 +87,8 @@ namespace Gek
 				uint32_t invertedDepthBuffer;
 				uint32_t buffer;
 			};
+
+			static_assert(sizeof(EngineConstantData) == 16);
 
 			struct CameraConstantData
 			{
@@ -91,6 +99,8 @@ namespace Gek
 				Math::Float4x4 projectionMatrix;
 			};
 
+			static_assert(sizeof(CameraConstantData) == 144);
+
 			struct LightConstantData
 			{
 				Math::UInt3 gridSize;
@@ -100,12 +110,15 @@ namespace Gek
 				uint32_t spotLightCount;
 			};
 
+			static_assert(sizeof(LightConstantData) == 32);
+
 			struct TileOffsetCount
 			{
 				uint32_t indexOffset;
-				uint16_t pointLightCount;
-				uint16_t spotLightCount;
+				uint32_t lightCounts;
 			};
+
+			static_assert(sizeof(TileOffsetCount) == 8);
 
 			struct DrawCallValue
 			{
@@ -224,14 +237,9 @@ namespace Gek
 					}
 				}
 
-				virtual void clearLights(void)
-				{
-				}
-
-				void clearEntities(void)
+				void clearEntityData(void)
 				{
 					entityList.clear();
-					clearLights();
 				}
 
 				void createBuffer(int32_t size = 0)
@@ -284,7 +292,7 @@ namespace Gek
 				{
 				}
 
-				void clearLights(void)
+				void clearLightData(void)
 				{
 					shapeXPositionList.clear();
 					shapeYPositionList.clear();
@@ -293,7 +301,7 @@ namespace Gek
 					visibilityList.clear();
 				}
 
-				void cull(Math::SIMD::Frustum const &frustum, Hash identifier)
+				void cull(Math::SIMD::Frustum const &frustum)
 				{
 					const int entityCount = this->entityList.size();
 					auto buffer = (entityCount % 4);
@@ -390,10 +398,6 @@ namespace Gek
 				Video::BufferPtr indexBuffer;
 			} gui;
 
-			Hash directionalThreadIdentifier;
-			Hash pointLightThreadIdentifier;
-			Hash spotLightThreadIdentifier;
-
 		public:
 			Renderer(Context *context, Engine::Core *core)
 				: ContextRegistration(context)
@@ -404,9 +408,6 @@ namespace Gek
 				, directionalLightData(core->getVideoDevice())
 				, pointLightData(core)
 				, spotLightData(core)
-				, directionalThreadIdentifier(Hash(&directionalLightData))
-				, pointLightThreadIdentifier(Hash(&pointLightData))
-				, spotLightThreadIdentifier(Hash(&spotLightData))
 				, workerPool(3)
 			{
 				population->onReset.connect(this, &Renderer::onReset);
@@ -483,34 +484,34 @@ namespace Gek
 
 				lightBufferList = { lightConstantBuffer.get() };
 
-				static constexpr std::string_view program = \
-					"struct Output\r\n"sv \
-					"{\r\n"sv \
-					"    float4 screen : SV_POSITION;\r\n"sv \
-					"    float2 texCoord : TEXCOORD0;\r\n"sv \
-					"};\r\n"sv \
-					"\r\n"sv \
-					"Output mainVertexProgram(in uint vertexID : SV_VertexID)\r\n"sv \
-					"{\r\n"sv \
-					"    Output output;\r\n"sv \
-					"    output.texCoord = float2((vertexID << 1) & 2, vertexID & 2);\r\n"sv \
-					"    output.screen = float4(output.texCoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f);\r\n"sv \
-					"    return output;\r\n"sv \
-					"}\r\n"sv \
-					"\r\n"sv \
-					"struct Input\r\n"sv \
-					"{\r\n"sv \
-					"    float4 screen : SV_POSITION;\r\n\r\n"sv \
-					"    float2 texCoord : TEXCOORD0;\r\n"sv \
-					"};\r\n"sv \
-					"\r\n"sv \
-					"Texture2D<float3> inputBuffer : register(t0);\r\n"sv \
-					"float3 mainPixelProgram(in Input input) : SV_TARGET0\r\n"sv \
-					"{\r\n"sv \
-					"    uint width, height, mipMapCount;\r\n"sv \
-					"    inputBuffer.GetDimensions(0, width, height, mipMapCount);\r\n"sv \
-					"    return inputBuffer[input.texCoord * float2(width, height)];\r\n"sv \
-					"}\r\n"sv;
+				static constexpr std::string_view program = 
+R"(struct Output
+{
+    float4 screen : SV_POSITION;
+    float2 texCoord : TEXCOORD0;
+};
+
+Output mainVertexProgram(in uint vertexID : SV_VertexID)
+{
+    Output output;
+    output.texCoord = float2((vertexID << 1) & 2, vertexID & 2);
+    output.screen = float4(output.texCoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f);
+    return output;
+}
+
+struct Input
+{
+    float4 screen : SV_POSITION;
+    float2 texCoord : TEXCOORD0;
+};
+
+Texture2D<float3> inputBuffer : register(t0);
+float3 mainPixelProgram(in Input input) : SV_TARGET0
+{
+    uint width, height, mipMapCount;
+    inputBuffer.GetDimensions(0, width, height, mipMapCount);
+    return inputBuffer[input.texCoord * float2(width, height)];
+})";
 
 				deferredVertexProgram = resources->getProgram(Video::Program::Type::Vertex, "deferredVertexProgram", "mainVertexProgram", program);
 				deferredVertexProgram->setName("renderer:deferredVertexProgram");
@@ -544,35 +545,35 @@ namespace Gek
 				gui.context = ImGui::CreateContext();
 
 				static constexpr std::string_view vertexShader =
-					"cbuffer DataBuffer : register(b0)\r\n"sv \
-					"{\r\n"sv \
-					"    float4x4 ProjectionMatrix;\r\n"sv \
-					"    bool TextureHasAlpha;\r\n"sv \
-					"    bool buffer[3];\r\n"sv \
-					"};\r\n"sv \
-					"\r\n"sv \
-					"struct VertexInput\r\n"sv \
-					"{\r\n"sv \
-					"    float2 position : POSITION;\r\n"sv \
-					"    float4 color : COLOR0;\r\n"sv \
-					"    float2 texCoord  : TEXCOORD0;\r\n"sv \
-					"};\r\n"sv \
-					"\r\n"sv \
-					"struct PixelOutput\r\n"sv \
-					"{\r\n"sv \
-					"    float4 position : SV_POSITION;\r\n"sv \
-					"    float4 color : COLOR0;\r\n"sv \
-					"    float2 texCoord  : TEXCOORD0;\r\n"sv \
-					"};\r\n"sv \
-					"\r\n"sv \
-					"PixelOutput main(in VertexInput input)\r\n"sv \
-					"{\r\n"sv \
-					"    PixelOutput output;\r\n"sv \
-					"    output.position = mul(ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));\r\n"sv \
-					"    output.color = input.color;\r\n"sv \
-					"    output.texCoord  = input.texCoord;\r\n"sv \
-					"    return output;\r\n"sv \
-					"}\r\n"sv;
+R"(cbuffer DataBuffer : register(b0)
+{
+    float4x4 ProjectionMatrix;
+    bool TextureHasAlpha;
+    bool buffer[3];
+};
+
+struct VertexInput
+{
+    float2 position : POSITION;
+    float4 color : COLOR0;
+    float2 texCoord  : TEXCOORD0;
+};
+
+struct PixelOutput
+{
+    float4 position : SV_POSITION;
+    float4 color : COLOR0;
+    float2 texCoord  : TEXCOORD0;
+};
+
+PixelOutput main(in VertexInput input)
+{
+    PixelOutput output;
+    output.position = mul(ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));
+    output.color = input.color;
+    output.texCoord  = input.texCoord;
+    return output;
+})";
 
 				gui.vertexProgram = resources->getProgram(Video::Program::Type::Vertex, "uiVertexProgram", "main", vertexShader);
 				gui.vertexProgram->setName("core:vertexProgram");
@@ -603,27 +604,27 @@ namespace Gek
 				gui.constantBuffer->setName("core:constantBuffer");
 
 				static constexpr std::string_view pixelShader =
-					"cbuffer DataBuffer : register(b0)\r\n"sv \
-					"{\r\n"sv \
-					"    float4x4 ProjectionMatrix;\r\n"sv \
-					"    bool TextureHasAlpha;\r\n"sv \
-					"    bool buffer[3];\r\n"sv \
-					"};\r\n"sv \
-					"\r\n"sv \
-					"struct PixelInput\r\n"sv \
-					"{\r\n"sv \
-					"    float4 position : SV_POSITION;\r\n"sv \
-					"    float4 color : COLOR0;\r\n"sv \
-					"    float2 texCoord  : TEXCOORD0;\r\n"sv \
-					"};\r\n"sv \
-					"\r\n"sv \
-					"sampler uiSampler;\r\n"sv \
-					"Texture2D<float4> uiTexture : register(t0);\r\n"sv \
-					"\r\n"sv \
-					"float4 main(PixelInput input) : SV_Target\r\n"sv \
-					"{\r\n"sv \
-					"    return (input.color * uiTexture.Sample(uiSampler, input.texCoord));\r\n"sv \
-					"}\r\n"sv;
+R"(cbuffer DataBuffer : register(b0)
+{
+    float4x4 ProjectionMatrix;
+    bool TextureHasAlpha;
+    bool buffer[3];
+};
+
+struct PixelInput
+{
+    float4 position : SV_POSITION;
+    float4 color : COLOR0;
+    float2 texCoord  : TEXCOORD0;
+};
+
+sampler uiSampler;
+Texture2D<float4> uiTexture : register(t0);
+
+float4 main(PixelInput input) : SV_Target
+{
+    return (input.color * uiTexture.Sample(uiSampler, input.texCoord));
+})";
 
 				gui.pixelProgram = resources->getProgram(Video::Program::Type::Pixel, "uiPixelProgram", "main", pixelShader);
 				gui.pixelProgram->setName("core:pixelProgram");
@@ -655,18 +656,18 @@ namespace Gek
 				gui.depthState->setName("core:depthState");
 
 				ImGuiIO &imGuiIo = ImGui::GetIO();
-				imGuiIo.Fonts->AddFontFromFileTTF(getContext()->findDataPath(FileSystem::CombinePaths("fonts", "Ruda-Bold.ttf")).getString().data(), 14.0f);
+				imGuiIo.Fonts->AddFontFromFileTTF(getContext()->findDataPath(FileSystem::CreatePath("fonts", "Ruda-Bold.ttf")).getString().data(), 14.0f);
 
 				ImFontConfig fontConfig;
 				fontConfig.MergeMode = true;
 
 				fontConfig.GlyphOffset.y = 1.0f;
 				const ImWchar fontAwesomeRanges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-				imGuiIo.Fonts->AddFontFromFileTTF(getContext()->findDataPath(FileSystem::CombinePaths("fonts", "fontawesome-webfont.ttf")).getString().data(), 16.0f, &fontConfig, fontAwesomeRanges);
+				imGuiIo.Fonts->AddFontFromFileTTF(getContext()->findDataPath(FileSystem::CreatePath("fonts", "fontawesome-webfont.ttf")).getString().data(), 16.0f, &fontConfig, fontAwesomeRanges);
 
 				fontConfig.GlyphOffset.y = 3.0f;
 				const ImWchar googleIconRanges[] = { ICON_MIN_MD, ICON_MAX_MD, 0 };
-				imGuiIo.Fonts->AddFontFromFileTTF(getContext()->findDataPath(FileSystem::CombinePaths("fonts", "MaterialIcons-Regular.ttf")).getString().data(), 16.0f, &fontConfig, googleIconRanges);
+				imGuiIo.Fonts->AddFontFromFileTTF(getContext()->findDataPath(FileSystem::CreatePath("fonts", "MaterialIcons-Regular.ttf")).getString().data(), 16.0f, &fontConfig, googleIconRanges);
 
 				imGuiIo.Fonts->Build();
 
@@ -684,7 +685,7 @@ namespace Gek
 
 				imGuiIo.UserData = this;
 
-				ImGui::ResetStyle(ImGuiStyle_GrayCodz01);
+				ImGui::ResetStyle(ImGuiStyle_PurpleInverse);
 				auto &style = ImGui::GetStyle();
 				style.WindowPadding.x = style.WindowPadding.y;
 				style.FramePadding.x = style.FramePadding.y;
@@ -1043,9 +1044,12 @@ namespace Gek
 			// Plugin::Population Slots
 			void onReset(void)
 			{
-				directionalLightData.clearEntities();
-				pointLightData.clearEntities();
-				spotLightData.clearEntities();
+				directionalLightData.clearEntityData();
+				pointLightData.clearEntityData();
+				spotLightData.clearEntityData();
+
+				pointLightData.clearLightData();
+				spotLightData.clearLightData();
 			}
 
 			void onEntityCreated(Plugin::Entity * const entity)
@@ -1133,52 +1137,64 @@ namespace Gek
 				directionalLightData.lightList.clear();
 				directionalLightData.lightList.reserve(directionalLightData.entityList.size());
 				std::for_each(std::begin(directionalLightData.entityList), std::end(directionalLightData.entityList), [&](Plugin::Entity* const entity) -> void
-					{
-						auto const& transformComponent = entity->getComponent<Components::Transform>();
-						auto const& colorComponent = entity->getComponent<Components::Color>();
-						auto const& lightComponent = entity->getComponent<Components::DirectionalLight>();
+				{
+					auto const& transformComponent = entity->getComponent<Components::Transform>();
+					auto const& colorComponent = entity->getComponent<Components::Color>();
+					auto const& lightComponent = entity->getComponent<Components::DirectionalLight>();
 
-						DirectionalLightData lightData;
-						lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
-						lightData.direction = currentCamera.viewMatrix.rotate(getLightDirection(transformComponent.rotation));
-						directionalLightData.lightList.push_back(lightData);
-					});
+					DirectionalLightData lightData;
+					lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
+					lightData.direction = currentCamera.viewMatrix.rotate(getLightDirection(transformComponent.rotation));
+					directionalLightData.lightList.push_back(lightData);
+				});
 
 				directionalLightData.createBuffer();
 			}
 
-			Task schedulePointLights(Math::SIMD::Frustum &frustum)
+			Task schedulePointLights(const Math::SIMD::Frustum & sceneFrustum)
 			{
+				Math::SIMD::Frustum frustum = sceneFrustum;
 				co_await workerPool.schedule();
 
-				pointLightData.cull(frustum, pointLightThreadIdentifier);
+				concurrency::parallel_for_each(std::begin(tilePointLightIndexList), std::end(tilePointLightIndexList), [&](auto& gridData) -> void
+				{
+					gridData.clear();
+				});
+
+				pointLightData.cull(frustum);
 				concurrency::parallel_for(size_t(0), pointLightData.entityList.size(), [&](size_t index) -> void
+				{
+					if (pointLightData.visibilityList[index])
 					{
-						if (pointLightData.visibilityList[index])
-						{
-							auto entity = pointLightData.entityList[index];
-							auto& lightComponent = entity->getComponent<Components::PointLight>();
-							addPointLight(entity, lightComponent);
-						}
-					});
+						auto entity = pointLightData.entityList[index];
+						auto& lightComponent = entity->getComponent<Components::PointLight>();
+						addPointLight(entity, lightComponent);
+					}
+				});
 
 				pointLightData.createBuffer();
 			}
 
-			Task scheduleSpotLights(Math::SIMD::Frustum& frustum)
+			Task scheduleSpotLights(const Math::SIMD::Frustum & sceneFrustum)
 			{
+				Math::SIMD::Frustum frustum = sceneFrustum;
 				co_await workerPool.schedule();
 
-				spotLightData.cull(frustum, spotLightThreadIdentifier);
+				concurrency::parallel_for_each(std::begin(tileSpotLightIndexList), std::end(tileSpotLightIndexList), [&](auto& gridData) -> void
+				{
+					gridData.clear();
+				});
+
+				spotLightData.cull(frustum);
 				concurrency::parallel_for(size_t(0), spotLightData.entityList.size(), [&](size_t index) -> void
+				{
+					if (spotLightData.visibilityList[index])
 					{
-						if (spotLightData.visibilityList[index])
-						{
-							auto entity = spotLightData.entityList[index];
-							auto& lightComponent = entity->getComponent<Components::SpotLight>();
-							addSpotLight(entity, lightComponent);
-						}
-					});
+						auto entity = spotLightData.entityList[index];
+						auto& lightComponent = entity->getComponent<Components::SpotLight>();
+						addSpotLight(entity, lightComponent);
+					}
+				});
 
 				spotLightData.createBuffer();
 			}
@@ -1241,17 +1257,7 @@ namespace Gek
 
 						if (isLightingRequired)
 						{
-							auto frustum = Math::SIMD::loadFrustum((Math::Float4 *)currentCamera.viewFrustum.planeList);
-							concurrency::parallel_for_each(std::begin(tilePointLightIndexList), std::end(tilePointLightIndexList), [&](auto &gridData) -> void
-							{
-								gridData.clear();
-							});
-
-							concurrency::parallel_for_each(std::begin(tileSpotLightIndexList), std::end(tileSpotLightIndexList), [&](auto &gridData) -> void
-							{
-								gridData.clear();
-							});
-
+							auto frustum = Math::SIMD::loadFrustum((Math::Float4*)currentCamera.viewFrustum.planeList);
 							scheduleDirectionalLights();
 							schedulePointLights(frustum);
 							scheduleSpotLights(frustum);
@@ -1276,8 +1282,7 @@ namespace Gek
 								auto const &tilePointLightIndex = tilePointLightIndexList[tileIndex];
 								auto const &tileSpotightIndex = tileSpotLightIndexList[tileIndex];
 								tileOffsetCount.indexOffset = lightIndexList.size();
-								tileOffsetCount.pointLightCount = uint16_t(tilePointLightIndex.size() & 0xFFFF);
-								tileOffsetCount.spotLightCount = uint16_t(tileSpotightIndex.size() & 0xFFFF);
+								tileOffsetCount.lightCounts = (static_cast<uint32_t>(tileSpotightIndex.size()) << 16) + static_cast<uint32_t>(tilePointLightIndex.size());
 								lightIndexList.insert(std::end(lightIndexList), std::begin(tilePointLightIndex), std::end(tilePointLightIndex));
 								lightIndexList.insert(std::end(lightIndexList), std::begin(tileSpotightIndex), std::end(tileSpotightIndex));
 							}
@@ -1457,7 +1462,7 @@ namespace Gek
 
 					uint8_t filterIndex = 0;
 					videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
-					for (auto const &filterName : { "tonemap" })
+					for (auto const &filterName : { "antialias" })
 					{
 						auto const filter = resources->getFilter(filterName);
 						if (filter)

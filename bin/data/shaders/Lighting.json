@@ -1,17 +1,19 @@
 {
     "BRDF": {
         "Debug": {
-            "selection": "None",
+            "selection": "ShowFull",
             "options": [
-                "None",
+                "ShowFull",
                 "ShowAlbedo",
                 "ShowNormal",
                 "ShowRoughness",
                 "ShowMetallic",
                 "ShowAttenuation",
+                "ShowDiffuse",
                 "ShowNormalDistribution",
                 "ShowGeometricShadow",
-                "ShowFresnel"
+                "ShowFresnel",
+                "ShowSpecular"
             ]
         },
         "NormalDistribution": {

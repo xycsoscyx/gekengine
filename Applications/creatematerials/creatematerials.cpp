@@ -19,11 +19,11 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	else
 	{
 		auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
-		dataPath = FileSystem::CombinePaths(rootPath, "Data");
+        dataPath = rootPath / "Data"sv;
 	}
 
-	auto texturesPath(FileSystem::CombinePaths(dataPath, "textures").getString());
-	auto materialsPath(FileSystem::CombinePaths(dataPath, "materials"));
+	auto texturesPath((dataPath / "textures"sv).getString());
+	auto materialsPath(dataPath / "materials"sv);
 
 	std::function<bool(FileSystem::Path const &)> findMaterials;
 	findMaterials = [&](FileSystem::Path const &materialCollectionPath) -> bool
@@ -183,7 +183,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                             dataNode[mapType] = node;
                         }
 
-                        auto materialPath(FileSystem::CombinePaths(materialsPath, materialName + ".json"));
+                        auto materialPath((materialsPath / materialName).replaceExtension(".json"));
                         materialPath.getParentPath().createChain();
 
                         JSON shaderNode;

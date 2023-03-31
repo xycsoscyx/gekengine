@@ -32,9 +32,9 @@ namespace Gek
                 assert(resources);
 
                 JSON visualNode;
-                visualNode.load(getContext()->findDataPath(FileSystem::CombinePaths("visuals", visualName).withExtension(".json")));
+                visualNode.load(getContext()->findDataPath(FileSystem::CreatePath("visuals", visualName).withExtension(".json")));
 
-				std::string inputVertexData;
+				std::vector<std::string> inputVertexData;
 				std::vector<Video::InputElement> elementList;
 
                 uint32_t inputIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
@@ -44,15 +44,15 @@ namespace Gek
                     std::string systemType(String::GetLower(elementNode.getMember("system"sv).convert(String::Empty)));
                     if (systemType == "instanceindex")
                     {
-                        inputVertexData += std::format("    uint {} : SV_InstanceId;\r\n", elementName);
+                        inputVertexData.push_back(std::format("    uint {} : SV_InstanceId;", elementName));
                     }
                     else if (systemType == "vertexindex")
                     {
-                        inputVertexData += std::format("    uint {} : SV_VertexId;\r\n", elementName);
+                        inputVertexData.push_back(std::format("    uint {} : SV_VertexId;", elementName));
                     }
                     else if (systemType == "isfrontfacing")
                     {
-                        inputVertexData += std::format("    uint {} : SV_IsFrontFace;\r\n", elementName);
+                        inputVertexData.push_back(std::format("    uint {} : SV_IsFrontFace;", elementName));
                     }
                     else
                     {
@@ -66,7 +66,7 @@ namespace Gek
                         auto semanticIndex = inputIndexList[static_cast<uint8_t>(element.semantic)];
                         inputIndexList[static_cast<uint8_t>(element.semantic)] += count;
 
-                        inputVertexData += std::format("    {} {} : {}{};\r\n", getFormatSemantic(element.format, count), elementName, videoDevice->getSemanticMoniker(element.semantic), semanticIndex);
+                        inputVertexData.push_back(std::format("    {} {} : {}{};", getFormatSemantic(element.format, count), elementName, videoDevice->getSemanticMoniker(element.semantic), semanticIndex));
                         while (count-- > 0)
                         {
                             elementList.push_back(element);
@@ -74,7 +74,7 @@ namespace Gek
                     }
                 }
 
-				std::string outputVertexData;
+				std::vector<std::string> outputVertexData;
 				uint32_t outputIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
 				for (auto &elementNode : visualNode.getMember("output"sv).asType(JSON::EmptyArray))
 				{
@@ -84,32 +84,35 @@ namespace Gek
                     uint32_t count = elementNode.getMember("count").convert(1U);
                     auto semanticIndex = outputIndexList[static_cast<uint8_t>(semantic)];
                     outputIndexList[static_cast<uint8_t>(semantic)] += count;
-                    outputVertexData += std::format("    {} {} : {}{};\r\n", getFormatSemantic(format, count), elementName, videoDevice->getSemanticMoniker(semantic), semanticIndex);
+                    outputVertexData.push_back(std::format("    {} {} : {}{};", getFormatSemantic(format, count), elementName, videoDevice->getSemanticMoniker(semantic), semanticIndex));
 				}
 
-				std::string engineData;
-                engineData +=
-                    "struct InputVertex\r\n" \
-                    "{\r\n"
-                    + inputVertexData +
-                    "};\r\n" \
-                    "\r\n" \
-                    "struct OutputVertex\r\n" \
-                    "{\r\n" \
-                    "    float4 projected : SV_POSITION;\r\n"
-                    + outputVertexData +
-                    "};\r\n" \
-                    "\r\n" \
-                    "OutputVertex getProjection(OutputVertex outputVertex)\r\n" \
-                    "{\r\n" \
-                    "    outputVertex.projected = mul(Camera::ProjectionMatrix, float4(outputVertex.position, 1.0));\r\n" \
-                    "    return outputVertex;\r\n" \
-                    "}\r\n";
+                static constexpr std::string_view engineDataTemplate =
+R"(struct InputVertex
+{{
+    {}
+}};
+
+struct OutputVertex
+{{
+    float4 projected : SV_POSITION;
+    {}
+}};
+
+OutputVertex getProjection(OutputVertex outputVertex)
+{{
+    outputVertex.projected = mul(Camera::ProjectionMatrix, float4(outputVertex.position, 1.0));
+    return outputVertex;
+}})";
+
+                auto inputVertexString = String::Join(inputVertexData, "\r\n");
+                auto outputVertexString = String::Join(outputVertexData, "\r\n");
+                auto engineData = std::vformat(engineDataTemplate, std::make_format_args(inputVertexString, outputVertexString));
 
                 auto vertexNode = visualNode.getMember("vertex"sv);
                 std::string vertexEntry(vertexNode.getMember("entry"sv).convert(String::Empty));
                 std::string vertexProgram(vertexNode.getMember("program"sv).convert(String::Empty));
-                std::string vertexFileName(FileSystem::CombinePaths(visualName, vertexProgram).withExtension(".hlsl").getString());
+                std::string vertexFileName(FileSystem::CreatePath(visualName, vertexProgram).withExtension(".hlsl").getString());
 				this->vertexProgram = resources->getProgram(Video::Program::Type::Vertex, vertexFileName, vertexEntry, engineData);
                 if (!elementList.empty() && this->vertexProgram)
 				{
@@ -121,7 +124,7 @@ namespace Gek
                 std::string geometryProgram(geometryNode.getMember("program"sv).convert(String::Empty));
                 if (!geometryEntry.empty() && !geometryProgram.empty())
                 {
-                    std::string geometryFileName(FileSystem::CombinePaths(visualName, geometryProgram).withExtension(".hlsl").getString());
+                    std::string geometryFileName(FileSystem::CreatePath(visualName, geometryProgram).withExtension(".hlsl").getString());
 					this->geometryProgram = resources->getProgram(Video::Program::Type::Geometry, geometryFileName, geometryEntry);
                 }
 			}

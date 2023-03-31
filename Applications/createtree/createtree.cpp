@@ -264,10 +264,10 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     aiReleaseImport(scene);
 
     auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
-    auto dataPath(FileSystem::CombinePaths(rootPath, "Data"));
+    auto dataPath(rootPath / "Data"sv);
 
-	std::string texturesPath(String::GetLower(FileSystem::CombinePaths(dataPath, "Textures").getString()));
-    auto materialsPath(FileSystem::CombinePaths(dataPath, "Materials").getString());
+	std::string texturesPath(String::GetLower((dataPath / "Textures"sv).getString()));
+    auto materialsPath((dataPath / "Materials"sv).getString());
 
     std::map<std::string, std::string> diffuseToMaterialMap;
     std::function<bool(FileSystem::Path const &)> findMaterials;

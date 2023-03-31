@@ -53,33 +53,6 @@ namespace Gek
             return ((ending.size() > value.size()) ? false : std::equal(std::rbegin(ending), std::rend(ending), std::rbegin(value)));
         }
 
-        std::string Join(std::initializer_list<std::string_view> list, char delimiter, bool initialDelimiter)
-        {
-            auto size = (initialDelimiter ? 1 : 0); // initial length
-            size += (list.size() - 1); // insert delimiters between list elements
-            for (auto const &string : list)
-            {
-                size += string.length();
-            }
-
-            std::string result;
-            result.reserve(size);
-            if (initialDelimiter)
-            {
-                result.append(1U, delimiter);
-            }
-
-            auto element = std::begin(list);
-            result.append(*element);
-            for (++element; element != std::end(list); ++element)
-            {
-                result.append(1U, delimiter);
-                result.append(*element);
-            }
-
-            return result;
-        }
-
         std::vector<std::string> Split(std::string_view string, char delimiter, bool clearSpaces)
         {
             std::string current;

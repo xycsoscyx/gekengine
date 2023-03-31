@@ -108,6 +108,11 @@ namespace Gek
 
     std::string JSON::getString(void) const
     {
+        if (isType<nullptr_t>())
+        {
+            return "null";
+        }
+
         return visit(
             [](std::string const &visitedData)
         {
@@ -146,8 +151,7 @@ namespace Gek
                     stream << ", ";
                 }
 
-                stream << "\"" << index.first << "\": ";
-                stream << index.second.getString();
+                stream << std::format("\"{}\": {}", index.first, index.second.getString());
                 writtenPrevious = true;
             }
 

@@ -2020,42 +2020,44 @@ namespace Gek
             std::mutex backBufferMutex;
             Video::Target * const getBackBuffer(void)
             {
-                backBufferMutex.lock();
                 if (!backBuffer)
                 {
-                    CComPtr<ID3D11Texture2D> d3dRenderTarget;
-                    HRESULT resultValue = dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&d3dRenderTarget));
-                    if (FAILED(resultValue) || !d3dRenderTarget)
+                    std::unique_lock<std::mutex> lock(backBufferMutex);
+                    if (!backBuffer)
                     {
-                        throw std::exception("Unable to get swap chain primary buffer");
+                        CComPtr<ID3D11Texture2D> d3dRenderTarget;
+                        HRESULT resultValue = dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&d3dRenderTarget));
+                        if (FAILED(resultValue) || !d3dRenderTarget)
+                        {
+                            throw std::exception("Unable to get swap chain primary buffer");
+                        }
+
+                        CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
+                        resultValue = d3dDevice->CreateRenderTargetView(d3dRenderTarget, nullptr, &d3dRenderTargetView);
+                        if (FAILED(resultValue) || !d3dRenderTargetView)
+                        {
+                            throw std::exception("Unable to create render target view for back buffer");
+                        }
+
+                        CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
+                        resultValue = d3dDevice->CreateShaderResourceView(d3dRenderTarget, nullptr, &d3dShaderResourceView);
+                        if (FAILED(resultValue) || !d3dShaderResourceView)
+                        {
+                            throw std::exception("Unable to create shader resource view for back buffer");
+                        }
+
+                        D3D11_TEXTURE2D_DESC textureDescription;
+                        d3dRenderTarget->GetDesc(&textureDescription);
+
+                        Video::Texture::Description description;
+                        description.width = textureDescription.Width;
+                        description.height = textureDescription.Height;
+                        description.format = DirectX::GetFormat(textureDescription.Format);
+                        auto d3dRenderTargetResource = CComQIPtr<ID3D11Resource>(d3dRenderTarget);
+                        backBuffer = std::make_unique<TargetViewTexture>(d3dRenderTargetResource, d3dRenderTargetView, d3dShaderResourceView, description);
                     }
-
-                    CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
-                    resultValue = d3dDevice->CreateRenderTargetView(d3dRenderTarget, nullptr, &d3dRenderTargetView);
-                    if (FAILED(resultValue) || !d3dRenderTargetView)
-                    {
-                        throw std::exception("Unable to create render target view for back buffer");
-                    }
-
-                    CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                    resultValue = d3dDevice->CreateShaderResourceView(d3dRenderTarget, nullptr, &d3dShaderResourceView);
-                    if (FAILED(resultValue) || !d3dShaderResourceView)
-                    {
-                        throw std::exception("Unable to create shader resource view for back buffer");
-                    }
-
-                    D3D11_TEXTURE2D_DESC textureDescription;
-                    d3dRenderTarget->GetDesc(&textureDescription);
-
-                    Video::Texture::Description description;
-                    description.width = textureDescription.Width;
-                    description.height = textureDescription.Height;
-                    description.format = DirectX::GetFormat(textureDescription.Format);
-                    auto d3dRenderTargetResource = CComQIPtr<ID3D11Resource>(d3dRenderTarget);
-                    backBuffer = std::make_unique<TargetViewTexture>(d3dRenderTargetResource, d3dRenderTargetView, d3dShaderResourceView, description);
                 }
 
-                backBufferMutex.unlock();
                 return backBuffer.get();
             }
 

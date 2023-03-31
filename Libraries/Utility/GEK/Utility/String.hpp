@@ -73,16 +73,22 @@ namespace Gek
         extern const std::string Empty;
         extern const std::locale Locale;
 
-        void TrimLeft(std::string &string, std::function<bool(char)> checkElement = [](char ch) { return !std::isspace(ch, Locale); });
-        void TrimRight(std::string &string, std::function<bool(char)> checkElement = [](char ch) { return !std::isspace(ch, Locale); });
-        void Trim(std::string &string, std::function<bool(char)> checkElement = [](char ch) { return !std::isspace(ch, Locale); });
+        void TrimLeft(std::string& string, std::function<bool(char)> checkElement = [](char ch) { return !std::isspace(ch, Locale); });
+        void TrimRight(std::string& string, std::function<bool(char)> checkElement = [](char ch) { return !std::isspace(ch, Locale); });
+        void Trim(std::string& string, std::function<bool(char)> checkElement = [](char ch) { return !std::isspace(ch, Locale); });
 
         std::string GetLower(std::string_view string);
         std::string GetUpper(std::string_view string);
 
         bool EndsWith(std::string_view value, std::string_view ending);
 
-        std::string Join(std::initializer_list<std::string_view> list, char delimiter, bool initialDelimiter = false);
+        template <class ARRAY>
+        std::string Join(ARRAY const& strings, std::string delimiter)
+        {
+            std::stringstream combinedString;
+            std::copy(std::begin(strings), std::end(strings), std::ostream_iterator<std::string>(combinedString, delimiter.c_str()));
+            return combinedString.str();
+        }
 
         std::vector<std::string> Split(std::string_view string, char delimiter, bool clearSpaces = true);
 

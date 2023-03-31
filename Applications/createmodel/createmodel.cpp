@@ -346,10 +346,10 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	else
 	{
 		auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
-		dataPath = FileSystem::CombinePaths(rootPath, "Data");
+		dataPath = rootPath / "Data"sv;
 	}
 
-    auto sourcePath(FileSystem::CombinePaths(dataPath, "models", sourceName.getString()));
+    auto sourcePath(dataPath / "models"sv / sourceName);
     auto inputScene = aiImportFileExWithProperties(sourcePath.getString().data(), importFlags, nullptr, propertyStore);
     if (inputScene == nullptr)
     {
@@ -392,8 +392,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     aiReleasePropertyStore(propertyStore);
     aiReleaseImport(inputScene);
 
-	std::string texturesPath(String::GetLower(FileSystem::CombinePaths(dataPath, "Textures").getString()));
-    auto materialsPath(FileSystem::CombinePaths(dataPath, "Materials").getString());
+	std::string texturesPath(String::GetLower((dataPath / "Textures"sv).getString()));
+    auto materialsPath((dataPath / "Materials"sv).getString());
 
 	std::map<std::string, std::string> diffuseToMaterialMap;
     std::function<bool(FileSystem::Path const &)> findMaterials;
@@ -478,8 +478,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             String::Replace(modelName, replacement, "");
         }
 
-        auto outputParentPath(FileSystem::CombinePaths(dataPath, "models", sourceName.withoutExtension().getString()));
-        auto outputPath(FileSystem::CombinePaths(outputParentPath, modelName).withExtension(".gek"));
+        auto outputParentPath((dataPath / "models"sv / sourceName).withoutExtension());
+        auto outputPath((outputParentPath / modelName).withExtension(".gek"));
         LockedWrite{ std::cout } << ">     " << model.name << ": " << outputPath.getString();
         LockedWrite{ std::cout } << "      Num. Meshes: " << model.meshList.size();
         LockedWrite{ std::cout } << "      Size: Minimum[" << model.boundingBox.minimum.x << ", " << model.boundingBox.minimum.y << ", " << model.boundingBox.minimum.z << "]";

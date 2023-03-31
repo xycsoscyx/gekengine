@@ -391,7 +391,7 @@ namespace Gek
             co_await loadPool.schedule();
 
             std::vector<FileSystem::Path> modelPathList;
-            auto groupPath(getContext()->findDataPath(FileSystem::CombinePaths("models", name)));
+            auto groupPath(getContext()->findDataPath(FileSystem::CreatePath("models", name)));
             groupPath.findFiles([&](FileSystem::Path const& filePath) -> bool
             {
                 std::string fileName(filePath.getString());

@@ -19,17 +19,16 @@ namespace Gek
 	{
 		struct Path
 		{
-        private:
+		public:
             std::filesystem::path data;
-
-        private:
-            Path(std::filesystem::path const &path);
 
         public:
 			Path(void);
-            Path(std::string_view path);
+			Path(std::filesystem::path const& path);
+			Path(std::string_view path);
             Path(std::string const &path);
 			Path(Path const &path);
+			Path(const char *path);
 
             void operator = (std::string_view path);
             void operator = (std::string const &path);
@@ -61,24 +60,7 @@ namespace Gek
             void findFiles(std::function<bool(Path const &filePath)> onFileFound) const;
         };
 
-        struct File
-            : public Path
-        {
-        };
-
 		Path GetModuleFilePath(void);
-
-        template <typename... PARAMETERS>
-        Path CombinePaths(PARAMETERS const & ... nameList)
-        {
-            return String::Join({ nameList... }, static_cast<char>(std::filesystem::path::preferred_separator));
-        }
-
-        template <typename... PARAMETERS>
-        Path CombinePaths(Path const &rootDirectory, PARAMETERS const &... nameList)
-        {
-            return String::Join({ rootDirectory.getString(), nameList... }, static_cast<char>(std::filesystem::path::preferred_separator));
-        }
 
         template <typename CONTAINER>
 		CONTAINER Load(Path const &filePath, CONTAINER const &defaultValue = CONTAINER(), std::uintmax_t limitReadSize = 0)
@@ -123,7 +105,22 @@ namespace Gek
 				fclose(file);
 			}
 		}
-	}; // namespace File
+
+		template <class ... STRINGS>
+		Path CreatePath(STRINGS && ... names)
+		{
+			Path path;
+			([&] {
+				path = path / Path(names);
+			} (), ...);
+			return path;
+		}
+
+		Path operator / (Path const& leftPath, std::string_view rightPath);
+		Path operator / (Path const& leftPath, std::string const& rightPath);
+		Path operator / (Path const& leftPath, Path const& rightPath);
+		Path operator / (Path const& leftPath, const char *rightPath);
+	}; // namespace FileSystem
 }; // namespace Gek
 
 namespace std

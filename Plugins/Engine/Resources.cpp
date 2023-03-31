@@ -133,7 +133,7 @@ namespace Gek
 
             virtual ~ResourceCache(void) = default;
 
-            void forEachResource(std::function<void(HandleType, TypePtr)> onResource)
+            void visit(std::function<void(HandleType, TypePtr)> onResource)
             {
                 for (auto& resourcePair : resourceMap)
                 {
@@ -670,7 +670,7 @@ namespace Gek
 				auto lowerName = String::GetLower(name);
 				if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_Framed))
 				{
-                    cache.forEachResource([&](CACHE::HandleType handle, CACHE::TypePtr object) -> void
+                    cache.visit([&](CACHE::HandleType handle, CACHE::TypePtr object) -> void
 					{
 						std::string nodeName(object->getName());
 						if (nodeName.empty())
@@ -696,7 +696,7 @@ namespace Gek
                 {
                     auto lowerName = String::GetLower(name);
                     std::unordered_map<std::string_view, std::vector<std::pair<HANDLE, std::shared_ptr<TYPE>>>> typeDataMap;
-                    cache->forEachResource([&](ResourceCache<HANDLE, TYPE>::HandleType handle, ResourceCache<HANDLE, TYPE>::TypePtr object) -> void
+                    cache->visit([&](ResourceCache<HANDLE, TYPE>::HandleType handle, ResourceCache<HANDLE, TYPE>::TypePtr object) -> void
                     {
 						if (dynamic_cast<Video::Target *>(object.get()))
 						{
@@ -993,12 +993,12 @@ namespace Gek
 				auto hash = GetHash(textureName);
 				for (auto const &format : formatList)
                 {
-                    auto texturePath(getContext()->findDataPath(FileSystem::CombinePaths("textures", textureName).withExtension(format)));
+                    auto texturePath(getContext()->findDataPath(FileSystem::CreatePath("textures", textureName).withExtension(format)));
                     if (texturePath.isFile())
                     {
-                        auto resource = dynamicCache.getHandle(hash, flags, [this, filePath = FileSystem::Path(texturePath), textureName = std::string(textureName), flags](ResourceHandle)->Video::TexturePtr
+                        auto resource = dynamicCache.getHandle(hash, flags, [this, texturePath = texturePath, textureName = std::string(textureName), flags](ResourceHandle)->Video::TexturePtr
 						{
-							return loadTextureData(filePath, textureName, flags);
+							return loadTextureData(texturePath, textureName, flags);
 						}, false);
 
                         if (resource.first)
@@ -1490,12 +1490,12 @@ namespace Gek
 			Video::Program::Information getProgramInformation(Video::Program::Type type, std::string_view name, std::string_view entryFunction, std::string_view engineData)
             {
 				auto programsPath(getContext()->findDataPath("programs"s, false));
-				auto filePath(FileSystem::CombinePaths(programsPath, name));
+				auto filePath(programsPath / name);
 				auto programDirectory(filePath.getParentPath());
 				std::string uncompiledData(FileSystem::Load(filePath, std::string(engineData)));
 
 				auto hash = GetHash(name, uncompiledData, engineData);
-				auto cachePath = getContext()->getCachePath(FileSystem::CombinePaths("programs", name));
+				auto cachePath = getContext()->getCachePath(FileSystem::CreatePath("programs"sv, name));
 				auto uncompiledPath(cachePath.withExtension(std::format(".{}.hlsl", hash)));
 				auto compiledPath(cachePath.withExtension(std::format(".{}.bin", hash)));
 				Video::Program::Information information =
@@ -1528,7 +1528,7 @@ namespace Gek
 							case Video::IncludeType::Local:
 								if (true)
 								{
-									auto localPath(FileSystem::CombinePaths(programDirectory, fileName));
+									auto localPath(programDirectory / fileName);
 									if (localPath.isFile())
 									{
 										includedMap[fileName] = FileSystem::Load(localPath, String::Empty);
@@ -1543,7 +1543,7 @@ namespace Gek
 							case Video::IncludeType::Global:
 								if (true)
 								{
-									auto rootPath(FileSystem::CombinePaths(programsPath, fileName));
+									auto rootPath(programsPath / fileName);
 									if (rootPath.isFile())
 									{
 										includedMap[fileName] = FileSystem::Load(rootPath, String::Empty);

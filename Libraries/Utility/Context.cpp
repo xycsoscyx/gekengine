@@ -16,7 +16,7 @@ namespace Gek
         std::unordered_map<std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<Hash> &)>> classMap;
         std::unordered_multimap<std::string_view, std::string_view> typeMap;
         std::set<std::string> dataPathList;
-		std::string cachePath;
+		FileSystem::Path cachePath;
 
 	public:
         ContextImplementation(std::vector<FileSystem::Path> const &pluginSearchList)
@@ -82,12 +82,12 @@ namespace Gek
         // Context
 		void setCachePath(FileSystem::Path const &path)
 		{
-			cachePath = path.getString();
+			cachePath = path;
 		}
 
 		FileSystem::Path getCachePath(FileSystem::Path const &path)
 		{
-			return FileSystem::CombinePaths(cachePath, path.getString());
+			return cachePath / path;
 		}
 
 		void addDataPath(FileSystem::Path const &path)
@@ -97,10 +97,9 @@ namespace Gek
 
         FileSystem::Path findDataPath(FileSystem::Path const &path, bool includeCache) const
         {
-            auto pathString = path.getString();
 			if (includeCache)
 			{
-				auto fullPath = FileSystem::CombinePaths(cachePath, pathString);
+				auto fullPath = cachePath / path;
 				if (fullPath.isFile() || fullPath.isDirectory())
 				{
 					return fullPath;
@@ -109,7 +108,7 @@ namespace Gek
 
             for (auto &dataPath : dataPathList)
             {
-                auto fullPath = FileSystem::CombinePaths(dataPath, pathString);
+                auto fullPath = dataPath / path;
                 if (fullPath.isFile() || fullPath.isDirectory())
                 {
                     return fullPath;
@@ -121,10 +120,9 @@ namespace Gek
 
 		void findDataFiles(FileSystem::Path const &path, std::function<bool(FileSystem::Path const &filePath)> onFileFound, bool includeCache) const
 		{
-			auto pathString = path.getString();
 			if (includeCache)
 			{
-				auto fullPath = FileSystem::CombinePaths(cachePath, pathString);
+				auto fullPath = cachePath / path;
 				if (fullPath.isDirectory())
 				{
 					fullPath.findFiles(onFileFound);
@@ -133,7 +131,7 @@ namespace Gek
 
 			for (auto &dataPath : dataPathList)
 			{
-				auto fullPath = FileSystem::CombinePaths(dataPath, pathString);
+				auto fullPath = dataPath / path;
 				if (fullPath.isDirectory())
 				{
 					fullPath.findFiles(onFileFound);

@@ -114,7 +114,7 @@ namespace Gek
                 auto &backBufferDescription = backBuffer->getDescription();
 
                 JSON rootNode;
-                rootNode.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", shaderName).withExtension(".json")));
+                rootNode.load(getContext()->findDataPath(FileSystem::CreatePath("shaders", shaderName).withExtension(".json")));
                 outputResource = rootNode.getMember("output"sv).convert(String::Empty);
 
                 ShuntingYard shuntingYard(population->getShuntingYard());
@@ -137,7 +137,7 @@ namespace Gek
                     auto importExternal = [&](std::string_view importName) -> void
                     {
                         JSON importOptions;
-                        importOptions.load(getContext()->findDataPath(FileSystem::CombinePaths("shaders", importName).withExtension(".json")));
+                        importOptions.load(getContext()->findDataPath(FileSystem::CreatePath("shaders", importName).withExtension(".json")));
                         for (auto &importPair : importOptions.asType(JSON::EmptyObject))
                         {
                             if (rootOptionsObject.count(importPair.first) == 0)
@@ -179,7 +179,7 @@ namespace Gek
                     }
                 }
 
-				std::string inputData;
+                std::vector<std::string> inputData;
                 uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
                 for (auto &elementNode : rootNode.getMember("input"sv).asType(JSON::EmptyArray))
                 {
@@ -187,11 +187,11 @@ namespace Gek
                     std::string system(String::GetLower(elementNode.getMember("system"sv).convert(String::Empty)));
                     if (system == "isfrontfacing")
                     {
-                        inputData += std::format("    uint {} : SV_IsFrontFace;\r\n", name);
+                        inputData.push_back(std::format("    uint {} : SV_IsFrontFace;", name));
                     }
                     else if (system == "sampleindex")
                     {
-                        inputData += std::format("    uint {} : SV_SampleIndex;\r\n", name);
+                        inputData.push_back(std::format("    uint {} : SV_SampleIndex;", name));
                     }
                     else
                     {
@@ -201,61 +201,60 @@ namespace Gek
                         auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)];
                         semanticIndexList[static_cast<uint8_t>(semantic)] += count;
 
-                        inputData += std::format("    {} {} : {}{};\r\n", getFormatSemantic(format, count), name, videoDevice->getSemanticMoniker(semantic), semanticIndex);
+                        inputData.push_back(std::format("    {} {} : {}{};", getFormatSemantic(format, count), name, videoDevice->getSemanticMoniker(semantic), semanticIndex));
                     }
                 }
 
-				static constexpr std::string_view lightsData =
-                    "namespace Lights\r\n" \
-                    "{\r\n" \
-                    "    cbuffer Parameters : register(b3)\r\n" \
-                    "    {\r\n" \
-                    "        uint3 gridSize;\r\n" \
-                    "        uint directionalCount;\r\n" \
-                    "        uint2 tileSize;\r\n" \
-                    "        uint pointCount;\r\n" \
-                    "        uint spotCount;\r\n" \
-                    "    };\r\n" \
-                    "\r\n" \
-                    "    static const float2 ReciprocalTileSize = (1.0 / tileSize);" \
-                    "\r\n" \
-                    "    struct DirectionalData\r\n" \
-                    "    {\r\n" \
-                    "        float3 radiance;\r\n" \
-                    "        float padding1;\r\n" \
-                    "        float3 direction;\r\n" \
-                    "        float padding2;\r\n" \
-                    "    };\r\n" \
-                    "\r\n" \
-                    "    struct PointData\r\n" \
-                    "    {\r\n" \
-                    "        float3 radiance;\r\n" \
-                    "        float radius;\r\n" \
-                    "        float3 position;\r\n" \
-                    "        float range;\r\n" \
-                    "    };\r\n" \
-                    "\r\n" \
-                    "    struct SpotData\r\n" \
-                    "    {\r\n" \
-                    "        float3 radiance;\r\n" \
-                    "        float radius;\r\n" \
-                    "        float3 position;\r\n" \
-                    "        float range;\r\n" \
-                    "        float3 direction;\r\n" \
-                    "        float padding1;\r\n" \
-                    "        float innerAngle;\r\n" \
-                    "        float outerAngle;\r\n" \
-                    "        float coneFalloff;\r\n" \
-                    "        float padding2;\r\n" \
-                    "    };\r\n" \
-                    "\r\n" \
-                    "    StructuredBuffer<DirectionalData> directionalList : register(t0);\r\n" \
-                    "    StructuredBuffer<PointData> pointList : register(t1);\r\n" \
-                    "    StructuredBuffer<SpotData> spotList : register(t2);\r\n" \
-                    "    Buffer<uint2> clusterDataList : register(t3);\r\n" \
-                    "    Buffer<uint> clusterIndexList : register(t4);\r\n" \
-                    "};\r\n" \
-                    "\r\n"sv;
+                static constexpr std::string_view lightsData =
+R"(namespace Lights
+{
+    cbuffer Parameters : register(b3)
+    {
+        uint3 gridSize;
+        uint directionalCount;
+        uint2 tileSize;
+        uint pointCount;
+        uint spotCount;
+    };
+
+    static const float2 ReciprocalTileSize = (1.0 / tileSize);
+
+    struct DirectionalData
+    {
+        float3 radiance;
+        float padding1;
+        float3 direction;
+        float padding2;
+    };
+
+    struct PointData
+    {
+        float3 radiance;
+        float radius;
+        float3 position;
+        float range;
+    };
+
+    struct SpotData
+    {
+        float3 radiance;
+        float radius;
+        float3 position;
+        float range;
+        float3 direction;
+        float padding1;
+        float innerAngle;
+        float outerAngle;
+        float coneFalloff;
+        float padding2;
+    };
+
+    StructuredBuffer<DirectionalData> directionalList : register(t0);
+    StructuredBuffer<PointData> pointList : register(t1);
+    StructuredBuffer<SpotData> spotList : register(t2);
+    Buffer<uint2> clusterDataList : register(t3);
+    Buffer<uint> clusterIndexList : register(t4);
+};)";
 
                 std::unordered_map<std::string, ResourceHandle> resourceMap;
                 std::unordered_map<std::string, std::string> resourceSemanticsMap;
@@ -455,7 +454,7 @@ namespace Gek
                     std::function<std::string(JSON const &)> addOptions;
                     addOptions = [&](JSON const & options) -> std::string
                     {
-                        std::string outerData;
+                        std::vector<std::string> outerData;
                         for (auto &optionPair : options.asType(JSON::EmptyObject))
                         {
                             auto optionName = optionPair.first;
@@ -465,14 +464,13 @@ namespace Gek
                             {
                                 if (optionObject.count("options"))
                                 {
-                                    outerData += "    namespace " + optionName + "\r\n";
-                                    outerData += "    {\r\n";
+                                    outerData.push_back(std::format("    namespace {} {{", optionName));
 
                                     std::vector<std::string> choices;
                                     for (auto &choice : optionNode.getMember("options"sv).asType(JSON::EmptyArray))
                                     {
                                         auto name = choice.convert(String::Empty);
-                                        outerData += std::format("        static const int {} = {}; \r\n", name, choices.size());
+                                        outerData.push_back(std::format("        static const int {} = {};", name, choices.size()));
                                         choices.push_back(name);
                                     }
 
@@ -496,20 +494,20 @@ namespace Gek
                                         selection = selectionNode.convert(0U);
                                     }
 
-                                    outerData += std::format("        static const int Selection = {}; \r\n", selection);
-                                    outerData += "    };\r\n";
+                                    outerData.push_back(std::format("        static const int Selection = {};", selection));
+                                    outerData.push_back(std::format("    }}; // namespace {}", optionName));
                                 }
                                 else
                                 {
-                                    auto innerData = addOptions(optionNode);
-                                    if (!innerData.empty())
+                                    auto innerString = addOptions(optionNode);
+                                    if (!innerString.empty())
                                     {
-                                        outerData +=
-                                            "namespace " + optionName + "\r\n" \
-                                            "{\r\n"
-                                            + innerData +
-                                            "};\r\n" \
-                                            "\r\n";
+                                        static constexpr std::string_view innerTemplate =
+R"(namespace {0} {{
+    {1}
+}}; // namespace {0})";
+
+                                        outerData.push_back(std::vformat(innerTemplate, std::make_format_args(optionName, innerString)));
                                     }
                                 }
                             },
@@ -518,29 +516,29 @@ namespace Gek
                                 switch (optionArray.size())
                                 {
                                 case 1:
-                                    outerData += std::format("    static const float {} = {};\r\n", optionName,
-                                        optionArray[0].convert(0.0f));
+                                    outerData.push_back(std::format("    static const float {} = {};", optionName,
+                                        optionArray[0].convert(0.0f)));
                                     break;
 
                                 case 2:
-                                    outerData += std::format("    static const float2 {} = float2({}, {});\r\n", optionName,
+                                    outerData.push_back(std::format("    static const float2 {} = float2({}, {});", optionName,
                                         optionArray[0].convert(0.0f),
-                                        optionArray[1].convert(0.0f));
+                                        optionArray[1].convert(0.0f)));
                                     break;
 
                                 case 3:
-                                    outerData += std::format("    static const float3 {} = float3({}, {}, {});\r\n", optionName,
+                                    outerData.push_back(std::format("    static const float3 {} = float3({}, {}, {});", optionName,
                                         optionArray[0].convert(0.0f),
                                         optionArray[1].convert(0.0f),
-                                        optionArray[2].convert(0.0f));
+                                        optionArray[2].convert(0.0f)));
                                     break;
 
                                 case 4:
-                                    outerData += std::format("    static const float4 {} = float4({}, {}, {}, {})\r\n", optionName,
+                                    outerData.push_back(std::format("    static const float4 {} = float4({}, {}, {}, {})", optionName,
                                         optionArray[0].convert(0.0f),
                                         optionArray[1].convert(0.0f),
                                         optionArray[2].convert(0.0f),
-                                        optionArray[3].convert(0.0f));
+                                        optionArray[3].convert(0.0f)));
                                     break;
                                 };
                             },
@@ -549,31 +547,31 @@ namespace Gek
                             },
                                 [&](bool optionBoolean)
                             {
-                                outerData += std::format("    static const bool {} = {};\r\n", optionName, optionBoolean);
+                                outerData.push_back(std::format("    static const bool {} = {};", optionName, optionBoolean));
                             },
                                 [&](float optionFloat)
                             {
-                                outerData += std::format("    static const float {} = {};\r\n", optionName, optionFloat);
+                                outerData.push_back(std::format("    static const float {} = {};", optionName, optionFloat));
                             },
                                 [&](auto const &optionValue)
                             {
-                                outerData += std::format("    static const int {} = {};\r\n", optionName, optionValue);
+                                outerData.push_back(std::format("    static const int {} = {};", optionName, optionValue));
                             });
                         }
 
-                        return outerData;
+                        return String::Join(outerData, "\r\n");
                     };
 
-                    std::string engineData;
-                    auto optionsData = addOptions(passOptions);
-                    if (!optionsData.empty())
+                    std::vector<std::string> engineData;
+                    auto optionsString = addOptions(passOptions);
+                    if (!optionsString.empty())
                     {
-                        engineData +=
-                            "namespace Options\r\n" \
-                            "{\r\n"
-                            + optionsData +
-                            "}; // namespace Options\r\n" \
-                            "\r\n";
+                        static constexpr std::string_view optionsTemplate =
+R"(namespace Options {{
+    {}
+}}; // namespace Options)";
+
+                        engineData.push_back(std::vformat(optionsTemplate, std::make_format_args(optionsString)));
                     }
 
                     std::string mode(String::GetLower(passNode.getMember("mode"sv).convert(String::Empty)));
@@ -610,28 +608,21 @@ namespace Gek
                     }
                     else
                     {
-                        engineData +=
-                            "struct InputPixel\r\n" \
-                            "{\r\n";
+                        engineData.push_back("struct InputPixel {");
                         if (pass.mode == Pass::Mode::Forward)
                         {
-                            engineData +=
-                                "    float4 screen : SV_POSITION;\r\n"
-                                + inputData;
+                            engineData.push_back("    float4 screen : SV_POSITION;");
+                            engineData.push_back(String::Join(inputData, "\r\n"));
                         }
                         else
                         {
-                            engineData +=
-                                "    float4 screen : SV_POSITION;\r\n" \
-                                "    float2 texCoord : TEXCOORD0;\r\n";
+                            engineData.push_back("    float4 screen : SV_POSITION;");
+                            engineData.push_back("    float2 texCoord : TEXCOORD0;");
                         }
 
-                        engineData +=
-                            "};\r\n" \
-                            "\r\n";
+                        engineData.push_back("};");
 
-                        std::string outputData;
-                        uint32_t currentStage = 0;
+                        std::vector<std::string> outputData;
                         std::unordered_map<std::string, std::string> renderTargetsMap = getAliasedMap(passNode.getMember("targets"sv));
                         if (!renderTargetsMap.empty())
                         {
@@ -647,7 +638,7 @@ namespace Gek
                                 auto description = resources->getTextureDescription(resourceSearch->second);
                                 if (description)
                                 {
-                                    outputData += std::format("    {} {} : SV_TARGET{};\r\n", getFormatSemantic(description->format), renderTarget.second, currentStage++);
+                                    outputData.push_back(std::format("    {} {} : SV_TARGET{};", getFormatSemantic(description->format), renderTarget.second, outputData.size()));
                                 }
                                 else
                                 {
@@ -658,12 +649,14 @@ namespace Gek
 
                         if (!outputData.empty())
                         {
-                            engineData +=
-                                "struct OutputPixel\r\n" \
-                                "{\r\n"
-                                + outputData +
-                                "};\r\n" \
-                                "\r\n";
+                            static constexpr std::string_view outputTemplate =
+R"(struct OutputPixel
+{{
+    {}
+}}; // struct OutputPixel)";
+
+                            auto outputString = String::Join(outputData, "\r\n");
+                            engineData.push_back(std::vformat(outputTemplate, std::make_format_args(outputString)));
                         }
 
                         Video::DepthState::Description depthStateInformation;
@@ -812,10 +805,10 @@ namespace Gek
 
                     if (pass.lighting)
                     {
-                        engineData += lightsData;
+                        engineData.push_back(lightsData.data());
                     }
 
-                    std::string resourceData;
+                    std::vector<std::string> resourceData;
                     uint32_t nextResourceStage(pass.lighting ? 5 : 0);
                     if (pass.mode == Pass::Mode::Forward)
                     {
@@ -843,7 +836,7 @@ namespace Gek
                                         textureType = "Texture1D";
                                     }
 
-                                    resourceData += std::format("    {}<{}> {} : register(t{});\r\n", textureType, getFormatSemantic(description->format), initializer.name, currentStage);
+                                    resourceData.push_back(std::format("    {}<{}> {} : register(t{});", textureType, getFormatSemantic(description->format), initializer.name, currentStage));
                                 }
                             }
                         }
@@ -862,27 +855,29 @@ namespace Gek
                         auto semanticsSearch = resourceSemanticsMap.find(resourcePair.first);
                         if (semanticsSearch != std::end(resourceSemanticsMap))
                         {
-                            resourceData += std::format("    {} {} : register(t{});\r\n", semanticsSearch->second, resourcePair.second, currentStage);
+                            resourceData.push_back(std::format("    {} {} : register(t{});", semanticsSearch->second, resourcePair.second, currentStage));
                         }
                     }
 
                     if (!resourceData.empty())
                     {
-                        engineData +=
-                            "namespace Resources\r\n" \
-                            "{\r\n"
-                            + resourceData +
-                            "};\r\n" \
-                            "\r\n";
+                        static constexpr std::string_view resourceTemplate =
+R"(namespace Resources
+{{
+    {}
+}}; // namespace Resources)";
+
+                        auto resourceString = String::Join(resourceData, "\r\n");
+                        engineData.push_back(std::vformat(resourceTemplate, std::make_format_args(resourceString)));
                     }
 
-                    std::string unorderedAccessData;
-                    uint32_t nextUnorderedStage = 0;
+                    uint32_t unorderedStateStart = 0;
                     if (pass.mode != Pass::Mode::Compute)
                     {
-                        nextUnorderedStage = pass.renderTargetList.size();
+                        unorderedStateStart = pass.renderTargetList.size();
                     }
 
+                    std::vector<std::string> unorderedAccessData;
                     std::unordered_map<std::string, std::string> unorderedAccessAliasMap = getAliasedMap(passNode.getMember("unorderedAccess"sv));
                     for (auto &resourcePair : unorderedAccessAliasMap)
                     {
@@ -892,27 +887,29 @@ namespace Gek
                             pass.unorderedAccessList.push_back(resourceSearch->second);
                         }
 
-                        uint32_t currentStage = nextUnorderedStage++;
+                        uint32_t currentStage = unorderedStateStart + unorderedAccessData.size();
                         auto semanticsSearch = resourceSemanticsMap.find(resourcePair.first);
                         if (semanticsSearch != std::end(resourceSemanticsMap))
                         {
-                            unorderedAccessData += std::format("    RW{} {} : register(u{});\r\n", semanticsSearch->second, resourcePair.second, currentStage);
+                            unorderedAccessData.push_back(std::format("    RW{} {} : register(u{});", semanticsSearch->second, resourcePair.second, currentStage));
                         }
                     }
 
                     if (!unorderedAccessData.empty())
                     {
-                        engineData +=
-                            "namespace UnorderedAccess\r\n" \
-                            "{\r\n"
-                            + unorderedAccessData +
-                            "};\r\n" \
-                            "\r\n";
+                        static constexpr std::string_view unorderedAccessTemplate =
+R"(namespace UnorderedAccess
+{{
+    {}
+}}; // namespace UnorderedAccess)";
+
+                        auto unorderedAccessString = String::Join(unorderedAccessData, "\r\n");
+                        engineData.push_back(std::vformat(unorderedAccessTemplate, std::make_format_args(unorderedAccessString)));
                     }
 
-                    std::string fileName(FileSystem::CombinePaths(shaderName, programName).withExtension(".hlsl").getString());
+                    std::string fileName(FileSystem::CreatePath(shaderName, programName).withExtension(".hlsl").getString());
                     Video::Program::Type pipelineType = (pass.mode == Pass::Mode::Compute ? Video::Program::Type::Compute : Video::Program::Type::Pixel);
-                    pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
+                    pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, String::Join(engineData, "\r\n"));
 				}
 
 				LockedWrite{ std::cout } << "Shader loaded successfully: " << shaderName;

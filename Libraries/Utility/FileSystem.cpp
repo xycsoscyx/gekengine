@@ -4,16 +4,36 @@
 
 namespace Gek
 {
-	namespace FileSystem
+    namespace FileSystem
 	{
-        Path::Path(std::filesystem::path const &path)
-            : data(path)
+        Path operator / (Path const& leftPath, std::string_view rightPath)
         {
-            data.make_preferred();
+            return leftPath.data / std::filesystem::path(rightPath);
+        }
+
+        Path operator / (Path const& leftPath, std::string const& rightPath)
+        {
+            return leftPath.data / std::filesystem::path(rightPath);
+        }
+
+        Path operator / (Path const& leftPath, Path const& rightPath)
+        {
+            return leftPath.data / rightPath.data;
+        }
+
+        Path operator / (Path const& leftPath, const char *rightPath)
+        {
+            return leftPath.data / std::filesystem::path(rightPath);
         }
 
         Path::Path(void)
         {
+        }
+
+        Path::Path(std::filesystem::path const &path)
+            : data(path)
+        {
+            data.make_preferred();
         }
 
         Path::Path(std::string_view path)
@@ -28,8 +48,14 @@ namespace Gek
             data.make_preferred();
         }
 
-        Path::Path(Path const &path)
+        Path::Path(Path const& path)
             : data(path.data)
+        {
+            data.make_preferred();
+        }
+
+        Path::Path(const char *path)
+            : data(path)
         {
             data.make_preferred();
         }

@@ -1345,46 +1345,60 @@ namespace Gek
 
             std::string getShaderHeader(const Render::PipelineStateInformation &pipelineStateInformation)
             {
-				static constexpr std::string_view ConversionFunctions =
-                    "#define DeclareConstantBuffer(NAME, INDEX) cbuffer NAME : register(b##INDEX)\r\n"sv \
-                    "#define DeclareSamplerState(NAME, INDEX) SamplerState NAME : register(s##INDEX)\r\n"sv \
-                    "#define DeclareTexture1D(NAME, TYPE, INDEX) Texture1D<TYPE> NAME : register(t##INDEX)\r\n"sv \
-                    "#define DeclareTexture2D(NAME, TYPE, INDEX) Texture2D<TYPE> NAME : register(t##INDEX)\r\n"sv \
-                    "#define DeclareTexture3D(NAME, TYPE, INDEX) Texture3D<TYPE> NAME : register(t##INDEX)\r\n"sv \
-                    "#define DeclareTextureCube(NAME, TYPE, INDEX) TextureCube<TYPE> NAME : register(t##INDEX)\r\n"sv \
-					""sv \
-                    "#define SampleTexture(TEXTURE, SAMPLER, COORD) TEXTURE.Sample(SAMPLER, COORD)\r\n"sv \
-                    "\r\n"sv;
-
-                std::string shader(ConversionFunctions);
-                shader.append("struct Vertex\r\n{\r\n");
+                std::vector<std::string> vertexData;
                 uint32_t vertexSemanticIndexList[static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count)] = { 0 };
                 for (auto const &vertexElement : pipelineStateInformation.vertexDeclaration)
                 {
                     std::string semantic = DirectX::VertexSemanticList[static_cast<uint8_t>(vertexElement.semantic)].data();
                     std::string format = DirectX::getFormatSemantic(vertexElement.format);
-                    shader += std::format("    {} {} : {}{};\r\n", format, vertexElement.name, semantic, vertexSemanticIndexList[static_cast<uint8_t>(vertexElement.semantic)]++);
+                    vertexData.push_back(std::format("    {} {} : {}{};", format, vertexElement.name, semantic, vertexSemanticIndexList[static_cast<uint8_t>(vertexElement.semantic)]++));
                 }
 
-                shader.append("};\r\n\r\nstruct Pixel\r\n{\r\n");
+                std::vector<std::string> pixelData;
                 uint32_t pixelSemanticIndexList[static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count)] = { 0 };
                 for (auto const &pixelElement : pipelineStateInformation.pixelDeclaration)
                 {
                     std::string semantic = DirectX::PixelSemanticList[static_cast<uint8_t>(pixelElement.semantic)].data();
                     std::string format = DirectX::getFormatSemantic(pixelElement.format);
-                    shader += std::format("    {} {} : {}{};\r\n", format, pixelElement.name, semantic, pixelSemanticIndexList[static_cast<uint8_t>(pixelElement.semantic)]++);
+                    pixelData.push_back(std::format("    {} {} : {}{};", format, pixelElement.name, semantic, pixelSemanticIndexList[static_cast<uint8_t>(pixelElement.semantic)]++));
                 }
 
-                shader.append("};\r\n\r\nstruct Output\r\n{\r\n");
                 uint32_t renderTargetIndex = 0;
+                std::vector<std::string> renderTargets;
                 for (auto const &renderTarget : pipelineStateInformation.renderTargetList)
                 {
                     std::string format = DirectX::getFormatSemantic(renderTarget.format);
-                    shader += std::format("    {} {} : SV_TARGET{};\r\n", format, renderTarget.name, renderTargetIndex++);
+                    renderTargets.push_back(std::format("    {} {} : SV_TARGET{};", format, renderTarget.name, renderTargets.size()));
                 }
 
-                shader.append("};\r\n\r\n");
-                return shader;
+                static constexpr std::string_view shaderHeaderTemplate =
+R"(#define DeclareConstantBuffer(NAME, INDEX) cbuffer NAME : register(b##INDEX)
+#define DeclareSamplerState(NAME, INDEX) SamplerState NAME : register(s##INDEX)
+#define DeclareTexture1D(NAME, TYPE, INDEX) Texture1D<TYPE> NAME : register(t##INDEX)
+#define DeclareTexture2D(NAME, TYPE, INDEX) Texture2D<TYPE> NAME : register(t##INDEX)
+#define DeclareTexture3D(NAME, TYPE, INDEX) Texture3D<TYPE> NAME : register(t##INDEX)
+#define DeclareTextureCube(NAME, TYPE, INDEX) TextureCube<TYPE> NAME : register(t##INDEX)
+#define SampleTexture(TEXTURE, SAMPLER, COORD) TEXTURE.Sample(SAMPLER, COORD)
+
+struct Vertex
+{{
+    {}
+}};
+
+struct Pixel
+{{
+    {}
+}};
+
+struct Output
+{{
+    {}
+}};)";
+
+                auto vertexString = String::Join(vertexData, "\r\n");
+                auto pixelString = String::Join(pixelData, "\r\n");
+                auto renderString = String::Join(renderTargets, "\r\n");
+                return std::vformat(shaderHeaderTemplate, std::make_format_args(vertexString, pixelString, renderString));
             }
 
             std::vector<uint8_t> compileShader(std::string const &name, std::string const &type, std::string const &entryFunction, std::string const &shader, const std::string &header)

@@ -91,6 +91,62 @@
         },
 
         {
+            "Transform": {
+                "position": [ -34.2, 4, 13.3 ],
+                "rotation": [ 0, 0, 0 ]
+            },
+            "PointLight": {
+                "radius": 2.0,
+                "range": 50.0,
+                "intensity": 0.0
+            },
+            "Color": [ 1, 0, 0 ]
+        },
+        {
+            "Transform": {
+                "position": [ -34.2, 4, -12.3 ],
+                "rotation": [ 0, 0, 0 ]
+            },
+            "PointLight": {
+                "radius": 2.0,
+                "range": 50.0,
+                "intensity": 0.0
+            },
+            "Color": [ 0, 1, 0 ]
+        },
+        {
+            "Transform": {
+                "position": [ 35.5, 4, 13.3 ],
+                "rotation": [ 0, 0, 0 ]
+            },
+            "PointLight": {
+                "radius": 2.0,
+                "range": 50.0,
+                "intensity": 0.0
+            },
+            "Color": [ 0, 0, 1 ]
+        },
+        {
+            "Transform": {
+                "position": [ 35.5, 4, -12.3 ],
+                "rotation": [ 0, 0, 0 ]
+            },
+            "PointLight": {
+                "radius": 2.0,
+                "range": 50.0,
+                "intensity": 0.0
+            },
+            "Color": [ 1, 0, 1 ]
+        },
+
+        {
+            "Template": {
+                "Base": "BasicCube",
+                "Count": 0
+            }
+        },
+
+        {
             "Template": {
                 "Base": "BasicPointLight",
                 "Count": 0

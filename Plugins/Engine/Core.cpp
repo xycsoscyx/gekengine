@@ -495,6 +495,8 @@ namespace Gek
                     showLoadWindow();
                     showReset();
                 }
+
+                showDebug();
             }
 
             void showDisplay(void)
@@ -943,6 +945,39 @@ namespace Gek
 
                     ImGui::End();
                 }
+            }
+
+            void showDebug(void)
+            {
+                bool showDebug = true;
+
+                auto& io = ImGui::GetIO();
+                auto& style = ImGui::GetStyle();
+                ImGui::SetNextWindowPos(io.DisplaySize, ImGuiCond_Appearing, ImVec2(1.0f, 1.0f));
+                if (ImGui::Begin("Debug", &showDebug, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+                {
+                    auto getName = [](JSON const& option) -> std::string
+                    {
+                        auto selection = option.getMember("selection");
+                        if (selection.isType<std::string>())
+                        {
+                            return selection.getString();
+                        }
+                        else
+                        {
+                            return option.getMember("options").getIndex(selection.asType<uint32_t>(0)).getString();
+                        }
+                    };
+
+                    auto brdf = configuration.getMember("shaders").getMember("solid").getMember("BRDF");
+                    ImGui::Text(std::format("Debug: {}", getName(brdf.getMember("Debug"))).c_str());
+                    ImGui::Text(std::format("NormalDistribution: {}", getName(brdf.getMember("NormalDistribution"))).c_str());
+                    ImGui::Text(std::format("GeometricShadowing: {}", getName(brdf.getMember("GeometricShadowing"))).c_str());
+                    ImGui::Text(std::format("Fresnel: {}", getName(brdf.getMember("Fresnel"))).c_str());
+                }
+
+
+                ImGui::End();
             }
 
             // Plugin::Core

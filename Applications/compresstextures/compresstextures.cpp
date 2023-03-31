@@ -192,7 +192,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
 	auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
 	auto rootPath(pluginPath.getParentPath());
-	auto cachePath(FileSystem::CombinePaths(rootPath, "cache"));
+	auto cachePath(rootPath / "cache"sv);
 	SetCurrentDirectoryW(cachePath.getWindowsString().data());
 
 	std::vector<FileSystem::Path> searchPathList;
@@ -209,7 +209,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 			context->addDataPath(String::Narrow(gekDataPath));
 		}
 
-		context->addDataPath(FileSystem::CombinePaths(rootPath.getString(), "data"));
+		context->addDataPath(rootPath / "data"sv);
 		context->addDataPath(rootPath.getString());
 
 		Window::Description description;

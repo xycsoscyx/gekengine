@@ -61,11 +61,12 @@ namespace Gek
         std::vector<std::thread> workerList;
         concurrency::concurrent_queue<std::coroutine_handle<void>> coroutineQueue;
 
-        std::mutex mutex;
-        std::condition_variable condition;
+        std::mutex activeMutex;
+        std::condition_variable activeCondition;
         std::atomic<bool> stop = false;
+        std::atomic<uint32_t> activeCount = 0;
 
-	private:
+    private:
         void create(void)
         {
 			stop.store(false);
@@ -84,8 +85,8 @@ namespace Gek
 						// Wait for additional work signal
                         // Wait to be notified of work
 
-                        Lock lock(mutex);
-                        condition.wait(lock, [&](void) -> bool
+                        Lock lock(activeMutex);
+                        activeCondition.wait(lock, [&](void) -> bool
                         {
                             return stop.load() || !coroutineQueue.empty();
                         });
@@ -100,12 +101,14 @@ namespace Gek
                         std::coroutine_handle<void> coroutine;
 						
 						// Dequeue the next Task
-						if (coroutineQueue.try_pop(coroutine))
+                        if (coroutineQueue.try_pop(coroutine))
 						{
 							// Execute
                             coroutine.resume();
-						}
-					};
+                        }
+
+                        activeCount--;
+                    };
 
 #ifdef _WIN32
                     CoUninitialize();
@@ -122,7 +125,7 @@ namespace Gek
             }
 
             coroutineQueue.push(coroutine);
-            condition.notify_one();
+            activeCondition.notify_one();
         }
 
     public:
@@ -146,20 +149,13 @@ namespace Gek
 
         void join(void)
         {
-            [this](void)
+            while (activeCount.load() > 0)
             {
-                while (!coroutineQueue.empty())
-                {
-                    std::coroutine_handle<> coroutine;
-                    if (coroutineQueue.try_pop(coroutine))
-                    {
-                        coroutine();
-                    }
-                };
-            } ();
+                Sleep(0);
+            };
         }
 
-        void drain(bool executePendingTasks = false)
+        void drain(bool executePendingTasks = true)
         {
 			if (executePendingTasks)
 			{
@@ -173,7 +169,7 @@ namespace Gek
             if (!workerList.empty())
             {
 				stop.store(true);
-                condition.notify_all();
+                activeCondition.notify_all();
 
                 // Wait for threads to complete work
                 for (std::thread &worker : workerList)
@@ -183,6 +179,8 @@ namespace Gek
 
                 workerList.clear();
             }
+
+            activeCount = 0;
         }
         
         void reset(void)
@@ -193,6 +191,7 @@ namespace Gek
 
         auto schedule()
         {
+            activeCount++;
             struct Awaiter
             {
                 ThreadPool *threadPool;

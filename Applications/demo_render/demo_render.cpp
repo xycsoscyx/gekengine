@@ -85,7 +85,7 @@ namespace Gek
 			searchPathList.push_back(pluginPath);
 
 			context = Context::Create(searchPathList);
-			context->addDataPath(FileSystem::CombinePaths(rootPath.getString(), "data"));
+			context->addDataPath(rootPath / "data"sv);
 			configuration.load(getContext()->findDataPath("config.json"sv));
 
 			Window::Description windowDescription;
@@ -164,29 +164,29 @@ namespace Gek
 			gui->renderQueue = renderDevice->createQueue(0);
 
 			static constexpr std::string_view guiProgram =
-				"DeclareConstantBuffer(Constants, 0)\r\n" \
-				"{\r\n" \
-				"    float4x4 ProjectionMatrix;\r\n" \
-				"};\r\n" \
-				"\r\n" \
-				"DeclareSamplerState(PointSampler, 0);\r\n" \
-				"DeclareTexture2D(GuiTexture, float4, 0);\r\n" \
-				"\r\n" \
-				"Pixel mainVertexProgram(in Vertex input)\r\n" \
-				"{\r\n" \
-				"    Pixel output;\r\n" \
-				"    output.position = mul(ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));\r\n" \
-				"    output.color = input.color;\r\n" \
-				"    output.texCoord  = input.texCoord;\r\n" \
-				"    return output;\r\n" \
-				"}\r\n" \
-				"\r\n" \
-				"Output mainPixelProgram(in Pixel input)\r\n" \
-				"{\r\n" \
-				"    Output output;\r\n" \
-				"    output.screen = (input.color * SampleTexture(GuiTexture, PointSampler, input.texCoord));\r\n" \
-				"    return output;\r\n" \
-				"}"sv;
+R"(DeclareConstantBuffer(Constants, 0)
+{
+    float4x4 ProjectionMatrix;
+};
+
+DeclareSamplerState(PointSampler, 0);
+DeclareTexture2D(GuiTexture, float4, 0);
+
+Pixel mainVertexProgram(in Vertex input)
+{
+    Pixel output;
+    output.position = mul(ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));
+    output.color = input.color;
+    output.texCoord  = input.texCoord;
+    return output;
+}
+
+Output mainPixelProgram(in Pixel input)
+{
+    Output output;
+    output.screen = (input.color * SampleTexture(GuiTexture, PointSampler, input.texCoord));
+    return output;
+})";
 
 			Render::PipelineStateInformation pipelineStateInformation;
 			pipelineStateInformation.vertexShader = guiProgram;
@@ -288,18 +288,18 @@ namespace Gek
             imGuiIo.KeyMap[ImGuiKey_Z] = 'Z';
 
             auto fontPath = getContext()->findDataPath("fonts"sv);
-			imGuiIo.Fonts->AddFontFromFileTTF(FileSystem::CombinePaths(fontPath, "Ruda-Bold.ttf"sv).getString().data(), 14.0f);
+			imGuiIo.Fonts->AddFontFromFileTTF((fontPath / "Ruda-Bold.ttf"sv).getString().data(), 14.0f);
 
 			ImFontConfig fontConfig;
 			fontConfig.MergeMode = true;
 
 			fontConfig.GlyphOffset.y = 1.0f;
 			const ImWchar fontAwesomeRanges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-			imGuiIo.Fonts->AddFontFromFileTTF(FileSystem::CombinePaths(fontPath, "fontawesome-webfont.ttf"sv).getString().data(), 16.0f, &fontConfig, fontAwesomeRanges);
+			imGuiIo.Fonts->AddFontFromFileTTF((fontPath / "fontawesome-webfont.ttf"sv).getString().data(), 16.0f, &fontConfig, fontAwesomeRanges);
 
 			fontConfig.GlyphOffset.y = 3.0f;
 			const ImWchar googleIconRanges[] = { ICON_MIN_MD, ICON_MAX_MD, 0 };
-			imGuiIo.Fonts->AddFontFromFileTTF(FileSystem::CombinePaths(fontPath, "MaterialIcons-Regular.ttf"sv).getString().data(), 16.0f, &fontConfig, googleIconRanges);
+			imGuiIo.Fonts->AddFontFromFileTTF((fontPath / "MaterialIcons-Regular.ttf"sv).getString().data(), 16.0f, &fontConfig, googleIconRanges);
 
 			imGuiIo.Fonts->Build();
 

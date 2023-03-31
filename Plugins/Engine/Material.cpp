@@ -33,7 +33,7 @@ namespace Gek
                 assert(resources);
 
                 JSON materialNode;
-                materialNode.load(getContext()->findDataPath(FileSystem::CombinePaths("materials", materialName).withExtension(".json")));
+                materialNode.load(getContext()->findDataPath(FileSystem::CreatePath("materials", materialName).withExtension(".json")));
                 auto &shaderNode = materialNode.getMember("shader"sv);
                 auto shaderName = shaderNode.getMember("default"sv).convert(String::Empty);
                 ShaderHandle shaderHandle = resources->getShader(shaderName, materialHandle);
