@@ -178,7 +178,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
         return;
     }
 
-    resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, outputFilePath.getWindowsString().data());
+    resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, outputFilePath.getWideString().data());
 	if (FAILED(resultValue))
 	{
         LockedWrite{ std::cerr } << "Unable to save image";
@@ -193,7 +193,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
 	auto rootPath(pluginPath.getParentPath());
 	auto cachePath(rootPath / "cache"sv);
-	SetCurrentDirectoryW(cachePath.getWindowsString().data());
+	SetCurrentDirectoryW(cachePath.getWideString().data());
 
 	std::vector<FileSystem::Path> searchPathList;
 	searchPathList.push_back(pluginPath);

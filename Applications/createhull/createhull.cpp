@@ -26,75 +26,78 @@ struct Header
 
 struct Parameters
 {
+    std::string sourceName;
+    std::string targetName;
     float feetPerUnit = 1.0f;
 };
 
-bool getMeshes(Parameters const &parameters, aiScene const *scene, aiNode const *node, std::vector<Math::Float3> &pointList, Shapes::AlignedBox &boundingBox)
+bool GetModels(Parameters const& parameters, aiScene const* inputScene, aiNode const* inputNode, aiMatrix4x4 const& parentTransform, std::vector<Math::Float3> &pointList, Shapes::AlignedBox &boundingBox)
 {
-    if (node == nullptr)
+    if (inputNode == nullptr)
     {
-        LockedWrite{ std::cerr } << "Invalid model node";
+        LockedWrite{ std::cerr } << "Invalid scene node";
         return false;
     }
 
-    if (node->mNumMeshes > 0)
+    aiMatrix4x4 transform(parentTransform * inputNode->mTransformation);
+    if (inputNode->mNumMeshes > 0)
     {
-        if (node->mMeshes == nullptr)
+        if (inputNode->mMeshes == nullptr)
         {
             LockedWrite{ std::cerr } << "Invalid mesh list";
             return false;
         }
 
-        for (uint32_t meshIndex = 0; meshIndex < node->mNumMeshes; ++meshIndex)
+        std::string name = inputNode->mName.C_Str();
+        LockedWrite{ std::cout } << "Found Assimp Model: " << name;
+        for (uint32_t meshIndex = 0; meshIndex < inputNode->mNumMeshes; ++meshIndex)
         {
-            uint32_t nodeMeshIndex = node->mMeshes[meshIndex];
-            if (nodeMeshIndex >= scene->mNumMeshes)
+            uint32_t nodeMeshIndex = inputNode->mMeshes[meshIndex];
+            if (nodeMeshIndex >= inputScene->mNumMeshes)
             {
                 LockedWrite{ std::cerr } << "Invalid mesh index";
-                return false;
+                continue;
             }
 
-            const aiMesh *mesh = scene->mMeshes[nodeMeshIndex];
-            if (mesh->mNumFaces > 0)
+            const aiMesh* inputMesh = inputScene->mMeshes[nodeMeshIndex];
+            if (inputMesh->mNumFaces > 0)
             {
-                if (mesh->mFaces == nullptr)
+                if (inputMesh->mFaces == nullptr)
                 {
-                    LockedWrite{ std::cerr } << "Invalid mesh face list";
-                    return false;
+                    LockedWrite{ std::cerr } << "Invalid inputMesh face list";
+                    continue;
                 }
 
-				if (mesh->mVertices == nullptr)
-				{
-					LockedWrite{ std::cerr } << "Invalid mesh vertex list";
-                    return false;
+                if (inputMesh->mVertices == nullptr)
+                {
+                    LockedWrite{ std::cerr } << "Invalid inputMesh vertex list";
+                    continue;
                 }
 
-                for (uint32_t vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex)
+                pointList.reserve(pointList.size() + inputMesh->mNumVertices);
+                for (uint32_t vertexIndex = 0; vertexIndex < inputMesh->mNumVertices; ++vertexIndex)
                 {
-                    Math::Float3 position(
-                        mesh->mVertices[vertexIndex].x,
-                        mesh->mVertices[vertexIndex].y,
-                        mesh->mVertices[vertexIndex].z);
-                    position *= parameters.feetPerUnit;
-                    boundingBox.extend(position);
-
-                    pointList.push_back(position);
+                    auto vertex = inputMesh->mVertices[vertexIndex];
+                    aiTransformVecByMatrix4(&vertex, &transform);
+                    vertex *= parameters.feetPerUnit;
+                    pointList.push_back(Math::Float3(vertex.x, vertex.y, vertex.z));
+                    boundingBox.extend(Math::Float3(vertex.x, vertex.y, vertex.z));
                 }
             }
         }
     }
 
-    if (node->mNumChildren > 0)
+    if (inputNode->mNumChildren > 0)
     {
-        if (node->mChildren == nullptr)
+        if (inputNode->mChildren == nullptr)
         {
             LockedWrite{ std::cerr } << "Invalid child list";
             return false;
         }
 
-        for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
+        for (uint32_t childIndex = 0; childIndex < inputNode->mNumChildren; ++childIndex)
         {
-            if (!getMeshes(parameters, scene, node->mChildren[childIndex], pointList, boundingBox))
+            if (!GetModels(parameters, inputScene, inputNode->mChildren[childIndex], transform, pointList, boundingBox))
             {
                 return false;
             }
@@ -112,110 +115,131 @@ void serializeCollision(void* const serializeHandle, const void* const buffer, i
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    LockedWrite{ std::cout } << "GEK Model Converter";
+    LockedWrite{ std::cout } << "GEK Hull Converter";
 
-    FileSystem::Path fileNameInput;
-    FileSystem::Path fileNameOutput;
-	Parameters parameters;
+    Parameters parameters;
     for (int argumentIndex = 1; argumentIndex < argumentCount; ++argumentIndex)
     {
-		std::string argument(String::Narrow(argumentList[argumentIndex]));
-		std::vector<std::string> arguments(String::Split(String::GetLower(argument), ':'));
+        std::string argument(String::Narrow(argumentList[argumentIndex]));
+        std::vector<std::string> arguments(String::Split(String::GetLower(argument), ':'));
         if (arguments.empty())
         {
             LockedWrite{ std::cerr } << "No arguments specified for command line parameter";
             return -__LINE__;
         }
 
-        if (arguments[0] == "-input" && ++argumentIndex < argumentCount)
+        if (arguments[0] == "-source" && ++argumentIndex < argumentCount)
         {
-            fileNameInput = String::Narrow(argumentList[argumentIndex]);
+            parameters.sourceName = String::Narrow(argumentList[argumentIndex]);
         }
-        else if (arguments[0] == "-output" && ++argumentIndex < argumentCount)
+        else if (arguments[0] == "-target" && ++argumentIndex < argumentCount)
         {
-            fileNameOutput = String::Narrow(argumentList[argumentIndex]);
+            parameters.targetName = String::Narrow(argumentList[argumentIndex]);
         }
-		else if (arguments[0] == "-unitsinfoot")
-		{
-			if (arguments.size() != 2)
-			{
-				LockedWrite{ std::cerr } << "Missing parameters for unitsInFoot";
+        else if (arguments[0] == "-unitsinfoot")
+        {
+            if (arguments.size() != 2)
+            {
+                LockedWrite{ std::cerr } << "Missing parameters for unitsInFoot";
                 return -__LINE__;
             }
 
-			parameters.feetPerUnit = (1.0f / (float)String::Convert(arguments[1], 1.0f));
-		}
-	}
+            parameters.feetPerUnit = (1.0f / String::Convert(arguments[1], 1.0f));
+        }
+    }
 
-	aiLogStream logStream;
-	logStream.callback = [](char const *message, char *user) -> void
-	{
-		std::string trimmedMessage(message);
-		trimmedMessage = trimmedMessage.substr(0, trimmedMessage.size() - 1);
-		LockedWrite{ std::cerr } << "Assimp: " << trimmedMessage;
-	};
+    aiLogStream logStream;
+    logStream.callback = [](char const* message, char* user) -> void
+    {
+        std::string trimmedMessage(message);
+        trimmedMessage = trimmedMessage.substr(0, trimmedMessage.size() - 1);
+        LockedWrite{ std::cerr } << "Assimp: " << trimmedMessage;
+    };
 
-	logStream.user = nullptr;
-	aiAttachLogStream(&logStream);
+    logStream.user = nullptr;
+    aiAttachLogStream(&logStream);
 
-	int notRequiredComponents =
-        aiComponent_TEXCOORDS |
+    int notRequiredComponents =
         aiComponent_NORMALS |
-		aiComponent_TANGENTS_AND_BITANGENTS |
-		aiComponent_COLORS |
+        aiComponent_TANGENTS_AND_BITANGENTS |
+        aiComponent_COLORS |
         aiComponent_BONEWEIGHTS |
         aiComponent_ANIMATIONS |
         aiComponent_LIGHTS |
         aiComponent_CAMERAS |
-        aiComponent_TEXTURES |
-        aiComponent_MATERIALS |
         0;
 
-    unsigned int importFlags =
+    static const unsigned int importFlags =
         aiProcess_RemoveComponent |
-        aiProcess_OptimizeMeshes |
-        aiProcess_PreTransformVertices |
-        0;
+        aiProcess_RemoveRedundantMaterials |
+        aiProcess_FindDegenerates |
+        aiProcess_ValidateDataStructure;
 
-    unsigned int postProcessFlags =
-        aiProcess_JoinIdenticalVertices |
-        aiProcess_FindInvalidData |
-        aiProcess_OptimizeGraph |
-        0;
-
-    aiPropertyStore *propertyStore = aiCreatePropertyStore();
+    aiPropertyStore* propertyStore = aiCreatePropertyStore();
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
+    aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
-    auto scene = aiImportFileExWithProperties(fileNameInput.getString().data(), importFlags, nullptr, propertyStore);
-    if (scene == nullptr)
+
+    FileSystem::Path dataPath;
+    wchar_t gekDataPath[MAX_PATH + 1] = L"\0";
+    if (GetEnvironmentVariable(L"gek_data_path", gekDataPath, MAX_PATH) > 0)
+    {
+        dataPath = String::Narrow(gekDataPath);
+    }
+    else
+    {
+        auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
+        dataPath = rootPath / "Data"sv;
+    }
+
+    auto sourcePath(dataPath / "physics"sv / parameters.sourceName);
+    LockedWrite{ std::cout } << "Loading: " << sourcePath.getString();
+    auto inputScene = aiImportFileExWithProperties(sourcePath.getString().data(), importFlags, nullptr, propertyStore);
+    if (inputScene == nullptr)
     {
         LockedWrite{ std::cerr } << "Unable to load scene with Assimp";
         return -__LINE__;
     }
 
-    scene = aiApplyPostProcessing(scene, postProcessFlags);
-    if (scene == nullptr)
-	{
-		LockedWrite{ std::cerr } << "Unable to apply post processing with Assimp";
-        return -__LINE__;
+    static const unsigned int postProcessSteps[] =
+    {
+        aiProcess_JoinIdenticalVertices |
+        aiProcess_FindInvalidData |
+        0,
+
+        aiProcess_ImproveCacheLocality |
+        aiProcess_OptimizeMeshes |
+        aiProcess_OptimizeGraph,
+        0,
+    };
+
+    for (auto postProcessFlags : postProcessSteps)
+    {
+        inputScene = aiApplyPostProcessing(inputScene, postProcessFlags);
+        if (inputScene == nullptr)
+        {
+            LockedWrite{ std::cerr } << "Unable to apply post processing with Assimp";
+            return -__LINE__;
+        }
     }
 
-    if (!scene->HasMeshes())
+    if (!inputScene->HasMeshes())
     {
         LockedWrite{ std::cerr } << "Scene has no meshes";
         return -__LINE__;
     }
 
-	Shapes::AlignedBox boundingBox;
+    aiMatrix4x4 identity;
+    Shapes::AlignedBox boundingBox;
     std::vector<Math::Float3> pointList;
-    if (!getMeshes(parameters, scene, scene->mRootNode, pointList, boundingBox))
+    if (!GetModels(parameters, inputScene, inputScene->mRootNode, identity, pointList, boundingBox))
     {
         return -__LINE__;
     }
 
     aiReleasePropertyStore(propertyStore);
-    aiReleaseImport(scene);
+    aiReleaseImport(inputScene);
 
 	if (pointList.empty())
 	{
@@ -235,8 +259,12 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         return -__LINE__;
     }
 
+    auto outputPath((dataPath / "physics"sv / parameters.targetName).withoutExtension().withExtension(".gek"));
+    LockedWrite{ std::cout } << "Writing: " << outputPath.getString();
+    outputPath.getParentPath().createChain();
+
     FILE *file = nullptr;
-    _wfopen_s(&file, fileNameOutput.getWindowsString().data(), L"wb");
+    _wfopen_s(&file, outputPath.getWideString().data(), L"wb");
     if (file == nullptr)
     {
         LockedWrite{ std::cerr } << "Unable to create output file";

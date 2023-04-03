@@ -327,7 +327,7 @@ namespace Gek
             {
                 return Quaternion((axis / scalar), (angle / scalar));
             }
-
+            
             inline Quaternion operator + (float scalar) const noexcept
             {
                 return Quaternion((axis + scalar), (angle + scalar));

@@ -47,7 +47,7 @@ namespace Gek
 			std::string getFileName(void) const;
 			std::string getExtension(void) const;
             std::string getString(void) const;
-            std::wstring getWindowsString(void) const;
+            std::wstring getWideString(void) const;
 
             void rename(Path const &name) const;
             bool isNewerThan(Path const &path) const;
@@ -74,7 +74,7 @@ namespace Gek
 				{
 					// Need to use fopen since STL methods break up the reads to multiple small calls
                     FILE *file = nullptr;
-                    _wfopen_s(&file, filePath.getWindowsString().data(), L"rb");
+                    _wfopen_s(&file, filePath.getWideString().data(), L"rb");
 					if (file != nullptr)
 					{
 						buffer.resize(size);
@@ -98,7 +98,7 @@ namespace Gek
             filePath.getParentPath().createChain();
             
             FILE *file = nullptr;
-            _wfopen_s(&file, filePath.getWindowsString().data(), L"wb");
+            _wfopen_s(&file, filePath.getWideString().data(), L"wb");
             if (file != nullptr)
 			{
 				auto numberOfSegmentsWritten = fwrite(buffer.data(), buffer.size(), 1, file);

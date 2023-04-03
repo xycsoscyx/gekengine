@@ -27,7 +27,7 @@ namespace Gek
                 {
 					if (filePath.isFile() && String::GetLower(filePath.getExtension()) == ".dll")
 					{
-                        HMODULE module = LoadLibrary(filePath.getWindowsString().data());
+                        HMODULE module = LoadLibrary(filePath.getWideString().data());
 						if (module)
 						{
 							InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "initializePlugin");

@@ -133,7 +133,7 @@ namespace Gek
             return data.string();
         }
 
-        std::wstring Path::getWindowsString(void) const
+        std::wstring Path::getWideString(void) const
         {
             return data.native();
         }

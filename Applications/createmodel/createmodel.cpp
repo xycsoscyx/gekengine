@@ -34,7 +34,7 @@ struct Header
 
     Shapes::AlignedBox boundingBox;
 
-    uint32_t meshCount;
+    uint32_t meshCount = 0;
 };
 
 struct Mesh
@@ -46,9 +46,13 @@ struct Mesh
         {
             return data[index];
         }
+
+        const uint16_t& operator [] (size_t index) const
+        {
+            return data[index];
+        }
     };
 
-    std::string diffuse;
     std::string material;
     std::vector<Math::Float3> pointList;
     std::vector<Math::Float2> texCoordList;
@@ -69,10 +73,14 @@ using ModelList = std::vector<Model>;
 
 struct Parameters
 {
+    std::string sourceName;
     float feetPerUnit = 1.0f;
+    bool flipCoords = false;
+    bool flipWinding = false;
+    float smoothingAngle = 80.0f;
 };
 
-bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode const *inputNode, ModelList &modelList)
+bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode const *inputNode, aiMatrix4x4 const &parentTransform, ModelList &modelList, std::function<std::string(const std::string &, const std::string &)> findMaterialForMesh)
 {
     if (inputNode == nullptr)
     {
@@ -80,6 +88,7 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
         return false;
     }
 
+    aiMatrix4x4 transform(parentTransform * inputNode->mTransformation);
     if (inputNode->mNumMeshes > 0)
     {
         if (inputNode->mMeshes == nullptr)
@@ -95,14 +104,14 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
 			model.name = std::format("model_{}", modelList.size());
 		}
 
-		LockedWrite{ std::cout } << "Found Assimp Model: " << inputNode->mName.C_Str();
+		LockedWrite{ std::cout } << "Found Assimp Model: " << model.name;
         for (uint32_t meshIndex = 0; meshIndex < inputNode->mNumMeshes; ++meshIndex)
         {
             uint32_t nodeMeshIndex = inputNode->mMeshes[meshIndex];
             if (nodeMeshIndex >= inputScene->mNumMeshes)
             {
                 LockedWrite{ std::cerr } << "Invalid mesh index";
-                return false;
+                continue;
             }
 
             const aiMesh *inputMesh = inputScene->mMeshes[nodeMeshIndex];
@@ -111,37 +120,37 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
                 if (inputMesh->mFaces == nullptr)
                 {
                     LockedWrite{ std::cerr } << "Invalid inputMesh face list";
-                    return false;
+                    continue;
                 }
 
                 if (inputMesh->mVertices == nullptr)
                 {
                     LockedWrite{ std::cerr } << "Invalid inputMesh vertex list";
-                    return false;
+                    continue;
                 }
 
                 if (inputMesh->mTextureCoords[0] == nullptr)
                 {
                     LockedWrite{ std::cerr } << "Invalid inputMesh texture coordinate list";
-                    return false;
+                    continue;
                 }
 
                 if (inputMesh->mTangents == nullptr)
                 {
                     LockedWrite{ std::cerr } << "Invalid inputMesh tangent list";
-                    return false;
+                    continue;
                 }
 
                 if (inputMesh->mBitangents == nullptr)
                 {
                     LockedWrite{ std::cerr } << "Invalid inputMesh bitangent list";
-                    return false;
+                    continue;
                 }
 
                 if (inputMesh->mNormals == nullptr)
                 {
                     LockedWrite{ std::cerr } << "Invalid inputMesh normal list";
-                    return false;
+                    continue;
                 }
 
                 Mesh mesh;
@@ -149,7 +158,13 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
                 aiString sceneDiffuseMaterial;
                 const aiMaterial *sceneMaterial = inputScene->mMaterials[inputMesh->mMaterialIndex];
                 sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
-                mesh.diffuse = sceneDiffuseMaterial.C_Str();
+                std::string diffuseName = sceneDiffuseMaterial.C_Str();
+                mesh.material = findMaterialForMesh(parameters.sourceName, diffuseName);
+                if (mesh.material.empty())
+                {
+                    LockedWrite{ std::cerr } << "Unable to find material for mesh " << inputMesh->mName.C_Str();
+                    continue;
+                }
 
                 mesh.pointList.resize(inputMesh->mNumVertices);
                 mesh.texCoordList.resize(inputMesh->mNumVertices);
@@ -158,10 +173,10 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
                 mesh.normalList.resize(inputMesh->mNumVertices);
                 for (uint32_t vertexIndex = 0; vertexIndex < inputMesh->mNumVertices; ++vertexIndex)
                 {
-                    mesh.pointList[vertexIndex].set(
-                        (inputMesh->mVertices[vertexIndex].x * parameters.feetPerUnit),
-                        (inputMesh->mVertices[vertexIndex].y * parameters.feetPerUnit),
-                        (inputMesh->mVertices[vertexIndex].z * parameters.feetPerUnit));
+                    auto vertex = inputMesh->mVertices[vertexIndex];
+                    aiTransformVecByMatrix4(&vertex, &transform);
+                    mesh.pointList[vertexIndex].set(vertex.x, vertex.y, vertex.z);
+                    mesh.pointList[vertexIndex] *= parameters.feetPerUnit;
                     model.boundingBox.extend(mesh.pointList[vertexIndex]);
 
                     mesh.texCoordList[vertexIndex].set(
@@ -220,7 +235,7 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
 
         for (uint32_t childIndex = 0; childIndex < inputNode->mNumChildren; ++childIndex)
         {
-            if (!GetModels(parameters, inputScene, inputNode->mChildren[childIndex], modelList))
+            if (!GetModels(parameters, inputScene, inputNode->mChildren[childIndex], transform, modelList, findMaterialForMesh))
             {
                 return false;
             }
@@ -234,11 +249,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 {
     LockedWrite{ std::cout } << "GEK Model Converter";
 
-    FileSystem::Path sourceName;
     Parameters parameters;
-    bool flipCoords = false;
-    bool flipWinding = false;
-    float smoothingAngle = 80.0f;
     for (int argumentIndex = 1; argumentIndex < argumentCount; ++argumentIndex)
     {
 		std::string argument(String::Narrow(argumentList[argumentIndex]));
@@ -251,15 +262,15 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
         if (arguments[0] == "-source" && ++argumentIndex < argumentCount)
         {
-            sourceName = String::Narrow(argumentList[argumentIndex]);
+            parameters.sourceName = String::Narrow(argumentList[argumentIndex]);
         }
         else if (arguments[0] == "-flipcoords")
         {
-            flipCoords = true;
+            parameters.flipCoords = true;
         }
         else if (arguments[0] == "-flipwinding")
         {
-            flipWinding = true;
+            parameters.flipWinding = true;
         }
         else if (arguments[0] == "-smoothangle")
         {
@@ -269,7 +280,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                 return -__LINE__;
             }
 
-			smoothingAngle = String::Convert(arguments[1], 80.0f);
+            parameters.smoothingAngle = String::Convert(arguments[1], 80.0f);
         }
         else if (arguments[0] == "-unitsinfoot")
         {
@@ -295,8 +306,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     aiAttachLogStream(&logStream);
 
     int notRequiredComponents =
-        aiComponent_NORMALS |
-        aiComponent_TANGENTS_AND_BITANGENTS |
+        //aiComponent_NORMALS |
+        //aiComponent_TANGENTS_AND_BITANGENTS |
         aiComponent_COLORS |
         aiComponent_BONEWEIGHTS |
         aiComponent_ANIMATIONS |
@@ -304,36 +315,18 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         aiComponent_CAMERAS |
         0;
 
-    unsigned int importFlags =
-        (flipWinding ? aiProcess_FlipWindingOrder : 0) |
-        (flipCoords ? aiProcess_FlipUVs : 0) |
-        aiProcess_OptimizeMeshes |
+    static const unsigned int importFlags =
+        (parameters.flipWinding ? aiProcess_FlipWindingOrder : 0) |
+        (parameters.flipCoords ? aiProcess_FlipUVs : 0) |
         aiProcess_RemoveComponent |
-        aiProcess_SplitLargeMeshes |
-        aiProcess_PreTransformVertices |
-        aiProcess_Triangulate |
-        aiProcess_ImproveCacheLocality |
         aiProcess_RemoveRedundantMaterials |
         aiProcess_FindDegenerates |
-        0;
-
-    unsigned int textureProcessFlags =
-        aiProcess_GenUVCoords |
-        aiProcess_TransformUVCoords |
-        0;
-
-    unsigned int tangentProcessFlags =
-        aiProcess_JoinIdenticalVertices |
-        aiProcess_FindInvalidData |
-        aiProcess_GenSmoothNormals |
-        aiProcess_CalcTangentSpace |
-        //aiProcess_OptimizeGraph |
-        0;
+        aiProcess_ValidateDataStructure;
 
     aiPropertyStore *propertyStore = aiCreatePropertyStore();
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
-    aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
+    aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, parameters.smoothingAngle);
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
 
@@ -349,7 +342,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 		dataPath = rootPath / "Data"sv;
 	}
 
-    auto sourcePath(dataPath / "models"sv / sourceName);
+    auto sourcePath(dataPath / "models"sv / parameters.sourceName);
     auto inputScene = aiImportFileExWithProperties(sourcePath.getString().data(), importFlags, nullptr, propertyStore);
     if (inputScene == nullptr)
     {
@@ -357,18 +350,38 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         return -__LINE__;
     }
 
-    inputScene = aiApplyPostProcessing(inputScene, textureProcessFlags);
-    if (inputScene == nullptr)
+    static const unsigned int postProcessSteps[] =
     {
-        LockedWrite{ std::cerr } << "Unable to apply texture post processing with Assimp";
-        return -__LINE__;
-    }
+        aiProcess_Triangulate |
+        //aiProcess_SplitLargeMeshes |
+        0,
 
-    inputScene = aiApplyPostProcessing(inputScene, tangentProcessFlags);
-    if (inputScene == nullptr)
+        aiProcess_GenUVCoords |
+        aiProcess_TransformUVCoords |
+        0,
+
+        aiProcess_GenSmoothNormals |
+        aiProcess_CalcTangentSpace |
+        0,
+
+        aiProcess_JoinIdenticalVertices |
+        aiProcess_FindInvalidData |
+        0,
+
+        aiProcess_ImproveCacheLocality |
+        aiProcess_OptimizeMeshes |
+        //aiProcess_OptimizeGraph,
+        0,
+    };
+
+    for (auto postProcessFlags : postProcessSteps)
     {
-        LockedWrite{ std::cerr } << "Unable to apply tangent post processing with Assimp";
-        return -__LINE__;
+        inputScene = aiApplyPostProcessing(inputScene, postProcessFlags);
+        if (inputScene == nullptr)
+        {
+            LockedWrite{ std::cerr } << "Unable to apply post processing with Assimp";
+            return -__LINE__;
+        }
     }
 
     if (!inputScene->HasMeshes())
@@ -383,21 +396,12 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         return -__LINE__;
     }
 
-    ModelList modelList;
-    if (!GetModels(parameters, inputScene, inputScene->mRootNode, modelList))
-    {
-        return -__LINE__;
-    }
-
-    aiReleasePropertyStore(propertyStore);
-    aiReleaseImport(inputScene);
-
-	std::string texturesPath(String::GetLower((dataPath / "Textures"sv).getString()));
+    std::string texturesPath(String::GetLower((dataPath / "Textures"sv).getString()));
     auto materialsPath((dataPath / "Materials"sv).getString());
 
-	std::map<std::string, std::string> diffuseToMaterialMap;
-    std::function<bool(FileSystem::Path const &)> findMaterials;
-    findMaterials = [&](FileSystem::Path const &filePath) -> bool
+    std::map<std::string, std::string> diffuseToMaterialMap;
+    std::function<bool(FileSystem::Path const&)> findMaterials;
+    findMaterials = [&](FileSystem::Path const& filePath) -> bool
     {
         if (filePath.isDirectory())
         {
@@ -407,13 +411,15 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         {
             JSON materialNode;
             materialNode.load(filePath);
-            auto shaderNode = materialNode.getMember("shader");
-            auto dataNode = shaderNode.getMember("data");
-            auto albedoNode = dataNode.getMember("albedo");
+            auto& shaderNode = materialNode.getMember("shader");
+            auto& dataNode = shaderNode.getMember("data");
+            auto& albedoNode = dataNode.getMember("albedo");
             std::string albedoPath(albedoNode.getMember("file").convert(String::Empty));
             std::string materialName(String::GetLower(filePath.withoutExtension().getString().substr(materialsPath.size() + 1)));
-            std::cout << albedoPath << ": " << materialName << std::endl;
-            diffuseToMaterialMap[albedoPath] = materialName;
+            if (!albedoPath.empty() && !materialName.empty())
+            {
+                diffuseToMaterialMap[albedoPath] = materialName;
+            }
         }
 
         return true;
@@ -433,11 +439,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         return -__LINE__;
     }
 
-	LockedWrite{ std::cout } << "> Num. Models: " << modelList.size();
-
-    auto findMaterialForDiffuse = [&](std::string const &diffuse) -> std::string
+    auto findMaterialForMesh = [&](const FileSystem::Path &sourceName, const std::string &diffuseName) -> std::string
     {
-        FileSystem::Path diffusePath(diffuse);
+        FileSystem::Path diffusePath(diffuseName);
         std::string albedoName(String::GetLower(diffusePath.withoutExtension().getString()));
         if (albedoName.find("textures\\") == 0)
         {
@@ -460,16 +464,57 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             }
         }
 
-        auto materialAlebedoSearch = diffuseToMaterialMap.find(albedoName);
-        if (materialAlebedoSearch == std::end(diffuseToMaterialMap))
+        if (albedoName.ends_with("_basecolor"))
         {
-            LockedWrite{ std::cerr } << "! Unable to find material for albedo: " << albedoName;
-            return sourceName.withoutExtension().getString();
+            albedoName = albedoName.substr(0, albedoName.size() - 10);
         }
 
-        return materialAlebedoSearch->second;
+        auto materialAlebedoSearch = diffuseToMaterialMap.find(albedoName);
+        if (materialAlebedoSearch != std::end(diffuseToMaterialMap))
+        {
+            return materialAlebedoSearch->second;
+        }
+
+        auto sourceAlbedoName = (sourceName.withoutExtension() / albedoName).getString();
+        materialAlebedoSearch = diffuseToMaterialMap.find(sourceAlbedoName);
+        if (materialAlebedoSearch != std::end(diffuseToMaterialMap))
+        {
+            return materialAlebedoSearch->second;
+        }
+
+        auto doesValueExist = [&](const std::string& value) -> bool
+        {
+            for (auto& iterator : diffuseToMaterialMap)
+            {
+                if (iterator.second == value)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        if (doesValueExist(sourceAlbedoName))
+        {
+            return sourceAlbedoName;
+        }
+
+        LockedWrite{ std::cerr } << "   ! Unable to find material for albedo: " << albedoName;
+        return "";
     };
 
+    ModelList modelList;
+    aiMatrix4x4 identity;
+    if (!GetModels(parameters, inputScene, inputScene->mRootNode, identity, modelList, findMaterialForMesh))
+    {
+        return -__LINE__;
+    }
+
+    aiReleasePropertyStore(propertyStore);
+    aiReleaseImport(inputScene);
+
+    LockedWrite{ std::cout } << "> Num. Models: " << modelList.size();
     for (auto &model : modelList)
     {
         auto modelName(model.name);
@@ -478,16 +523,12 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             String::Replace(modelName, replacement, "");
         }
 
-        auto outputParentPath((dataPath / "models"sv / sourceName).withoutExtension());
+        auto outputParentPath((dataPath / "models"sv / parameters.sourceName).withoutExtension());
         auto outputPath((outputParentPath / modelName).withExtension(".gek"));
-        LockedWrite{ std::cout } << ">     " << model.name << ": " << outputPath.getString();
-        LockedWrite{ std::cout } << "      Num. Meshes: " << model.meshList.size();
-        LockedWrite{ std::cout } << "      Size: Minimum[" << model.boundingBox.minimum.x << ", " << model.boundingBox.minimum.y << ", " << model.boundingBox.minimum.z << "]";
-        LockedWrite{ std::cout } << "      Size: Maximum[" << model.boundingBox.maximum.x << ", " << model.boundingBox.maximum.y << ", " << model.boundingBox.maximum.z << "]";
-        for (auto &mesh : model.meshList)
-        {
-            mesh.material = findMaterialForDiffuse(mesh.diffuse);
-        }
+        LockedWrite{ std::cout } << "> Model: " << model.name << ": " << outputPath.getString();
+        LockedWrite{ std::cout } << "   Num. Meshes: " << model.meshList.size();
+        LockedWrite{ std::cout } << "   Size: Minimum[" << model.boundingBox.minimum.x << ", " << model.boundingBox.minimum.y << ", " << model.boundingBox.minimum.z << "]";
+        LockedWrite{ std::cout } << "   Size: Maximum[" << model.boundingBox.maximum.x << ", " << model.boundingBox.maximum.y << ", " << model.boundingBox.maximum.z << "]";
         
         outputParentPath.createChain();
         auto file = fopen(outputPath.getString().data(), "wb");
@@ -504,9 +545,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
         for (auto &mesh : model.meshList)
         {
-            LockedWrite{ std::cout } << "-    Mesh: " << mesh.material;
-            LockedWrite{ std::cout } << "        Num. Vertices: " << mesh.pointList.size();
-            LockedWrite{ std::cout } << "        Num. Faces: " << mesh.faceList.size();
+            LockedWrite{ std::cout } << "   > Mesh: " << mesh.material;
+            LockedWrite{ std::cout } << "      Num. Vertices: " << mesh.pointList.size();
+            LockedWrite{ std::cout } << "      Num. Faces: " << mesh.faceList.size();
 
             Header::Mesh meshHeader;
             std::strncpy(meshHeader.material, mesh.material.data(), 63);

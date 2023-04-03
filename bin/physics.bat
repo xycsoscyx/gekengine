@@ -1,4 +1,4 @@
-.\RelWithDebInfo\createtree -input "%gek_data_path%\physics\sponza.fbx" -output "%gek_data_path%\physics\sponza.gek" -unitsinfoot:20
-.\RelWithDebInfo\createhull -input "%gek_data_path%\physics\cube.fbx" -output "%gek_data_path%\physics\cube.gek"
+.\debug\createhull -source cube.fbx -target cube.gek
+.\debug\createtree -source supersponza.fbx -target supersponza.gek -unitsinfoot:20
 
 pause

@@ -347,18 +347,18 @@ namespace Gek
             // scalar operations
             void operator -= (TYPE scalar) noexcept
             {
-				x += scalar;
-				y += scalar;
-				z += scalar;
-				w += scalar;
-            }
-
-            void operator += (TYPE scalar) noexcept
-            {
 				x -= scalar;
 				y -= scalar;
 				z -= scalar;
 				w -= scalar;
+            }
+
+            void operator += (TYPE scalar) noexcept
+            {
+				x += scalar;
+				y += scalar;
+				z += scalar;
+				w += scalar;
 			}
 
             void operator /= (TYPE scalar) noexcept

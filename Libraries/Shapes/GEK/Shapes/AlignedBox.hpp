@@ -27,7 +27,7 @@ namespace Gek
 
             AlignedBox &operator = (AlignedBox const &box) noexcept;
 
-            void extend(Math::Float3 &point) noexcept;
+            void extend(const Math::Float3 &point) noexcept;
 
             Math::Float3 getSize(void) const noexcept;
             Math::Float3 getHalfSize(void) const noexcept;

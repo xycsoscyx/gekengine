@@ -38,7 +38,7 @@ namespace Gek
             return (*this);
         }
 
-        void AlignedBox::extend(Math::Float3 &point) noexcept
+        void AlignedBox::extend(const Math::Float3 &point) noexcept
         {
             minimum = minimum.getMinimum(point);
             maximum = maximum.getMaximum(point);

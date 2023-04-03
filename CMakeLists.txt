@@ -58,6 +58,16 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4221")
 set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /ignore:4006")
 set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /ignore:4221")
 
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/b796f7d44681514f58a683a3a71ff17c94edb0c1.zip
+)
+
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
 include_directories("${CMAKE_SOURCE_DIR}/External/Wink-Signals")
 include_directories("${CMAKE_SOURCE_DIR}/External/json/single_include")
 
@@ -74,7 +84,7 @@ add_subdirectory("External/DirectXTex")
 SET(NEWTON_BUILD_SANDBOX_DEMOS False CACHE BOOL "" FORCE)
 SET(NEWTON_BUILD_PROFILER False CACHE BOOL "" FORCE)
 #SET(NEWTON_STATIC_RUNTIME_LIBRARIES False CACHE BOOL "" FORCE)
-add_subdirectory("External/newton-dynamics/newton-3.14")
+add_subdirectory("External/newton-dynamics/newton-4.00")
 
 message(WARNING "Silencing C++17 old allocator members deprecation warning")
 add_definitions(-D_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING)
@@ -101,5 +111,34 @@ add_definitions(-DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_DEFINE_PLACEMENT_NEW)
 add_subdirectory("Libraries")
 add_subdirectory("Plugins")
 add_subdirectory("Applications")
+
+set_property(TARGET gmock PROPERTY FOLDER "External/Google Test")
+set_property(TARGET gmock_main PROPERTY FOLDER "External/Google Test")
+set_property(TARGET gtest PROPERTY FOLDER "External/Google Test")
+set_property(TARGET gtest_main PROPERTY FOLDER "External/Google Test")
+
+set_property(TARGET zlibstatic PROPERTY FOLDER "External/Assimp")
+set_property(TARGET assimp PROPERTY FOLDER "External/Assimp")
+set_property(TARGET uninstall PROPERTY FOLDER "External/Assimp")
+
+set_property(TARGET ndBrain PROPERTY FOLDER "External/Newton")
+set_property(TARGET ndFileFormat PROPERTY FOLDER "External/Newton")
+set_property(TARGET ndNewton PROPERTY FOLDER "External/Newton")
+set_property(TARGET ndSolverAvx2 PROPERTY FOLDER "External/Newton")
+set_property(TARGET ndTinyxml PROPERTY FOLDER "External/Newton")
+set_property(TARGET newton_tests PROPERTY FOLDER "External/Newton")
+set_property(TARGET openfbx PROPERTY FOLDER "External/Newton/Dependencies")
+set_property(TARGET vhacd PROPERTY FOLDER "External/Newton/Dependencies")
+
+if(WIN32)
+    set_property(TARGET UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTY FOLDER "External/Assimp")
+endif()
+
+if(WIN32)
+    set_property(TARGET DirectXTex PROPERTY FOLDER "External/DirectXTex")
+    set_property(TARGET texconv PROPERTY FOLDER "External/DirectXTex")
+    set_property(TARGET texdiag PROPERTY FOLDER "External/DirectXTex")
+    set_property(TARGET texassemble PROPERTY FOLDER "External/DirectXTex")
+endif()
 
 set_property(DIRECTORY ${CMAKE_CURRENT_LIST_DIR} PROPERTY VS_STARTUP_PROJECT demo_engine)

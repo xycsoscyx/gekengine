@@ -11,7 +11,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstan
     auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
     auto rootPath(pluginPath.getParentPath());
 	auto cachePath(rootPath / "cache"sv);
-    SetCurrentDirectoryW(cachePath.getWindowsString().data());
+    SetCurrentDirectoryW(cachePath.getWideString().data());
 
     std::vector<FileSystem::Path> searchPathList;
     searchPathList.push_back(pluginPath);
