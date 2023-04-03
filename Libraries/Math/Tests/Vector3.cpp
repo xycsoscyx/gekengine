@@ -83,3 +83,16 @@ TEST(Vector3, VectorOperations)
     value /= testValue;
     EXPECT_EQ(value, Float3(2.0f, 3.0f, 4.0f));
 }
+
+TEST(Vector3, Operations)
+{
+    static const Float3 testValue(2.0f, 3.0f, 4.0f);
+
+    EXPECT_EQ(testValue.getLength(), 5.38516474f);
+
+    Float3 value(testValue);
+    EXPECT_EQ(value.getNormal(), Float3(0.371390671f, 0.557086f, 0.742781341f));
+
+    value.normalize();
+    EXPECT_EQ(value, Float3(0.371390671f, 0.557086f, 0.742781341f));
+}

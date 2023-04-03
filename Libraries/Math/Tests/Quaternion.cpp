@@ -45,3 +45,54 @@ TEST(Quaternion, VectorOperations)
     value = value + testValue;
     EXPECT_EQ(value, Quaternion(4.0f, 6.0f, 8.0f, 10.0f));
 }
+
+TEST(Quaternion, RotationOperations)
+{
+    Quaternion qx(Quaternion::MakeAngularRotation(Float3(1.0, 0.0, 0.0), Pi / 3.0f));
+    EXPECT_NEAR(qx.w, std::sqrt(3.0) / 2, Epsilon);
+    EXPECT_NEAR(qx.x, 0.5, Epsilon);
+    EXPECT_NEAR(qx.y, 0.0, Epsilon);
+    EXPECT_NEAR(qx.z, 0.0, Epsilon);
+
+    Quaternion qy(Quaternion::MakeAngularRotation(Float3(0.0, 1.0, 0.0), Pi / 2.0f));
+    EXPECT_NEAR(qy.w, 1 / std::sqrt(2.0), Epsilon);
+    EXPECT_NEAR(qy.x, 0.0, Epsilon);
+    EXPECT_NEAR(qy.y, 1 / std::sqrt(2.0), Epsilon);
+    EXPECT_NEAR(qy.z, 0.0, Epsilon);
+
+    Quaternion qz(Quaternion::MakeAngularRotation(Float3(0.0, 0.0, 1.0), Pi));
+    EXPECT_NEAR(qz.w, 0.0, Epsilon);
+    EXPECT_NEAR(qz.x, 0.0, Epsilon);
+    EXPECT_NEAR(qz.y, 0.0, Epsilon);
+    EXPECT_NEAR(qz.z, 1.0, Epsilon);
+
+    Quaternion qnull(Quaternion::MakeAngularRotation(Float3(1.0, 0.0, 0.0), 0.0f));
+    EXPECT_NEAR(qnull.w, 1.0, Epsilon);
+    EXPECT_NEAR(qnull.x, 0.0, Epsilon);
+    EXPECT_NEAR(qnull.y, 0.0, Epsilon);
+    EXPECT_NEAR(qnull.z, 0.0, Epsilon);
+}
+
+TEST(Quaternion, MultiplyOperations)
+{
+    Quaternion qa(1.0f / std::sqrt(2.0f), 0.0f, 0.0f, 1.0f / std::sqrt(2.0f));
+    Quaternion qb(0.0f, 1.0f / std::sqrt(2.0f), 0.0f, 1.0f / std::sqrt(2.0f));
+
+    Quaternion qc = qa * qb;
+    EXPECT_NEAR(qc.w, 0.5, Epsilon);
+    EXPECT_NEAR(qc.x, 0.5, Epsilon);
+    EXPECT_NEAR(qc.y, 0.5, Epsilon);
+    EXPECT_NEAR(qc.z, 0.5, Epsilon);
+
+    qc = qa * qa.getConjugate();
+    EXPECT_NEAR(qc.w, 1.0, Epsilon);
+    EXPECT_NEAR(qc.x, 0.0, Epsilon);
+    EXPECT_NEAR(qc.y, 0.0, Epsilon);
+    EXPECT_NEAR(qc.x, 0.0, Epsilon);
+
+    qc = qa * qa.getInverse();
+    EXPECT_NEAR(qc.w, 1.0, Epsilon);
+    EXPECT_NEAR(qc.x, 0.0, Epsilon);
+    EXPECT_NEAR(qc.y, 0.0, Epsilon);
+    EXPECT_NEAR(qc.x, 0.0, Epsilon);
+}

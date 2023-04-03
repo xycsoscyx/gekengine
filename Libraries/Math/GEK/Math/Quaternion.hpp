@@ -195,14 +195,26 @@ namespace Gek
                 return ((*this) * inverseLength);
             }
 
-            inline Quaternion getInverse(void) const noexcept
+            inline Quaternion getConjugate(void) const noexcept
             {
                 return Quaternion(-axis, angle);
             }
 
-            inline void invert(void) noexcept
+            inline Quaternion getInverse(void) const noexcept
+            {
+                float inverseLength = (1.0f / getLength());
+                return Quaternion(-axis * inverseLength, angle * inverseLength);
+            }
+
+            inline void conjugate(void) noexcept
             {
                 axis *= -1.0f;
+            }
+
+            inline void invert(void) noexcept
+            {
+                float inverseLength = (1.0f / getLength());
+                axis *= -inverseLength;
             }
 
             inline void normalize(void) noexcept
@@ -293,10 +305,10 @@ namespace Gek
             inline Quaternion operator * (Quaternion const &rotation) const noexcept
             {
                 return Quaternion(
-                    (rotation.w * x) + (rotation.x * w) + (rotation.y * z) - (rotation.z * y),
-                    (rotation.w * y) + (rotation.y * w) + (rotation.z * x) - (rotation.x * z),
-                    (rotation.w * z) + (rotation.z * w) + (rotation.x * y) - (rotation.y * x),
-                    (rotation.w * w) - (rotation.x * x) - (rotation.y * y) - (rotation.z * z));
+                    w * rotation.x + x * rotation.w + y * rotation.z - z * rotation.y,
+                    w * rotation.y - x * rotation.z + y * rotation.w + z * rotation.x,
+                    w * rotation.z + x * rotation.y - y * rotation.x + z * rotation.w,
+                    w * rotation.w - x * rotation.x - y * rotation.y - z * rotation.z);
             }
 
             inline void operator *= (Quaternion const &rotation) noexcept
