@@ -16,7 +16,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstan
     std::vector<FileSystem::Path> searchPathList;
     searchPathList.push_back(pluginPath);
 
-    ContextPtr context(Context::Create(searchPathList));
+    ContextPtr context(Context::Create(&searchPathList));
     if (context)
     {
 		context->setCachePath(cachePath);

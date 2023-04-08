@@ -4,85 +4,106 @@
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/API/ComponentMixin.hpp"
 #include "GEK/Components/Transform.hpp"
-#include "GEK/Newton/Base.hpp"
-
-#include <Newton.h>
+#include "GEK/Physics/Base.hpp"
 
 namespace Gek
 {
-    namespace Newton
+    namespace Physics
     {
         class RigidBody
-            : public Newton::Entity
+            : public Body
+            , public ndBodyDynamic
         {
         private:
-            Newton::World *world = nullptr;
+			class NotifyCallback
+				: public ndBodyNotify
+			{
+            private:
+                RigidBody *rigidBody = nullptr;
+            
+            public:
+                NotifyCallback(World* world, RigidBody* rigidBody)
+                    : ndBodyNotify(world->getGravity().data)
+                    , rigidBody(rigidBody)
+                {
+                }
+
+                ~NotifyCallback()
+                {
+                }
+
+                // ndBodyNotify
+				void* GetUserData() const
+				{
+					return rigidBody;
+				}
+
+                void OnObjectPick() const
+                {
+                    rigidBody->OnObjectPick();
+                }
+
+                void OnTransform(ndInt32 threadIndex, const ndMatrix& matrix)
+                {
+                    rigidBody->OnTransform(threadIndex, matrix);
+                }
+
+                void OnApplyExternalForce(ndInt32 threadIndex, ndFloat32 timeStep)
+                {
+                    rigidBody->OnApplyExternalForce(threadIndex, timeStep);
+                }
+			};
+
+			World *world = nullptr;
             Plugin::Entity * const entity = nullptr;
-            NewtonBody *newtonBody = nullptr;
 
         public:
-            RigidBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Plugin::Entity * const entity)
-                : world(static_cast<Newton::World *>(NewtonWorldGetUserData(newtonWorld)))
+            RigidBody(World* world, Plugin::Entity* const entity)
+                : world(world)
                 , entity(entity)
             {
-                assert(world);
                 assert(entity);
 
-				auto const &physicalComponent = entity->getComponent<Components::Physical>();
-				auto const &transformComponent = entity->getComponent<Components::Transform>();
-
-                Math::Float4x4 matrix(transformComponent.getMatrix());
-                newtonBody = NewtonCreateDynamicBody(newtonWorld, newtonCollision, matrix.data);
-				assert(newtonBody && "Unable to create rigid body");
-
-                NewtonBodySetCollisionScale(newtonBody, transformComponent.scale.x, transformComponent.scale.y, transformComponent.scale.z);
-                NewtonBodySetUserData(newtonBody, dynamic_cast<Newton::Entity *>(this));
-                NewtonBodySetMassProperties(newtonBody, physicalComponent.mass, newtonCollision);
-                NewtonBodySetCollidable(newtonBody, true);
-                NewtonBodySetAutoSleep(newtonBody, true);
+                SetNotifyCallback(new NotifyCallback(world, this));
             }
 
             ~RigidBody(void)
             {
             }
 
-            // Newton::Entity
-            Plugin::Entity * const getEntity(void) const
+            // Body
+            ndBody* getAsNewtonBody(void)
             {
-                return entity;
+                return GetAsBody();
             }
 
-            NewtonBody * const getNewtonBody(void) const
+            // NotifyCallback
+            void OnObjectPick() const
             {
-                return newtonBody;
             }
 
-            uint32_t getSurface(Math::Float3 const &position, Math::Float3 const &normal)
+            void OnTransform(ndInt32 threadIndex, const ndMatrix& matrixData)
             {
-                return 0;
+                auto matrix = reinterpret_cast<const Math::Float4x4*>(&matrixData);
+                auto& transformComponent = entity->getComponent<Components::Transform>();
+                transformComponent.rotation = matrix->getRotation();
+                transformComponent.position = matrix->translation.xyz;
             }
 
-            void onPreUpdate(float frameTime, int threadHandle)
+            void OnApplyExternalForce(ndInt32 threadIndex, ndFloat32 timestep)
             {
-				auto const &physicalComponent = entity->getComponent<Components::Physical>();
-				auto const &transformComponent = entity->getComponent<Components::Transform>();
+                auto const& physicalComponent = entity->getComponent<Components::Physical>();
+                auto const& transformComponent = entity->getComponent<Components::Transform>();
 
-                Math::Float3 gravity(world->getGravity(transformComponent.position));
-                NewtonBodyAddForce(newtonBody, (gravity * physicalComponent.mass).data);
-            }
-
-            void onSetTransform(const float* const matrixData, int threadHandle)
-            {
-                Math::Float4x4 matrix(matrixData);
-				auto &transformComponent = entity->getComponent<Components::Transform>();
-                transformComponent.rotation = matrix.getRotation();
-                transformComponent.position = matrix.translation.xyz;
+                Math::Float3 gravity(world->getGravity(&transformComponent.position));
+                SetForce((gravity * physicalComponent.mass).data);
+                SetTorque(Math::Float3::Zero.data);
             }
         };
 
-        Newton::EntityPtr createRigidBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Plugin::Entity * const entity)
+        BodyPtr createRigidBody(World *world, Plugin::Entity * const entity)
         {
-            return std::make_unique<RigidBody>(newtonWorld, newtonCollision, entity);
+            return std::make_unique<RigidBody>(world, entity);
         }
-    }; // namespace Newton
+    }; // namespace Physics
 }; // namespace Gek

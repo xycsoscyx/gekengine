@@ -330,243 +330,233 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
 
-	FileSystem::Path dataPath;
-	wchar_t gekDataPath[MAX_PATH + 1] = L"\0";
-	if (GetEnvironmentVariable(L"gek_data_path", gekDataPath, MAX_PATH) > 0)
-	{
-		dataPath = String::Narrow(gekDataPath);
-	}
-	else
-	{
-		auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
-		dataPath = rootPath / "Data"sv;
-	}
+    auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
+    auto rootPath(pluginPath.getParentPath());
+    auto cachePath(rootPath / "cache"sv);
+    SetCurrentDirectoryW(cachePath.getWideString().data());
 
-    auto sourcePath(dataPath / "models"sv / parameters.sourceName);
-    auto inputScene = aiImportFileExWithProperties(sourcePath.getString().data(), importFlags, nullptr, propertyStore);
-    if (inputScene == nullptr)
+    std::vector<FileSystem::Path> searchPathList;
+    searchPathList.push_back(pluginPath);
+
+    ContextPtr context(Context::Create(nullptr));
+    if (context)
     {
-        LockedWrite{ std::cerr } << "Unable to load scene with Assimp";
-        return -__LINE__;
-    }
+        context->setCachePath(cachePath);
 
-    static const unsigned int postProcessSteps[] =
-    {
-        aiProcess_Triangulate |
-        //aiProcess_SplitLargeMeshes |
-        0,
+        wchar_t gekDataPath[MAX_PATH + 1] = L"\0";
+        if (GetEnvironmentVariable(L"gek_data_path", gekDataPath, MAX_PATH) > 0)
+        {
+            context->addDataPath(String::Narrow(gekDataPath));
+        }
 
-        aiProcess_GenUVCoords |
-        aiProcess_TransformUVCoords |
-        0,
+        context->addDataPath(rootPath / "data"sv);
+        context->addDataPath(rootPath.getString());
 
-        aiProcess_GenSmoothNormals |
-        aiProcess_CalcTangentSpace |
-        0,
+        auto filePath = context->findDataPath(FileSystem::CreatePath("models", parameters.sourceName));
 
-        aiProcess_JoinIdenticalVertices |
-        aiProcess_FindInvalidData |
-        0,
-
-        aiProcess_ImproveCacheLocality |
-        aiProcess_OptimizeMeshes |
-        //aiProcess_OptimizeGraph,
-        0,
-    };
-
-    for (auto postProcessFlags : postProcessSteps)
-    {
-        inputScene = aiApplyPostProcessing(inputScene, postProcessFlags);
+        LockedWrite{ std::cout } << "Loading: " << filePath.getString();
+        auto inputScene = aiImportFileExWithProperties(filePath.getString().data(), importFlags, nullptr, propertyStore);
         if (inputScene == nullptr)
         {
-            LockedWrite{ std::cerr } << "Unable to apply post processing with Assimp";
+            LockedWrite{ std::cerr } << "Unable to load scene with Assimp";
             return -__LINE__;
         }
-    }
 
-    if (!inputScene->HasMeshes())
-    {
-        LockedWrite{ std::cerr } << "Scene has no meshes";
-        return -__LINE__;
-    }
-
-    if (!inputScene->HasMaterials())
-    {
-        LockedWrite{ std::cerr } << "Exporting to model requires materials in scene";
-        return -__LINE__;
-    }
-
-    std::string texturesPath(String::GetLower((dataPath / "Textures"sv).getString()));
-    auto materialsPath((dataPath / "Materials"sv).getString());
-
-    std::map<std::string, std::string> diffuseToMaterialMap;
-    std::function<bool(FileSystem::Path const&)> findMaterials;
-    findMaterials = [&](FileSystem::Path const& filePath) -> bool
-    {
-        if (filePath.isDirectory())
+        static const unsigned int postProcessSteps[] =
         {
-            filePath.findFiles(findMaterials);
+            aiProcess_Triangulate |
+            //aiProcess_SplitLargeMeshes |
+            0,
+
+            aiProcess_GenUVCoords |
+            aiProcess_TransformUVCoords |
+            0,
+
+            aiProcess_GenSmoothNormals |
+            aiProcess_CalcTangentSpace |
+            0,
+
+            aiProcess_JoinIdenticalVertices |
+            aiProcess_FindInvalidData |
+            0,
+
+            aiProcess_ImproveCacheLocality |
+            aiProcess_OptimizeMeshes |
+            //aiProcess_OptimizeGraph,
+            0,
+        };
+
+        for (auto postProcessFlags : postProcessSteps)
+        {
+            inputScene = aiApplyPostProcessing(inputScene, postProcessFlags);
+            if (inputScene == nullptr)
+            {
+                LockedWrite{ std::cerr } << "Unable to apply post processing with Assimp";
+                return -__LINE__;
+            }
         }
-        else if (filePath.isFile())
+
+        if (!inputScene->HasMeshes())
         {
+            LockedWrite{ std::cerr } << "Scene has no meshes";
+            return -__LINE__;
+        }
+
+        if (!inputScene->HasMaterials())
+        {
+            LockedWrite{ std::cerr } << "Exporting to model requires materials in scene";
+            return -__LINE__;
+        }
+
+        auto texturesPath(context->findDataPath("textures").getString());
+        auto engineIndex = texturesPath.find("gek engine");
+        if (engineIndex != std::string::npos)
+        {
+            // skip hard drive location, jump to known engine structure
+            texturesPath = texturesPath.substr(engineIndex);
+        }
+
+        std::function<FileSystem::Path (const char*, FileSystem::Path const &)> removeRoot = [](const char *location, FileSystem::Path const & path) -> FileSystem::Path
+        {
+            auto texturesPath = path.getParentPath();
+            while (texturesPath.isDirectory() && texturesPath != path.getRootPath())
+            {
+                if (texturesPath.getFileName() == location)
+                {
+                    return path.lexicallyRelative(texturesPath);
+                }
+                else
+                {
+                    texturesPath = texturesPath.getParentPath();
+                }
+            };
+
+            return path;
+        };
+
+        std::map<std::string, std::string> albedoToMaterialMap;
+        std::function<bool(FileSystem::Path const&)> findMaterials;
+        findMaterials = [&](FileSystem::Path const& filePath) -> bool
+        {
+            if (filePath.getExtension() != ".json")
+            {
+                return true;
+            }
+
             JSON materialNode;
             materialNode.load(filePath);
             auto& shaderNode = materialNode.getMember("shader");
             auto& dataNode = shaderNode.getMember("data");
             auto& albedoNode = dataNode.getMember("albedo");
-            std::string albedoPath(albedoNode.getMember("file").convert(String::Empty));
-            std::string materialName(String::GetLower(filePath.withoutExtension().getString().substr(materialsPath.size() + 1)));
-            if (!albedoPath.empty() && !materialName.empty())
-            {
-                diffuseToMaterialMap[albedoPath] = materialName;
-            }
-        }
+            auto albedoFile = albedoNode.getMember("file").convert(String::Empty);
+            auto albedoPath = removeRoot("textures", context->findDataPath(albedoFile));
 
-        return true;
-    };
-
-    auto engineIndex = texturesPath.find("gek engine");
-    if (engineIndex != std::string::npos)
-    {
-        // skip hard drive location, jump to known engine structure
-        texturesPath = texturesPath.substr(engineIndex);
-    }
-
-    FileSystem::Path(materialsPath).findFiles(findMaterials);
-    if (diffuseToMaterialMap.empty())
-    {
-        LockedWrite{ std::cerr } << "Unable to locate any materials";
-        return -__LINE__;
-    }
-
-    auto findMaterialForMesh = [&](const FileSystem::Path &sourceName, const std::string &diffuseName) -> std::string
-    {
-        FileSystem::Path diffusePath(diffuseName);
-        std::string albedoName(String::GetLower(diffusePath.withoutExtension().getString()));
-        if (albedoName.find("textures\\") == 0)
-        {
-            albedoName = albedoName.substr(9);
-        }
-        else if (albedoName.find("..\\textures\\") == 0)
-        {
-            albedoName = albedoName.substr(12);
-        }
-        else if (albedoName.find("..\\..\\textures\\") == 0)
-        {
-            albedoName = albedoName.substr(15);
-        }
-        else
-        {
-            auto texturesIndex = albedoName.find(texturesPath);
-            if (texturesIndex != std::string::npos)
-            {
-                albedoName = albedoName.substr(texturesIndex + texturesPath.length() + 1);
-            }
-        }
-
-        if (albedoName.ends_with("_basecolor"))
-        {
-            albedoName = albedoName.substr(0, albedoName.size() - 10);
-        }
-
-        auto materialAlebedoSearch = diffuseToMaterialMap.find(albedoName);
-        if (materialAlebedoSearch != std::end(diffuseToMaterialMap))
-        {
-            return materialAlebedoSearch->second;
-        }
-
-        auto sourceAlbedoName = (sourceName.withoutExtension() / albedoName).getString();
-        materialAlebedoSearch = diffuseToMaterialMap.find(sourceAlbedoName);
-        if (materialAlebedoSearch != std::end(diffuseToMaterialMap))
-        {
-            return materialAlebedoSearch->second;
-        }
-
-        auto doesValueExist = [&](const std::string& value) -> bool
-        {
-            for (auto& iterator : diffuseToMaterialMap)
-            {
-                if (iterator.second == value)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            LockedWrite{ std::cerr } << "Found material: " << filePath.getString() << ", with albedo: " << albedoFile;
+            albedoToMaterialMap[String::GetLower(albedoFile)] = String::GetLower(removeRoot("materials", filePath).getString());
+            return true;
         };
 
-        if (doesValueExist(sourceAlbedoName))
+        context->findDataFiles("materials", findMaterials);
+        if (albedoToMaterialMap.empty())
         {
-            return sourceAlbedoName;
-        }
-
-        LockedWrite{ std::cerr } << "   ! Unable to find material for albedo: " << albedoName;
-        return "";
-    };
-
-    ModelList modelList;
-    aiMatrix4x4 identity;
-    if (!GetModels(parameters, inputScene, inputScene->mRootNode, identity, modelList, findMaterialForMesh))
-    {
-        return -__LINE__;
-    }
-
-    aiReleasePropertyStore(propertyStore);
-    aiReleaseImport(inputScene);
-
-    LockedWrite{ std::cout } << "> Num. Models: " << modelList.size();
-    for (auto &model : modelList)
-    {
-        auto modelName(model.name);
-        for (auto replacement : {"$", "<", ">"})
-        {
-            String::Replace(modelName, replacement, "");
-        }
-
-        auto outputParentPath((dataPath / "models"sv / parameters.sourceName).withoutExtension());
-        auto outputPath((outputParentPath / modelName).withExtension(".gek"));
-        LockedWrite{ std::cout } << "> Model: " << model.name << ": " << outputPath.getString();
-        LockedWrite{ std::cout } << "   Num. Meshes: " << model.meshList.size();
-        LockedWrite{ std::cout } << "   Size: Minimum[" << model.boundingBox.minimum.x << ", " << model.boundingBox.minimum.y << ", " << model.boundingBox.minimum.z << "]";
-        LockedWrite{ std::cout } << "   Size: Maximum[" << model.boundingBox.maximum.x << ", " << model.boundingBox.maximum.y << ", " << model.boundingBox.maximum.z << "]";
-        
-        outputParentPath.createChain();
-        auto file = fopen(outputPath.getString().data(), "wb");
-        if (file == nullptr)
-        {
-            LockedWrite{ std::cerr } << "Unable to create output file";
+            LockedWrite{ std::cerr } << "Unable to locate any materials";
             return -__LINE__;
         }
 
-        Header header;
-        header.meshCount = model.meshList.size();
-        header.boundingBox = model.boundingBox;
-        fwrite(&header, sizeof(Header), 1, file);
-
-        for (auto &mesh : model.meshList)
+        auto findMaterialForMesh = [&](const FileSystem::Path& sourceName, std::string diffuseName) -> std::string
         {
-            LockedWrite{ std::cout } << "   > Mesh: " << mesh.material;
-            LockedWrite{ std::cout } << "      Num. Vertices: " << mesh.pointList.size();
-            LockedWrite{ std::cout } << "      Num. Faces: " << mesh.faceList.size();
+            LockedWrite{ std::cout } << "> Searching for : " << diffuseName << ", " << (filePath / diffuseName).getString();
 
-            Header::Mesh meshHeader;
-            std::strncpy(meshHeader.material, mesh.material.data(), 63);
-            meshHeader.vertexCount = mesh.pointList.size();
-            meshHeader.faceCount = mesh.faceList.size();
-            fwrite(&meshHeader, sizeof(Header::Mesh), 1, file);
+            FileSystem::Path albedoPath = FileSystem::GetCanonicalPath(filePath / diffuseName);
+            if (!albedoPath.isFile())
+            {
+                albedoPath = FileSystem::Path(diffuseName).lexicallyRelative("textures");
+                albedoPath = context->findDataPath(FileSystem::Path("textures") / filePath.withoutExtension().getFileName() / albedoPath);
+            }
+
+            if (albedoPath.isFile())
+            {
+                albedoPath = removeRoot("textures", albedoPath);
+                auto albedoSearch = albedoToMaterialMap.find(String::GetLower(albedoPath.withoutExtension().getString()));
+                if (albedoSearch == std::end(albedoToMaterialMap))
+                {
+                    albedoSearch = albedoToMaterialMap.find(String::GetLower(albedoPath.getString()));
+                }
+
+                if (albedoSearch != std::end(albedoToMaterialMap))
+                {
+                    LockedWrite{ std::cout } << "  Found material for albedo: " << albedoPath.getString() << " belongs to " << albedoSearch->second;
+                    return albedoSearch->second;
+                }
+            }
+
+            LockedWrite{ std::cerr } << "! Unable to find material for albedo: " << diffuseName << ", " << albedoPath.getString();
+            return "";
+        };
+
+        ModelList modelList;
+        aiMatrix4x4 identity;
+        if (!GetModels(parameters, inputScene, inputScene->mRootNode, identity, modelList, findMaterialForMesh))
+        {
+            return -__LINE__;
         }
 
-        for (auto &mesh : model.meshList)
-        {
-            fwrite(mesh.faceList.data(), sizeof(Mesh::Face), mesh.faceList.size(), file);
-            fwrite(mesh.pointList.data(), sizeof(Math::Float3), mesh.pointList.size(), file);
-            fwrite(mesh.texCoordList.data(), sizeof(Math::Float2), mesh.texCoordList.size(), file);
-            fwrite(mesh.tangentList.data(), sizeof(Math::Float3), mesh.tangentList.size(), file);
-            fwrite(mesh.biTangentList.data(), sizeof(Math::Float3), mesh.biTangentList.size(), file);
-            fwrite(mesh.normalList.data(), sizeof(Math::Float3), mesh.normalList.size(), file);
-        }
+        aiReleasePropertyStore(propertyStore);
+        aiReleaseImport(inputScene);
 
-        fclose(file);
+        LockedWrite{ std::cout } << "> Num. Models: " << modelList.size();
+        for (auto& model : modelList)
+        {
+            auto modelName(model.name);
+            for (auto replacement : { "$", "<", ">" })
+            {
+                String::Replace(modelName, replacement, "");
+            }
+
+            auto outputPath((filePath.withoutExtension() / modelName).withExtension(".gek"));
+            LockedWrite{ std::cout } << "> Model: " << model.name << ": " << outputPath.getString();
+            LockedWrite{ std::cout } << "   Num. Meshes: " << model.meshList.size();
+            LockedWrite{ std::cout } << "   Size: Minimum[" << model.boundingBox.minimum.x << ", " << model.boundingBox.minimum.y << ", " << model.boundingBox.minimum.z << "]";
+            LockedWrite{ std::cout } << "   Size: Maximum[" << model.boundingBox.maximum.x << ", " << model.boundingBox.maximum.y << ", " << model.boundingBox.maximum.z << "]";
+
+            filePath.withoutExtension().createChain();
+            auto file = fopen(outputPath.getString().data(), "wb");
+            if (file == nullptr)
+            {
+                LockedWrite{ std::cerr } << "Unable to create output file";
+                return -__LINE__;
+            }
+
+            Header header;
+            header.meshCount = model.meshList.size();
+            header.boundingBox = model.boundingBox;
+            fwrite(&header, sizeof(Header), 1, file);
+
+            for (auto& mesh : model.meshList)
+            {
+                LockedWrite{ std::cout } << "   > Mesh: " << mesh.material;
+                LockedWrite{ std::cout } << "      Num. Vertices: " << mesh.pointList.size();
+                LockedWrite{ std::cout } << "      Num. Faces: " << mesh.faceList.size();
+
+                Header::Mesh meshHeader;
+                std::strncpy(meshHeader.material, mesh.material.data(), 63);
+                meshHeader.vertexCount = mesh.pointList.size();
+                meshHeader.faceCount = mesh.faceList.size();
+                fwrite(&meshHeader, sizeof(Header::Mesh), 1, file);
+            }
+
+            for (auto& mesh : model.meshList)
+            {
+                fwrite(mesh.faceList.data(), sizeof(Mesh::Face), mesh.faceList.size(), file);
+                fwrite(mesh.pointList.data(), sizeof(Math::Float3), mesh.pointList.size(), file);
+                fwrite(mesh.texCoordList.data(), sizeof(Math::Float2), mesh.texCoordList.size(), file);
+                fwrite(mesh.tangentList.data(), sizeof(Math::Float3), mesh.tangentList.size(), file);
+                fwrite(mesh.biTangentList.data(), sizeof(Math::Float3), mesh.biTangentList.size(), file);
+                fwrite(mesh.normalList.data(), sizeof(Math::Float3), mesh.normalList.size(), file);
+            }
+
+            fclose(file);
+        }
     }
 
     return 0;

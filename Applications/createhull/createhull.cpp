@@ -7,8 +7,6 @@
 #include <algorithm>
 #include <vector>
 
-#include <Newton.h>
-
 #include <assimp/config.h>
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
@@ -20,8 +18,7 @@ struct Header
 {
     uint32_t identifier = *(uint32_t *)"GEKX";
     uint16_t type = 1;
-    uint16_t version = 2;
-    uint32_t newtonVersion = NewtonWorldGetVersion();
+    uint16_t version = 3;
 };
 
 struct Parameters
@@ -172,112 +169,114 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     static const unsigned int importFlags =
         aiProcess_RemoveComponent |
         aiProcess_RemoveRedundantMaterials |
-        aiProcess_FindDegenerates |
         aiProcess_ValidateDataStructure;
 
     aiPropertyStore* propertyStore = aiCreatePropertyStore();
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
-    aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
-    aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
     aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
 
-    FileSystem::Path dataPath;
-    wchar_t gekDataPath[MAX_PATH + 1] = L"\0";
-    if (GetEnvironmentVariable(L"gek_data_path", gekDataPath, MAX_PATH) > 0)
-    {
-        dataPath = String::Narrow(gekDataPath);
-    }
-    else
-    {
-        auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
-        dataPath = rootPath / "Data"sv;
-    }
+    auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
+    auto rootPath(pluginPath.getParentPath());
+    auto cachePath(rootPath / "cache"sv);
+    SetCurrentDirectoryW(cachePath.getWideString().data());
 
-    auto sourcePath(dataPath / "physics"sv / parameters.sourceName);
-    LockedWrite{ std::cout } << "Loading: " << sourcePath.getString();
-    auto inputScene = aiImportFileExWithProperties(sourcePath.getString().data(), importFlags, nullptr, propertyStore);
-    if (inputScene == nullptr)
-    {
-        LockedWrite{ std::cerr } << "Unable to load scene with Assimp";
-        return -__LINE__;
-    }
+    std::vector<FileSystem::Path> searchPathList;
+    searchPathList.push_back(pluginPath);
 
-    static const unsigned int postProcessSteps[] =
+    ContextPtr context(Context::Create(nullptr));
+    if (context)
     {
-        aiProcess_JoinIdenticalVertices |
-        aiProcess_FindInvalidData |
-        0,
+        context->setCachePath(cachePath);
 
-        aiProcess_ImproveCacheLocality |
-        aiProcess_OptimizeMeshes |
-        aiProcess_OptimizeGraph,
-        0,
-    };
+        wchar_t gekDataPath[MAX_PATH + 1] = L"\0";
+        if (GetEnvironmentVariable(L"gek_data_path", gekDataPath, MAX_PATH) > 0)
+        {
+            context->addDataPath(String::Narrow(gekDataPath));
+        }
 
-    for (auto postProcessFlags : postProcessSteps)
-    {
-        inputScene = aiApplyPostProcessing(inputScene, postProcessFlags);
+        context->addDataPath(rootPath / "data"sv);
+        context->addDataPath(rootPath.getString());
+
+        auto filePath = context->findDataPath(FileSystem::CreatePath("physics", parameters.sourceName));
+
+        LockedWrite{ std::cout } << "Loading: " << filePath.getString();
+        auto inputScene = aiImportFileExWithProperties(filePath.getString().data(), importFlags, nullptr, propertyStore);
         if (inputScene == nullptr)
         {
-            LockedWrite{ std::cerr } << "Unable to apply post processing with Assimp";
+            LockedWrite{ std::cerr } << "Unable to load scene with Assimp";
             return -__LINE__;
         }
+
+        static const unsigned int postProcessSteps[] =
+        {
+            aiProcess_JoinIdenticalVertices |
+            aiProcess_FindInvalidData |
+            0,
+
+            aiProcess_ImproveCacheLocality |
+            aiProcess_OptimizeMeshes |
+            aiProcess_OptimizeGraph,
+            0,
+        };
+
+        for (auto postProcessFlags : postProcessSteps)
+        {
+            inputScene = aiApplyPostProcessing(inputScene, postProcessFlags);
+            if (inputScene == nullptr)
+            {
+                LockedWrite{ std::cerr } << "Unable to apply post processing with Assimp";
+                return -__LINE__;
+            }
+        }
+
+        if (!inputScene->HasMeshes())
+        {
+            LockedWrite{ std::cerr } << "Scene has no meshes";
+            return -__LINE__;
+        }
+
+        aiMatrix4x4 identity;
+        Shapes::AlignedBox boundingBox;
+        std::vector<Math::Float3> pointList;
+        if (!GetModels(parameters, inputScene, inputScene->mRootNode, identity, pointList, boundingBox))
+        {
+            return -__LINE__;
+        }
+
+        aiReleasePropertyStore(propertyStore);
+        aiReleaseImport(inputScene);
+
+        if (pointList.empty())
+        {
+            LockedWrite{ std::cerr } << "No vertex data found in scene";
+            return -__LINE__;
+        }
+
+        LockedWrite{ std::cout } << "> Num. Points: " << pointList.size();
+        LockedWrite{ std::cout } << "< Size: Minimum[" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << "]";
+        LockedWrite{ std::cout } << "< Size: Maximum[" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << "]";
+
+        auto outputPath(filePath.withoutExtension().withExtension(".gek"));
+        LockedWrite{ std::cout } << "Writing: " << outputPath.getString();
+        outputPath.getParentPath().createChain();
+
+        FILE* file = nullptr;
+        _wfopen_s(&file, outputPath.getWideString().data(), L"wb");
+        if (file == nullptr)
+        {
+            LockedWrite{ std::cerr } << "Unable to create output file";
+            return -__LINE__;
+        }
+
+        Header header;
+        fwrite(&header, sizeof(Header), 1, file);
+
+        uint32_t pointCount = pointList.size();
+        fwrite(&pointCount, sizeof(uint32_t), 1, file);
+        fwrite(pointList[0].data, sizeof(Math::Float3), pointCount, file);
+
+        fclose(file);
     }
-
-    if (!inputScene->HasMeshes())
-    {
-        LockedWrite{ std::cerr } << "Scene has no meshes";
-        return -__LINE__;
-    }
-
-    aiMatrix4x4 identity;
-    Shapes::AlignedBox boundingBox;
-    std::vector<Math::Float3> pointList;
-    if (!GetModels(parameters, inputScene, inputScene->mRootNode, identity, pointList, boundingBox))
-    {
-        return -__LINE__;
-    }
-
-    aiReleasePropertyStore(propertyStore);
-    aiReleaseImport(inputScene);
-
-	if (pointList.empty())
-	{
-        LockedWrite{ std::cerr } << "No vertex data found in scene";
-        return -__LINE__;
-    }
-
-	LockedWrite{ std::cout } << "> Num. Points: " << pointList.size();
-    LockedWrite{ std::cout } << "< Size: Minimum[" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << "]";
-    LockedWrite{ std::cout } << "< Size: Maximum[" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << "]";
-
-    NewtonWorld *newtonWorld = NewtonCreate();
-    NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointList.size(), pointList.data()->data, sizeof(Math::Float3), 0.025f, 0, Math::Float4x4::Identity.data);
-    if (newtonCollision == nullptr)
-    {
-        LockedWrite{ std::cerr } << "Unable to create convex hull collision object";
-        return -__LINE__;
-    }
-
-    auto outputPath((dataPath / "physics"sv / parameters.targetName).withoutExtension().withExtension(".gek"));
-    LockedWrite{ std::cout } << "Writing: " << outputPath.getString();
-    outputPath.getParentPath().createChain();
-
-    FILE *file = nullptr;
-    _wfopen_s(&file, outputPath.getWideString().data(), L"wb");
-    if (file == nullptr)
-    {
-        LockedWrite{ std::cerr } << "Unable to create output file";
-        return -__LINE__;
-    }
-
-    Header header;
-    fwrite(&header, sizeof(Header), 1, file);
-    NewtonCollisionSerialize(newtonWorld, newtonCollision, serializeCollision, file);
-    fclose(file);
-
-    NewtonDestroyCollision(newtonCollision);
-    NewtonDestroy(newtonWorld);
 
     return 0;
 }

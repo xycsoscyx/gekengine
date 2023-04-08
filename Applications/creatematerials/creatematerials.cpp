@@ -164,14 +164,14 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                             auto filePath(highestPriority.first);
                             auto textureName(highestPriority.second);
 
-                            if (FileSystem::Path(textureName).withoutExtension().getFileName() != mapType)
+                            /*if (FileSystem::Path(textureName).withoutExtension().getFileName() != mapType)
                             {
                                 auto sourceFilePath(filePath);
                                 filePath.replaceFileName(mapType + filePath.getExtension());
                                 textureName = FileSystem::Path(textureName).replaceFileName(mapType).getString();
                                 LockedWrite{ std::cout } << "Renaming " << sourceFilePath.getString() << " to " << filePath.getString() << ", named " << textureName;
                                 sourceFilePath.rename(filePath);
-                            }
+                            }*/
 
                             JSON node;
                             node["file"] = textureName;

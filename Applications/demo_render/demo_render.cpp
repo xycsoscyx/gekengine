@@ -82,7 +82,7 @@ namespace Gek
 			std::vector<FileSystem::Path> searchPathList;
 			searchPathList.push_back(pluginPath);
 
-			context = Context::Create(searchPathList);
+			context = Context::Create(&searchPathList);
 			context->addDataPath(rootPath / "data"sv);
 			configuration.load(getContext()->findDataPath("config.json"sv));
 

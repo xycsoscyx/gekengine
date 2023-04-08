@@ -11,7 +11,7 @@
 #include "GEK/API/Component.hpp"
 #include "GEK/API/Entity.hpp"
 #include <wink/signal.hpp>
-#include <Newton.h>
+#include <ndNewton.h>
 
 namespace Gek
 {
@@ -40,29 +40,13 @@ namespace Gek
         };
     };
 
-    namespace Newton
+    namespace Physics
     {
-        GEK_INTERFACE(Entity)
+        GEK_INTERFACE(Body)
         {
-            virtual ~Entity(void) = default;
+            virtual ~Body(void) = default;
 
-            virtual Plugin::Entity * const getEntity(void) const = 0;
-
-            virtual NewtonBody * const getNewtonBody(void) const = 0;
-
-            virtual uint32_t getSurface(Math::Float3 const &position, Math::Float3 const &normal) = 0;
-
-            // Called before the update phase to set the frame data for the body
-            // Applies to rigid and player bodies
-            virtual void onPreUpdate(float frameTime, int threadHandle) { };
-
-            // Called after the update phase to react to changes in the world
-            // Applies to player bodies only
-            virtual void onPostUpdate(float frameTime, int threadHandle) { };
-
-            // Called when setting the transformation matrix of the body
-            // Applies to rigid bodies only
-            virtual void onSetTransform(float const * const matrixData, int threadHandle) { };
+            virtual ndBody* getAsNewtonBody(void) = 0;
         };
 
         GEK_INTERFACE(World)
@@ -80,10 +64,10 @@ namespace Gek
 
             virtual ~World(void) = default;
 
-            virtual Math::Float3 getGravity(Math::Float3 const &position) = 0;
+            virtual Math::Float3 getGravity(Math::Float3 const *position = nullptr) = 0;
 
             virtual uint32_t loadSurface(std::string const &surfaceName) = 0;
             virtual const Surface &getSurface(uint32_t surfaceIndex) const = 0;
         };
-    };
+    }; // namespace Physics
 }; // namespace Gek

@@ -8,7 +8,7 @@ add_definitions(-D_NEWTON_STATIC_LIB=1)
 file(GLOB SOURCES "*.cpp" "*.rc")
 add_executable(${ProjectID} ${SOURCES})
 
-target_link_libraries(${ProjectID} Math Utility Shapes Resources newton assimp)
+target_link_libraries(${ProjectID} Math Utility Shapes Resources assimp)
 
 set_target_properties(${ProjectID}
     PROPERTIES

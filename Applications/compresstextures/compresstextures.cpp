@@ -198,7 +198,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	std::vector<FileSystem::Path> searchPathList;
 	searchPathList.push_back(pluginPath);
 
-	ContextPtr context(Context::Create(searchPathList));
+	ContextPtr context(Context::Create(&searchPathList));
 	if (context)
 	{
         context->setCachePath(cachePath);

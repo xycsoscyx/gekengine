@@ -34,6 +34,9 @@ namespace Gek
             void operator = (std::string const &path);
 			void operator = (Path const &path);
 
+			bool operator == (Path const& path);
+			bool operator != (Path const& path);
+
             Path &removeFileName(void);
             Path &removeExtension(void);
 
@@ -43,6 +46,7 @@ namespace Gek
 			Path withExtension(std::string_view extension) const;
 			Path withoutExtension() const;
 
+			Path getRootPath(void) const;
 			Path getParentPath(void) const;
 			std::string getFileName(void) const;
 			std::string getExtension(void) const;
@@ -57,10 +61,13 @@ namespace Gek
 
 			bool isDirectory(void) const;
             void createChain(void) const;
-            void findFiles(std::function<bool(Path const &filePath)> onFileFound) const;
+            void findFiles(std::function<bool(Path const &filePath)> onFileFound, bool recursive = true) const;
+
+			FileSystem::Path lexicallyRelative(FileSystem::Path const& root) const;
         };
 
 		Path GetModuleFilePath(void);
+		Path GetCanonicalPath(Path const& path);
 
         template <typename CONTAINER>
 		CONTAINER Load(Path const &filePath, CONTAINER const &defaultValue = CONTAINER(), std::uintmax_t limitReadSize = 0)

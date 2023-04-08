@@ -15,3 +15,7 @@ target_link_libraries(${ProjectID}_test GTest::gtest_main ${ProjectID})
 include(GoogleTest)
 gtest_discover_tests(${ProjectID}_test)
 
+set_target_properties(${ProjectID}_test
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin"
+)

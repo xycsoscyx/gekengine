@@ -6,15 +6,13 @@
 #include "GEK/API/ComponentMixin.hpp"
 #include "GEK/API/Editor.hpp"
 #include "GEK/Components/Transform.hpp"
-#include "GEK/Newton/Base.hpp"
+#include "GEK/Physics/Base.hpp"
 #include <algorithm>
 #include <memory>
 
-#include <Newton.h>
-
 namespace Gek
 {
-    namespace Newton
+    namespace Physics
     {
         GEK_CONTEXT_USER(Player, Plugin::Population *)
             , public Plugin::ComponentMixin<Components::Player, Edit::Component>
@@ -77,5 +75,5 @@ namespace Gek
         };
 
         GEK_REGISTER_CONTEXT_USER(Player)
-    }; // namespace Newton
+    }; // namespace Physics
 }; // namespace Gek

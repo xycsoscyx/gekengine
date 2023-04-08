@@ -19,6 +19,10 @@ namespace Gek
 		FileSystem::Path cachePath;
 
 	public:
+        ContextImplementation(void)
+        {
+        }
+
         ContextImplementation(std::vector<FileSystem::Path> const &pluginSearchList)
         {
 			for (auto const &searchPath : pluginSearchList)
@@ -115,17 +119,17 @@ namespace Gek
                 }
             }
 
-            return path;
+            return FileSystem::Path();
         }
 
-		void findDataFiles(FileSystem::Path const &path, std::function<bool(FileSystem::Path const &filePath)> onFileFound, bool includeCache) const
+		void findDataFiles(FileSystem::Path const &path, std::function<bool(FileSystem::Path const &filePath)> onFileFound, bool includeCache, bool recursive) const
 		{
 			if (includeCache)
 			{
 				auto fullPath = cachePath / path;
 				if (fullPath.isDirectory())
 				{
-					fullPath.findFiles(onFileFound);
+                    fullPath.findFiles(onFileFound, recursive);
 				}
 			}
 
@@ -134,7 +138,7 @@ namespace Gek
 				auto fullPath = dataPath / path;
 				if (fullPath.isDirectory())
 				{
-					fullPath.findFiles(onFileFound);
+                    fullPath.findFiles(onFileFound, recursive);
 				}
 			}
 		}
@@ -181,8 +185,15 @@ namespace Gek
         }
     };
 
-    ContextPtr Context::Create(std::vector<FileSystem::Path> const &pluginSearchList)
+    ContextPtr Context::Create(std::vector<FileSystem::Path> const *pluginSearchList)
     {
-        return std::make_unique<ContextImplementation>(pluginSearchList);
+        if (pluginSearchList)
+        {
+            return std::make_unique<ContextImplementation>(*pluginSearchList);
+        }
+        else
+        {
+            return std::make_unique<ContextImplementation>();
+        }
     }
 }; // namespace Gek

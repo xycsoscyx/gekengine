@@ -1,4 +1,4 @@
-#include "GEK/Newton/Base.hpp"
+#include "GEK/Physics/Base.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/API/ComponentMixin.hpp"
 #include "GEK/API/Editor.hpp"
@@ -7,7 +7,7 @@
 
 namespace Gek
 {
-    namespace Newton
+    namespace Physics
     {
         GEK_CONTEXT_USER(Physical, Plugin::Population *)
             , public Plugin::ComponentMixin<Components::Physical, Edit::Component>
@@ -49,5 +49,5 @@ namespace Gek
         };
 
         GEK_REGISTER_CONTEXT_USER(Physical)
-    }; // namespace Newton
+    }; // namespace Physics
 }; // namespace Gek

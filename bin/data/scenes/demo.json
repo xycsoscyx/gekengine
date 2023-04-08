@@ -6,11 +6,10 @@
                 "position": [ "random(-40, 40)", "random(5, 30)", "random(-10, 10)" ],
                 "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
             },
-            "Model": "cube",
+            "Model": "dice_wood",
             "Physical": { "mass": 100 }
         },
         "BasicPointLight": {
-            "Model": "lightbulb",
             "Transform": {
                 "position": [ "random(-50, 50)", "random(-10, 40)", "random(-20, 20)" ],
                 "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
@@ -23,7 +22,6 @@
             "Color": [ "random(0, 1)", "random(0, 1)", "random(0, 1)" ]
         },
         "BasicSpotLight": {
-            "Model": "flashlight",
             "Transform": {
                 "position": [ "random(-50, 50)", "random(-10, 40)", "random(-20, 20)" ],
                 "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
@@ -56,22 +54,7 @@
                 "fieldOfView": 60,
                 "nearClip": 0.5,
                 "FarClip": 200
-            },
-            "Player": {
-                "height": 6,
-                "outerRadius": 1.5,
-                "innerRadius": 0.5,
-                "stairStep": 1.5
-            },
-            "Physical": {
-                "mass": 250
-            },
-            "PointLight": {
-                "radius": 2.0,
-                "range": 50.0,
-                "intensity": 10.0
-            },
-            "Color": [ 1, 1, 1 ]
+            }
         },
 
         {

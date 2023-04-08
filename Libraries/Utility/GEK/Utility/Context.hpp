@@ -25,7 +25,7 @@ namespace Gek
 
     GEK_INTERFACE(Context)
     {
-        static ContextPtr Create(std::vector<FileSystem::Path> const &pluginSearchList);
+        static ContextPtr Create(std::vector<FileSystem::Path> const *pluginSearchList);
 
         virtual ~Context(void) = default;
 
@@ -34,7 +34,7 @@ namespace Gek
 
         virtual void addDataPath(FileSystem::Path const &path) = 0;
         virtual FileSystem::Path findDataPath(FileSystem::Path const &path, bool includeCache = true) const = 0;
-		virtual void findDataFiles(FileSystem::Path const &path, std::function<bool(FileSystem::Path const &filePath)> onFileFound, bool includeCache = true) const = 0;
+		virtual void findDataFiles(FileSystem::Path const &path, std::function<bool(FileSystem::Path const &filePath)> onFileFound, bool includeCache = true, bool recursive = true) const = 0;
 
         virtual ContextUserPtr createBaseClass(std::string_view className, void *typelessArguments, std::vector<Hash> &argumentTypes) const = 0;
 

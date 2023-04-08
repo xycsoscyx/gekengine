@@ -24,6 +24,7 @@ add_definitions(/wd4244) #
 add_definitions(/wd4099) #
 add_definitions(/wd4574) #
 add_definitions(/wd4146) # unary minus operator applied to unsigned type, result still unsigned
+add_definitions(/wd4100) # unreferenced formal parameter
 add_definitions(/wd4101) # unreferenced local variable
 add_definitions(/wd4005) # macro redefinition
 add_definitions(/wd4820) # bytes padding added after data member
@@ -45,16 +46,21 @@ add_definitions(/wd4711) # function selected for automatic inline expansion
 add_definitions(/wd4774) # format string expected in argument is not a string literal
 add_definitions(/wd4777) # format string requires an argument of type, but variadic argument has type
 add_definitions(/wd5045) # Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
-add_definitions(-D_USE_MATH_DEFINES -DNOMINMAX)
+add_definitions(/wd5233) # explicit lambda capture 'this' is not used
 add_definitions(/await:strict) # Enable coroutines
 add_definitions(/std:c++latest) # Enable std::format
+add_definitions(-D_USE_MATH_DEFINES -DNOMINMAX)
+#add_definitions(-D_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING)
+add_definitions(-D_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4006")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4221")
-
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4006")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /ignore:4221")
-
 set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /ignore:4006")
 set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} /ignore:4221")
 
@@ -69,7 +75,17 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 include_directories("${CMAKE_SOURCE_DIR}/External/Wink-Signals")
+
 include_directories("${CMAKE_SOURCE_DIR}/External/json/single_include")
+
+include_directories("${CMAKE_SOURCE_DIR}/External/newton-dynamics/newton-4.00/sdk/dCore")
+include_directories("${CMAKE_SOURCE_DIR}/External/newton-dynamics/newton-4.00/sdk/dCollision")
+include_directories("${CMAKE_SOURCE_DIR}/External/newton-dynamics/newton-4.00/sdk/dNewton/dModels")
+include_directories("${CMAKE_SOURCE_DIR}/External/newton-dynamics/newton-4.00/sdk/dNewton/dModels/dCharacter")
+include_directories("${CMAKE_SOURCE_DIR}/External/newton-dynamics/newton-4.00/sdk/dNewton/dModels/dVehicle")
+include_directories("${CMAKE_SOURCE_DIR}/External/newton-dynamics/newton-4.00/sdk/dNewton/dIkSolver")
+include_directories("${CMAKE_SOURCE_DIR}/External/newton-dynamics/newton-4.00/sdk/dNewton/dJoints")
+include_directories("${CMAKE_SOURCE_DIR}/External/newton-dynamics/newton-4.00/sdk/dNewton")
 
 SET(ASSIMP_BUILD_IFC_IMPORTER False CACHE BOOL "" FORCE)
 SET(ASSIMP_BUILD_ASSIMP_TOOLS False CACHE BOOL "" FORCE)
@@ -81,36 +97,20 @@ add_subdirectory("External/Assimp")
 add_definitions(-D_OPENMP)
 add_subdirectory("External/DirectXTex")
 
-SET(NEWTON_BUILD_SANDBOX_DEMOS False CACHE BOOL "" FORCE)
-SET(NEWTON_BUILD_PROFILER False CACHE BOOL "" FORCE)
-#SET(NEWTON_STATIC_RUNTIME_LIBRARIES False CACHE BOOL "" FORCE)
+SET(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
 add_subdirectory("External/newton-dynamics/newton-4.00")
 
-message(WARNING "Silencing C++17 old allocator members deprecation warning")
-add_definitions(-D_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING)
-
-message(WARNING "Silencing C++17 codecvt header deprecation warning")
-add_definitions(-D_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-add_definitions(-DUNICODE -D_UNICODE -D_HAS_CXX17)
-
-add_definitions(-DNO_IMGUITOOLBAR)
-add_definitions(-DNO_IMGUIPANELMANAGER)
-add_definitions(-DNO_IMGUISTRING)
-add_definitions(-DNO_IMGUIHELPER)
-add_definitions(-DNO_IMGUIFILESYSTEM)
-add_definitions(-DNO_IMGUICODEEDITOR)
-add_definitions(-DNO_IMGUILISTVIEW)
-add_definitions(-DNO_IMGUINODEGRAPHEDITOR)
-#add_definitions(-DIMGUI_INCLUDE_IMGUI_USER_H -DIMGUI_INCLUDE_IMGUI_USER_INL)
+add_definitions(-DUNICODE -D_UNICODE)
 add_definitions(-DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_DEFINE_PLACEMENT_NEW)
 
 add_subdirectory("Libraries")
 add_subdirectory("Plugins")
 add_subdirectory("Applications")
+
+set_target_properties(gtest PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+set_target_properties(gtest_main PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+set_target_properties(assimp PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+set_target_properties(ndNewton PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
 set_property(TARGET gmock PROPERTY FOLDER "External/Google Test")
 set_property(TARGET gmock_main PROPERTY FOLDER "External/Google Test")
@@ -129,7 +129,6 @@ set_property(TARGET ndTinyxml PROPERTY FOLDER "External/Newton")
 set_property(TARGET newton_tests PROPERTY FOLDER "External/Newton")
 set_property(TARGET openfbx PROPERTY FOLDER "External/Newton/Dependencies")
 set_property(TARGET vhacd PROPERTY FOLDER "External/Newton/Dependencies")
-
 if(WIN32)
     set_property(TARGET UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTY FOLDER "External/Assimp")
 endif()

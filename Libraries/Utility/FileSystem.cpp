@@ -75,6 +75,16 @@ namespace Gek
             data = path.data;
         }
 
+        bool Path::operator == (Path const& path)
+        {
+            return data == path.data;
+        }
+
+        bool Path::operator != (Path const& path)
+        {
+            return data != path.data;
+        }
+
         Path &Path::removeFileName(void)
         {
             data.remove_filename();
@@ -113,9 +123,14 @@ namespace Gek
             return replaced;
         }
 
+        Path Path::getRootPath(void) const
+        {
+            return data.root_path();
+        }
+
         Path Path::getParentPath(void) const
         {
-            return Path(data.parent_path());
+            return data.parent_path();
         }
 
         std::string Path::getFileName(void) const
@@ -175,16 +190,32 @@ namespace Gek
             std::filesystem::create_directories(data, errorCode);
         }
 
-        void Path::findFiles(std::function<bool(Path const &filePath)> onFileFound) const
+        void Path::findFiles(std::function<bool(Path const &filePath)> onFileFound, bool recursive) const
         {
             std::error_code errorCode;
             for (auto const &fileSearch : std::filesystem::directory_iterator(data, errorCode))
             {
-                if (!onFileFound(Path(fileSearch.path())))
+                Path filePath(fileSearch.path());
+                if (recursive && filePath.isDirectory())
+                {
+                    filePath.findFiles(onFileFound, recursive);
+                }
+                else if (!onFileFound(Path(fileSearch.path())))
                 {
                     return;
                 }
             }
+        }
+
+        Path Path::lexicallyRelative(Path const& root) const
+        {
+            return data.lexically_relative(root.data);
+        }
+
+        Path GetCanonicalPath(Path const& path)
+        {
+            std::error_code errorCode;
+            return std::filesystem::canonical(path.data, errorCode);
         }
 
         Path GetModuleFilePath(void)
