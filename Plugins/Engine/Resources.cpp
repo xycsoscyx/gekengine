@@ -630,10 +630,10 @@ namespace Gek
                     ImGui::BeginMainMenuBar();
                     ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5.0f, 10.0f));
                     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5.0f, 10.0f));
-                    if (ImGui::BeginMenu("Resources"))
+                    if (ImGui::BeginMenu("Edit"))
                     {
-                        ImGui::MenuItem("Show", "CTRL+S", &showResources);
-                        if (ImGui::MenuItem("Reload", "CTRL+R"))
+                        ImGui::MenuItem("Show Resources", nullptr, &showResources);
+                        if (ImGui::MenuItem("Reload Resources"))
                         {
                             onReload();
                         }

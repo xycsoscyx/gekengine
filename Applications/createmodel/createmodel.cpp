@@ -418,16 +418,16 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
         std::function<FileSystem::Path (const char*, FileSystem::Path const &)> removeRoot = [](const char *location, FileSystem::Path const & path) -> FileSystem::Path
         {
-            auto texturesPath = path.getParentPath();
-            while (texturesPath.isDirectory() && texturesPath != path.getRootPath())
+            auto parentPath = path.getParentPath();
+            while (parentPath.isDirectory() && parentPath != path.getRootPath())
             {
-                if (texturesPath.getFileName() == location)
+                if (parentPath.getFileName() == location)
                 {
-                    return path.lexicallyRelative(texturesPath);
+                    return path.lexicallyRelative(parentPath);
                 }
                 else
                 {
-                    texturesPath = texturesPath.getParentPath();
+                    parentPath = parentPath.getParentPath();
                 }
             };
 

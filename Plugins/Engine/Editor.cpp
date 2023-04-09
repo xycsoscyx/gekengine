@@ -67,6 +67,7 @@ namespace Gek
             std::string entityName;
             Plugin::Entity *selectedEntity = nullptr;
             bool showPopulationDock = true;
+            bool showPropertiesDock = true;
 
         public:
             Editor(Context *context, Plugin::Core *core)
@@ -81,22 +82,8 @@ namespace Gek
 
                 core->setOption("editor", "active", false);
 
-                /*if (!ImGui::TabWindow::DockPanelIconTextureID)
-                {
-					int width = 0, height = 0;
-					ImVector<unsigned char> imageData;
-					ImGui::TabWindow::GetDockPanelIconImageRGBA(imageData, &width, &height);
-
-					Video::Texture::Description description;
-					description.flags = Video::Texture::Flags::Resource;
-					description.format = Video::Format::R8G8B8A8_UNORM;
-					description.width = width;
-					description.height = height;
-					dockPanelIcon = renderer->getVideoDevice()->createTexture(description, imageData.Data);
-                    ImGui::TabWindow::DockPanelIconTextureID = dynamic_cast<ImTextureID>(dockPanelIcon.get());
-                }*/
-
                 gizmo = std::make_unique<UI::Gizmo::WorkSpace>();
+
                 core->onInitialized.connect(this, &Editor::onInitialized);
                 core->onShutdown.connect(this, &Editor::onShutdown);
 				population->onReset.connect(this, &Editor::onReset);
@@ -252,65 +239,8 @@ namespace Gek
             {
                 auto &imGuiIo = ImGui::GetIO();
                 auto &style = ImGui::GetStyle();
-                if (ImGui::Begin("Population", &showPopulationDock, 0))//, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
+                if (ImGui::Begin("Population", &showPopulationDock))//, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
                 {
-                    ImGui::BulletText("Alignment ");
-                    ImGui::SameLine();
-                    auto width = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x) * 0.5f;
-                    UI::RadioButton(std::format("{} Entity", (const char*)ICON_FA_USER_O), &currentGizmoAlignment, UI::Gizmo::Alignment::Local, ImVec2(width, 0.0f));
-                    ImGui::SameLine();
-                    UI::RadioButton(std::format("{} World", (const char*)ICON_FA_GLOBE), &currentGizmoAlignment, UI::Gizmo::Alignment::World, ImVec2(width, 0.0f));
-
-                    ImGui::BulletText("Operation ");
-                    ImGui::SameLine();
-                    width = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x * 3.0f) / 4.0f;
-                    UI::RadioButton(std::format("{} Move", (const char*)ICON_FA_ARROWS), &currentGizmoOperation, UI::Gizmo::Operation::Translate, ImVec2(width, 0.0f));
-                    ImGui::SameLine();
-                    UI::RadioButton(std::format("{} Rotate", (const char*)ICON_FA_REPEAT), &currentGizmoOperation, UI::Gizmo::Operation::Rotate, ImVec2(width, 0.0f));
-                    ImGui::SameLine();
-                    UI::RadioButton(std::format("{} Scale", (const char*)ICON_FA_SEARCH), &currentGizmoOperation, UI::Gizmo::Operation::Scale, ImVec2(width, 0.0f));
-                    ImGui::SameLine();
-                    UI::RadioButton(std::format("{} Bounds", (const char*)ICON_FA_SEARCH), &currentGizmoOperation, UI::Gizmo::Operation::Bounds, ImVec2(width, 0.0f));
-
-                    ImGui::BulletText("Bounding Axis ");
-                    ImGui::SameLine();
-                    width = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x * 3.0f) / 4.0f;
-                    UI::RadioButton(std::format("{} Auto", (const char*)ICON_FA_SEARCH), &currentGizmoAxis, UI::Gizmo::LockAxis::Automatic, ImVec2(width, 0.0f));
-                    ImGui::SameLine();
-                    UI::RadioButton(" X ", &currentGizmoAxis, UI::Gizmo::LockAxis::X, ImVec2(width, 0.0f));
-                    ImGui::SameLine();
-                    UI::RadioButton(" Y ", &currentGizmoAxis, UI::Gizmo::LockAxis::Y, ImVec2(width, 0.0f));
-                    ImGui::SameLine();
-                    UI::RadioButton(" Z ", &currentGizmoAxis, UI::Gizmo::LockAxis::Z, ImVec2(width, 0.0f));
-
-                    UI::CheckButton(std::format("{} Snap", (const char*)ICON_FA_MAGNET), &useGizmoSnap);
-                    ImGui::SameLine();
-                    ImGui::PushItemWidth(-1.0f);
-                    switch (currentGizmoOperation)
-                    {
-                    case UI::Gizmo::Operation::Translate:
-                        ImGui::InputFloat3("##snapTranslation", gizmoSnapPosition.data, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-                        break;
-
-                    case UI::Gizmo::Operation::Rotate:
-                        ImGui::SliderFloat("##snapDegrees", &gizmoSnapRotation, 0.0f, 360.0f);
-                        break;
-
-                    case UI::Gizmo::Operation::Scale:
-                        ImGui::InputFloat("##gizmoSnapScale", &gizmoSnapScale, (1.0f / 10.0f), 1.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-                        break;
-
-                    case UI::Gizmo::Operation::Bounds:
-                        ImGui::InputFloat3("##snapBounds", gizmoSnapBounds.data, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-                        break;
-                    };
-
-                    ImGui::PopItemWidth();
-
-                    std::set<Plugin::Entity *> deleteEntitySet;
-                    auto &registry = population->getRegistry();
-                    auto entityCount = registry.size();
-
                     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.5f, 0.0f, 1.0f));
                     ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.75f, 0.0f, 1.0f));
                     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
@@ -370,188 +300,73 @@ namespace Gek
                     }
 
                     ImGui::PopStyleVar();
-                    ImGui::SameLine();
-                    UI::TextFrame(std::format("Population: {}", entityCount), ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f));
-                    if (ImGui::BeginChildFrame(665, ImVec2(-1.0f, -1.0f)))
+
+                    std::set<Plugin::Entity*> deleteEntitySet;
+                    auto& registry = population->getRegistry();
+                    auto entityCount = registry.size();
+
+                    if (ImGui::BeginListBox("##Population", ImVec2(-FLT_MIN, -FLT_MIN)))
                     {
-                        ImGuiListClipper clipper;
-                        clipper.Begin(entityCount);
-                        while (clipper.Step())
+                        for (auto& entity : registry)
                         {
-                            for (auto entityIndex = clipper.DisplayStart; entityIndex < clipper.DisplayEnd; ++entityIndex)
+                            Edit::Entity* editEntity = reinterpret_cast<Edit::Entity*>(entity.get());
+
+                            std::string name;
+                            if (entity->hasComponent<Components::Name>())
                             {
-                                auto entitySearch = std::begin(registry);
-                                std::advance(entitySearch, entityIndex);
-                                auto entity = entitySearch->get();
-
-                                std::string name;
-                                if (entity->hasComponent<Components::Name>())
-                                {
-                                    name = entity->getComponent<Components::Name>().name;
-                                }
-                                else
-                                {
-                                    name = std::format("entity_{}", entityIndex);
-                                }
-
-                                ImGui::PushID(entityIndex);
-                                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.0f, 0.0f, 1.0f));
-                                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.0f, 0.0f, 1.0f));
-                                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-                                if (ImGui::Button((const char*)ICON_FA_USER_TIMES))
-                                {
-                                    ImGui::OpenPopup("ConfirmEntityDelete");
-                                }
-
-                                ImGui::PopStyleColor(3);
-                                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
-                                if (ImGui::BeginPopup("ConfirmEntityDelete"))
-                                {
-                                    ImGui::Text("Are you sure you want to remove this entitiy?");
-                                    ImGui::Spacing();
-                                    if (ImGui::Button("Yes", ImVec2(50.0f, 25.0f)))
-                                    {
-                                        deleteEntitySet.insert(entity);
-                                        ImGui::CloseCurrentPopup();
-                                    }
-
-                                    ImGui::SameLine();
-                                    if (ImGui::Button("No", ImVec2(50.0f, 25.0f)))
-                                    {
-                                        ImGui::CloseCurrentPopup();
-                                    }
-
-                                    ImGui::EndPopup();
-                                }
-
-                                ImGui::PopStyleVar();
-                                ImGui::SameLine();
-                                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.5f, 0.0f, 1.0f));
-                                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.75f, 0.0f, 1.0f));
-                                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
-                                if (ImGui::Button((const char*)ICON_FA_PLUS_CIRCLE))
-                                {
-                                    selectedComponent = 0;
-                                    ImGui::OpenPopup("AddComponent");
-                                }
-
-                                ImGui::PopStyleColor(3);
-                                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
-                                if (ImGui::BeginPopup("AddComponent"))
-                                {
-                                    UI::TextFrame("Select Component Type", ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f));
-                                    ImGui::Spacing();
-                                    ImGui::Spacing();
-                                    ImGui::Spacing();
-
-                                    auto const &availableComponents = population->getAvailableComponents();
-                                    auto componentCount = availableComponents.size();
-                                    if (ImGui::ListBoxHeader("##Components", componentCount, 10))
-                                    {
-                                        ImGuiListClipper clipper(componentCount, ImGui::GetTextLineHeightWithSpacing());
-                                        while (clipper.Step())
-                                        {
-                                            for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
-                                            {
-                                                auto componentSearch = std::begin(availableComponents);
-                                                std::advance(componentSearch, componentIndex);
-												std::string componentName(componentSearch->second->getName());
-                                                if (ImGui::Selectable(componentName.data(), (selectedComponent == componentIndex)))
-                                                {
-                                                    auto componentDefintion = std::make_pair(componentName, JSON::EmptyObject);
-                                                    population->addComponent(entity, componentDefintion);
-                                                    ImGui::CloseCurrentPopup();
-                                                }
-                                            }
-                                        };
-
-                                        ImGui::ListBoxFooter();
-                                    }
-
-                                    ImGui::EndPopup();
-                                }
-
-                                ImGui::PopStyleVar();
-                                ImGui::PopID();
-                                ImGui::SameLine();
-                                ImGui::SetNextItemOpen(selectedEntity == entity);
-                                if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_Framed))
-                                {
-                                    selectedEntity = dynamic_cast<Edit::Entity *>(entity);
-                                    auto editEntity = dynamic_cast<Edit::Entity *>(selectedEntity);
-                                    if (editEntity)
-                                    {
-                                        std::set<Hash> deleteComponentSet;
-                                        auto const &entityComponents = editEntity->getComponents();
-                                        for (auto &componentSearch : entityComponents)
-                                        {
-                                            Edit::Component *component = population->getComponent(componentSearch.first);
-                                            Plugin::Component::Data *componentDefintion = componentSearch.second.get();
-                                            if (component && componentDefintion)
-                                            {
-                                                ImGui::PushID(component->getIdentifier());
-                                                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.0f, 0.0f, 1.0f));
-                                                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.0f, 0.0f, 1.0f));
-                                                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-                                                if (ImGui::Button((const char*)ICON_FA_MINUS_CIRCLE))
-                                                {
-                                                    ImGui::OpenPopup("ConfirmComponentDelete");
-                                                }
-
-                                                ImGui::PopStyleColor(3);
-                                                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
-                                                if (ImGui::BeginPopup("ConfirmComponentDelete"))
-                                                {
-                                                    ImGui::Text("Are you sure you want to remove this component?");
-                                                    ImGui::Spacing();
-                                                    if (ImGui::Button("Yes", ImVec2(50.0f, 25.0f)))
-                                                    {
-                                                        ImGui::CloseCurrentPopup();
-                                                        deleteComponentSet.insert(component->getIdentifier());
-                                                    }
-
-                                                    ImGui::SameLine();
-                                                    if (ImGui::Button("No", ImVec2(50.0f, 25.0f)))
-                                                    {
-                                                        ImGui::CloseCurrentPopup();
-                                                    }
-
-                                                    ImGui::EndPopup();
-                                                }
-
-                                                ImGui::PopStyleVar();
-                                                ImGui::PopID();
-                                                ImGui::SameLine();
-                                                if (ImGui::TreeNodeEx(component->getName().data(), ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
-                                                {
-                                                    if (component->onUserInterface(ImGui::GetCurrentContext(), entity, componentDefintion))
-                                                    {
-                                                        onModified(entity, componentSearch.first);
-                                                    }
-
-                                                    ImGui::TreePop();
-                                                }
-                                            }
-                                        }
-
-                                        for (auto &component : deleteComponentSet)
-                                        {
-                                            population->removeComponent(entity, component);
-                                        }
-                                    }
-
-                                    ImGui::TreePop();
-                                }
-                                else if (selectedEntity == entity)
-                                {
-                                    selectedEntity = nullptr;
-                                }
+                                name = entity->getComponent<Components::Name>().name;
                             }
-                        };
+                            else
+                            {
+                                name = "<unnamed>";
+                            }
 
+                            name = std::format("{}, {} components", name, editEntity->getComponents().size());
+
+                            ImGui::PushID(entity.get());
+                            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.0f, 0.0f, 1.0f));
+                            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.0f, 0.0f, 1.0f));
+                            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+                            if (ImGui::Button((const char*)ICON_FA_USER_TIMES))
+                            {
+                                ImGui::OpenPopup("ConfirmEntityDelete");
+                            }
+
+                            ImGui::PopStyleColor(3);
+                            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
+                            if (ImGui::BeginPopup("ConfirmEntityDelete"))
+                            {
+                                ImGui::Text("Are you sure you want to remove this entitiy?");
+                                ImGui::Spacing();
+                                if (ImGui::Button("Yes", ImVec2(50.0f, 25.0f)))
+                                {
+                                    deleteEntitySet.insert(entity.get());
+                                    ImGui::CloseCurrentPopup();
+                                }
+
+                                ImGui::SameLine();
+                                if (ImGui::Button("No", ImVec2(50.0f, 25.0f)))
+                                {
+                                    ImGui::CloseCurrentPopup();
+                                }
+
+                                ImGui::EndPopup();
+                            }
+
+                            ImGui::PopStyleVar();
+                            ImGui::SameLine();
+                            bool entitySelected = (selectedEntity == entity.get());
+                            if (ImGui::Selectable(name.data(), &entitySelected))
+                            {
+                                selectedEntity = entity.get();
+                            }
+
+                            ImGui::PopID();
+                        }
+
+                        ImGui::EndListBox();
                     }
 
-                    ImGui::EndChildFrame();
                     for (auto &entity : deleteEntitySet)
                     {
                         if (selectedEntity == entity)
@@ -561,7 +376,197 @@ namespace Gek
 
                         population->killEntity(entity);
                     }
+                }
 
+                ImGui::End();
+            }
+
+            void showProperties(void)
+            {
+                auto& imGuiIo = ImGui::GetIO();
+                auto& style = ImGui::GetStyle();
+                if (ImGui::Begin("Properties", &showPropertiesDock))//, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
+                {
+                    if (selectedEntity)
+                    {
+                        ImGui::BulletText("Alignment ");
+                        ImGui::SameLine();
+                        auto width = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x) * 0.5f;
+                        UI::RadioButton(std::format("{} Entity", (const char*)ICON_FA_USER_O), &currentGizmoAlignment, UI::Gizmo::Alignment::Local, ImVec2(width, 0.0f));
+                        ImGui::SameLine();
+                        UI::RadioButton(std::format("{} World", (const char*)ICON_FA_GLOBE), &currentGizmoAlignment, UI::Gizmo::Alignment::World, ImVec2(width, 0.0f));
+
+                        ImGui::BulletText("Operation ");
+                        ImGui::SameLine();
+                        width = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x * 3.0f) / 4.0f;
+                        UI::RadioButton(std::format("{} Move", (const char*)ICON_FA_ARROWS), &currentGizmoOperation, UI::Gizmo::Operation::Translate, ImVec2(width, 0.0f));
+                        ImGui::SameLine();
+                        UI::RadioButton(std::format("{} Rotate", (const char*)ICON_FA_REPEAT), &currentGizmoOperation, UI::Gizmo::Operation::Rotate, ImVec2(width, 0.0f));
+                        ImGui::SameLine();
+                        UI::RadioButton(std::format("{} Scale", (const char*)ICON_FA_SEARCH), &currentGizmoOperation, UI::Gizmo::Operation::Scale, ImVec2(width, 0.0f));
+                        ImGui::SameLine();
+                        UI::RadioButton(std::format("{} Bounds", (const char*)ICON_FA_SEARCH), &currentGizmoOperation, UI::Gizmo::Operation::Bounds, ImVec2(width, 0.0f));
+
+                        ImGui::BulletText("Bounding Axis ");
+                        ImGui::SameLine();
+                        width = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x * 3.0f) / 4.0f;
+                        UI::RadioButton(std::format("{} Auto", (const char*)ICON_FA_SEARCH), &currentGizmoAxis, UI::Gizmo::LockAxis::Automatic, ImVec2(width, 0.0f));
+                        ImGui::SameLine();
+                        UI::RadioButton(" X ", &currentGizmoAxis, UI::Gizmo::LockAxis::X, ImVec2(width, 0.0f));
+                        ImGui::SameLine();
+                        UI::RadioButton(" Y ", &currentGizmoAxis, UI::Gizmo::LockAxis::Y, ImVec2(width, 0.0f));
+                        ImGui::SameLine();
+                        UI::RadioButton(" Z ", &currentGizmoAxis, UI::Gizmo::LockAxis::Z, ImVec2(width, 0.0f));
+
+                        UI::CheckButton(std::format("{} Snap", (const char*)ICON_FA_MAGNET), &useGizmoSnap);
+                        ImGui::SameLine();
+                        ImGui::PushItemWidth(-1.0f);
+                        switch (currentGizmoOperation)
+                        {
+                        case UI::Gizmo::Operation::Translate:
+                            ImGui::InputFloat3("##snapTranslation", gizmoSnapPosition.data, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                            break;
+
+                        case UI::Gizmo::Operation::Rotate:
+                            ImGui::SliderFloat("##snapDegrees", &gizmoSnapRotation, 0.0f, 360.0f);
+                            break;
+
+                        case UI::Gizmo::Operation::Scale:
+                            ImGui::InputFloat("##gizmoSnapScale", &gizmoSnapScale, (1.0f / 10.0f), 1.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                            break;
+
+                        case UI::Gizmo::Operation::Bounds:
+                            ImGui::InputFloat3("##snapBounds", gizmoSnapBounds.data, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                            break;
+                        };
+
+                        ImGui::PopItemWidth();
+                        if (ImGui::BeginChildFrame(665, ImVec2(-1.0f, -1.0f)))
+                        {
+                            auto entity = selectedEntity;
+                            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.5f, 0.0f, 1.0f));
+                            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.75f, 0.0f, 1.0f));
+                            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
+                            if (ImGui::Button((const char*)ICON_FA_PLUS_CIRCLE))
+                            {
+                                selectedComponent = 0;
+                                ImGui::OpenPopup("AddComponent");
+                            }
+
+                            ImGui::PopStyleColor(3);
+                            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
+                            if (ImGui::BeginPopup("AddComponent"))
+                            {
+                                UI::TextFrame("Select Component Type", ImVec2(ImGui::GetWindowContentRegionWidth(), 0.0f));
+                                ImGui::Spacing();
+                                ImGui::Spacing();
+                                ImGui::Spacing();
+
+                                auto const& availableComponents = population->getAvailableComponents();
+                                auto componentCount = availableComponents.size();
+                                if (ImGui::BeginListBox("##Components"))
+                                {
+                                    for (auto &component : availableComponents)
+                                    {
+                                        std::string componentName(component.second->getName());
+
+                                        ImGui::PushID(component.second->getIdentifier());
+
+                                        bool componentSelected = false;
+                                        if (ImGui::Selectable(componentName.data(), &componentSelected))
+                                        {
+                                            auto componentDefintion = std::make_pair(componentName, JSON::EmptyObject);
+                                            population->addComponent(entity, componentDefintion);
+                                            ImGui::CloseCurrentPopup();
+                                        }
+
+                                        ImGui::PopID();
+                                    }
+
+                                    ImGui::EndListBox();
+                                }
+
+                                ImGui::EndPopup();
+                            }
+
+                            ImGui::PopStyleVar();
+                            ImGui::SameLine();
+                            ImGui::SetNextItemOpen(selectedEntity == entity);
+                            if (ImGui::TreeNodeEx("##selected", ImGuiTreeNodeFlags_Framed))
+                            {
+                                selectedEntity = dynamic_cast<Edit::Entity*>(entity);
+                                auto editEntity = dynamic_cast<Edit::Entity*>(selectedEntity);
+                                if (editEntity)
+                                {
+                                    std::set<Hash> deleteComponentSet;
+                                    auto const& entityComponents = editEntity->getComponents();
+                                    for (auto& componentSearch : entityComponents)
+                                    {
+                                        Edit::Component* component = population->getComponent(componentSearch.first);
+                                        Plugin::Component::Data* componentDefintion = componentSearch.second.get();
+                                        if (component && componentDefintion)
+                                        {
+                                            ImGui::PushID(component->getIdentifier());
+                                            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.0f, 0.0f, 1.0f));
+                                            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.0f, 0.0f, 1.0f));
+                                            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+                                            if (ImGui::Button((const char*)ICON_FA_MINUS_CIRCLE))
+                                            {
+                                                ImGui::OpenPopup("ConfirmComponentDelete");
+                                            }
+
+                                            ImGui::PopStyleColor(3);
+                                            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
+                                            if (ImGui::BeginPopup("ConfirmComponentDelete"))
+                                            {
+                                                ImGui::Text("Are you sure you want to remove this component?");
+                                                ImGui::Spacing();
+                                                if (ImGui::Button("Yes", ImVec2(50.0f, 25.0f)))
+                                                {
+                                                    ImGui::CloseCurrentPopup();
+                                                    deleteComponentSet.insert(component->getIdentifier());
+                                                }
+
+                                                ImGui::SameLine();
+                                                if (ImGui::Button("No", ImVec2(50.0f, 25.0f)))
+                                                {
+                                                    ImGui::CloseCurrentPopup();
+                                                }
+
+                                                ImGui::EndPopup();
+                                            }
+
+                                            ImGui::PopStyleVar();
+                                            ImGui::PopID();
+                                            ImGui::SameLine();
+                                            if (ImGui::TreeNodeEx(component->getName().data(), ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
+                                            {
+                                                if (component->onUserInterface(ImGui::GetCurrentContext(), entity, componentDefintion))
+                                                {
+                                                    onModified(entity, componentSearch.first);
+                                                }
+
+                                                ImGui::TreePop();
+                                            }
+                                        }
+                                    }
+
+                                    for (auto& component : deleteComponentSet)
+                                    {
+                                        population->removeComponent(entity, component);
+                                    }
+                                }
+
+                                ImGui::TreePop();
+                            }
+                            else if (selectedEntity == entity)
+                            {
+                                selectedEntity = nullptr;
+                            }
+                        }
+
+                        ImGui::EndChildFrame();
+                    }
                 }
 
                 ImGui::End();
@@ -580,7 +585,7 @@ namespace Gek
                     if (ImGui::BeginMenu("Edit"))
                     {
                         bool editorEnabled = core->getOption("editor", "active").convert(false);
-                        if (ImGui::MenuItem("Enable", "CTRL+E", &editorEnabled))
+                        if (ImGui::MenuItem("Show Editor", nullptr, &editorEnabled))
                         {
                             core->setOption("editor", "active", editorEnabled);
                         }
@@ -598,33 +603,10 @@ namespace Gek
                     return;
                 }
 
-                auto editorSize = imGuiIo.DisplaySize;
-                auto editorPosition = ImVec2(0.0f, 0.0f);
-                if (mainMenuShowing)
-                {
-                    auto &style = ImGui::GetStyle();
-                    editorSize.y -= ImGui::GetFrameHeightWithSpacing() - style.ItemSpacing.y;
-                    editorPosition.y += ImGui::GetFrameHeightWithSpacing() - style.ItemSpacing.y;
-                }
-
                 ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
-
-                ImGui::SetNextWindowSize(editorSize);
-                ImGui::SetNextWindowPos(editorPosition);
-                ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-                auto oldWindowPadding = ImGui::GetStyle().WindowPadding;
-                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-				if (ImGui::Begin("Editor", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
-                {
-                    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, oldWindowPadding);
-                    showScene();
-                    showPopulation();
-                    ImGui::PopStyleVar(1);
-                }
-
-                ImGui::End();
-                ImGui::PopStyleVar(3);
+                showScene();
+                showPopulation();
+                showProperties();
             }
 
             // Plugin::Population Slots

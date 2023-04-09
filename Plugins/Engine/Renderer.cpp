@@ -1509,31 +1509,10 @@ float4 main(PixelInput input) : SV_Target
 
                 ImGui::NewFrame();
 				onShowUserInterface();
-				auto mainMenu = ImGui::FindWindowByName("##MainMenuBar");
-				auto mainMenuShowing = (mainMenu ? mainMenu->Active : false);
-				if (mainMenuShowing)
-				{
-					ImGui::BeginMainMenuBar();
-					ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(5.0f, 10.0f));
-					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5.0f, 10.0f));
-					if (ImGui::BeginMenu("Render"))
-					{
-						auto invertedDepthBuffer = core->getOption("render"s, "invertedDepthBuffer"s).convert(true);
-						if (ImGui::MenuItem("Inverted Depth Buffer", "CTRL+I", &invertedDepthBuffer))
-						{
-							core->setOption("render"s, "invertedDepthBuffer"s, invertedDepthBuffer);
-							reloadRequired = true;
-						}
-
-						ImGui::EndMenu();
-					}
-
-					ImGui::PopStyleVar(2);
-					ImGui::EndMainMenuBar();
-				}
-				
                 ImGui::Render();
-                renderUI(ImGui::GetDrawData());
+
+				renderUI(ImGui::GetDrawData());
+
 				videoDevice->present(true);
 				if (reloadRequired)
 				{

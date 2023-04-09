@@ -58,13 +58,11 @@ namespace Gek
     private:
         int selectedModel = 0;
         std::vector<std::string> modelList;
-        FileSystem::Path modelsPath;
 
     public:
         Model(Context *context, Plugin::Population *population)
             : ContextRegistration(context)
             , ComponentMixin(population)
-            , modelsPath(context->findDataPath("models"s))
         {
         }
 
@@ -87,6 +85,24 @@ namespace Gek
 
             auto &modelComponent = *dynamic_cast<Components::Model *>(data);
 
+            std::function<FileSystem::Path(const char*, FileSystem::Path const&)> removeRoot = [](const char* location, FileSystem::Path const& path) -> FileSystem::Path
+            {
+                auto parentPath = path.getParentPath();
+                while (parentPath.isDirectory() && parentPath != path.getRootPath())
+                {
+                    if (parentPath.getFileName() == location)
+                    {
+                        return path.lexicallyRelative(parentPath);
+                    }
+                    else
+                    {
+                        parentPath = parentPath.getParentPath();
+                    }
+                };
+
+                return path;
+            };
+
             changed |= editorElement("Model", [&](void) -> bool
             {
                 if (modelList.empty())
@@ -100,16 +116,15 @@ namespace Gek
                         }
                         else if (filePath.getExtension() == ".gek")
                         {
-                            auto modelPath = filePath.getParentPath().getString();
-                            String::Replace(modelPath, modelsPath.getString(), "");
-                            modelList.push_back(modelPath.substr(1));
+                            auto modelPath = removeRoot("models", filePath).getParentPath().getString();
+                            modelList.push_back(modelPath);
                             return false;
                         }
 
                         return true;
                     });
 
-                    modelsPath.findFiles(searchDirectory);
+                    getContext()->findDataFiles("models", searchDirectory);
                 }
 
                 if (modelComponent.name.empty())
@@ -450,14 +465,17 @@ namespace Gek
         {
             EntityProcessor::addEntity(entity, [&](bool isNewInsert, auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
-                static const Group BlankGroup;
-                auto pair = groupMap.insert(std::make_pair(GetHash(modelComponent.name), BlankGroup));
-                if (pair.second)
+                if (!modelComponent.name.empty())
                 {
-                    scheduleLoadGroup(modelComponent.name, pair.first->second);
-                }
+                    static const Group BlankGroup;
+                    auto pair = groupMap.insert(std::make_pair(GetHash(modelComponent.name), BlankGroup));
+                    if (pair.second)
+                    {
+                        scheduleLoadGroup(modelComponent.name, pair.first->second);
+                    }
 
-                data.group = &pair.first->second;
+                    data.group = &pair.first->second;
+                }
             });
         }
 
@@ -559,21 +577,24 @@ namespace Gek
 			entityDataList.reserve(entityCount);
 			parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
 			{
-				auto group = data.group;
-				auto matrix(transformComponent.getMatrix());
-				matrix.translation.xyz += group->boundingBox.getCenter();
-				auto halfSize(group->boundingBox.getHalfSize() * transformComponent.scale);
+                if (data.group)
+                {
+                    auto group = data.group;
+                    auto matrix(transformComponent.getMatrix());
+                    matrix.translation.xyz += group->boundingBox.getCenter();
+                    auto halfSize(group->boundingBox.getHalfSize() * transformComponent.scale);
 
-				auto entityInsert = entityDataList.push_back(std::make_tuple(entity, &data, 0));
-				auto entityIndex = std::get<2>(*entityInsert) = std::distance(std::begin(entityDataList), entityInsert);
+                    auto entityInsert = entityDataList.push_back(std::make_tuple(entity, &data, 0));
+                    auto entityIndex = std::get<2>(*entityInsert) = std::distance(std::begin(entityDataList), entityInsert);
 
-				halfSizeXList[entityIndex] = halfSize.x;
-				halfSizeYList[entityIndex] = halfSize.y;
-				halfSizeZList[entityIndex] = halfSize.z;
-				for (size_t element = 0; element < 16; ++element)
-				{
-					transformList[element][entityIndex] = matrix.data[element];
-				}
+                    halfSizeXList[entityIndex] = halfSize.x;
+                    halfSizeYList[entityIndex] = halfSize.y;
+                    halfSizeZList[entityIndex] = halfSize.z;
+                    for (size_t element = 0; element < 16; ++element)
+                    {
+                        transformList[element][entityIndex] = matrix.data[element];
+                    }
+                }
 			});
 
 			visibilityList.resize(bufferedEntityCount);

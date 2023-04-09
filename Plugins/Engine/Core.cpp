@@ -154,6 +154,7 @@ namespace Gek
                 onInitialized.emit();
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
+                imGuiIo.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
                 imGuiIo.KeyMap[ImGuiKey_Tab] = VK_TAB;
                 imGuiIo.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
                 imGuiIo.KeyMap[ImGuiKey_RightArrow] = VK_RIGHT;
@@ -448,27 +449,26 @@ namespace Gek
                     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5.0f, 10.0f));
                     if (ImGui::BeginMenu("File"))
                     {
-                        if (ImGui::MenuItem("Load", "CTRL+L"))
+                        if (ImGui::MenuItem("Load Scene"))
                         {
                             showLoadMenu = true;
                             currentSelectedScene = 0;
                         }
 
-                        if (ImGui::MenuItem("Save", "CTRL+S"))
+                        if (ImGui::MenuItem("Save Scene"))
                         {
                             population->save("demo_save");
                         }
 
                         ImGui::Separator();
-                        if (ImGui::MenuItem("Reset", "CTRL+R"))
+                        if (ImGui::MenuItem("Clear Scene"))
                         {
                             showResetDialog = true;
                         }
 
                         ImGui::Separator();
-                        if (ImGui::MenuItem("Settings", "CTRL+O"))
+                        if (ImGui::MenuItem("Settings", nullptr, &showSettings))
                         {
-                            showSettings = true;
                             next = previous = current;
                             shadersSettings = configuration["shaders"sv].makeType<JSON::Object>();
                             filtersSettings = configuration["filters"sv].makeType<JSON::Object>();
@@ -476,7 +476,7 @@ namespace Gek
                         }
 
                         ImGui::Separator();
-                        if (ImGui::MenuItem("Quit", "CTRL+Q"))
+                        if (ImGui::MenuItem("Quit"))
                         {
                             onClose();
                         }
@@ -486,13 +486,12 @@ namespace Gek
 
                     ImGui::PopStyleVar(2);
                     ImGui::EndMainMenuBar();
+
                     showSettingsWindow();
                     showDisplayBackup();
                     showLoadWindow();
                     showReset();
                 }
-
-                showDebug();
             }
 
             void showDisplay(void)
@@ -687,6 +686,13 @@ namespace Gek
                         }
                     };
 
+                    auto invertedDepthBuffer = getOption("render"s, "invertedDepthBuffer"s).convert(true);
+                    if (ImGui::Checkbox("Inverted Depth Buffer", &invertedDepthBuffer))
+                    {
+                        setOption("render"s, "invertedDepthBuffer"s, invertedDepthBuffer);
+                        resources->reload();
+                    }
+
                     if (ImGui::TreeNodeEx("Shaders", ImGuiTreeNodeFlags_Framed))
                     {
                         showSetting(shadersSettings);
@@ -707,10 +713,11 @@ namespace Gek
             {
                 if (showSettings)
                 {
-                    auto &io = ImGui::GetIO();
-                    auto &style = ImGui::GetStyle();
+                    auto& io = ImGui::GetIO();
+                    auto& style = ImGui::GetStyle();
+                    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
                     ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-                    if (ImGui::Begin("Settings", &showSettings, 0))
+                    if (ImGui::Begin("Settings", &showSettings))
                     {
                         if (ImGui::BeginTabBar("##Settings"))
                         {
@@ -754,7 +761,8 @@ namespace Gek
                         }
                     }
 
-					ImGui::End();
+                    ImGui::PopStyleVar();
+                    ImGui::End();
                 }
             }
 
@@ -895,39 +903,6 @@ namespace Gek
 
                     ImGui::End();
                 }
-            }
-
-            void showDebug(void)
-            {
-                bool showDebug = true;
-
-                auto& io = ImGui::GetIO();
-                auto& style = ImGui::GetStyle();
-                ImGui::SetNextWindowPos(io.DisplaySize, ImGuiCond_Appearing, ImVec2(1.0f, 1.0f));
-                if (ImGui::Begin("Debug", &showDebug, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
-                {
-                    auto getName = [](JSON const& option) -> std::string
-                    {
-                        auto selection = option.getMember("selection");
-                        if (selection.isType<std::string>())
-                        {
-                            return selection.getString();
-                        }
-                        else
-                        {
-                            return option.getMember("options").getIndex(selection.asType<uint32_t>(0)).getString();
-                        }
-                    };
-
-                    auto brdf = configuration.getMember("shaders").getMember("solid").getMember("BRDF");
-                    ImGui::Text(std::format("Debug: {}", getName(brdf.getMember("Debug"))).c_str());
-                    ImGui::Text(std::format("NormalDistribution: {}", getName(brdf.getMember("NormalDistribution"))).c_str());
-                    ImGui::Text(std::format("GeometricShadowing: {}", getName(brdf.getMember("GeometricShadowing"))).c_str());
-                    ImGui::Text(std::format("Fresnel: {}", getName(brdf.getMember("Fresnel"))).c_str());
-                }
-
-
-                ImGui::End();
             }
 
             // Plugin::Core

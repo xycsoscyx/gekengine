@@ -90,13 +90,13 @@ namespace Gek
                 transformComponent.position = matrix->translation.xyz;
             }
 
-            void OnApplyExternalForce(ndInt32 threadIndex, ndFloat32 timestep)
+            void OnApplyExternalForce(ndInt32 threadIndex, ndFloat32 timeStep)
             {
                 auto const& physicalComponent = entity->getComponent<Components::Physical>();
                 auto const& transformComponent = entity->getComponent<Components::Transform>();
 
                 Math::Float3 gravity(world->getGravity(&transformComponent.position));
-                SetForce((gravity * physicalComponent.mass).data);
+                SetForce((gravity * physicalComponent.mass * timeStep).data);
                 SetTorque(Math::Float3::Zero.data);
             }
         };
