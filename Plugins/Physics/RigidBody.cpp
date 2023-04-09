@@ -65,6 +65,11 @@ namespace Gek
                 assert(entity);
 
                 SetNotifyCallback(new NotifyCallback(world, this));
+
+                auto& transformComponent = entity->getComponent<Components::Transform>();
+                auto matrix(transformComponent.getMatrix());
+                SetMatrix(matrix.data);
+                SetAutoSleep(false);
             }
 
             ~RigidBody(void)
@@ -96,8 +101,8 @@ namespace Gek
                 auto const& transformComponent = entity->getComponent<Components::Transform>();
 
                 Math::Float3 gravity(world->getGravity(&transformComponent.position));
-                SetForce((gravity * physicalComponent.mass * timeStep).data);
-                SetTorque(Math::Float3::Zero.data);
+                GetAsBodyKinematic()->SetForce((gravity * physicalComponent.mass).data);
+                GetAsBodyKinematic()->SetTorque(Math::Float3::Zero.data);
             }
         };
 

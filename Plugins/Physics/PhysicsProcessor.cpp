@@ -146,6 +146,8 @@ namespace Gek
                 population->onComponentRemoved.connect(this, &Processor::onComponentRemoved);
                 population->onUpdate[50].connect(this, &Processor::onUpdate);
                 renderer->onShowUserInterface.connect(this, &Processor::onShowUserInterface);
+
+                onReset();
             }
 
             void clear(void)
@@ -341,19 +343,44 @@ namespace Gek
             }
 
             // Plugin::Editor Slots
-            void onModified(Plugin::Entity * const entity, Hash type)
+            void onModified(Plugin::Entity* const entity, Hash type)
             {
+                auto bodySearch = entityBodyMap.find(entity);
+                if (bodySearch == std::end(entityBodyMap))
+                {
+                    return;
+                }
+
+                auto body = bodySearch->second;
                 if (type == Components::Transform::GetIdentifier())
                 {
                     auto entitySearch = entityBodyMap.find(entity);
                     if (entitySearch != std::end(entityBodyMap))
                     {
-                        auto& transformComponent = entity->getComponent<Components::Transform>();
+                        auto const& transformComponent = entity->getComponent<Components::Transform>();
                         auto matrix(transformComponent.getMatrix());
+                        body->getAsNewtonBody()->SetMatrix(matrix.data);
                     }
                 }
                 else if (type == Components::Model::GetIdentifier())
                 {
+                    if (!entity->hasComponent<Components::Physical>())
+                    {
+                        auto const& physicalComponent = entity->getComponent<Components::Physical>();
+                        auto const& modelComponent = entity->getComponent<Components::Model>();
+                        auto shape = loadShape(modelComponent);
+                        body->getAsNewtonBody()->GetAsBodyDynamic()->SetCollisionShape(ndShapeInstance(shape));
+                        body->getAsNewtonBody()->GetAsBodyDynamic()->SetMassMatrix(physicalComponent.mass, ndShapeInstance(shape));
+                    }
+                }
+                else if (type == Components::Physical::GetIdentifier())
+                {
+                    if (!entity->hasComponent<Components::Model>())
+                    {
+                        auto const& physicalComponent = entity->getComponent<Components::Physical>();
+                        auto& shapeInstance = body->getAsNewtonBody()->GetAsBodyDynamic()->GetCollisionShape();
+                        body->getAsNewtonBody()->GetAsBodyDynamic()->SetMassMatrix(physicalComponent.mass, shapeInstance);
+                    }
                 }
             }
 
