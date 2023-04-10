@@ -659,8 +659,9 @@ namespace Gek
                         showRenderStateCache();
                         showDepthStateCache();
                         showBlendStateCache();
-                        ImGui::End();
                     }
+
+                    ImGui::End();
                 }
             }
 

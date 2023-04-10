@@ -108,7 +108,7 @@ namespace Gek
             _wfopen_s(&file, filePath.getWideString().data(), L"wb");
             if (file != nullptr)
 			{
-				auto numberOfSegmentsWritten = fwrite(buffer.data(), buffer.size(), 1, file);
+				fwrite(buffer.data(), buffer.size(), 1, file);
 				fclose(file);
 			}
 		}

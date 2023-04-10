@@ -83,10 +83,10 @@ namespace Gek
         bool EndsWith(std::string_view value, std::string_view ending);
 
         template <class ARRAY>
-        std::string Join(ARRAY const& strings, std::string delimiter)
+        std::string Join(ARRAY const& strings, std::string_view delimiter)
         {
             std::stringstream combinedString;
-            std::copy(std::begin(strings), std::end(strings), std::ostream_iterator<std::string>(combinedString, delimiter.c_str()));
+            std::copy(std::begin(strings), std::end(strings), std::ostream_iterator<std::string>(combinedString, delimiter.data()));
             return combinedString.str();
         }
 

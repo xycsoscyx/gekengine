@@ -40,9 +40,13 @@ namespace Gek
             } current, previous, next;
            
             bool showResetDialog = false;
+
             bool showLoadMenu = false;
-            int currentSelectedScene = 0;
+            std::vector<std::string> scenes;
+            uint32_t currentSelectedScene = 0;
+
             bool showSettings = false;
+
             bool showModeChange = false;
             float modeChangeTimer = 0.0f;
 
@@ -451,8 +455,19 @@ namespace Gek
                     {
                         if (ImGui::MenuItem("Load Scene"))
                         {
-                            showLoadMenu = true;
+                            scenes.clear();
                             currentSelectedScene = 0;
+                            getContext()->findDataFiles("scenes"s, [&scenes = scenes](FileSystem::Path const& filePath) -> bool
+                            {
+                                if (filePath.isFile())
+                                {
+                                    scenes.push_back(filePath.withoutExtension().getFileName());
+                                }
+
+                                return true;
+                            });
+
+                            showLoadMenu = true;
                         }
 
                         if (ImGui::MenuItem("Save Scene"))
@@ -711,198 +726,206 @@ namespace Gek
 
             void showSettingsWindow(void)
             {
-                if (showSettings)
+                if (!showSettings)
                 {
-                    auto& io = ImGui::GetIO();
-                    auto& style = ImGui::GetStyle();
-                    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
-                    ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-                    if (ImGui::Begin("Settings", &showSettings))
+                    return;
+                }
+
+                auto& io = ImGui::GetIO();
+                auto& style = ImGui::GetStyle();
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
+                ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+                if (ImGui::Begin("Settings", &showSettings))
+                {
+                    if (ImGui::BeginTabBar("##Settings"))
                     {
-                        if (ImGui::BeginTabBar("##Settings"))
-                        {
-                            showDisplay();
-                            showVisual();
-                            ImGui::EndTabBar();
-                        }
-
-                        ImGui::Dummy(ImVec2(0.0f, 3.0f));
-
-                        auto size = UI::GetWindowContentRegionSize();
-                        float buttonPositionX = (size.x - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
-                        ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
-
-                        ImGui::SameLine();
-                        if (ImGui::Button("Accept", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
-                        {
-                            ImGui::GetIO().KeysDown[VK_RETURN] = false;
-                            bool changedDisplayMode = setDisplayMode(next.mode);
-                            bool changedFullScreen = setFullScreen(next.fullScreen);
-                            if (changedDisplayMode || changedFullScreen)
-                            {
-                                showModeChange = true;
-                                modeChangeTimer = 10.0f;
-                            }
-
-                            if (changedVisualOptions)
-                            {
-                                configuration["shaders"] = shadersSettings;
-                                configuration["filters"] = filtersSettings;
-                                onChangedSettings();
-                            }
-
-                            showSettings = false;
-                        }
-
-                        ImGui::SameLine();
-                        if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
-                        {
-                            showSettings = false;
-                        }
+                        showDisplay();
+                        showVisual();
+                        ImGui::EndTabBar();
                     }
 
-                    ImGui::PopStyleVar();
-                    ImGui::End();
+                    ImGui::Dummy(ImVec2(0.0f, 3.0f));
+
+                    auto size = UI::GetWindowContentRegionSize();
+                    float buttonPositionX = (size.x - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
+                    ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("Accept", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
+                    {
+                        ImGui::GetIO().KeysDown[VK_RETURN] = false;
+                        bool changedDisplayMode = setDisplayMode(next.mode);
+                        bool changedFullScreen = setFullScreen(next.fullScreen);
+                        if (changedDisplayMode || changedFullScreen)
+                        {
+                            showModeChange = true;
+                            modeChangeTimer = 10.0f;
+                        }
+
+                        if (changedVisualOptions)
+                        {
+                            configuration["shaders"] = shadersSettings;
+                            configuration["filters"] = filtersSettings;
+                            onChangedSettings();
+                        }
+
+                        showSettings = false;
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
+                    {
+                        showSettings = false;
+                    }
                 }
+
+                ImGui::PopStyleVar();
+                ImGui::End();
             }
 
             void showDisplayBackup(void)
             {
-                if (showModeChange)
+                if (!showModeChange)
                 {
-                    auto &io = ImGui::GetIO();
-                    ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-                    ImGui::SetNextWindowSize(ImVec2(225.0f, 0.0f));
-                    if (ImGui::Begin("Keep Display Mode", &showModeChange, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+                    return;
+                }
+
+                auto &io = ImGui::GetIO();
+                ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+                ImGui::SetNextWindowSize(ImVec2(225.0f, 0.0f));
+                if (ImGui::Begin("Keep Display Mode", &showModeChange, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+                {
+                    ImGui::Text("Keep Display Mode?");
+
+                    auto &style = ImGui::GetStyle();
+                    float buttonPositionX = (ImGui::GetWindowContentRegionWidth() - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
+                    ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
                     {
-                        ImGui::Text("Keep Display Mode?");
-
-                        auto &style = ImGui::GetStyle();
-                        float buttonPositionX = (ImGui::GetWindowContentRegionWidth() - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
-                        ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
-
-                        ImGui::SameLine();
-                        if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
-                        {
-                            ImGui::GetIO().KeysDown[VK_RETURN] = false;
-                            showModeChange = false;
-                            previous = current;
-                        }
-
-                        ImGui::SameLine();
-                        if (modeChangeTimer <= 0.0f || ImGui::Button("No", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
-                        {
-                            showModeChange = false;
-                            setDisplayMode(previous.mode);
-                            setFullScreen(previous.fullScreen);
-                        }
-
-                        ImGui::Text(std::format("(Revert in {} seconds)", uint32_t(modeChangeTimer)).data());
+                        ImGui::GetIO().KeysDown[VK_RETURN] = false;
+                        showModeChange = false;
+                        previous = current;
                     }
 
-					ImGui::End();
+                    ImGui::SameLine();
+                    if (modeChangeTimer <= 0.0f || ImGui::Button("No", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
+                    {
+                        showModeChange = false;
+                        setDisplayMode(previous.mode);
+                        setFullScreen(previous.fullScreen);
+                    }
+
+                    ImGui::Text(std::format("(Revert in {} seconds)", uint32_t(modeChangeTimer)).data());
                 }
+
+				ImGui::End();
             }
 
             void showLoadWindow(void)
             {
-                if (showLoadMenu)
+                if (!showLoadMenu)
                 {
-                    auto &io = ImGui::GetIO();
-                    ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-                    if (ImGui::Begin("Load", &showLoadMenu, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+                    return;
+                }
+
+                auto &io = ImGui::GetIO();
+                ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+                if (ImGui::Begin("Load", &showLoadMenu, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar))
+                {
+                    auto &style = ImGui::GetStyle();
+                    if (scenes.empty())
                     {
-                        auto &style = ImGui::GetStyle();
-                        std::vector<std::string> scenes;
-						getContext()->findDataFiles("scenes"s, [&scenes](FileSystem::Path const &filePath) -> bool
+                        ImGui::Text("No scenes found");
+                    }
+                    else
+                    {
+                        ImGui::PushItemWidth(350.0f);
+                        if (ImGui::BeginListBox("##loadscene"))
                         {
-                            if (filePath.isFile())
+                            uint32_t sceneIndex = 0;
+                            for (auto& scene : scenes)
                             {
-                                scenes.push_back(filePath.withoutExtension().getFileName());
+                                ImGui::PushID(sceneIndex);
+                                bool selected = (sceneIndex == currentSelectedScene);
+                                if (ImGui::Selectable(scene.data(), &selected))
+                                {
+                                    currentSelectedScene = sceneIndex;
+                                }
+
+                                sceneIndex++;
+                                ImGui::PopID();
                             }
 
-                            return true;
-                        });
-
-                        if (scenes.empty())
-                        {
-                            ImGui::Text("No scenes found");
+                            ImGui::EndListBox();
                         }
-                        else
-                        {
-                            ImGui::PushItemWidth(350.0f);
-                            ImGui::ListBox("##scenes", &currentSelectedScene, [](void *data, int index, const char **output) -> bool
-                            {
-                                auto scenes = (std::vector<std::string> *)data;
-                                (*output) = scenes->at(index).data();
-                                return true;
-                            }, (void *)&scenes, scenes.size(), 10);
-                        }
+                    }
 
-                        float buttonPositionX = (ImGui::GetWindowContentRegionWidth() - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
-                        ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
+                    float buttonPositionX = (ImGui::GetWindowContentRegionWidth() - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
+                    ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
 
-                        ImGui::SameLine();
-                        if (scenes.empty())
+                    ImGui::SameLine();
+                    if (scenes.empty())
+                    {
+                        ImGui::Dummy(ImVec2(100.0f, 25.0f));
+                    }
+                    else
+                    {
+                        if (ImGui::Button("Load", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
                         {
-                            ImGui::Dummy(ImVec2(100.0f, 25.0f));
-                        }
-                        else
-                        {
-                            ImGui::SetKeyboardFocusHere();
-                            if (ImGui::Button("Load", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
-                            {
-                                ImGui::GetIO().KeysDown[VK_RETURN] = false;
-                                showLoadMenu = false;
-                                population->load(scenes[currentSelectedScene]);
-                                enableInterfaceControl = ImGui::GetIO().MouseDrawCursor = false;
-                                window->setCursorVisibility(enableInterfaceControl);
-                            }
-                        }
-
-                        ImGui::SameLine();
-                        if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
-                        {
+                            ImGui::GetIO().KeysDown[VK_RETURN] = false;
+                            population->load(scenes[currentSelectedScene]);
+                            enableInterfaceControl = ImGui::GetIO().MouseDrawCursor = false;
+                            window->setCursorVisibility(enableInterfaceControl);
                             showLoadMenu = false;
                         }
                     }
 
-					ImGui::End();
+                    ImGui::SameLine();
+                    if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
+                    {
+                        showLoadMenu = false;
+                    }
                 }
+
+				ImGui::End();
             }
 
             void showReset(void)
             {
-                if (showResetDialog)
+                if (!showResetDialog)
                 {
-                    auto &io = ImGui::GetIO();
-                    ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-                    ImGui::SetNextWindowSize(ImVec2(225.0f, 0.0f));
-                    if (ImGui::Begin("Reset?", &showResetDialog, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+                    return;
+                }
+
+                auto &io = ImGui::GetIO();
+                ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+                ImGui::SetNextWindowSize(ImVec2(225.0f, 0.0f));
+                if (ImGui::Begin("Reset?", &showResetDialog, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+                {
+                    ImGui::Text("Reset Scene?");
+
+                    auto &style = ImGui::GetStyle();
+                    float buttonPositionX = (ImGui::GetWindowContentRegionWidth() - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
+                    ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
                     {
-                        ImGui::Text("Reset Scene?");
-
-                        auto &style = ImGui::GetStyle();
-                        float buttonPositionX = (ImGui::GetWindowContentRegionWidth() - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
-                        ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
-
-                        ImGui::SameLine();
-                        if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
-                        {
-                            ImGui::GetIO().KeysDown[VK_RETURN] = false;
-                            showResetDialog = false;
-                            population->reset();
-                        }
-
-                        ImGui::SameLine();
-                        if (ImGui::Button("No", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
-                        {
-                            showResetDialog = false;
-                        }
+                        ImGui::GetIO().KeysDown[VK_RETURN] = false;
+                        showResetDialog = false;
+                        population->reset();
                     }
 
-                    ImGui::End();
+                    ImGui::SameLine();
+                    if (ImGui::Button("No", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
+                    {
+                        showResetDialog = false;
+                    }
                 }
+
+                ImGui::End();
             }
 
             // Plugin::Core

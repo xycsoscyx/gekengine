@@ -67,7 +67,7 @@ namespace Gek
             std::string entityName;
             Plugin::Entity *selectedEntity = nullptr;
             bool showPopulationDock = true;
-            bool showPropertiesDock = true;
+            bool showEntityDock = true;
 
         public:
             Editor(Context *context, Plugin::Core *core)
@@ -381,11 +381,11 @@ namespace Gek
                 ImGui::End();
             }
 
-            void showProperties(void)
+            void showEntity(void)
             {
                 auto& imGuiIo = ImGui::GetIO();
                 auto& style = ImGui::GetStyle();
-                if (ImGui::Begin("Properties", &showPropertiesDock))//, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
+                if (ImGui::Begin("Entity", &showEntityDock))//, ImVec2(imGuiIo.DisplaySize.x * 0.3f, -1.0f)))
                 {
                     if (selectedEntity)
                     {
@@ -606,7 +606,7 @@ namespace Gek
                 ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
                 showScene();
                 showPopulation();
-                showProperties();
+                showEntity();
             }
 
             // Plugin::Population Slots
