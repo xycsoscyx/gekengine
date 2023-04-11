@@ -74,6 +74,8 @@ namespace Gek
             bool showPopulationDock = true;
             bool showEntityDock = true;
 
+            bool sceneModified = false;
+
         public:
             Editor(Context *context, Plugin::Core *core)
                 : ContextRegistration(context)
@@ -88,11 +90,24 @@ namespace Gek
                 core->setOption("editor", "active", false);
 
                 core->onInitialized.connect(this, &Editor::onInitialized);
+                core->canShutdown.connect(this, &Editor::canShutdown);
                 core->onShutdown.connect(this, &Editor::onShutdown);
 				population->onReset.connect(this, &Editor::onReset);
 				population->onAction.connect(this, &Editor::onAction);
                 population->onUpdate[90].connect(this, &Editor::onUpdate);
                 renderer->onShowUserInterface.connect(this, &Editor::onShowUserInterface);
+            }
+
+            void modify(Plugin::Entity* entity, Hash type)
+            {
+                onModified(entity, type);
+                sceneModified = true;
+            }
+
+            // Edit::Events
+            bool isModified(void)
+            {
+                return sceneModified;
             }
 
             // Plugin::Core
@@ -108,13 +123,18 @@ namespace Gek
                 });
             }
 
+            void canShutdown(bool &shutdown)
+            {
+                shutdown = !sceneModified;
+            }
+
             void onShutdown(void)
             {
                 renderer->onShowUserInterface.disconnect(this, &Editor::onShowUserInterface);
                 population->onAction.disconnect(this, &Editor::onAction);
                 population->onUpdate[90].disconnect(this, &Editor::onUpdate);
-				population->onReset.disconnect(this, &Editor::onReset);
-			}
+                population->onReset.disconnect(this, &Editor::onReset);
+            }
 
             // Renderer
             bool isObjectInFrustum(Shapes::Frustum &frustum, Shapes::OrientedBox &orientedBox)
@@ -294,7 +314,7 @@ namespace Gek
                                             break;
                                         };
 
-										onModified(selectedEntity, Components::Transform::GetIdentifier());
+										modify(selectedEntity, Components::Transform::GetIdentifier());
                                     }
                                 }
                             }
@@ -352,7 +372,15 @@ namespace Gek
                         ImGui::Spacing();
                         ImGui::PushStyleColor(ImGuiCol_FrameBg, createNamedEntity ? style.Colors[ImGuiCol_FrameBg] : ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
                         ImGui::PushStyleColor(ImGuiCol_Text, createNamedEntity ? style.Colors[ImGuiCol_Text] : ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-                        UI::InputString("##name", createNamedEntity ? entityName : "<unnamed>", (createNamedEntity ? 0 : ImGuiInputTextFlags_ReadOnly));
+                        if (createNamedEntity)
+                        {
+                            UI::InputString("##name", entityName);
+                        }
+                        else
+                        {
+                            UI::InputString("##blank", "<unnamed>", ImGuiInputTextFlags_ReadOnly);
+                        }
+
                         ImGui::PopStyleColor(2);
 
                         ImGui::Spacing();
@@ -374,6 +402,7 @@ namespace Gek
 
                             selectedEntity = population->createEntity(definition);
                             ImGui::CloseCurrentPopup();
+                            sceneModified = true;
                         }
 
                         ImGui::SameLine();
@@ -426,6 +455,7 @@ namespace Gek
                                 ImGui::Spacing();
                                 if (ImGui::Button("Yes", ImVec2(50.0f, 25.0f)))
                                 {
+                                    sceneModified = true;
                                     deleteEntitySet.insert(entity.get());
                                     ImGui::CloseCurrentPopup();
                                 }
@@ -629,7 +659,7 @@ namespace Gek
                                             {
                                                 if (component->onUserInterface(ImGui::GetCurrentContext(), entity, componentDefintion))
                                                 {
-                                                    onModified(entity, componentSearch.first);
+                                                    modify(entity, componentSearch.first);
                                                 }
 
                                                 ImGui::TreePop();
@@ -702,8 +732,9 @@ namespace Gek
             }
 
             // Plugin::Population Slots
-			void onReset(void)
+            void onReset(void)
 			{
+                sceneModified = false;
 				selectedEntity = nullptr;
 			}
 

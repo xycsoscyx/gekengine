@@ -26,6 +26,7 @@ namespace Gek
             virtual ~Core(void) = default;
 
             wink::signal<wink::slot<void(void)>> onInitialized;
+            wink::signal<wink::slot<void(bool &)>> canShutdown;
             wink::signal<wink::slot<void(void)>> onShutdown;
 
             virtual JSON getOption(std::string_view system, std::string_view name) const = 0;

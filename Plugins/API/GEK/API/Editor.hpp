@@ -55,6 +55,8 @@ namespace Gek
             virtual ~Events(void) = default;
 
             wink::signal<wink::slot<void(Plugin::Entity *entity, Hash type)>> onModified;
+
+            virtual bool isModified(void) = 0;
         };
     }; // namespace Edit
 }; // namespace Gek

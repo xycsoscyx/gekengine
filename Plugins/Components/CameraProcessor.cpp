@@ -180,7 +180,7 @@ namespace Gek
             assert(renderer);
 
 			bool editorActive = core->getOption("editor", "active").convert(false);
-			if (frameTime > 0.0f && !editorActive)
+			//if (frameTime > 0.0f && !editorActive)
 			{
 				parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void
 				{

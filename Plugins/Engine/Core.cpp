@@ -157,7 +157,7 @@ namespace Gek
 
                 onInitialized.emit();
 
-                ImGuiIO &imGuiIo = ImGui::GetIO();
+                ImGuiIO& imGuiIo = ImGui::GetIO();
                 imGuiIo.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
                 imGuiIo.KeyMap[ImGuiKey_Tab] = VK_TAB;
                 imGuiIo.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
@@ -184,8 +184,8 @@ namespace Gek
                 engineRunning = true;
 
                 window->setVisibility(true);
-				setFullScreen(getOption("display"s, "fullScreen"s).convert(false));
-				LockedWrite{ std::cout } << "Starting engine";
+                setFullScreen(getOption("display"s, "fullScreen"s).convert(false));
+                LockedWrite{ std::cout } << "Starting engine";
                 window->readEvents();
             }
 
@@ -207,7 +207,7 @@ namespace Gek
                 if (current.fullScreen != requestFullScreen)
                 {
                     current.fullScreen = requestFullScreen;
-					setOption("display"s, "fullScreen"s, requestFullScreen);
+                    setOption("display"s, "fullScreen"s, requestFullScreen);
                     if (requestFullScreen)
                     {
                         window->move(Math::Int2::Zero);
@@ -226,17 +226,17 @@ namespace Gek
                 return false;
             }
 
-			bool setDisplayMode(uint32_t requestDisplayMode)
+            bool setDisplayMode(uint32_t requestDisplayMode)
             {
                 if (current.mode != requestDisplayMode)
                 {
-                    auto &displayModeData = displayModeList[requestDisplayMode];
+                    auto& displayModeData = displayModeList[requestDisplayMode];
                     LockedWrite{ std::cout } << "Setting display mode: " << displayModeData.width << "x" << displayModeData.height;
                     if (requestDisplayMode < displayModeList.size())
                     {
                         next.mode = requestDisplayMode;
                         current.mode = requestDisplayMode;
-						setOption("display"s, "mode"s, requestDisplayMode);
+                        setOption("display"s, "mode"s, requestDisplayMode);
                         videoDevice->setDisplayMode(displayModeData);
                         window->move();
                         onChangedDisplay();
@@ -248,11 +248,37 @@ namespace Gek
                 return false;
             }
 
+            void close(bool forceClose = false)
+            {
+                bool isModified = false;
+                if (!forceClose)
+                {
+                    listProcessors([&](Plugin::Processor* processor) -> void
+                    {
+                        auto castCheck = dynamic_cast<Edit::Events*>(processor);
+                        if (castCheck)
+                        {
+                            isModified = castCheck->isModified();
+                        }
+                    });
+                }
+
+                if (isModified)
+                {
+                    showSaveModified = true;
+                    closeOnModified = true;
+                }
+                else
+                {
+                    engineRunning = false;
+                    onShutdown.emit();
+                }
+            }
+
             // Window slots
             void onClose(void)
             {
-                engineRunning = false;
-                onShutdown.emit();
+                close(true);
             }
 
             void onActivate(bool isActive)
@@ -290,23 +316,6 @@ namespace Gek
 
                 if (!state)
                 {
-					auto changeShader = [&](std::string_view shaderName, std::string_view optionName) -> void
-					{
-                        auto &shadersNode = configuration["shaders"];
-                        auto &shaderNode = shadersNode[shaderName.data()];
-                        auto &brdfNode = shaderNode["BRDF"];
-                        auto &optionNode = brdfNode[optionName.data()];
-                        auto &selectionNode = optionNode["selection"];
-                        auto &optionsArray = optionNode["options"].makeType<JSON::Array>();
-
-                        uint32_t selection = selectionNode.convert(0U);
-                        selection = (++selection % optionsArray.size());
-
-                        LockedWrite{ std::cout } << shaderName << ": " << optionName << " changed to " << optionsArray[selection].convert(String::Empty);
-
-                        optionNode["selection"] = selection;
-					};
-
                     switch (keyCode)
                     {
                     case VK_ESCAPE:
@@ -325,34 +334,6 @@ namespace Gek
                             imGuiIo.MousePos.y = -1.0f;
                         }
 
-                        break;
-
-                    case VK_F1:
-                        changeShader("solid", "Debug");
-                        changeShader("glass", "Debug");
-                        resources->reload();
-                        break;
-
-                    case VK_F2:
-                        changeShader("solid", "NormalDistribution");
-                        changeShader("glass", "NormalDistribution");
-                        resources->reload();
-                        break;
-
-                    case VK_F3:
-                        changeShader("solid", "GeometricShadowing");
-                        changeShader("glass", "GeometricShadowing");
-                        resources->reload();
-                        break;
-
-                    case VK_F4:
-                        changeShader("solid", "Fresnel");
-                        changeShader("glass", "Fresnel");
-                        resources->reload();
-                        break;
-
-                    case VK_F5:
-                        resources->reload();
                         break;
                     };
                 }
@@ -455,19 +436,25 @@ namespace Gek
                     {
                         if (ImGui::MenuItem("Load Scene"))
                         {
-                            scenes.clear();
-                            currentSelectedScene = 0;
-                            getContext()->findDataFiles("scenes"s, [&scenes = scenes](FileSystem::Path const& filePath) -> bool
+                            bool isModified = false;
+                            listProcessors([&](Plugin::Processor* processor) -> void
                             {
-                                if (filePath.isFile())
+                                auto castCheck = dynamic_cast<Edit::Events*>(processor);
+                                if (castCheck)
                                 {
-                                    scenes.push_back(filePath.withoutExtension().getFileName());
+                                    isModified = castCheck->isModified();
                                 }
-
-                                return true;
                             });
 
-                            showLoadMenu = true;
+                            if (isModified)
+                            {
+                                showSaveModified = true;
+                                loadOnModified = true;
+                            }
+                            else
+                            {
+                                triggerLoadWindow();
+                            }
                         }
 
                         if (ImGui::MenuItem("Save Scene"))
@@ -493,7 +480,7 @@ namespace Gek
                         ImGui::Separator();
                         if (ImGui::MenuItem("Quit"))
                         {
-                            onClose();
+                            close();
                         }
 
                         ImGui::EndMenu();
@@ -504,6 +491,7 @@ namespace Gek
 
                     showSettingsWindow();
                     showDisplayBackup();
+                    showModifiedPrompt();
                     showLoadWindow();
                     showReset();
                 }
@@ -744,14 +732,20 @@ namespace Gek
                         ImGui::EndTabBar();
                     }
 
-                    ImGui::Dummy(ImVec2(0.0f, 3.0f));
-
-                    auto size = UI::GetWindowContentRegionSize();
-                    float buttonPositionX = (size.x - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
-                    ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
+                    bool applySettings = false;
+                    if (ImGui::Button("Apply") || ImGui::GetIO().KeysDown[VK_RETURN])
+                    {
+                        applySettings = true;
+                    }
 
                     ImGui::SameLine();
-                    if (ImGui::Button("Accept", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
+                    if (ImGui::Button("Accept"))
+                    {
+                        applySettings = true;
+                        showSettings = false;
+                    }
+
+                    if (applySettings)
                     {
                         ImGui::GetIO().KeysDown[VK_RETURN] = false;
                         bool changedDisplayMode = setDisplayMode(next.mode);
@@ -768,12 +762,10 @@ namespace Gek
                             configuration["filters"] = filtersSettings;
                             onChangedSettings();
                         }
-
-                        showSettings = false;
                     }
 
                     ImGui::SameLine();
-                    if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
+                    if (ImGui::Button("Cancel") || ImGui::GetIO().KeysDown[VK_ESCAPE])
                     {
                         showSettings = false;
                     }
@@ -792,17 +784,11 @@ namespace Gek
 
                 auto &io = ImGui::GetIO();
                 ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-                ImGui::SetNextWindowSize(ImVec2(225.0f, 0.0f));
                 if (ImGui::Begin("Keep Display Mode", &showModeChange, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
                 {
                     ImGui::Text("Keep Display Mode?");
 
-                    auto &style = ImGui::GetStyle();
-                    float buttonPositionX = (ImGui::GetWindowContentRegionWidth() - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
-                    ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
-
-                    ImGui::SameLine();
-                    if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
+                    if (ImGui::Button("Yes") || ImGui::GetIO().KeysDown[VK_RETURN])
                     {
                         ImGui::GetIO().KeysDown[VK_RETURN] = false;
                         showModeChange = false;
@@ -810,7 +796,7 @@ namespace Gek
                     }
 
                     ImGui::SameLine();
-                    if (modeChangeTimer <= 0.0f || ImGui::Button("No", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
+                    if (modeChangeTimer <= 0.0f || ImGui::Button("No") || ImGui::GetIO().KeysDown[VK_ESCAPE])
                     {
                         showModeChange = false;
                         setDisplayMode(previous.mode);
@@ -821,6 +807,85 @@ namespace Gek
                 }
 
 				ImGui::End();
+            }
+
+            bool showSaveModified = false;
+            bool closeOnModified = false;
+            bool loadOnModified = false;
+            void showModifiedPrompt(void)
+            {
+                if (!showSaveModified)
+                {
+                    return;
+                }
+
+                auto& io = ImGui::GetIO();
+                ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+                if (ImGui::Begin("Save Changes?", &showSaveModified, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+                {
+                    ImGui::Text("Changes have been made.");
+                    ImGui::Text("Do you want to save them?");
+
+                    if (ImGui::Button("Yes") || ImGui::GetIO().KeysDown[VK_RETURN])
+                    {
+                        population->save("demo_save");
+                        ImGui::GetIO().KeysDown[VK_RETURN] = false;
+                        showSaveModified = false;
+                        if (closeOnModified)
+                        {
+                            close(true);
+                        }
+                        else if (loadOnModified)
+                        {
+                            triggerLoadWindow();
+                        }
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("No") || ImGui::GetIO().KeysDown[VK_ESCAPE])
+                    {
+                        showSaveModified = false;
+                        if (closeOnModified)
+                        {
+                            close(true);
+                        }
+                        else if (loadOnModified)
+                        {
+                            triggerLoadWindow();
+                        }
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("Cancel") || ImGui::GetIO().KeysDown[VK_ESCAPE])
+                    {
+                        showSaveModified = false;
+                    }
+                }
+
+                ImGui::End();
+                if (!showSaveModified)
+                {
+                    closeOnModified = false;
+                    loadOnModified = false;
+                }
+
+            }
+
+            void triggerLoadWindow(void)
+            {
+                scenes.clear();
+                currentSelectedScene = 0;
+                getContext()->findDataFiles("scenes"s, [&scenes = scenes](FileSystem::Path const& filePath) -> bool
+                {
+                    if (filePath.isFile())
+                    {
+                        scenes.push_back(filePath.withoutExtension().getFileName());
+                    }
+
+                    return true;
+                });
+
+                showLoadMenu = true;
             }
 
             void showLoadWindow(void)
@@ -862,17 +927,9 @@ namespace Gek
                         }
                     }
 
-                    float buttonPositionX = (ImGui::GetWindowContentRegionWidth() - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
-                    ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
-
-                    ImGui::SameLine();
-                    if (scenes.empty())
+                    if (!scenes.empty())
                     {
-                        ImGui::Dummy(ImVec2(100.0f, 25.0f));
-                    }
-                    else
-                    {
-                        if (ImGui::Button("Load", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
+                        if (ImGui::Button("Load") || ImGui::GetIO().KeysDown[VK_RETURN])
                         {
                             ImGui::GetIO().KeysDown[VK_RETURN] = false;
                             population->load(scenes[currentSelectedScene]);
@@ -883,7 +940,7 @@ namespace Gek
                     }
 
                     ImGui::SameLine();
-                    if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
+                    if (ImGui::Button("Cancel") || ImGui::GetIO().KeysDown[VK_ESCAPE])
                     {
                         showLoadMenu = false;
                     }
@@ -901,17 +958,11 @@ namespace Gek
 
                 auto &io = ImGui::GetIO();
                 ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-                ImGui::SetNextWindowSize(ImVec2(225.0f, 0.0f));
                 if (ImGui::Begin("Reset?", &showResetDialog, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
                 {
                     ImGui::Text("Reset Scene?");
 
-                    auto &style = ImGui::GetStyle();
-                    float buttonPositionX = (ImGui::GetWindowContentRegionWidth() - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
-                    ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
-
-                    ImGui::SameLine();
-                    if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_RETURN])
+                    if (ImGui::Button("Yes") || ImGui::GetIO().KeysDown[VK_RETURN])
                     {
                         ImGui::GetIO().KeysDown[VK_RETURN] = false;
                         showResetDialog = false;
@@ -919,7 +970,7 @@ namespace Gek
                     }
 
                     ImGui::SameLine();
-                    if (ImGui::Button("No", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[VK_ESCAPE])
+                    if (ImGui::Button("No") || ImGui::GetIO().KeysDown[VK_ESCAPE])
                     {
                         showResetDialog = false;
                     }

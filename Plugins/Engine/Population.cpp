@@ -318,6 +318,8 @@ namespace Gek
                         queueEntity(entity);
                     };
                 }
+
+                onLoad.emit(populationName);
             }
 
             void load(std::string const& populationName)
@@ -362,6 +364,7 @@ namespace Gek
                 scene["Population"] = population;
                 scene["Seed"] = shuntingYard.getRandomSeed();
                 scene.save(getContext()->getCachePath(FileSystem::CreatePath("scenes", populationName).withExtension(".json")));
+                onSave.emit(populationName);
             }
 
             Plugin::Entity *createEntity(EntityDefinition const &entityDefinition)

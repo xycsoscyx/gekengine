@@ -57,6 +57,9 @@ namespace Gek
 
             virtual ~Population(void) = default;
 
+            wink::signal<wink::slot<void(std::string const& populationName)>> onLoad;
+            wink::signal<wink::slot<void(std::string const& populationName)>> onSave;
+
             std::map<int32_t, wink::signal<wink::slot<void(float frameTime)>>> onUpdate;
             wink::signal<wink::slot<void(Action const &action)>> onAction;
 
