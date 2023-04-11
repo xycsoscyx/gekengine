@@ -88,11 +88,38 @@ TEST(Vector3, Operations)
 {
     static const Float3 testValue(2.0f, 3.0f, 4.0f);
 
+    EXPECT_EQ(testValue.dot(testValue), 29.0f);
+    EXPECT_EQ(testValue.getMagnitude(), 29.0f);
     EXPECT_EQ(testValue.getLength(), 5.38516474f);
+    EXPECT_EQ(testValue.getNormal(), Float3(0.371390671f, 0.557086f, 0.742781341f));
+
+    EXPECT_EQ(Float3(1.0f, 1.0f, 1.0f).getDistance(Float3(2.0f, 1.0f, 1.0f)), 1.0f);
 
     Float3 value(testValue);
-    EXPECT_EQ(value.getNormal(), Float3(0.371390671f, 0.557086f, 0.742781341f));
-
     value.normalize();
     EXPECT_EQ(value, Float3(0.371390671f, 0.557086f, 0.742781341f));
+
+    value.set(5.0f, -10.0f, 15.0f);
+    EXPECT_EQ(value.getAbsolute(), Float3(5.0f, 10.0f, 15.0f));
+    EXPECT_EQ(value.getClamped(Float3::Zero, Float3::One), Float3(1.0f, 0.0f, 1.0f));
+    EXPECT_EQ(value.getSaturated(), Float3(1.0f, 0.0f, 1.0f));
+    EXPECT_EQ(value.getMinimum(Float3::Zero), Float3(0.0f, -10.0f, 0.0f));
+    EXPECT_EQ(value.getMaximum(Float3::Zero), Float3(5.0f, 0.0f, 15.0f));
+
+    EXPECT_EQ(Float3(1.0f, 0.0f, 0.0f).cross(Float3(0.0f, 1.0f, 0.0f)), Float3(0.0f, 0.0f, 1.0f));
+    EXPECT_EQ(Float3(0.0f, 1.0f, 0.0f).cross(Float3(0.0f, 0.0f, 1.0f)), Float3(1.0f, 0.0f, 0.0f));
+    EXPECT_EQ(Float3(0.0f, 0.0f, 1.0f).cross(Float3(1.0f, 0.0f, 0.0f)), Float3(0.0f, 1.0f, 0.0f));
+}
+
+TEST(Vector3, Comparisons)
+{
+    static const Float3 lowValue(1.0f, 2.0f, 3.0f);
+    static const Float3 highValue(2.0f, 3.0f, 4.0f);
+
+    EXPECT_TRUE(lowValue < highValue);
+    EXPECT_TRUE(lowValue <= highValue);
+    EXPECT_TRUE(highValue > lowValue);
+    EXPECT_TRUE(highValue >= lowValue);
+    EXPECT_TRUE(lowValue == lowValue);
+    EXPECT_TRUE(lowValue != highValue);
 }

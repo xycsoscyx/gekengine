@@ -92,11 +92,34 @@ TEST(Vector4, Operations)
 {
     static const Float4 testValue(2.0f, 3.0f, 4.0f, 5.0f);
 
+    EXPECT_EQ(testValue.dot(testValue), 54.0f);
+    EXPECT_EQ(testValue.getMagnitude(), 54.0f);
     EXPECT_EQ(testValue.getLength(), 7.34846926f);
+    EXPECT_EQ(testValue.getNormal(), Float4(0.272165537f, 0.408248305f, 0.544331074f, 0.680413842f));
+
+    EXPECT_EQ(Float4(1.0f, 1.0f, 1.0f, 1.0f).getDistance(Float4(2.0f, 1.0f, 1.0f, 1.0f)), 1.0f);
 
     Float4 value(testValue);
-    EXPECT_EQ(value.getNormal(), Float4(0.272165537f, 0.408248305f, 0.544331074f, 0.680413842f));
-
     value.normalize();
     EXPECT_EQ(value, Float4(0.272165537f, 0.408248305f, 0.544331074f, 0.680413842f));
+
+    value.set(5.0f, -10.0f, 15.0f, -20.0f);
+    EXPECT_EQ(value.getAbsolute(), Float4(5.0f, 10.0f, 15.0f, 20.0f));
+    EXPECT_EQ(value.getClamped(Float4::Zero, Float4::One), Float4(1.0f, 0.0f, 1.0f, 0.0f));
+    EXPECT_EQ(value.getSaturated(), Float4(1.0f, 0.0f, 1.0f, 0.0f));
+    EXPECT_EQ(value.getMinimum(Float4::Zero), Float4(0.0f, -10.0f, 0.0f, -20.0f));
+    EXPECT_EQ(value.getMaximum(Float4::Zero), Float4(5.0f, 0.0f, 15.0f, 0.0f));
+}
+
+TEST(Vector4, Comparisons)
+{
+    static const Float4 lowValue(1.0f, 2.0f, 3.0f, 4.0f);
+    static const Float4 highValue(2.0f, 3.0f, 4.0f, 5.0f);
+
+    EXPECT_TRUE(lowValue < highValue);
+    EXPECT_TRUE(lowValue <= highValue);
+    EXPECT_TRUE(highValue > lowValue);
+    EXPECT_TRUE(highValue >= lowValue);
+    EXPECT_TRUE(lowValue == lowValue);
+    EXPECT_TRUE(lowValue != highValue);
 }

@@ -84,11 +84,34 @@ TEST(Vector2, Operations)
 {
     static const Float2 testValue(2.0f, 3.0f);
 
+    EXPECT_EQ(testValue.dot(testValue), 13.0f);
+    EXPECT_EQ(testValue.getMagnitude(), 13.0f);
     EXPECT_EQ(testValue.getLength(), 3.60555124f);
+    EXPECT_EQ(testValue.getNormal(), Float2(0.554700196f, 0.832050323f));
+
+    EXPECT_EQ(Float2(1.0f, 1.0f).getDistance(Float2(2.0f, 1.0f)), 1.0f);
 
     Float2 value(testValue);
-    EXPECT_EQ(value.getNormal(), Float2(0.554700196f, 0.832050323f));
-
     value.normalize();
     EXPECT_EQ(value, Float2(0.554700196f, 0.832050323f));
+
+    value.set(5.0f, -10.0f);
+    EXPECT_EQ(value.getAbsolute(), Float2(5.0f, 10.0f));
+    EXPECT_EQ(value.getClamped(Float2::Zero, Float2::One), Float2(1.0f, 0.0f));
+    EXPECT_EQ(value.getSaturated(), Float2(1.0f, 0.0f));
+    EXPECT_EQ(value.getMinimum(Float2::Zero), Float2(0.0f, -10.0f));
+    EXPECT_EQ(value.getMaximum(Float2::Zero), Float2(5.0f, 0.0f));
+}
+
+TEST(Vector2, Comparisons)
+{
+    static const Float2 lowValue(1.0f, 2.0f);
+    static const Float2 highValue(2.0f, 3.0f);
+
+    EXPECT_TRUE(lowValue < highValue);
+    EXPECT_TRUE(lowValue <= highValue);
+    EXPECT_TRUE(highValue > lowValue);
+    EXPECT_TRUE(highValue >= lowValue);
+    EXPECT_TRUE(lowValue == lowValue);
+    EXPECT_TRUE(lowValue != highValue);
 }
