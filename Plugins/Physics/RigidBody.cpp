@@ -67,7 +67,7 @@ namespace Gek
                 SetNotifyCallback(new NotifyCallback(world, this));
 
                 auto& transformComponent = entity->getComponent<Components::Transform>();
-                auto matrix(transformComponent.getMatrix());
+                auto matrix(transformComponent.getScaledMatrix());
                 SetMatrix(matrix.data);
                 SetAutoSleep(false);
             }

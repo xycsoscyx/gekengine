@@ -10,6 +10,8 @@
 #include "GEK/Utility/String.hpp"
 
 #include <imgui.h>
+#include <imgui_internal.h>
+#include <ImGuizmo.h>
 
 #include "GEK/GUI/IconsFontAwesome.h"
 #include "GEK/GUI/IconsMaterialDesign.h"

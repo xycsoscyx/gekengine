@@ -5,7 +5,6 @@
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/GUI/Utilities.hpp"
-#include "GEK/GUI/Gizmo.hpp"
 #include "GEK/Engine/Core.hpp"
 #include "GEK/API/Component.hpp"
 #include "GEK/API/ComponentMixin.hpp"
@@ -19,7 +18,6 @@
 #include "GEK/Components/Name.hpp"
 #include "GEK/Model/Base.hpp"
 #include <concurrent_vector.h>
-#include <imgui_internal.h>
 #include <ppl.h>
 #include <set>
 
@@ -31,15 +29,20 @@ namespace Gek
             , virtual public Plugin::Processor
             , virtual public Edit::Events
         {
+            enum LOCKAXIS
+            {
+                NONE,
+                X,
+                Y,
+                Z,
+            };
+
         private:
             Plugin::Core *core = nullptr;
             Edit::Population *population = nullptr;
             Engine::Resources *resources = nullptr;
             Plugin::Renderer *renderer = nullptr;
             Gek::Processor::Model *modelProcessor = nullptr;
-
-            std::unique_ptr<UI::Gizmo::WorkSpace> gizmo;
-            Video::TexturePtr dockPanelIcon;
 
             float headingAngle = 0.0f;
             float lookingAngle = 0.0f;
@@ -51,9 +54,9 @@ namespace Gek
 
             int selectedComponent = 0;
 
-            UI::Gizmo::LockAxis currentGizmoAxis = UI::Gizmo::LockAxis::Automatic;
-            UI::Gizmo::Alignment currentGizmoAlignment = UI::Gizmo::Alignment::Local;
-            UI::Gizmo::Operation currentGizmoOperation = UI::Gizmo::Operation::Translate;
+            LOCKAXIS currentAxisLock = LOCKAXIS::NONE;
+            ImGuizmo::MODE currentGizmoAlignment = ImGuizmo::MODE::LOCAL;
+            ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::OPERATION::TRANSLATE;
             bool useGizmoSnap = true;
             Math::Float3 gizmoSnapPosition = Math::Float3::One;
             float gizmoSnapRotation = 10.0f;
@@ -81,8 +84,6 @@ namespace Gek
                 assert(core);
 
                 core->setOption("editor", "active", false);
-
-                gizmo = std::make_unique<UI::Gizmo::WorkSpace>();
 
                 core->onInitialized.connect(this, &Editor::onInitialized);
                 core->onShutdown.connect(this, &Editor::onShutdown);
@@ -152,6 +153,45 @@ namespace Gek
                     if (cameraTexture)
                     {
                         ImGui::Image(reinterpret_cast<ImTextureID>(cameraTexture), cameraSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+                        auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 0.1f, 200.0f));
+                        Math::Float4x4 viewMatrix(Math::Float4x4::MakePitchRotation(lookingAngle) * Math::Float4x4::MakeYawRotation(headingAngle));
+                        viewMatrix.translation.xyz = position;
+                        viewMatrix.invert();
+
+                        ImGuizmo::Enable(true);
+                        ImGuizmo::BeginFrame();
+
+                        auto size = ImGui::GetItemRectSize();
+                        auto origin = ImGui::GetItemRectMin();
+                        
+                        ImGuizmo::SetDrawlist();
+                        ImGuizmo::SetRect(origin.x, origin.y, size.x, size.y);
+
+                        ImGuizmo::DrawGrid(viewMatrix.data, projectionMatrix.data, Math::Float4x4::Identity.data, 100.0f);
+
+                        auto& registry = population->getRegistry();
+                        for (auto& entity : registry)
+                        {
+                            if (entity->hasComponent<Components::Transform>())
+                            {
+                                auto& transformComponent = entity->getComponent<Components::Transform>();
+
+                                bool showCube = true;
+                                if (entity->hasComponent<Components::Model>())
+                                {
+                                    auto& modelComponent = entity->getComponent<Components::Model>();
+                                    showCube = modelComponent.name.empty();
+                                }
+
+                                if (showCube)
+                                {
+                                    auto matrix = transformComponent.getScaledMatrix();
+                                    ImGuizmo::DrawCubes(viewMatrix.data, projectionMatrix.data, matrix.data, 1);
+                                }
+                            }
+                        }
+
                         if (selectedEntity)
                         {
                             if (selectedEntity->hasComponent<Components::Transform>())
@@ -163,62 +203,56 @@ namespace Gek
                                 {
                                     switch (currentGizmoOperation)
                                     {
-                                    case UI::Gizmo::Operation::Translate:
+                                    case ImGuizmo::OPERATION::TRANSLATE:
                                         snapData = gizmoSnapPosition.data;
                                         break;
 
-                                    case UI::Gizmo::Operation::Rotate:
+                                    case ImGuizmo::OPERATION::ROTATE:
                                         snapData = &gizmoSnapRotation;
                                         break;
 
-                                    case UI::Gizmo::Operation::Scale:
+                                    case ImGuizmo::OPERATION::SCALE:
                                         snapData = &gizmoSnapScale;
                                         break;
 
-                                    case UI::Gizmo::Operation::Bounds:
+                                    case ImGuizmo::OPERATION::BOUNDS:
                                         snapData = gizmoSnapBounds.data;
                                         break;
                                     };
                                 }
 
-                                Shapes::AlignedBox boundingBox(0.5f);
+                                Shapes::AlignedBox boundingBox(1.0f);
                                 if (selectedEntity->hasComponent<Components::Model>())
                                 {
                                     auto &modelComponent = selectedEntity->getComponent<Components::Model>();
-                                    boundingBox = modelProcessor->getBoundingBox(modelComponent.name);
+                                    if (!modelComponent.name.empty())
+                                    {
+                                        boundingBox = modelProcessor->getBoundingBox(modelComponent.name);
+                                    }
                                 }
-
-                                auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 0.1f, 200.0f));
-                                Math::Float4x4 viewMatrix(Math::Float4x4::MakePitchRotation(lookingAngle) * Math::Float4x4::MakeYawRotation(headingAngle));
-                                viewMatrix.translation.xyz = position;
-                                viewMatrix.invert();
 
                                 auto projectedMatrix = Shapes::Frustum(viewMatrix * projectionMatrix);
                                 auto orientedBox = Shapes::OrientedBox(matrix, boundingBox);
                                 if (isObjectInFrustum(projectedMatrix, orientedBox))
                                 {
-                                    Math::Float4x4 deltaMatrix;
-                                    auto size = ImGui::GetItemRectSize();
-                                    auto origin = ImGui::GetItemRectMin();
-                                    gizmo->beginFrame(viewMatrix, projectionMatrix, origin.x, origin.y, size.x, size.y);
-                                    gizmo->manipulate(currentGizmoOperation, currentGizmoAlignment, matrix, snapData, &boundingBox, currentGizmoAxis);
-                                    if (gizmo->isUsing())
+                                    ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, currentGizmoAlignment, matrix.data, nullptr, snapData, boundingBox.minimum.data);
+                                    if (ImGuizmo::IsUsing())
                                     {
                                         switch (currentGizmoOperation)
                                         {
-                                        case UI::Gizmo::Operation::Translate:
+                                        case ImGuizmo::OPERATION::TRANSLATE:
                                             transformComponent.position = matrix.translation.xyz;
                                             break;
 
-                                        case UI::Gizmo::Operation::Rotate:
+                                        case ImGuizmo::OPERATION::ROTATE:
                                             transformComponent.rotation = matrix.getRotation();
                                             break;
 
-                                        case UI::Gizmo::Operation::Scale:
+                                        case ImGuizmo::OPERATION::SCALE:
                                             transformComponent.scale = matrix.getScaling();
                                             break;
 
-                                        case UI::Gizmo::Operation::Bounds:
+                                        case ImGuizmo::OPERATION::BOUNDS:
                                             transformComponent.position = matrix.translation.xyz;
                                             transformComponent.scale = matrix.getScaling();
                                             break;
@@ -247,7 +281,7 @@ namespace Gek
                     if (ImGui::Button((const char *)ICON_FA_USER_PLUS))
                     {
                         ImGui::OpenPopup("NewEntity");
-                        createNamedEntity = true;
+                        createNamedEntity = false;
                         entityName.clear();
                     }
 
@@ -260,16 +294,19 @@ namespace Gek
                         ImGui::Spacing();
                         ImGui::Spacing();
 
+                        if (ImGui::RadioButton("Blank", !createNamedEntity))
+                        {
+                            createNamedEntity = false;
+                        }
+
+                        ImGui::SameLine();
                         if (ImGui::RadioButton("Named", createNamedEntity))
                         {
                             createNamedEntity = true;
                         }
 
-                        ImGui::SameLine();
-                        if (ImGui::RadioButton("Blank", !createNamedEntity))
-                        {
-                            createNamedEntity = false;
-                        }
+                        bool includeTransform = true;
+                        ImGui::Checkbox("Include Transform", &includeTransform);
 
                         ImGui::Spacing();
                         ImGui::PushStyleColor(ImGuiCol_FrameBg, createNamedEntity ? style.Colors[ImGuiCol_FrameBg] : ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
@@ -286,7 +323,15 @@ namespace Gek
                                 definition["Name"] = JSON(entityName);
                             }
 
-                            population->createEntity(definition);
+                            if (includeTransform)
+                            {
+                                definition["Transform"]["position"] = JSON::Array({ 0.0f, 0.0f, 0.0f });
+                                definition["Transform"]["rotation"] = JSON::Array({ 0.0f, 0.0f, 0.0f, 1.0f });
+                                definition["Transform"]["scale"] = JSON::Array({ 1.0f, 1.0f, 1.0f });
+
+                            }
+
+                            selectedEntity = population->createEntity(definition);
                             ImGui::CloseCurrentPopup();
                         }
 
@@ -392,50 +437,50 @@ namespace Gek
                         ImGui::BulletText("Alignment ");
                         ImGui::SameLine();
                         auto width = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x) * 0.5f;
-                        UI::RadioButton(std::format("{} Entity", (const char*)ICON_FA_USER_O), &currentGizmoAlignment, UI::Gizmo::Alignment::Local, ImVec2(width, 0.0f));
+                        UI::RadioButton(std::format("{} Entity", (const char*)ICON_FA_USER_O), &currentGizmoAlignment, ImGuizmo::MODE::LOCAL, ImVec2(width, 0.0f));
                         ImGui::SameLine();
-                        UI::RadioButton(std::format("{} World", (const char*)ICON_FA_GLOBE), &currentGizmoAlignment, UI::Gizmo::Alignment::World, ImVec2(width, 0.0f));
+                        UI::RadioButton(std::format("{} World", (const char*)ICON_FA_GLOBE), &currentGizmoAlignment, ImGuizmo::MODE::WORLD, ImVec2(width, 0.0f));
 
                         ImGui::BulletText("Operation ");
                         ImGui::SameLine();
                         width = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x * 3.0f) / 4.0f;
-                        UI::RadioButton(std::format("{} Move", (const char*)ICON_FA_ARROWS), &currentGizmoOperation, UI::Gizmo::Operation::Translate, ImVec2(width, 0.0f));
+                        UI::RadioButton(std::format("{} Move", (const char*)ICON_FA_ARROWS), &currentGizmoOperation, ImGuizmo::OPERATION::TRANSLATE, ImVec2(width, 0.0f));
                         ImGui::SameLine();
-                        UI::RadioButton(std::format("{} Rotate", (const char*)ICON_FA_REPEAT), &currentGizmoOperation, UI::Gizmo::Operation::Rotate, ImVec2(width, 0.0f));
+                        UI::RadioButton(std::format("{} Rotate", (const char*)ICON_FA_REPEAT), &currentGizmoOperation, ImGuizmo::OPERATION::ROTATE, ImVec2(width, 0.0f));
                         ImGui::SameLine();
-                        UI::RadioButton(std::format("{} Scale", (const char*)ICON_FA_SEARCH), &currentGizmoOperation, UI::Gizmo::Operation::Scale, ImVec2(width, 0.0f));
+                        UI::RadioButton(std::format("{} Scale", (const char*)ICON_FA_SEARCH), &currentGizmoOperation, ImGuizmo::OPERATION::SCALE, ImVec2(width, 0.0f));
                         ImGui::SameLine();
-                        UI::RadioButton(std::format("{} Bounds", (const char*)ICON_FA_SEARCH), &currentGizmoOperation, UI::Gizmo::Operation::Bounds, ImVec2(width, 0.0f));
+                        UI::RadioButton(std::format("{} Bounds", (const char*)ICON_FA_SEARCH), &currentGizmoOperation, ImGuizmo::OPERATION::BOUNDS, ImVec2(width, 0.0f));
 
                         ImGui::BulletText("Bounding Axis ");
                         ImGui::SameLine();
                         width = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x * 3.0f) / 4.0f;
-                        UI::RadioButton(std::format("{} Auto", (const char*)ICON_FA_SEARCH), &currentGizmoAxis, UI::Gizmo::LockAxis::Automatic, ImVec2(width, 0.0f));
+                        UI::RadioButton(std::format("{} Auto", (const char*)ICON_FA_SEARCH), &currentAxisLock, LOCKAXIS::NONE, ImVec2(width, 0.0f));
                         ImGui::SameLine();
-                        UI::RadioButton(" X ", &currentGizmoAxis, UI::Gizmo::LockAxis::X, ImVec2(width, 0.0f));
+                        UI::RadioButton(" X ", &currentAxisLock, LOCKAXIS::X, ImVec2(width, 0.0f));
                         ImGui::SameLine();
-                        UI::RadioButton(" Y ", &currentGizmoAxis, UI::Gizmo::LockAxis::Y, ImVec2(width, 0.0f));
+                        UI::RadioButton(" Y ", &currentAxisLock, LOCKAXIS::Y, ImVec2(width, 0.0f));
                         ImGui::SameLine();
-                        UI::RadioButton(" Z ", &currentGizmoAxis, UI::Gizmo::LockAxis::Z, ImVec2(width, 0.0f));
+                        UI::RadioButton(" Z ", &currentAxisLock, LOCKAXIS::Z, ImVec2(width, 0.0f));
 
                         UI::CheckButton(std::format("{} Snap", (const char*)ICON_FA_MAGNET), &useGizmoSnap);
                         ImGui::SameLine();
                         ImGui::PushItemWidth(-1.0f);
                         switch (currentGizmoOperation)
                         {
-                        case UI::Gizmo::Operation::Translate:
+                        case ImGuizmo::OPERATION::TRANSLATE:
                             ImGui::InputFloat3("##snapTranslation", gizmoSnapPosition.data, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                             break;
 
-                        case UI::Gizmo::Operation::Rotate:
+                        case ImGuizmo::OPERATION::ROTATE:
                             ImGui::SliderFloat("##snapDegrees", &gizmoSnapRotation, 0.0f, 360.0f);
                             break;
 
-                        case UI::Gizmo::Operation::Scale:
+                        case ImGuizmo::OPERATION::SCALE:
                             ImGui::InputFloat("##gizmoSnapScale", &gizmoSnapScale, (1.0f / 10.0f), 1.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                             break;
 
-                        case UI::Gizmo::Operation::Bounds:
+                        case ImGuizmo::OPERATION::BOUNDS:
                             ImGui::InputFloat3("##snapBounds", gizmoSnapBounds.data, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                             break;
                         };

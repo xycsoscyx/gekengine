@@ -131,52 +131,80 @@ namespace Gek
                 {
                     selectedModel = 0;
                 }
-                else if (selectedModel <= 0 || selectedModel >= modelList.size() || modelList[selectedModel - 1] != modelComponent.name)
+                else if (selectedModel <= 0 || selectedModel >= modelList.size() || modelList[selectedModel - 3] != modelComponent.name)
                 {
-                    auto modelSearch = std::find_if(std::begin(modelList), std::end(modelList), [&](std::string const &modelName) -> bool
+                    if (modelComponent.name == "#cube")
                     {
-                        return (modelName == modelComponent.name);
-                    });
-
-                    if (modelSearch != std::end(modelList))
+                        selectedModel = 1;
+                    }
+                    else if (modelComponent.name == "#sphere")
                     {
-                        selectedModel = (std::distance(std::begin(modelList), modelSearch) + 1);
+                        selectedModel = 2;
                     }
                     else
                     {
-                        selectedModel = 0;
+                        auto modelSearch = std::find_if(std::begin(modelList), std::end(modelList), [&](std::string const& modelName) -> bool
+                        {
+                            return (modelName == modelComponent.name);
+                        });
+
+                        if (modelSearch != std::end(modelList))
+                        {
+                            selectedModel = (std::distance(std::begin(modelList), modelSearch) + 3);
+                        }
+                        else
+                        {
+                            selectedModel = 0;
+                        }
                     }
                 }
 
                 return ImGui::Combo("##model", &selectedModel, [](void *userData, int index, char const **outputText) -> bool
                 {
-                    if (index == 0)
+                    switch (index)
                     {
+                    case 0:
                         *outputText = "(none)";
                         return true;
-                    }
-
-                    auto &modelList = *(std::vector<std::string> *)userData;
-                    if (index > 0 && index <= modelList.size())
-                    {
-                        *outputText = modelList[index - 1].data();
+                    
+                    case 1:
+                        *outputText = "* Physics Cube";
                         return true;
-                    }
+                    
+                    case 2:
+                        *outputText = "* Physics Sphere";
+                        return true;
+
+                    default:
+                        auto& modelList = *(std::vector<std::string> *)userData;
+                        *outputText = modelList[index - 3].data();
+                        return true;
+                    };
 
                     return false;
-                }, &modelList, (modelList.size() + 1), 10);
+                }, &modelList, (modelList.size() + 3), 10);
             });
 
             if (changed)
             {
-                if (selectedModel == 0)
+                switch (selectedModel)
                 {
+                case 0:
                     modelComponent.name.clear();
-                }
-                else
-                {
-                    modelComponent.name = modelList[selectedModel - 1];
-                }
+                    break;
+
+                case 1:
+                    modelComponent.name = "#cube";
+                    break;
+
+                case 2:
+                    modelComponent.name = "#sphere";
+                    break;
+
+                default:
+                    modelComponent.name = modelList[selectedModel - 3];
+                    break;
+                };
             }
 
             ImGui::SetCurrentContext(nullptr);
@@ -465,7 +493,11 @@ namespace Gek
         {
             EntityProcessor::addEntity(entity, [&](bool isNewInsert, auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
-                if (!modelComponent.name.empty())
+                if (modelComponent.name.empty())
+                {
+                    data.group = nullptr;
+                }
+                else
                 {
                     static const Group BlankGroup;
                     auto pair = groupMap.insert(std::make_pair(GetHash(modelComponent.name), BlankGroup));

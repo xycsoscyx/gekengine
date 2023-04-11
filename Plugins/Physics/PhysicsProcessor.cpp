@@ -171,75 +171,90 @@ namespace Gek
 
             ndShape* loadShape(Components::Model const& modelComponent)
             {
-                ndShape *shape = nullptr;
+                ndShape* shape = nullptr;
                 auto hash = GetHash(modelComponent.name);
                 auto shapeSearch = shapeMap.find(hash);
                 if (shapeSearch == std::end(shapeMap))
                 {
                     LockedWrite{ std::cout } << "Loading physics model: " << modelComponent.name;
 
-					static const std::vector<uint8_t> EmptyBuffer;
-                    auto filePath = getContext()->findDataPath(FileSystem::CreatePath("physics", modelComponent.name).withExtension(".gek"));
-                    std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
-					if (buffer.size() < sizeof(Header))
-					{
-						LockedWrite{ std::cerr } << "File too small to be physics model: " << modelComponent.name;
-						return nullptr;
-					}
-
-                    BufferReader reader(buffer.data());
-                    Header* header = reader.read<Header>(0);
-                    if (header->identifier != *(uint32_t *)"GEKX")
+                    if (modelComponent.name[0] == '#')
                     {
-						LockedWrite{ std::cerr } << "Unknown model file identifier encountered: " << modelComponent.name;
-						return nullptr;
-                    }
-
-                    if (header->version != 3)
-                    {
-                        LockedWrite{ std::cerr } << "Unsupported model version encountered (requires: 2, has: " << header->version << "): " << modelComponent.name;
-						return nullptr;
-					}
-
-                    if (header->type == 1)
-                    {
-						LockedWrite{ std::cout } << "Loading hull: " << modelComponent.name;
-
-                        HullHeader* hullHeader = reader.read<HullHeader>();
-                        Math::Float3* points = reader.read<Math::Float3>(hullHeader->pointCount);
-                        shape = new ndShapeConvexHull(hullHeader->pointCount, sizeof(Math::Float3), 0.0f, points->data);
-                    }
-                    else if (header->type == 2)
-                    {
-						LockedWrite{ std::cout } << "Loading tree: " << modelComponent.name;
-                        /*
-                        TreeHeader* treeHeader = reader.read<TreeHeader>();
-
-                        for (uint32_t materialIndex = 0; materialIndex < treeHeader->materialCount; ++materialIndex)
+                        auto shapeName = modelComponent.name.substr(1);
+                        if (shapeName == "cube")
                         {
-                            TreeHeader::Material* materialHeader = reader.read<TreeHeader::Material>();
-                            loadSurface(materialHeader->name);
+                            shape = new ndShapeBox(1.0f, 1.0f, 1.0f);
                         }
-
-                        for (uint32_t meshIndex = 0; meshIndex < treeHeader->meshCount; meshIndex++)
+                        else if (shapeName == "sphere")
                         {
-                            TreeHeader::Mesh* mesh = reader.read<TreeHeader::Mesh>();
-                            TreeHeader::Face* faces = reader.read<TreeHeader::Face>(mesh->faceCount);
-                            Math::Float3* points = reader.read<Math::Float3>(mesh->pointCount);
-
-                            for (uint32_t faceIndex = 0; faceIndex < mesh->faceCount; faceIndex++)
-                            {
-                            }
-                        }*/
+                            shape = new ndShapeSphere(1.0f);
+                        }
                     }
                     else
                     {
-						LockedWrite{ std::cerr } << "Unsupported model type encountered: " << modelComponent.name;
-						return nullptr;
+                        static const std::vector<uint8_t> EmptyBuffer;
+                        auto filePath = getContext()->findDataPath(FileSystem::CreatePath("physics", modelComponent.name).withExtension(".gek"));
+                        std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
+                        if (buffer.size() < sizeof(Header))
+                        {
+                            LockedWrite{ std::cerr } << "File too small to be physics model: " << modelComponent.name;
+                            return nullptr;
+                        }
+
+                        BufferReader reader(buffer.data());
+                        Header* header = reader.read<Header>(0);
+                        if (header->identifier != *(uint32_t*)"GEKX")
+                        {
+                            LockedWrite{ std::cerr } << "Unknown model file identifier encountered: " << modelComponent.name;
+                            return nullptr;
+                        }
+
+                        if (header->version != 3)
+                        {
+                            LockedWrite{ std::cerr } << "Unsupported model version encountered (requires: 2, has: " << header->version << "): " << modelComponent.name;
+                            return nullptr;
+                        }
+
+                        if (header->type == 1)
+                        {
+                            LockedWrite{ std::cout } << "Loading hull: " << modelComponent.name;
+
+                            HullHeader* hullHeader = reader.read<HullHeader>();
+                            Math::Float3* points = reader.read<Math::Float3>(hullHeader->pointCount);
+                            shape = new ndShapeConvexHull(hullHeader->pointCount, sizeof(Math::Float3), 0.0f, points->data);
+                        }
+                        else if (header->type == 2)
+                        {
+                            LockedWrite{ std::cout } << "Loading tree: " << modelComponent.name;
+                            /*
+                            TreeHeader* treeHeader = reader.read<TreeHeader>();
+
+                            for (uint32_t materialIndex = 0; materialIndex < treeHeader->materialCount; ++materialIndex)
+                            {
+                                TreeHeader::Material* materialHeader = reader.read<TreeHeader::Material>();
+                                loadSurface(materialHeader->name);
+                            }
+
+                            for (uint32_t meshIndex = 0; meshIndex < treeHeader->meshCount; meshIndex++)
+                            {
+                                TreeHeader::Mesh* mesh = reader.read<TreeHeader::Mesh>();
+                                TreeHeader::Face* faces = reader.read<TreeHeader::Face>(mesh->faceCount);
+                                Math::Float3* points = reader.read<Math::Float3>(mesh->pointCount);
+
+                                for (uint32_t faceIndex = 0; faceIndex < mesh->faceCount; faceIndex++)
+                                {
+                                }
+                            }*/
+                        }
+                        else
+                        {
+                            LockedWrite{ std::cerr } << "Unsupported model type encountered: " << modelComponent.name;
+                            return nullptr;
+                        }
                     }
 
-					LockedWrite{ std::cout } << "Physics shape successfully loaded: " << modelComponent.name;
-				}
+                    LockedWrite{ std::cout } << "Physics shape successfully loaded: " << modelComponent.name;
+                }
 
                 if (shape)
                 {
@@ -291,7 +306,7 @@ namespace Gek
                         ndSharedPtr<ndBody> sharedBody(body->getAsNewtonBody());
 
                         auto& transformComponent = entity->getComponent<Components::Transform>();
-                        sharedBody->SetMatrix(transformComponent.getMatrix().data);
+                        sharedBody->SetMatrix(transformComponent.getScaledMatrix().data);
 
                         newtonWorld->AddBody(sharedBody);
                     }
@@ -358,7 +373,7 @@ namespace Gek
                     if (entitySearch != std::end(entityBodyMap))
                     {
                         auto const& transformComponent = entity->getComponent<Components::Transform>();
-                        auto matrix(transformComponent.getMatrix());
+                        auto matrix(transformComponent.getScaledMatrix());
                         body->getAsNewtonBody()->SetMatrix(matrix.data);
                     }
                 }
