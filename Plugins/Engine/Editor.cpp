@@ -29,9 +29,9 @@ namespace Gek
             , virtual public Plugin::Processor
             , virtual public Edit::Events
         {
-            enum LOCKAXIS
+            enum AxisSelection
             {
-                NONE,
+                ALL,
                 X,
                 Y,
                 Z,
@@ -54,7 +54,7 @@ namespace Gek
 
             int selectedComponent = 0;
 
-            LOCKAXIS currentAxisLock = LOCKAXIS::NONE;
+            AxisSelection currentAxis = AxisSelection::ALL;
             ImGuizmo::MODE currentGizmoAlignment = ImGuizmo::MODE::LOCAL;
             ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::OPERATION::TRANSLATE;
             bool useGizmoSnap = true;
@@ -176,7 +176,7 @@ namespace Gek
                         ImGuizmo::SetDrawlist();
                         ImGuizmo::SetRect(origin.x, origin.y, size.x, size.y);
 
-                        ImGuizmo::DrawGrid(viewMatrix.data, projectionMatrix.data, Math::Float4x4::Identity.data, 100.0f);
+                        ImGuizmo::DrawGrid(viewMatrix.data, projectionMatrix.data, Math::Float4x4::Identity.data, 25.0f);
 
                         auto& registry = population->getRegistry();
                         for (auto& entity : registry)
@@ -243,7 +243,35 @@ namespace Gek
                                 auto orientedBox = Shapes::OrientedBox(matrix, boundingBox);
                                 if (isObjectInFrustum(projectedMatrix, orientedBox))
                                 {
-                                    ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, currentGizmoAlignment, matrix.data, nullptr, snapData, boundingBox.minimum.data);
+                                    static std::map<ImGuizmo::OPERATION, std::map<AxisSelection, ImGuizmo::OPERATION>> lockedOperations =
+                                    {
+                                        { ImGuizmo::OPERATION::TRANSLATE, {
+                                            { AxisSelection::ALL, ImGuizmo::OPERATION::TRANSLATE },
+                                            { AxisSelection::X, ImGuizmo::OPERATION::TRANSLATE_X },
+                                            { AxisSelection::Y, ImGuizmo::OPERATION::TRANSLATE_Y },
+                                            { AxisSelection::Z, ImGuizmo::OPERATION::TRANSLATE_Z }
+                                        } },
+                                        { ImGuizmo::OPERATION::ROTATE, {
+                                            { AxisSelection::ALL, ImGuizmo::OPERATION::ROTATE },
+                                            { AxisSelection::X, ImGuizmo::OPERATION::ROTATE_X },
+                                            { AxisSelection::Y, ImGuizmo::OPERATION::ROTATE_Y },
+                                            { AxisSelection::Z, ImGuizmo::OPERATION::ROTATE_Z }
+                                        } },
+                                        { ImGuizmo::OPERATION::SCALE, {
+                                            { AxisSelection::ALL, ImGuizmo::OPERATION::SCALE },
+                                            { AxisSelection::X, ImGuizmo::OPERATION::SCALE_X },
+                                            { AxisSelection::Y, ImGuizmo::OPERATION::SCALE_Y },
+                                            { AxisSelection::Z, ImGuizmo::OPERATION::SCALE_Z }
+                                        } },
+                                        { ImGuizmo::OPERATION::BOUNDS, {
+                                            { AxisSelection::ALL, ImGuizmo::OPERATION::BOUNDS },
+                                            { AxisSelection::X, ImGuizmo::OPERATION::BOUNDS },
+                                            { AxisSelection::Y, ImGuizmo::OPERATION::BOUNDS },
+                                            { AxisSelection::Z, ImGuizmo::OPERATION::BOUNDS }
+                                        } },
+                                    };
+
+                                    ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, lockedOperations[currentGizmoOperation][currentAxis], currentGizmoAlignment, matrix.data, nullptr, snapData, boundingBox.minimum.data);
                                     if (ImGuizmo::IsUsing())
                                     {
                                         switch (currentGizmoOperation)
@@ -271,6 +299,8 @@ namespace Gek
                                 }
                             }
                         }
+
+                        ImGuizmo::ViewManipulate(viewMatrix.data, 5.0f, ImVec2(origin.x + size.x - 75.0f, origin.y), ImVec2(75.0f, 75.0f), 0x10101010);
                     }
                 }
 
@@ -463,16 +493,16 @@ namespace Gek
                         ImGui::SameLine();
                         UI::RadioButton(std::format("{} Bounds", (const char*)ICON_FA_SEARCH), &currentGizmoOperation, ImGuizmo::OPERATION::BOUNDS, ImVec2(width, 0.0f));
 
-                        ImGui::BulletText("Bounding Axis ");
+                        ImGui::BulletText("Axis ");
                         ImGui::SameLine();
                         width = (ImGui::GetContentRegionAvail().x - style.ItemSpacing.x * 3.0f) / 4.0f;
-                        UI::RadioButton(std::format("{} Auto", (const char*)ICON_FA_SEARCH), &currentAxisLock, LOCKAXIS::NONE, ImVec2(width, 0.0f));
+                        UI::RadioButton(std::format("{} All", (const char*)ICON_FA_SEARCH), &currentAxis, AxisSelection::ALL, ImVec2(width, 0.0f));
                         ImGui::SameLine();
-                        UI::RadioButton(" X ", &currentAxisLock, LOCKAXIS::X, ImVec2(width, 0.0f));
+                        UI::RadioButton(" X ", &currentAxis, AxisSelection::X, ImVec2(width, 0.0f));
                         ImGui::SameLine();
-                        UI::RadioButton(" Y ", &currentAxisLock, LOCKAXIS::Y, ImVec2(width, 0.0f));
+                        UI::RadioButton(" Y ", &currentAxis, AxisSelection::Y, ImVec2(width, 0.0f));
                         ImGui::SameLine();
-                        UI::RadioButton(" Z ", &currentAxisLock, LOCKAXIS::Z, ImVec2(width, 0.0f));
+                        UI::RadioButton(" Z ", &currentAxis, AxisSelection::Z, ImVec2(width, 0.0f));
 
                         UI::CheckButton(std::format("{} Snap", (const char*)ICON_FA_MAGNET), &useGizmoSnap);
                         ImGui::SameLine();
@@ -659,10 +689,16 @@ namespace Gek
                     return;
                 }
 
-                ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+                auto dockspaceID = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+
+                ImGui::SetNextWindowDockID(dockspaceID, ImGuiCond_FirstUseEver);
                 showScene();
-                showPopulation();
+
+                ImGui::SetNextWindowDockID(dockspaceID, ImGuiCond_FirstUseEver);
                 showEntity();
+
+                ImGui::SetNextWindowDockID(dockspaceID, ImGuiCond_FirstUseEver);
+                showPopulation();
             }
 
             // Plugin::Population Slots
