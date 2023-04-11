@@ -178,17 +178,13 @@ namespace Gek
                 {
                     LockedWrite{ std::cout } << "Loading physics model: " << modelComponent.name;
 
-                    if (modelComponent.name[0] == '#')
+                    if (modelComponent.name == "#cube")
                     {
-                        auto shapeName = modelComponent.name.substr(1);
-                        if (shapeName == "cube")
-                        {
-                            shape = new ndShapeBox(1.0f, 1.0f, 1.0f);
-                        }
-                        else if (shapeName == "sphere")
-                        {
-                            shape = new ndShapeSphere(1.0f);
-                        }
+                        shape = new ndShapeBox(1.0f, 1.0f, 1.0f);
+                    }
+                    else if (modelComponent.name == "#sphere")
+                    {
+                        shape = new ndShapeSphere(1.0f);
                     }
                     else
                     {
@@ -488,15 +484,15 @@ namespace Gek
 
                     JSON materialNode;
                     materialNode.load(getContext()->findDataPath(FileSystem::CreatePath("materials", surfaceName).withExtension(".json")));
-                    auto surfaceNode = materialNode.getMember("surface"sv);
+                    auto surfaceNode = materialNode.getMember("surface");
                     if (surfaceNode.isType<JSON::Object>())
                     {
                         Surface surface;
-                        surface.ghost = surfaceNode.getMember("ghost"sv).convert(surface.ghost);
-                        surface.staticFriction = surfaceNode.getMember("static_friction"sv).convert(surface.staticFriction);
-                        surface.kineticFriction = surfaceNode.getMember("kinetic_friction"sv).convert(surface.kineticFriction);
-                        surface.elasticity = surfaceNode.getMember("elasticity"sv).convert(surface.elasticity);
-                        surface.softness = surfaceNode.getMember("softness"sv).convert(surface.softness);
+                        surface.ghost = surfaceNode.getMember("ghost").convert(surface.ghost);
+                        surface.staticFriction = surfaceNode.getMember("static_friction").convert(surface.staticFriction);
+                        surface.kineticFriction = surfaceNode.getMember("kinetic_friction").convert(surface.kineticFriction);
+                        surface.elasticity = surfaceNode.getMember("elasticity").convert(surface.elasticity);
+                        surface.softness = surfaceNode.getMember("softness").convert(surface.softness);
 
                         surfaceIndex = surfaceList.size();
                         surfaceList.push_back(surface);

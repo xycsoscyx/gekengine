@@ -482,12 +482,12 @@ namespace Gek
 
         static constexpr std::string_view SemanticNameList[] =
         {
-            "POSITION"sv,
-            "TEXCOORD"sv,
-            "TANGENT"sv,
-            "BINORMAL"sv,
-            "NORMAL"sv,
-            "COLOR"sv,
+            "POSITION",
+            "TEXCOORD",
+            "TANGENT",
+            "BINORMAL",
+            "NORMAL",
+            "COLOR",
         };
 
         static_assert(ARRAYSIZE(SemanticNameList) == static_cast<uint8_t>(Video::InputElement::Semantic::Count), "New input element semantic added without adding to all SemanticNameList.");
@@ -2570,10 +2570,10 @@ namespace Gek
 
                 static const std::unordered_map<Video::Program::Type, std::string_view> D3DTypeMap =
                 {
-                    { Video::Program::Type::Compute, "cs_5_0"sv, },
-                    { Video::Program::Type::Geometry, "gs_5_0"sv, },
-                    { Video::Program::Type::Vertex, "vs_5_0"sv, },
-                    { Video::Program::Type::Pixel, "ps_5_0"sv, },
+                    { Video::Program::Type::Compute, "cs_5_0", },
+                    { Video::Program::Type::Geometry, "gs_5_0", },
+                    { Video::Program::Type::Vertex, "vs_5_0", },
+                    { Video::Program::Type::Pixel, "ps_5_0", },
                 };
 
                 static const std::vector<uint8_t> EmptyBuffer;

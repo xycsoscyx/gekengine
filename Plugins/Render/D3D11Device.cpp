@@ -475,22 +475,22 @@ namespace Gek
 
 		static constexpr std::string_view VertexSemanticList[] =
         {
-            "POSITION"sv,
-            "TEXCOORD"sv,
-            "TANGENT"sv,
-            "BINORMA"sv,
-            "NORMAL"sv,
-            "COLOR"sv,
+            "POSITION",
+            "TEXCOORD",
+            "TANGENT",
+            "BINORMA",
+            "NORMAL",
+            "COLOR",
         };
 
 		static constexpr std::string_view PixelSemanticList[] =
         {
-            "SV_POSITION"sv,
-            "TEXCOORD"sv,
-            "TANGENT"sv,
-            "BINORMA"sv,
-            "NORMAL"sv,
-            "COLOR"sv,
+            "SV_POSITION",
+            "TEXCOORD",
+            "TANGENT",
+            "BINORMA",
+            "NORMAL",
+            "COLOR",
         };
 
         static_assert(ARRAYSIZE(VertexSemanticList) == static_cast<uint8_t>(Render::ElementDeclaration::Semantic::Count), "New element semantic added without adding to all VertexSemanticList.");

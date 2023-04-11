@@ -66,7 +66,9 @@ namespace Gek
             ResourceHandle cameraTarget;
             ImVec2 cameraSize;
 
+            bool createBlankEntity = true;
             bool createNamedEntity = true;
+            bool includeTransform = true;
             std::string entityName;
             Plugin::Entity *selectedEntity = nullptr;
             bool showPopulationDock = true;
@@ -159,6 +161,12 @@ namespace Gek
                         viewMatrix.translation.xyz = position;
                         viewMatrix.invert();
 
+                        const ImU32 flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus;
+                        ImGui::Begin("gizmo", NULL, flags);
+                        auto gizmoDrawList = ImGui::GetWindowDrawList();
+                        ImGui::End();
+
+                        //gizmoDrawList->AddCallback()
                         ImGuizmo::Enable(true);
                         ImGuizmo::BeginFrame();
 
@@ -281,7 +289,9 @@ namespace Gek
                     if (ImGui::Button((const char *)ICON_FA_USER_PLUS))
                     {
                         ImGui::OpenPopup("NewEntity");
+                        createBlankEntity = true;
                         createNamedEntity = false;
+                        includeTransform = true;
                         entityName.clear();
                     }
 
@@ -294,24 +304,25 @@ namespace Gek
                         ImGui::Spacing();
                         ImGui::Spacing();
 
-                        if (ImGui::RadioButton("Blank", !createNamedEntity))
+                        if (ImGui::RadioButton("Blank", createBlankEntity))
                         {
+                            createBlankEntity = true;
                             createNamedEntity = false;
                         }
 
                         ImGui::SameLine();
                         if (ImGui::RadioButton("Named", createNamedEntity))
                         {
+                            createBlankEntity = false;
                             createNamedEntity = true;
                         }
 
-                        bool includeTransform = true;
                         ImGui::Checkbox("Include Transform", &includeTransform);
 
                         ImGui::Spacing();
                         ImGui::PushStyleColor(ImGuiCol_FrameBg, createNamedEntity ? style.Colors[ImGuiCol_FrameBg] : ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
                         ImGui::PushStyleColor(ImGuiCol_Text, createNamedEntity ? style.Colors[ImGuiCol_Text] : ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-                        UI::InputString("##name", entityName, (createNamedEntity ? 0 : ImGuiInputTextFlags_ReadOnly));
+                        UI::InputString("##name", createNamedEntity ? entityName : "<unnamed>", (createNamedEntity ? 0 : ImGuiInputTextFlags_ReadOnly));
                         ImGui::PopStyleColor(2);
 
                         ImGui::Spacing();

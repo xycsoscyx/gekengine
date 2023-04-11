@@ -19,11 +19,11 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	else
 	{
 		auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
-        dataPath = rootPath / "Data"sv;
+        dataPath = rootPath / "Data";
 	}
 
-	auto texturesPath((dataPath / "textures"sv).getString());
-	auto materialsPath(dataPath / "materials"sv);
+	auto texturesPath((dataPath / "textures").getString());
+	auto materialsPath(dataPath / "materials");
 
 	std::function<bool(FileSystem::Path const &)> findMaterials;
 	findMaterials = [&](FileSystem::Path const &materialCollectionPath) -> bool

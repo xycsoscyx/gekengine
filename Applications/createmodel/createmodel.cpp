@@ -78,6 +78,7 @@ struct Parameters
     bool flipCoords = false;
     bool flipWinding = false;
     float smoothingAngle = 80.0f;
+    bool saveAsCode = false;
 };
 
 bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode const *inputNode, aiMatrix4x4 const &parentTransform, ModelList &modelList, std::function<std::string(const std::string &, const std::string &)> findMaterialForMesh)
@@ -292,6 +293,10 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
 			parameters.feetPerUnit = (1.0f / String::Convert(arguments[1], 1.0f));
         }
+        else if (arguments[0] == "-code")
+        {
+            parameters.saveAsCode = true;
+        }
     }
 
     aiLogStream logStream;
@@ -332,7 +337,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
     auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
     auto rootPath(pluginPath.getParentPath());
-    auto cachePath(rootPath / "cache"sv);
+    auto cachePath(rootPath / "cache");
     SetCurrentDirectoryW(cachePath.getWideString().data());
 
     std::vector<FileSystem::Path> searchPathList;
@@ -349,7 +354,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             context->addDataPath(String::Narrow(gekDataPath));
         }
 
-        context->addDataPath(rootPath / "data"sv);
+        context->addDataPath(rootPath / "data");
         context->addDataPath(rootPath.getString());
 
         auto filePath = context->findDataPath(FileSystem::CreatePath("models", parameters.sourceName));
@@ -513,49 +518,140 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                 String::Replace(modelName, replacement, "");
             }
 
-            auto outputPath((filePath.withoutExtension() / modelName).withExtension(".gek"));
+            auto outputPath((filePath.withoutExtension() / modelName).withExtension(parameters.saveAsCode ? ".h" : ".gek"));
             LockedWrite{ std::cout } << "> Model: " << model.name << ": " << outputPath.getString();
             LockedWrite{ std::cout } << "   Num. Meshes: " << model.meshList.size();
             LockedWrite{ std::cout } << "   Size: Minimum[" << model.boundingBox.minimum.x << ", " << model.boundingBox.minimum.y << ", " << model.boundingBox.minimum.z << "]";
             LockedWrite{ std::cout } << "   Size: Maximum[" << model.boundingBox.maximum.x << ", " << model.boundingBox.maximum.y << ", " << model.boundingBox.maximum.z << "]";
 
             filePath.withoutExtension().createChain();
-            auto file = fopen(outputPath.getString().data(), "wb");
-            if (file == nullptr)
+            if (parameters.saveAsCode)
             {
-                LockedWrite{ std::cerr } << "Unable to create output file";
-                return -__LINE__;
+                auto modelName = filePath.withoutExtension().getFileName();
+                auto file = fopen(outputPath.getString().data(), "w");
+                if (file == nullptr)
+                {
+                    LockedWrite{ std::cerr } << "Unable to create output file";
+                    return -__LINE__;
+                }
+
+                static constexpr std::string_view codeTemplate =
+R"(struct StaticModel_{0}
+{{
+    std::string material;
+    std::vector<uint16_t> indices;
+    std::vector<Math::Float3> positions;
+    std::vector<Math::Float2> texCoords;
+    std::vector<Math::Float3> tangents;
+    std::vector<Math::Float3> biTangents;
+    std::vector<Math::Float3> normals;
+
+    StaticModel_{0}(std::string &&material, 
+        std::vector<uint16_t> &&indices,
+        std::vector<Math::Float3> &&positions,
+        std::vector<Math::Float2> &&texCoords,
+        std::vector<Math::Float3> &&tangents,
+        std::vector<Math::Float3> &&biTangents,
+        std::vector<Math::Float3> &&normals)
+        : material(std::move(material))
+        , indices(std::move(indices))
+        , positions(std::move(positions))
+        , texCoords(std::move(texCoords))
+        , tangents(std::move(tangents))
+        , biTangents(std::move(biTangents))
+        , normals(std::move(normals))
+    {{
+    }}
+}} {0}_models[] =
+{{
+)";
+
+                std::string code = std::vformat(codeTemplate, std::make_format_args(modelName));
+                for (auto& mesh : model.meshList)
+                {
+                    String::Replace(mesh.material, "\\", "\\\\");
+                    code += std::format("   StaticModel_{}(\"{}\",\n       std::vector<uint16_t>({{ ", modelName, mesh.material);
+                    for (auto &face : mesh.faceList)
+                    {
+                        code += std::format("{}, {}, {}, ", face[0], face[1], face[2]);
+                    }
+
+                    code += std::format("}}),\n       std::vector<Math::Float3>({{ ");
+                    for (auto& point : mesh.pointList)
+                    {
+                        code += std::format("Math::Float3({}, {}, {}), ", point.x, point.y, point.z);
+                    }
+
+                    code += std::format("}}),\n       std::vector<Math::Float2>({{ ");
+                    for (auto& texCoord : mesh.texCoordList)
+                    {
+                        code += std::format("Math::Float2({}, {}), ", texCoord.x, texCoord.y);
+                    }
+
+                    code += std::format("}}),\n       std::vector<Math::Float3>({{ ");
+                    for (auto& tangent : mesh.tangentList)
+                    {
+                        code += std::format("Math::Float3({}, {}, {}), ", tangent.x, tangent.y, tangent.z);
+                    }
+
+                    code += std::format("}}),\n       std::vector<Math::Float3>({{ ");
+                    for (auto& biTangent : mesh.biTangentList)
+                    {
+                        code += std::format("Math::Float3({}, {}, {}), ", biTangent.x, biTangent.y, biTangent.z);
+                    }
+
+                    code += std::format("}}),\n       std::vector<Math::Float3>({{ ");
+                    for (auto& normal : mesh.pointList)
+                    {
+                        code += std::format("Math::Float3({}, {}, {}), ", normal.x, normal.y, normal.z);
+                    }
+
+                    code += std::format("}})),\n");
+                }
+
+                code += std::format("}};");
+                fwrite(code.data(), 1, code.size(), file);
+                fclose(file);
             }
-
-            Header header;
-            header.meshCount = model.meshList.size();
-            header.boundingBox = model.boundingBox;
-            fwrite(&header, sizeof(Header), 1, file);
-
-            for (auto& mesh : model.meshList)
+            else
             {
-                LockedWrite{ std::cout } << "   > Mesh: " << mesh.material;
-                LockedWrite{ std::cout } << "      Num. Vertices: " << mesh.pointList.size();
-                LockedWrite{ std::cout } << "      Num. Faces: " << mesh.faceList.size();
+                auto file = fopen(outputPath.getString().data(), "wb");
+                if (file == nullptr)
+                {
+                    LockedWrite{ std::cerr } << "Unable to create output file";
+                    return -__LINE__;
+                }
 
-                Header::Mesh meshHeader;
-                std::strncpy(meshHeader.material, mesh.material.data(), 63);
-                meshHeader.vertexCount = mesh.pointList.size();
-                meshHeader.faceCount = mesh.faceList.size();
-                fwrite(&meshHeader, sizeof(Header::Mesh), 1, file);
+                Header header;
+                header.meshCount = model.meshList.size();
+                header.boundingBox = model.boundingBox;
+                fwrite(&header, sizeof(Header), 1, file);
+
+                for (auto& mesh : model.meshList)
+                {
+                    LockedWrite{ std::cout } << "   > Mesh: " << mesh.material;
+                    LockedWrite{ std::cout } << "      Num. Vertices: " << mesh.pointList.size();
+                    LockedWrite{ std::cout } << "      Num. Faces: " << mesh.faceList.size();
+
+                    Header::Mesh meshHeader;
+                    std::strncpy(meshHeader.material, mesh.material.data(), 63);
+                    meshHeader.vertexCount = mesh.pointList.size();
+                    meshHeader.faceCount = mesh.faceList.size();
+                    fwrite(&meshHeader, sizeof(Header::Mesh), 1, file);
+                }
+
+                for (auto& mesh : model.meshList)
+                {
+                    fwrite(mesh.faceList.data(), sizeof(Mesh::Face), mesh.faceList.size(), file);
+                    fwrite(mesh.pointList.data(), sizeof(Math::Float3), mesh.pointList.size(), file);
+                    fwrite(mesh.texCoordList.data(), sizeof(Math::Float2), mesh.texCoordList.size(), file);
+                    fwrite(mesh.tangentList.data(), sizeof(Math::Float3), mesh.tangentList.size(), file);
+                    fwrite(mesh.biTangentList.data(), sizeof(Math::Float3), mesh.biTangentList.size(), file);
+                    fwrite(mesh.normalList.data(), sizeof(Math::Float3), mesh.normalList.size(), file);
+                }
+
+                fclose(file);
             }
-
-            for (auto& mesh : model.meshList)
-            {
-                fwrite(mesh.faceList.data(), sizeof(Mesh::Face), mesh.faceList.size(), file);
-                fwrite(mesh.pointList.data(), sizeof(Math::Float3), mesh.pointList.size(), file);
-                fwrite(mesh.texCoordList.data(), sizeof(Math::Float2), mesh.texCoordList.size(), file);
-                fwrite(mesh.tangentList.data(), sizeof(Math::Float3), mesh.tangentList.size(), file);
-                fwrite(mesh.biTangentList.data(), sizeof(Math::Float3), mesh.biTangentList.size(), file);
-                fwrite(mesh.normalList.data(), sizeof(Math::Float3), mesh.normalList.size(), file);
-            }
-
-            fclose(file);
         }
     }
 

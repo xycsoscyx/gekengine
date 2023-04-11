@@ -27,18 +27,18 @@ namespace Gek
             // Plugin::Component
             void save(Components::Player const * const data, JSON &exportData) const
             {
-                exportData["height"sv] = data->height;
-                exportData["outerRadius"sv] = data->outerRadius;
-                exportData["innerRadius"sv] = data->innerRadius;
-                exportData["stairStep"sv] = data->stairStep;
+                exportData["height"] = data->height;
+                exportData["outerRadius"] = data->outerRadius;
+                exportData["innerRadius"] = data->innerRadius;
+                exportData["stairStep"] = data->stairStep;
             }
 
             void load(Components::Player * const data, JSON const &importData)
             {
-                data->height = evaluate(importData.getMember("height"sv), 0.0f);
-                data->outerRadius = evaluate(importData.getMember("outerRadius"sv), 0.0f);
-                data->innerRadius = evaluate(importData.getMember("innerRadius"sv), 0.0f);
-                data->stairStep = evaluate(importData.getMember("stairStep"sv), 0.0f);
+                data->height = evaluate(importData.getMember("height"), 0.0f);
+                data->outerRadius = evaluate(importData.getMember("outerRadius"), 0.0f);
+                data->innerRadius = evaluate(importData.getMember("innerRadius"), 0.0f);
+                data->stairStep = evaluate(importData.getMember("stairStep"), 0.0f);
             }
 
             // Edit::Component
@@ -49,22 +49,22 @@ namespace Gek
 
                 auto &playerComponent = *dynamic_cast<Components::Player *>(data);
 
-                changed |= editorElement("Height"sv, [&](void) -> bool
+                changed |= editorElement("Height", [&](void) -> bool
                 {
                     return ImGui::InputFloat("##height", &playerComponent.height, 1.0f, 10.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 });
 
-                changed |= editorElement("Outer Radius"sv, [&](void) -> bool
+                changed |= editorElement("Outer Radius", [&](void) -> bool
                 {
                     return ImGui::InputFloat("##outerRadius", &playerComponent.outerRadius, 1.0f, 10.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 });
 
-                changed |= editorElement("Inner Radius"sv, [&](void) -> bool
+                changed |= editorElement("Inner Radius", [&](void) -> bool
                 {
                     return ImGui::InputFloat("##innerRadius", &playerComponent.innerRadius, 1.0f, 10.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 });
 
-                changed |= editorElement("Stair Step"sv, [&](void) -> bool
+                changed |= editorElement("Stair Step", [&](void) -> bool
                 {
                     return ImGui::InputFloat("##stairStep", &playerComponent.stairStep, 1.0f, 10.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 });

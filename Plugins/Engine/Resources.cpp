@@ -701,15 +701,15 @@ namespace Gek
                     {
 						if (dynamic_cast<Video::Target *>(object.get()))
 						{
-							typeDataMap["Target"sv].push_back(std::make_pair(handle, object));
+							typeDataMap["Target"].push_back(std::make_pair(handle, object));
 						}
 						else if (dynamic_cast<Video::Texture *>(object.get()))
 						{
-							typeDataMap["Texture"sv].push_back(std::make_pair(handle, object));
+							typeDataMap["Texture"].push_back(std::make_pair(handle, object));
 						}
 						else if (dynamic_cast<Video::Buffer *>(object.get()))
 						{
-							typeDataMap["Buffer"sv].push_back(std::make_pair(handle, object));
+							typeDataMap["Buffer"].push_back(std::make_pair(handle, object));
 						}
 						else
 						{
@@ -718,10 +718,10 @@ namespace Gek
 							{
 								static const std::unordered_map<Video::Program::Type, std::string_view> ProgramTypeMap = 
 								{
-									{ Video::Program::Type::Compute, "Compute"sv },
-									{ Video::Program::Type::Geometry, "Geometry"sv },
-									{ Video::Program::Type::Vertex, "Vertex"sv },
-									{ Video::Program::Type::Pixel, "Pixel"sv },
+									{ Video::Program::Type::Compute, "Compute" },
+									{ Video::Program::Type::Geometry, "Geometry" },
+									{ Video::Program::Type::Vertex, "Vertex" },
+									{ Video::Program::Type::Pixel, "Pixel" },
 								};
 
 								auto typeSearch = ProgramTypeMap.find(program->getInformation().type);
@@ -980,15 +980,15 @@ namespace Gek
                 // iterate over formats in case the texture name has no extension
 				static constexpr std::string_view formatList[] =
                 {
-                    ""sv,
-                    ".dds"sv,
-                    ".tga"sv,
-                    ".png"sv,
-                    ".jpg"sv,
-                    ".jpeg"sv,
-                    ".tif"sv,
-                    ".tiff"sv,
-                    ".bmp"sv,
+                    "",
+                    ".dds",
+                    ".tga",
+                    ".png",
+                    ".jpg",
+                    ".jpeg",
+                    ".tif",
+                    ".tiff",
+                    ".bmp",
                 };
 
 				auto hash = GetHash(textureName);
@@ -1496,7 +1496,7 @@ namespace Gek
 				std::string uncompiledData(FileSystem::Load(filePath, std::string(engineData)));
 
 				auto hash = GetHash(name, uncompiledData, engineData);
-				auto cachePath = getContext()->getCachePath(FileSystem::CreatePath("programs"sv, name));
+				auto cachePath = getContext()->getCachePath(FileSystem::CreatePath("programs", name));
 				auto uncompiledPath(cachePath.withExtension(std::format(".{}.hlsl", hash)));
 				auto compiledPath(cachePath.withExtension(std::format(".{}.bin", hash)));
 				Video::Program::Information information =

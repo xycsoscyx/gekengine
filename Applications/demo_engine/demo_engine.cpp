@@ -10,7 +10,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstan
 {
     auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
     auto rootPath(pluginPath.getParentPath());
-	auto cachePath(rootPath / "cache"sv);
+	auto cachePath(rootPath / "cache");
     SetCurrentDirectoryW(cachePath.getWideString().data());
 
     std::vector<FileSystem::Path> searchPathList;
@@ -27,7 +27,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstan
             context->addDataPath(String::Narrow(gekDataPath));
         }
 
-        context->addDataPath(rootPath / "data"sv);
+        context->addDataPath(rootPath / "data");
         context->addDataPath(rootPath.getString());
 
         Engine::CorePtr core(context->createClass<Engine::Core>("Engine::Core", (Window *)nullptr));

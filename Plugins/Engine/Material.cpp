@@ -34,17 +34,17 @@ namespace Gek
 
                 JSON materialNode;
                 materialNode.load(getContext()->findDataPath(FileSystem::CreatePath("materials", materialName).withExtension(".json")));
-                auto &shaderNode = materialNode.getMember("shader"sv);
-                auto shaderName = shaderNode.getMember("default"sv).convert(String::Empty);
+                auto &shaderNode = materialNode.getMember("shader");
+                auto shaderName = shaderNode.getMember("default").convert(String::Empty);
                 ShaderHandle shaderHandle = resources->getShader(shaderName, materialHandle);
                 Engine::Shader *shader = resources->getShader(shaderHandle);
                 if (shader)
                 {
                     Video::RenderState::Description renderStateInformation;
-                    renderStateInformation.load(shaderNode.getMember("renderState"sv));
+                    renderStateInformation.load(shaderNode.getMember("renderState"));
                     renderState = resources->createRenderState(renderStateInformation);
 
-                    auto &dataNode = shaderNode.getMember("data"sv);
+                    auto &dataNode = shaderNode.getMember("data");
                     for (auto material = shader->begin(); material; material = material->next())
                     {
                         auto materialName = material->getName();
@@ -56,13 +56,13 @@ namespace Gek
                             const auto &resourceObject = resourceNode.asType(JSON::EmptyObject);
                             if (resourceObject.count("file"))
                             {
-                                auto fileName = resourceNode.getMember("file"sv).convert(String::Empty);
-                                uint32_t flags = getTextureLoadFlags(resourceNode.getMember("flags"sv).convert(String::Empty));
+                                auto fileName = resourceNode.getMember("file").convert(String::Empty);
+                                uint32_t flags = getTextureLoadFlags(resourceNode.getMember("flags").convert(String::Empty));
                                 resourceHandle = resources->loadTexture(fileName, flags);
                             }
                             else if (resourceObject.count("source"))
                             {
-                                resourceHandle = resources->getResourceHandle(resourceNode.getMember("source"sv).convert(String::Empty));
+                                resourceHandle = resources->getResourceHandle(resourceNode.getMember("source").convert(String::Empty));
                             }
 
                             if (!resourceHandle)

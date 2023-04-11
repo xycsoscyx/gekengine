@@ -245,11 +245,11 @@ namespace Gek
                 LockedWrite{ std::cout } << "Loading population: " << populationName;
 
                 JSON worldNode;
-                worldNode.load(getContext()->findDataPath(FileSystem::CreatePath("scenes"sv, populationName).withExtension(".json")));
-                shuntingYard.setRandomSeed(worldNode.getMember("Seed"sv).convert(uint32_t(std::time(nullptr) & 0xFFFFFFFF)));
+                worldNode.load(getContext()->findDataPath(FileSystem::CreatePath("scenes", populationName).withExtension(".json")));
+                shuntingYard.setRandomSeed(worldNode.getMember("Seed").convert(uint32_t(std::time(nullptr) & 0xFFFFFFFF)));
 
-                auto templatesNode = worldNode.getMember("Templates"sv);
-                auto populationNode = worldNode.getMember("Population"sv);
+                auto templatesNode = worldNode.getMember("Templates");
+                auto populationNode = worldNode.getMember("Population");
                 auto populationArray = populationNode.asType(JSON::EmptyArray);
                 LockedWrite{ std::cout } << "Found " << populationArray.size() << " Entity Definitions";
                 for (auto const& entityNode : populationArray)
@@ -261,7 +261,7 @@ namespace Gek
                     if (templateSearch != std::end(entityObject))
                     {
                         std::string templateName;
-                        auto entityTemplateNode = entityNode.getMember("Template"sv);
+                        auto entityTemplateNode = entityNode.getMember("Template");
                         auto entityTemplateObject = entityTemplateNode.asType(JSON::EmptyObject);
                         if (entityTemplateNode.isType<std::string>())
                         {
@@ -271,12 +271,12 @@ namespace Gek
                         {
                             if (entityTemplateObject.count("Base"))
                             {
-                                templateName = entityTemplateNode.getMember("Base"sv).convert(String::Empty);
+                                templateName = entityTemplateNode.getMember("Base").convert(String::Empty);
                             }
 
                             if (entityTemplateObject.count("Count"))
                             {
-                                count = entityTemplateNode.getMember("Count"sv).convert(0);
+                                count = entityTemplateNode.getMember("Count").convert(0);
                             }
                         }
 

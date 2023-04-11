@@ -407,7 +407,7 @@ namespace Gek
             {
                 auto optionName = value.substr(8);
                 auto selectorGroup = configs.getMember(optionName);
-                auto optionsGroup = selectorGroup.getMember("options"sv);
+                auto optionsGroup = selectorGroup.getMember("options");
                 if (optionsGroup.isType<JSON::Array>())
                 {
                     uint32_t optionValue = 0;
@@ -419,7 +419,7 @@ namespace Gek
                     }
 
                     int selection = 0;
-                    auto &selectionNode = selectorGroup.getMember("selection"sv);
+                    auto &selectionNode = selectorGroup.getMember("selection");
                     if (selectionNode.isType<std::string>())
                     {
                         auto selectedName = selectionNode.convert(String::Empty);
@@ -474,16 +474,16 @@ namespace Gek
 				return (result == std::end(data) ? CullMode::Back : result->second);
 			};
 
-            fillMode = getFillMode(checkConfiguration(configs, object.getMember("fillMode"sv).convert("Solid"s)));
-			cullMode = getCullMode(checkConfiguration(configs, object.getMember("cullMode"sv).convert("Back"s)));
-            frontCounterClockwise = object.getMember("frontCounterClockwise"sv).convert(false);
-            depthBias = object.getMember("depthBias"sv).convert(0);
-            depthBiasClamp = object.getMember("depthBiasClamp"sv).convert(0.0f);
-            slopeScaledDepthBias = object.getMember("slopeScaledDepthBias"sv).convert(0.0f);
-            depthClipEnable = object.getMember("depthClipEnable"sv).convert(false);
-            scissorEnable = object.getMember("scissorEnable"sv).convert(false);
-            multisampleEnable = object.getMember("multisampleEnable"sv).convert(false);
-            antialiasedLineEnable = object.getMember("antialiasedLineEnable"sv).convert(false);
+            fillMode = getFillMode(checkConfiguration(configs, object.getMember("fillMode").convert("Solid"s)));
+			cullMode = getCullMode(checkConfiguration(configs, object.getMember("cullMode").convert("Back"s)));
+            frontCounterClockwise = object.getMember("frontCounterClockwise").convert(false);
+            depthBias = object.getMember("depthBias").convert(0);
+            depthBiasClamp = object.getMember("depthBiasClamp").convert(0.0f);
+            slopeScaledDepthBias = object.getMember("slopeScaledDepthBias").convert(0.0f);
+            depthClipEnable = object.getMember("depthClipEnable").convert(false);
+            scissorEnable = object.getMember("scissorEnable").convert(false);
+            multisampleEnable = object.getMember("multisampleEnable").convert(false);
+            antialiasedLineEnable = object.getMember("antialiasedLineEnable").convert(false);
         }
 
         size_t RenderState::Description::getHash(void) const
@@ -509,10 +509,10 @@ namespace Gek
 				return (result == std::end(data) ? Operation::Zero : result->second);
             };
 
-            failOperation = getOperation(object.getMember("failOperation"sv).convert("Keep"s));
-            depthFailOperation = getOperation(object.getMember("depthFailOperation"sv).convert("Keep"s));
-            passOperation = getOperation(object.getMember("passOperation"sv).convert("Keep"s));
-            comparisonFunction = getComparisonFunction(object.getMember("comparisonFunction"sv).convert("Always"s));
+            failOperation = getOperation(object.getMember("failOperation").convert("Keep"s));
+            depthFailOperation = getOperation(object.getMember("depthFailOperation").convert("Keep"s));
+            passOperation = getOperation(object.getMember("passOperation").convert("Keep"s));
+            comparisonFunction = getComparisonFunction(object.getMember("comparisonFunction").convert("Always"s));
         }
 
         size_t DepthState::Description::StencilState::getHash(void) const
@@ -533,12 +533,12 @@ namespace Gek
 				return (result == std::end(data) ? Write::All : result->second);
 			};
 
-            enable = object.getMember("enable"sv).convert(false);
-            writeMask = getWriteMask(object.getMember("writeMask"sv).convert("All"s));
-            comparisonFunction = getComparisonFunction(object.getMember("comparisonFunction"sv).convert("Always"s));
-            stencilEnable = object.getMember("stencilEnable"sv).convert(false);
-            stencilReadMask = object.getMember("stencilReadMask"sv).convert(0);
-            stencilWriteMask = object.getMember("stencilWriteMask"sv).convert(0);
+            enable = object.getMember("enable").convert(false);
+            writeMask = getWriteMask(object.getMember("writeMask").convert("All"s));
+            comparisonFunction = getComparisonFunction(object.getMember("comparisonFunction").convert("Always"s));
+            stencilEnable = object.getMember("stencilEnable").convert(false);
+            stencilReadMask = object.getMember("stencilReadMask").convert(0);
+            stencilWriteMask = object.getMember("stencilWriteMask").convert(0);
             stencilFrontState.load(object.getMember("stencilFrontState"s), configs);
             stencilBackState.load(object.getMember("stencilBackState"s), configs);
         }
@@ -592,14 +592,14 @@ namespace Gek
 				return (result == std::end(data) ? Operation::Add : result->second);
             };
 
-            enable = object.getMember("enable"sv).convert(false);
-            colorSource = GetSource(object.getMember("colorSource"sv).convert("One"s));
-            colorDestination = GetSource(object.getMember("colorDestination"sv).convert("One"s));
-            colorOperation = getOperation(object.getMember("colorOperation"sv).convert("Add"s));
-            alphaSource = GetSource(object.getMember("alphaSource"sv).convert("One"s));
-            alphaDestination = GetSource(object.getMember("alphaDestination"sv).convert("One"s));
-            alphaOperation = getOperation(object.getMember("alphaOperation"sv).convert("Add"s));
-            std::string writeMask(String::GetLower(object.getMember("writeMask"sv).convert("RGBA"s)));
+            enable = object.getMember("enable").convert(false);
+            colorSource = GetSource(object.getMember("colorSource").convert("One"s));
+            colorDestination = GetSource(object.getMember("colorDestination").convert("One"s));
+            colorOperation = getOperation(object.getMember("colorOperation").convert("Add"s));
+            alphaSource = GetSource(object.getMember("alphaSource").convert("One"s));
+            alphaDestination = GetSource(object.getMember("alphaDestination").convert("One"s));
+            alphaOperation = getOperation(object.getMember("alphaOperation").convert("Add"s));
+            std::string writeMask(String::GetLower(object.getMember("writeMask").convert("RGBA"s)));
             if (writeMask.empty())
             {
                 this->writeMask = Mask::RGBA;
@@ -636,8 +636,8 @@ namespace Gek
 
         void BlendState::Description::load(JSON const &object, JSON const &configs)
         {
-            alphaToCoverage = object.getMember("alphaToCoverage"sv).convert(false);
-            independentBlendStates = object.getMember("independentBlendStates"sv).convert(false);
+            alphaToCoverage = object.getMember("alphaToCoverage").convert(false);
+            independentBlendStates = object.getMember("independentBlendStates").convert(false);
             auto targetStatesGroup = object.getMember("targetStates"s).asType(JSON::EmptyArray);
             size_t targetCount = std::min(targetStatesGroup.size(), targetStates.size());
             for (size_t target = 0; target < targetCount; ++target)
@@ -718,18 +718,18 @@ namespace Gek
 				return (result == std::end(data) ? AddressMode::Clamp : result->second);
             };
 
-            filterMode = getFilterMode(object.getMember("filterMode"sv).convert("AllPoint"s));
-            addressModeU = getAddressMode(object.getMember("addressModeU"sv).convert("Clamp"s));
-            addressModeV = getAddressMode(object.getMember("addressModeV"sv).convert("Clamp"s));
-            addressModeW = getAddressMode(object.getMember("addressModeW"sv).convert("Clamp"s));
-            mipLevelBias = object.getMember("mipLevelBias"sv).convert(0.0f);
-            maximumAnisotropy = object.getMember("maximumAnisotropy"sv).convert(1);
-            comparisonFunction = getComparisonFunction(object.getMember("comparisonFunction"sv).convert("Never"s));
-            minimumMipLevel = object.getMember("minimumMipLevel"sv).convert(0.0f);
-            maximumMipLevel = object.getMember("maximumMipLevel"sv).convert(Math::Infinity);
+            filterMode = getFilterMode(object.getMember("filterMode").convert("AllPoint"s));
+            addressModeU = getAddressMode(object.getMember("addressModeU").convert("Clamp"s));
+            addressModeV = getAddressMode(object.getMember("addressModeV").convert("Clamp"s));
+            addressModeW = getAddressMode(object.getMember("addressModeW").convert("Clamp"s));
+            mipLevelBias = object.getMember("mipLevelBias").convert(0.0f);
+            maximumAnisotropy = object.getMember("maximumAnisotropy").convert(1);
+            comparisonFunction = getComparisonFunction(object.getMember("comparisonFunction").convert("Never"s));
+            minimumMipLevel = object.getMember("minimumMipLevel").convert(0.0f);
+            maximumMipLevel = object.getMember("maximumMipLevel").convert(Math::Infinity);
 
             static ShuntingYard EmptyYard;
-            borderColor = object.getMember("borderColor"sv).evaluate(EmptyYard, Math::Float4::White);
+            borderColor = object.getMember("borderColor").evaluate(EmptyYard, Math::Float4::White);
         }
 
         size_t SamplerState::Description::getHash(void) const

@@ -83,8 +83,8 @@ namespace Gek
 			searchPathList.push_back(pluginPath);
 
 			context = Context::Create(&searchPathList);
-			context->addDataPath(rootPath / "data"sv);
-			configuration.load(getContext()->findDataPath("config.json"sv));
+			context->addDataPath(rootPath / "data");
+			configuration.load(getContext()->findDataPath("config.json"));
 
 			Window::Description windowDescription;
 			windowDescription.allowResize = true;
@@ -157,7 +157,7 @@ namespace Gek
 				displayModeStringList.push_back(displayModeString);
 			}
 
-            setDisplayMode(configuration.getMember("display"sv).getMember("mode"sv).convert(preferredDisplayMode));
+            setDisplayMode(configuration.getMember("display").getMember("mode").convert(preferredDisplayMode));
 
 			gui->renderQueue = renderDevice->createQueue(0);
 
@@ -285,19 +285,19 @@ Output mainPixelProgram(in Pixel input)
             imGuiIo.KeyMap[ImGuiKey_Y] = 'Y';
             imGuiIo.KeyMap[ImGuiKey_Z] = 'Z';
 
-            auto fontPath = getContext()->findDataPath("fonts"sv);
-			imGuiIo.Fonts->AddFontFromFileTTF((fontPath / "Ruda-Bold.ttf"sv).getString().data(), 14.0f);
+            auto fontPath = getContext()->findDataPath("fonts");
+			imGuiIo.Fonts->AddFontFromFileTTF((fontPath / "Ruda-Bold.ttf").getString().data(), 14.0f);
 
 			ImFontConfig fontConfig;
 			fontConfig.MergeMode = true;
 
 			fontConfig.GlyphOffset.y = 1.0f;
 			const ImWchar fontAwesomeRanges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-			imGuiIo.Fonts->AddFontFromFileTTF((fontPath / "fontawesome-webfont.ttf"sv).getString().data(), 16.0f, &fontConfig, fontAwesomeRanges);
+			imGuiIo.Fonts->AddFontFromFileTTF((fontPath / "fontawesome-webfont.ttf").getString().data(), 16.0f, &fontConfig, fontAwesomeRanges);
 
 			fontConfig.GlyphOffset.y = 3.0f;
 			const ImWchar googleIconRanges[] = { ICON_MIN_MD, ICON_MAX_MD, 0 };
-			imGuiIo.Fonts->AddFontFromFileTTF((fontPath / "MaterialIcons-Regular.ttf"sv).getString().data(), 16.0f, &fontConfig, googleIconRanges);
+			imGuiIo.Fonts->AddFontFromFileTTF((fontPath / "MaterialIcons-Regular.ttf").getString().data(), 16.0f, &fontConfig, googleIconRanges);
 
 			imGuiIo.Fonts->Build();
 
@@ -322,7 +322,7 @@ Output mainPixelProgram(in Pixel input)
 			imGuiIo.UserData = this;
 
 			window->setVisibility(true);
-            setFullScreen(configuration.getMember("display"sv).getMember("fullScreen"sv).convert(false));
+            setFullScreen(configuration.getMember("display").getMember("fullScreen").convert(false));
 			engineRunning = true;
 			windowActive = true;
 		}
@@ -345,7 +345,7 @@ Output mainPixelProgram(in Pixel input)
 			if (current.fullScreen != requestFullScreen)
 			{
 				current.fullScreen = requestFullScreen;
-				configuration["display"sv]["fullScreen"sv] = requestFullScreen;
+				configuration["display"]["fullScreen"] = requestFullScreen;
 				if (requestFullScreen)
 				{
 					window->move(Math::Int2::Zero);
@@ -372,7 +372,7 @@ Output mainPixelProgram(in Pixel input)
 				if (requestDisplayMode < displayModeList.size())
 				{
 					current.mode = requestDisplayMode;
-					configuration["display"sv]["mode"sv] = requestDisplayMode;
+					configuration["display"]["mode"] = requestDisplayMode;
 					renderDevice->setDisplayMode(displayModeData);
 					window->move();
 					return true;
@@ -784,7 +784,7 @@ Output mainPixelProgram(in Pixel input)
 					break;
 
 				case Window::Key::F1:
-                    configuration["editor"sv]["active"sv] = !configuration.getMember("editor"sv).getMember("active"sv).convert(false);
+                    configuration["editor"]["active"] = !configuration.getMember("editor").getMember("active").convert(false);
 					break;
 				};
 			}

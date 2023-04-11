@@ -12,6 +12,9 @@ namespace Gek
         GEK_CONTEXT_USER(Physical, Plugin::Population *)
             , public Plugin::ComponentMixin<Components::Physical, Edit::Component>
         {
+        private:
+            int selectedShape = 0;
+
         public:
             Physical(Context *context, Plugin::Population *population)
                 : ContextRegistration(context)
@@ -22,12 +25,12 @@ namespace Gek
             // Plugin::Component
             void save(Components::Physical const * const data, JSON &exportData) const
             {
-                exportData["mass"sv] = data->mass;
+                exportData["mass"] = data->mass;
             }
 
             void load(Components::Physical * const data, JSON const &importData)
             {
-                data->mass = evaluate(importData.getMember("mass"sv), 0.0f);
+                data->mass = evaluate(importData.getMember("mass"), 0.0f);
             }
 
             // Edit::Component
@@ -38,7 +41,7 @@ namespace Gek
 
                 auto &physicalComponent = *dynamic_cast<Components::Physical *>(data);
 
-                changed |= editorElement("Mass"sv, [&](void) -> bool
+                changed |= editorElement("Mass", [&](void) -> bool
                 {
                     return ImGui::InputFloat("##mass", &physicalComponent.mass, 1.0f, 10.0f, "%.3f", ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 });

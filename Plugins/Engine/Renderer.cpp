@@ -648,10 +648,20 @@ float4 main(PixelInput input) : SV_Target
 				gui.renderState = videoDevice->createRenderState(renderStateInformation);
 				gui.renderState->setName("core:renderState");
 
+				auto invertedDepthBuffer = core->getOption("render", "invertedDepthBuffer").convert(true);
+
 				Video::DepthState::Description depthStateInformation;
 				depthStateInformation.enable = true;
-				depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
-				depthStateInformation.writeMask = Video::DepthState::Write::Zero;
+				depthStateInformation.writeMask = Video::DepthState::Write::All;
+				if (invertedDepthBuffer)
+				{
+					depthStateInformation.comparisonFunction = Video::ComparisonFunction::GreaterEqual;
+				}
+				else
+				{
+					depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
+				}
+
 				gui.depthState = videoDevice->createDepthState(depthStateInformation);
 				gui.depthState->setName("core:depthState");
 
@@ -792,8 +802,13 @@ float4 main(PixelInput input) : SV_Target
 					dataBuffer.projectionMatrix = Math::Float4x4::MakeOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
 					videoDevice->updateResource(gui.constantBuffer.get(), &dataBuffer);
 
+					auto editorShaderHandle = resources->getShader("editor");
+					auto editorShader = editorShaderHandle ? resources->getShader(editorShaderHandle) : nullptr;
+					ResourceHandle depthHandle = editorShader ? editorShader->getDepthTarget(0) : ResourceHandle();
+					auto depthBuffer = depthHandle ? resources->getResource(depthHandle) : nullptr;
+
 					auto videoContext = videoDevice->getDefaultContext();
-					videoContext->setRenderTargetList({ videoDevice->getBackBuffer() }, nullptr);
+					videoContext->setRenderTargetList({ videoDevice->getBackBuffer() }, depthBuffer);
 					videoContext->setViewportList({ Video::ViewPort(Math::Float2::Zero, Math::Float2(width, height), 0.0f, 1.0f) });
 
 					videoContext->setInputLayout(gui.inputLayout.get());
@@ -809,6 +824,8 @@ float4 main(PixelInput input) : SV_Target
 					videoContext->setDepthState(gui.depthState.get(), 0);
 					videoContext->setRenderState(gui.renderState.get());
 
+					videoContext->clearDepthStencilTarget(depthBuffer, Video::ClearFlags::Depth, 0.0f, 0);
+
 					uint32_t vertexOffset = 0;
 					uint32_t indexOffset = 0;
 					for (int32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
@@ -819,7 +836,13 @@ float4 main(PixelInput input) : SV_Target
 							const ImDrawCmd* command = &commandList->CmdBuffer[commandIndex];
 							if (command->UserCallback)
 							{
-								command->UserCallback(commandList, command);
+								if (command->UserCallback == ImDrawCallback_ResetRenderState)
+								{
+								}
+								else
+								{
+									command->UserCallback(commandList, command);
+								}
 							}
 							else
 							{

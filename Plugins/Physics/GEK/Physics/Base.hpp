@@ -25,8 +25,8 @@ namespace Gek
         GEK_COMPONENT(Physical)
         {
 			GEK_COMPONENT_DATA(Physical);
-			
-			float mass = 0.0f;
+
+            float mass = 0.0f;
         };
 
         GEK_COMPONENT(Player)

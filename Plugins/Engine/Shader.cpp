@@ -115,7 +115,7 @@ namespace Gek
 
                 JSON rootNode;
                 rootNode.load(getContext()->findDataPath(FileSystem::CreatePath("shaders", shaderName).withExtension(".json")));
-                outputResource = rootNode.getMember("output"sv).convert(String::Empty);
+                outputResource = rootNode.getMember("output").convert(String::Empty);
 
                 ShuntingYard shuntingYard(population->getShuntingYard());
                 const auto &coreOptionsNode = core->getOption("shaders", shaderName);
@@ -167,7 +167,7 @@ namespace Gek
                 }
 
                 core->setOption("shaders", shaderName, rootOptionsNode);
-                auto requiredShadesrArray = rootNode.getMember("requires"sv).asType(JSON::EmptyArray);
+                auto requiredShadesrArray = rootNode.getMember("requires").asType(JSON::EmptyArray);
                 drawOrder = requiredShadesrArray.size();
                 for (auto &requiredShaderNode : requiredShadesrArray)
                 {
@@ -181,10 +181,10 @@ namespace Gek
 
                 std::vector<std::string> inputData;
                 uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
-                for (auto &elementNode : rootNode.getMember("input"sv).asType(JSON::EmptyArray))
+                for (auto &elementNode : rootNode.getMember("input").asType(JSON::EmptyArray))
                 {
-                    std::string name(elementNode.getMember("name"sv).convert(String::Empty));
-                    std::string system(String::GetLower(elementNode.getMember("system"sv).convert(String::Empty)));
+                    std::string name(elementNode.getMember("name").convert(String::Empty));
+                    std::string system(String::GetLower(elementNode.getMember("system").convert(String::Empty)));
                     if (system == "isfrontfacing")
                     {
                         inputData.push_back(std::format("    uint {} : SV_IsFrontFace;", name));
@@ -195,9 +195,9 @@ namespace Gek
                     }
                     else
                     {
-                        Video::Format format = Video::GetFormat(elementNode.getMember("format"sv).convert(String::Empty));
+                        Video::Format format = Video::GetFormat(elementNode.getMember("format").convert(String::Empty));
                         uint32_t count = elementNode.getMember("count").convert(1);
-                        auto semantic = Video::InputElement::GetSemantic(elementNode.getMember("semantic"sv).convert(String::Empty));
+                        auto semantic = Video::InputElement::GetSemantic(elementNode.getMember("semantic").convert(String::Empty));
                         auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)];
                         semanticIndexList[static_cast<uint8_t>(semantic)] += count;
 
@@ -258,7 +258,7 @@ R"(namespace Lights
 
                 std::unordered_map<std::string, ResourceHandle> resourceMap;
                 std::unordered_map<std::string, std::string> resourceSemanticsMap;
-                for (auto &texturesPair : rootNode.getMember("textures"sv).asType(JSON::EmptyObject))
+                for (auto &texturesPair : rootNode.getMember("textures").asType(JSON::EmptyObject))
                 {
                     std::string textureName(texturesPair.first);
                     if (resourceMap.count(textureName) > 0)
@@ -272,15 +272,15 @@ R"(namespace Lights
                     const auto &textureMap = textureNode.asType(JSON::EmptyObject);
                     if (textureMap.count("file"))
                     {
-                        std::string fileName(textureNode.getMember("file"sv).convert(String::Empty));
-                        uint32_t flags = getTextureLoadFlags(textureNode.getMember("flags"sv).convert(String::Empty));
+                        std::string fileName(textureNode.getMember("file").convert(String::Empty));
+                        uint32_t flags = getTextureLoadFlags(textureNode.getMember("flags").convert(String::Empty));
                         resource = resources->loadTexture(fileName, flags);
                     }
                     else
                     {
                         Video::Texture::Description description(backBufferDescription);
-                        description.format = Video::GetFormat(textureNode.getMember("format"sv).convert(String::Empty));
-                        auto &sizeNode = textureNode.getMember("size"sv);
+                        description.format = Video::GetFormat(textureNode.getMember("format").convert(String::Empty));
+                        auto &sizeNode = textureNode.getMember("size");
                         if (sizeNode.isType<float>())
                         {
                             description.width = sizeNode.evaluate(shuntingYard, 1);
@@ -302,9 +302,9 @@ R"(namespace Lights
                             };
                         }
 
-                        description.sampleCount = textureNode.getMember("sampleCount"sv).convert(1);
-                        description.flags = getTextureFlags(textureNode.getMember("flags"sv).convert(String::Empty));
-                        description.mipMapCount = textureNode.getMember("mipmaps"sv).evaluate(shuntingYard, 1);
+                        description.sampleCount = textureNode.getMember("sampleCount").convert(1);
+                        description.flags = getTextureFlags(textureNode.getMember("flags").convert(String::Empty));
+                        description.mipMapCount = textureNode.getMember("mipmaps").evaluate(shuntingYard, 1);
                         resource = resources->createTexture(textureName, description, true);
                     }
 
@@ -327,7 +327,7 @@ R"(namespace Lights
                     }
                 }
 
-                for (auto &buffersPair : rootNode.getMember("buffers"sv).asType(JSON::EmptyObject))
+                for (auto &buffersPair : rootNode.getMember("buffers").asType(JSON::EmptyObject))
                 {
                     std::string bufferName(buffersPair.first);
                     if (resourceMap.count(bufferName) > 0)
@@ -340,24 +340,24 @@ R"(namespace Lights
                     const auto &bufferObject = bufferNode.asType(JSON::EmptyObject);
 
                     Video::Buffer::Description description;
-                    description.count = bufferNode.getMember("count"sv).evaluate(shuntingYard, 0);
-                    description.flags = getBufferFlags(bufferNode.getMember("flags"sv).convert(String::Empty));
+                    description.count = bufferNode.getMember("count").evaluate(shuntingYard, 0);
+                    description.flags = getBufferFlags(bufferNode.getMember("flags").convert(String::Empty));
                     if (bufferObject.count("format"))
                     {
                         description.type = Video::Buffer::Type::Raw;
-                        description.format = Video::GetFormat(bufferNode.getMember("format"sv).convert(String::Empty));
+                        description.format = Video::GetFormat(bufferNode.getMember("format").convert(String::Empty));
                     }
                     else
                     {
                         description.type = Video::Buffer::Type::Structured;
-                        description.stride = bufferNode.getMember("stride"sv).evaluate(shuntingYard, 0);
+                        description.stride = bufferNode.getMember("stride").evaluate(shuntingYard, 0);
                     }
 
                     auto resource = resources->createBuffer(bufferName, description, true);
                     if (resource)
                     {
                         resourceMap[bufferName] = resource;
-                        if (bufferNode.getMember("byteaddress"sv).convert(false))
+                        if (bufferNode.getMember("byteaddress").convert(false))
                         {
                             resourceSemanticsMap[bufferName] = "ByteAddressBuffer";
                         }
@@ -366,33 +366,33 @@ R"(namespace Lights
                             auto description = resources->getBufferDescription(resource);
                             if (description != nullptr)
                             {
-                                auto structure = bufferNode.getMember("structure"sv).convert(String::Empty);
+                                auto structure = bufferNode.getMember("structure").convert(String::Empty);
                                 resourceSemanticsMap[bufferName] += std::format("Buffer<{}>", structure.empty() ? getFormatSemantic(description->format) : structure);
                             }
                         }
                     }
                 }
 
-                auto materialsNode = rootNode.getMember("materials"sv);
+                auto materialsNode = rootNode.getMember("materials");
                 for (auto &materialPair : materialsNode.asType(JSON::EmptyObject))
                 {
                     auto materialName = materialPair.first;
                     auto &materialData = materialMap[materialName];
                     auto materialNode = materialPair.second;
-                    for (auto data : materialNode.getMember("data"sv).asType(JSON::EmptyArray))
+                    for (auto data : materialNode.getMember("data").asType(JSON::EmptyArray))
                     {
                         Material::Initializer initializer;
-                        initializer.name = data.getMember("name"sv).convert(String::Empty);
-                        initializer.fallback = resources->createPattern(data.getMember("pattern"sv).convert(String::Empty), data.getMember("parameters"sv));
+                        initializer.name = data.getMember("name").convert(String::Empty);
+                        initializer.fallback = resources->createPattern(data.getMember("pattern").convert(String::Empty), data.getMember("parameters"));
                         materialData.initializerList.push_back(initializer);
                     }
 
                     Video::RenderState::Description renderStateInformation;
-                    renderStateInformation.load(materialNode.getMember("renderState"sv), rootOptionsNode);
+                    renderStateInformation.load(materialNode.getMember("renderState"), rootOptionsNode);
                     materialData.renderState = resources->createRenderState(renderStateInformation);
                 }
 
-                auto passesNode = rootNode.getMember("passes"sv);
+                auto passesNode = rootNode.getMember("passes");
                 passList.resize(passesNode.asType(JSON::EmptyArray).size());
                 auto passData = std::begin(passList);
                 for (auto &passNode : passesNode.asType(JSON::EmptyArray))
@@ -400,16 +400,16 @@ R"(namespace Lights
                     const auto &passObject = passNode.asType(JSON::EmptyObject);
 
                     PassData &pass = *passData++;
-                    std::string entryPoint(passNode.getMember("entry"sv).convert(String::Empty));
+                    std::string entryPoint(passNode.getMember("entry").convert(String::Empty));
                     auto programName = passNode.getMember("program").convert(String::Empty);
                     pass.name = programName;
 
-                    auto passMaterial = passNode.getMember("material"sv).convert(String::Empty);
-                    pass.lighting = passNode.getMember("lighting"sv).convert(false);
+                    auto passMaterial = passNode.getMember("material").convert(String::Empty);
+                    pass.lighting = passNode.getMember("lighting").convert(false);
                     pass.materialHash = GetHash(passMaterial);
                     lightingRequired |= pass.lighting;
 
-                    auto enableOption = passNode.getMember("enable"sv).convert(String::Empty);
+                    auto enableOption = passNode.getMember("enable").convert(String::Empty);
                     if (!enableOption.empty())
                     {
                         String::Replace(enableOption, "::", "|");
@@ -428,7 +428,7 @@ R"(namespace Lights
                     }
 
                     JSON passOptions(std::cref(rootOptionsNode).get());
-                    for (auto &overridePair : passNode.getMember("options"sv).asType(JSON::EmptyObject))
+                    for (auto &overridePair : passNode.getMember("options").asType(JSON::EmptyObject))
                     {
                         std::function<void(JSON &, std::string_view, JSON const &)> insertOptions;
                         insertOptions = [&](JSON &options, std::string_view name, JSON const &node) -> void
@@ -467,7 +467,7 @@ R"(namespace Lights
                                     outerData.push_back(std::format("    namespace {} {{", optionName));
 
                                     std::vector<std::string> choices;
-                                    for (auto &choice : optionNode.getMember("options"sv).asType(JSON::EmptyArray))
+                                    for (auto &choice : optionNode.getMember("options").asType(JSON::EmptyArray))
                                     {
                                         auto name = choice.convert(String::Empty);
                                         outerData.push_back(std::format("        static const int {} = {};", name, choices.size()));
@@ -475,7 +475,7 @@ R"(namespace Lights
                                     }
 
                                     int selection = 0;
-                                    auto &selectionNode = optionNode.getMember("selection"sv);
+                                    auto &selectionNode = optionNode.getMember("selection");
                                     if (selectionNode.isType<std::string>())
                                     {
                                         auto selectedName = selectionNode.convert(String::Empty);
@@ -574,7 +574,7 @@ R"(namespace Options {{
                         engineData.push_back(std::vformat(optionsTemplate, std::make_format_args(optionsString)));
                     }
 
-                    std::string mode(String::GetLower(passNode.getMember("mode"sv).convert(String::Empty)));
+                    std::string mode(String::GetLower(passNode.getMember("mode").convert(String::Empty)));
                     if (mode == "forward")
                     {
                         pass.mode = Pass::Mode::Forward;
@@ -590,7 +590,7 @@ R"(namespace Options {{
 
                     if (pass.mode == Pass::Mode::Compute)
                     {
-                        auto &dispatchNode = passNode.getMember("dispatch"sv);
+                        auto &dispatchNode = passNode.getMember("dispatch");
                         if (dispatchNode.isType<JSON::Array>())
                         {
                             const auto &dispatchArray = dispatchNode.asType(JSON::EmptyArray);
@@ -623,7 +623,7 @@ R"(namespace Options {{
                         engineData.push_back("};");
 
                         std::vector<std::string> outputData;
-                        std::unordered_map<std::string, std::string> renderTargetsMap = getAliasedMap(passNode.getMember("targets"sv));
+                        std::unordered_map<std::string, std::string> renderTargetsMap = getAliasedMap(passNode.getMember("targets"));
                         if (!renderTargetsMap.empty())
                         {
                             for (auto &renderTarget : renderTargetsMap)
@@ -662,11 +662,11 @@ R"(struct OutputPixel
                         Video::DepthState::Description depthStateInformation;
                         if (passObject.count("depthStyle"))
                         {
-                            auto &depthStyleNode = passNode.getMember("depthStyle"sv);
-                            auto camera = String::GetLower(depthStyleNode.getMember("camera"sv).convert("perspective"sv));
-                            if (camera == "perspective"sv)
+                            auto &depthStyleNode = passNode.getMember("depthStyle");
+                            auto camera = String::GetLower(depthStyleNode.getMember("camera").convert("perspective"));
+                            if (camera == "perspective")
                             {
-                                auto invertedDepthBuffer = core->getOption("render"sv, "invertedDepthBuffer"sv).convert(true);
+                                auto invertedDepthBuffer = core->getOption("render", "invertedDepthBuffer").convert(true);
 
                                 depthStateInformation.enable = true;
                                 depthStateInformation.writeMask = Video::DepthState::Write::All;
@@ -679,7 +679,7 @@ R"(struct OutputPixel
                                     depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
                                 }
 
-                                auto clear = depthStyleNode.getMember("clear"sv).convert(false);
+                                auto clear = depthStyleNode.getMember("clear").convert(false);
                                 if (clear)
                                 {
                                     pass.clearDepthValue = (invertedDepthBuffer ? 0.0f : 1.0f);
@@ -689,9 +689,9 @@ R"(struct OutputPixel
                         }
                         else
                         {
-                            auto &depthStateNode = passNode.getMember("depthState"sv);
+                            auto &depthStateNode = passNode.getMember("depthState");
                             depthStateInformation.load(depthStateNode, passOptions);
-                            pass.clearDepthValue = depthStateNode.getMember("clear"sv).convert(Math::Infinity);
+                            pass.clearDepthValue = depthStateNode.getMember("clear").convert(Math::Infinity);
                             if (pass.clearDepthValue != Math::Infinity)
                             {
                                 pass.clearDepthFlags |= Video::ClearFlags::Depth;
@@ -700,7 +700,7 @@ R"(struct OutputPixel
 
 						if (depthStateInformation.enable)
 						{
-                            auto depthBuffer = passNode.getMember("depthBuffer"sv).convert(String::Empty);
+                            auto depthBuffer = passNode.getMember("depthBuffer").convert(String::Empty);
 							auto depthBufferSearch = resourceMap.find(depthBuffer);
                             if (depthBufferSearch != std::end(resourceMap))
                             {
@@ -713,25 +713,25 @@ R"(struct OutputPixel
                         }
 
                         Video::BlendState::Description blendStateInformation;
-                        blendStateInformation.load(passNode.getMember("blendState"sv), passOptions);
+                        blendStateInformation.load(passNode.getMember("blendState"), passOptions);
 
                         Video::RenderState::Description renderStateInformation;
-                        renderStateInformation.load(passNode.getMember("renderState"sv), passOptions);
+                        renderStateInformation.load(passNode.getMember("renderState"), passOptions);
 
                         pass.depthState = resources->createDepthState(depthStateInformation);
                         pass.blendState = resources->createBlendState(blendStateInformation);
                         pass.renderState = resources->createRenderState(renderStateInformation);
                     }
 
-                    for (auto &baseClearTargetNode : passNode.getMember("clear"sv).asType(JSON::EmptyObject))
+                    for (auto &baseClearTargetNode : passNode.getMember("clear").asType(JSON::EmptyObject))
                     {
                         auto resourceName = baseClearTargetNode.first;
                         auto resourceSearch = resourceMap.find(resourceName);
                         if (resourceSearch != std::end(resourceMap))
                         {
                             JSON clearTargetNode(baseClearTargetNode.second);
-                            auto clearType = getClearType(clearTargetNode.getMember("type"sv).convert(String::Empty));
-                            auto clearValue = clearTargetNode.getMember("value"sv).convert(String::Empty);
+                            auto clearType = getClearType(clearTargetNode.getMember("type").convert(String::Empty));
+                            auto clearValue = clearTargetNode.getMember("value").convert(String::Empty);
                             pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(clearType, clearValue)));
                         }
                         else
@@ -740,7 +740,7 @@ R"(struct OutputPixel
                         }
                     }
 
-                    for (auto &baseGenerateMipMapsNode : passNode.getMember("generateMipMaps"sv).asType(JSON::EmptyArray))
+                    for (auto &baseGenerateMipMapsNode : passNode.getMember("generateMipMaps").asType(JSON::EmptyArray))
                     {
                         JSON generateMipMapNode(baseGenerateMipMapsNode);
                         auto resourceName = generateMipMapNode.convert(String::Empty);
@@ -755,7 +755,7 @@ R"(struct OutputPixel
                         }
                     }
 
-                    for (auto &baseCopyNode : passNode.getMember("copy"sv).asType(JSON::EmptyObject))
+                    for (auto &baseCopyNode : passNode.getMember("copy").asType(JSON::EmptyObject))
                     {
                         auto targetResourceName = baseCopyNode.first;
                         auto nameSearch = resourceMap.find(targetResourceName);
@@ -779,7 +779,7 @@ R"(struct OutputPixel
                         }
                     }
 
-                    for (auto &baseResolveNode : passNode.getMember("resolve"sv).asType(JSON::EmptyObject))
+                    for (auto &baseResolveNode : passNode.getMember("resolve").asType(JSON::EmptyObject))
                     {
                         auto targetResourceName = baseResolveNode.first;
                         auto nameSearch = resourceMap.find(targetResourceName);
@@ -842,7 +842,7 @@ R"(struct OutputPixel
                         }
                     }
 
-                    std::unordered_map<std::string, std::string> resourceAliasMap = getAliasedMap(passNode.getMember("resources"sv));
+                    std::unordered_map<std::string, std::string> resourceAliasMap = getAliasedMap(passNode.getMember("resources"));
                     for (auto &resourcePair : resourceAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);
@@ -878,7 +878,7 @@ R"(namespace Resources
                     }
 
                     std::vector<std::string> unorderedAccessData;
-                    std::unordered_map<std::string, std::string> unorderedAccessAliasMap = getAliasedMap(passNode.getMember("unorderedAccess"sv));
+                    std::unordered_map<std::string, std::string> unorderedAccessAliasMap = getAliasedMap(passNode.getMember("unorderedAccess"));
                     for (auto &resourcePair : unorderedAccessAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);
@@ -1167,6 +1167,11 @@ R"(namespace UnorderedAccess
             std::string const &getOutput(void) const
             {
                 return outputResource;
+            }
+
+            ResourceHandle getDepthTarget(uint32_t pass) const
+            {
+                return passList[pass].depthBuffer;
             }
 
             Material::Iterator begin(void)

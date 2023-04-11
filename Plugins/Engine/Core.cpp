@@ -485,8 +485,8 @@ namespace Gek
                         if (ImGui::MenuItem("Settings", nullptr, &showSettings))
                         {
                             next = previous = current;
-                            shadersSettings = configuration["shaders"sv].makeType<JSON::Object>();
-                            filtersSettings = configuration["filters"sv].makeType<JSON::Object>();
+                            shadersSettings = configuration["shaders"].makeType<JSON::Object>();
+                            filtersSettings = configuration["filters"].makeType<JSON::Object>();
                             changedVisualOptions = false;
                         }
 
