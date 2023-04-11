@@ -103,7 +103,11 @@ SET(ASSIMP_BUILD_TESTS False CACHE BOOL "" FORCE)
 SET(ASSIMP_INSTALL_PDB False CACHE BOOL "" FORCE)
 add_subdirectory("External/Assimp")
 
-add_definitions(-D_OPENMP)
+SET(BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+SET(BUILD_SAMPLE OFF CACHE BOOL "" FORCE)
+SET(BUILD_DX12 OFF CACHE BOOL "" FORCE)
+SET(BC_USE_OPENMP OFF CACHE BOOL "" FORCE)
+SET(DISABLE_MSVC_ITERATOR_DEBUGGING ON CACHE BOOL "" FORCE)
 add_subdirectory("External/DirectXTex")
 
 SET(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
@@ -145,9 +149,6 @@ if(GEK_CREATE_FOLDERS)
 
     if(WIN32)
         set_property(TARGET DirectXTex PROPERTY FOLDER "External/DirectXTex")
-        set_property(TARGET texconv PROPERTY FOLDER "External/DirectXTex")
-        set_property(TARGET texdiag PROPERTY FOLDER "External/DirectXTex")
-        set_property(TARGET texassemble PROPERTY FOLDER "External/DirectXTex")
     endif()
 endif()
 

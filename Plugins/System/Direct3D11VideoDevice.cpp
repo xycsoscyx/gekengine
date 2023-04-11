@@ -2919,7 +2919,8 @@ namespace Gek
                 }
 
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), image.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, (flags & Video::TextureLoadFlags::sRGB), &d3dShaderResourceView);
+                auto createFlags = (flags & Video::TextureLoadFlags::sRGB ? ::DirectX::CREATETEX_FORCE_SRGB : ::DirectX::CREATETEX_DEFAULT);
+                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), image.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, createFlags, &d3dShaderResourceView);
                 if (FAILED(resultValue) || !d3dShaderResourceView)
                 {
                     LockedWrite{ std::cerr } << "Unable to create texture shader resource view";
@@ -2960,7 +2961,8 @@ namespace Gek
                 }
 
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), image.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, (flags & Video::TextureLoadFlags::sRGB), &d3dShaderResourceView);
+                auto createFlags = (flags & Video::TextureLoadFlags::sRGB ? ::DirectX::CREATETEX_FORCE_SRGB : ::DirectX::CREATETEX_DEFAULT);
+                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), image.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, createFlags, &d3dShaderResourceView);
                 if (FAILED(resultValue) || !d3dShaderResourceView)
                 {
                     LockedWrite{ std::cerr } << "Unable to create texture shader resource view";
