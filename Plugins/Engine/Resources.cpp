@@ -153,18 +153,25 @@ namespace Gek
                 resourceMap.clear();
             }
 
-            void setResource(HANDLE handle, TypePtr &&data)
+            void setResource(HANDLE handle, TypePtr&& data, TYPE* fallback = nullptr)
             {
                 TypePtr blankObject;
                 auto resourceSearch = resourceMap.insert(std::make_pair(handle, blankObject));
-                resourceSearch.first->second.store(data);
+                if (data)
+                {
+                    resourceSearch.first->second.store(data);
+                }
+                else if (fallback)
+                {
+                    resourceSearch.first->second.store(TypePtr(fallback));
+                }
             }
 
-            Task scheduleResource(HANDLE handle, std::function<TypePtr(HandleType)> &&load)
+            Task scheduleResource(HANDLE handle, std::function<TypePtr(HandleType)> &&load, TYPE *fallback = nullptr)
             {
                 auto localLoad = std::move(load);
                 co_await loadPool.schedule();
-                setResource(handle, localLoad(handle));
+                setResource(handle, localLoad(handle), fallback);
             }
 
             virtual TYPE * const getResource(HANDLE handle) const
@@ -275,9 +282,10 @@ namespace Gek
                 this->setResource(handle, data);
             }
 
-            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::size_t parameters, std::function<TypePtr(HandleType)> &&load, uint32_t flags)
+            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::size_t parameters, std::function<TypePtr(HandleType)> &&load, uint32_t flags, HANDLE fallbackResource = HANDLE())
             {
                 HANDLE handle;
+                auto fallback = this->getResource(fallbackResource);
                 if (requestedLoadSet.count(hash) > 0)
                 {
                     auto resourceSearch = this->resourceHandleMap.find(hash);
@@ -292,11 +300,11 @@ namespace Gek
                                 loadParameters[handle] = parameters;
                                 if (flags & Plugin::Resources::Flags::LoadImmediately)
                                 {
-                                    this->setResource(handle, load(handle));
+                                    this->setResource(handle, load(handle), fallback);
                                 }
                                 else
                                 {
-                                    this->scheduleResource(handle, std::move(load));
+                                    this->scheduleResource(handle, std::move(load), fallback);
                                 }
 
                                 return std::make_pair(true, handle);
@@ -829,11 +837,20 @@ namespace Gek
                 {
 					if (dynamic_cast<Video::Texture *>(object.get()))
                     {
-                        auto texture = dynamic_cast<Video::Texture *>(object.get());
-                        auto const &description = texture->getDescription();
-                        float width = ImGui::GetContentRegionAvail().x;
+                        float start = ImGui::GetCursorPosY();
+
+                        ImGui::BeginGroup();
+                        auto texture = dynamic_cast<Video::Texture*>(object.get());
+                        auto const& description = texture->getDescription();
+                        float width = 32.0f;
                         float ratio = (width / float(description.width));
                         float height = (float(description.height) * ratio);
+                        ImGui::Image(reinterpret_cast<ImTextureID>(texture), ImVec2(width, height), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(0, 0, 0, 1));
+                        ImGui::EndGroup();
+
+                        ImGui::SetCursorPosY(start);
+                        ImGui::Indent(40.0f);
+                        ImGui::BeginGroup();
                         showResourceValue("Format", "##format", Video::GetFormat(description.format));
                         showResourceValue("Width", "##width", std::to_string(description.width));
                         showResourceValue("Height", "##height", std::to_string(description.height));
@@ -842,7 +859,8 @@ namespace Gek
                         showResourceValue("MultiSample Count", "##sampleCount", std::to_string(description.sampleCount));
                         showResourceValue("MultiSample Quality", "##sampleQuality", std::to_string(description.sampleQuality));
                         showResourceValue("Flags", "##flags", std::to_string(description.flags));
-						ImGui::Image(reinterpret_cast<ImTextureID>(texture), ImVec2(width, height));
+                        ImGui::EndGroup();
+                        ImGui::Unindent(40.0f);
 					}
 					else if (dynamic_cast<Video::Buffer *>(object.get()))
 					{
@@ -975,7 +993,7 @@ namespace Gek
 				}).second;
             }
 
-            ResourceHandle loadTexture(std::string_view textureName, uint32_t flags)
+            ResourceHandle loadTexture(std::string_view textureName, uint32_t flags, ResourceHandle fallbackResource)
             {
                 // iterate over formats in case the texture name has no extension
 				static constexpr std::string_view formatList[] =
@@ -997,7 +1015,7 @@ namespace Gek
                     auto texturePath(getContext()->findDataPath(FileSystem::CreatePath("textures", textureName).withExtension(format)));
                     if (texturePath.isFile())
                     {
-                        auto resource = dynamicCache.getHandle(hash, flags, [this, texturePath = texturePath, textureName = std::string(textureName), flags](ResourceHandle)->Video::TexturePtr
+                        auto resource = dynamicCache.getHandle(hash, flags, [this, texturePath = texturePath, textureName = std::string(textureName), flags, fallbackResource](ResourceHandle)->Video::TexturePtr
 						{
 							return loadTextureData(texturePath, textureName, flags);
 						}, false);
@@ -1024,20 +1042,22 @@ namespace Gek
                 std::string parameterString;
                 if (lowerPattern == "color")
                 {
+                    description.width = 1;
+                    description.height = 1;
                     auto parametersArray = parameters.asType(JSON::EmptyArray);
                     switch (parametersArray.size())
                     {
                     case 1:
                         data.push_back(parametersArray.at(0).convert(255));
                         description.format = Video::Format::R8_UNORM;
-                        parameterString = std::format("[{}]", data[0]);
+                        parameterString = std::format("color[{}]", data[0]);
                         break;
 
                     case 2:
                         data.push_back(parametersArray.at(0).convert(255));
                         data.push_back(parametersArray.at(1).convert(255));
                         description.format = Video::Format::R8G8_UNORM;
-                        parameterString = std::format("[{}, {}]", data[0], data[1]);
+                        parameterString = std::format("color2[{}, {}]", data[0], data[1]);
                         break;
 
                     case 3:
@@ -1046,7 +1066,7 @@ namespace Gek
                         data.push_back(parametersArray.at(2).convert(255));
                         data.push_back(0);
                         description.format = Video::Format::R8G8B8A8_UNORM;
-                        parameterString = std::format("[{}, {}, {}]", data[0], data[1], data[2]);
+                        parameterString = std::format("color3[{}, {}, {}]", data[0], data[1], data[2]);
                         break;
 
                     case 4:
@@ -1055,7 +1075,7 @@ namespace Gek
                         data.push_back(parametersArray.at(2).convert(255));
                         data.push_back(parametersArray.at(3).convert(255));
                         description.format = Video::Format::R8G8B8A8_UNORM;
-                        parameterString = std::format("[{}, {}, {}, {}]", data[0], data[1], data[2], data[3]);
+                        parameterString = std::format("color4[{}, {}, {}, {}]", data[0], data[1], data[2], data[3]);
                         break;
 
                     default:
@@ -1073,7 +1093,7 @@ namespace Gek
                             data.push_back(quarters[2]);
                             data.push_back(quarters[3]);
                             description.format = Video::Format::R32_FLOAT;
-                            parameterString = std::format("[{}, {}, {}, {}]", data[0], data[1], data[2], data[3]);
+                            parameterString = std::format("float[{}]", value);
                         }
                     };
                 }
@@ -1086,6 +1106,7 @@ namespace Gek
                     };
 
                     Math::Float3 normal = parameters.evaluate(shuntingYard, Math::Float3::Zero);
+                    parameterString = std::format("normal[{}, {}, {}]", normal.x, normal.y, normal.z);
 
                     Float16Compressor compressor;
                     halves[0] = compressor.compress(normal.x);
@@ -1098,8 +1119,8 @@ namespace Gek
                 }
                 else if (lowerPattern == "system")
                 {
-                    std::string type(String::GetLower(parameters.convert(String::Empty)));
-                    if (type == "debug")
+                    parameterString = String::GetLower(parameters.convert(String::Empty));
+                    if (parameterString == "debug")
                     {
                         data.push_back(255);    data.push_back(0);      data.push_back(255);    data.push_back(255);
                         data.push_back(255);    data.push_back(255);    data.push_back(255);    data.push_back(255);
@@ -1109,7 +1130,7 @@ namespace Gek
                         description.width = 2;
                         description.height = 2;
                     }
-                    else if (type == "flat")
+                    else if (parameterString == "flat")
                     {
                         data.push_back(127);
                         data.push_back(127);
@@ -1120,7 +1141,7 @@ namespace Gek
                 }
 
                 description.flags = Video::Texture::Flags::Resource;
-                std::string name(std::format("{}:{}", pattern, parameters.convert(String::Empty)));
+                std::string name(std::format("{}:{}", lowerPattern, parameterString));
                 auto hash = GetHash(name);
 
                 auto resource = dynamicCache.getHandle(hash, 0, [this, name, description, data = move(data)](ResourceHandle)->Video::TexturePtr

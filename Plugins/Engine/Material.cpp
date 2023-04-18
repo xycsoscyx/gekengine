@@ -58,7 +58,7 @@ namespace Gek
                             {
                                 auto fileName = resourceNode.getMember("file").convert(String::Empty);
                                 uint32_t flags = getTextureLoadFlags(resourceNode.getMember("flags").convert(String::Empty));
-                                resourceHandle = resources->loadTexture(fileName, flags);
+                                resourceHandle = resources->loadTexture(fileName, flags, initializer.fallback);
                             }
                             else if (resourceObject.count("source"))
                             {

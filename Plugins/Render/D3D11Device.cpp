@@ -684,7 +684,7 @@ namespace Gek
             std::unordered_map<size_t, HANDLE> hashMap;
 
         public:
-            HANDLE insert(size_t hash, std::function<CComPtr<TYPE>(HANDLE)> &&onLoadRequired)
+            HANDLE insert(size_t hash, std::function<CComPtr<TYPE>(HANDLE)> &&onLoadRequired, HANDLE fallbackResource = HANDLE())
             {
                 auto hashSearch = hashMap.find(hash);
                 if (hashSearch != std::end(hashMap))
@@ -695,6 +695,11 @@ namespace Gek
                 HANDLE handle = InterlockedIncrement(&nextHandle);
                 hashMap[hash] = handle;
                 auto data = onLoadRequired(handle);
+                if (!data && fallbackResource)
+                {
+                    data = this->get(fallbackResource);
+                }
+
                 this->set(handle, data);
                 return handle;
             }
@@ -2150,7 +2155,7 @@ struct Output
                 });
             }
 
-            Render::ResourceHandle loadTexture(FileSystem::Path const &filePath, uint32_t flags, std::string const &name)
+            Render::ResourceHandle loadTexture(FileSystem::Path const &filePath, uint32_t flags, Render::ResourceHandle fallbackResource, std::string const &name)
             {
                 assert(d3dDevice);
 
@@ -2220,7 +2225,7 @@ struct Output
                     description.mipMapCount = image.GetMetadata().mipLevels;
                     textureDescriptionMap.insert(std::make_pair(handle, description));
                     return d3dResource;
-                });
+                }, fallbackResource);
             }
 
             Render::BufferDescription const * const getBufferDescription(Render::ResourceHandle resource) const

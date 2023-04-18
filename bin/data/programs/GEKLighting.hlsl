@@ -179,24 +179,25 @@ float3 getLightIrradiance(
         break;
     };
 
-    float3 fresnel;
+    float fresnelFactor;
     switch (Options::BRDF::Fresnel::Selection)
     {
     case Options::BRDF::Fresnel::Schlick: {
-        fresnel = F0 + (1.0 - F0) * pow(1.0 - LdotH, 5.0);
+        fresnelFactor = pow(1.0 - LdotH, 5.0);
         break; }
 
     case Options::BRDF::Fresnel::SphericalGaussian: {
         float power = ((-5.55473 * LdotH) - 6.98316) * LdotH;
-        fresnel = F0 + (1.0 - F0) * pow(2.0, power);
+        fresnelFactor = pow(2.0, power);
         break; }
 
     default:
-        fresnel = 0.0;
+        fresnelFactor = 0.0;
         break;
     };
 
-    float3 kd = lerp(float3(1, 1, 1) - fresnel, float3(0, 0, 0), materialMetallic);
+    float3 fresnel = F0 + (1.0 - F0) * fresnelFactor;
+    float3 kd = lerp(1.0 - fresnelFactor, 0.0, materialMetallic);
     float3 diffuseRadiance = kd * materialAlbedo;
 
     // Lambert diffuse BRDF.

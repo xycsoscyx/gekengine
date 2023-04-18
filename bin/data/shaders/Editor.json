@@ -47,12 +47,12 @@
                 {
                     "name": "roughness",
                     "pattern": "color",
-                    "parameters": 0.5
+                    "parameters": 1.0
                 },
                 {
                     "name": "metallic",
                     "pattern": "color",
-                    "parameters": 0
+                    "parameters": 0.0
                 }
             ]
         }

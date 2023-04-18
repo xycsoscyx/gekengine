@@ -6,7 +6,6 @@
 
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
-    // final images will be sRGB format and converted to linear automatically
     const float4 albedo = Resources::albedo.Sample(Global::TextureSampler, inputPixel.texCoord);
 
     [branch]
@@ -19,10 +18,11 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
 
     float3 normalColor = Resources::normal.Sample(Global::TextureSampler, inputPixel.texCoord).xyz;
     float3 textureNormal = ((normalColor * (255.0 / 127.0)) - (128.0 / 127.0));
+    
     float3 surfaceNormal = normalize((textureNormal.x * inputPixel.tangent) + 
                                      (textureNormal.y * inputPixel.biTangent) +
                                      (textureNormal.z * inputPixel.normal));
-    surfaceNormal = normalColor;
+    surfaceNormal = inputPixel.normal;
 
     float3 materialAlbedo = albedo.rgb;
     float materialRoughness = Resources::roughness.Sample(Global::TextureSampler, inputPixel.texCoord);

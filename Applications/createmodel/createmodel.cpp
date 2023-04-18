@@ -524,8 +524,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             auto& shaderNode = materialNode.getMember("shader");
             auto& dataNode = shaderNode.getMember("data");
             auto& albedoNode = dataNode.getMember("albedo");
-            auto albedoFile = albedoNode.getMember("file").convert(String::Empty);
-            auto albedoPath = removeRoot("textures", context->findDataPath(albedoFile));
+            FileSystem::Path albedoPath = albedoNode.getMember("file").convert(String::Empty);
+            auto albedoFile = albedoPath.withoutExtension().getString();
 
             LockedWrite{ std::cerr } << "Found material: " << filePath.getString() << ", with albedo: " << albedoFile;
             albedoToMaterialMap[String::GetLower(albedoFile)] = String::GetLower(removeRoot("materials", filePath).getString());
@@ -539,35 +539,46 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             return -__LINE__;
         }
 
+        auto findMaterial = [&](FileSystem::Path albedoPath) -> std::string
+        {
+            albedoPath = removeRoot("textures", albedoPath);
+            LockedWrite{ std::cout } << "Searching for albedo: " << albedoPath.getString();
+
+            auto albedoSearch = albedoToMaterialMap.find(String::GetLower(albedoPath.withoutExtension().getString()));
+            if (albedoSearch == std::end(albedoToMaterialMap))
+            {
+                albedoSearch = albedoToMaterialMap.find(String::GetLower(albedoPath.getString()));
+            }
+
+            if (albedoSearch != std::end(albedoToMaterialMap))
+            {
+                LockedWrite{ std::cout } << "Found material for albedo: " << albedoPath.getString() << " belongs to " << albedoSearch->second;
+                return albedoSearch->second;
+            }
+
+            return String::Empty;
+        };
+
         auto findMaterialForMesh = [&](const FileSystem::Path& sourceName, std::string diffuseName) -> std::string
         {
-            LockedWrite{ std::cout } << "> Searching for : " << diffuseName << ", " << (filePath / diffuseName).getString();
+            LockedWrite{ std::cout } << "Searching for: " << diffuseName << ", " << (filePath / diffuseName).getString();
 
-            FileSystem::Path albedoPath = FileSystem::GetCanonicalPath(filePath / diffuseName);
-            if (!albedoPath.isFile())
+            FileSystem::Path albedoPath = FileSystem::Path(diffuseName).lexicallyRelative("textures");
+            albedoPath = filePath.withoutExtension().getFileName() / albedoPath.withoutExtension();
+            auto materialName = findMaterial(albedoPath);
+            if (!materialName.empty())
             {
-                albedoPath = FileSystem::Path(diffuseName).lexicallyRelative("textures");
-                albedoPath = context->findDataPath(FileSystem::Path("textures") / filePath.withoutExtension().getFileName() / albedoPath);
+                return materialName;
             }
 
-            if (albedoPath.isFile())
+            albedoPath = FileSystem::GetCanonicalPath(filePath / diffuseName);
+            materialName = findMaterial(albedoPath);
+            if (!materialName.empty())
             {
-                albedoPath = removeRoot("textures", albedoPath);
-                auto albedoSearch = albedoToMaterialMap.find(String::GetLower(albedoPath.withoutExtension().getString()));
-                if (albedoSearch == std::end(albedoToMaterialMap))
-                {
-                    albedoSearch = albedoToMaterialMap.find(String::GetLower(albedoPath.getString()));
-                }
-
-                if (albedoSearch != std::end(albedoToMaterialMap))
-                {
-                    LockedWrite{ std::cout } << "  Found material for albedo: " << albedoPath.getString() << " belongs to " << albedoSearch->second;
-                    return albedoSearch->second;
-                }
+                return materialName;
             }
 
-            LockedWrite{ std::cerr } << "! Unable to find material for albedo: " << diffuseName << ", " << albedoPath.getString();
-            return "";
+            return String::Empty;
         };
 
         ModelList modelList;
