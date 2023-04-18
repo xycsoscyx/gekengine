@@ -5,7 +5,7 @@ project(${ProjectID})
 
 add_definitions(-D_NEWTON_STATIC_LIB=1)
 
-file(GLOB SOURCES "*.cpp" "*.rc")
+file(GLOB SOURCES "*.cpp" "*.c" "*.rc")
 add_executable(${ProjectID} ${SOURCES})
 
 target_link_libraries(${ProjectID} Math Utility Shapes Resources assimp)

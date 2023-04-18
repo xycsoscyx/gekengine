@@ -16,24 +16,17 @@
         },
         {
             "name": "tangent",
-            "format": "R32G32B32_FLOAT",
+            "format": "R32G32B32A32_FLOAT",
             "semantic": "TANGENT",
             "source": "vertex",
             "sourceIndex": 2
-        },
-        {
-            "name": "biTangent",
-            "format": "R32G32B32_FLOAT",
-            "semantic": "BITANGENT",
-            "source": "vertex",
-            "sourceIndex": 3
         },
         {
             "name": "normal",
             "format": "R32G32B32_FLOAT",
             "semantic": "NORMAL",
             "source": "vertex",
-            "sourceIndex": 4
+            "sourceIndex": 3
         },
         {
             "name": "transform",
@@ -41,7 +34,7 @@
             "count": 4,
             "semantic": "TEXCOORD",
             "source": "instance",
-            "sourceIndex": 5
+            "sourceIndex": 4
         }
     ],
     "output": [

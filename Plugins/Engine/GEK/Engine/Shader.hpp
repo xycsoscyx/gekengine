@@ -80,7 +80,7 @@ namespace Gek
             virtual bool isLightingRequired(void) const = 0;
             virtual std::string const &getOutput(void) const = 0;
 
-            virtual ResourceHandle getDepthTarget(uint32_t pass) const = 0;
+            virtual ResourceHandle getTextureResource(const std::string& name) = 0;
 
             virtual Material::Iterator begin(void) = 0;
             virtual Pass::Iterator begin(Video::Device::Context *videoContext, Math::Float4x4 const &viewMatrix, Shapes::Frustum const &viewFrustum) = 0;

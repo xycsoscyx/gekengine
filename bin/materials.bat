@@ -1,3 +1,0 @@
-.\debug\creatematerials.exe
-
-pause

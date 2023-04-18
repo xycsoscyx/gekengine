@@ -80,6 +80,8 @@ namespace Gek
             std::string outputResource;
             uint32_t drawOrder = 0;
 
+            std::map<std::string, ResourceHandle> textureResourceMap;
+
             using PassList = std::vector<PassData>;
             using MaterialMap = std::unordered_map<std::string, MaterialData>;
 
@@ -312,6 +314,7 @@ R"(namespace Lights
                     if (description)
                     {
                         resourceMap[textureName] = resource;
+                        textureResourceMap[textureName] = resource;
                         if (description->depth > 1)
                         {
                             resourceSemanticsMap[textureName] = std::format("Texture3D<{}>", getFormatSemantic(description->format));
@@ -1169,9 +1172,15 @@ R"(namespace UnorderedAccess
                 return outputResource;
             }
 
-            ResourceHandle getDepthTarget(uint32_t pass) const
+            ResourceHandle getTextureResource(const std::string& name)
             {
-                return passList[pass].depthBuffer;
+                auto textureSearch = textureResourceMap.find(name);
+                if (textureSearch != std::end(textureResourceMap))
+                {
+                    return textureSearch->second;
+                }
+
+                return 0;
             }
 
             Material::Iterator begin(void)

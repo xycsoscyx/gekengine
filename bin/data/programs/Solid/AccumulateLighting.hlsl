@@ -4,15 +4,6 @@
 #include <GEKUtility.hlsl>
 #include <GEKLighting.hlsl>
 
-// assume normals are stored as 3Dc format, so generate the Z value
-float3 ConvertNormal(float2 encoded)
-{
-    float3 normal;
-    normal.xy = ((encoded.xy * 2.0) - 1.0) * float2(1.0f, -1.0f);
-    normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
-    return normal;
-}
-
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
     // final images will be sRGB format and converted to linear automatically
@@ -26,11 +17,12 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
 
     float3 surfacePosition = inputPixel.position;
 
-    const float3x3 viewBasis = float3x3(inputPixel.tangent, inputPixel.biTangent, inputPixel.normal);
-
-    float3 surfaceNormal = ConvertNormal(Resources::normal.Sample(Global::TextureSampler, inputPixel.texCoord).xy);
-    surfaceNormal = (inputPixel.isFrontFacing ? surfaceNormal : -surfaceNormal);
-    surfaceNormal = mul(surfaceNormal, viewBasis);
+    float3 normalColor = Resources::normal.Sample(Global::TextureSampler, inputPixel.texCoord).xyz;
+    float3 textureNormal = ((normalColor * (255.0 / 127.0)) - (128.0 / 127.0));
+    float3 surfaceNormal = normalize((textureNormal.x * inputPixel.tangent) + 
+                                     (textureNormal.y * inputPixel.biTangent) +
+                                     (textureNormal.z * inputPixel.normal));
+    surfaceNormal = normalColor;
 
     float3 materialAlbedo = albedo.rgb;
     float materialRoughness = Resources::roughness.Sample(Global::TextureSampler, inputPixel.texCoord);

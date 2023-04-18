@@ -17,6 +17,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include "mikktspace.h"
+
 using namespace Gek;
 
 struct Header
@@ -39,10 +41,20 @@ struct Header
 
 struct Mesh
 {
+    std::string material;
+    std::vector<Math::Float3> pointList;
+    std::vector<Math::Float2> texCoordList;
+    std::vector<Math::Float4> tangentList;
+    std::vector<Math::Float3> normalList;
+};
+
+struct IndexedMesh
+    : public Mesh
+{
     struct Face
     {
         uint16_t data[3];
-        uint16_t &operator [] (size_t index)
+        uint16_t& operator [] (size_t index)
         {
             return data[index];
         }
@@ -53,12 +65,6 @@ struct Mesh
         }
     };
 
-    std::string material;
-    std::vector<Math::Float3> pointList;
-    std::vector<Math::Float2> texCoordList;
-    std::vector<Math::Float3> tangentList;
-    std::vector<Math::Float3> biTangentList;
-    std::vector<Math::Float3> normalList;
     std::vector<Face> faceList;
 };
 
@@ -67,6 +73,7 @@ struct Model
     std::string name;
     Shapes::AlignedBox boundingBox;
     std::vector<Mesh> meshList;
+    std::vector<IndexedMesh> indexedMeshList;
 };
 
 using ModelList = std::vector<Model>;
@@ -75,13 +82,12 @@ struct Parameters
 {
     std::string sourceName;
     float feetPerUnit = 1.0f;
-    bool flipCoords = false;
-    bool flipWinding = false;
-    float smoothingAngle = 80.0f;
+    bool generateSmoothNormals = false;
+    float smoothingAngle = 90.0f;
     bool saveAsCode = false;
 };
 
-bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode const *inputNode, aiMatrix4x4 const &parentTransform, ModelList &modelList, std::function<std::string(const std::string &, const std::string &)> findMaterialForMesh)
+bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode const *inputNode, aiMatrix4x4 const &accumulatedTransform, ModelList &modelList, std::function<std::string(const std::string &, const std::string &)> findMaterialForMesh)
 {
     if (inputNode == nullptr)
     {
@@ -89,7 +95,7 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
         return false;
     }
 
-    aiMatrix4x4 transform(parentTransform * inputNode->mTransformation);
+    auto transform = accumulatedTransform * inputNode->mTransformation;
     if (inputNode->mNumMeshes > 0)
     {
         if (inputNode->mMeshes == nullptr)
@@ -97,6 +103,9 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
             LockedWrite{ std::cerr } << "Invalid mesh list";
             return false;
         }
+
+        Math::Float4x4 localTransform(&transform.a1);
+        localTransform.transpose();
 
         Model model;
         model.name = inputNode->mName.C_Str();
@@ -136,90 +145,161 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
                     continue;
                 }
 
-                if (inputMesh->mTangents == nullptr)
-                {
-                    LockedWrite{ std::cerr } << "Invalid inputMesh tangent list";
-                    continue;
-                }
-
-                if (inputMesh->mBitangents == nullptr)
-                {
-                    LockedWrite{ std::cerr } << "Invalid inputMesh bitangent list";
-                    continue;
-                }
-
                 if (inputMesh->mNormals == nullptr)
                 {
                     LockedWrite{ std::cerr } << "Invalid inputMesh normal list";
                     continue;
                 }
 
-                Mesh mesh;
-
                 aiString sceneDiffuseMaterial;
                 const aiMaterial *sceneMaterial = inputScene->mMaterials[inputMesh->mMaterialIndex];
                 sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
                 std::string diffuseName = sceneDiffuseMaterial.C_Str();
-                mesh.material = findMaterialForMesh(parameters.sourceName, diffuseName);
-                if (mesh.material.empty())
+                auto material = findMaterialForMesh(parameters.sourceName, diffuseName);
+                if (material.empty())
                 {
                     LockedWrite{ std::cerr } << "Unable to find material for mesh " << inputMesh->mName.C_Str();
                     continue;
                 }
 
-                mesh.pointList.resize(inputMesh->mNumVertices);
-                mesh.texCoordList.resize(inputMesh->mNumVertices);
-                mesh.tangentList.resize(inputMesh->mNumVertices);
-                mesh.biTangentList.resize(inputMesh->mNumVertices);
-                mesh.normalList.resize(inputMesh->mNumVertices);
-                for (uint32_t vertexIndex = 0; vertexIndex < inputMesh->mNumVertices; ++vertexIndex)
-                {
-                    auto vertex = inputMesh->mVertices[vertexIndex];
-                    aiTransformVecByMatrix4(&vertex, &transform);
-                    mesh.pointList[vertexIndex].set(vertex.x, vertex.y, vertex.z);
-                    mesh.pointList[vertexIndex] *= parameters.feetPerUnit;
-                    model.boundingBox.extend(mesh.pointList[vertexIndex]);
+                LockedWrite{ std::cout } << " -> Material: " << material;
+                LockedWrite{ std::cerr } << " -> Num. Faces: " << inputMesh->mNumFaces;
+                LockedWrite{ std::cerr } << " -> Num. Vertex: " << inputMesh->mNumVertices;
 
-                    mesh.texCoordList[vertexIndex].set(
-                        inputMesh->mTextureCoords[0][vertexIndex].x,
-                        inputMesh->mTextureCoords[0][vertexIndex].y);
-
-                    mesh.tangentList[vertexIndex].set(
-                        inputMesh->mTangents[vertexIndex].x,
-                        inputMesh->mTangents[vertexIndex].y,
-                        inputMesh->mTangents[vertexIndex].z);
-
-                    mesh.biTangentList[vertexIndex].set(
-                        inputMesh->mBitangents[vertexIndex].x,
-                        inputMesh->mBitangents[vertexIndex].y,
-                        inputMesh->mBitangents[vertexIndex].z);
-
-                    mesh.normalList[vertexIndex].set(
-                        inputMesh->mNormals[vertexIndex].x,
-                        inputMesh->mNormals[vertexIndex].y,
-                        inputMesh->mNormals[vertexIndex].z);
-                }
-
-                mesh.faceList.reserve(inputMesh->mNumFaces);
+                IndexedMesh indexedMesh;
+                indexedMesh.material = material;
+                indexedMesh.faceList.reserve(inputMesh->mNumFaces);
                 for (uint32_t faceIndex = 0; faceIndex < inputMesh->mNumFaces; ++faceIndex)
                 {
-                    const aiFace &face = inputMesh->mFaces[faceIndex];
+                    const aiFace& face = inputMesh->mFaces[faceIndex];
                     if (face.mNumIndices != 3)
                     {
                         LockedWrite{ std::cerr } << "Skipping non-triangular face, face: " << faceIndex << ": " << face.mNumIndices << " indices";
-						continue;
+                        continue;
                     }
 
-					Mesh::Face meshFace;
+                    IndexedMesh::Face meshFace;
                     for (uint32_t edgeIndex = 0; edgeIndex < 3; ++edgeIndex)
                     {
-						meshFace[edgeIndex] = face.mIndices[edgeIndex];
+                        meshFace[edgeIndex] = face.mIndices[edgeIndex];
                     }
 
-					mesh.faceList.push_back(meshFace);
+                    indexedMesh.faceList.push_back(meshFace);
                 }
 
+                indexedMesh.pointList.resize(inputMesh->mNumVertices);
+                indexedMesh.texCoordList.resize(inputMesh->mNumVertices);
+                indexedMesh.tangentList.resize(inputMesh->mNumVertices);
+                indexedMesh.normalList.resize(inputMesh->mNumVertices);
+                for (uint32_t vertexIndex = 0; vertexIndex < inputMesh->mNumVertices; ++vertexIndex)
+                {
+                    Math::Float3 position(inputMesh->mVertices[vertexIndex].x, inputMesh->mVertices[vertexIndex].y, inputMesh->mVertices[vertexIndex].z);
+                    Math::Float2 texCoord(inputMesh->mTextureCoords[0][vertexIndex].x, inputMesh->mTextureCoords[0][vertexIndex].y);
+                    Math::Float3 tangent(inputMesh->mTangents[vertexIndex].x, inputMesh->mTangents[vertexIndex].y, inputMesh->mTangents[vertexIndex].z);
+                    Math::Float3 normal(inputMesh->mNormals[vertexIndex].x, inputMesh->mNormals[vertexIndex].y, inputMesh->mNormals[vertexIndex].z);
+
+                    indexedMesh.pointList[vertexIndex] = localTransform.transform(position) * parameters.feetPerUnit;
+                    indexedMesh.texCoordList[vertexIndex] = texCoord;
+                    indexedMesh.tangentList[vertexIndex].xyz = localTransform.rotate(normal);
+                    indexedMesh.tangentList[vertexIndex].w = 1.0f;
+                    indexedMesh.normalList[vertexIndex] = localTransform.rotate(normal);
+                }
+
+                for (const auto& point : indexedMesh.pointList)
+                {
+                    model.boundingBox.extend(point);
+                }
+
+                Mesh mesh;
+                mesh.material = material;
+                mesh.pointList.reserve(inputMesh->mNumFaces * 3);
+                mesh.texCoordList.reserve(inputMesh->mNumFaces * 3);
+                mesh.tangentList.reserve(inputMesh->mNumFaces * 3);
+                mesh.normalList.reserve(inputMesh->mNumFaces * 3);
+                for (uint32_t faceIndex = 0; faceIndex < inputMesh->mNumFaces; ++faceIndex)
+                {
+                    const aiFace& face = inputMesh->mFaces[faceIndex];
+                    if (face.mNumIndices != 3)
+                    {
+                        LockedWrite{ std::cerr } << "Skipping non-triangular face, face: " << faceIndex << ": " << face.mNumIndices << " indices";
+                        continue;
+                    }
+
+                    for (uint32_t edgeIndex = 0; edgeIndex < 3; ++edgeIndex)
+                    {
+                        auto vertexIndex = face.mIndices[edgeIndex];
+                        Math::Float3 position(inputMesh->mVertices[vertexIndex].x, inputMesh->mVertices[vertexIndex].y, inputMesh->mVertices[vertexIndex].z);
+                        Math::Float2 texCoord(inputMesh->mTextureCoords[0][vertexIndex].x, inputMesh->mTextureCoords[0][vertexIndex].y);
+                        Math::Float3 tangent(inputMesh->mTangents[vertexIndex].x, inputMesh->mTangents[vertexIndex].y, inputMesh->mTangents[vertexIndex].z);
+                        Math::Float3 normal(inputMesh->mNormals[vertexIndex].x, inputMesh->mNormals[vertexIndex].y, inputMesh->mNormals[vertexIndex].z);
+
+                        mesh.pointList.push_back(localTransform.transform(position) * parameters.feetPerUnit);
+                        mesh.texCoordList.push_back(texCoord);
+                        mesh.tangentList.push_back(Math::Float4(localTransform.rotate(normal), 1.0f));
+                        mesh.normalList.push_back(localTransform.rotate(normal));
+                    }
+                }
+
+                for (const auto& point : mesh.pointList)
+                {
+                    model.boundingBox.extend(point);
+                }
+
+                SMikkTSpaceInterface mikkInterface;
+                mikkInterface.m_getNumFaces = [](const SMikkTSpaceContext* mikkContext) -> int
+                {
+                    auto& mesh = *reinterpret_cast<Mesh*>(mikkContext->m_pUserData);
+                    return mesh.pointList.size() / 3;
+                };
+
+                mikkInterface.m_getNumVerticesOfFace = [](const SMikkTSpaceContext* mikkContext, const int faceIndex) -> int
+                {
+                    auto& mesh = *reinterpret_cast<Mesh*>(mikkContext->m_pUserData);
+                    return 3;
+                };
+
+                mikkInterface.m_getPosition = [](const SMikkTSpaceContext* mikkContext, float position[], const int faceIndex, const int vertexIndex) -> void
+                {
+                    auto& mesh = *reinterpret_cast<Mesh*>(mikkContext->m_pUserData);
+                    position[0] = mesh.pointList[(faceIndex * 3) + vertexIndex].x;
+                    position[1] = mesh.pointList[(faceIndex * 3) + vertexIndex].y;
+                    position[2] = mesh.pointList[(faceIndex * 3) + vertexIndex].z;
+                };
+
+                mikkInterface.m_getNormal = [](const SMikkTSpaceContext* mikkContext, float normal[], const int faceIndex, const int vertexIndex) -> void
+                {
+                    auto& mesh = *reinterpret_cast<Mesh*>(mikkContext->m_pUserData);
+                    normal[0] = mesh.normalList[(faceIndex * 3) + vertexIndex].x;
+                    normal[1] = mesh.normalList[(faceIndex * 3) + vertexIndex].y;
+                    normal[2] = mesh.normalList[(faceIndex * 3) + vertexIndex].z;
+                };
+
+                mikkInterface.m_getTexCoord = [](const SMikkTSpaceContext* mikkContext, float texCoord[], const int faceIndex, const int vertexIndex) -> void
+                {
+                    auto& mesh = *reinterpret_cast<Mesh*>(mikkContext->m_pUserData);
+                    texCoord[0] = mesh.texCoordList[(faceIndex * 3) + vertexIndex].x;
+                    texCoord[1] = mesh.texCoordList[(faceIndex * 3) + vertexIndex].y;
+                };
+
+                mikkInterface.m_setTSpaceBasic = [](const SMikkTSpaceContext* mikkContext, const float tangent[], const float sign, const int faceIndex, const int vertexIndex) -> void
+                {
+                    auto& mesh = *reinterpret_cast<Mesh*>(mikkContext->m_pUserData);
+                    mesh.tangentList[(faceIndex * 3) + vertexIndex].x = tangent[0];
+                    mesh.tangentList[(faceIndex * 3) + vertexIndex].y = tangent[1];
+                    mesh.tangentList[(faceIndex * 3) + vertexIndex].z = tangent[2];
+                    mesh.tangentList[(faceIndex * 3) + vertexIndex].w = sign;
+                };
+
+                mikkInterface.m_setTSpace = nullptr;
+
+                SMikkTSpaceContext mikkContext;
+                mikkContext.m_pInterface = &mikkInterface;
+                mikkContext.m_pUserData = &mesh;
+
+                genTangSpaceDefault(&mikkContext);
+
                 model.meshList.push_back(mesh);
+                model.indexedMeshList.push_back(indexedMesh);
             }
 
             modelList.push_back(model);
@@ -265,14 +345,6 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         {
             parameters.sourceName = String::Narrow(argumentList[argumentIndex]);
         }
-        else if (arguments[0] == "-flipcoords")
-        {
-            parameters.flipCoords = true;
-        }
-        else if (arguments[0] == "-flipwinding")
-        {
-            parameters.flipWinding = true;
-        }
         else if (arguments[0] == "-smoothangle")
         {
             if (arguments.size() != 2)
@@ -281,7 +353,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                 return -__LINE__;
             }
 
-            parameters.smoothingAngle = String::Convert(arguments[1], 80.0f);
+            parameters.smoothingAngle = String::Convert(arguments[1], parameters.smoothingAngle);
         }
         else if (arguments[0] == "-unitsinfoot")
         {
@@ -291,6 +363,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                 return -__LINE__;
             }
 
+            parameters.generateSmoothNormals = true;
 			parameters.feetPerUnit = (1.0f / String::Convert(arguments[1], 1.0f));
         }
         else if (arguments[0] == "-code")
@@ -298,42 +371,6 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             parameters.saveAsCode = true;
         }
     }
-
-    aiLogStream logStream;
-    logStream.callback = [](char const *message, char *user) -> void
-    {
-        std::string trimmedMessage(message);
-        trimmedMessage = trimmedMessage.substr(0, trimmedMessage.size() - 1);
-        LockedWrite{ std::cerr } << "Assimp: " << trimmedMessage;
-    };
-
-    logStream.user = nullptr;
-    aiAttachLogStream(&logStream);
-
-    int notRequiredComponents =
-        //aiComponent_NORMALS |
-        //aiComponent_TANGENTS_AND_BITANGENTS |
-        aiComponent_COLORS |
-        aiComponent_BONEWEIGHTS |
-        aiComponent_ANIMATIONS |
-        aiComponent_LIGHTS |
-        aiComponent_CAMERAS |
-        0;
-
-    static const unsigned int importFlags =
-        (parameters.flipWinding ? aiProcess_FlipWindingOrder : 0) |
-        (parameters.flipCoords ? aiProcess_FlipUVs : 0) |
-        aiProcess_RemoveComponent |
-        aiProcess_RemoveRedundantMaterials |
-        aiProcess_FindDegenerates |
-        aiProcess_ValidateDataStructure;
-
-    aiPropertyStore *propertyStore = aiCreatePropertyStore();
-    aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
-    aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
-    aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, parameters.smoothingAngle);
-    aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
-    aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
 
     auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
     auto rootPath(pluginPath.getParentPath());
@@ -359,6 +396,53 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
         auto filePath = context->findDataPath(FileSystem::CreatePath("models", parameters.sourceName));
 
+        aiLogStream logStream;
+        logStream.callback = [](char const* message, char* user) -> void
+        {
+            std::string trimmedMessage(message);
+            trimmedMessage = trimmedMessage.substr(0, trimmedMessage.size() - 1);
+            LockedWrite{ std::cerr } << "Assimp: " << trimmedMessage;
+        };
+
+        logStream.user = nullptr;
+        aiAttachLogStream(&logStream);
+
+        int notRequiredComponents =
+            //aiComponent_NORMALS |
+            //aiComponent_TANGENTS_AND_BITANGENTS |
+            aiComponent_COLORS |
+            aiComponent_BONEWEIGHTS |
+            aiComponent_ANIMATIONS |
+            aiComponent_LIGHTS |
+            aiComponent_CAMERAS |
+            0;
+
+        static const unsigned int importFlags =
+            aiProcess_RemoveComponent |
+            aiProcess_RemoveRedundantMaterials |
+            aiProcess_FindDegenerates |
+            aiProcess_ValidateDataStructure |
+            aiProcess_MakeLeftHanded |
+            aiProcess_FlipWindingOrder |
+            aiProcess_FlipUVs |
+            aiProcess_GenUVCoords |
+            aiProcess_GenSmoothNormals |
+            aiProcess_JoinIdenticalVertices |
+            aiProcess_FindInvalidData |
+            aiProcess_ImproveCacheLocality |
+            aiProcess_OptimizeMeshes |
+            //aiProcess_OptimizeGraph,
+            0;
+
+        aiPropertyStore* propertyStore = aiCreatePropertyStore();
+        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
+        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
+        aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, parameters.smoothingAngle);
+        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
+        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
+        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
+        //aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_TRIANGLE_LIMIT, 65535);
+
         LockedWrite{ std::cout } << "Loading: " << filePath.getString();
         auto inputScene = aiImportFileExWithProperties(filePath.getString().data(), importFlags, nullptr, propertyStore);
         if (inputScene == nullptr)
@@ -367,38 +451,25 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             return -__LINE__;
         }
 
-        static const unsigned int postProcessSteps[] =
+        inputScene = aiApplyPostProcessing(inputScene, aiProcess_Triangulate);
+        if (inputScene == nullptr)
         {
-            aiProcess_Triangulate |
-            //aiProcess_SplitLargeMeshes |
-            0,
+            LockedWrite{ std::cerr } << "Unable to apply post processing with Assimp";
+            return -__LINE__;
+        }
 
-            aiProcess_GenUVCoords |
-            aiProcess_TransformUVCoords |
-            0,
-
-            aiProcess_GenSmoothNormals |
-            aiProcess_CalcTangentSpace |
-            0,
-
-            aiProcess_JoinIdenticalVertices |
-            aiProcess_FindInvalidData |
-            0,
-
-            aiProcess_ImproveCacheLocality |
-            aiProcess_OptimizeMeshes |
-            //aiProcess_OptimizeGraph,
-            0,
-        };
-
-        for (auto postProcessFlags : postProcessSteps)
+        inputScene = aiApplyPostProcessing(inputScene, aiProcess_SplitLargeMeshes);
+        if (inputScene == nullptr)
         {
-            inputScene = aiApplyPostProcessing(inputScene, postProcessFlags);
-            if (inputScene == nullptr)
-            {
-                LockedWrite{ std::cerr } << "Unable to apply post processing with Assimp";
-                return -__LINE__;
-            }
+            LockedWrite{ std::cerr } << "Unable to apply post processing with Assimp";
+            return -__LINE__;
+        }
+
+        inputScene = aiApplyPostProcessing(inputScene, aiProcess_CalcTangentSpace);
+        if (inputScene == nullptr)
+        {
+            LockedWrite{ std::cerr } << "Unable to apply post processing with Assimp";
+            return -__LINE__;
         }
 
         if (!inputScene->HasMeshes())
@@ -500,8 +571,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         };
 
         ModelList modelList;
-        aiMatrix4x4 identity;
-        if (!GetModels(parameters, inputScene, inputScene->mRootNode, identity, modelList, findMaterialForMesh))
+        aiMatrix4x4 rootTransform;
+        if (!GetModels(parameters, inputScene, inputScene->mRootNode, rootTransform, modelList, findMaterialForMesh))
         {
             return -__LINE__;
         }
@@ -542,23 +613,20 @@ R"(struct StaticModel_{0}
     std::vector<uint16_t> indices;
     std::vector<Math::Float3> positions;
     std::vector<Math::Float2> texCoords;
-    std::vector<Math::Float3> tangents;
-    std::vector<Math::Float3> biTangents;
+    std::vector<Math::Float4> tangents;
     std::vector<Math::Float3> normals;
 
     StaticModel_{0}(std::string &&material, 
         std::vector<uint16_t> &&indices,
         std::vector<Math::Float3> &&positions,
         std::vector<Math::Float2> &&texCoords,
-        std::vector<Math::Float3> &&tangents,
-        std::vector<Math::Float3> &&biTangents,
+        std::vector<Math::Float4> &&tangents,
         std::vector<Math::Float3> &&normals)
         : material(std::move(material))
         , indices(std::move(indices))
         , positions(std::move(positions))
         , texCoords(std::move(texCoords))
         , tangents(std::move(tangents))
-        , biTangents(std::move(biTangents))
         , normals(std::move(normals))
     {{
     }}
@@ -567,7 +635,7 @@ R"(struct StaticModel_{0}
 )";
 
                 std::string code = std::vformat(codeTemplate, std::make_format_args(modelName));
-                for (auto& mesh : model.meshList)
+                for (auto& mesh : model.indexedMeshList)
                 {
                     String::Replace(mesh.material, "\\", "\\\\");
                     code += std::format("   StaticModel_{}(\"{}\",\n       std::vector<uint16_t>({{ ", modelName, mesh.material);
@@ -588,16 +656,10 @@ R"(struct StaticModel_{0}
                         code += std::format("Math::Float2({}, {}), ", texCoord.x, texCoord.y);
                     }
 
-                    code += std::format("}}),\n       std::vector<Math::Float3>({{ ");
+                    code += std::format("}}),\n       std::vector<Math::Float4>({{ ");
                     for (auto& tangent : mesh.tangentList)
                     {
-                        code += std::format("Math::Float3({}, {}, {}), ", tangent.x, tangent.y, tangent.z);
-                    }
-
-                    code += std::format("}}),\n       std::vector<Math::Float3>({{ ");
-                    for (auto& biTangent : mesh.biTangentList)
-                    {
-                        code += std::format("Math::Float3({}, {}, {}), ", biTangent.x, biTangent.y, biTangent.z);
+                        code += std::format("Math::Float4({}, {}, {}, {}), ", tangent.x, tangent.y, tangent.z, tangent.w);
                     }
 
                     code += std::format("}}),\n       std::vector<Math::Float3>({{ ");
@@ -631,22 +693,21 @@ R"(struct StaticModel_{0}
                 {
                     LockedWrite{ std::cout } << "   > Mesh: " << mesh.material;
                     LockedWrite{ std::cout } << "      Num. Vertices: " << mesh.pointList.size();
-                    LockedWrite{ std::cout } << "      Num. Faces: " << mesh.faceList.size();
+                    //LockedWrite{ std::cout } << "      Num. Faces: " << mesh.faceList.size();
 
                     Header::Mesh meshHeader;
                     std::strncpy(meshHeader.material, mesh.material.data(), 63);
                     meshHeader.vertexCount = mesh.pointList.size();
-                    meshHeader.faceCount = mesh.faceList.size();
+                    //meshHeader.faceCount = mesh.faceList.size();
                     fwrite(&meshHeader, sizeof(Header::Mesh), 1, file);
                 }
 
                 for (auto& mesh : model.meshList)
                 {
-                    fwrite(mesh.faceList.data(), sizeof(Mesh::Face), mesh.faceList.size(), file);
+                    //fwrite(mesh.faceList.data(), sizeof(Mesh::Face), mesh.faceList.size(), file);
                     fwrite(mesh.pointList.data(), sizeof(Math::Float3), mesh.pointList.size(), file);
                     fwrite(mesh.texCoordList.data(), sizeof(Math::Float2), mesh.texCoordList.size(), file);
-                    fwrite(mesh.tangentList.data(), sizeof(Math::Float3), mesh.tangentList.size(), file);
-                    fwrite(mesh.biTangentList.data(), sizeof(Math::Float3), mesh.biTangentList.size(), file);
+                    fwrite(mesh.tangentList.data(), sizeof(Math::Float4), mesh.tangentList.size(), file);
                     fwrite(mesh.normalList.data(), sizeof(Math::Float3), mesh.normalList.size(), file);
                 }
 

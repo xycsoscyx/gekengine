@@ -3,7 +3,7 @@
 
 using namespace Gek::Math;
 
-TEST(Matrix4x4, Initialization)
+TEST(Matrix4x4, CheckIdentity)
 {
     EXPECT_EQ(Float4x4::Identity.rx.x, 1.0f);
     EXPECT_EQ(Float4x4::Identity.rx.y, 0.0f);

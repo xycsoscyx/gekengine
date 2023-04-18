@@ -1,9 +1,8 @@
 {
-    "Seed": 7151980,
     "Templates": {
         "BasicCube": {
             "Transform": {
-                "position": [ "random(-40, 40)", "random(5, 30)", "random(-10, 10)" ],
+                "position": [ "random(-40, 40)", "random(10, 30)", "random(-10, 10)" ],
                 "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
             },
             "Model": "dice_wood",
@@ -11,27 +10,27 @@
         },
         "BasicPointLight": {
             "Transform": {
-                "position": [ "random(-50, 50)", "random(-10, 40)", "random(-20, 20)" ],
+                "position": [ "random(-35, 35)", "random(10, 50)", "random(-15, 15)" ],
                 "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
             },
             "PointLight": {
                 "radius": "random(0.5, 2.0)",
-                "range": "random(10, 30)",
-                "intensity": "random(1, 10)"
+                "range": "random(25, 50)",
+                "intensity": "random(5, 10)"
             },
             "Color": [ "random(0, 1)", "random(0, 1)", "random(0, 1)" ]
         },
         "BasicSpotLight": {
             "Transform": {
-                "position": [ "random(-50, 50)", "random(-10, 40)", "random(-20, 20)" ],
+                "position": [ "random(-35, 35)", "random(10, 50)", "random(-15, 15)" ],
                 "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
             },
             "SpotLight": {
-                "range": "random(10, 30)",
+                "range": "random(25, 50)",
                 "innerAngle": "random(10,50)",
                 "outerAngle": "random(60,90)",
                 "coneFalloff": "random(0.5, 4.0)",
-                "intensity": "random(1, 10)"
+                "intensity": "random(5, 10)"
             },
             "Color": [ "random(0, 1)", "random(0, 1)", "random(0, 1)" ],
             "Spin": {}
@@ -45,85 +44,38 @@
         },
 
         {
-            "Name": "player",
             "Transform": {
-                "position": [ 0, 20, 0 ],
-                "rotation": [ 0, "pi/2", 0 ]
+                "position": [ 34, 26, 0 ],
+                "rotation": [ 0.12278781, -0.6963644, 0.122787766, 0.6963641 ],
+                "scale": [ 1, 1, 1 ]
             },
             "FirstPersonCamera": {
                 "fieldOfView": 60,
                 "nearClip": 0.5,
-                "FarClip": 200
-            }
-        },
-
-        {
-            "Transform": {
-                "position": [ -34.2, 4, 13.3 ],
-                "rotation": [ 0, 0, 0 ]
+                "target": "",
+                "farClip": 100
             },
-            "PointLight": {
-                "radius": 2.0,
-                "range": 50.0,
-                "intensity": 5.0
-            },
-            "Color": [ 1, 0, 0 ]
-        },
-        {
-            "Transform": {
-                "position": [ -34.2, 4, -12.3 ],
-                "rotation": [ 0, 0, 0 ]
-            },
-            "PointLight": {
-                "radius": 2.0,
-                "range": 50.0,
-                "intensity": 5.0
-            },
-            "Color": [ 0, 1, 0 ]
-        },
-        {
-            "Transform": {
-                "position": [ 35.5, 4, 13.3 ],
-                "rotation": [ 0, 0, 0 ]
-            },
-            "PointLight": {
-                "radius": 2.0,
-                "range": 50.0,
-                "intensity": 5.0
-            },
-            "Color": [ 0, 0, 1 ]
-        },
-        {
-            "Transform": {
-                "position": [ 35.5, 4, -12.3 ],
-                "rotation": [ 0, 0, 0 ]
-            },
-            "PointLight": {
-                "radius": 2.0,
-                "range": 50.0,
-                "intensity": 5.0
-            },
-            "Color": [ 1, 0, 1 ]
+            "Name": "player"
         },
 
         {
             "Template": {
                 "Base": "BasicCube",
-                "Count": 10
+                "Count": 0
             }
         },
 
         {
             "Template": {
                 "Base": "BasicPointLight",
-                "Count": 10
+                "Count": 50
             }
         },
 
         {
             "Template": {
                 "Base": "BasicSpotLight",
-                "Count": 10
+                "Count": 50
             }
         }
     ]

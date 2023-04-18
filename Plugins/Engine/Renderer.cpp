@@ -651,17 +651,9 @@ float4 main(PixelInput input) : SV_Target
 				auto invertedDepthBuffer = core->getOption("render", "invertedDepthBuffer").convert(true);
 
 				Video::DepthState::Description depthStateInformation;
-				depthStateInformation.enable = true;
+				depthStateInformation.enable = false;
 				depthStateInformation.writeMask = Video::DepthState::Write::All;
-				if (invertedDepthBuffer)
-				{
-					depthStateInformation.comparisonFunction = Video::ComparisonFunction::GreaterEqual;
-				}
-				else
-				{
-					depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
-				}
-
+				depthStateInformation.comparisonFunction = Video::ComparisonFunction::Always;
 				gui.depthState = videoDevice->createDepthState(depthStateInformation);
 				gui.depthState->setName("core:depthState");
 
@@ -696,8 +688,9 @@ float4 main(PixelInput input) : SV_Target
 				imGuiIo.UserData = this;
 
 				auto &style = ImGui::GetStyle();
+				ImGui::StyleColorsDark(&style);
 				style.WindowPadding.x = style.WindowPadding.y;
-				style.FramePadding.x = style.FramePadding.y;
+				style.FramePadding.x = style.FramePadding.y = 5.0f;
 			}
 
 			~Renderer(void)
@@ -802,13 +795,8 @@ float4 main(PixelInput input) : SV_Target
 					dataBuffer.projectionMatrix = Math::Float4x4::MakeOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
 					videoDevice->updateResource(gui.constantBuffer.get(), &dataBuffer);
 
-					auto editorShaderHandle = resources->getShader("editor");
-					auto editorShader = editorShaderHandle ? resources->getShader(editorShaderHandle) : nullptr;
-					ResourceHandle depthHandle = editorShader ? editorShader->getDepthTarget(0) : ResourceHandle();
-					auto depthBuffer = depthHandle ? resources->getResource(depthHandle) : nullptr;
-
 					auto videoContext = videoDevice->getDefaultContext();
-					videoContext->setRenderTargetList({ videoDevice->getBackBuffer() }, depthBuffer);
+					videoContext->setRenderTargetList({ videoDevice->getBackBuffer() }, nullptr);
 					videoContext->setViewportList({ Video::ViewPort(Math::Float2::Zero, Math::Float2(width, height), 0.0f, 1.0f) });
 
 					videoContext->setInputLayout(gui.inputLayout.get());
@@ -823,8 +811,6 @@ float4 main(PixelInput input) : SV_Target
 					videoContext->setBlendState(gui.blendState.get(), Math::Float4::Black, 0xFFFFFFFF);
 					videoContext->setDepthState(gui.depthState.get(), 0);
 					videoContext->setRenderState(gui.renderState.get());
-
-					videoContext->clearDepthStencilTarget(depthBuffer, Video::ClearFlags::Depth, 0.0f, 0);
 
 					uint32_t vertexOffset = 0;
 					uint32_t indexOffset = 0;

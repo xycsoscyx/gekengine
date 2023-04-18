@@ -196,7 +196,7 @@ namespace Gek
                         ImGuizmo::SetDrawlist();
                         ImGuizmo::SetRect(origin.x, origin.y, size.x, size.y);
 
-                        ImGuizmo::DrawGrid(viewMatrix.data, projectionMatrix.data, Math::Float4x4::Identity.data, 25.0f);
+                        //ImGuizmo::DrawGrid(viewMatrix.data, projectionMatrix.data, Math::Float4x4::Identity.data, 25.0f);
 
                         auto& registry = population->getRegistry();
                         for (auto& entity : registry)
@@ -378,13 +378,14 @@ namespace Gek
                         }
                         else
                         {
-                            UI::InputString("##blank", "<unnamed>", ImGuiInputTextFlags_ReadOnly);
+                            std::string unnamed("<unnamed>");
+                            UI::InputString("##blank", unnamed, ImGuiInputTextFlags_ReadOnly);
                         }
 
                         ImGui::PopStyleColor(2);
 
                         ImGui::Spacing();
-                        if (ImGui::Button("Create", ImVec2(50.0f, 25.0f)))
+                        if (ImGui::Button("Create"))
                         {
                             Plugin::Population::EntityDefinition definition;
                             if (createNamedEntity && !entityName.empty())
@@ -406,7 +407,7 @@ namespace Gek
                         }
 
                         ImGui::SameLine();
-                        if (ImGui::Button("Cancel", ImVec2(50.0f, 25.0f)))
+                        if (ImGui::Button("Cancel"))
                         {
                             ImGui::CloseCurrentPopup();
                         }
@@ -453,7 +454,7 @@ namespace Gek
                             {
                                 ImGui::Text("Are you sure you want to remove this entitiy?");
                                 ImGui::Spacing();
-                                if (ImGui::Button("Yes", ImVec2(50.0f, 25.0f)))
+                                if (ImGui::Button("Yes"))
                                 {
                                     sceneModified = true;
                                     deleteEntitySet.insert(entity.get());
@@ -461,7 +462,7 @@ namespace Gek
                                 }
 
                                 ImGui::SameLine();
-                                if (ImGui::Button("No", ImVec2(50.0f, 25.0f)))
+                                if (ImGui::Button("No"))
                                 {
                                     ImGui::CloseCurrentPopup();
                                 }
@@ -637,14 +638,14 @@ namespace Gek
                                             {
                                                 ImGui::Text("Are you sure you want to remove this component?");
                                                 ImGui::Spacing();
-                                                if (ImGui::Button("Yes", ImVec2(50.0f, 25.0f)))
+                                                if (ImGui::Button("Yes"))
                                                 {
                                                     ImGui::CloseCurrentPopup();
                                                     deleteComponentSet.insert(component->getIdentifier());
                                                 }
 
                                                 ImGui::SameLine();
-                                                if (ImGui::Button("No", ImVec2(50.0f, 25.0f)))
+                                                if (ImGui::Button("No"))
                                                 {
                                                     ImGui::CloseCurrentPopup();
                                                 }
@@ -784,7 +785,7 @@ namespace Gek
                     viewMatrix.translation.xyz = position;
                     viewMatrix.invert();
 
-                    renderer->queueCamera(viewMatrix, Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 0.1f, 200.0f, "Editor Camera"s, cameraTarget, "editor");
+                    renderer->queueCamera(viewMatrix, Math::DegreesToRadians(90.0f), (cameraSize.x / cameraSize.y), 0.1f, 200.0f, "Editor Camera"s, cameraTarget, "solid");
                 }
             }
         };

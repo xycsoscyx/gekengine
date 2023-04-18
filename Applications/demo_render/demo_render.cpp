@@ -314,8 +314,8 @@ Output mainPixelProgram(in Pixel input)
 
 			imGuiIo.Fonts->TexID = reinterpret_cast<ImTextureID>(&gui->fontTexture);
 
-			//ImGui::ResetStyle(ImGuiStyle_Design);
-			auto &style = ImGui::GetStyle();
+			auto& style = ImGui::GetStyle();
+			ImGui::StyleColorsDark(&style);
 			style.WindowPadding.x = style.WindowPadding.y;
 			style.FramePadding.x = style.FramePadding.y;
 

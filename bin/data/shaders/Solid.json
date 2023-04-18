@@ -125,7 +125,13 @@
                 "finalBuffer",
                 "albedoBuffer",
                 "normalBuffer"
-            ]
+            ],
+            "clear": {
+                "finalBuffer": {
+                    "type": "target",
+                    "value": [ 1.0, 0.0, 1.0 ]
+                }
+            }
         },
         {
             "enable": "AmbientOcclusion::Enable",

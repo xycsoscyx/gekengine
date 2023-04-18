@@ -239,15 +239,6 @@ namespace Gek
             Mesh meshList[1];
         };
 
-        struct Vertex
-        {
-            Math::Float3 position;
-            Math::Float2 texCoord;
-			Math::Float3 tangent;
-			Math::Float3 biTangent;
-			Math::Float3 normal;
-        };
-
         struct Face
         {
             uint16_t data[3];
@@ -264,9 +255,10 @@ namespace Gek
                 struct Mesh
                 {
                     MaterialHandle material;
-                    std::vector<ResourceHandle> vertexBufferList = std::vector<ResourceHandle>(5);
+                    std::vector<ResourceHandle> vertexBufferList = std::vector<ResourceHandle>(4);
                     ResourceHandle indexBuffer;
                     uint32_t indexCount = 0;
+                    uint32_t vertexCount = 0;
                 };
 
                 Shapes::AlignedBox boundingBox;
@@ -280,12 +272,6 @@ namespace Gek
         struct Data
         {
             Group *group = nullptr;
-        };
-
-        struct Instance
-        {
-            Math::Float4 color = Math::Float4::White;
-            Math::Float4x4 transform = Math::Float4x4::Identity;
         };
 
         struct DrawData
@@ -399,13 +385,14 @@ namespace Gek
                 Group::Model::Mesh& mesh = model.meshList[meshIndex];
 
                 mesh.material = resources->loadMaterial(meshHeader.material);
+                mesh.vertexCount = meshHeader.vertexCount;
+                mesh.indexCount = (meshHeader.faceCount * 3);
 
-                Video::Buffer::Description indexBufferDescription;
-                indexBufferDescription.format = Video::Format::R16_UINT;
-                indexBufferDescription.count = (meshHeader.faceCount * 3);
-                indexBufferDescription.type = Video::Buffer::Type::Index;
-                mesh.indexBuffer = resources->createBuffer(std::format("model:{}.{}.{}:indices", meshIndex, fileName, name), indexBufferDescription, unpacker.readBlock<Face>(meshHeader.faceCount));
-                mesh.indexCount = indexBufferDescription.count;
+                //Video::Buffer::Description indexBufferDescription;
+                //indexBufferDescription.format = Video::Format::R16_UINT;
+                //indexBufferDescription.count = (meshHeader.faceCount * 3);
+                //indexBufferDescription.type = Video::Buffer::Type::Index;
+                //mesh.indexBuffer = resources->createBuffer(std::format("model:{}.{}.{}:indices", meshIndex, fileName, name), indexBufferDescription, unpacker.readBlock<Face>(meshHeader.faceCount));
 
                 Video::Buffer::Description vertexBufferDescription;
                 vertexBufferDescription.stride = sizeof(Math::Float3);
@@ -416,14 +403,11 @@ namespace Gek
                 vertexBufferDescription.stride = sizeof(Math::Float2);
                 mesh.vertexBufferList[1] = resources->createBuffer(std::format("model:{}.{}.{}:texcoords", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float2>(meshHeader.vertexCount));
 
-                vertexBufferDescription.stride = sizeof(Math::Float3);
-                mesh.vertexBufferList[2] = resources->createBuffer(std::format("model:{}.{}.{}:tangents", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
+                vertexBufferDescription.stride = sizeof(Math::Float4);
+                mesh.vertexBufferList[2] = resources->createBuffer(std::format("model:{}.{}.{}:tangents", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float4>(meshHeader.vertexCount));
 
                 vertexBufferDescription.stride = sizeof(Math::Float3);
-                mesh.vertexBufferList[3] = resources->createBuffer(std::format("model:{}.{}.{}:bitangents", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
-
-                vertexBufferDescription.stride = sizeof(Math::Float3);
-                mesh.vertexBufferList[4] = resources->createBuffer(std::format("model:{}.{}.{}:normals", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
+                mesh.vertexBufferList[3] = resources->createBuffer(std::format("model:{}.{}.{}:normals", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
             }
 
             LockedWrite{ std::cout } << "Group " << name << ", mesh " << fileName << " successfully loaded";
@@ -467,14 +451,11 @@ namespace Gek
                     vertexBufferDescription.stride = sizeof(Math::Float2);
                     mesh.vertexBufferList[1] = resources->createBuffer(std::format("model:{}.{}:texcoords", model.meshList.size(), "cube"), vertexBufferDescription, staticModel.texCoords.data());
 
-                    vertexBufferDescription.stride = sizeof(Math::Float3);
+                    vertexBufferDescription.stride = sizeof(Math::Float4);
                     mesh.vertexBufferList[2] = resources->createBuffer(std::format("model:{}.{}:tangents", model.meshList.size(), "cube"), vertexBufferDescription, staticModel.tangents.data());
 
                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                    mesh.vertexBufferList[3] = resources->createBuffer(std::format("model:{}.{}:bitangents", model.meshList.size(), "cube"), vertexBufferDescription, staticModel.biTangents.data());
-
-                    vertexBufferDescription.stride = sizeof(Math::Float3);
-                    mesh.vertexBufferList[4] = resources->createBuffer(std::format("model:{}.{}:normals", model.meshList.size(), "cube"), vertexBufferDescription, staticModel.normals.data());
+                    mesh.vertexBufferList[3] = resources->createBuffer(std::format("model:{}.{}:normals", model.meshList.size(), "cube"), vertexBufferDescription, staticModel.normals.data());
                 }
             }
             else if (name == "#sphere")
@@ -509,14 +490,11 @@ namespace Gek
                     vertexBufferDescription.stride = sizeof(Math::Float2);
                     mesh.vertexBufferList[1] = resources->createBuffer(std::format("model:{}.{}:texcoords", model.meshList.size(), "sphere"), vertexBufferDescription, staticModel.texCoords.data());
 
-                    vertexBufferDescription.stride = sizeof(Math::Float3);
+                    vertexBufferDescription.stride = sizeof(Math::Float4);
                     mesh.vertexBufferList[2] = resources->createBuffer(std::format("model:{}.{}:tangents", model.meshList.size(), "sphere"), vertexBufferDescription, staticModel.tangents.data());
 
                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                    mesh.vertexBufferList[3] = resources->createBuffer(std::format("model:{}.{}:bitangents", model.meshList.size(), "sphere"), vertexBufferDescription, staticModel.biTangents.data());
-
-                    vertexBufferDescription.stride = sizeof(Math::Float3);
-                    mesh.vertexBufferList[4] = resources->createBuffer(std::format("model:{}.{}:normals", model.meshList.size(), "sphere"), vertexBufferDescription, staticModel.normals.data());
+                    mesh.vertexBufferList[3] = resources->createBuffer(std::format("model:{}.{}:normals", model.meshList.size(), "sphere"), vertexBufferDescription, staticModel.normals.data());
                 }
             }
             else
@@ -835,15 +813,22 @@ namespace Gek
 					{
 						std::copy(std::begin(instanceList), std::end(instanceList), instanceData);
 						videoDevice->unmapBuffer(instanceBuffer.get());
-						videoContext->setVertexBufferList({ instanceBuffer.get() }, 5);
+						videoContext->setVertexBufferList({ instanceBuffer.get() }, 4);
 						for (auto const &drawData : drawDataList)
 						{
 							if (drawData.data)
 							{
 								auto &level = *drawData.data;
 								resources->setVertexBufferList(videoContext, level.vertexBufferList, 0);
-								resources->setIndexBuffer(videoContext, level.indexBuffer, 0);
-								resources->drawInstancedIndexedPrimitive(videoContext, drawData.instanceCount, drawData.instanceStart, level.indexCount, 0, 0);
+                                if (level.indexBuffer)
+                                {
+                                    resources->setIndexBuffer(videoContext, level.indexBuffer, 0);
+                                    resources->drawInstancedIndexedPrimitive(videoContext, drawData.instanceCount, drawData.instanceStart, level.indexCount, 0, 0);
+                                }
+                                else
+                                {
+                                    resources->drawInstancedPrimitive(videoContext, drawData.instanceCount, drawData.instanceStart, level.vertexCount, 0);
+                                }
 							}
 						}
 					}

@@ -3,6 +3,11 @@ float square(float value)
     return (value * value);
 }
 
+float2 square(float2 value)
+{
+    return float2(square(value.x), square(value.y));
+}
+
 float cube(float value)
 {
     return (value * value * value);
@@ -83,23 +88,21 @@ float GetLuminance(float3 color)
 
 float3x3 GetCoTangentFrame(float3 position, float3 normal, float2 texCoord)
 {
-    normal = normalize(normal);
-
     // get edge vectors of the pixel triangle
-    const float3 positionDDX = ddx(position);
-    const float3 positionDDY = ddy(position);
-    const float2 texCoordDDX = ddx(texCoord);
-    const float2 texCoordDDY = ddy(texCoord);
+    float3 dp1 = ddx(position);
+    float3 dp2 = ddy(position);
+    float2 duv1 = ddx(texCoord);
+    float2 duv2 = ddy(texCoord);
 
     // solve the linear system
-    const float3 perpendicularDX = cross(normal, positionDDX);
-    const float3 perpendicularDY = cross(positionDDY, normal);
-    const float3 tangent =   ((perpendicularDY * texCoordDDX.x) + (perpendicularDX * texCoordDDY.x));
-    const float3 biTangent = ((perpendicularDY * texCoordDDX.y) + (perpendicularDX * texCoordDDY.y));
+    float3 dp2perp = cross(dp2, normal);
+    float3 dp1perp = cross(normal, dp1);
+    float3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+    float3 B = dp2perp * duv1.y + dp1perp * duv2.y;
 
-    // construct a scale-invariant frame 
-    const float reciprocal = rsqrt(max(dot(tangent, tangent), dot(biTangent, biTangent)));
-    return float3x3(normalize(tangent * reciprocal), normalize(-biTangent * reciprocal), normal);
+    // construct a scale-invariant frame
+    float invmax = rsqrt( max( dot(T,T), dot(B,B) ) );
+    return transpose(float3x3(T * invmax, B * invmax, normal));
 }
 
 float GetLinearDepthFromSampleDepth(float depthSample)
@@ -122,29 +125,27 @@ float3 GetPositionFromSampleDepth(float2 texCoord, float depthSample)
     return GetPositionFromLinearDepth(texCoord, GetLinearDepthFromSampleDepth(depthSample));
 }
 
-// http://aras-p.info/texts/CompactNormalStorage.html
-// http://jcgt.org/published/0003/02/01/paper.pdf
 // https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/
-float2 GetOctWrap(float2 v)
+float2 OctWrap(float2 normal)
 {
-    return (1.0 - abs(v.yx)) * (v.xy >= 0.0 ? 1.0 : -1.0);
+    return (1.0 - abs(normal.yx)) * (normal.xy >= 0.0 ? 1.0 : -1.0);
 }
 
-float2 GetEncodedNormal(float3 n)
+float2 GetEncodedNormal(float3 normal)
 {
-    n /= (abs(n.x) + abs(n.y) + abs(n.z));
-    n.xy = n.z >= 0.0 ? n.xy : GetOctWrap(n.xy);
-    n.xy = n.xy * 0.5 + 0.5;
-    return n.xy;
+    normal /= (abs(normal.x) + abs(normal.y) + abs(normal.z));
+    normal.xy = normal.z >= 0.0 ? normal.xy : OctWrap(normal.xy);
+    normal.xy = normal.xy * 0.5 + 0.5;
+    return normal.xy;
 }
 
-float3 GetDecodedNormal(float2 encN)
+float3 GetDecodedNormal(float2 encoded)
 {
-    encN = encN * 2.0 - 1.0;
+    encoded = encoded * 2.0 - 1.0;
 
-    float3 n;
-    n.z = 1.0 - abs(encN.x) - abs(encN.y);
-    n.xy = n.z >= 0.0 ? encN.xy : GetOctWrap(encN.xy);
-    n = normalize(n);
-    return n;
+    // https://twitter.com/Stubbesaurus/status/937994790553227264
+    float3 normal = float3(encoded.x, encoded.y, 1.0 - abs(encoded.x) - abs(encoded.y));
+    float sign = saturate(-normal.z);
+    normal.xy += normal.xy >= 0.0 ? -sign : sign;
+    return normalize(normal);
 }
