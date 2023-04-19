@@ -17,7 +17,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include "mikktspace.h"
+#include <mikktspace.h>
 
 using namespace Gek;
 

@@ -22,7 +22,10 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     float3 surfaceNormal = normalize((textureNormal.x * inputPixel.tangent) + 
                                      (textureNormal.y * inputPixel.biTangent) +
                                      (textureNormal.z * inputPixel.normal));
-    surfaceNormal = inputPixel.normal;
+    //surfaceNormal = inputPixel.normal;
+
+    //float3x3 coTangentFrame = GetCoTangentFrame(inputPixel.position, inputPixel.normal, inputPixel.texCoord);
+    //surfaceNormal = mul(coTangentFrame, textureNormal);
 
     float3 materialAlbedo = albedo.rgb;
     float materialRoughness = Resources::roughness.Sample(Global::TextureSampler, inputPixel.texCoord);

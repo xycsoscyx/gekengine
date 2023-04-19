@@ -3,10 +3,13 @@ string(REPLACE " " "_" ProjectID ${ProjectID})
 
 project(${ProjectID})
 
-add_definitions(-D_NEWTON_STATIC_LIB=1)
+file(GLOB MIKKTSPACE_HEADERS "${CMAKE_SOURCE_DIR}/External/MikkTSpace/*.h")
+file(GLOB MIKKTSPACE_SOURCES "${CMAKE_SOURCE_DIR}/External/MikkTSpace/*.c")
 
-file(GLOB SOURCES "*.cpp" "*.c" "*.rc")
-add_executable(${ProjectID} ${SOURCES})
+file(GLOB SOURCES "*.cpp" "*.rc")
+add_executable(${ProjectID} ${SOURCES} ${MIKKTSPACE_HEADERS} ${MIKKTSPACE_SOURCES})
+
+target_include_directories(${ProjectID} BEFORE PUBLIC "${CMAKE_SOURCE_DIR}/External/MikkTSpace")
 
 target_link_libraries(${ProjectID} Math Utility Shapes Resources assimp)
 

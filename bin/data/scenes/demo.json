@@ -10,7 +10,7 @@
         },
         "BasicPointLight": {
             "Transform": {
-                "position": [ "random(-35, 35)", "random(10, 50)", "random(-15, 15)" ],
+                "position": [ "random(-50, 50)", "random(10, 70)", "random(-35, 35)" ],
                 "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
             },
             "PointLight": {
@@ -22,7 +22,7 @@
         },
         "BasicSpotLight": {
             "Transform": {
-                "position": [ "random(-35, 35)", "random(10, 50)", "random(-15, 15)" ],
+                "position": [ "random(-50, 50)", "random(10, 70)", "random(-35, 35)" ],
                 "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
             },
             "SpotLight": {
@@ -39,7 +39,7 @@
     "Population": [
         {
             "Transform": {},
-            "Model": "sponza",
+            "Model": "supersponza",
             "Scene": {}
         },
 
