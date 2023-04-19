@@ -6,6 +6,22 @@ The Game Excelleration Kit, GEK, is a hobby project that I have been using to ex
 
 GEK can easily be compiled using CMake.  The GIT repository is setup to include all it's major dependencies as submodules.  The only additional dependency that is required is a DirectX/Windows SDK containing the Direct3D 11 API.  Checking out recursively will also check out the external submodules, and the CMake scripts are setup to generate the required projects and link against them as well.  So far only MSVC has been tested and verified, but additional support for alternate Windows compilers, as well as Linux and Mac, will be implemented and verified.
 
+# Running
+
+The GEK engine supports a context with configurable data paths.  By default, the context will look in it's own relative data directory, but most of the applications support an additional data path, which can be specified through an environment variable, to keep external data separate from the build, "gek_data_path".
+
+data
+\ filters (post processing filter definitions)
+\ fonts (additional true type font location, used by ImGui)
+\ materials (material definitions)
+\ models (visual model data, used by model processor)
+\ physics (physics model data, used by physics processor)
+\ programs (shared location for rendering programs) 
+\ scenes (scene definitions)
+\ shaders (rendering shader definitions, defines the passes used to render models)
+\ textures (textures)
+\ visuals (visual model definitions, defines the model rendering pipelines)
+
 # Dependencies
 
 GEK uses multiple external libraries for a number of functions.
@@ -37,6 +53,10 @@ Newton Dynamics is an integrated solution for real time simulation of physics en
 ## [Wink Signals](https://github.com/miguelmartin75/Wink-Signals)
 
 Wink Signals is a standalone signals library, similar to boost::signals, this is used to store and triggere different events throughout the engine.
+
+## [MikkTSpace](https://github.com/mmikk/MikkTSpace)
+
+MikkTSpace is the common format for storing tangent information, using a 3D vector for the tangent, and a single sign value, as opposed to calculating in the shader or requiring the additional bitangent/binormal.
 
 # License
 
