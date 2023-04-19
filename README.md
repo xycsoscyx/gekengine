@@ -11,7 +11,7 @@ GEK can easily be compiled using CMake.  The GIT repository is setup to include 
 The GEK engine supports a context with configurable data paths.  By default, the context will look in it's own relative data directory, but most of the applications support an additional data path, which can be specified through an environment variable, to keep external data separate from the build, "gek_data_path".
 
 data
-\ filters (post processing filter definitions)
+```\ filters (post processing filter definitions)
 \ fonts (additional true type font location, used by ImGui)
 \ materials (material definitions)
 \ models (visual model data, used by model processor)
@@ -20,7 +20,7 @@ data
 \ scenes (scene definitions)
 \ shaders (rendering shader definitions, defines the passes used to render models)
 \ textures (textures)
-\ visuals (visual model definitions, defines the model rendering pipelines)
+\ visuals (visual model definitions, defines the model rendering pipelines)```
 
 # Dependencies
 
