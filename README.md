@@ -24,6 +24,10 @@ data
 \ visuals (visual model definitions, defines the model rendering pipelines)
 ```
 
+The default data path includes everything needed to run demo_engine, which also supports the live editor.  Once run, pressing the ESC key will bring up the main menu, and Edit -> Show Editor can be selected.  From there, entities can be added to the scene, modified, and removed.  Disabling the editor will return to the standard engine view, but a FirstPersonCamera must be added with an empty target (the default framebuffer), for anything to be displayed.
+
+Models can be converted to the GEK format using the createmodel application, which has a built in help information.  This utility uses Assimp to load from any supported format, and MikkTSpace to generate tangent information, then saves it in a custom binary format for quick loading in engine.  The converter also uses the standard GEK context, so the gek_data_path environment variable can be setup to include a custom search path.  The created files will be placed in a subdirectory of the main model file, even if that is in the external data location.
+
 # Dependencies
 
 GEK uses multiple external libraries for a number of functions.
