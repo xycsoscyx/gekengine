@@ -22,3 +22,9 @@
 [submodule "External/MikkTSpace"]
 	path = External/MikkTSpace
 	url = https://github.com/mmikk/MikkTSpace.git
+[submodule "External/argparse"]
+	path = External/argparse
+	url = https://github.com/p-ranav/argparse.git
+[submodule "External/oneTBB"]
+	path = External/oneTBB
+	url = https://github.com/oneapi-src/oneTBB.git

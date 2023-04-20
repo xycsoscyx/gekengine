@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <map>
 
+#include <argparse/argparse.hpp>
+
 using namespace Gek;
 
 void compressTexture(Video::Debug::Device *device, FileSystem::Path const &inputFilePath)

@@ -12,6 +12,7 @@
 #include <vector>
 #include <map>
 
+#include <argparse/argparse.hpp>
 #include <assimp/config.h>
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
@@ -81,10 +82,10 @@ using ModelList = std::vector<Model>;
 struct Parameters
 {
     std::string sourceName;
-    float feetPerUnit = 1.0f;
-    bool generateSmoothNormals = false;
-    float smoothingAngle = 90.0f;
-    bool saveAsCode = false;
+    float feetPerUnit;
+    bool generateSmoothNormals;
+    float smoothingAngle;
+    bool saveAsCode;
 };
 
 bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode const *inputNode, aiMatrix4x4 const &accumulatedTransform, ModelList &modelList, std::function<std::string(const std::string &, const std::string &)> findMaterialForMesh)
@@ -330,47 +331,53 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 {
     LockedWrite{ std::cout } << "GEK Model Converter";
 
-    Parameters parameters;
-    for (int argumentIndex = 1; argumentIndex < argumentCount; ++argumentIndex)
+    argparse::ArgumentParser program("GEK Model Converter", "1.0");
+
+    program.add_argument("-i", "--input")
+        .required()
+        .help("input model");
+
+    program.add_argument("-c", "--codify")
+        .help("save output as code")
+        .default_value(false)
+        .implicit_value(true);
+
+    program.add_argument("-s", "--smoothangle")
+        .scan<'g', float>()
+        .help("smoothing angle")
+        .default_value(90.0f);
+
+    program.add_argument("-u", "--unitsperfoot")
+        .scan<'g', float>()
+        .help("units per foot")
+        .default_value(1.0f);
+
+    program.add_description("Convert input model in to GEK Engine format.");
+    program.add_epilog("Input model formats include anything supported by the Assimp library.");
+
+    try
     {
-		std::string argument(String::Narrow(argumentList[argumentIndex]));
-		std::vector<std::string> arguments(String::Split(String::GetLower(argument), ':'));
-        if (arguments.empty())
+        std::vector<std::string> arguments;
+        for (int argumentIndex = 0; argumentIndex < argumentCount; argumentIndex++)
         {
-            LockedWrite{ std::cerr } << "No arguments specified for command line parameter";
-            return -__LINE__;
+            arguments.push_back(String::Narrow(argumentList[argumentIndex]));
         }
 
-        if (arguments[0] == "-source" && ++argumentIndex < argumentCount)
-        {
-            parameters.sourceName = String::Narrow(argumentList[argumentIndex]);
-        }
-        else if (arguments[0] == "-smoothangle")
-        {
-            if (arguments.size() != 2)
-            {
-                LockedWrite{ std::cerr } << "Missing parameters for smoothAngle";
-                return -__LINE__;
-            }
-
-            parameters.smoothingAngle = String::Convert(arguments[1], parameters.smoothingAngle);
-        }
-        else if (arguments[0] == "-unitsinfoot")
-        {
-            if (arguments.size() != 2)
-            {
-                LockedWrite{ std::cerr } << "Missing parameters for unitsInFoot";
-                return -__LINE__;
-            }
-
-            parameters.generateSmoothNormals = true;
-			parameters.feetPerUnit = (1.0f / String::Convert(arguments[1], 1.0f));
-        }
-        else if (arguments[0] == "-code")
-        {
-            parameters.saveAsCode = true;
-        }
+        program.parse_args(arguments);
     }
+    catch (const std::runtime_error& err)
+    {
+        LockedWrite{ std::cerr } << err.what() << std::endl;
+        LockedWrite{ std::cerr } << program;
+        return 1;
+    }
+
+    Parameters parameters;
+    parameters.sourceName = program.get<std::string>("--input");
+    parameters.feetPerUnit = (1.0f / program.get<float>("--unitsperfoot"));
+    parameters.smoothingAngle = program.get<float>("--smoothangle");
+    parameters.generateSmoothNormals = program.is_used("--smoothangle");
+    parameters.saveAsCode = program.get<bool>("codify");
 
     auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
     auto rootPath(pluginPath.getParentPath());
@@ -401,7 +408,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         {
             std::string trimmedMessage(message);
             trimmedMessage = trimmedMessage.substr(0, trimmedMessage.size() - 1);
-            LockedWrite{ std::cerr } << "Assimp: " << trimmedMessage;
+            LockedWrite{ std::cout } << "Assimp: " << trimmedMessage;
         };
 
         logStream.user = nullptr;

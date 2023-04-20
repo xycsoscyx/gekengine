@@ -10,8 +10,3 @@ add_library(${ProjectID} SHARED ${SOURCES} ${HEADERS})
 target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
 target_link_libraries(${ProjectID} Math Utility Shapes imgui)
-
-set_target_properties(${ProjectID}
-    PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/plugins"
-)

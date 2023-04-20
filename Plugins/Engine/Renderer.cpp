@@ -27,6 +27,7 @@
 #include <imgui_internal.h>
 #include <smmintrin.h>
 #include <algorithm>
+#include <execution>
 #include <ppl.h>
 
 namespace Gek
@@ -303,7 +304,7 @@ namespace Gek
 
 				void cull(Math::SIMD::Frustum const &frustum)
 				{
-					const int entityCount = this->entityList.size();
+					const auto entityCount = this->entityList.size();
 					auto buffer = (entityCount % 4);
 					buffer = (buffer ? (4 - buffer) : buffer);
 					auto bufferedEntityCount = (entityCount + buffer);
@@ -312,7 +313,8 @@ namespace Gek
 					shapeZPositionList.resize(bufferedEntityCount);
 					shapeRadiusList.resize(bufferedEntityCount);
 
-					concurrency::parallel_for(0, entityCount, [&](size_t entityIndex) -> void
+					auto entityRange = std::ranges::iota_view{ 0ULL, entityCount };
+					std::for_each(std::execution::par, std::begin(entityRange), std::end(entityRange), [&](size_t entityIndex) -> void
 					{
 						auto entity = this->entityList[entityIndex];
 						auto &transformComponent = entity->getComponent<Components::Transform>();
@@ -934,7 +936,7 @@ float4 main(PixelInput input) : SV_Target
 				return Math::Float4(clipBounds.x, (1.0f - clipBounds.w), clipBounds.z, (1.0f - clipBounds.y));
 			}
 
-			bool isSeparated(uint32_t x, uint32_t y, uint32_t z, Math::Float3 const &position, float radius) const
+			bool isSeparated(int32_t x, int32_t y, int32_t z, Math::Float3 const &position, float radius) const
 			{
 				static const Math::Float4 GridScaleNegator(Math::Float2(-1.0f), Math::Float2(1.0f));
 				static const Math::Float4 GridScaleOne(1.0f);
@@ -994,17 +996,18 @@ float4 main(PixelInput input) : SV_Target
 					std::min(int32_t(std::ceil(maximumDepth * GridDepth)), GridDepth)
 				);
 
-				concurrency::parallel_for(depthBounds.minimum, depthBounds.maximum, [&](auto z) -> void
+				auto depthRange = std::ranges::iota_view{ depthBounds.minimum, depthBounds.maximum };
+				std::for_each(std::execution::par, std::begin(depthRange), std::end(depthRange), [&](int32_t z) -> void
 				{
-					const uint32_t zSlice = (z * GridHeight);
+					const int32_t zSlice = (z * GridHeight);
 					for (auto y = gridBounds.minimum.y; y < gridBounds.maximum.y; ++y)
 					{
-						const uint32_t ySlize = ((zSlice + y) * GridWidth);
+						const int32_t ySlize = ((zSlice + y) * GridWidth);
 						for (auto x = gridBounds.minimum.x; x < gridBounds.maximum.x; ++x)
 						{
 							if (!isSeparated(x, y, z, position, radius))
 							{
-								const uint32_t gridIndex = (ySlize + x);
+								const int32_t gridIndex = (ySlize + x);
 								auto &gridData = gridLightList[gridIndex];
 								gridData.push_back(lightIndex);
 							}
@@ -1164,13 +1167,14 @@ float4 main(PixelInput input) : SV_Target
 				Math::SIMD::Frustum frustum = sceneFrustum;
 				co_await workerPool.schedule();
 
-				concurrency::parallel_for_each(std::begin(tilePointLightIndexList), std::end(tilePointLightIndexList), [&](auto& gridData) -> void
+				std::for_each(std::execution::par, std::begin(tilePointLightIndexList), std::end(tilePointLightIndexList), [&](auto& gridData) -> void
 				{
 					gridData.clear();
 				});
 
 				pointLightData.cull(frustum);
-				concurrency::parallel_for(size_t(0), pointLightData.entityList.size(), [&](size_t index) -> void
+				auto visibilityRange = std::ranges::iota_view{ 0ULL,  pointLightData.entityList.size() };
+				std::for_each(std::execution::par, std::begin(visibilityRange), std::end(visibilityRange), [&](size_t index) -> void
 				{
 					if (pointLightData.visibilityList[index])
 					{
@@ -1188,13 +1192,14 @@ float4 main(PixelInput input) : SV_Target
 				Math::SIMD::Frustum frustum = sceneFrustum;
 				co_await workerPool.schedule();
 
-				concurrency::parallel_for_each(std::begin(tileSpotLightIndexList), std::end(tileSpotLightIndexList), [&](auto& gridData) -> void
+				std::for_each(std::execution::par, std::begin(tileSpotLightIndexList), std::end(tileSpotLightIndexList), [&](auto& gridData) -> void
 				{
 					gridData.clear();
 				});
 
 				spotLightData.cull(frustum);
-				concurrency::parallel_for(size_t(0), spotLightData.entityList.size(), [&](size_t index) -> void
+				auto visibilityRange = std::ranges::iota_view{ 0ULL,  spotLightData.entityList.size() };
+				std::for_each(std::execution::par, std::begin(visibilityRange), std::end(visibilityRange), [&](size_t index) -> void
 				{
 					if (spotLightData.visibilityList[index])
 					{
@@ -1232,7 +1237,7 @@ float4 main(PixelInput input) : SV_Target
 						const auto backBuffer = videoDevice->getBackBuffer();
 						const auto width = backBuffer->getDescription().width;
 						const auto height = backBuffer->getDescription().height;
-						concurrency::parallel_sort(std::begin(drawCallList), std::end(drawCallList), [](DrawCallValue const &leftValue, DrawCallValue const &rightValue) -> bool
+						std::sort(std::execution::par, std::begin(drawCallList), std::end(drawCallList), [](DrawCallValue const &leftValue, DrawCallValue const &rightValue) -> bool
 						{
 							return (leftValue.value < rightValue.value);
 						});
@@ -1272,12 +1277,12 @@ float4 main(PixelInput input) : SV_Target
 							workerPool.join();
 
 							concurrency::combinable<size_t> lightIndexCount;
-							concurrency::parallel_for_each(std::begin(tilePointLightIndexList), std::end(tilePointLightIndexList), [&](auto &gridData) -> void
+							std::for_each(std::execution::par, std::begin(tilePointLightIndexList), std::end(tilePointLightIndexList), [&](auto &gridData) -> void
 							{
 								lightIndexCount.local() += gridData.size();
 							});
 
-							concurrency::parallel_for_each(std::begin(tileSpotLightIndexList), std::end(tileSpotLightIndexList), [&](auto &gridData) -> void
+							std::for_each(std::execution::par, std::begin(tileSpotLightIndexList), std::end(tileSpotLightIndexList), [&](auto &gridData) -> void
 							{
 								lightIndexCount.local() += gridData.size();
 							});

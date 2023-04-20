@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.5.2)
 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+
 option("GEK_BUILD_TESTS" "Create unit test projects" ON)
 option("GEK_CREATE_FOLDERS" "Create project folders in generated solution" ON)
 
@@ -96,6 +100,10 @@ include_directories("${CMAKE_SOURCE_DIR}/External/newton-dynamics/newton-4.00/sd
 include_directories("${CMAKE_SOURCE_DIR}/External/newton-dynamics/newton-4.00/sdk/dNewton/dJoints")
 include_directories("${CMAKE_SOURCE_DIR}/External/newton-dynamics/newton-4.00/sdk/dNewton")
 
+SET(TBB_TEST OFF CACHE BOOL "" FORCE)
+SET(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+add_subdirectory("External/oneTBB")
+
 SET(ASSIMP_BUILD_IFC_IMPORTER False CACHE BOOL "" FORCE)
 SET(ASSIMP_BUILD_ASSIMP_TOOLS False CACHE BOOL "" FORCE)
 SET(ASSIMP_BUILD_ASSIMP_VIEW False CACHE BOOL "" FORCE)
@@ -120,12 +128,15 @@ add_subdirectory("Libraries")
 add_subdirectory("Plugins")
 add_subdirectory("Applications")
 
-set_target_properties(gtest PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
-set_target_properties(gtest_main PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
-set_target_properties(assimp PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
-set_target_properties(ndNewton PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
-
 if(GEK_CREATE_FOLDERS)
+    if(GEK_BUILD_TESTS)
+        set_property(TARGET Math_test PROPERTY FOLDER "Tests")
+    endif()
+
+    set_property(TARGET tbb PROPERTY FOLDER "External/oneTBB")
+    set_property(TARGET tbbmalloc PROPERTY FOLDER "External/oneTBB")
+    #set_property(TARGET tbbmalloc_proxy PROPERTY FOLDER "External/oneTBB")
+
     set_property(TARGET gmock PROPERTY FOLDER "External/Google Test")
     set_property(TARGET gmock_main PROPERTY FOLDER "External/Google Test")
     set_property(TARGET gtest PROPERTY FOLDER "External/Google Test")

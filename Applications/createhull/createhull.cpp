@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <vector>
 
+#include <argparse/argparse.hpp>
 #include <assimp/config.h>
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
@@ -25,7 +26,7 @@ struct Parameters
 {
     std::string sourceName;
     std::string targetName;
-    float feetPerUnit = 1.0f;
+    float feetPerUnit;
 };
 
 bool GetModels(Parameters const& parameters, aiScene const* inputScene, aiNode const* inputNode, aiMatrix4x4 const& parentTransform, std::vector<Math::Float3> &pointList, Shapes::AlignedBox &boundingBox)
@@ -112,38 +113,47 @@ void serializeCollision(void* const serializeHandle, const void* const buffer, i
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    LockedWrite{ std::cout } << "GEK Hull Converter";
+    LockedWrite{ std::cout } << "GEK Convex Hull Converter";
+
+    argparse::ArgumentParser program("GEK Convex Hull Converter", "1.0");
+
+    program.add_argument("-i", "--input")
+        .required()
+        .help("input model");
+
+    program.add_argument("-o", "--output")
+        .required()
+        .help("output model");
+
+    program.add_argument("-u", "--unitsperfoot")
+        .scan<'g', float>()
+        .help("units per foot")
+        .default_value(1.0f);
+
+    program.add_description("Convert input model in to GEK Engine format.");
+    program.add_epilog("Input model formats include anything supported by the Assimp library.");
+
+    try
+    {
+        std::vector<std::string> arguments;
+        for (int argumentIndex = 0; argumentIndex < argumentCount; argumentIndex++)
+        {
+            arguments.push_back(String::Narrow(argumentList[argumentIndex]));
+        }
+
+        program.parse_args(arguments);
+    }
+    catch (const std::runtime_error& err)
+    {
+        LockedWrite{ std::cerr } << err.what() << std::endl;
+        LockedWrite{ std::cerr } << program;
+        return 1;
+    }
 
     Parameters parameters;
-    for (int argumentIndex = 1; argumentIndex < argumentCount; ++argumentIndex)
-    {
-        std::string argument(String::Narrow(argumentList[argumentIndex]));
-        std::vector<std::string> arguments(String::Split(String::GetLower(argument), ':'));
-        if (arguments.empty())
-        {
-            LockedWrite{ std::cerr } << "No arguments specified for command line parameter";
-            return -__LINE__;
-        }
-
-        if (arguments[0] == "-source" && ++argumentIndex < argumentCount)
-        {
-            parameters.sourceName = String::Narrow(argumentList[argumentIndex]);
-        }
-        else if (arguments[0] == "-target" && ++argumentIndex < argumentCount)
-        {
-            parameters.targetName = String::Narrow(argumentList[argumentIndex]);
-        }
-        else if (arguments[0] == "-unitsinfoot")
-        {
-            if (arguments.size() != 2)
-            {
-                LockedWrite{ std::cerr } << "Missing parameters for unitsInFoot";
-                return -__LINE__;
-            }
-
-            parameters.feetPerUnit = (1.0f / String::Convert(arguments[1], 1.0f));
-        }
-    }
+    parameters.sourceName = program.get<std::string>("--input");
+    parameters.targetName = program.get<std::string>("--output");
+    parameters.feetPerUnit = (1.0f / program.get<float>("--unitsperfoot"));
 
     aiLogStream logStream;
     logStream.callback = [](char const* message, char* user) -> void
@@ -155,25 +165,6 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
     logStream.user = nullptr;
     aiAttachLogStream(&logStream);
-
-    int notRequiredComponents =
-        aiComponent_NORMALS |
-        aiComponent_TANGENTS_AND_BITANGENTS |
-        aiComponent_COLORS |
-        aiComponent_BONEWEIGHTS |
-        aiComponent_ANIMATIONS |
-        aiComponent_LIGHTS |
-        aiComponent_CAMERAS |
-        0;
-
-    static const unsigned int importFlags =
-        aiProcess_RemoveComponent |
-        aiProcess_RemoveRedundantMaterials |
-        aiProcess_ValidateDataStructure;
-
-    aiPropertyStore* propertyStore = aiCreatePropertyStore();
-    aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
-    aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
 
     auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
     auto rootPath(pluginPath.getParentPath());
@@ -199,34 +190,43 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
         auto filePath = context->findDataPath(FileSystem::CreatePath("physics", parameters.sourceName));
 
+
+        int notRequiredComponents =
+            aiComponent_NORMALS |
+            aiComponent_TANGENTS_AND_BITANGENTS |
+            aiComponent_COLORS |
+            aiComponent_BONEWEIGHTS |
+            aiComponent_ANIMATIONS |
+            aiComponent_LIGHTS |
+            aiComponent_CAMERAS |
+            0;
+
+        static const unsigned int importFlags =
+            aiProcess_RemoveComponent |
+            aiProcess_RemoveRedundantMaterials |
+            aiProcess_FindDegenerates |
+            aiProcess_ValidateDataStructure |
+            aiProcess_MakeLeftHanded |
+            aiProcess_JoinIdenticalVertices |
+            aiProcess_FindInvalidData |
+            aiProcess_ImproveCacheLocality |
+            aiProcess_OptimizeMeshes |
+            //aiProcess_OptimizeGraph,
+            0;
+
+        aiPropertyStore* propertyStore = aiCreatePropertyStore();
+        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
+        //aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
+        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
+        //aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
+        //aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_TRIANGLE_LIMIT, 65535);
+
         LockedWrite{ std::cout } << "Loading: " << filePath.getString();
         auto inputScene = aiImportFileExWithProperties(filePath.getString().data(), importFlags, nullptr, propertyStore);
         if (inputScene == nullptr)
         {
             LockedWrite{ std::cerr } << "Unable to load scene with Assimp";
             return -__LINE__;
-        }
-
-        static const unsigned int postProcessSteps[] =
-        {
-            aiProcess_JoinIdenticalVertices |
-            aiProcess_FindInvalidData |
-            0,
-
-            aiProcess_ImproveCacheLocality |
-            aiProcess_OptimizeMeshes |
-            aiProcess_OptimizeGraph,
-            0,
-        };
-
-        for (auto postProcessFlags : postProcessSteps)
-        {
-            inputScene = aiApplyPostProcessing(inputScene, postProcessFlags);
-            if (inputScene == nullptr)
-            {
-                LockedWrite{ std::cerr } << "Unable to apply post processing with Assimp";
-                return -__LINE__;
-            }
         }
 
         if (!inputScene->HasMeshes())

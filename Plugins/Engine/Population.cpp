@@ -9,7 +9,8 @@
 #include "GEK/API/Editor.hpp"
 #include "GEK/Engine/Core.hpp"
 #include "GEK/Engine/Population.hpp"
-#include <concurrent_queue.h>
+#include <tbb/concurrent_queue.h>
+#include <execution>
 #include <ppl.h>
 #include <map>
 
@@ -88,14 +89,14 @@ namespace Gek
             Engine::Core *core = nullptr;
 
             ShuntingYard shuntingYard;
-            concurrency::concurrent_queue<Action> actionQueue;
+            tbb::concurrent_queue<Action> actionQueue;
 
             std::unordered_map<std::string, Hash> componentTypeNameMap;
             std::unordered_map<Hash, std::string> componentNameTypeMap;
             AvailableComponents availableComponents;
 
             ThreadPool workerPool;
-            concurrency::concurrent_queue<std::function<void(void)>> entityQueue;
+            tbb::concurrent_queue<std::function<void(void)>> entityQueue;
             Registry registry;
 
             uint32_t uniqueEntityIdentifier = 0;
@@ -452,7 +453,7 @@ namespace Gek
 
             void listEntities(std::function<void(Plugin::Entity *)> onEntity) const
             {
-                concurrency::parallel_for_each(std::begin(registry), std::end(registry), [&](auto &entity) -> void
+                std::for_each(std::execution::par, std::begin(registry), std::end(registry), [&](auto &entity) -> void
                 {
                     onEntity(entity.get());
                 });

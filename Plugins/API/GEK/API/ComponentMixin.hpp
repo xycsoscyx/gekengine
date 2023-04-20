@@ -10,8 +10,10 @@
 #include "GEK/API/Component.hpp"
 #include "GEK/API/Processor.hpp"
 #include "GEK/API/Population.hpp"
-#include <concurrent_unordered_map.h>
+#include <tbb/concurrent_unordered_map.h>
+#include <execution>
 #include <new>
+
 #include <imgui.h>
 
 namespace Gek
@@ -92,7 +94,7 @@ namespace Gek
             };
 
         protected:
-            using EntityDataMap = concurrency::concurrent_unordered_map<Plugin::Entity *, Data>;
+            using EntityDataMap = tbb::concurrent_unordered_map<Plugin::Entity *, Data>;
             EntityDataMap entityDataMap;
 
         public:
@@ -145,11 +147,11 @@ namespace Gek
                 });
             }
 
-            void parallelListEntities(std::function<void(Plugin::Entity * const entity, Data &data, REQUIRED&... components)> &&onEntity)
+            void parallelListEntities(std::function<void(Plugin::Entity* const entity, Data& data, REQUIRED&... components)>&& onEntity)
             {
                 assert(onEntity);
 
-                concurrency::parallel_for_each(std::begin(entityDataMap), std::end(entityDataMap), [&](auto &entitySearch) -> void
+                std::for_each(std::execution::par, std::begin(entityDataMap), std::end(entityDataMap), [&](auto& entitySearch) -> void
                 {
                     onEntity(entitySearch.first, entitySearch.second, entitySearch.first->getComponent<REQUIRED>()...);
                 });

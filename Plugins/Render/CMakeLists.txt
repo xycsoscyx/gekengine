@@ -13,8 +13,3 @@ target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 target_include_directories(${ProjectID} BEFORE PUBLIC "${CMAKE_SOURCE_DIR}/External/DirectXTex/DirectXTex")
 
 target_link_libraries(${ProjectID} DirectXTex Math Utility Resources)
-
-set_target_properties(${ProjectID}
-    PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin"
-)

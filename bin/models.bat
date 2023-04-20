@@ -1,6 +1,6 @@
-REM .\debug\createmodel -source sponza.obj -unitsinfoot:20
-.\debug\createmodel -source supersponza.fbx -unitsinfoot:20
-REM .\debug\createmodel -source cube.fbx -unitsinfoot:50 -code
-REM .\debug\createmodel -source sphere.fbx -unitsinfoot:50 -code
+.\debug\createmodel --input sponza.obj --unitsperfoot 20
+.\debug\createmodel --input supersponza.fbx --unitsperfoot 20
+REM .\debug\createmodel --input cube.fbx --unitsperfoot 50 --codify
+REM .\debug\createmodel --input sphere.fbx --unitsperfoot 50 --codify
 
 pause

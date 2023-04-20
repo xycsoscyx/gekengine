@@ -8,14 +8,11 @@
 #pragma once
 
 #include "GEK/Utility/String.hpp"
-#include <concurrent_queue.h>
+#include <tbb/concurrent_queue.h>
 #include <coroutine>
-#include <future>
+#include <execution>
 #include <iostream>
-
-#ifdef _WIN32
-#include <Windows.h>
-#endif
+#include <future>
 
 namespace Gek
 {
@@ -59,7 +56,7 @@ namespace Gek
 	private:
         uint32_t threadCount;
         std::vector<std::thread> workerList;
-        concurrency::concurrent_queue<std::coroutine_handle<void>> coroutineQueue;
+        tbb::concurrent_queue<std::coroutine_handle<void>> coroutineQueue;
 
         std::mutex activeMutex;
         std::condition_variable activeCondition;
@@ -67,6 +64,9 @@ namespace Gek
         std::atomic<uint32_t> activeCount = 0;
 
     private:
+        void initializeWorker(void);
+        void releaseWorker(void);
+
         void create(void)
         {
 			stop.store(false);
@@ -77,9 +77,7 @@ namespace Gek
                 // Worker execution loop
                 workerList.emplace_back([&](void) -> void
                 {
-#ifdef _WIN32
-                    CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
-#endif
+                    initializeWorker();
 					while (true)
                     {
 						// Wait for additional work signal
@@ -110,9 +108,7 @@ namespace Gek
                         activeCount--;
                     };
 
-#ifdef _WIN32
-                    CoUninitialize();
-#endif
+                    releaseWorker();
                 });
             }
         }

@@ -11,6 +11,7 @@
 #include <atlbase.h>
 #include <dxgi1_3.h>
 #include <algorithm>
+#include <execution>
 #include <comdef.h>
 #include <d3d11.h>
 #include <memory>
@@ -1930,7 +1931,7 @@ namespace Gek
                         }
                     }
 
-                    concurrency::parallel_sort(std::begin(displayModeList), std::end(displayModeList), [](const Video::DisplayMode &left, const Video::DisplayMode &right) -> bool
+                    std::sort(std::execution::par, std::begin(displayModeList), std::end(displayModeList), [](const Video::DisplayMode &left, const Video::DisplayMode &right) -> bool
                     {
                         if (left.width < right.width)
                         {

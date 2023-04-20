@@ -23,6 +23,7 @@
 #include <concurrent_vector.h>
 #include <xmmintrin.h>
 #include <algorithm>
+#include <execution>
 #include <memory>
 #include <future>
 #include <ppl.h>
@@ -724,7 +725,7 @@ namespace Gek
 
 			entityModelList.clear();
 			entityModelList.reserve(bufferedModelCount);
-			concurrency::parallel_for_each(std::begin(entityDataList), std::end(entityDataList), [&](auto &entitySearch) -> void
+			std::for_each(std::execution::par, std::begin(entityDataList), std::end(entityDataList), [&](auto &entitySearch) -> void
 			{
 				auto entityDataIndex = std::get<2>(entitySearch);
 				if (visibilityList[entityDataIndex])
@@ -736,7 +737,7 @@ namespace Gek
 					auto &transformComponent = entity->getComponent<Components::Transform>();
 					auto matrix(transformComponent.getMatrix());
 
-					concurrency::parallel_for_each(std::begin(group->modelList), std::end(group->modelList), [&](Group::Model const &model) -> void
+					std::for_each(std::execution::par, std::begin(group->modelList), std::end(group->modelList), [&](Group::Model const &model) -> void
 					{
 						auto halfSize(group->boundingBox.getHalfSize() * transformComponent.scale);
 						auto center = Math::Float4x4::MakeTranslation(model.boundingBox.getCenter());
@@ -758,7 +759,7 @@ namespace Gek
 			visibilityList.resize(bufferedModelCount);
 			Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedModelCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
 
-			concurrency::parallel_for_each(std::begin(entityModelList), std::end(entityModelList), [&](auto &entitySearch) -> void
+			std::for_each(std::execution::par, std::begin(entityModelList), std::end(entityModelList), [&](auto &entitySearch) -> void
 			{
 				if (visibilityList[std::get<2>(entitySearch)])
 				{
@@ -768,7 +769,7 @@ namespace Gek
 					auto &transformComponent = entity->getComponent<Components::Transform>();
 					auto modelViewMatrix(transformComponent.getScaledMatrix() * viewMatrix);
 
-					concurrency::parallel_for_each(std::begin(model->meshList), std::end(model->meshList), [&](Group::Model::Mesh const &mesh) -> void
+					std::for_each(std::execution::par, std::begin(model->meshList), std::end(model->meshList), [&](Group::Model::Mesh const &mesh) -> void
 					{
 						auto &meshMap = renderList[mesh.material];
 						auto &instanceList = meshMap[&mesh];
@@ -778,7 +779,7 @@ namespace Gek
 			});
 
 			size_t maximumInstanceCount = 0;
-			concurrency::parallel_for_each(std::begin(renderList), std::end(renderList), [&](auto &materialPair) -> void
+			std::for_each(std::execution::par, std::begin(renderList), std::end(renderList), [&](auto &materialPair) -> void
 			{
 				const auto material = materialPair.first;
 				auto &materialMap = materialPair.second;
