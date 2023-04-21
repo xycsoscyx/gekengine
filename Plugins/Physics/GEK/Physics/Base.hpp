@@ -11,7 +11,7 @@
 #include "GEK/API/Component.hpp"
 #include "GEK/API/Entity.hpp"
 #include <wink/signal.hpp>
-#include <ndNewton.h>
+#include <dNewton/ndNewton.h>
 
 namespace Gek
 {
