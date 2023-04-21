@@ -6,7 +6,7 @@
 #include "GEK/System/VideoDevice.hpp"
 #include "GEK/System/Window.hpp"
 #include <d3dcompiler.h>
-#include <DirectXTex/DirectXTex.h>
+#include <DirectXTex.h>
 #include <wincodec.h>
 #include <atlbase.h>
 #include <dxgi1_3.h>

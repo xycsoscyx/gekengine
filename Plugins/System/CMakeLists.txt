@@ -12,6 +12,5 @@ add_library(${ProjectID} SHARED ${SOURCES} ${HEADERS} ${API_HEADERS})
 set_property(TARGET ${ProjectID} PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS True)
 
 target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_LIST_DIR})
-target_include_directories(${ProjectID} BEFORE PUBLIC "${CMAKE_SOURCE_DIR}/External/DirectXTex")
 
-target_link_libraries(${ProjectID} DirectXTex Math Utility Resources)
+target_link_libraries(${ProjectID} Math Utility Resources DirectXTex)

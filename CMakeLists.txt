@@ -67,7 +67,7 @@ FetchContent_MakeAvailable(json)
 SET(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(newton GIT_REPOSITORY https://github.com/MADEAPPS/newton-dynamics.git GIT_TAG master)
 FetchContent_Populate(newton)
-add_subdirectory(${newton_SOURCE_DIR}/newton-4.00)
+add_subdirectory(${newton_SOURCE_DIR}/newton-4.00 ${newton_BINARY_DIR}/newton-4.00)
 
 SET(TBB_TEST OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(oneTBB GIT_REPOSITORY https://github.com/oneapi-src/oneTBB GIT_TAG master)
