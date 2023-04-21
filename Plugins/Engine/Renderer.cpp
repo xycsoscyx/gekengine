@@ -28,6 +28,7 @@
 #include <smmintrin.h>
 #include <algorithm>
 #include <execution>
+#include <ranges>
 #include <ppl.h>
 
 namespace Gek

@@ -33,8 +33,8 @@
 
 namespace Gek
 {
-    #include "Cube.h"
-    #include "Sphere.h"
+    //#include "Cube.h"
+    //#include "Sphere.h"
 
     class Unpacker
     {
@@ -422,7 +422,7 @@ namespace Gek
 
             if (name == "#cube")
             {
-                group.modelList.resize(1);
+                /*group.modelList.resize(1);
                 auto& model = group.modelList[0];
                 for (auto &staticModel : cube_models)
                 {
@@ -457,11 +457,11 @@ namespace Gek
 
                     vertexBufferDescription.stride = sizeof(Math::Float3);
                     mesh.vertexBufferList[3] = resources->createBuffer(std::format("model:{}.{}:normals", model.meshList.size(), "cube"), vertexBufferDescription, staticModel.normals.data());
-                }
+                }*/
             }
             else if (name == "#sphere")
             {
-                group.modelList.resize(1);
+                /*group.modelList.resize(1);
                 auto& model = group.modelList[0];
                 for (auto& staticModel : sphere_models)
                 {
@@ -496,7 +496,7 @@ namespace Gek
 
                     vertexBufferDescription.stride = sizeof(Math::Float3);
                     mesh.vertexBufferList[3] = resources->createBuffer(std::format("model:{}.{}:normals", model.meshList.size(), "sphere"), vertexBufferDescription, staticModel.normals.data());
-                }
+                }*/
             }
             else
             {
