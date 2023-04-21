@@ -1,18 +1,9 @@
-[submodule "external/DirectXTex"]
-	path = External/DirectXTex
-	url = https://github.com/Microsoft/DirectXTex.git
-[submodule "external/assimp"]
-	path = External/assimp
-	url = https://github.com/assimp/assimp.git
 [submodule "external/imgui"]
 	path = External/imgui
 	url = https://github.com/ocornut/imgui.git
 [submodule "external/imguizmo"]
 	path = External/imguizmo
 	url = https://github.com/CedricGuillemet/ImGuizmo.git
-[submodule "external/newton-dynamics"]
-	path = External/newton-dynamics
-	url = https://github.com/MADEAPPS/newton-dynamics.git
 [submodule "External/Wink-Signals"]
 	path = External/Wink-Signals
 	url = https://github.com/miguelmartin75/Wink-Signals.git
