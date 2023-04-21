@@ -53,6 +53,9 @@ FetchContent_MakeAvailable(argparse)
 FetchContent_Declare(fmt GIT_REPOSITORY https://github.com/fmtlib/fmt.git GIT_TAG master)
 FetchContent_MakeAvailable(fmt)
 
+FetchContent_Declare(json GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG master)
+FetchContent_MakeAvailable(json)
+
 SET(TBB_TEST OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(oneTBB GIT_REPOSITORY https://github.com/oneapi-src/oneTBB GIT_TAG master)
 FetchContent_MakeAvailable(oneTBB)
@@ -69,8 +72,6 @@ if(GEK_BUILD_TESTS)
 endif()
 
 include_directories("${CMAKE_SOURCE_DIR}/External/Wink-Signals")
-
-include_directories("${CMAKE_SOURCE_DIR}/External/json/single_include")
 
 include_directories("${CMAKE_SOURCE_DIR}/External/newton-dynamics/newton-4.00/sdk/dCore")
 include_directories("${CMAKE_SOURCE_DIR}/External/newton-dynamics/newton-4.00/sdk/dCollision")

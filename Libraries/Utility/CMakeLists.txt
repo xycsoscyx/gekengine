@@ -9,4 +9,4 @@ add_library(${ProjectID} STATIC ${SOURCES} ${HEADERS})
 
 target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
-target_link_libraries(${ProjectID} Math tbb)
+target_link_libraries(${ProjectID} Math tbb nlohmann_json )
