@@ -75,9 +75,8 @@ FetchContent_Declare(mikktspace GIT_REPOSITORY https://github.com/mmikk/MikkTSpa
 FetchContent_Populate(mikktspace)
 
 SET(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(newton GIT_REPOSITORY https://github.com/MADEAPPS/newton-dynamics.git GIT_TAG master)
-FetchContent_Populate(newton)
-add_subdirectory(${newton_SOURCE_DIR}/newton-4.00 ${newton_BINARY_DIR}/newton-4.00)
+FetchContent_Declare(newton GIT_REPOSITORY https://github.com/MADEAPPS/newton-dynamics.git GIT_TAG master SOURCE_SUBDIR newton-4.00)
+FetchContent_MakeAvailable(newton)
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCollision")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dModels")
@@ -91,7 +90,7 @@ SET(TBB_TEST OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(oneTBB GIT_REPOSITORY https://github.com/oneapi-src/oneTBB GIT_TAG master)
 FetchContent_MakeAvailable(oneTBB)
 
-FetchContent_Declare(wink GIT_REPOSITORY https://github.com/miguelmartin75/Wink-Signals.git GIT_TAG main)
+FetchContent_Declare(wink GIT_REPOSITORY https://github.com/miguelmartin75/Wink-Signals.git GIT_TAG master)
 FetchContent_Populate(wink)
 include_directories("${wink_SOURCE_DIR}")
 
