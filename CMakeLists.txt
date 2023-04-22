@@ -69,6 +69,15 @@ FetchContent_Declare(newton GIT_REPOSITORY https://github.com/MADEAPPS/newton-dy
 FetchContent_Populate(newton)
 add_subdirectory(${newton_SOURCE_DIR}/newton-4.00 ${newton_BINARY_DIR}/newton-4.00)
 
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCollision")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dModels")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dModels/dCharacter")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dModels/dVehicle")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dIkSolver")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dJoints")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton")
+
 SET(TBB_TEST OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(oneTBB GIT_REPOSITORY https://github.com/oneapi-src/oneTBB GIT_TAG master)
 FetchContent_MakeAvailable(oneTBB)

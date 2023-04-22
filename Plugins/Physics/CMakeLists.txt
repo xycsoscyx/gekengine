@@ -3,8 +3,6 @@ string(REPLACE " " "_" ProjectID ${ProjectID})
 
 project(${ProjectID})
 
-add_definitions(-D_NEWTON_STATIC_LIB=1)
-
 file(GLOB API_HEADERS "${CMAKE_SOURCE_DIR}/Plugins/API/GEK/API/*.hpp")
 
 file(GLOB HEADERS "GEK/Newton/*.hpp")
