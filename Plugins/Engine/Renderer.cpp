@@ -146,7 +146,7 @@ namespace Gek
 				}
 			};
 
-			using DrawCallList = concurrency::concurrent_vector<DrawCallValue>;
+			using DrawCallList = tbb::concurrent_vector<DrawCallValue>;
 
 			struct DrawCallSet
 			{
@@ -373,7 +373,7 @@ namespace Gek
 			Video::BufferPtr lightIndexBuffer;
 
 			DrawCallList drawCallList;
-			concurrency::concurrent_queue<Camera> cameraQueue;
+			tbb::concurrent_queue<Camera> cameraQueue;
 			Camera currentCamera;
 			float clipDistance;
 			float reciprocalClipDistance;

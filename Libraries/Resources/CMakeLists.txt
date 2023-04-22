@@ -8,4 +8,3 @@ target_include_directories(${ProjectID} INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 
 file(TO_CMAKE_PATH "${CMAKE_CURRENT_LIST_DIR}/resource.rc" SOURCE)
 target_sources(${ProjectID} INTERFACE ${SOURCE})
-message(STATUS ${SOURCE})

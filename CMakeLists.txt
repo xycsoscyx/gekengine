@@ -5,7 +5,11 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 option("GEK_BUILD_TESTS" "Create unit test projects" ON)
-option("GEK_CREATE_FOLDERS" "Create project folders in generated solution" ON)
+if(MSVC)
+    option("GEK_CREATE_FOLDERS" "Create project folders in generated solution" ON)
+else()
+    option("GEK_CREATE_FOLDERS" "Create project folders in generated solution" OFF)
+endif()
 
 project (GEKEngine)
 
@@ -89,7 +93,6 @@ include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton")
 SET(TBB_TEST OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(oneTBB GIT_REPOSITORY https://github.com/oneapi-src/oneTBB GIT_TAG master)
 FetchContent_MakeAvailable(oneTBB)
-install(DIRECTORY ${oneTBB_BINARY_DIR} DESTINATION ${CMAKE_SOURCE_DIR})
 
 FetchContent_Declare(wink GIT_REPOSITORY https://github.com/miguelmartin75/Wink-Signals.git GIT_TAG master)
 FetchContent_Populate(wink)
@@ -104,7 +107,6 @@ if(GEK_BUILD_TESTS)
     endif()
 
     FetchContent_MakeAvailable(googletest)
-    install(DIRECTORY ${googletest_BINARY_DIR} DESTINATION ${CMAKE_SOURCE_DIR})
 endif()
 
 if(WIN32)
@@ -123,7 +125,7 @@ add_definitions(-DUNICODE -D_UNICODE)
 add_subdirectory("Libraries")
 add_subdirectory("Plugins")
 add_subdirectory("Applications")
-
+     
 if(GEK_CREATE_FOLDERS)
     set_property(TARGET assimp PROPERTY FOLDER "External")
     set_property(TARGET fmt PROPERTY FOLDER "External")
