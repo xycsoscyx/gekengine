@@ -71,11 +71,13 @@ FetchContent_Populate(imguizmo)
 FetchContent_Declare(json GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG master)
 FetchContent_MakeAvailable(json)
 
+FetchContent_Declare(mikktspace GIT_REPOSITORY https://github.com/mmikk/MikkTSpace.git GIT_TAG master)
+FetchContent_Populate(mikktspace)
+
 SET(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(newton GIT_REPOSITORY https://github.com/MADEAPPS/newton-dynamics.git GIT_TAG master)
 FetchContent_Populate(newton)
 add_subdirectory(${newton_SOURCE_DIR}/newton-4.00 ${newton_BINARY_DIR}/newton-4.00)
-
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCollision")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dModels")
@@ -88,6 +90,10 @@ include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton")
 SET(TBB_TEST OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(oneTBB GIT_REPOSITORY https://github.com/oneapi-src/oneTBB GIT_TAG master)
 FetchContent_MakeAvailable(oneTBB)
+
+FetchContent_Declare(wink GIT_REPOSITORY https://github.com/miguelmartin75/Wink-Signals.git GIT_TAG main)
+FetchContent_Populate(wink)
+include_directories("${wink_SOURCE_DIR}")
 
 if(GEK_BUILD_TESTS)
     FetchContent_Declare(googletest GIT_REPOSITORY https://github.com/google/googletest.git GIT_TAG main)
@@ -109,8 +115,6 @@ if(WIN32)
     FetchContent_Declare(DirectXTex GIT_REPOSITORY https://github.com/microsoft/DirectXTex.git GIT_TAG main)
     FetchContent_MakeAvailable(DirectXTex)
 endif()
-
-include_directories("${CMAKE_SOURCE_DIR}/External/Wink-Signals")
 
 add_definitions(-D_USE_MATH_DEFINES)
 add_definitions(-DUNICODE -D_UNICODE)

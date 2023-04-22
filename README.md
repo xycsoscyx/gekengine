@@ -28,6 +28,19 @@ The default data path includes everything needed to run demo_engine, which also 
 
 Models can be converted to the GEK format using the createmodel application, which has a built in help information.  This utility uses Assimp to load from any supported format, and MikkTSpace to generate tangent information, then saves it in a custom binary format for quick loading in engine.  The converter also uses the standard GEK context, so the gek_data_path environment variable can be setup to include a custom search path.  The created files will be placed in a subdirectory of the main model file, even if that is in the external data location.
 
+# Dependencies
+
+[Assimp](https://github.com/assimp/assimp)
+[DirectXTex](https://github.com/microsoft/DirectXTex)
+[ImGui](https://github.com/ocornut/imgui)
+[ImGuizmo](https://github.com/CedricGuillemet/ImGuizmo)
+[JSON](https://github.com/nlohmann/json)
+[Newton Dynamic](https://github.com/MADEAPPS/newton-dynamics)
+[Wink Signals](https://github.com/miguelmartin75/Wink-Signals)
+[MikkTSpace](https://github.com/mmikk/MikkTSpace)
+[oneTBB](https://github.com/oneapi-src/oneTBB)
+[ArgParse](https://github.com/p-ranav/argparse)
+
 # License
 
 GEK Engine is released under the MIT licence.
