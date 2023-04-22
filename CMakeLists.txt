@@ -61,6 +61,13 @@ FetchContent_MakeAvailable(assimp)
 FetchContent_Declare(fmt GIT_REPOSITORY https://github.com/fmtlib/fmt.git GIT_TAG master)
 FetchContent_MakeAvailable(fmt)
 
+add_definitions(-DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_DEFINE_PLACEMENT_NEW)
+FetchContent_Declare(imgui GIT_REPOSITORY https://github.com/ocornut/imgui.git GIT_TAG docking)
+FetchContent_Populate(imgui)
+
+FetchContent_Declare(imguizmo GIT_REPOSITORY https://github.com/CedricGuillemet/ImGuizmo.git GIT_TAG master)
+FetchContent_Populate(imguizmo)
+
 FetchContent_Declare(json GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG master)
 FetchContent_MakeAvailable(json)
 
@@ -107,7 +114,6 @@ include_directories("${CMAKE_SOURCE_DIR}/External/Wink-Signals")
 
 add_definitions(-D_USE_MATH_DEFINES)
 add_definitions(-DUNICODE -D_UNICODE)
-add_definitions(-DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_DEFINE_PLACEMENT_NEW)
 
 add_subdirectory("Libraries")
 add_subdirectory("Plugins")

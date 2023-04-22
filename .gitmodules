@@ -1,9 +1,3 @@
-[submodule "external/imgui"]
-	path = External/imgui
-	url = https://github.com/ocornut/imgui.git
-[submodule "external/imguizmo"]
-	path = External/imguizmo
-	url = https://github.com/CedricGuillemet/ImGuizmo.git
 [submodule "External/Wink-Signals"]
 	path = External/Wink-Signals
 	url = https://github.com/miguelmartin75/Wink-Signals.git
