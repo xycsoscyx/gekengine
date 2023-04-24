@@ -105,6 +105,16 @@ namespace Gek
     {
         static ShuntingYard shuntingYard;
 
+        template<typename TYPE>
+        void updateMaximumValue(std::atomic<TYPE>& maximum_value, TYPE const& value) noexcept
+        {
+            TYPE prev_value = maximum_value;
+            while (prev_value < value &&
+                !maximum_value.compare_exchange_weak(prev_value, value))
+            {
+            }
+        }
+
         template <typename HANDLE, typename TYPE>
         class ResourceCache
         {
@@ -118,7 +128,7 @@ namespace Gek
 
         private:
             uint32_t validationIdentifier = 0;
-            uint32_t nextIdentifier = 0;
+            std::atomic<uint32_t> nextIdentifier = 0;
 
         protected:
             ThreadPool& loadPool;
@@ -190,7 +200,7 @@ namespace Gek
 
             uint32_t getNextHandle(void)
             {
-                return InterlockedIncrement(&nextIdentifier);
+                return nextIdentifier++;
             }
         };
 
@@ -684,7 +694,7 @@ namespace Gek
 						std::string nodeName(object->getName());
 						if (nodeName.empty())
 						{
-							nodeName = std::format("{}_{}", lowerName, static_cast<uint64_t>(handle.identifier));
+							nodeName = fmt::format("{}_{}", lowerName, static_cast<uint64_t>(handle.identifier));
 						}
 
 						if (ImGui::TreeNodeEx(nodeName.data(), ImGuiTreeNodeFlags_Framed))
@@ -749,7 +759,7 @@ namespace Gek
                             {
                                 auto handle = resourcePair.first;
                                 auto &object = resourcePair.second;
-                                auto nodeName = std::format("{} - {}", static_cast<uint64_t>(handle.identifier), (object->getName().empty() ? lowerName : object->getName()));
+                                auto nodeName = fmt::format("{} - {}", static_cast<uint64_t>(handle.identifier), (object->getName().empty() ? lowerName : object->getName()));
                                 if (ImGui::TreeNodeEx(nodeName.data(), ImGuiTreeNodeFlags_Framed))
                                 {
                                     onObject(object);
@@ -1033,7 +1043,7 @@ namespace Gek
                 return ResourceHandle();
             }
 
-            ResourceHandle createPattern(std::string_view pattern, JSON const &parameters)
+            ResourceHandle createPattern(std::string_view pattern, JSON::Object const &parameters)
             {
                 auto lowerPattern = String::GetLower(pattern);
 
@@ -1044,38 +1054,37 @@ namespace Gek
                 {
                     description.width = 1;
                     description.height = 1;
-                    auto parametersArray = parameters.asType(JSON::EmptyArray);
-                    switch (parametersArray.size())
+                    switch (parameters.size())
                     {
                     case 1:
-                        data.push_back(parametersArray.at(0).convert(255));
+                        data.push_back(JSON::Evaluate(parameters[0], shuntingYard, 255));
                         description.format = Video::Format::R8_UNORM;
-                        parameterString = std::format("color[{}]", data[0]);
+                        parameterString = fmt::format("color[{}]", data[0]);
                         break;
 
                     case 2:
-                        data.push_back(parametersArray.at(0).convert(255));
-                        data.push_back(parametersArray.at(1).convert(255));
+                        data.push_back(JSON::Evaluate(parameters[0], shuntingYard, 255));
+                        data.push_back(JSON::Evaluate(parameters[1], shuntingYard, 255));
                         description.format = Video::Format::R8G8_UNORM;
-                        parameterString = std::format("color2[{}, {}]", data[0], data[1]);
+                        parameterString = fmt::format("color2[{}, {}]", data[0], data[1]);
                         break;
 
                     case 3:
-                        data.push_back(parametersArray.at(0).convert(255));
-                        data.push_back(parametersArray.at(1).convert(255));
-                        data.push_back(parametersArray.at(2).convert(255));
+                        data.push_back(JSON::Evaluate(parameters[0], shuntingYard, 255));
+                        data.push_back(JSON::Evaluate(parameters[1], shuntingYard, 255));
+                        data.push_back(JSON::Evaluate(parameters[2], shuntingYard, 255));
                         data.push_back(0);
                         description.format = Video::Format::R8G8B8A8_UNORM;
-                        parameterString = std::format("color3[{}, {}, {}]", data[0], data[1], data[2]);
+                        parameterString = fmt::format("color3[{}, {}, {}]", data[0], data[1], data[2]);
                         break;
 
                     case 4:
-                        data.push_back(parametersArray.at(0).convert(255));
-                        data.push_back(parametersArray.at(1).convert(255));
-                        data.push_back(parametersArray.at(2).convert(255));
-                        data.push_back(parametersArray.at(3).convert(255));
+                        data.push_back(JSON::Evaluate(parameters[0], shuntingYard, 255));
+                        data.push_back(JSON::Evaluate(parameters[1], shuntingYard, 255));
+                        data.push_back(JSON::Evaluate(parameters[2], shuntingYard, 255));
+                        data.push_back(JSON::Evaluate(parameters[3], shuntingYard, 255));
                         description.format = Video::Format::R8G8B8A8_UNORM;
-                        parameterString = std::format("color4[{}, {}, {}, {}]", data[0], data[1], data[2], data[3]);
+                        parameterString = fmt::format("color4[{}, {}, {}, {}]", data[0], data[1], data[2], data[3]);
                         break;
 
                     default:
@@ -1087,13 +1096,13 @@ namespace Gek
                                 uint8_t quarters[4];
                             };
 
-                            value = parameters.evaluate(shuntingYard, 1.0f);
+                            value = JSON::Evaluate(parameters, shuntingYard, 1.0f);
                             data.push_back(quarters[0]);
                             data.push_back(quarters[1]);
                             data.push_back(quarters[2]);
                             data.push_back(quarters[3]);
                             description.format = Video::Format::R32_FLOAT;
-                            parameterString = std::format("float[{}]", value);
+                            parameterString = fmt::format("float[{}]", value);
                         }
                     };
                 }
@@ -1105,8 +1114,8 @@ namespace Gek
                         uint8_t quarters[4];
                     };
 
-                    Math::Float3 normal = parameters.evaluate(shuntingYard, Math::Float3::Zero);
-                    parameterString = std::format("normal[{}, {}, {}]", normal.x, normal.y, normal.z);
+                    Math::Float3 normal = JSON::Evaluate(parameters, shuntingYard, Math::Float3::Zero);
+                    parameterString = fmt::format("normal[{}, {}, {}]", normal.x, normal.y, normal.z);
 
                     Float16Compressor compressor;
                     halves[0] = compressor.compress(normal.x);
@@ -1119,7 +1128,7 @@ namespace Gek
                 }
                 else if (lowerPattern == "system")
                 {
-                    parameterString = String::GetLower(parameters.convert(String::Empty));
+                    parameterString = String::GetLower(parameters.get<std::string>());
                     if (parameterString == "debug")
                     {
                         data.push_back(255);    data.push_back(0);      data.push_back(255);    data.push_back(255);
@@ -1141,7 +1150,7 @@ namespace Gek
                 }
 
                 description.flags = Video::Texture::Flags::Resource;
-                std::string name(std::format("{}:{}", lowerPattern, parameterString));
+                std::string name(fmt::format("{}:{}", lowerPattern, parameterString));
                 auto hash = GetHash(name);
 
                 auto resource = dynamicCache.getHandle(hash, 0, [this, name, description, data = move(data)](ResourceHandle)->Video::TexturePtr
@@ -1518,8 +1527,8 @@ namespace Gek
 
 				auto hash = GetHash(name, uncompiledData, engineData);
 				auto cachePath = getContext()->getCachePath(FileSystem::CreatePath("programs", name));
-				auto uncompiledPath(cachePath.withExtension(std::format(".{}.hlsl", hash)));
-				auto compiledPath(cachePath.withExtension(std::format(".{}.bin", hash)));
+				auto uncompiledPath(cachePath.withExtension(fmt::format(".{}.hlsl", hash)));
+				auto compiledPath(cachePath.withExtension(fmt::format(".{}.bin", hash)));
 				Video::Program::Information information =
 				{
 					type
@@ -1603,7 +1612,7 @@ namespace Gek
 					auto program = videoDevice->createProgram(compiledData);
                     if (program)
                     {
-                        program->setName(std::format("{}:{}", name, entryFunction));
+                        program->setName(fmt::format("{}:{}", name, entryFunction));
                     }
 
                     return program;
@@ -1620,7 +1629,7 @@ namespace Gek
 					auto program = videoDevice->createProgram(compiledData);
                     if (program)
                     {
-                        program->setName(std::format("{}:{}", name, entryFunction));
+                        program->setName(fmt::format("{}:{}", name, entryFunction));
                     }
 
                     return program;

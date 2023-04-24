@@ -5,12 +5,9 @@ using namespace Gek::Math;
 
 TEST(Matrix3x2, Initialization)
 {
-    EXPECT_EQ(Float3x2::Identity.rx.x, 1.0f);
-    EXPECT_EQ(Float3x2::Identity.rx.y, 0.0f);
-    EXPECT_EQ(Float3x2::Identity.ry.x, 0.0f);
-    EXPECT_EQ(Float3x2::Identity.ry.y, 1.0f);
-    EXPECT_EQ(Float3x2::Identity.rz.x, 0.0f);
-    EXPECT_EQ(Float3x2::Identity.rz.y, 0.0f);
+    EXPECT_EQ(Float3x2::Identity.r.x, Float2(1.0f, 0.0f));
+    EXPECT_EQ(Float3x2::Identity.r.y, Float2(0.0f, 1.0f));
+    EXPECT_EQ(Float3x2::Identity.r.z, Float2(0.0f, 0.0f));
 }
 
 TEST(Matrix3x2, Operations)

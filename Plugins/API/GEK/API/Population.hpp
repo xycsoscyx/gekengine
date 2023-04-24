@@ -26,7 +26,7 @@ namespace Gek
 
         GEK_INTERFACE(Population)
         {
-            using EntityDefinition = std::unordered_map<std::string, JSON>;
+            using EntityDefinition = std::unordered_map<std::string, JSON::Object>;
             using ComponentDefinition = EntityDefinition::value_type;
 
             struct Action

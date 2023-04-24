@@ -19,7 +19,7 @@ if(MSVC)
     endif()
 
     add_definitions(/await:strict) # Enable coroutines
-    add_definitions(/std:c++20) # Enable std::format
+    add_definitions(/std:c++20) # Enable fmt::format
 	add_definitions(-D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_ITERATOR_DEBUG_LEVEL=0)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")

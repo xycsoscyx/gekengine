@@ -25,7 +25,7 @@ namespace Gek
             }
 
             // Plugin::Component
-            void save(Components::Player const * const data, JSON &exportData) const
+            void save(Components::Player const * const data, JSON::Object &exportData) const
             {
                 exportData["height"] = data->height;
                 exportData["outerRadius"] = data->outerRadius;
@@ -33,12 +33,12 @@ namespace Gek
                 exportData["stairStep"] = data->stairStep;
             }
 
-            void load(Components::Player * const data, JSON const &importData)
+            void load(Components::Player * const data, JSON::Object const &importData)
             {
-                data->height = evaluate(importData.getMember("height"), 0.0f);
-                data->outerRadius = evaluate(importData.getMember("outerRadius"), 0.0f);
-                data->innerRadius = evaluate(importData.getMember("innerRadius"), 0.0f);
-                data->stairStep = evaluate(importData.getMember("stairStep"), 0.0f);
+                data->height = evaluate(importData["height"], 0.0f);
+                data->outerRadius = evaluate(importData["outerRadius"], 0.0f);
+                data->innerRadius = evaluate(importData["innerRadius"], 0.0f);
+                data->stairStep = evaluate(importData["stairStep"], 0.0f);
             }
 
             // Edit::Component

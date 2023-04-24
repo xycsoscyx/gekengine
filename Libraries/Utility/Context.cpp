@@ -3,8 +3,21 @@
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include <unordered_map>
-#include <Windows.h>
 #include <set>
+
+#ifdef _WIN32
+#include <Windows.h>
+#define LIBRARY                         HMODULE
+#define loadLibrary(FILE)               LoadLibraryA(FILE)
+#define getFunction(HANDLE, FUNCTION)   GetProcAddress(HANDLE, FUNCTION)
+#define freeLibrary(HANDLE)             FreeLibrary(HANDLE)
+#else
+#include <dlfcn.h>
+#define LIBRARY                         void *
+#define loadLibrary(FILE)               dlopen(FILE, RTLD_LAZY);
+#define getFunction(HANDLE, FUNCTION)   dlsym(HANDLE, FUNCTION)
+#define freeLibrary(HANDLE)             dlclose(HANDLE)
+#endif
 
 namespace Gek
 {
@@ -12,7 +25,7 @@ namespace Gek
         : public Context
     {
     private:
-        std::vector<HMODULE> moduleList;
+        std::vector<LIBRARY> libraryList;
         std::unordered_map<std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<Hash> &)>> classMap;
         std::unordered_multimap<std::string_view, std::string_view> typeMap;
         std::set<std::string> dataPathList;
@@ -31,40 +44,40 @@ namespace Gek
                 {
 					if (filePath.isFile() && String::GetLower(filePath.getExtension()) == ".dll")
 					{
-                        HMODULE module = LoadLibrary(filePath.getWideString().data());
-						if (module)
+                        LIBRARY library = loadLibrary(filePath.getString().data());
+						if (library)
 						{
-							InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "initializePlugin");
+                            InitializePlugin initializePlugin = (InitializePlugin)getFunction(library, "initializePlugin");
 							if (initializePlugin)
 							{
-								LockedWrite{ std::cout } << "Initializing Plugin: " << filePath.getFileName();
+								std::cout << "Initializing Plugin: " << filePath.getFileName();
 								initializePlugin([this, filePath = filePath.getString()](std::string_view className, std::function<ContextUserPtr(Context *, void *, std::vector<Hash> &)> creator) -> void
 								{
 									if (classMap.count(className) == 0)
 									{
 										classMap[className] = creator;
-										LockedWrite{ std::cout } << "- Adding " << className << " to context registry";
+                                        std::cout << "Adding " << className << " to context registry";
 									}
 									else
 									{
-                                        LockedWrite{ std::cerr } << "- Skipping duplicate class from plugin: " << className << ", from: " << filePath;
+                                        std::cout << "Skipping duplicate class from plugin: " << className << ", from: " << filePath;
 									}
 								}, [this](std::string_view typeName, std::string_view className) -> void
 								{
 									typeMap.insert(std::make_pair(typeName, className));
-									LockedWrite{ std::cout } << "- - Adding " << typeName << " to " << className;
+                                    std::cout << "Adding " << typeName << " to " << className;
 								});
 
-								moduleList.push_back(module);
+								libraryList.push_back(library);
 							}
 							else
 							{
-								FreeLibrary(module);
+                                freeLibrary(library);
 							}
 						}
 						else
 						{
-                            LockedWrite{ std::cerr } << "! Unable to load plugin: " << filePath.getString();
+                            std::cerr << "Unable to load plugin: " << filePath.getString();
 						}
 					}
 
@@ -77,9 +90,9 @@ namespace Gek
         {
             typeMap.clear();
             classMap.clear();
-            for (auto const &module : moduleList)
+            for (auto const &library : libraryList)
             {
-                FreeLibrary(module);
+                freeLibrary(library);
             }
         }
 
@@ -148,7 +161,7 @@ namespace Gek
             auto classSearch = classMap.find(className);
             if (classSearch == std::end(classMap))
             {
-                LockedWrite{ std::cerr } << "Requested class doesn't exist: " << className;
+                std::cerr << "Requested class doesn't exist: " << className;
                 return nullptr;
             }
 
@@ -158,17 +171,17 @@ namespace Gek
             }
             catch (std::exception const &exception)
             {
-                LockedWrite{ std::cerr } << "Exception raised trying to create " << exception.what() << ": " << className;
+                std::cerr << "Exception raised trying to create " << exception.what() << ": " << className;
                 return nullptr;
             }
             catch (std::string_view error)
             {
-                LockedWrite{ std::cerr } << "Error raised trying to create " << error << ": " << className;
+                std::cerr << "Error raised trying to create " << error << ": " << className;
                 return nullptr;
             }
             catch (...)
             {
-                LockedWrite{ std::cerr } << "Unknown exception occurred trying to create " << className;
+                std::cerr << "Unknown exception occurred trying to create " << className;
                 return nullptr;
             };
         }

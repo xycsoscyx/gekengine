@@ -36,6 +36,16 @@ namespace Gek
     //#include "Cube.h"
     //#include "Sphere.h"
 
+    template<typename TYPE>
+    void updateMaximumValue(std::atomic<TYPE>& maximum_value, TYPE const& value) noexcept
+    {
+        TYPE prev_value = maximum_value;
+        while (prev_value < value &&
+            !maximum_value.compare_exchange_weak(prev_value, value))
+        {
+        }
+    }
+
     class Unpacker
     {
     private:
@@ -71,12 +81,12 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(Components::Model const * const data, JSON &exportData) const
+        void save(Components::Model const * const data, JSON::Object &exportData) const
         {
             exportData = data->name;
         }
 
-        void load(Components::Model * const data, JSON const &importData)
+        void load(Components::Model * const data, JSON::Object const &importData)
         {
             data->name = evaluate(importData, String::Empty);
         }
@@ -335,7 +345,7 @@ namespace Gek
             assert(resources);
             assert(renderer);
 
-            LockedWrite{ std::cout } << "Initializing model system";
+            std::cout << "Initializing model system";
 
             core->onInitialized.connect(this, &ModelProcessor::onInitialized);
             core->onShutdown.connect(this, &ModelProcessor::onShutdown);
@@ -369,11 +379,11 @@ namespace Gek
             Header* header = (Header*)buffer.data();
             if (buffer.size() < (sizeof(Header) + (sizeof(Header::Mesh) * header->meshCount)))
             {
-                LockedWrite{ std::cerr } << "Model file too small to contain mesh headers: " << filePath.getString();
+                std::cerr << "Model file too small to contain mesh headers: " << filePath.getString();
                 co_return;
             }
 
-            LockedWrite{ std::cout } << "Group " << name << ", loading model " << fileName << ": " << header->meshCount << " meshes";
+            std::cout << "Group " << name << ", loading model " << fileName << ": " << header->meshCount << " meshes";
 
             model.boundingBox = header->boundingBox;
             group.boundingBox.extend(model.boundingBox.minimum);
@@ -393,30 +403,30 @@ namespace Gek
                 //indexBufferDescription.format = Video::Format::R16_UINT;
                 //indexBufferDescription.count = (meshHeader.faceCount * 3);
                 //indexBufferDescription.type = Video::Buffer::Type::Index;
-                //mesh.indexBuffer = resources->createBuffer(std::format("model:{}.{}.{}:indices", meshIndex, fileName, name), indexBufferDescription, unpacker.readBlock<Face>(meshHeader.faceCount));
+                //mesh.indexBuffer = resources->createBuffer(fmt::format("model:{}.{}.{}:indices", meshIndex, fileName, name), indexBufferDescription, unpacker.readBlock<Face>(meshHeader.faceCount));
 
                 Video::Buffer::Description vertexBufferDescription;
                 vertexBufferDescription.stride = sizeof(Math::Float3);
                 vertexBufferDescription.count = meshHeader.vertexCount;
                 vertexBufferDescription.type = Video::Buffer::Type::Vertex;
-                mesh.vertexBufferList[0] = resources->createBuffer(std::format("model:{}.{}.{}:positions", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
+                mesh.vertexBufferList[0] = resources->createBuffer(fmt::format("model:{}.{}.{}:positions", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
 
                 vertexBufferDescription.stride = sizeof(Math::Float2);
-                mesh.vertexBufferList[1] = resources->createBuffer(std::format("model:{}.{}.{}:texcoords", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float2>(meshHeader.vertexCount));
+                mesh.vertexBufferList[1] = resources->createBuffer(fmt::format("model:{}.{}.{}:texcoords", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float2>(meshHeader.vertexCount));
 
                 vertexBufferDescription.stride = sizeof(Math::Float4);
-                mesh.vertexBufferList[2] = resources->createBuffer(std::format("model:{}.{}.{}:tangents", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float4>(meshHeader.vertexCount));
+                mesh.vertexBufferList[2] = resources->createBuffer(fmt::format("model:{}.{}.{}:tangents", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float4>(meshHeader.vertexCount));
 
                 vertexBufferDescription.stride = sizeof(Math::Float3);
-                mesh.vertexBufferList[3] = resources->createBuffer(std::format("model:{}.{}.{}:normals", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
+                mesh.vertexBufferList[3] = resources->createBuffer(fmt::format("model:{}.{}.{}:normals", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
             }
 
-            LockedWrite{ std::cout } << "Group " << name << ", mesh " << fileName << " successfully loaded";
+            std::cout << "Group " << name << ", mesh " << fileName << " successfully loaded";
         }
 
         Task scheduleLoadGroup(std::string name, ModelProcessor::Group &group)
         {
-            LockedWrite{ std::cout } << "Queueing group for load: " << name;
+            std::cout << "Queueing group for load: " << name;
 
             co_await loadPool.schedule();
 
@@ -433,14 +443,14 @@ namespace Gek
                     indexBufferDescription.format = Video::Format::R16_UINT;
                     indexBufferDescription.count = staticModel.indices.size();
                     indexBufferDescription.type = Video::Buffer::Type::Index;
-                    mesh.indexBuffer = resources->createBuffer(std::format("model:{}.{}:indices", model.meshList.size(), "cube"), indexBufferDescription, staticModel.indices.data());
+                    mesh.indexBuffer = resources->createBuffer(fmt::format("model:{}.{}:indices", model.meshList.size(), "cube"), indexBufferDescription, staticModel.indices.data());
                     mesh.indexCount = indexBufferDescription.count;
 
                     Video::Buffer::Description vertexBufferDescription;
                     vertexBufferDescription.stride = sizeof(Math::Float3);
                     vertexBufferDescription.count = staticModel.positions.size();
                     vertexBufferDescription.type = Video::Buffer::Type::Vertex;
-                    mesh.vertexBufferList[0] = resources->createBuffer(std::format("model:{}.{}:positions", model.meshList.size(), "cube"), vertexBufferDescription, staticModel.positions.data());
+                    mesh.vertexBufferList[0] = resources->createBuffer(fmt::format("model:{}.{}:positions", model.meshList.size(), "cube"), vertexBufferDescription, staticModel.positions.data());
                     for (auto& position : staticModel.positions)
                     {
                         group.boundingBox.extend(position);
@@ -450,13 +460,13 @@ namespace Gek
                     group.boundingBox.extend(model.boundingBox.minimum);
                     group.boundingBox.extend(model.boundingBox.maximum);
                     vertexBufferDescription.stride = sizeof(Math::Float2);
-                    mesh.vertexBufferList[1] = resources->createBuffer(std::format("model:{}.{}:texcoords", model.meshList.size(), "cube"), vertexBufferDescription, staticModel.texCoords.data());
+                    mesh.vertexBufferList[1] = resources->createBuffer(fmt::format("model:{}.{}:texcoords", model.meshList.size(), "cube"), vertexBufferDescription, staticModel.texCoords.data());
 
                     vertexBufferDescription.stride = sizeof(Math::Float4);
-                    mesh.vertexBufferList[2] = resources->createBuffer(std::format("model:{}.{}:tangents", model.meshList.size(), "cube"), vertexBufferDescription, staticModel.tangents.data());
+                    mesh.vertexBufferList[2] = resources->createBuffer(fmt::format("model:{}.{}:tangents", model.meshList.size(), "cube"), vertexBufferDescription, staticModel.tangents.data());
 
                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                    mesh.vertexBufferList[3] = resources->createBuffer(std::format("model:{}.{}:normals", model.meshList.size(), "cube"), vertexBufferDescription, staticModel.normals.data());
+                    mesh.vertexBufferList[3] = resources->createBuffer(fmt::format("model:{}.{}:normals", model.meshList.size(), "cube"), vertexBufferDescription, staticModel.normals.data());
                 }*/
             }
             else if (name == "#sphere")
@@ -472,14 +482,14 @@ namespace Gek
                     indexBufferDescription.format = Video::Format::R16_UINT;
                     indexBufferDescription.count = staticModel.indices.size();
                     indexBufferDescription.type = Video::Buffer::Type::Index;
-                    mesh.indexBuffer = resources->createBuffer(std::format("model:{}.{}:indices", model.meshList.size(), "sphere"), indexBufferDescription, staticModel.indices.data());
+                    mesh.indexBuffer = resources->createBuffer(fmt::format("model:{}.{}:indices", model.meshList.size(), "sphere"), indexBufferDescription, staticModel.indices.data());
                     mesh.indexCount = indexBufferDescription.count;
 
                     Video::Buffer::Description vertexBufferDescription;
                     vertexBufferDescription.stride = sizeof(Math::Float3);
                     vertexBufferDescription.count = staticModel.positions.size();
                     vertexBufferDescription.type = Video::Buffer::Type::Vertex;
-                    mesh.vertexBufferList[0] = resources->createBuffer(std::format("model:{}.{}:positions", model.meshList.size(), "sphere"), vertexBufferDescription, staticModel.positions.data());
+                    mesh.vertexBufferList[0] = resources->createBuffer(fmt::format("model:{}.{}:positions", model.meshList.size(), "sphere"), vertexBufferDescription, staticModel.positions.data());
                     for (auto& position : staticModel.positions)
                     {
                         group.boundingBox.extend(position);
@@ -489,13 +499,13 @@ namespace Gek
                     group.boundingBox.extend(model.boundingBox.minimum);
                     group.boundingBox.extend(model.boundingBox.maximum);
                     vertexBufferDescription.stride = sizeof(Math::Float2);
-                    mesh.vertexBufferList[1] = resources->createBuffer(std::format("model:{}.{}:texcoords", model.meshList.size(), "sphere"), vertexBufferDescription, staticModel.texCoords.data());
+                    mesh.vertexBufferList[1] = resources->createBuffer(fmt::format("model:{}.{}:texcoords", model.meshList.size(), "sphere"), vertexBufferDescription, staticModel.texCoords.data());
 
                     vertexBufferDescription.stride = sizeof(Math::Float4);
-                    mesh.vertexBufferList[2] = resources->createBuffer(std::format("model:{}.{}:tangents", model.meshList.size(), "sphere"), vertexBufferDescription, staticModel.tangents.data());
+                    mesh.vertexBufferList[2] = resources->createBuffer(fmt::format("model:{}.{}:tangents", model.meshList.size(), "sphere"), vertexBufferDescription, staticModel.tangents.data());
 
                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                    mesh.vertexBufferList[3] = resources->createBuffer(std::format("model:{}.{}:normals", model.meshList.size(), "sphere"), vertexBufferDescription, staticModel.normals.data());
+                    mesh.vertexBufferList[3] = resources->createBuffer(fmt::format("model:{}.{}:normals", model.meshList.size(), "sphere"), vertexBufferDescription, staticModel.normals.data());
                 }*/
             }
             else
@@ -511,26 +521,26 @@ namespace Gek
                         std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer, sizeof(Header)));
                         if (buffer.size() < sizeof(Header))
                         {
-                            LockedWrite{ std::cerr } << "Model file too small to contain header: " << fileName;
+                            std::cerr << "Model file too small to contain header: " << fileName;
                             return true;
                         }
 
                         Header* header = (Header*)buffer.data();
                         if (header->identifier != *(uint32_t*)"GEKX")
                         {
-                            LockedWrite{ std::cerr } << "Unknown model file identifier encountered (requires: GEKX, has: " << header->identifier << "): " << fileName;
+                            std::cerr << "Unknown model file identifier encountered (requires: GEKX, has: " << header->identifier << "): " << fileName;
                             return true;
                         }
 
                         if (header->type != 0)
                         {
-                            LockedWrite{ std::cerr } << "Unsupported model type encountered (requires: 0, has: " << header->type << "): " << fileName;
+                            std::cerr << "Unsupported model type encountered (requires: 0, has: " << header->type << "): " << fileName;
                             return true;
                         }
 
                         if (header->version != 8)
                         {
-                            LockedWrite{ std::cerr } << "Unsupported model version encountered (requires: 8, has: " << header->version << "): " << fileName;
+                            std::cerr << "Unsupported model version encountered (requires: 8, has: " << header->version << "): " << fileName;
                             return true;
                         }
 
@@ -542,7 +552,7 @@ namespace Gek
 
                 if (modelPathList.empty())
                 {
-                    LockedWrite{ std::cerr } << "No models found for group: " << name;
+                    std::cerr << "No models found for group: " << name;
                 }
 
                 group.modelList.resize(modelPathList.size());
@@ -554,7 +564,7 @@ namespace Gek
                 }
             }
 
-            LockedWrite{ std::cout } << "Group " << name << " successfully queued";
+            std::cout << "Group " << name << " successfully queued";
         }
 
         void addEntity(Plugin::Entity * const entity)
@@ -681,7 +691,7 @@ namespace Gek
                 {
                     auto group = data.group;
                     auto matrix(transformComponent.getMatrix());
-                    matrix.translation.xyz += group->boundingBox.getCenter();
+                    matrix.translation() += group->boundingBox.getCenter();
                     auto halfSize(group->boundingBox.getHalfSize() * transformComponent.scale);
 
                     auto entityInsert = entityDataList.push_back(std::make_tuple(entity, &data, 0));
@@ -778,7 +788,7 @@ namespace Gek
 				}
 			});
 
-			size_t maximumInstanceCount = 0;
+			std::atomic<size_t> maximumInstanceCount = 0;
 			std::for_each(std::execution::par, std::begin(renderList), std::end(renderList), [&](auto &materialPair) -> void
 			{
 				const auto material = materialPair.first;
@@ -806,7 +816,7 @@ namespace Gek
 					}
 				}
 
-				InterlockedExchange(&maximumInstanceCount, std::max(maximumInstanceCount, instanceList.size()));
+                updateMaximumValue(maximumInstanceCount, instanceList.size());
 				renderer->queueDrawCall(visual, material, std::move([this, drawDataList = move(drawDataList), instanceList = move(instanceList)](Video::Device::Context *videoContext) -> void
 				{
 					Math::Float4x4 *instanceData = nullptr;

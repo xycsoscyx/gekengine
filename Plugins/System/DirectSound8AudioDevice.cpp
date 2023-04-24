@@ -232,8 +232,8 @@ namespace Gek
 			{
 				assert(directSoundListener);
 
-				directSoundListener->SetPosition(matrix.translation.x, matrix.translation.y, matrix.translation.z, DS3D_DEFERRED);
-				directSoundListener->SetOrientation(matrix.rz.x, matrix.rz.y, matrix.rz.z, matrix.ry.x, matrix.ry.y, matrix.ry.z, DS3D_DEFERRED);
+				directSoundListener->SetPosition(matrix.r.w.x, matrix.r.w.y, matrix.r.w.z, DS3D_DEFERRED);
+				directSoundListener->SetOrientation(matrix.r.z.x, matrix.r.z.y, matrix.r.z.z, matrix.r.y.x, matrix.r.y.y, matrix.r.y.z, DS3D_DEFERRED);
 				directSoundListener->CommitDeferredSettings();
 			}
 

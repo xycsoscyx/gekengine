@@ -1229,7 +1229,7 @@ namespace Gek
                 d3dDevice->CreateRasterizerState(&rasterizerDescription, &rasterizerState);
                 if (!rasterizerState)
                 {
-                    LockedWrite{ std::cerr } << "Unable to create rasterizer state";
+                     << "Unable to create rasterizer state";
                     return nullptr;
                 }
 
@@ -1260,7 +1260,7 @@ namespace Gek
                 d3dDevice->CreateDepthStencilState(&depthStencilDescription, &depthState);
                 if (!depthState)
                 {
-                    LockedWrite{ std::cerr } << "Unable to create depth stencil state";
+                     << "Unable to create depth stencil state";
                     return nullptr;
                 }
 
@@ -1309,7 +1309,7 @@ namespace Gek
                 d3dDevice->CreateBlendState(&blendDescription, &blendState);
                 if (!blendState)
                 {
-                    LockedWrite{ std::cerr } << "Unable to create blend state";
+                     << "Unable to create blend state";
                     return nullptr;
                 }
 
@@ -1428,7 +1428,7 @@ struct Output
                 {
                     _com_error error(resultValue);
                     std::string_view compilerError = (char const *)d3dCompilerErrors->GetBufferPointer();
-                    LockedWrite{ std::cerr } << "D3DCompile Failed (" << error.ErrorMessage() << ") " << compilerError;
+                     << "D3DCompile Failed (" << error.ErrorMessage() << ") " << compilerError;
                     static const std::vector<uint8_t> EmptyBuffer;
                     return EmptyBuffer;
                 }
@@ -1636,21 +1636,21 @@ struct Output
                     d3dDevice->CreateInputLayout(vertexDeclaration.data(), vertexDeclaration.size(), compiledVertexShader.data(), compiledVertexShader.size(), &pipelineState->vertexDeclaration);
                     if (!pipelineState->vertexDeclaration)
                     {
-                        LockedWrite{ std::cerr } << "Unable to create pipeline vertex declaration";
+                         << "Unable to create pipeline vertex declaration";
                         return nullptr;
                     }
 
                     d3dDevice->CreateVertexShader(compiledVertexShader.data(), compiledVertexShader.size(), nullptr, &pipelineState->vertexShader);
                     if (!pipelineState->vertexShader)
                     {
-                        LockedWrite{ std::cerr } << "Unable to create pipeline vertex shader";
+                         << "Unable to create pipeline vertex shader";
                         return nullptr;
                     }
 
                     d3dDevice->CreatePixelShader(compiledPixelShader.data(), compiledPixelShader.size(), nullptr, &pipelineState->pixelShader);
                     if (!pipelineState->pixelShader)
                     {
-                        LockedWrite{ std::cerr } << "Unable to create pipeline pixel shader";
+                         << "Unable to create pipeline pixel shader";
                         return nullptr;
                     }
 
@@ -1769,7 +1769,7 @@ struct Output
                     {
                         if (description.stride > 0)
                         {
-                            LockedWrite{ std::cerr } << "Buffer requires only a format or an element stride";
+                             << "Buffer requires only a format or an element stride";
                             return nullptr;
                         }
 
@@ -1777,7 +1777,7 @@ struct Output
                     }
                     else if (description.stride == 0)
                     {
-                        LockedWrite{ std::cerr } << "Buffer requires either a format or an element stride";
+                         << "Buffer requires either a format or an element stride";
                         return nullptr;
                     }
 
@@ -1857,7 +1857,7 @@ struct Output
                         HRESULT resultValue = d3dDevice->CreateBuffer(&bufferDescription, nullptr, &d3dBuffer);
                         if (FAILED(resultValue) || !d3dBuffer)
                         {
-                            LockedWrite{ std::cerr } << "Unable to dynamic buffer";
+                             << "Unable to dynamic buffer";
                             return nullptr;
                         }
                     }
@@ -1870,7 +1870,7 @@ struct Output
                         HRESULT resultValue = d3dDevice->CreateBuffer(&bufferDescription, &resourceData, &d3dBuffer);
                         if (FAILED(resultValue) || !d3dBuffer)
                         {
-                            LockedWrite{ std::cerr } << "Unable to create static buffer";
+                             << "Unable to create static buffer";
                             return nullptr;
                         }
                     }
@@ -1889,7 +1889,7 @@ struct Output
                         HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dBuffer, &viewDescription, &d3dShaderResourceView);
                         if (FAILED(resultValue) || !d3dShaderResourceView)
                         {
-                            LockedWrite{ std::cerr } << "Unable to create buffer shader resource view";
+                             << "Unable to create buffer shader resource view";
                             return nullptr;
                         }
 
@@ -1910,7 +1910,7 @@ struct Output
                         HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView);
                         if (FAILED(resultValue) || !d3dUnorderedAccessView)
                         {
-                            LockedWrite{ std::cerr } << "Unable to create buffer unordered access view";
+                             << "Unable to create buffer unordered access view";
                             return nullptr;
                         }
 
@@ -1940,7 +1940,7 @@ struct Output
                     {
                         if (description.flags & Render::TextureDescription::Flags::DepthTarget)
                         {
-                            LockedWrite{ std::cerr } << "Cannot create render target when depth target flag also specified";
+                             << "Cannot create render target when depth target flag also specified";
                             return nullptr;
                         }
 
@@ -1951,7 +1951,7 @@ struct Output
                     {
                         if (description.depth > 1)
                         {
-                            LockedWrite{ std::cerr } << "Depth target must have depth of one";
+                             << "Depth target must have depth of one";
                             return nullptr;
                         }
 
@@ -2000,7 +2000,7 @@ struct Output
                         HRESULT resultValue = d3dDevice->CreateTexture2D(&textureDescription, (data ? &resourceData : nullptr), &texture2D);
                         if (FAILED(resultValue) || !texture2D)
                         {
-                            LockedWrite{ std::cerr } << "Unable to create 2D texture";
+                             << "Unable to create 2D texture";
                             return nullptr;
                         }
 
@@ -2030,7 +2030,7 @@ struct Output
                         HRESULT resultValue = d3dDevice->CreateTexture3D(&textureDescription, (data ? &resourceData : nullptr), &texture3D);
                         if (FAILED(resultValue) || !texture3D)
                         {
-                            LockedWrite{ std::cerr } << "Unable to create 3D texture";
+                             << "Unable to create 3D texture";
                             return nullptr;
                         }
 
@@ -2039,7 +2039,7 @@ struct Output
 
                     if (!d3dResource)
                     {
-                        LockedWrite{ std::cerr } << "Unable to get texture resource";
+                         << "Unable to get texture resource";
                         return nullptr;
                     }
 
@@ -2065,7 +2065,7 @@ struct Output
                         HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dResource, &viewDescription, &d3dShaderResourceView);
                         if (FAILED(resultValue) || !d3dShaderResourceView)
                         {
-                            LockedWrite{ std::cerr } << "Unable to create texture shader resource view";
+                             << "Unable to create texture shader resource view";
                             return nullptr;
                         }
 
@@ -2094,7 +2094,7 @@ struct Output
                         HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dResource, &viewDescription, &d3dUnorderedAccessView);
                         if (FAILED(resultValue) || !d3dUnorderedAccessView)
                         {
-                            LockedWrite{ std::cerr } << "Unable to create texture unordered access view";
+                             << "Unable to create texture unordered access view";
                             return nullptr;
                         }
 
@@ -2123,7 +2123,7 @@ struct Output
                         HRESULT resultValue = d3dDevice->CreateRenderTargetView(d3dResource, &renderViewDescription, &d3dRenderTargetView);
                         if (FAILED(resultValue) || !d3dRenderTargetView)
                         {
-                            LockedWrite{ std::cerr } << "Unable to create render target view";
+                             << "Unable to create render target view";
                             return nullptr;
                         }
 
@@ -2142,7 +2142,7 @@ struct Output
                         HRESULT resultValue = d3dDevice->CreateDepthStencilView(d3dResource, &depthStencilDescription, &d3dDepthStencilView);
                         if (FAILED(resultValue) || !d3dDepthStencilView)
                         {
-                            LockedWrite{ std::cerr } << "Unable to create depth stencil view";
+                             << "Unable to create depth stencil view";
                             return nullptr;
                         }
 
@@ -2184,7 +2184,7 @@ struct Output
 
                     if (!load)
                     {
-                        LockedWrite{ std::cerr } << "Unknown texture extension encountered";
+                         << "Unknown texture extension encountered";
                         return nullptr;
                     }
 
@@ -2192,7 +2192,7 @@ struct Output
                     HRESULT resultValue = load(buffer, image);
                     if (FAILED(resultValue))
                     {
-                        LockedWrite{ std::cerr } << "Unable to load texture from file";
+                         << "Unable to load texture from file";
                         return nullptr;
                     }
 
@@ -2201,7 +2201,7 @@ struct Output
                     resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), image.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, createFlags, &d3dShaderResourceView);
                     if (FAILED(resultValue) || !d3dShaderResourceView)
                     {
-                        LockedWrite{ std::cerr } << "Unable to create texture shader resource view";
+                         << "Unable to create texture shader resource view";
                         return nullptr;
                     }
 
@@ -2209,7 +2209,7 @@ struct Output
                     d3dShaderResourceView->GetResource(&d3dResource);
                     if (!d3dResource)
                     {
-                        LockedWrite{ std::cerr } << "Unable to get texture resource";
+                         << "Unable to get texture resource";
                         return nullptr;
                     }
 
@@ -2256,7 +2256,7 @@ struct Output
                 HRESULT resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeviceContext);
                 if (!d3dDeviceContext)
                 {
-                    LockedWrite{ std::cerr } << "Unable to create bundle render queue";
+                     << "Unable to create bundle render queue";
                     return nullptr;
                 }
 
@@ -2272,7 +2272,7 @@ struct Output
                 Queue *queue = dynamic_cast<Queue *>(baseQueue);
                 if (!queue)
                 {
-                    LockedWrite{ std::cerr } << "Unable to get internal render queue";
+                     << "Unable to get internal render queue";
                     return Render::QueueHandle();
                 }
 
@@ -2280,7 +2280,7 @@ struct Output
                 HRESULT resultValue = queue->d3dDeviceContext->FinishCommandList(false, &d3dCommandList);
                 if (FAILED(resultValue) || !d3dCommandList)
                 {
-                    LockedWrite{ std::cerr } << "Unable to create render list";
+                     << "Unable to create render list";
                     return Render::QueueHandle();
                 }
 
@@ -2305,12 +2305,12 @@ struct Output
                     }
                     else
                     {
-                        LockedWrite{ std::cerr } << "Unable to create render list";
+                         << "Unable to create render list";
                     }
                 }
                 else
                 {
-                    LockedWrite{ std::cerr } << "Unable to get internal render queue";
+                     << "Unable to get internal render queue";
                 }
             }
 

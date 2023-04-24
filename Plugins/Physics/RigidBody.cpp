@@ -92,7 +92,7 @@ namespace Gek
                 auto matrix = reinterpret_cast<const Math::Float4x4*>(&matrixData);
                 auto& transformComponent = entity->getComponent<Components::Transform>();
                 transformComponent.rotation = matrix->getRotation();
-                transformComponent.position = matrix->translation.xyz;
+                transformComponent.position = matrix->translation();
             }
 
             void OnApplyExternalForce(ndInt32 threadIndex, ndFloat32 timeStep)

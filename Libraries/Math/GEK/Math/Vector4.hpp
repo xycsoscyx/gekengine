@@ -29,43 +29,18 @@ namespace Gek
 			static const TYPE4 White;
 
         public:
+            struct POINT
+            {
+                TYPE x, y;
+            };
+
             union
             {
 				struct { TYPE data[4]; };
-                struct
-                {
-                    union
-                    {
-                        struct { TYPE x, y, z; };
-                        struct { TYPE r, g, b; };
-                        TYPE3 xyz;
-                        TYPE3 rgb;
-                    };
-                    
-                    union
-                    {
-                        TYPE w;
-                        TYPE a;
-                    };
-                };
-
-                struct
-                {
-                    TYPE2 minimum;
-                    TYPE2 maximum;
-                };
-
-                struct
-                {
-                    TYPE2 xy;
-                    TYPE2 zw;
-                };
-
-                struct
-                {
-                    TYPE2 position;
-                    TYPE2 size;
-                };
+                struct { TYPE x, y, z, w; };
+                struct { TYPE r, g, b, a; };
+                struct { POINT minimum, maximum; };
+                struct { POINT position, size; };
             };
 
         public:
@@ -144,8 +119,18 @@ namespace Gek
 
             void set(TYPE3 const &xyz, float w) noexcept
             {
-                this->xyz = xyz;
+                this->xyz() = xyz;
                 this->w = w;
+            }
+
+            TYPE3 &xyz(void)
+            {
+                return *reinterpret_cast<TYPE3 *>(this);
+            }
+
+            const TYPE3 &xyz(void) const
+            {
+                return *reinterpret_cast<const TYPE3 *>(this);
             }
 
             TYPE getMagnitude(void) const noexcept
@@ -363,11 +348,12 @@ namespace Gek
 
             void operator /= (TYPE scalar) noexcept
             {
-				x /= scalar;
-				y /= scalar;
-				z /= scalar;
-				w /= scalar;
-			}
+                TYPE inverseScalar = (1.0f / scalar);
+                x *= inverseScalar;
+                y *= inverseScalar;
+                z *= inverseScalar;
+                w *= inverseScalar;
+            }
 
             void operator *= (TYPE scalar) noexcept
             {
@@ -397,11 +383,12 @@ namespace Gek
 
             TYPE4 operator / (TYPE scalar) const noexcept
             {
+                TYPE inverseScalar = (1.0f / scalar);
                 return TYPE4(
-                    (x / scalar),
-                    (y / scalar),
-                    (z / scalar),
-                    (w / scalar));
+                    (x * inverseScalar),
+                    (y * inverseScalar),
+                    (z * inverseScalar),
+                    (w * inverseScalar));
 			}
 
             TYPE4 operator * (TYPE scalar) const noexcept

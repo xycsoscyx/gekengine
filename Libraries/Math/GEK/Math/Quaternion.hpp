@@ -16,30 +16,11 @@ namespace Gek
     namespace Math
     {
         struct Quaternion
+            : public Float4
         {
         public:
             static const Quaternion Identity;
             static const Quaternion Zero;
-
-        public:
-            union
-            {
-                struct { float data[4]; };
-                struct
-                {
-                    union
-                    {
-                        struct { float x, y, z; };
-                        Float3 axis;
-                    };
-                    
-                    union
-                    {
-                        float w;
-                        float angle;
-                    };
-                };
-            };
 
         public:
             inline static Quaternion MakeEulerRotation(float pitch, float yaw, float roll) noexcept
@@ -103,52 +84,21 @@ namespace Gek
             }
 
         public:
+            using Float4::Float4;
+            using Float4::set;
+            using Float4::dot;
+            using Float4::getMagnitude;
+            using Float4::getLength;
+            using Float4::getNormal;
+            using Float4::normalize;
+
             inline Quaternion(void) noexcept
             {
             }
 
-            inline Quaternion(Quaternion const &rotation) noexcept
-                : axis(rotation.axis)
-                , angle(rotation.angle)
+            inline Quaternion(Quaternion const &quaternion) noexcept
+                : Float4(quaternion)
             {
-            }
-
-            explicit inline Quaternion(float x, float y, float z, float w) noexcept
-                : x(x)
-                , y(y)
-                , z(z)
-                , w(w)
-            {
-            }
-
-            explicit inline Quaternion(float const * const data) noexcept
-                : x(data[0])
-                , y(data[1])
-                , z(data[2])
-                , w(data[3])
-            {
-            }
-
-            explicit inline Quaternion(Math::Float3 const &axis, float angle) noexcept
-                : axis(axis)
-                , angle(angle)
-            {
-            }
-
-            inline void set(float x, float y, float z, float w) noexcept
-            {
-                this->x = x;
-                this->y = y;
-                this->z = z;
-                this->w = w;
-            }
-
-            inline void set(float const * constdata) noexcept
-            {
-                this->x = data[0];
-                this->y = data[1];
-                this->z = data[2];
-                this->w = data[3];
             }
 
             inline Float3 getEuler(void) const noexcept
@@ -179,59 +129,36 @@ namespace Gek
                 return Float3(pitch, yaw, roll);
             }
 
-            inline float getMagnitude(void) const noexcept
-            {
-                return dot(*this);
-            }
-
-            inline float getLength(void) const noexcept
-            {
-                return std::sqrt(getMagnitude());
-            }
-
-            inline Quaternion getNormal(void) const noexcept
-            {
-                float inverseLength = (1.0f / getLength());
-                return ((*this) * inverseLength);
-            }
-
             inline Quaternion getConjugate(void) const noexcept
             {
-                return Quaternion(-axis, angle);
+                return Quaternion(-x, -y, -z, w);
             }
 
             inline Quaternion getInverse(void) const noexcept
             {
                 float inverseLength = (1.0f / getLength());
-                return Quaternion(-axis * inverseLength, angle * inverseLength);
+                return (*this * inverseLength);
             }
 
             inline void conjugate(void) noexcept
             {
-                axis *= -1.0f;
+                x *= -1.0f;
+                y *= -1.0f;
+                z *= -1.0f;
             }
 
             inline void invert(void) noexcept
             {
                 float inverseLength = (1.0f / getLength());
-                axis *= -inverseLength;
+                x *= -inverseLength;
+                y *= -inverseLength;
+                z *= -inverseLength;
             }
 
-            inline void normalize(void) noexcept
-            {
-                float inverseLength = (1.0f / getLength());
-                (*this) *= inverseLength;
-            }
-
-            inline float dot(Quaternion const &rotation) const noexcept
-            {
-                return ((x * rotation.x) + (y * rotation.y) + (z * rotation.z) + (w * rotation.w));
-            }
-
-            inline Quaternion slerp(Quaternion const &rotation, float factor) const noexcept
+            inline Quaternion slerp(Quaternion const &quaternion, float factor) const noexcept
             {
                 Quaternion result;
-                float deltaAngle = dot(rotation);
+                float deltaAngle = dot(quaternion);
                 if ((deltaAngle + 1.0f) > Epsilon)
                 {
                     float factor0;
@@ -250,7 +177,7 @@ namespace Gek
                         factor1 = factor;
                     }
 
-                    result = ((*this) * factor0) + (rotation * factor1);
+                    result = ((*this) * factor0) + (quaternion * factor1);
                 }
                 else
                 {
@@ -260,7 +187,7 @@ namespace Gek
                     result.z = w;
                     float factor0 = std::sin((1.0f - factor) * (Pi * 0.5f));
                     float factor1 = std::sin(factor * (Pi * 0.5f));
-                    result = ((*this) * factor0) + (rotation * factor1);
+                    result = ((*this) * factor0) + (quaternion * factor1);
                 }
 
                 deltaAngle = result.dot(result);
@@ -273,21 +200,21 @@ namespace Gek
                 return result;
             }
 
-            inline bool operator == (Quaternion const &rotation) const noexcept
+            inline bool operator == (Quaternion const &quaternion) const noexcept
             {
-                if (x != rotation.x) return false;
-                if (y != rotation.y) return false;
-                if (z != rotation.z) return false;
-                if (w != rotation.w) return false;
+                if (x != quaternion.x) return false;
+                if (y != quaternion.y) return false;
+                if (z != quaternion.z) return false;
+                if (w != quaternion.w) return false;
                 return true;
             }
 
-            inline bool operator != (Quaternion const &rotation) const noexcept
+            inline bool operator != (Quaternion const &quaternion) const noexcept
             {
-                if (x != rotation.x) return true;
-                if (y != rotation.y) return true;
-                if (z != rotation.z) return true;
-                if (w != rotation.w) return true;
+                if (x != quaternion.x) return true;
+                if (y != quaternion.y) return true;
+                if (z != quaternion.z) return true;
+                if (w != quaternion.w) return true;
                 return false;
             }
 
@@ -298,61 +225,85 @@ namespace Gek
 
             inline Float3 rotate(Float3 const &vector) const noexcept
             {
-                Float3 twoCross(2.0f * axis.cross(vector));
-                return (vector + (angle * twoCross) + axis.cross(twoCross));
+                Float3 twoCross(2.0f * xyz().cross(vector));
+                return (vector + (w * twoCross) + xyz().cross(twoCross));
             }
 
-            inline Quaternion operator * (Quaternion const &rotation) const noexcept
+            inline Quaternion operator * (Quaternion const &quaternion) const noexcept
             {
                 return Quaternion(
-                    w * rotation.x + x * rotation.w + y * rotation.z - z * rotation.y,
-                    w * rotation.y - x * rotation.z + y * rotation.w + z * rotation.x,
-                    w * rotation.z + x * rotation.y - y * rotation.x + z * rotation.w,
-                    w * rotation.w - x * rotation.x - y * rotation.y - z * rotation.z);
+                    (w * quaternion.x + x * quaternion.w + y * quaternion.z - z * quaternion.y),
+                    (w * quaternion.y - x * quaternion.z + y * quaternion.w + z * quaternion.x),
+                    (w * quaternion.z + x * quaternion.y - y * quaternion.x + z * quaternion.w),
+                    (w * quaternion.w - x * quaternion.x - y * quaternion.y - z * quaternion.z));
             }
 
-            inline void operator *= (Quaternion const &rotation) noexcept
+            inline void operator *= (Quaternion const &quaternion) noexcept
             {
-                (*this) = ((*this) * rotation);
+                (*this) = ((*this) * quaternion);
             }
 
-            inline Quaternion &operator = (Quaternion const &rotation) noexcept
+            inline Quaternion &operator = (Quaternion const &quaternion) noexcept
             {
-                axis = rotation.axis;
-                angle = rotation.angle;
+                x = quaternion.x;
+                y = quaternion.y;
+                z = quaternion.z;
+                w = quaternion.w;
                 return (*this);
             }
 
             inline void operator /= (float scalar) noexcept
             {
-                axis /= scalar;
-                angle /= scalar;
+                float inverseScalar = (1.0f / scalar);
+                x *= inverseScalar;
+                y *= inverseScalar;
+                z *= inverseScalar;
+                w *= inverseScalar;
             }
 
             inline void operator *= (float scalar) noexcept
             {
-                axis *= scalar;
-                angle *= scalar;
+                x *= scalar;
+                y *= scalar;
+                z *= scalar;
+                w *= scalar;
             }
 
             inline Quaternion operator / (float scalar) const noexcept
             {
-                return Quaternion((axis / scalar), (angle / scalar));
+                float inverseScalar = (1.0f / scalar);
+                return Quaternion(
+                    (x * inverseScalar),
+                    (y * inverseScalar),
+                    (z * inverseScalar),
+                    (w * inverseScalar));
             }
             
             inline Quaternion operator + (float scalar) const noexcept
             {
-                return Quaternion((axis + scalar), (angle + scalar));
+                return Quaternion(
+                    (x + scalar),
+                    (y + scalar),
+                    (z + scalar),
+                    (w + scalar));
             }
 
             inline Quaternion operator * (float scalar) const noexcept
             {
-                return Quaternion((axis * scalar), (angle *scalar));
+                return Quaternion(
+                    (x * scalar),
+                    (y * scalar),
+                    (z * scalar),
+                    (w * scalar));
             }
 
-            inline Quaternion operator + (Quaternion const &rotation) const noexcept
+            inline Quaternion operator + (Quaternion const &quaternion) const noexcept
             {
-                return Quaternion((axis + rotation.axis), (angle + rotation.angle));
+                return Quaternion(
+                    (x + quaternion.x),
+                    (y + quaternion.y),
+                    (z + quaternion.z),
+                    (w + quaternion.w));
             }
         };
     }; // namespace Math

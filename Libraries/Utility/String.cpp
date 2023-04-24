@@ -11,8 +11,6 @@
 
 namespace Gek
 {
-    std::mutex LockedWrite::mutex;
-
     namespace String
     {
         const std::string Empty;

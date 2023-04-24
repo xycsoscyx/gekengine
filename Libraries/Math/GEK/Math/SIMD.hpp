@@ -274,25 +274,25 @@ namespace Gek
 				auto combinedMatrix(viewMatrix * projectionMatrix);
                 const Matrix viewProjectionMatrix =
                 {
-                    _mm_set_ps1(combinedMatrix.rx.x),
-                    _mm_set_ps1(combinedMatrix.rx.y),
-                    _mm_set_ps1(combinedMatrix.rx.z),
-                    _mm_set_ps1(combinedMatrix.rx.w),
+                    _mm_set_ps1(combinedMatrix.r.x.x),
+                    _mm_set_ps1(combinedMatrix.r.x.y),
+                    _mm_set_ps1(combinedMatrix.r.x.z),
+                    _mm_set_ps1(combinedMatrix.r.x.w),
 
-                    _mm_set_ps1(combinedMatrix.ry.x),
-                    _mm_set_ps1(combinedMatrix.ry.y),
-                    _mm_set_ps1(combinedMatrix.ry.z),
-                    _mm_set_ps1(combinedMatrix.ry.w),
+                    _mm_set_ps1(combinedMatrix.r.y.x),
+                    _mm_set_ps1(combinedMatrix.r.y.y),
+                    _mm_set_ps1(combinedMatrix.r.y.z),
+                    _mm_set_ps1(combinedMatrix.r.y.w),
 
-                    _mm_set_ps1(combinedMatrix.rz.x),
-                    _mm_set_ps1(combinedMatrix.rz.y),
-                    _mm_set_ps1(combinedMatrix.rz.z),
-                    _mm_set_ps1(combinedMatrix.rz.w),
+                    _mm_set_ps1(combinedMatrix.r.z.x),
+                    _mm_set_ps1(combinedMatrix.r.z.y),
+                    _mm_set_ps1(combinedMatrix.r.z.z),
+                    _mm_set_ps1(combinedMatrix.r.z.w),
 
-                    _mm_set_ps1(combinedMatrix.rw.x),
-                    _mm_set_ps1(combinedMatrix.rw.y),
-                    _mm_set_ps1(combinedMatrix.rw.z),
-                    _mm_set_ps1(combinedMatrix.rw.w),
+                    _mm_set_ps1(combinedMatrix.r.w.x),
+                    _mm_set_ps1(combinedMatrix.r.w.y),
+                    _mm_set_ps1(combinedMatrix.r.w.z),
+                    _mm_set_ps1(combinedMatrix.r.w.w),
                 };
 
                 for (uint32_t objectBase = 0; objectBase < objectCount; objectBase += 4)

@@ -368,7 +368,7 @@ Output mainPixelProgram(in Pixel input)
 			if (current.mode != requestDisplayMode)
 			{
 				auto &displayModeData = displayModeList[requestDisplayMode];
-				LockedWrite{ std::cout } << "Setting display mode: " << displayModeData.width << "x" << displayModeData.height;
+				 << "Setting display mode: " << displayModeData.width << "x" << displayModeData.height;
 				if (requestDisplayMode < displayModeList.size())
 				{
 					current.mode = requestDisplayMode;

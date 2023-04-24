@@ -17,19 +17,19 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(Components::PointLight const * const data, JSON &exportData) const
+        void save(Components::PointLight const * const data, JSON::Object &exportData) const
         {
             exportData["range"] = data->range;
             exportData["radius"] = data->radius;
             exportData["intensity"] = data->intensity;
         }
 
-        void load(Components::PointLight * const data, JSON const &importData)
+        void load(Components::PointLight * const data, JSON::Object const &importData)
         {
-            data->range = evaluate(importData.getMember("range"), 0.0f);
-            data->radius = evaluate(importData.getMember("radius"), 0.0f);
-            data->intensity = evaluate(importData.getMember("intensity"), 0.0f);
-            LockedWrite{ std::cout } << "Range: " << data->range << ", Radius: " << data->radius << ", Intensity: " << data->intensity;
+            data->range = evaluate(importData["range"], 0.0f);
+            data->radius = evaluate(importData["radius"], 0.0f);
+            data->intensity = evaluate(importData["intensity"], 0.0f);
+            std::cout << "Range: " << data->range << ", Radius: " << data->radius << ", Intensity: " << data->intensity;
         }
 
         // Edit::Component
@@ -71,7 +71,7 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(Components::SpotLight const * const data, JSON &exportData) const
+        void save(Components::SpotLight const * const data, JSON::Object &exportData) const
         {
             exportData["range"] = data->range;
             exportData["radius"] = data->radius;
@@ -81,14 +81,14 @@ namespace Gek
             exportData["coneFalloff"] = data->coneFalloff;
         }
 
-        void load(Components::SpotLight * const data, JSON const &importData)
+        void load(Components::SpotLight * const data, JSON::Object const &importData)
         {
-            data->range = evaluate(importData.getMember("range"), 0.0f);
-            data->radius = evaluate(importData.getMember("radius"), 0.0f);
-            data->intensity = evaluate(importData.getMember("intensity"), 0.0f);
-            data->innerAngle = std::cos(Math::DegreesToRadians(evaluate(importData.getMember("innerAngle"), 0.0f)));
-            data->outerAngle = std::cos(Math::DegreesToRadians(evaluate(importData.getMember("outerAngle"), 0.0f)));
-            data->coneFalloff = evaluate(importData.getMember("coneFalloff"), 0.0f);
+            data->range = evaluate(importData["range"], 0.0f);
+            data->radius = evaluate(importData["radius"], 0.0f);
+            data->intensity = evaluate(importData["intensity"], 0.0f);
+            data->innerAngle = std::cos(Math::DegreesToRadians(evaluate(importData["innerAngle"], 0.0f)));
+            data->outerAngle = std::cos(Math::DegreesToRadians(evaluate(importData["outerAngle"], 0.0f)));
+            data->coneFalloff = evaluate(importData["coneFalloff"], 0.0f);
         }
 
         // Edit::Component
@@ -145,14 +145,14 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(Components::DirectionalLight const * const data, JSON &exportData) const
+        void save(Components::DirectionalLight const * const data, JSON::Object &exportData) const
         {
             exportData["intensity"] = data->intensity;
         }
 
-        void load(Components::DirectionalLight * const data, JSON const &importData)
+        void load(Components::DirectionalLight * const data, JSON::Object const &importData)
         {
-            data->intensity = evaluate(importData.getMember("intensity"), 0.0f);
+            data->intensity = evaluate(importData["intensity"], 0.0f);
         }
 
         // Edit::Component

@@ -7,16 +7,14 @@
 /// Last Changed: $Date:   Thu Oct 27 08:51:53 2016 -0700 $
 #pragma once
 
-#include <Windows.h>
+#include <fmt/format.h>
 #include <string_view>
 #include <functional>
 #include <algorithm>
 #include <sstream>
 #include <codecvt>
 #include <string>
-#include <format>
 #include <vector>
-#include <ppl.h>
 
 using namespace std::string_literals; // enables s-suffix for std::string literals  
 using namespace std::string_view_literals; // enables s-suffix for std::string literals  
@@ -41,33 +39,6 @@ namespace std
 
 namespace Gek
 {
-    class LockedWrite
-        : public std::ostringstream
-    {
-    private:
-        static std::mutex mutex;
-        std::ostream &stream;
-
-    public:
-        LockedWrite(std::ostream &stream)
-            : stream(stream)
-        {
-        }
-
-        ~LockedWrite()
-        {
-            (*this) << std::endl;
-            if (IsDebuggerPresent())
-            {
-                OutputDebugStringA(str().data());
-            }
-            else
-            {
-                stream << str();
-            }
-        }
-    };
-
     namespace String
     {
         extern const std::string Empty;

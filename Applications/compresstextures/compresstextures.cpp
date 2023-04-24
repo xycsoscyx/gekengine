@@ -16,21 +16,21 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 {
 	if (!inputFilePath.isFile())
 	{
-		LockedWrite{ std::cerr } << "Input file not found: " << inputFilePath.getString();
+		std::cerr << "Input file not found: " << inputFilePath.getString();
 		return;
 	}
 
 	auto outputFilePath(inputFilePath.withExtension(".dds"));
 	if (outputFilePath.isFile() && outputFilePath.isNewerThan(inputFilePath))
 	{
-		LockedWrite{ std::cerr } << "Input file hasn't changed since last compression: " << inputFilePath.getString();
+		std::cerr << "Input file hasn't changed since last compression: " << inputFilePath.getString();
 		return;
 	}
 
 	std::string extension(String::GetLower(inputFilePath.getExtension()));
 	if (extension == ".dds")
 	{
-		LockedWrite{ std::cerr } << "Input file is alrady compressed: " << inputFilePath.getString();
+		std::cerr << "Input file is alrady compressed: " << inputFilePath.getString();
 		return;
 	}
 
@@ -53,7 +53,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 	*/
 	if (!load)
 	{
-		LockedWrite{ std::cerr } << "Unknown file type of " << extension << " for input: " << inputFilePath.getString();
+		std::cerr << "Unknown file type of " << extension << " for input: " << inputFilePath.getString();
 		return;
 	}
 
@@ -64,7 +64,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 	HRESULT resultValue = load(buffer, image);
 	if (FAILED(resultValue))
 	{
-		LockedWrite{ std::cerr } << "Unable to load input file: " << inputFilePath.getString();
+		std::cerr << "Unable to load input file: " << inputFilePath.getString();
 		return;
 	}
 
@@ -122,43 +122,43 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 		String::EndsWith(textureName, "specular")
 		)
 	{
-		LockedWrite{ std::cerr } << "Skipping unhandled texture material type: " << textureName;
+		std::cerr << "Skipping unhandled texture material type: " << textureName;
 		return;
 	}
 	else
 	{
-		LockedWrite{ std::cerr } << "Unable to determine texture material type: " << textureName;
+		std::cerr << "Unable to determine texture material type: " << textureName;
         return;
     }
 
-    LockedWrite{ std::cout } << "Compressing: -> " << inputFilePath.getString();
-    LockedWrite{ std::cout } << "             <- " << outputFilePath.getString();
+    std::cout << "Compressing: -> " << inputFilePath.getString();
+    std::cout << "             <- " << outputFilePath.getString();
     switch (outputFormat)
     {
     case DXGI_FORMAT_BC7_UNORM_SRGB:
-        LockedWrite{ std::cout } << "             Albedo BC7";
+        std::cout << "             Albedo BC7";
         break;
 
     case DXGI_FORMAT_BC1_UNORM_SRGB:
-        LockedWrite{ std::cout } << "             Albedo BC1";
+        std::cout << "             Albedo BC1";
         break;
 
     case DXGI_FORMAT_BC5_UNORM:
-        LockedWrite{ std::cout } << "             Normal BC5";
+        std::cout << "             Normal BC5";
         break;
 
     case DXGI_FORMAT_BC4_UNORM:
-        LockedWrite{ std::cout } << "             Metalness/Roughness BC4";
+        std::cout << "             Metalness/Roughness BC4";
         break;
     };
 
-    LockedWrite{ std::cout } << "             " << image.GetMetadata().width << "x" << image.GetMetadata().height;
+    std::cout << "             " << image.GetMetadata().width << "x" << image.GetMetadata().height;
 
 	::DirectX::ScratchImage mipMapChain;
 	resultValue = ::DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), ::DirectX::TEX_FILTER_TRIANGLE, 0, mipMapChain);
 	if (FAILED(resultValue))
 	{
-		LockedWrite{ std::cerr } << "Unable to create mipmap chain";
+		std::cerr << "Unable to create mipmap chain";
 	}
 
 	image = std::move(mipMapChain);
@@ -176,26 +176,26 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 
 	if (FAILED(resultValue))
 	{
-		LockedWrite{ std::cerr } << "Unable to compress image: ";
+		std::cerr << "Unable to compress image: ";
         return;
     }
 
-    resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, outputFilePath.getWideString().data());
+    resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, String::Widen(outputFilePath.getString()).data());
 	if (FAILED(resultValue))
 	{
-        LockedWrite{ std::cerr } << "Unable to save image";
+        std::cout << "Unable to save image";
         return;
     }
 }
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    LockedWrite{ std::cout } << "GEK Texture Compressor";
+    std::cout << "GEK Texture Compressor";
 
 	auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
 	auto rootPath(pluginPath.getParentPath());
 	auto cachePath(rootPath / "cache");
-	SetCurrentDirectoryW(cachePath.getWideString().data());
+	cachePath.setWorkingDirectory();
 
 	std::vector<FileSystem::Path> searchPathList;
 	searchPathList.push_back(pluginPath);

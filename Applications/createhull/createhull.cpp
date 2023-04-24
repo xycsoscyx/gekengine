@@ -13,6 +13,10 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 using namespace Gek;
 
 struct Header
@@ -33,7 +37,7 @@ bool GetModels(Parameters const& parameters, aiScene const* inputScene, aiNode c
 {
     if (inputNode == nullptr)
     {
-        LockedWrite{ std::cerr } << "Invalid scene node";
+        std::cerr << "Invalid scene node";
         return false;
     }
 
@@ -42,18 +46,18 @@ bool GetModels(Parameters const& parameters, aiScene const* inputScene, aiNode c
     {
         if (inputNode->mMeshes == nullptr)
         {
-            LockedWrite{ std::cerr } << "Invalid mesh list";
+            std::cerr << "Invalid mesh list";
             return false;
         }
 
         std::string name = inputNode->mName.C_Str();
-        LockedWrite{ std::cout } << "Found Assimp Model: " << name;
+        std::cout << "Found Assimp Model: " << name;
         for (uint32_t meshIndex = 0; meshIndex < inputNode->mNumMeshes; ++meshIndex)
         {
             uint32_t nodeMeshIndex = inputNode->mMeshes[meshIndex];
             if (nodeMeshIndex >= inputScene->mNumMeshes)
             {
-                LockedWrite{ std::cerr } << "Invalid mesh index";
+                std::cerr << "Invalid mesh index";
                 continue;
             }
 
@@ -62,13 +66,13 @@ bool GetModels(Parameters const& parameters, aiScene const* inputScene, aiNode c
             {
                 if (inputMesh->mFaces == nullptr)
                 {
-                    LockedWrite{ std::cerr } << "Invalid inputMesh face list";
+                    std::cerr << "Invalid inputMesh face list";
                     continue;
                 }
 
                 if (inputMesh->mVertices == nullptr)
                 {
-                    LockedWrite{ std::cerr } << "Invalid inputMesh vertex list";
+                    std::cerr << "Invalid inputMesh vertex list";
                     continue;
                 }
 
@@ -89,7 +93,7 @@ bool GetModels(Parameters const& parameters, aiScene const* inputScene, aiNode c
     {
         if (inputNode->mChildren == nullptr)
         {
-            LockedWrite{ std::cerr } << "Invalid child list";
+            std::cerr << "Invalid child list";
             return false;
         }
 
@@ -113,7 +117,7 @@ void serializeCollision(void* const serializeHandle, const void* const buffer, i
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    LockedWrite{ std::cout } << "GEK Convex Hull Converter";
+    std::cout << "GEK Convex Hull Converter";
 
     argparse::ArgumentParser program("GEK Convex Hull Converter", "1.0");
 
@@ -145,8 +149,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
     catch (const std::runtime_error& err)
     {
-        LockedWrite{ std::cerr } << err.what() << std::endl;
-        LockedWrite{ std::cerr } << program;
+        std::cerr << err.what() << std::endl;
+        std::cerr << program;
         return 1;
     }
 
@@ -160,7 +164,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     {
         std::string trimmedMessage(message);
         trimmedMessage = trimmedMessage.substr(0, trimmedMessage.size() - 1);
-        LockedWrite{ std::cerr } << "Assimp: " << trimmedMessage;
+        std::cout << "Assimp: " << trimmedMessage;
     };
 
     logStream.user = nullptr;
@@ -169,7 +173,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
     auto rootPath(pluginPath.getParentPath());
     auto cachePath(rootPath / "cache");
-    SetCurrentDirectoryW(cachePath.getWideString().data());
+    cachePath.setWorkingDirectory();
 
     std::vector<FileSystem::Path> searchPathList;
     searchPathList.push_back(pluginPath);
@@ -221,17 +225,17 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         //aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
         //aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_TRIANGLE_LIMIT, 65535);
 
-        LockedWrite{ std::cout } << "Loading: " << filePath.getString();
+        std::cout << "Loading: " << filePath.getString();
         auto inputScene = aiImportFileExWithProperties(filePath.getString().data(), importFlags, nullptr, propertyStore);
         if (inputScene == nullptr)
         {
-            LockedWrite{ std::cerr } << "Unable to load scene with Assimp";
+            std::cerr << "Unable to load scene with Assimp";
             return -__LINE__;
         }
 
         if (!inputScene->HasMeshes())
         {
-            LockedWrite{ std::cerr } << "Scene has no meshes";
+            std::cerr << "Scene has no meshes";
             return -__LINE__;
         }
 
@@ -248,34 +252,35 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
         if (pointList.empty())
         {
-            LockedWrite{ std::cerr } << "No vertex data found in scene";
+            std::cerr << "No vertex data found in scene";
             return -__LINE__;
         }
 
-        LockedWrite{ std::cout } << "> Num. Points: " << pointList.size();
-        LockedWrite{ std::cout } << "< Size: Minimum[" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << "]";
-        LockedWrite{ std::cout } << "< Size: Maximum[" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << "]";
+        std::cout << "> Num. Points: " << pointList.size();
+        std::cout << "< Size: Minimum[" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << "]";
+        std::cout << "< Size: Maximum[" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << "]";
 
         auto outputPath(filePath.withoutExtension().withExtension(".gek"));
-        LockedWrite{ std::cout } << "Writing: " << outputPath.getString();
+        std::cout << "Writing: " << outputPath.getString();
         outputPath.getParentPath().createChain();
 
-        FILE* file = nullptr;
-        _wfopen_s(&file, outputPath.getWideString().data(), L"wb");
-        if (file == nullptr)
+        std::ofstream file;
+        file.open(outputPath.getString().data(), std::ios::out | std::ios::binary);
+        if (file.is_open())
         {
-            LockedWrite{ std::cerr } << "Unable to create output file";
+            Header header;
+            FileSystem::Write(file, &header, 1);
+
+            uint32_t pointCount = pointList.size();
+            FileSystem::Write(file, &pointCount, 1);
+            FileSystem::Write(file, pointList.data(), pointCount);
+            file.close();
+        }
+        else
+        {
+            std::cerr << "Unable to create output file";
             return -__LINE__;
         }
-
-        Header header;
-        fwrite(&header, sizeof(Header), 1, file);
-
-        uint32_t pointCount = pointList.size();
-        fwrite(&pointCount, sizeof(uint32_t), 1, file);
-        fwrite(pointList[0].data, sizeof(Math::Float3), pointCount, file);
-
-        fclose(file);
     }
 
     return 0;

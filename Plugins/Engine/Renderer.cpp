@@ -146,7 +146,7 @@ namespace Gek
 				}
 			};
 
-			using DrawCallList = tbb::concurrent_vector<DrawCallValue>;
+			using DrawCallList = concurrency::concurrent_vector<DrawCallValue>;
 
 			struct DrawCallSet
 			{
@@ -258,7 +258,7 @@ namespace Gek
 						lightBufferDescription.stride = sizeof(DATA);
 						lightBufferDescription.count = createSize;
 						lightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
-						lightDataBuffer->setName(std::format("render:{}", COMPONENT::GetName()));
+						lightDataBuffer->setName(fmt::format("render:{}", COMPONENT::GetName()));
 					}
 				}
 
@@ -373,7 +373,7 @@ namespace Gek
 			Video::BufferPtr lightIndexBuffer;
 
 			DrawCallList drawCallList;
-			tbb::concurrent_queue<Camera> cameraQueue;
+			concurrency::concurrent_queue<Camera> cameraQueue;
 			Camera currentCamera;
 			float clipDistance;
 			float reciprocalClipDistance;
@@ -428,7 +428,7 @@ namespace Gek
 
 			void initializeSystem(void)
 			{
-				LockedWrite{ std::cout } << "Initializing rendering system components";
+				std::cout << "Initializing rendering system components";
 
 				Video::SamplerState::Description bufferSamplerStateData;
 				bufferSamplerStateData.filterMode = Video::SamplerState::FilterMode::MinificationMagnificationMipMapPoint;
@@ -543,7 +543,7 @@ float3 mainPixelProgram(in Input input) : SV_TARGET0
 
 			void initializeUI(void)
 			{
-				LockedWrite{ std::cout } << "Initializing user interface data";
+				std::cout << "Initializing user interface data";
 
 				gui.context = ImGui::CreateContext();
 
@@ -651,7 +651,7 @@ float4 main(PixelInput input) : SV_Target
 				gui.renderState = videoDevice->createRenderState(renderStateInformation);
 				gui.renderState->setName("core:renderState");
 
-				auto invertedDepthBuffer = core->getOption("render", "invertedDepthBuffer").convert(true);
+				auto invertedDepthBuffer = core->getOption("render").value("invertedDepthBuffer", true);
 
 				Video::DepthState::Description depthStateInformation;
 				depthStateInformation.enable = false;
@@ -741,7 +741,7 @@ float4 main(PixelInput input) : SV_Target
 					vertexBufferDescription.type = Video::Buffer::Type::Vertex;
 					vertexBufferDescription.flags = Video::Buffer::Flags::Mappable;
 					gui.vertexBuffer = videoDevice->createBuffer(vertexBufferDescription);
-					gui.vertexBuffer->setName(std::format("core:vertexBuffer:{}", reinterpret_cast<std::uintptr_t>(gui.vertexBuffer.get())));
+					gui.vertexBuffer->setName(fmt::format("core:vertexBuffer:{}", reinterpret_cast<std::uintptr_t>(gui.vertexBuffer.get())));
 				}
 
 				if (!gui.indexBuffer || gui.indexBuffer->getDescription().count < uint32_t(drawData->TotalIdxCount))
@@ -762,7 +762,7 @@ float4 main(PixelInput input) : SV_Target
 					};
 
 					gui.indexBuffer = videoDevice->createBuffer(vertexBufferDescription);
-					gui.indexBuffer->setName(std::format("core:vertexBuffer:{}", reinterpret_cast<std::uintptr_t>(gui.indexBuffer.get())));
+					gui.indexBuffer->setName(fmt::format("core:vertexBuffer:{}", reinterpret_cast<std::uintptr_t>(gui.indexBuffer.get())));
 				}
 
 				bool dataUploaded = false;
@@ -924,8 +924,8 @@ float4 main(PixelInput input) : SV_Target
 					clipRegion.set(-1.0f, -1.0f, 1.0f, 1.0f);
 					const float radiusSquared = (radius * radius);
 					const float lightDepthSquared = (position.z * position.z);
-					updateClipRegion(position.x, position.z, lightDepthSquared, radius, radiusSquared, currentCamera.projectionMatrix.rx.x, clipRegion.minimum.x, clipRegion.maximum.x);
-					updateClipRegion(position.y, position.z, lightDepthSquared, radius, radiusSquared, currentCamera.projectionMatrix.ry.y, clipRegion.minimum.y, clipRegion.maximum.y);
+					updateClipRegion(position.x, position.z, lightDepthSquared, radius, radiusSquared, currentCamera.projectionMatrix.r.x.x, clipRegion.minimum.x, clipRegion.maximum.x);
+					updateClipRegion(position.y, position.z, lightDepthSquared, radius, radiusSquared, currentCamera.projectionMatrix.r.y.y, clipRegion.minimum.y, clipRegion.maximum.y);
 				}
 
 				return clipRegion;
@@ -950,8 +950,8 @@ float4 main(PixelInput input) : SV_Target
 
 				const Math::Float4 tileBounds(Math::Float4(x, x, y, y) + TileBoundsOffset);
 				const Math::Float4 projectionScale(GridScaleOne / Math::Float4(
-					currentCamera.projectionMatrix.rx.x, currentCamera.projectionMatrix.rx.x,
-					currentCamera.projectionMatrix.ry.y, currentCamera.projectionMatrix.ry.y));
+					currentCamera.projectionMatrix.r.x.x, currentCamera.projectionMatrix.r.x.x,
+					currentCamera.projectionMatrix.r.y.y, currentCamera.projectionMatrix.r.y.y));
 				const auto gridScale = (GridScaleNegator * (GridScaleOne - GridScaleTwo / GridDimensions * tileBounds));
 				const auto minimum = (gridScale * minimumZ * projectionScale);
 				const auto maximum = (gridScale * maximumZ * projectionScale);
@@ -1024,7 +1024,7 @@ float4 main(PixelInput input) : SV_Target
 
 				auto lightIterator = pointLightData.lightList.grow_by(1);
 				PointLightData &lightData = (*lightIterator);
-				lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
+				lightData.radiance = (colorComponent.value.xyz() * lightComponent.intensity);
 				lightData.position = currentCamera.viewMatrix.transform(transformComponent.position);
 				lightData.radius = lightComponent.radius;
 				lightData.range = lightComponent.range;
@@ -1040,7 +1040,7 @@ float4 main(PixelInput input) : SV_Target
 
 				auto lightIterator = spotLightData.lightList.grow_by(1);
 				SpotLightData &lightData = (*lightIterator);
-				lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
+				lightData.radiance = (colorComponent.value.xyz() * lightComponent.intensity);
 				lightData.position = currentCamera.viewMatrix.transform(transformComponent.position);
 				lightData.radius = lightComponent.radius;
 				lightData.range = lightComponent.range;
@@ -1115,7 +1115,7 @@ float4 main(PixelInput input) : SV_Target
 
 			void queueCamera(Math::Float4x4 const &viewMatrix, float fieldOfView, float aspectRatio, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget, std::string const &forceShader)
 			{
-				if (core->getOption("render"s, "invertedDepthBuffer"s).convert(true))
+				if (core->getOption("render").value("invertedDepthBuffer", true))
 				{
 					queueCamera(viewMatrix, Math::Float4x4::MakePerspective(fieldOfView, aspectRatio, farClip, nearClip), nearClip, farClip, name, cameraTarget, forceShader);
 				}
@@ -1155,7 +1155,7 @@ float4 main(PixelInput input) : SV_Target
 					auto const& lightComponent = entity->getComponent<Components::DirectionalLight>();
 
 					DirectionalLightData lightData;
-					lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
+					lightData.radiance = (colorComponent.value.xyz() * lightComponent.intensity);
 					lightData.direction = currentCamera.viewMatrix.rotate(getLightDirection(transformComponent.rotation));
 					directionalLightData.lightList.push_back(lightData);
 				});
@@ -1222,7 +1222,7 @@ float4 main(PixelInput input) : SV_Target
 				EngineConstantData engineConstantData;
 				engineConstantData.frameTime = frameTime;
 				engineConstantData.worldTime = 0.0f;
-				engineConstantData.invertedDepthBuffer = (core->getOption("render"s, "invertedDepthBuffer"s).convert(true) ? 1 : 0);
+				engineConstantData.invertedDepthBuffer = (core->getOption("render").value("invertedDepthBuffer", true) ? 1 : 0);
 				videoDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
 				Video::Device::Context *videoContext = videoDevice->getDefaultContext();
 				while (cameraQueue.try_pop(currentCamera))
@@ -1331,7 +1331,7 @@ float4 main(PixelInput input) : SV_Target
 									tileBufferDescription.format = Video::Format::R16_UINT;
 									tileBufferDescription.count = lightIndexList.size();
 									lightIndexBuffer = videoDevice->createBuffer(tileBufferDescription);
-									lightIndexBuffer->setName(std::format("renderer:lightIndexBuffer:{}", reinterpret_cast<std::uintptr_t>(lightIndexBuffer.get())));
+									lightIndexBuffer->setName(fmt::format("renderer:lightIndexBuffer:{}", reinterpret_cast<std::uintptr_t>(lightIndexBuffer.get())));
 								}
 
 								uint16_t *lightIndexData = nullptr;
@@ -1508,7 +1508,7 @@ float4 main(PixelInput input) : SV_Target
 				}
 				else
 				{
-					static const JSON Black = JSON::Array({ 0.0f, 0.0f, 0.0f, 1.0f });
+					static const JSON::Object Black = { 0.0f, 0.0f, 0.0f, 1.0f };
 					auto blackPattern = resources->createPattern("color", Black);
 					renderOverlay(videoContext, blackPattern, ResourceHandle());
 				}

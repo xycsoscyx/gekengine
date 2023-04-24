@@ -33,11 +33,11 @@ namespace Gek
 		}
 
 		// Plugin::Component
-		void save(Components::Spin const * const data, JSON &exportData) const
+		void save(Components::Spin const * const data, JSON::Object &exportData) const
 		{
 		}
 
-		void load(Components::Spin * const data, JSON const &importData)
+		void load(Components::Spin * const data, JSON::Object const &importData)
 		{
 			data->torque.x = population->getShuntingYard().evaluate("random(-pi,pi)").value_or(0.0f);
 			data->torque.y = population->getShuntingYard().evaluate("random(-pi,pi)").value_or(0.0f);
@@ -75,7 +75,7 @@ namespace Gek
 		{
 			assert(population);
 
-			bool editorActive = core->getOption("editor", "active").convert(false);
+			bool editorActive = core->getOption("editor").value("active", false);
 			if (frameTime > 0.0f && !editorActive)
 			{
 				population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity * const entity, auto &transformComponent, auto &spinComponent) -> void

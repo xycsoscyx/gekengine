@@ -109,20 +109,20 @@ namespace Gek
             {
                 assert(core);
 
-                LockedWrite{ std::cout } << "Loading component plugins";
+                std::cout << "Loading component plugins";
                 getContext()->listTypes("ComponentType", [&](std::string_view className) -> void
                 {
-                    LockedWrite{ std::cout } << "Component found: " << className;
+                    std::cout << "Component found: " << className;
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className, static_cast<Plugin::Population *>(this)));
                     if (availableComponents.count(component->getIdentifier()) > 0)
                     {
-                        LockedWrite{ std::cerr } << "Duplicate component identifier found: Class(" << className << "), Identifier(" << component->getIdentifier() << ")";
+                        std::cerr << "Duplicate component identifier found: Class(" << className << "), Identifier(" << component->getIdentifier() << ")";
                         return;
                     }
 
                     if (componentNameTypeMap.count(component->getIdentifier()) > 0)
                     {
-                        LockedWrite{ std::cerr } << "Duplicate component name found: Class(" << className << "), Name(" << component->getName() << ")";
+                        std::cerr << "Duplicate component name found: Class(" << className << "), Name(" << component->getName() << ")";
                         return;
                     }
 
@@ -243,68 +243,63 @@ namespace Gek
 
                 co_await workerPool.schedule();
 
-                LockedWrite{ std::cout } << "Loading population: " << populationName;
+                std::cout << "Loading population: " << populationName;
 
-                JSON worldNode;
-                worldNode.load(getContext()->findDataPath(FileSystem::CreatePath("scenes", populationName).withExtension(".json")));
-                shuntingYard.setRandomSeed(worldNode.getMember("Seed").convert(uint32_t(std::time(nullptr) & 0xFFFFFFFF)));
+                JSON::Object worldNode = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("scenes", populationName).withExtension(".json")));
+                shuntingYard.setRandomSeed(worldNode.value("Seed", uint32_t(std::time(nullptr) & 0xFFFFFFFF)));
 
-                auto templatesNode = worldNode.getMember("Templates");
-                auto populationNode = worldNode.getMember("Population");
-                auto populationArray = populationNode.asType(JSON::EmptyArray);
-                LockedWrite{ std::cout } << "Found " << populationArray.size() << " Entity Definitions";
-                for (auto const& entityNode : populationArray)
+                auto templatesNode = worldNode["Templates"];
+                auto populationNode = worldNode["Population"];
+                std::cout << "Found " << populationNode.size() << " Entity Definitions";
+                for (auto &entityNode : populationNode)
                 {
                     uint32_t count = 1;
                     EntityDefinition entityDefinition;
-                    auto entityObject = entityNode.asType(JSON::EmptyObject);
-                    auto templateSearch = entityObject.find("Template");
-                    if (templateSearch != std::end(entityObject))
+                    auto templateSearch = entityNode.find("Template");
+                    if (templateSearch != std::end(entityNode))
                     {
                         std::string templateName;
-                        auto entityTemplateNode = entityNode.getMember("Template");
-                        auto entityTemplateObject = entityTemplateNode.asType(JSON::EmptyObject);
-                        if (entityTemplateNode.isType<std::string>())
+                        auto entityTemplateNode = entityNode["Template"];
+                        if (entityTemplateNode.is_string())
                         {
-                            templateName = entityTemplateNode.convert(String::Empty);
+                            templateName = entityTemplateNode.get<std::string>();
                         }
                         else
                         {
-                            if (entityTemplateObject.count("Base"))
+                            if (entityTemplateNode.contains("Base"))
                             {
-                                templateName = entityTemplateNode.getMember("Base").convert(String::Empty);
+                                templateName = entityTemplateNode.value("Base", String::Empty);
                             }
 
-                            if (entityTemplateObject.count("Count"))
+                            if (entityTemplateNode.contains("Count"))
                             {
-                                count = entityTemplateNode.getMember("Count").convert(0);
+                                count = entityTemplateNode.value("Count", 0);
                             }
                         }
 
-                        auto& templateNode = templatesNode.getMember(templateName);
-                        for (auto const& componentPair : templateNode.asType(JSON::EmptyObject))
+                        auto& templateNode = templatesNode[templateName];
+                        for (auto const& [key, value] : templateNode.items())
                         {
-                            entityDefinition[componentPair.first] = componentPair.second;
+                            entityDefinition[key] = value;
                         }
 
-                        entityObject.erase(templateSearch);
+                        entityNode.erase(templateSearch);
                     }
 
-                    for (auto const& componentPair : entityObject)
+                    for (auto const& [componentName, componentData] : entityNode.items())
                     {
-                        auto& componentDefiniti9on = entityDefinition[componentPair.first];
-                        componentPair.second.visit(
-                            [&](JSON::Object const& componentObject)
+                        auto& componentDefinition = entityDefinition[componentName];
+                        if (componentData.is_object())
+                        {
+                            for (auto const& [valueName, valueData] : componentData.items())
                             {
-                                for (auto const& attributePair : componentObject)
-                                {
-                                    componentDefiniti9on[attributePair.first] = attributePair.second;
-                                }
-                            },
-                            [&](auto const& visitedData)
-                            {
-                                componentDefiniti9on = visitedData;
-                            });
+                                componentDefinition[valueName] = valueData;
+                            }
+                        }
+                        else
+                        {
+                            componentDefinition = componentData;
+                        }
                     }
 
                     while (count-- > 0)
@@ -330,28 +325,28 @@ namespace Gek
 
             void save(std::string const &populationName)
             {
-                auto population = JSON::Array();
+                auto population = JSON::Object({});
                 for (auto const &entity : registry)
                 {
-                    JSON entityDefinition = JSON::EmptyObject;
+                    JSON::Object entityDefinition;
                     Entity *editorEntity = static_cast<Entity *>(entity.get());
                     editorEntity->listComponents([&](Hash type, Plugin::Component::Data const *data) -> void
                     {
                         auto componentName = componentNameTypeMap.find(type);
                         if (componentName == std::end(componentNameTypeMap))
                         {
-                            LockedWrite{ std::cerr } << "Unknown component identifier found when trying to save population: " << type;
+                            std::cerr << "Unknown component identifier found when trying to save population: " << type;
                         }
                         else
                         {
                             auto component = availableComponents.find(type);
                             if (component == std::end(availableComponents))
                             {
-								LockedWrite{ std::cerr } << "Unknown component type found when trying to save population: " << componentName->second << ", " << type;
+								std::cerr << "Unknown component type found when trying to save population: " << componentName->second << ", " << type;
                             }
                             else
                             {
-                                JSON componentDefinition;
+                                JSON::Object componentDefinition;
                                 component->second->save(data, componentDefinition);
                                 entityDefinition[componentName->second] = componentDefinition;
                             }
@@ -361,10 +356,10 @@ namespace Gek
                     population.push_back(entityDefinition);
                 }
 
-                JSON scene;
+                JSON::Object scene;
                 scene["Population"] = population;
                 scene["Seed"] = shuntingYard.getRandomSeed();
-                scene.save(getContext()->getCachePath(FileSystem::CreatePath("scenes", populationName).withExtension(".json")));
+                JSON::Save(scene, getContext()->getCachePath(FileSystem::CreatePath("scenes", populationName).withExtension(".json")));
                 onSave.emit(populationName);
             }
 
@@ -421,12 +416,12 @@ namespace Gek
                     }
                     else
                     {
-                        LockedWrite{ std::cerr } << "Entity contains unknown component identifier: " << definition.first << ", " << componentNameSearch->second;
+                        std::cerr << "Entity contains unknown component identifier: " << definition.first << ", " << componentNameSearch->second;
                     }
                 }
                 else
                 {
-                    LockedWrite{ std::cerr } << "Entity contains unknown component: " << definition.first;
+                    std::cerr << "Entity contains unknown component: " << definition.first;
                 }
 
                 return false;

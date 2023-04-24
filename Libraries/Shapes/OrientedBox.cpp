@@ -23,7 +23,7 @@ namespace Gek
         }
 
         OrientedBox::OrientedBox(Math::Float4x4 const &matrix, AlignedBox const &box) noexcept
-            : matrix(Math::Float4x4::MakeQuaternionRotation(matrix.getRotation(), (matrix.translation.xyz + box.getCenter())))
+            : matrix(Math::Float4x4::MakeQuaternionRotation(matrix.getRotation(), (matrix.r.w.xyz() + box.getCenter())))
             , halfsize(box.getHalfSize())
         {
         }

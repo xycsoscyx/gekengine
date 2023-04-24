@@ -4,6 +4,10 @@
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Engine/Core.hpp"
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 using namespace Gek;
 
 int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstance, _In_ wchar_t *commandLine, _In_ int commandShow)
@@ -11,7 +15,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstan
     auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
     auto rootPath(pluginPath.getParentPath());
 	auto cachePath(rootPath / "cache");
-    SetCurrentDirectoryW(cachePath.getWideString().data());
+    cachePath.setWorkingDirectory();
 
     std::vector<FileSystem::Path> searchPathList;
     searchPathList.push_back(pluginPath);

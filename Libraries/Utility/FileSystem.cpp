@@ -1,6 +1,8 @@
 #include "GEK/Utility/FileSystem.hpp"
-#include <fstream>
+
+#ifdef _WIN32
 #include <Windows.h>
+#endif
 
 namespace Gek
 {
@@ -148,11 +150,6 @@ namespace Gek
             return data.string();
         }
 
-        std::wstring Path::getWideString(void) const
-        {
-            return data.native();
-        }
-
         void Path::rename(Path const &name) const
         {
             std::filesystem::rename(data, name.data);
@@ -190,6 +187,13 @@ namespace Gek
             std::filesystem::create_directories(data, errorCode);
         }
 
+        void Path::setWorkingDirectory(void) const
+        {
+            std::error_code errorCode;
+            std::filesystem::create_directories(data, errorCode);
+            std::filesystem::current_path(data, errorCode);
+        }
+
         void Path::findFiles(std::function<bool(Path const &filePath)> onFileFound, bool recursive) const
         {
             std::error_code errorCode;
@@ -220,19 +224,17 @@ namespace Gek
 
         Path GetModuleFilePath(void)
         {
+            std::string shortPath;
 #ifdef _WIN32
-            std::wstring relativeName((MAX_PATH + 1), L'\0');
-            GetModuleFileName(nullptr, &relativeName.at(0), MAX_PATH);
-
-            std::wstring absoluteName((MAX_PATH + 1), L'\0');
-            GetFullPathName(relativeName.data(), MAX_PATH, &absoluteName.at(0), nullptr);
+            std::wstring widePath(1025, L'\0');
+            GetModuleFileName(nullptr, &widePath.at(0), 1024);
+            shortPath = String::Narrow(widePath);
 #else
-            std:string processName(std::format("/proc/{}/exe", getpid()));
-            std::string absoluteName((MAX_PATH + 1), L'\0');
-            readlink(processName, &absoluteName.at(0), MAX_PATH);
-            String::TrimRight(absoluteName);
+            shortPath = "/proc/self/exe";
 #endif
-            return Path(String::Narrow(absoluteName));
+            std::error_code errorCode;
+            auto processName = std::filesystem::canonical(shortPath, errorCode);
+            return Path(processName);
         }
     } // namespace FileSystem
 }; // namespace Gek

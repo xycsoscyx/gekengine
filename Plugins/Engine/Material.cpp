@@ -32,19 +32,18 @@ namespace Gek
             {
                 assert(resources);
 
-                JSON materialNode;
-                materialNode.load(getContext()->findDataPath(FileSystem::CreatePath("materials", materialName).withExtension(".json")));
-                auto &shaderNode = materialNode.getMember("shader");
-                auto shaderName = shaderNode.getMember("default").convert(String::Empty);
+                JSON::Object materialNode = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("materials", materialName).withExtension(".json")));
+                auto &shaderNode = materialNode["shader"];
+                auto shaderName = shaderNode.value("default", String::Empty);
                 ShaderHandle shaderHandle = resources->getShader(shaderName, materialHandle);
                 Engine::Shader *shader = resources->getShader(shaderHandle);
                 if (shader)
                 {
                     Video::RenderState::Description renderStateInformation;
-                    renderStateInformation.load(shaderNode.getMember("renderState"));
+                    renderStateInformation.load(shaderNode["renderState"]);
                     renderState = resources->createRenderState(renderStateInformation);
 
-                    auto &dataNode = shaderNode.getMember("data");
+                    auto &dataNode = shaderNode["data"];
                     for (auto material = shader->begin(); material; material = material->next())
                     {
                         auto materialName = material->getName();
@@ -52,17 +51,16 @@ namespace Gek
                         for (auto &initializer : material->getInitializerList())
                         {
                             ResourceHandle resourceHandle;
-                            auto &resourceNode = dataNode.getMember(initializer.name);
-                            const auto &resourceObject = resourceNode.asType(JSON::EmptyObject);
-                            if (resourceObject.count("file"))
+                            auto &resourceNode = dataNode[initializer.name];
+                            if (resourceNode.contains("file"))
                             {
-                                auto fileName = resourceNode.getMember("file").convert(String::Empty);
-                                uint32_t flags = getTextureLoadFlags(resourceNode.getMember("flags").convert(String::Empty));
+                                auto fileName = resourceNode.value("file", String::Empty);
+                                uint32_t flags = getTextureLoadFlags(resourceNode.value("flags", String::Empty));
                                 resourceHandle = resources->loadTexture(fileName, flags, initializer.fallback);
                             }
-                            else if (resourceObject.count("source"))
+                            else if (resourceNode.contains("source"))
                             {
-                                resourceHandle = resources->getResourceHandle(resourceNode.getMember("source").convert(String::Empty));
+                                resourceHandle = resources->getResourceHandle(resourceNode.value("source", String::Empty));
                             }
 
                             if (!resourceHandle)
@@ -76,7 +74,7 @@ namespace Gek
                 }
                 else
                 {
-                    LockedWrite{ std::cerr } << "Shader " << shaderName << " missing for material " << materialName;
+                    std::cerr << "Shader " << shaderName << " missing for material " << materialName;
                 }
             }
 

@@ -262,7 +262,7 @@ namespace Gek
                 bool multisampleEnable = false;
                 bool antialiasedLineEnable = false;
 
-                void load(JSON const &object, JSON const &configs = JSON::Empty);
+                void load(JSON::Object const& object, JSON::Object const& configs = JSON::Object());
                 size_t getHash(void) const;
             };
 
@@ -304,7 +304,7 @@ namespace Gek
                     Operation passOperation = Operation::Keep;
                     ComparisonFunction comparisonFunction = ComparisonFunction::Always;
 
-                    void load(JSON const &object, JSON const &configs = JSON::Empty);
+                    void load(JSON::Object const &object, JSON::Object const &configs = JSON::Object());
                     size_t getHash(void) const;
                 };
 
@@ -317,7 +317,7 @@ namespace Gek
                 StencilState stencilFrontState;
                 StencilState stencilBackState;
 
-                void load(JSON const &object, JSON const &configs = JSON::Empty);
+                void load(JSON::Object const &object, JSON::Object const &configs = JSON::Object());
                 size_t getHash(void) const;
             };
 
@@ -389,7 +389,7 @@ namespace Gek
                     Operation alphaOperation = Operation::Add;
                     uint8_t writeMask = Mask::RGBA;
 
-                    void load(JSON const &object, JSON const &configs = JSON::Empty);
+                    void load(JSON::Object const &object, JSON::Object const &configs = JSON::Object());
                     size_t getHash(void) const;
                 };
 
@@ -404,7 +404,7 @@ namespace Gek
                     return targetStates[index];
                 }
 
-                void load(JSON const &object, JSON const &configs = JSON::Empty);
+                void load(JSON::Object const &object, JSON::Object const &configs = JSON::Object());
                 size_t getHash(void) const;
             };
 
@@ -481,7 +481,7 @@ namespace Gek
                 float minimumMipLevel = 0.0f;
                 float maximumMipLevel = Math::Infinity;
 
-                void load(JSON const &object, JSON const &configs = JSON::Empty);
+                void load(JSON::Object const &object, JSON::Object const &configs = JSON::Object());
                 size_t getHash(void) const;
             };
 

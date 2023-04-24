@@ -21,10 +21,8 @@ namespace Gek
         public:
             union
             {
-                struct { float data[6]; };
-                struct { float table[3][2]; };
-                struct { Float2 rows[3]; };
-
+                float data[6];;
+                float table[3][2];;
                 struct
                 {
                     float _11, _12;
@@ -32,16 +30,11 @@ namespace Gek
                     float _31, _32;
                 };
 
+                Float2 rows[3];
                 struct
                 {
-                    Float2 rx;
-                    Float2 ry;
-                    union
-                    {
-                        struct { Float2 rz; };
-                        struct { Float2 translation; };
-                    };
-                };
+                    Float2 x, y, z;
+                } r;
             };
 
         public:
@@ -94,9 +87,19 @@ namespace Gek
             {
             }
 
+            Float2& translation(void)
+            {
+                return r.z;
+            }
+
+            const Float2& translation(void) const
+            {
+                return r.z;
+            }
+
             inline Float2 getScaling(void) const noexcept
             {
-                return Float2(rx.getLength(), ry.getLength());
+                return Float2(r.x.getLength(), r.y.getLength());
             }
 
             inline void operator *= (Float3x2 const &matrix) noexcept
@@ -106,7 +109,8 @@ namespace Gek
 
             inline Float3x2 operator * (Float3x2 const &matrix) const noexcept
             {
-                return Float3x2({ _11 * matrix._11 + _12 * matrix._21,
+                return Float3x2({
+                    _11 * matrix._11 + _12 * matrix._21,
                     _11 * matrix._12 + _12 * matrix._22,
                     _21 * matrix._11 + _22 * matrix._21,
                     _21 * matrix._12 + _22 * matrix._22,
@@ -116,7 +120,7 @@ namespace Gek
 
             inline std::tuple<Float2, Float2, Float2> getTuple(void) const noexcept
             {
-                return std::make_tuple(rx, ry, rz);
+                return std::make_tuple(r.x, r.y, r.z);
             }
 
             inline bool operator == (Float3x2 const &matrix) const noexcept
@@ -131,7 +135,7 @@ namespace Gek
 
             inline Float3x2 &operator = (Float3x2 const &matrix) noexcept
             {
-                std::tie(rx, ry, rz) = matrix.getTuple();
+                std::tie(r.x, r.y, r.z) = matrix.getTuple();
                 return (*this);
             }
         };

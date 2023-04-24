@@ -39,15 +39,8 @@ namespace Gek
                 Float4 rows[4];
                 struct
                 {
-                    Float4 rx;
-                    Float4 ry;
-                    Float4 rz;
-                    union
-                    {
-                        struct { Float4 rw; };
-                        struct { Float4 translation; };
-                    };
-                };
+                    Float4 x, y, z, w;
+                } r;
             };
 
         public:
@@ -64,7 +57,7 @@ namespace Gek
             {
                 Float4x4 matrix;
                 matrix.setRotation(rotation);
-                matrix.rw = Float4(translation, 1.0f);
+                matrix.r.w = Float4(translation, 1.0f);
                 return matrix;
             }
 
@@ -144,7 +137,7 @@ namespace Gek
                     translation.x, translation.y, translation.z, 1.0f);
             }
 
-            // https://msdn.microsoft.com/en-us/library/windows/desktop/bb205347(v=vs.85).aspx
+            // https://msdn.microsoft.com/en-us/librar.y/windows/desktop/bb205347(v=vs.85).aspx
             inline static Float4x4 MakeOrthographic(float left, float top, float right, float bottom, float nearClip, float farClip) noexcept
             {
                 return Float4x4(
@@ -154,7 +147,7 @@ namespace Gek
                     ((left + right) / (left - right)), ((top + bottom) / (bottom - top)), (nearClip / (nearClip - farClip)), 1.0f);
             }
 
-            // https://msdn.microsoft.com/en-us/library/windows/desktop/bb205350(v=vs.85).aspx
+            // https://msdn.microsoft.com/en-us/librar.y/windows/desktop/bb205350(v=vs.85).aspx
             inline static Float4x4 MakePerspective(float fieldOfView, float aspectRatio, float nearClip, float farClip) noexcept
             {
                 float yScale(1.0f / std::tan(fieldOfView * 0.5f));
@@ -174,10 +167,11 @@ namespace Gek
             }
 
             inline Float4x4(Float4x4 const &matrix) noexcept
-                : rx(matrix.rx)
-                , ry(matrix.ry)
-                , rz(matrix.rz)
-                , rw(matrix.rw)
+                : rows {
+                    matrix.rows[0],
+                    matrix.rows[1],
+                    matrix.rows[2],
+                    matrix.rows[3] }
             {
             }
 
@@ -194,10 +188,11 @@ namespace Gek
             }
 
             explicit inline Float4x4(float const *data) noexcept
-                : rx(data + 0)
-                , ry(data + 4)
-                , rz(data + 8)
-                , rw(data + 12)
+                : rows {
+                    Float4(data + 0),
+                    Float4(data + 4),
+                    Float4(data + 8),
+                    Float4(data + 12) }
             {
             }
 
@@ -210,9 +205,9 @@ namespace Gek
                 float length(xx + yy + zz + ww);
                 if (length == 0.0f)
                 {
-                    rx.set(1.0f, 0.0f, 0.0f, 0.0f);
-                    ry.set(0.0f, 1.0f, 0.0f, 0.0f);
-                    rz.set(0.0f, 0.0f, 1.0f, 0.0f);
+                    r.x.set(1.0f, 0.0f, 0.0f, 0.0f);
+                    r.y.set(0.0f, 1.0f, 0.0f, 0.0f);
+                    r.z.set(0.0f, 0.0f, 1.0f, 0.0f);
                 }
                 else
                 {
@@ -223,10 +218,20 @@ namespace Gek
                     float yz(rotation.y * rotation.z);
                     float yw(rotation.y * rotation.w);
                     float zw(rotation.z * rotation.w);
-                    rx.set(((xx - yy - zz + ww) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f);
-                    ry.set((2.0f * (xy - zw) * determinant), ((-xx + yy - zz + ww) * determinant), (2.0f * (yz + xw) * determinant), 0.0f);
-                    rz.set((2.0f * (xz + yw) * determinant), (2.0f * (yz - xw) * determinant), ((-xx - yy + zz + ww) * determinant), 0.0f);
+                    r.x.set(((xx - yy - zz + ww) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f);
+                    r.y.set((2.0f * (xy - zw) * determinant), ((-xx + yy - zz + ww) * determinant), (2.0f * (yz + xw) * determinant), 0.0f);
+                    r.z.set((2.0f * (xz + yw) * determinant), (2.0f * (yz - xw) * determinant), ((-xx - yy + zz + ww) * determinant), 0.0f);
                 }
+            }
+
+            Float3& translation(void)
+            {
+                return r.w.xyz();
+            }
+
+            const Float3& translation(void) const
+            {
+                return r.w.xyz();
             }
 
             inline float getDeterminant(void) const noexcept
@@ -290,9 +295,9 @@ namespace Gek
             {
                 Math::Float3 normalized[3] =
                 {
-                    rx.xyz.getNormal(),
-                    ry.xyz.getNormal(),
-                    rz.xyz.getNormal(),
+                    r.x.xyz().getNormal(),
+                    r.y.xyz().getNormal(),
+                    r.z.xyz().getNormal(),
                 };
 
                 Quaternion result;
@@ -338,11 +343,11 @@ namespace Gek
                     trace = 1.0f + normalized[localXAxis].data[localXAxis] - normalized[localYAxis].data[localYAxis] - normalized[localZAxis].data[localZAxis];
                     trace = std::sqrt(trace);
 
-                    result.axis.data[localXAxis] = 0.5f * trace;
+                    result.data[localXAxis] = 0.5f * trace;
                     trace = 0.5f / trace;
                     result.w = (normalized[localYAxis].data[localZAxis] - normalized[localZAxis].data[localYAxis]) * trace;
-                    result.axis.data[localYAxis] = (normalized[localXAxis].data[localYAxis] + normalized[localYAxis].data[localXAxis]) * trace;
-                    result.axis.data[localZAxis] = (normalized[localXAxis].data[localZAxis] + normalized[localZAxis].data[localXAxis]) * trace;
+                    result.data[localYAxis] = (normalized[localXAxis].data[localYAxis] + normalized[localYAxis].data[localXAxis]) * trace;
+                    result.data[localZAxis] = (normalized[localXAxis].data[localZAxis] + normalized[localZAxis].data[localXAxis]) * trace;
                 }
 
                 return result;
@@ -351,9 +356,9 @@ namespace Gek
             inline Float3 getScaling(void) const noexcept
             {
                 return Math::Float3(
-                    rx.xyz.getLength(),
-                    ry.xyz.getLength(),
-                    rz.xyz.getLength());
+                    r.x.xyz().getLength(),
+                    r.y.xyz().getLength(),
+                    r.z.xyz().getLength());
             }
 
             inline Float4x4 &transpose(void) noexcept
@@ -370,9 +375,9 @@ namespace Gek
 
             inline Float4x4 &orthonormalize(void) noexcept
             {
-                rx = Float4(rx.xyz.getNormal(), 0.0f);
-                ry = Float4(ry.xyz.getNormal(), 0.0f);
-                rz = Float4(rz.xyz.getNormal(), 0.0f);
+                r.x = Float4(r.x.xyz().getNormal(), 0.0f);
+                r.y = Float4(r.y.xyz().getNormal(), 0.0f);
+                r.z = Float4(r.z.xyz().getNormal(), 0.0f);
                 return (*this);
             }
 
@@ -381,23 +386,23 @@ namespace Gek
                 __m128 simd[2][4] =
                 {
                     {
-                        _mm_loadu_ps(rx.data),
-                        _mm_loadu_ps(ry.data),
-                        _mm_loadu_ps(rz.data),
-                        _mm_loadu_ps(rw.data),
+                        _mm_loadu_ps(r.x.data),
+                        _mm_loadu_ps(r.y.data),
+                        _mm_loadu_ps(r.z.data),
+                        _mm_loadu_ps(r.w.data),
                     },
                     {
-                        _mm_loadu_ps(matrix.rx.data),
-                        _mm_loadu_ps(matrix.ry.data),
-                        _mm_loadu_ps(matrix.rz.data),
-                        _mm_loadu_ps(matrix.rw.data),
+                        _mm_loadu_ps(matrix.r.x.data),
+                        _mm_loadu_ps(matrix.r.y.data),
+                        _mm_loadu_ps(matrix.r.z.data),
+                        _mm_loadu_ps(matrix.r.w.data),
                     },
                 };
 
-                _mm_storeu_ps(rx.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][0], simd[0][0], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][0], simd[0][0], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][0], simd[0][0], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][0], simd[0][0], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
-                _mm_storeu_ps(ry.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][1], simd[0][1], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][1], simd[0][1], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][1], simd[0][1], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][1], simd[0][1], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
-                _mm_storeu_ps(rz.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][2], simd[0][2], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][2], simd[0][2], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][2], simd[0][2], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][2], simd[0][2], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
-                _mm_storeu_ps(rw.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
+                _mm_storeu_ps(r.x.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][0], simd[0][0], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][0], simd[0][0], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][0], simd[0][0], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][0], simd[0][0], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
+                _mm_storeu_ps(r.y.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][1], simd[0][1], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][1], simd[0][1], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][1], simd[0][1], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][1], simd[0][1], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
+                _mm_storeu_ps(r.z.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][2], simd[0][2], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][2], simd[0][2], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][2], simd[0][2], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][2], simd[0][2], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
+                _mm_storeu_ps(r.w.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
             }
 
             inline Float4x4 operator * (Float4x4 const &matrix) const noexcept
@@ -405,24 +410,24 @@ namespace Gek
                 __m128 simd[2][4] =
                 {
                     {
-                        _mm_loadu_ps(rx.data),
-                        _mm_loadu_ps(ry.data),
-                        _mm_loadu_ps(rz.data),
-                        _mm_loadu_ps(rw.data),
+                        _mm_loadu_ps(r.x.data),
+                        _mm_loadu_ps(r.y.data),
+                        _mm_loadu_ps(r.z.data),
+                        _mm_loadu_ps(r.w.data),
                     },
                     {
-                        _mm_loadu_ps(matrix.rx.data),
-                        _mm_loadu_ps(matrix.ry.data),
-                        _mm_loadu_ps(matrix.rz.data),
-                        _mm_loadu_ps(matrix.rw.data),
+                        _mm_loadu_ps(matrix.r.x.data),
+                        _mm_loadu_ps(matrix.r.y.data),
+                        _mm_loadu_ps(matrix.r.z.data),
+                        _mm_loadu_ps(matrix.r.w.data),
                     },
                 };
 
                 Float4x4 result;
-                _mm_storeu_ps(result.rx.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][0], simd[0][0], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][0], simd[0][0], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][0], simd[0][0], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][0], simd[0][0], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
-                _mm_storeu_ps(result.ry.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][1], simd[0][1], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][1], simd[0][1], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][1], simd[0][1], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][1], simd[0][1], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
-                _mm_storeu_ps(result.rz.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][2], simd[0][2], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][2], simd[0][2], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][2], simd[0][2], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][2], simd[0][2], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
-                _mm_storeu_ps(result.rw.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
+                _mm_storeu_ps(result.r.x.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][0], simd[0][0], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][0], simd[0][0], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][0], simd[0][0], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][0], simd[0][0], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
+                _mm_storeu_ps(result.r.y.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][1], simd[0][1], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][1], simd[0][1], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][1], simd[0][1], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][1], simd[0][1], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
+                _mm_storeu_ps(result.r.z.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][2], simd[0][2], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][2], simd[0][2], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][2], simd[0][2], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][2], simd[0][2], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
+                _mm_storeu_ps(result.r.w.data, _mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(0, 0, 0, 0)), simd[1][0]), _mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(1, 1, 1, 1)), simd[1][1])), _mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(2, 2, 2, 2)), simd[1][2]), _mm_mul_ps(_mm_shuffle_ps(simd[0][3], simd[0][3], _MM_SHUFFLE(3, 3, 3, 3)), simd[1][3]))));
                 return result;
             }
 
@@ -453,7 +458,7 @@ namespace Gek
 
             std::tuple<Float4, Float4, Float4, Float4> getTuple(void) const noexcept
             {
-                return std::make_tuple(rx, ry, rz, rw);
+                return std::make_tuple(r.x, r.y, r.z, r.w);
             }
 
             bool operator == (Float4x4 const &matrix) const noexcept
@@ -478,7 +483,7 @@ namespace Gek
 
             inline Float4x4 &operator = (Float4x4 const &matrix) noexcept
             {
-                std::tie(rx, ry, rz, rw) = matrix.getTuple();
+                std::tie(r.x, r.y, r.z, r.w) = matrix.getTuple();
                 return (*this);
             }
         };

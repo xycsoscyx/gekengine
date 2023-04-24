@@ -107,7 +107,7 @@ namespace Gek
 
             void reload(void)
             {
-                LockedWrite{ std::cout } << "Loading shader: " << shaderName;
+                std::cout << "Loading shader: " << shaderName;
 			
                 passList.clear();
                 materialMap.clear();
@@ -115,22 +115,21 @@ namespace Gek
                 auto backBuffer = videoDevice->getBackBuffer();
                 auto &backBufferDescription = backBuffer->getDescription();
 
-                JSON rootNode;
-                rootNode.load(getContext()->findDataPath(FileSystem::CreatePath("shaders", shaderName).withExtension(".json")));
-                outputResource = rootNode.getMember("output").convert(String::Empty);
+                JSON::Object rootNode = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("shaders", shaderName).withExtension(".json")));
+                outputResource = rootNode["output"].get<std::string>();
 
                 ShuntingYard shuntingYard(population->getShuntingYard());
-                const auto &coreOptionsNode = core->getOption("shaders", shaderName);
-                for (const auto &coreValuePair : coreOptionsNode.asType(JSON::EmptyObject))
+                const auto &coreOptionsNode = core->getOption("shaders")[shaderName];
+                for (auto& [key, value] : coreOptionsNode.items())
                 {
-                    shuntingYard.setVariable(coreValuePair.first, coreValuePair.second.convert(0.0f));
+                    shuntingYard.setVariable(key, JSON::Evaluate(value, shuntingYard, 0.0f));
                 }
 
                 auto rootOptionsNode = rootNode["options"];
-                auto &rootOptionsObject = rootOptionsNode.makeType<JSON::Object>();
-                for (const auto &coreValuePair : coreOptionsNode.asType(JSON::EmptyObject))
+                auto rootOptionsObject = rootOptionsNode;
+                for (auto& [key, value] : coreOptionsNode.items())
                 {
-                    rootOptionsObject[coreValuePair.first] = coreValuePair.second;
+                    rootOptionsObject[key] = value;
                 }
 
                 auto importSearch = rootOptionsObject.find("#import");
@@ -138,42 +137,37 @@ namespace Gek
                 {
                     auto importExternal = [&](std::string_view importName) -> void
                     {
-                        JSON importOptions;
-                        importOptions.load(getContext()->findDataPath(FileSystem::CreatePath("shaders", importName).withExtension(".json")));
-                        for (auto &importPair : importOptions.asType(JSON::EmptyObject))
+                        JSON::Object importOptions = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("shaders", importName).withExtension(".json")));
+                        for (auto& [key, value] : importOptions.items())
                         {
-                            if (rootOptionsObject.count(importPair.first) == 0)
+                            if (rootOptionsObject.count(key) == 0)
                             {
-                                rootOptionsObject[importPair.first] = importPair.second;
+                                rootOptionsObject[key] = value;
                             }
                         }
                     };
 
-                    importSearch->second.visit(
-                        [&](std::string const &importName)
+                    if (importSearch->is_string())
                     {
-                        importExternal(importName);
-                    },
-                        [&](JSON::Array const &importArray)
+                        importExternal(importSearch->get<std::string>());
+                    }
+                    else if (importSearch->is_array())
                     {
-                        for (auto &importName : importArray)
+                        for (auto& importName : *importSearch)
                         {
-                            importExternal(importName.convert(String::Empty));
+                            importExternal(importName.get<std::string>());
                         }
-                    },
-                        [&](auto const &)
-                    {
-                    });
+                    }
 
                     rootOptionsObject.erase(importSearch);
                 }
 
                 core->setOption("shaders", shaderName, rootOptionsNode);
-                auto requiredShadesrArray = rootNode.getMember("requires").asType(JSON::EmptyArray);
+                auto requiredShadesrArray = rootNode["requires"];
                 drawOrder = requiredShadesrArray.size();
                 for (auto &requiredShaderNode : requiredShadesrArray)
                 {
-                    auto shaderHandle = resources->getShader(requiredShaderNode.convert(String::Empty));
+                    auto shaderHandle = resources->getShader(requiredShaderNode.get<std::string>());
                     auto shader = resources->getShader(shaderHandle);
                     if (shader)
                     {
@@ -183,27 +177,27 @@ namespace Gek
 
                 std::vector<std::string> inputData;
                 uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
-                for (auto &elementNode : rootNode.getMember("input").asType(JSON::EmptyArray))
+                for (auto &elementNode : rootNode["input"])
                 {
-                    std::string name(elementNode.getMember("name").convert(String::Empty));
-                    std::string system(String::GetLower(elementNode.getMember("system").convert(String::Empty)));
+                    std::string name(elementNode.value("name", String::Empty));
+                    std::string system(String::GetLower(elementNode.value("system", String::Empty)));
                     if (system == "isfrontfacing")
                     {
-                        inputData.push_back(std::format("    uint {} : SV_IsFrontFace;", name));
+                        inputData.push_back(fmt::format("    uint {} : SV_IsFrontFace;", name));
                     }
                     else if (system == "sampleindex")
                     {
-                        inputData.push_back(std::format("    uint {} : SV_SampleIndex;", name));
+                        inputData.push_back(fmt::format("    uint {} : SV_SampleIndex;", name));
                     }
                     else
                     {
-                        Video::Format format = Video::GetFormat(elementNode.getMember("format").convert(String::Empty));
-                        uint32_t count = elementNode.getMember("count").convert(1);
-                        auto semantic = Video::InputElement::GetSemantic(elementNode.getMember("semantic").convert(String::Empty));
+                        Video::Format format = Video::GetFormat(elementNode.value("format", String::Empty));
+                        uint32_t count = elementNode.value("count", 1);
+                        auto semantic = Video::InputElement::GetSemantic(elementNode.value("semantic", String::Empty));
                         auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)];
                         semanticIndexList[static_cast<uint8_t>(semantic)] += count;
 
-                        inputData.push_back(std::format("    {} {} : {}{};", getFormatSemantic(format, count), name, videoDevice->getSemanticMoniker(semantic), semanticIndex));
+                        inputData.push_back(fmt::format("    {} {} : {}{};", getFormatSemantic(format, count), name, videoDevice->getSemanticMoniker(semantic), semanticIndex));
                     }
                 }
 
@@ -260,53 +254,51 @@ R"(namespace Lights
 
                 std::unordered_map<std::string, ResourceHandle> resourceMap;
                 std::unordered_map<std::string, std::string> resourceSemanticsMap;
-                for (auto &texturesPair : rootNode.getMember("textures").asType(JSON::EmptyObject))
+                for (auto& [key, value] : rootNode["textures"].items())
                 {
-                    std::string textureName(texturesPair.first);
+                    std::string textureName(key);
                     if (resourceMap.count(textureName) > 0)
                     {
-                        LockedWrite{ std::cout } << "Texture name same as already listed resource: " << textureName;
+                        std::cerr << "Texture name same as already listed resource: " << textureName;
                         continue;
                     }
 
                     ResourceHandle resource;
-                    auto &textureNode = texturesPair.second;
-                    const auto &textureMap = textureNode.asType(JSON::EmptyObject);
-                    if (textureMap.count("file"))
+                    auto &textureNode = value;
+                    if (textureNode.contains("file"))
                     {
-                        std::string fileName(textureNode.getMember("file").convert(String::Empty));
-                        uint32_t flags = getTextureLoadFlags(textureNode.getMember("flags").convert(String::Empty));
+                        std::string fileName(textureNode.value("file", String::Empty));
+                        uint32_t flags = getTextureLoadFlags(textureNode.value("flags", String::Empty));
                         resource = resources->loadTexture(fileName, flags);
                     }
                     else
                     {
                         Video::Texture::Description description(backBufferDescription);
-                        description.format = Video::GetFormat(textureNode.getMember("format").convert(String::Empty));
-                        auto &sizeNode = textureNode.getMember("size");
-                        if (sizeNode.isType<float>())
+                        description.format = Video::GetFormat(textureNode.value("format", String::Empty));
+                        auto &sizeNode = textureNode["size"];
+                        if (sizeNode.is_number())
                         {
-                            description.width = sizeNode.evaluate(shuntingYard, 1);
+                            description.width = JSON::Evaluate(sizeNode, shuntingYard, 1);
                         }
-                        else
+                        else if(sizeNode.is_array())
                         {
-                            const auto &sizeArray = sizeNode.asType(JSON::EmptyArray);
-                            switch (sizeArray.size())
+                            switch (sizeNode.size())
                             {
                             case 3:
-                                description.depth = sizeArray.at(2).evaluate(shuntingYard, 1);
+                                description.depth = JSON::Evaluate(sizeNode[2], shuntingYard, 1);
 
                             case 2:
-                                description.height = sizeArray.at(1).evaluate(shuntingYard, 1);
+                                description.height = JSON::Evaluate(sizeNode[1], shuntingYard, 1);
 
                             case 1:
-                                description.width = sizeArray.at(0).evaluate(shuntingYard, 1);
+                                description.width = JSON::Evaluate(sizeNode[0], shuntingYard, 1);
                                 break;
                             };
                         }
 
-                        description.sampleCount = textureNode.getMember("sampleCount").convert(1);
-                        description.flags = getTextureFlags(textureNode.getMember("flags").convert(String::Empty));
-                        description.mipMapCount = textureNode.getMember("mipmaps").evaluate(shuntingYard, 1);
+                        description.sampleCount = textureNode.value("sampleCount", 1);
+                        description.flags = getTextureFlags(textureNode.value("flags", String::Empty));
+                        description.mipMapCount = JSON::Evaluate(textureNode["mipmaps"], shuntingYard, 1);
                         resource = resources->createTexture(textureName, description, true);
                     }
 
@@ -317,50 +309,46 @@ R"(namespace Lights
                         textureResourceMap[textureName] = resource;
                         if (description->depth > 1)
                         {
-                            resourceSemanticsMap[textureName] = std::format("Texture3D<{}>", getFormatSemantic(description->format));
+                            resourceSemanticsMap[textureName] = fmt::format("Texture3D<{}>", getFormatSemantic(description->format));
                         }
                         else if (description->height > 1 || description->width == 1)
                         {
-                            resourceSemanticsMap[textureName] = std::format("Texture2D<{}>", getFormatSemantic(description->format));
+                            resourceSemanticsMap[textureName] = fmt::format("Texture2D<{}>", getFormatSemantic(description->format));
                         }
                         else
                         {
-                            resourceSemanticsMap[textureName] = std::format("Texture1D<{}>", getFormatSemantic(description->format));
+                            resourceSemanticsMap[textureName] = fmt::format("Texture1D<{}>", getFormatSemantic(description->format));
                         }
                     }
                 }
 
-                for (auto &buffersPair : rootNode.getMember("buffers").asType(JSON::EmptyObject))
+                for (auto& [bufferName, bufferNode] : rootNode["buffers"].items())
                 {
-                    std::string bufferName(buffersPair.first);
                     if (resourceMap.count(bufferName) > 0)
                     {
-                        LockedWrite{ std::cout } << "Texture name same as already listed resource: " << bufferName;
+                        std::cerr << "Texture name same as already listed resource: " << bufferName;
                         continue;
                     }
 
-                    auto &bufferNode = buffersPair.second;
-                    const auto &bufferObject = bufferNode.asType(JSON::EmptyObject);
-
                     Video::Buffer::Description description;
-                    description.count = bufferNode.getMember("count").evaluate(shuntingYard, 0);
-                    description.flags = getBufferFlags(bufferNode.getMember("flags").convert(String::Empty));
-                    if (bufferObject.count("format"))
+                    description.count = bufferNode.value("count", 0);
+                    description.flags = getBufferFlags(bufferNode.value("flags", String::Empty));
+                    if (bufferNode.contains("format"))
                     {
                         description.type = Video::Buffer::Type::Raw;
-                        description.format = Video::GetFormat(bufferNode.getMember("format").convert(String::Empty));
+                        description.format = Video::GetFormat(bufferNode.value("format", String::Empty));
                     }
                     else
                     {
                         description.type = Video::Buffer::Type::Structured;
-                        description.stride = bufferNode.getMember("stride").evaluate(shuntingYard, 0);
+                        description.stride = bufferNode.value("stride", 0);
                     }
 
                     auto resource = resources->createBuffer(bufferName, description, true);
                     if (resource)
                     {
                         resourceMap[bufferName] = resource;
-                        if (bufferNode.getMember("byteaddress").convert(false))
+                        if (bufferNode.value("byteaddress", false))
                         {
                             resourceSemanticsMap[bufferName] = "ByteAddressBuffer";
                         }
@@ -369,119 +357,111 @@ R"(namespace Lights
                             auto description = resources->getBufferDescription(resource);
                             if (description != nullptr)
                             {
-                                auto structure = bufferNode.getMember("structure").convert(String::Empty);
-                                resourceSemanticsMap[bufferName] += std::format("Buffer<{}>", structure.empty() ? getFormatSemantic(description->format) : structure);
+                                auto structure = bufferNode.value("structure", String::Empty);
+                                resourceSemanticsMap[bufferName] += fmt::format("Buffer<{}>", structure.empty() ? getFormatSemantic(description->format) : structure);
                             }
                         }
                     }
                 }
 
-                auto materialsNode = rootNode.getMember("materials");
-                for (auto &materialPair : materialsNode.asType(JSON::EmptyObject))
+                auto materialsNode = rootNode["materials"];
+                for (auto& [materialName, materialNode] : materialsNode.items())
                 {
-                    auto materialName = materialPair.first;
                     auto &materialData = materialMap[materialName];
-                    auto materialNode = materialPair.second;
-                    for (auto data : materialNode.getMember("data").asType(JSON::EmptyArray))
+                    for (auto data : materialNode["data"])
                     {
                         Material::Initializer initializer;
-                        initializer.name = data.getMember("name").convert(String::Empty);
-                        initializer.fallback = resources->createPattern(data.getMember("pattern").convert(String::Empty), data.getMember("parameters"));
+                        initializer.name = data.value("name", String::Empty);
+                        initializer.fallback = resources->createPattern(data.value("pattern", String::Empty), data["parameters"]);
                         materialData.initializerList.push_back(initializer);
                     }
 
                     Video::RenderState::Description renderStateInformation;
-                    renderStateInformation.load(materialNode.getMember("renderState"), rootOptionsNode);
+                    renderStateInformation.load(materialNode["renderState"], rootOptionsNode);
                     materialData.renderState = resources->createRenderState(renderStateInformation);
                 }
 
-                auto passesNode = rootNode.getMember("passes");
-                passList.resize(passesNode.asType(JSON::EmptyArray).size());
+                auto passesNode = rootNode["passes"];
+                passList.resize(passesNode.size());
                 auto passData = std::begin(passList);
-                for (auto &passNode : passesNode.asType(JSON::EmptyArray))
+                for (auto &passNode : passesNode)
                 {
-                    const auto &passObject = passNode.asType(JSON::EmptyObject);
-
                     PassData &pass = *passData++;
-                    std::string entryPoint(passNode.getMember("entry").convert(String::Empty));
-                    auto programName = passNode.getMember("program").convert(String::Empty);
+                    std::string entryPoint(passNode.value("entry", String::Empty));
+                    auto programName = passNode.value("program", String::Empty);
                     pass.name = programName;
 
-                    auto passMaterial = passNode.getMember("material").convert(String::Empty);
-                    pass.lighting = passNode.getMember("lighting").convert(false);
+                    auto passMaterial = passNode.value("material", String::Empty);
+                    pass.lighting = passNode.value("lighting", false);
                     pass.materialHash = GetHash(passMaterial);
                     lightingRequired |= pass.lighting;
 
-                    auto enableOption = passNode.getMember("enable").convert(String::Empty);
+                    auto enableOption = passNode.value("enable", String::Empty);
                     if (!enableOption.empty())
                     {
                         String::Replace(enableOption, "::", "|");
                         auto nameList = String::Split(enableOption, '|');
-                        const JSON *nameNode = &rootOptionsNode;
+                        const JSON::Object *nameNode = &rootOptionsNode;
                         for (auto &name : nameList)
                         {
-                            nameNode = &nameNode->getMember(name);
+                            nameNode = &(*nameNode)[name];
                         }
 
-                        pass.enabled = nameNode->convert(true);
+                        pass.enabled = nameNode->is_boolean() ? nameNode->get<bool>() : false;
                         if (!pass.enabled)
                         {
                             continue;
                         }
                     }
 
-                    JSON passOptions(std::cref(rootOptionsNode).get());
-                    for (auto &overridePair : passNode.getMember("options").asType(JSON::EmptyObject))
+                    JSON::Object passOptions(rootOptionsNode);
+                    for (auto &[key, value] : passNode["options"].items())
                     {
-                        std::function<void(JSON &, std::string_view, JSON const &)> insertOptions;
-                        insertOptions = [&](JSON &options, std::string_view name, JSON const &node) -> void
+                        std::function<void(JSON::Object&, std::string_view, JSON::Object const &)> insertOptions;
+                        insertOptions = [&](JSON::Object& options, std::string_view name, JSON::Object const &node) -> void
                         {
-                            node.visit(
-                                [&](JSON::Object const &object)
+                            if (node.is_object())
                             {
-                                auto &localOptions = options[name];
-                                for (auto &objectPair : object)
+                                auto& localOptions = options[name];
+                                for (auto& [key, value] : node.items())
                                 {
-                                    insertOptions(localOptions, objectPair.first, objectPair.second);
+                                    insertOptions(localOptions, key, value);
                                 }
-                            },
-                            [&](auto const &value)
+                            }
+                            else
                             {
                                 options[name] = value;
-                            });
+                            }
                         };
 
-                        insertOptions(passOptions, overridePair.first, overridePair.second);
+                        insertOptions(passOptions, key, value);
                     }
 
-                    std::function<std::string(JSON const &)> addOptions;
-                    addOptions = [&](JSON const & options) -> std::string
+                    std::function<std::string(JSON::Object const &)> addOptions;
+                    addOptions = [&](JSON::Object const & options) -> std::string
                     {
                         std::vector<std::string> outerData;
-                        for (auto &optionPair : options.asType(JSON::EmptyObject))
+                        for (auto &[optionName, optionNode] : options.items())
                         {
-                            auto optionName = optionPair.first;
-                            auto &optionNode = optionPair.second;
-                            optionNode.visit(
-                                [&](JSON::Object const &optionObject)
+                            if (optionNode.is_object())
                             {
-                                if (optionObject.count("options"))
+                                if (optionNode.contains("options"))
                                 {
-                                    outerData.push_back(std::format("    namespace {} {{", optionName));
+                                    outerData.push_back(fmt::format("    namespace {} {{", optionName));
 
                                     std::vector<std::string> choices;
-                                    for (auto &choice : optionNode.getMember("options").asType(JSON::EmptyArray))
+                                    for (auto &choice : optionNode["options"])
                                     {
-                                        auto name = choice.convert(String::Empty);
-                                        outerData.push_back(std::format("        static const int {} = {};", name, choices.size()));
+                                        auto name = choice.get<std::string>();
+                                        outerData.push_back(fmt::format("        static const int {} = {};", name, choices.size()));
                                         choices.push_back(name);
                                     }
 
                                     int selection = 0;
-                                    auto &selectionNode = optionNode.getMember("selection");
-                                    if (selectionNode.isType<std::string>())
+                                    auto &selectionNode = optionNode["selection"];
+                                    if (selectionNode.is_string())
                                     {
-                                        auto selectedName = selectionNode.convert(String::Empty);
+                                        auto selectedName = selectionNode.get<std::string>();
                                         auto optionsSearch = std::find_if(std::begin(choices), std::end(choices), [selectedName](std::string const &choice) -> bool
                                         {
                                             return (selectedName == choice);
@@ -492,13 +472,13 @@ R"(namespace Lights
                                             selection = std::distance(std::begin(choices), optionsSearch);
                                         }
                                     }
-                                    else
+                                    else if (selectionNode.is_number())
                                     {
-                                        selection = selectionNode.convert(0U);
+                                        selection = selectionNode.get<int32_t>();
                                     }
 
-                                    outerData.push_back(std::format("        static const int Selection = {};", selection));
-                                    outerData.push_back(std::format("    }}; // namespace {}", optionName));
+                                    outerData.push_back(fmt::format("        static const int Selection = {};", selection));
+                                    outerData.push_back(fmt::format("    }}; // namespace {}", optionName));
                                 }
                                 else
                                 {
@@ -513,53 +493,50 @@ R"(namespace {0} {{
                                         outerData.push_back(std::vformat(innerTemplate, std::make_format_args(optionName, innerString)));
                                     }
                                 }
-                            },
-                                [&](JSON::Array const &optionArray)
+                            }
+                            else if (optionNode.is_array())
                             {
-                                switch (optionArray.size())
+                                switch (optionNode.size())
                                 {
                                 case 1:
-                                    outerData.push_back(std::format("    static const float {} = {};", optionName,
-                                        optionArray[0].convert(0.0f)));
+                                    outerData.push_back(fmt::format("    static const float {} = {};", optionName,
+                                        optionNode[0].get<float>()));
                                     break;
 
                                 case 2:
-                                    outerData.push_back(std::format("    static const float2 {} = float2({}, {});", optionName,
-                                        optionArray[0].convert(0.0f),
-                                        optionArray[1].convert(0.0f)));
+                                    outerData.push_back(fmt::format("    static const float2 {} = float2({}, {});", optionName,
+                                        optionNode[0].get<float>(),
+                                        optionNode[1].get<float>()));
                                     break;
 
                                 case 3:
-                                    outerData.push_back(std::format("    static const float3 {} = float3({}, {}, {});", optionName,
-                                        optionArray[0].convert(0.0f),
-                                        optionArray[1].convert(0.0f),
-                                        optionArray[2].convert(0.0f)));
+                                    outerData.push_back(fmt::format("    static const float3 {} = float3({}, {}, {});", optionName,
+                                        optionNode[0].get<float>(),
+                                        optionNode[1].get<float>(),
+                                        optionNode[2].get<float>()));
                                     break;
 
                                 case 4:
-                                    outerData.push_back(std::format("    static const float4 {} = float4({}, {}, {}, {})", optionName,
-                                        optionArray[0].convert(0.0f),
-                                        optionArray[1].convert(0.0f),
-                                        optionArray[2].convert(0.0f),
-                                        optionArray[3].convert(0.0f)));
+                                    outerData.push_back(fmt::format("    static const float4 {} = float4({}, {}, {}, {})", optionName,
+                                        optionNode[0].get<float>(),
+                                        optionNode[1].get<float>(),
+                                        optionNode[2].get<float>(),
+                                        optionNode[3].get<float>()));
                                     break;
                                 };
-                            },
-                                [&](std::nullptr_t const &)
+                            }
+                            else if (optionNode.is_boolean())
                             {
-                            },
-                                [&](bool optionBoolean)
+                                outerData.push_back(fmt::format("    static const bool {} = {};", optionName, optionNode.get<bool>()));
+                            }
+                            else if (optionNode.is_number_float())
                             {
-                                outerData.push_back(std::format("    static const bool {} = {};", optionName, optionBoolean));
-                            },
-                                [&](float optionFloat)
+                                outerData.push_back(fmt::format("    static const float {} = {};", optionName, optionNode.get<float>()));
+                            }
+                            else if (optionNode.is_number())
                             {
-                                outerData.push_back(std::format("    static const float {} = {};", optionName, optionFloat));
-                            },
-                                [&](auto const &optionValue)
-                            {
-                                outerData.push_back(std::format("    static const int {} = {};", optionName, optionValue));
-                            });
+                                outerData.push_back(fmt::format("    static const int {} = {};", optionName, optionNode.get<int32_t>()));
+                            }
                         }
 
                         return String::Join(outerData, "\r\n");
@@ -577,7 +554,7 @@ R"(namespace Options {{
                         engineData.push_back(std::vformat(optionsTemplate, std::make_format_args(optionsString)));
                     }
 
-                    std::string mode(String::GetLower(passNode.getMember("mode").convert(String::Empty)));
+                    std::string mode(String::GetLower(passNode.value("mode", String::Empty)));
                     if (mode == "forward")
                     {
                         pass.mode = Pass::Mode::Forward;
@@ -593,20 +570,23 @@ R"(namespace Options {{
 
                     if (pass.mode == Pass::Mode::Compute)
                     {
-                        auto &dispatchNode = passNode.getMember("dispatch");
-                        if (dispatchNode.isType<JSON::Array>())
+                        auto &dispatchNode = passNode["dispatch"];
+                        if (dispatchNode.is_array())
                         {
-                            const auto &dispatchArray = dispatchNode.asType(JSON::EmptyArray);
-                            if (dispatchArray.size() == 3)
+                            if (dispatchNode.size() == 3)
                             {
-                                pass.dispatchWidth = dispatchArray.at(0).evaluate(shuntingYard, 1);
-                                pass.dispatchHeight = dispatchArray.at(1).evaluate(shuntingYard, 1);
-                                pass.dispatchDepth = dispatchArray.at(2).evaluate(shuntingYard, 1);
+                                pass.dispatchDepth = JSON::Evaluate(dispatchNode[2], shuntingYard, 1);
+                                pass.dispatchHeight = JSON::Evaluate(dispatchNode[1], shuntingYard, 1);
+                                pass.dispatchWidth = JSON::Evaluate(dispatchNode[0], shuntingYard, 1);
+                            }
+                            else if (dispatchNode.size() == 1)
+                            {
+                                pass.dispatchWidth = pass.dispatchHeight = pass.dispatchDepth = JSON::Evaluate(dispatchNode[0], shuntingYard, 1);
                             }
                         }
                         else
                         {
-                            pass.dispatchWidth = pass.dispatchHeight = pass.dispatchDepth = dispatchNode.evaluate(shuntingYard, 1);
+                            pass.dispatchWidth = pass.dispatchHeight = pass.dispatchDepth = JSON::Evaluate(dispatchNode, shuntingYard, 1);
                         }
                     }
                     else
@@ -626,7 +606,7 @@ R"(namespace Options {{
                         engineData.push_back("};");
 
                         std::vector<std::string> outputData;
-                        std::unordered_map<std::string, std::string> renderTargetsMap = getAliasedMap(passNode.getMember("targets"));
+                        std::unordered_map<std::string, std::string> renderTargetsMap = getAliasedMap(passNode["targets"]);
                         if (!renderTargetsMap.empty())
                         {
                             for (auto &renderTarget : renderTargetsMap)
@@ -634,18 +614,18 @@ R"(namespace Options {{
                                 auto resourceSearch = resourceMap.find(renderTarget.first);
                                 if (resourceSearch == std::end(resourceMap))
                                 {
-                                    LockedWrite{ std::cerr } << "Unable to find render target for pass: " << renderTarget.first;
+                                    std::cerr << "Unable to find render target for pass: " << renderTarget.first;
                                 }
 
                                 pass.renderTargetList.push_back(resourceSearch->second);
                                 auto description = resources->getTextureDescription(resourceSearch->second);
                                 if (description)
                                 {
-                                    outputData.push_back(std::format("    {} {} : SV_TARGET{};", getFormatSemantic(description->format), renderTarget.second, outputData.size()));
+                                    outputData.push_back(fmt::format("    {} {} : SV_TARGET{};", getFormatSemantic(description->format), renderTarget.second, outputData.size()));
                                 }
                                 else
                                 {
-                                    LockedWrite{ std::cerr } << "Unable to get description for render target: " << renderTarget.first;
+                                    std::cerr << "Unable to get description for render target: " << renderTarget.first;
                                 }
                             }
                         }
@@ -663,13 +643,13 @@ R"(struct OutputPixel
                         }
 
                         Video::DepthState::Description depthStateInformation;
-                        if (passObject.count("depthStyle"))
+                        if (passNode.contains("depthStyle"))
                         {
-                            auto &depthStyleNode = passNode.getMember("depthStyle");
-                            auto camera = String::GetLower(depthStyleNode.getMember("camera").convert("perspective"));
+                            auto &depthStyleNode = passNode["depthStyle"];
+                            auto camera = String::GetLower(depthStyleNode.value("camera", "perspective"));
                             if (camera == "perspective")
                             {
-                                auto invertedDepthBuffer = core->getOption("render", "invertedDepthBuffer").convert(true);
+                                auto invertedDepthBuffer = core->getOption("render").value("invertedDepthBuffer", true);
 
                                 depthStateInformation.enable = true;
                                 depthStateInformation.writeMask = Video::DepthState::Write::All;
@@ -682,7 +662,7 @@ R"(struct OutputPixel
                                     depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
                                 }
 
-                                auto clear = depthStyleNode.getMember("clear").convert(false);
+                                auto clear = depthStyleNode.value("clear", false);
                                 if (clear)
                                 {
                                     pass.clearDepthValue = (invertedDepthBuffer ? 0.0f : 1.0f);
@@ -692,9 +672,9 @@ R"(struct OutputPixel
                         }
                         else
                         {
-                            auto &depthStateNode = passNode.getMember("depthState");
+                            auto &depthStateNode = passNode["depthState"];
                             depthStateInformation.load(depthStateNode, passOptions);
-                            pass.clearDepthValue = depthStateNode.getMember("clear").convert(Math::Infinity);
+                            pass.clearDepthValue = depthStateNode.value("clear", Math::Infinity);
                             if (pass.clearDepthValue != Math::Infinity)
                             {
                                 pass.clearDepthFlags |= Video::ClearFlags::Depth;
@@ -703,7 +683,7 @@ R"(struct OutputPixel
 
 						if (depthStateInformation.enable)
 						{
-                            auto depthBuffer = passNode.getMember("depthBuffer").convert(String::Empty);
+                            auto depthBuffer = passNode.value("depthBuffer", String::Empty);
 							auto depthBufferSearch = resourceMap.find(depthBuffer);
                             if (depthBufferSearch != std::end(resourceMap))
                             {
@@ -711,42 +691,40 @@ R"(struct OutputPixel
                             }
                             else
                             {
-                                LockedWrite{ std::cerr } << "Missing depth buffer encountered: " << depthBuffer;
+                                std::cerr << "Missing depth buffer encountered: " << depthBuffer;
 							}
                         }
 
                         Video::BlendState::Description blendStateInformation;
-                        blendStateInformation.load(passNode.getMember("blendState"), passOptions);
+                        blendStateInformation.load(passNode["blendState"], passOptions);
 
                         Video::RenderState::Description renderStateInformation;
-                        renderStateInformation.load(passNode.getMember("renderState"), passOptions);
+                        renderStateInformation.load(passNode["renderState"], passOptions);
 
                         pass.depthState = resources->createDepthState(depthStateInformation);
                         pass.blendState = resources->createBlendState(blendStateInformation);
                         pass.renderState = resources->createRenderState(renderStateInformation);
                     }
 
-                    for (auto &baseClearTargetNode : passNode.getMember("clear").asType(JSON::EmptyObject))
+                    for (auto &[resourceName, clearTargetNode] : passNode["clear"].items())
                     {
-                        auto resourceName = baseClearTargetNode.first;
                         auto resourceSearch = resourceMap.find(resourceName);
                         if (resourceSearch != std::end(resourceMap))
                         {
-                            JSON clearTargetNode(baseClearTargetNode.second);
-                            auto clearType = getClearType(clearTargetNode.getMember("type").convert(String::Empty));
-                            auto clearValue = clearTargetNode.getMember("value").convert(String::Empty);
+                            auto clearType = getClearType(clearTargetNode.value("type", String::Empty));
+                            auto clearValue = clearTargetNode.value("value", String::Empty);
                             pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(clearType, clearValue)));
                         }
                         else
                         {
-                            LockedWrite{ std::cerr } << "Missing clear target encountered: " << resourceName;
+                            std::cerr << "Missing clear target encountered: " << resourceName;
                         }
                     }
 
-                    for (auto &baseGenerateMipMapsNode : passNode.getMember("generateMipMaps").asType(JSON::EmptyArray))
+                    for (auto &baseGenerateMipMapsNode : passNode["generateMipMaps"])
                     {
-                        JSON generateMipMapNode(baseGenerateMipMapsNode);
-                        auto resourceName = generateMipMapNode.convert(String::Empty);
+                        JSON::Object generateMipMapNode(baseGenerateMipMapsNode);
+                        auto resourceName = generateMipMapNode.get<std::string>();
                         auto resourceSearch = resourceMap.find(resourceName);
                         if (resourceSearch != std::end(resourceMap))
                         {
@@ -754,18 +732,16 @@ R"(struct OutputPixel
                         }
                         else
                         {
-                            LockedWrite{ std::cerr } << "Missing mipmap generation target encountered: " << resourceName;
+                            std::cerr << "Missing mipmap generation target encountered: " << resourceName;
                         }
                     }
 
-                    for (auto &baseCopyNode : passNode.getMember("copy").asType(JSON::EmptyObject))
+                    for (auto &[targetResourceName, copyNode] : passNode["copy"].items())
                     {
-                        auto targetResourceName = baseCopyNode.first;
                         auto nameSearch = resourceMap.find(targetResourceName);
                         if (nameSearch != std::end(resourceMap))
                         {
-                            JSON copyNode(baseCopyNode.second);
-                            auto sourceResourceName = copyNode.convert(String::Empty);
+                            auto sourceResourceName = copyNode.get<std::string>();
                             auto valueSearch = resourceMap.find(sourceResourceName);
                             if (valueSearch != std::end(resourceMap))
                             {
@@ -773,23 +749,21 @@ R"(struct OutputPixel
                             }
                             else
                             {
-                                LockedWrite{ std::cerr } << "Missing copy source encountered: " << sourceResourceName;
+                                std::cerr << "Missing copy source encountered: " << sourceResourceName;
                             }
                         }
                         else
                         {
-                            LockedWrite{ std::cerr } << "Missing copy target encountered: " << targetResourceName;
+                            std::cerr << "Missing copy target encountered: " << targetResourceName;
                         }
                     }
 
-                    for (auto &baseResolveNode : passNode.getMember("resolve").asType(JSON::EmptyObject))
+                    for (auto &[targetResourceName, resolveNode] : passNode["resolve"].items())
                     {
-                        auto targetResourceName = baseResolveNode.first;
                         auto nameSearch = resourceMap.find(targetResourceName);
                         if (nameSearch != std::end(resourceMap))
                         {
-                            JSON resolveNode(baseResolveNode.second);
-                            auto sourceResourceName = resolveNode.convert(String::Empty);
+                            auto sourceResourceName = resolveNode.get<std::string>();
                             auto valueSearch = resourceMap.find(sourceResourceName);
                             if (valueSearch != std::end(resourceMap))
                             {
@@ -797,12 +771,12 @@ R"(struct OutputPixel
                             }
                             else
                             {
-                                LockedWrite{ std::cerr } << "Missing resolve source encountered: " << sourceResourceName;
+                                std::cerr << "Missing resolve source encountered: " << sourceResourceName;
                             }
                         }
                         else
                         {
-                            LockedWrite{ std::cerr } << "Missing resolve target encountered: " << targetResourceName;
+                            std::cerr << "Missing resolve target encountered: " << targetResourceName;
                         }
                     }
 
@@ -839,13 +813,13 @@ R"(struct OutputPixel
                                         textureType = "Texture1D";
                                     }
 
-                                    resourceData.push_back(std::format("    {}<{}> {} : register(t{});", textureType, getFormatSemantic(description->format), initializer.name, currentStage));
+                                    resourceData.push_back(fmt::format("    {}<{}> {} : register(t{});", textureType, getFormatSemantic(description->format), initializer.name, currentStage));
                                 }
                             }
                         }
                     }
 
-                    std::unordered_map<std::string, std::string> resourceAliasMap = getAliasedMap(passNode.getMember("resources"));
+                    std::unordered_map<std::string, std::string> resourceAliasMap = getAliasedMap(passNode["resources"]);
                     for (auto &resourcePair : resourceAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);
@@ -858,7 +832,7 @@ R"(struct OutputPixel
                         auto semanticsSearch = resourceSemanticsMap.find(resourcePair.first);
                         if (semanticsSearch != std::end(resourceSemanticsMap))
                         {
-                            resourceData.push_back(std::format("    {} {} : register(t{});", semanticsSearch->second, resourcePair.second, currentStage));
+                            resourceData.push_back(fmt::format("    {} {} : register(t{});", semanticsSearch->second, resourcePair.second, currentStage));
                         }
                     }
 
@@ -881,7 +855,7 @@ R"(namespace Resources
                     }
 
                     std::vector<std::string> unorderedAccessData;
-                    std::unordered_map<std::string, std::string> unorderedAccessAliasMap = getAliasedMap(passNode.getMember("unorderedAccess"));
+                    std::unordered_map<std::string, std::string> unorderedAccessAliasMap = getAliasedMap(passNode["unorderedAccess"]);
                     for (auto &resourcePair : unorderedAccessAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);
@@ -894,7 +868,7 @@ R"(namespace Resources
                         auto semanticsSearch = resourceSemanticsMap.find(resourcePair.first);
                         if (semanticsSearch != std::end(resourceSemanticsMap))
                         {
-                            unorderedAccessData.push_back(std::format("    RW{} {} : register(u{});", semanticsSearch->second, resourcePair.second, currentStage));
+                            unorderedAccessData.push_back(fmt::format("    RW{} {} : register(u{});", semanticsSearch->second, resourcePair.second, currentStage));
                         }
                     }
 
@@ -915,7 +889,7 @@ R"(namespace UnorderedAccess
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, String::Join(engineData, "\r\n"));
 				}
 
-				LockedWrite{ std::cout } << "Shader loaded successfully: " << shaderName;
+				std::cout << "Shader loaded successfully: " << shaderName;
 			}
 
             // Shader

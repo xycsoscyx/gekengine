@@ -1759,7 +1759,7 @@ namespace Gek
                 HRESULT resultValue = d3dDeviceContext->FinishCommandList(FALSE, &d3dCommandList);
                 if (FAILED(resultValue) || !d3dCommandList)
                 {
-                    LockedWrite{ std::cerr } << "Unable to finish command list compilation";
+                    std::cerr << "Unable to finish command list compilation";
                     return nullptr;
                 }
 
@@ -2077,7 +2077,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeferredDeviceContext);
                 if (FAILED(resultValue) || !d3dDeferredDeviceContext)
                 {
-                    LockedWrite{ std::cerr } << "Unable to create deferred context";
+                    std::cerr << "Unable to create deferred context";
                     return nullptr;
                 }
 
@@ -2096,7 +2096,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateQuery(&description, &d3dQuery);
                 if (FAILED(resultValue) || !d3dQuery)
                 {
-                    LockedWrite{ std::cerr } << "Unable to create event";
+                    std::cerr << "Unable to create event";
                     return nullptr;
                 }
 
@@ -2123,7 +2123,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateRasterizerState(&rasterizerDescription, &d3dStates);
                 if (FAILED(resultValue) || !d3dStates)
                 {
-                    LockedWrite{ std::cerr } << "Unable to create rasterizer state";
+                    std::cerr << "Unable to create rasterizer state";
                     return nullptr;
                 }
 
@@ -2154,7 +2154,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateDepthStencilState(&depthStencilDescription, &d3dStates);
                 if (FAILED(resultValue) || !d3dStates)
                 {
-                    LockedWrite{ std::cerr } << "Unable to create depth stencil state";
+                    std::cerr << "Unable to create depth stencil state";
                     return nullptr;
                 }
 
@@ -2203,7 +2203,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateBlendState(&blendDescription, &d3dStates);
                 if (FAILED(resultValue) || !d3dStates)
                 {
-                    LockedWrite{ std::cerr } << "Unable to create independent blend state";
+                    std::cerr << "Unable to create independent blend state";
                     return nullptr;
                 }
 
@@ -2233,7 +2233,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateSamplerState(&samplerDescription, &d3dStates);
                 if (FAILED(resultValue) || !d3dStates)
                 {
-                    LockedWrite{ std::cerr } << "Unable to create sampler state";
+                    std::cerr << "Unable to create sampler state";
                     return nullptr;
                 }
 
@@ -2254,7 +2254,7 @@ namespace Gek
                 {
                     if (description.stride > 0)
                     {
-                        LockedWrite{ std::cerr } << "Buffer requires only a format or an element stride";
+                        std::cerr << "Buffer requires only a format or an element stride";
                         return nullptr;
                     }
 
@@ -2262,7 +2262,7 @@ namespace Gek
                 }
                 else if (description.stride == 0)
                 {
-                    LockedWrite{ std::cerr } << "Buffer requires either a format or an element stride";
+                    std::cerr << "Buffer requires either a format or an element stride";
                     return nullptr;
                 }
 
@@ -2336,7 +2336,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateBuffer(&bufferDescription, nullptr, &d3dBuffer);
                     if (FAILED(resultValue) || !d3dBuffer)
                     {
-                        LockedWrite{ std::cerr } << "Unable to dynamic buffer";
+                        std::cerr << "Unable to dynamic buffer";
                         return nullptr;
                     }
                 }
@@ -2349,7 +2349,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateBuffer(&bufferDescription, &resourceData, &d3dBuffer);
                     if (FAILED(resultValue) || !d3dBuffer)
                     {
-                        LockedWrite{ std::cerr } << "Unable to create static buffer";
+                        std::cerr << "Unable to create static buffer";
                         return nullptr;
                     }
                 }
@@ -2365,7 +2365,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dBuffer, &viewDescription, &d3dShaderResourceView);
                     if (FAILED(resultValue) || !d3dShaderResourceView)
                     {
-                        LockedWrite{ std::cerr } << "Unable to create buffer shader resource view";
+                        std::cerr << "Unable to create buffer shader resource view";
                         return nullptr;
                     }
                 }
@@ -2383,7 +2383,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView);
                     if (FAILED(resultValue) || !d3dUnorderedAccessView)
                     {
-                        LockedWrite{ std::cerr } << "Unable to create buffer unordered access view";
+                        std::cerr << "Unable to create buffer unordered access view";
                         return nullptr;
                     }
                 }
@@ -2500,7 +2500,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateInputLayout(d3dElementList.data(), UINT(d3dElementList.size()), information.compiledData.data(), information.compiledData.size(), &d3dInputLayout);
                 if (FAILED(resultValue) || !d3dInputLayout)
                 {
-                    LockedWrite{ std::cerr } << "Unable to create input vertex layout";
+                    std::cerr << "Unable to create input vertex layout";
                     return nullptr;
                 }
 
@@ -2599,7 +2599,7 @@ namespace Gek
                     {
                         _com_error error(resultValue);
                         std::string_view compilerError = (char const *)d3dCompilerErrors->GetBufferPointer();
-                        LockedWrite{ std::cerr } << "D3DCompile Failed (" << error.ErrorMessage() << ") " << compilerError;
+                        std::cerr << "D3DCompile Failed (" << String::Narrow(error.ErrorMessage()) << ") " << compilerError;
                     }
                     else
                     {
@@ -2625,7 +2625,7 @@ namespace Gek
                 HRESULT resultValue = (d3dDevice->*function)(information.compiledData.data(), information.compiledData.size(), nullptr, &d3dShader);
                 if (FAILED(resultValue) || !d3dShader)
                 {
-                    LockedWrite{ std::cerr } << "Unable to create program from compiled data";
+                    std::cerr << "Unable to create program from compiled data";
                     return nullptr;
                 }
 
@@ -2649,7 +2649,7 @@ namespace Gek
                     return createProgram<ID3D11PixelShader, PixelProgram>(information, &ID3D11Device::CreatePixelShader);
                 };
 
-                LockedWrite{ std::cerr } << "Unknown program pipline encountered";
+                std::cerr << "Unknown program pipline encountered";
                 return nullptr;
             }
 
@@ -2670,7 +2670,7 @@ namespace Gek
                 {
                     if (description.flags & Video::Texture::Flags::DepthTarget)
                     {
-                        LockedWrite{ std::cerr } << "Cannot create render target when depth target flag also specified";
+                        std::cerr << "Cannot create render target when depth target flag also specified";
                         return nullptr;
                     }
 
@@ -2681,7 +2681,7 @@ namespace Gek
                 {
                     if (description.depth > 1)
                     {
-                        LockedWrite{ std::cerr } << "Depth target must have depth of one";
+                        std::cerr << "Depth target must have depth of one";
                         return nullptr;
                     }
 
@@ -2730,7 +2730,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateTexture2D(&textureDescription, (data ? &resourceData : nullptr), &texture2D);
                     if (FAILED(resultValue) || !texture2D)
                     {
-                        LockedWrite{ std::cerr } << "Unable to create 2D texture";
+                        std::cerr << "Unable to create 2D texture";
                         return nullptr;
                     }
 
@@ -2760,7 +2760,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateTexture3D(&textureDescription, (data ? &resourceData : nullptr), &texture3D);
                     if (FAILED(resultValue) || !texture3D)
                     {
-                        LockedWrite{ std::cerr } << "Unable to create 3D texture";
+                        std::cerr << "Unable to create 3D texture";
                         return nullptr;
                     }
 
@@ -2769,7 +2769,7 @@ namespace Gek
 
                 if (!d3dResource)
                 {
-                    LockedWrite{ std::cerr } << "Unable to get texture resource";
+                    std::cerr << "Unable to get texture resource";
                     return nullptr;
                 }
 
@@ -2794,7 +2794,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dResource, &viewDescription, &d3dShaderResourceView);
                     if (FAILED(resultValue) || !d3dShaderResourceView)
                     {
-                        LockedWrite{ std::cerr } << "Unable to create texture shader resource view";
+                        std::cerr << "Unable to create texture shader resource view";
                         return nullptr;
                     }
                 }
@@ -2820,7 +2820,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dResource, &viewDescription, &d3dUnorderedAccessView);
                     if (FAILED(resultValue) || !d3dUnorderedAccessView)
                     {
-                        LockedWrite{ std::cerr } << "Unable to create texture unordered access view";
+                        std::cerr << "Unable to create texture unordered access view";
                         return nullptr;
                     }
                 }
@@ -2846,7 +2846,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateRenderTargetView(d3dResource, &renderViewDescription, &d3dRenderTargetView);
                     if (FAILED(resultValue) || !d3dRenderTargetView)
                     {
-                        LockedWrite{ std::cerr } << "Unable to create render target view";
+                        std::cerr << "Unable to create render target view";
                         return nullptr;
                     }
 
@@ -2864,7 +2864,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateDepthStencilView(d3dResource, &depthStencilDescription, &d3dDepthStencilView);
                     if (FAILED(resultValue) || !d3dDepthStencilView)
                     {
-                        LockedWrite{ std::cerr } << "Unable to create depth stencil view";
+                        std::cerr << "Unable to create depth stencil view";
                         return nullptr;
                     }
 
@@ -2899,7 +2899,7 @@ namespace Gek
 
                 if (!load)
                 {
-                    LockedWrite{ std::cerr } << "Unknown texture extension encountered";
+                    std::cerr << "Unknown texture extension encountered";
                     return nullptr;
                 }
 
@@ -2907,7 +2907,7 @@ namespace Gek
                 std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
                 if (buffer.empty())
                 {
-                    LockedWrite{ std::cerr } << "Unable to load data from texture file";
+                    std::cerr << "Unable to load data from texture file";
                     return nullptr;
                 }
 
@@ -2915,7 +2915,7 @@ namespace Gek
                 HRESULT resultValue = load(buffer, image);
                 if (FAILED(resultValue))
                 {
-                    LockedWrite{ std::cerr } << "Unable to load image from texture file";
+                    std::cerr << "Unable to load image from texture file";
                     return nullptr;
                 }
 
@@ -2924,7 +2924,7 @@ namespace Gek
                 resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), image.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, createFlags, &d3dShaderResourceView);
                 if (FAILED(resultValue) || !d3dShaderResourceView)
                 {
-                    LockedWrite{ std::cerr } << "Unable to create texture shader resource view";
+                    std::cerr << "Unable to create texture shader resource view";
                     return nullptr;
                 }
 
@@ -2932,7 +2932,7 @@ namespace Gek
                 d3dShaderResourceView->GetResource(&d3dResource);
                 if (FAILED(resultValue) || !d3dResource)
                 {
-                    LockedWrite{ std::cerr } << "Unable to get texture resource";
+                    std::cerr << "Unable to get texture resource";
                     return nullptr;
                 }
 
@@ -2955,7 +2955,7 @@ namespace Gek
                     {
                         if (FAILED(resultValue = ::DirectX::LoadFromWICMemory(buffer, size, ::DirectX::WIC_FLAGS_NONE, nullptr, image)))
                         {
-                            LockedWrite{ std::cerr } << "Unable to load image from texture file";
+                            std::cerr << "Unable to load image from texture file";
                             return nullptr;
                         }
                     }
@@ -2966,7 +2966,7 @@ namespace Gek
                 resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), image.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, createFlags, &d3dShaderResourceView);
                 if (FAILED(resultValue) || !d3dShaderResourceView)
                 {
-                    LockedWrite{ std::cerr } << "Unable to create texture shader resource view";
+                    std::cerr << "Unable to create texture shader resource view";
                     return nullptr;
                 }
 
@@ -2974,7 +2974,7 @@ namespace Gek
                 d3dShaderResourceView->GetResource(&d3dResource);
                 if (FAILED(resultValue) || !d3dResource)
                 {
-                    LockedWrite{ std::cerr } << "Unable to get texture resource";
+                    std::cerr << "Unable to get texture resource";
                     return nullptr;
                 }
 
@@ -3009,7 +3009,7 @@ namespace Gek
                 static const Texture::Description EmptyDescription;
                 if (!getMetadata)
                 {
-                    LockedWrite{ std::cerr } << "Unknown texture extension encountered";
+                    std::cerr << "Unknown texture extension encountered";
                     return EmptyDescription;
                 }
 
@@ -3017,7 +3017,7 @@ namespace Gek
                 std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer, 1024 * 4));
                 if (buffer.empty())
                 {
-                    LockedWrite{ std::cerr } << "Unable to load data from texture file";
+                    std::cerr << "Unable to load data from texture file";
                     return EmptyDescription;
                 }
 
@@ -3025,7 +3025,7 @@ namespace Gek
                 HRESULT resultValue = getMetadata(buffer, metadata);
                 if (FAILED(resultValue))
                 {
-                    LockedWrite{ std::cerr } << "Unable to get metadata from file";
+                    std::cerr << "Unable to get metadata from file";
                     return EmptyDescription;
                 }
 

@@ -83,14 +83,14 @@ namespace Gek
         {
             if (argumentTypes.size() != sequence.size())
             {
-                LockedWrite{ std::cerr } << "Invalid number of arguments passed to " << typeid(TYPE).name() << " constructor, received: " << sequence.size() << ", expected: " << argumentTypes.size();
+                std::cerr << "Invalid number of arguments passed to " << typeid(TYPE).name() << " constructor, received: " << sequence.size() << ", expected: " << argumentTypes.size();
                 return nullptr;
             }
 
             std::vector<Hash> expectedTypes = { typeid(PARAMETERS).hash_code()... };
             if (expectedTypes != argumentTypes)
             {
-                LockedWrite{ std::cerr } << "Parameter types passed to context don't match " << typeid(TYPE).name() << " constructor types";
+                std::cerr << "Parameter types passed to context don't match " << typeid(TYPE).name() << " constructor types";
                 return nullptr;
             }
 

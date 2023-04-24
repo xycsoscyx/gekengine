@@ -1,6 +1,7 @@
 #include "GEK/Utility/ContextUser.hpp"
 
 #ifdef _WIN32
+#include <Windows.h>
 static HINSTANCE GlobalDLLInstance = nullptr;
 BOOL WINAPI DllMain(HINSTANCE dllInstance, DWORD callReason, void *reserved)
 {

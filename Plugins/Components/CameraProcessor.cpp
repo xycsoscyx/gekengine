@@ -39,7 +39,7 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(Components::FirstPersonCamera const * const data, JSON &exportData) const
+        void save(Components::FirstPersonCamera const * const data, JSON::Object&exportData) const
         {
             exportData["fieldOfView"] = Math::RadiansToDegrees(data->fieldOfView);
             exportData["nearClip"] = data->nearClip;
@@ -47,12 +47,12 @@ namespace Gek
             exportData["target"] = data->target;
         }
 
-        void load(Components::FirstPersonCamera * const data, JSON const &importData)
+        void load(Components::FirstPersonCamera * const data, JSON::Object const &importData)
         {
-            data->fieldOfView = Math::DegreesToRadians(evaluate(importData.getMember("fieldOfView"), 90.0f));
-            data->nearClip = evaluate(importData.getMember("nearClip"), 1.0f);
-            data->farClip = evaluate(importData.getMember("farClip"), 100.0f);
-            data->target = evaluate(importData.getMember("target"), String::Empty);
+            data->fieldOfView = Math::DegreesToRadians(evaluate(importData["fieldOfView"], 90.0f));
+            data->nearClip = evaluate(importData["nearClip"], 1.0f);
+            data->farClip = evaluate(importData["farClip"], 100.0f);
+            data->target = evaluate(importData["target"], String::Empty);
         }
 
         // Edit::Component
@@ -131,7 +131,7 @@ namespace Gek
                     description.width = backBuffer->getDescription().width;
                     description.height = backBuffer->getDescription().height;
                     description.flags = Video::Texture::Flags::RenderTarget | Video::Texture::Flags::Resource;
-                    data.target = resources->createTexture(std::format("camera:{}", cameraComponent.target), description);
+                    data.target = resources->createTexture(fmt::format("camera:{}", cameraComponent.target), description);
                 }
             });
         }
@@ -179,7 +179,7 @@ namespace Gek
         {
             assert(renderer);
 
-			bool editorActive = core->getOption("editor", "active").convert(false);
+            bool editorActive = core->getOption("editor").value("active", false);
 			//if (frameTime > 0.0f && !editorActive)
 			{
 				parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void
@@ -192,7 +192,7 @@ namespace Gek
 
 					if (name.empty())
 					{
-						name = std::format("camera_{}", *reinterpret_cast<int *>(entity));
+						name = fmt::format("camera_{}", *reinterpret_cast<int *>(entity));
 					}
 
 					auto viewMatrix(transformComponent.getMatrix().getInverse());

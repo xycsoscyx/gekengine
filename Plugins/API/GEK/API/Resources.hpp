@@ -34,7 +34,7 @@ namespace Gek
             virtual MaterialHandle loadMaterial(std::string_view materialName) = 0;
 
             virtual ResourceHandle loadTexture(std::string_view textureName, uint32_t flags, ResourceHandle fallbackResource = ResourceHandle()) = 0;
-            virtual ResourceHandle createPattern(std::string_view pattern, JSON const &parameters) = 0;
+            virtual ResourceHandle createPattern(std::string_view pattern, JSON::Object const &parameters) = 0;
 
             virtual ResourceHandle createTexture(std::string_view textureName, const Video::Texture::Description &description, uint32_t flags = 0) = 0;
             virtual ResourceHandle createBuffer(std::string_view bufferName, const Video::Buffer::Description &description, uint32_t flags = 0) = 0;

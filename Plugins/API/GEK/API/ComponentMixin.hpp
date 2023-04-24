@@ -54,20 +54,20 @@ namespace Gek
             }
 
             template <typename TYPE>
-            TYPE evaluate(JSON const &object, TYPE defaultValue)
+            TYPE evaluate(JSON::Object const &object, TYPE defaultValue)
             {
-                return object.evaluate(population->getShuntingYard(), defaultValue);
+                return JSON::Evaluate(object, population->getShuntingYard(), defaultValue);
             }
 
-            virtual void save(COMPONENT const * const component, JSON &exportData) const { };
-            virtual void load(COMPONENT * const component, JSON const &importData) { };
+            virtual void save(COMPONENT const * const component, JSON::Object&exportData) const { };
+            virtual void load(COMPONENT * const component, JSON::Object const &importData) { };
 
-            void save(Plugin::Component::Data const * const component, JSON &exportData) const
+            void save(Plugin::Component::Data const * const component, JSON::Object&exportData) const
             {
                 save(static_cast<COMPONENT const * const>(component), exportData);
             }
 
-            void load(Plugin::Component::Data * const component, JSON const &importData)
+            void load(Plugin::Component::Data * const component, JSON::Object const &importData)
             {
                 load(static_cast<COMPONENT * const>(component), importData);
             }

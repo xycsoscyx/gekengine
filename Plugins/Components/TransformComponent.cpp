@@ -18,18 +18,18 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(Components::Transform const * const data, JSON &exportData) const
+        void save(Components::Transform const * const data, JSON::Object &exportData) const
         {
-			exportData["position"] = JSON::Array({ data->position.x, data->position.y, data->position.z });
-            exportData["rotation"] = JSON::Array({ data->rotation.x, data->rotation.y, data->rotation.z, data->rotation.w });
-            exportData["scale"] = JSON::Array({ data->scale.x, data->scale.y, data->scale.z });
+			exportData["position"] = { data->position.x, data->position.y, data->position.z };
+            exportData["rotation"] ={ data->rotation.x, data->rotation.y, data->rotation.z, data->rotation.w };
+            exportData["scale"] = { data->scale.x, data->scale.y, data->scale.z };
         }
 
-        void load(Components::Transform * const data, JSON const &importData)
+        void load(Components::Transform * const data, JSON::Object const &importData)
         {
-            data->position = evaluate(importData.getMember("position"), Math::Float3::Zero);
-            data->rotation = evaluate(importData.getMember("rotation"), Math::Quaternion::Identity);
-            data->scale = evaluate(importData.getMember("scale"), Math::Float3::One);
+            data->position = evaluate(importData["position"], Math::Float3::Zero);
+            data->rotation = evaluate(importData["rotation"], Math::Quaternion::Identity);
+            data->scale = evaluate(importData["scale"], Math::Float3::One);
         }
 
         // Edit::Component

@@ -103,7 +103,7 @@ namespace Gek
         std::string semantic(getFormatSemantic(format));
         if (count > 1)
         {
-            semantic += std::format("x{}", count);
+            semantic += fmt::format("x{}", count);
         }
 
         return semantic;
@@ -182,33 +182,26 @@ namespace Gek
         return (flags | Video::Buffer::Flags::Resource);
     }
 
-    std::unordered_map<std::string, std::string> getAliasedMap(JSON const &node)
+    std::unordered_map<std::string, std::string> getAliasedMap(JSON::Object const &node)
     {
         std::unordered_map<std::string, std::string> aliasedMap;
-        for (auto &elementNode : node.asType(JSON::EmptyArray))
+        for (auto &elementNode : node)
         {
-            elementNode.visit(
-                [&](std::string const &elementString)
+            if (elementNode.is_string())
             {
-                aliasedMap[elementString] = elementString;
-            },
-                [&](JSON::Object const &elementObject)
+                auto element = elementNode.get<std::string>();
+                aliasedMap[element] = element;
+            }
+            else if (elementNode.is_object())
             {
-                auto firstMember = elementObject.begin();
-                auto &aliasName = firstMember->first;
-                auto &aliasNode = firstMember->second;
-                aliasNode.visit(
-                    [&](std::string const &aliasedValue)
+                auto firstMember = elementNode.begin();
+                auto &aliasName = firstMember.key();
+                auto &aliasNode = firstMember.value();
+                if (aliasNode.is_string())
                 {
-                    aliasedMap[aliasName] = std::to_string(aliasedValue);
-                },
-                    [&](auto const &aliasedValue)
-                {
-                });
-            },
-                [&](auto const &)
-            {
-            });
+                    aliasedMap[aliasName] = aliasNode.get<std::string>();
+                }
+            }
         }
 
         return aliasedMap;

@@ -11,6 +11,8 @@
 #include <filesystem>
 #include <functional>
 #include <algorithm>
+#include <iostream>
+#include <fstream>
 #include <vector>
 
 namespace Gek
@@ -51,7 +53,6 @@ namespace Gek
 			std::string getFileName(void) const;
 			std::string getExtension(void) const;
             std::string getString(void) const;
-            std::wstring getWideString(void) const;
 
             void rename(Path const &name) const;
             bool isNewerThan(Path const &path) const;
@@ -61,6 +62,7 @@ namespace Gek
 
 			bool isDirectory(void) const;
             void createChain(void) const;
+			void setWorkingDirectory(void) const;
             void findFiles(std::function<bool(Path const &filePath)> onFileFound, bool recursive = true) const;
 
 			FileSystem::Path lexicallyRelative(FileSystem::Path const& root) const;
@@ -79,19 +81,19 @@ namespace Gek
                 auto size = (limitReadSize == 0 ? fileSize : std::min(fileSize, limitReadSize));
 				if (size > 0)
 				{
-					// Need to use fopen since STL methods break up the reads to multiple small calls
-                    FILE *file = nullptr;
-                    _wfopen_s(&file, filePath.getWideString().data(), L"rb");
-					if (file != nullptr)
-					{
+                    std::ifstream file;
+                    file.open(filePath.getString().data(), std::ios::in);
+                    if (file.is_open())
+                    {
 						buffer.resize(size);
-						auto numberOfSegmentsRead = fread(static_cast<void *>(&buffer.front()), size, 1, file);
-						fclose(file);
+                        file.read(reinterpret_cast<char *>(buffer.data()), size);
+                        if (file)
+                        {
+                            file.close();
+                            return buffer;
+                        }
 
-						if (numberOfSegmentsRead == 1)
-						{
-							return buffer;
-						}
+                        file.close();
 					}
 				}
 			}
@@ -99,34 +101,40 @@ namespace Gek
 			return defaultValue;
 		}
 
+		template <typename DATA>
+		void Write(std::ofstream& file, DATA *data, uint32_t size)
+		{
+			file.write(reinterpret_cast<const char*>(data), sizeof(DATA) * size);
+		}
+
 		template <typename CONTAINER>
 		void Save(Path const &filePath, CONTAINER const &buffer)
 		{
             filePath.getParentPath().createChain();
             
-            FILE *file = nullptr;
-            _wfopen_s(&file, filePath.getWideString().data(), L"wb");
-            if (file != nullptr)
-			{
-				fwrite(buffer.data(), buffer.size(), 1, file);
-				fclose(file);
-			}
+            std::ofstream file;
+            file.open(filePath.getString().data(), std::ios::out | std::ios::binary);
+            if (file.is_open())
+            {
+                file.write(reinterpret_cast<const char*>(buffer.data()), buffer.size());
+                file.close();
+            }
 		}
+
+        Path operator / (Path const& leftPath, std::string_view rightPath);
+        Path operator / (Path const& leftPath, std::string const& rightPath);
+        Path operator / (Path const& leftPath, Path const& rightPath);
+        Path operator / (Path const& leftPath, const char *rightPath);
 
 		template <class ... STRINGS>
 		Path CreatePath(STRINGS && ... names)
 		{
 			Path path;
 			([&] {
-				path = path / Path(names);
+                path = path / Path(names);
 			} (), ...);
 			return path;
 		}
-
-		Path operator / (Path const& leftPath, std::string_view rightPath);
-		Path operator / (Path const& leftPath, std::string const& rightPath);
-		Path operator / (Path const& leftPath, Path const& rightPath);
-		Path operator / (Path const& leftPath, const char *rightPath);
 	}; // namespace FileSystem
 }; // namespace Gek
 

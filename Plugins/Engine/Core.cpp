@@ -14,6 +14,10 @@
 #include <queue>
 #include <ppl.h>
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 namespace Gek
 {
     namespace Implementation
@@ -26,7 +30,7 @@ namespace Gek
             bool windowActive = false;
             bool engineRunning = false;
 
-            JSON configuration;
+            JSON::Object configuration;
             JSON::Object shadersSettings;
             JSON::Object filtersSettings;
             bool changedVisualOptions = false;
@@ -65,7 +69,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(_window)
             {
-				LockedWrite{ std::cout } << "Starting GEK Engine";
+				std::cout << "Starting GEK Engine";
 
                 if (!window)
                 {
@@ -87,14 +91,16 @@ namespace Gek
                 window->onMousePosition.connect(this, &Core::onMousePosition);
                 window->onMouseMovement.connect(this, &Core::onMouseMovement);
 
-                configuration.load(getContext()->findDataPath("config.json"s));
+                configuration = JSON::Load(getContext()->findDataPath("config.json"s));
 
+#ifdef _WIN32
                 HRESULT resultValue = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
                 if (FAILED(resultValue))
                 {
-                    LockedWrite{ std::cerr } << "Call to CoInitialize failed: " << resultValue;
+                    std::cerr << "Call to CoInitialize failed: " << resultValue;
                     return;
                 }
+#endif
 
                 Video::Device::Description deviceDescription;
                 videoDevice = getContext()->createClass<Video::Device>("Default::Device::Video", window.get(), deviceDescription);
@@ -112,7 +118,7 @@ namespace Gek
                 for (auto const &displayMode : displayModeList)
                 {
                     auto currentDisplayMode = displayModeStringList.size();
-                    std::string displayModeString(std::format("{}x{}, {}hz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
+                    std::string displayModeString(fmt::format("{}x{}, {}hz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
                     switch (displayMode.aspectRatio)
                     {
                     case Video::DisplayMode::AspectRatio::_4x3:
@@ -133,20 +139,20 @@ namespace Gek
                     displayModeStringList.push_back(displayModeString);
                 }
 
-				setDisplayMode(getOption("display"s, "mode"s).convert(preferredDisplayMode));
+				setDisplayMode(getOption("display").value("mode", preferredDisplayMode));
 
                 population = getContext()->createClass<Engine::Population>("Engine::Population", (Engine::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Engine::Core *)this);
                 renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Engine::Core *)this);
                 renderer->onShowUserInterface.connect(this, &Core::onShowUserInterface);
 
-                LockedWrite{ std::cout } << "Loading processor plugins";
+                std::cout << "Loading processor plugins";
 
                 std::vector<std::string_view> processorNameList;
                 getContext()->listTypes("ProcessorType", [&](std::string_view className) -> void
                 {
                     processorNameList.push_back(className);
-					LockedWrite{ std::cout } << "- " << className << " processor found";
+					std::cout << "- " << className << " processor found";
 				});
 
                 processorList.reserve(processorNameList.size());
@@ -184,8 +190,8 @@ namespace Gek
                 engineRunning = true;
 
                 window->setVisibility(true);
-                setFullScreen(getOption("display"s, "fullScreen"s).convert(false));
-                LockedWrite{ std::cout } << "Starting engine";
+                setFullScreen(getOption("display").value("fullScreen", false));
+                std::cout << "Starting engine";
                 window->readEvents();
             }
 
@@ -198,7 +204,7 @@ namespace Gek
                 videoDevice = nullptr;
                 window = nullptr;
 
-                configuration.save(getContext()->getCachePath("config.json"s));
+                JSON::Save(configuration, getContext()->getCachePath("config.json"s));
                 CoUninitialize();
             }
 
@@ -231,7 +237,7 @@ namespace Gek
                 if (current.mode != requestDisplayMode)
                 {
                     auto& displayModeData = displayModeList[requestDisplayMode];
-                    LockedWrite{ std::cout } << "Setting display mode: " << displayModeData.width << "x" << displayModeData.height;
+                    std::cout << "Setting display mode: " << displayModeData.width << "x" << displayModeData.height;
                     if (requestDisplayMode < displayModeList.size())
                     {
                         next.mode = requestDisplayMode;
@@ -472,8 +478,8 @@ namespace Gek
                         if (ImGui::MenuItem("Settings", nullptr, &showSettings))
                         {
                             next = previous = current;
-                            shadersSettings = configuration["shaders"].makeType<JSON::Object>();
-                            filtersSettings = configuration["filters"].makeType<JSON::Object>();
+                            shadersSettings = configuration["shaders"];
+                            filtersSettings = configuration["filters"];
                             changedVisualOptions = false;
                         }
 
@@ -526,34 +532,31 @@ namespace Gek
                     std::function<void(JSON::Object &)> showSetting;
                     showSetting = [&](JSON::Object &settingNode) -> void
                     {
-                        for (auto &optionPair : settingNode)
+                        for (auto &[settingName, settingNode] : settingNode.items())
                         {
-                            auto &optionName = optionPair.first;
-                            auto &optionNode = optionPair.second;
-                            auto label(std::format("##{}{}", optionName, optionName));
-                            optionNode.visit(
-                                [&](JSON::Object &optionObject)
+                            auto label(fmt::format("##{}{}", settingName, settingName));
+                            if (settingNode.is_object())
                             {
-                                auto optionsSearch = optionObject.find("options");
-                                if (optionsSearch != optionObject.end())
+                                auto optionsSearch = settingNode.find("options");
+                                if (optionsSearch != settingNode.end())
                                 {
-                                    auto optionsNode = optionsSearch->second;
-                                    if (optionsNode.isType<JSON::Array>())
+                                    auto optionsNode = optionsSearch.value();
+                                    if (optionsNode.is_array())
                                     {
                                         std::vector<std::string> optionList;
-                                        for (auto choice : optionsNode.asType(JSON::EmptyArray))
+                                        for (auto &choice : optionsNode)
                                         {
-                                            optionList.push_back(choice.convert(String::Empty));
+                                            optionList.push_back(choice.get<std::string>());
                                         }
 
                                         int selection = 0;
-                                        const auto &selectorSearch = optionObject.find("selection");
-                                        if (selectorSearch != optionObject.end())
+                                        const auto &selectorSearch = settingNode.find("selection");
+                                        if (selectorSearch != settingNode.end())
                                         {
-                                            auto selectionNode = selectorSearch->second;
-                                            if (selectionNode.isType<std::string>())
+                                            auto selectionNode = selectorSearch.value();
+                                            if (selectionNode.is_string())
                                             {
-                                                auto selectedName = selectionNode.convert(String::Empty);
+                                                auto selectedName = selectionNode.get<std::string>();
                                                 auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string_view choice) -> bool
                                                 {
                                                     return (selectedName == choice);
@@ -562,16 +565,16 @@ namespace Gek
                                                 if (optionsSearch != std::end(optionList))
                                                 {
                                                     selection = std::distance(std::begin(optionList), optionsSearch);
-                                                    optionNode.makeType<JSON::Object>()["selection"] = selection;
+                                                    settingNode["selection"] = selection;
                                                 }
                                             }
-                                            else
+                                            else if (selectionNode.is_number())
                                             {
-                                                selection = selectionNode.convert(0U);
+                                                selection = selectionNode.get<int32_t>();
                                             }
                                         }
 
-                                        ImGui::Text(optionName.data());
+                                        ImGui::Text(settingName.data());
                                         ImGui::SameLine();
                                         ImGui::PushItemWidth(-1.0f);
                                         if (ImGui::Combo(label.data(), &selection, [](void *userData, int index, char const **outputText) -> bool
@@ -586,7 +589,7 @@ namespace Gek
                                             return false;
                                         }, &optionList, optionList.size(), 10))
                                         {
-                                            optionNode.makeType<JSON::Object>()["selection"] = selection;
+                                            settingNode["selection"] = selection;
                                             changedVisualOptions = true;
                                         }
 
@@ -595,27 +598,27 @@ namespace Gek
                                 }
                                 else
                                 {
-                                    if (ImGui::TreeNodeEx(optionName.data(), ImGuiTreeNodeFlags_Framed))
+                                    if (ImGui::TreeNodeEx(settingName.data(), ImGuiTreeNodeFlags_Framed))
                                     {
-                                        showSetting(optionObject);
+                                        showSetting(settingNode);
                                         ImGui::TreePop();
                                     }
                                 }
-                            },
-                                [&](JSON::Array &optionArray)
+                            }
+                            else if (settingNode.is_array())
                             {
-                                ImGui::Text(optionName.data());
+                                ImGui::Text(settingName.data());
                                 ImGui::SameLine();
                                 ImGui::PushItemWidth(-1.0f);
-                                switch (optionArray.size())
+                                switch (settingNode.size())
                                 {
                                 case 1:
                                     [&](void) -> void
                                     {
-                                        float data = optionArray[0].convert(0.0f);
+                                        float data = settingNode[0].get<float>();
                                         if (ImGui::InputFloat(label.data(), &data))
                                         {
-                                            optionNode = data;
+                                            settingNode = data;
                                             changedVisualOptions = true;
                                         }
                                     }();
@@ -625,11 +628,11 @@ namespace Gek
                                     [&](void) -> void
                                     {
                                         Math::Float2 data(
-                                            optionArray[0].convert(0.0f),
-                                            optionArray[1].convert(0.0f));
+                                            settingNode[0].get<float>(),
+                                            settingNode[1].get<float>());
                                         if (ImGui::InputFloat2(label.data(), data.data))
                                         {
-                                            optionNode = JSON::Array({ data.x, data.y });
+                                            settingNode = { data.x, data.y };
                                             changedVisualOptions = true;
                                         }
                                     }();
@@ -639,12 +642,12 @@ namespace Gek
                                     [&](void) -> void
                                     {
                                         Math::Float3 data(
-                                            optionArray[0].convert(0.0f),
-                                            optionArray[1].convert(0.0f),
-                                            optionArray[2].convert(0.0f));
+                                            settingNode[0].get<float>(),
+                                            settingNode[1].get<float>(),
+                                            settingNode[2].get<float>());
                                         if (ImGui::InputFloat3(label.data(), data.data))
                                         {
-                                            optionNode = JSON::Array({ data.x, data.y, data.z });
+                                            settingNode = { data.x, data.y, data.z };
                                             changedVisualOptions = true;
                                         }
                                     }();
@@ -654,13 +657,13 @@ namespace Gek
                                     [&](void) -> void
                                     {
                                         Math::Float4 data(
-                                            optionArray[0].convert(0.0f),
-                                            optionArray[1].convert(0.0f),
-                                            optionArray[2].convert(0.0f),
-                                            optionArray[3].convert(0.0f));
+                                            settingNode[0].get<float>(),
+                                            settingNode[1].get<float>(),
+                                            settingNode[2].get<float>(),
+                                            settingNode[3].get<float>());
                                         if (ImGui::InputFloat4(label.data(), data.data))
                                         {
-                                            optionNode = JSON::Array({ data.x, data.y, data.z, data.w });
+                                            settingNode = { data.x, data.y, data.z, data.w };
                                             changedVisualOptions = true;
                                         }
                                     }();
@@ -668,28 +671,53 @@ namespace Gek
                                 };
 
                                 ImGui::PopItemWidth();
-                            },
-                                [&](std::nullptr_t const &)
+                            }
+                            else if (settingNode.is_string())
                             {
-                            },
-                                [&](auto const &optionValue)
-                            {
-                                ImGui::Text(optionName.data());
+                                ImGui::Text(settingName.data());
                                 ImGui::SameLine();
                                 ImGui::PushItemWidth(-1.0f);
-                                auto value = optionValue;
+                                auto value = settingNode.get<std::string>();
                                 if (UI::Input(label, &value))
                                 {
-                                    optionNode = value;
+                                    settingNode = value;
                                     changedVisualOptions = true;
                                 }
 
                                 ImGui::PopItemWidth();
-                            });
+                            }
+                            else if (settingNode.is_number())
+                            {
+                                ImGui::Text(settingName.data());
+                                ImGui::SameLine();
+                                ImGui::PushItemWidth(-1.0f);
+                                auto value = settingNode.get<int32_t>();
+                                if (UI::Input(label, &value))
+                                {
+                                    settingNode = value;
+                                    changedVisualOptions = true;
+                                }
+
+                                ImGui::PopItemWidth();
+                            }
+                            else if (settingNode.is_boolean())
+                            {
+                                ImGui::Text(settingName.data());
+                                ImGui::SameLine();
+                                ImGui::PushItemWidth(-1.0f);
+                                auto value = settingNode.get<bool>();
+                                if (UI::Input(label, &value))
+                                {
+                                    settingNode = value;
+                                    changedVisualOptions = true;
+                                }
+
+                                ImGui::PopItemWidth();
+                            }
                         }
                     };
 
-                    auto invertedDepthBuffer = getOption("render"s, "invertedDepthBuffer"s).convert(true);
+                    auto invertedDepthBuffer = getOption("render").value("invertedDepthBuffer", true);
                     if (ImGui::Checkbox("Inverted Depth Buffer", &invertedDepthBuffer))
                     {
                         setOption("render"s, "invertedDepthBuffer"s, invertedDepthBuffer);
@@ -803,7 +831,7 @@ namespace Gek
                         setFullScreen(previous.fullScreen);
                     }
 
-                    ImGui::Text(std::format("(Revert in {} seconds)", uint32_t(modeChangeTimer)).data());
+                    ImGui::Text(fmt::format("(Revert in {} seconds)", uint32_t(modeChangeTimer)).data());
                 }
 
 				ImGui::End();
@@ -985,19 +1013,19 @@ namespace Gek
 				return ContextRegistration::getContext();
 			}
 
-            JSON getOption(std::string_view system, std::string_view name) const
+            JSON::Object getOption(std::string_view system) const
             {
-                return configuration.getMember(system).getMember(name);
+                return configuration[system];
             }
 
-            void setOption(std::string_view system, std::string_view name, JSON const &value)
+            void setOption(std::string_view system, std::string_view name, JSON::Object const &value)
             {
 				configuration[system][name] = value;
             }
 
             void deleteOption(std::string_view system, std::string_view name)
             {
-                auto groupNode = configuration.getMember(system).asType(JSON::EmptyObject);
+                auto groupNode = configuration[system];
                 auto search = groupNode.find(name.data());
                 if (search != std::end(groupNode))
                 {

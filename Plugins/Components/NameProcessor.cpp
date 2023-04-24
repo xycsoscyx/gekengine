@@ -19,14 +19,14 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(Components::Name const * const data, JSON &exportData) const
+        void save(Components::Name const * const data, JSON::Object &exportData) const
         {
             exportData = data->name;
         }
 
-        void load(Components::Name * const data, JSON const &importData)
+        void load(Components::Name * const data, JSON::Object const &importData)
         {
-            data->name = importData.convert(String::Empty);
+            data->name = importData.get<std::string>();
         }
 
         // Edit::Component
@@ -89,7 +89,7 @@ namespace Gek
                 auto nameSearch = nameMap.find(nameComponent.name);
                 if (nameSearch != std::end(nameMap) && nameSearch->second != entity)
                 {
-                    nameComponent.name += std::format("{}", ++uniqueIdentifier);
+                    nameComponent.name += fmt::format("{}", ++uniqueIdentifier);
                 }
 
                 nameMap.insert(std::make_pair(nameComponent.name, entity));

@@ -44,7 +44,7 @@ namespace Gek
 
             void unhandled_exception() noexcept
             {
-                LockedWrite{ std::cerr } << "Unhandled Exception Occurred";
+                std::cerr << "Unhandled Exception Occurred";
             }
         };
     };
@@ -147,7 +147,7 @@ namespace Gek
         {
             while (activeCount.load() > 0)
             {
-                Sleep(0);
+                std::this_thread::sleep_for(std::chrono::seconds(0));
             };
         }
 

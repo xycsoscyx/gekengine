@@ -20,6 +20,10 @@
 
 #include <mikktspace.h>
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 using namespace Gek;
 
 struct Header
@@ -92,7 +96,7 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
 {
     if (inputNode == nullptr)
     {
-        LockedWrite{ std::cerr } << "Invalid scene node";
+        std::cerr << "Invalid scene node";
         return false;
     }
 
@@ -101,7 +105,7 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
     {
         if (inputNode->mMeshes == nullptr)
         {
-            LockedWrite{ std::cerr } << "Invalid mesh list";
+            std::cerr << "Invalid mesh list";
             return false;
         }
 
@@ -112,16 +116,16 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
         model.name = inputNode->mName.C_Str();
 		if (model.name.empty())
 		{
-			model.name = std::format("model_{}", modelList.size());
+			model.name = fmt::format("model_{}", modelList.size());
 		}
 
-		LockedWrite{ std::cout } << "Found Assimp Model: " << model.name;
+		std::cout << "Found Assimp Model: " << model.name;
         for (uint32_t meshIndex = 0; meshIndex < inputNode->mNumMeshes; ++meshIndex)
         {
             uint32_t nodeMeshIndex = inputNode->mMeshes[meshIndex];
             if (nodeMeshIndex >= inputScene->mNumMeshes)
             {
-                LockedWrite{ std::cerr } << "Invalid mesh index";
+                std::cerr << "Invalid mesh index";
                 continue;
             }
 
@@ -130,25 +134,25 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
             {
                 if (inputMesh->mFaces == nullptr)
                 {
-                    LockedWrite{ std::cerr } << "Invalid inputMesh face list";
+                    std::cerr << "Invalid inputMesh face list";
                     continue;
                 }
 
                 if (inputMesh->mVertices == nullptr)
                 {
-                    LockedWrite{ std::cerr } << "Invalid inputMesh vertex list";
+                    std::cerr << "Invalid inputMesh vertex list";
                     continue;
                 }
 
                 if (inputMesh->mTextureCoords[0] == nullptr)
                 {
-                    LockedWrite{ std::cerr } << "Invalid inputMesh texture coordinate list";
+                    std::cerr << "Invalid inputMesh texture coordinate list";
                     continue;
                 }
 
                 if (inputMesh->mNormals == nullptr)
                 {
-                    LockedWrite{ std::cerr } << "Invalid inputMesh normal list";
+                    std::cerr << "Invalid inputMesh normal list";
                     continue;
                 }
 
@@ -159,13 +163,13 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
                 auto material = findMaterialForMesh(parameters.sourceName, diffuseName);
                 if (material.empty())
                 {
-                    LockedWrite{ std::cerr } << "Unable to find material for mesh " << inputMesh->mName.C_Str();
+                    std::cerr << "Unable to find material for mesh " << inputMesh->mName.C_Str();
                     continue;
                 }
 
-                LockedWrite{ std::cout } << " -> Material: " << material;
-                LockedWrite{ std::cerr } << " -> Num. Faces: " << inputMesh->mNumFaces;
-                LockedWrite{ std::cerr } << " -> Num. Vertex: " << inputMesh->mNumVertices;
+                std::cout << " -> Material: " << material;
+                std::cout << " -> Num. Faces: " << inputMesh->mNumFaces;
+                std::cout << " -> Num. Vertex: " << inputMesh->mNumVertices;
 
                 IndexedMesh indexedMesh;
                 indexedMesh.material = material;
@@ -175,7 +179,7 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
                     const aiFace& face = inputMesh->mFaces[faceIndex];
                     if (face.mNumIndices != 3)
                     {
-                        LockedWrite{ std::cerr } << "Skipping non-triangular face, face: " << faceIndex << ": " << face.mNumIndices << " indices";
+                        std::cerr << "Skipping non-triangular face, face: " << faceIndex << ": " << face.mNumIndices << " indices";
                         continue;
                     }
 
@@ -201,8 +205,7 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
 
                     indexedMesh.pointList[vertexIndex] = localTransform.transform(position) * parameters.feetPerUnit;
                     indexedMesh.texCoordList[vertexIndex] = texCoord;
-                    indexedMesh.tangentList[vertexIndex].xyz = localTransform.rotate(normal);
-                    indexedMesh.tangentList[vertexIndex].w = 1.0f;
+                    indexedMesh.tangentList[vertexIndex].set(localTransform.rotate(normal), 1.0f);
                     indexedMesh.normalList[vertexIndex] = localTransform.rotate(normal);
                 }
 
@@ -222,7 +225,7 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
                     const aiFace& face = inputMesh->mFaces[faceIndex];
                     if (face.mNumIndices != 3)
                     {
-                        LockedWrite{ std::cerr } << "Skipping non-triangular face, face: " << faceIndex << ": " << face.mNumIndices << " indices";
+                        std::cout << "Skipping non-triangular face, face: " << faceIndex << ": " << face.mNumIndices << " indices";
                         continue;
                     }
 
@@ -311,7 +314,7 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
     {
         if (inputNode->mChildren == nullptr)
         {
-            LockedWrite{ std::cerr } << "Invalid child list";
+            std::cerr << "Invalid child list";
             return false;
         }
 
@@ -329,7 +332,7 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    LockedWrite{ std::cout } << "GEK Model Converter";
+    std::cout << "GEK Model Converter";
 
     argparse::ArgumentParser program("GEK Model Converter", "1.0");
 
@@ -367,8 +370,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     }
     catch (const std::runtime_error& err)
     {
-        LockedWrite{ std::cerr } << err.what() << std::endl;
-        LockedWrite{ std::cerr } << program;
+        std::cerr << err.what() << std::endl;
+        std::cerr << program;
         return 1;
     }
 
@@ -382,7 +385,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
     auto rootPath(pluginPath.getParentPath());
     auto cachePath(rootPath / "cache");
-    SetCurrentDirectoryW(cachePath.getWideString().data());
+    cachePath.setWorkingDirectory();
 
     std::vector<FileSystem::Path> searchPathList;
     searchPathList.push_back(pluginPath);
@@ -408,7 +411,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         {
             std::string trimmedMessage(message);
             trimmedMessage = trimmedMessage.substr(0, trimmedMessage.size() - 1);
-            LockedWrite{ std::cout } << "Assimp: " << trimmedMessage;
+            std::cout << "Assimp: " << trimmedMessage;
         };
 
         logStream.user = nullptr;
@@ -450,44 +453,44 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
         //aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_TRIANGLE_LIMIT, 65535);
 
-        LockedWrite{ std::cout } << "Loading: " << filePath.getString();
+        std::cout << "Loading: " << filePath.getString();
         auto inputScene = aiImportFileExWithProperties(filePath.getString().data(), importFlags, nullptr, propertyStore);
         if (inputScene == nullptr)
         {
-            LockedWrite{ std::cerr } << "Unable to load scene with Assimp";
+            std::cerr << "Unable to load scene with Assimp";
             return -__LINE__;
         }
 
         inputScene = aiApplyPostProcessing(inputScene, aiProcess_Triangulate);
         if (inputScene == nullptr)
         {
-            LockedWrite{ std::cerr } << "Unable to apply post processing with Assimp";
+            std::cerr << "Unable to apply post processing with Assimp";
             return -__LINE__;
         }
 
         inputScene = aiApplyPostProcessing(inputScene, aiProcess_SplitLargeMeshes);
         if (inputScene == nullptr)
         {
-            LockedWrite{ std::cerr } << "Unable to apply post processing with Assimp";
+            std::cerr << "Unable to apply post processing with Assimp";
             return -__LINE__;
         }
 
         inputScene = aiApplyPostProcessing(inputScene, aiProcess_CalcTangentSpace);
         if (inputScene == nullptr)
         {
-            LockedWrite{ std::cerr } << "Unable to apply post processing with Assimp";
+            std::cerr << "Unable to apply post processing with Assimp";
             return -__LINE__;
         }
 
         if (!inputScene->HasMeshes())
         {
-            LockedWrite{ std::cerr } << "Scene has no meshes";
+            std::cerr << "Scene has no meshes";
             return -__LINE__;
         }
 
         if (!inputScene->HasMaterials())
         {
-            LockedWrite{ std::cerr } << "Exporting to model requires materials in scene";
+            std::cerr << "Exporting to model requires materials in scene";
             return -__LINE__;
         }
 
@@ -526,15 +529,14 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                 return true;
             }
 
-            JSON materialNode;
-            materialNode.load(filePath);
-            auto& shaderNode = materialNode.getMember("shader");
-            auto& dataNode = shaderNode.getMember("data");
-            auto& albedoNode = dataNode.getMember("albedo");
-            FileSystem::Path albedoPath = albedoNode.getMember("file").convert(String::Empty);
+            JSON::Object materialNode = JSON::Load(filePath);
+            auto& shaderNode = materialNode["shader"];
+            auto& dataNode = shaderNode["data"];
+            auto& albedoNode = dataNode["albedo"];
+            FileSystem::Path albedoPath = albedoNode.value("file", String::Empty);
             auto albedoFile = albedoPath.withoutExtension().getString();
 
-            LockedWrite{ std::cerr } << "Found material: " << filePath.getString() << ", with albedo: " << albedoFile;
+            std::cout << "Found material: " << filePath.getString() << ", with albedo: " << albedoFile;
             albedoToMaterialMap[String::GetLower(albedoFile)] = String::GetLower(removeRoot("materials", filePath).getString());
             return true;
         };
@@ -542,14 +544,14 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         context->findDataFiles("materials", findMaterials);
         if (albedoToMaterialMap.empty())
         {
-            LockedWrite{ std::cerr } << "Unable to locate any materials";
+            std::cerr << "Unable to locate any materials";
             return -__LINE__;
         }
 
         auto findMaterial = [&](FileSystem::Path albedoPath) -> std::string
         {
             albedoPath = removeRoot("textures", albedoPath);
-            LockedWrite{ std::cout } << "Searching for albedo: " << albedoPath.getString();
+            std::cout << "Searching for albedo: " << albedoPath.getString();
 
             auto albedoSearch = albedoToMaterialMap.find(String::GetLower(albedoPath.withoutExtension().getString()));
             if (albedoSearch == std::end(albedoToMaterialMap))
@@ -559,7 +561,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
             if (albedoSearch != std::end(albedoToMaterialMap))
             {
-                LockedWrite{ std::cout } << "Found material for albedo: " << albedoPath.getString() << " belongs to " << albedoSearch->second;
+                std::cout << "Found material for albedo: " << albedoPath.getString() << " belongs to " << albedoSearch->second;
                 return albedoSearch->second;
             }
 
@@ -568,7 +570,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
         auto findMaterialForMesh = [&](const FileSystem::Path& sourceName, std::string diffuseName) -> std::string
         {
-            LockedWrite{ std::cout } << "Searching for: " << diffuseName << ", " << (filePath / diffuseName).getString();
+            std::cout << "Searching for: " << diffuseName << ", " << (filePath / diffuseName).getString();
 
             FileSystem::Path albedoPath = FileSystem::Path(diffuseName).lexicallyRelative("textures");
             albedoPath = filePath.withoutExtension().getFileName() / albedoPath.withoutExtension();
@@ -598,7 +600,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         aiReleasePropertyStore(propertyStore);
         aiReleaseImport(inputScene);
 
-        LockedWrite{ std::cout } << "> Num. Models: " << modelList.size();
+        std::cout << "> Num. Models: " << modelList.size();
         for (auto& model : modelList)
         {
             auto modelName(model.name);
@@ -608,10 +610,10 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             }
 
             auto outputPath((filePath.withoutExtension() / modelName).withExtension(parameters.saveAsCode ? ".h" : ".gek"));
-            LockedWrite{ std::cout } << "> Model: " << model.name << ": " << outputPath.getString();
-            LockedWrite{ std::cout } << "   Num. Meshes: " << model.meshList.size();
-            LockedWrite{ std::cout } << "   Size: Minimum[" << model.boundingBox.minimum.x << ", " << model.boundingBox.minimum.y << ", " << model.boundingBox.minimum.z << "]";
-            LockedWrite{ std::cout } << "   Size: Maximum[" << model.boundingBox.maximum.x << ", " << model.boundingBox.maximum.y << ", " << model.boundingBox.maximum.z << "]";
+            std::cout << "> Model: " << model.name << ": " << outputPath.getString();
+            std::cout << "   Num. Meshes: " << model.meshList.size();
+            std::cout << "   Size: Minimum[" << model.boundingBox.minimum.x << ", " << model.boundingBox.minimum.y << ", " << model.boundingBox.minimum.z << "]";
+            std::cout << "   Size: Maximum[" << model.boundingBox.maximum.x << ", " << model.boundingBox.maximum.y << ", " << model.boundingBox.maximum.z << "]";
 
             filePath.withoutExtension().createChain();
             if (parameters.saveAsCode)
@@ -620,7 +622,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                 auto file = fopen(outputPath.getString().data(), "w");
                 if (file == nullptr)
                 {
-                    LockedWrite{ std::cerr } << "Unable to create output file";
+                    std::cerr << "Unable to create output file";
                     return -__LINE__;
                 }
 
@@ -656,40 +658,40 @@ R"(struct StaticModel_{0}
                 for (auto& mesh : model.indexedMeshList)
                 {
                     String::Replace(mesh.material, "\\", "\\\\");
-                    code += std::format("   StaticModel_{}(\"{}\",\n       std::vector<uint16_t>({{ ", modelName, mesh.material);
+                    code += fmt::format("   StaticModel_{}(\"{}\",\n       std::vector<uint16_t>({{ ", modelName, mesh.material);
                     for (auto &face : mesh.faceList)
                     {
-                        code += std::format("{}, {}, {}, ", face[0], face[1], face[2]);
+                        code += fmt::format("{}, {}, {}, ", face[0], face[1], face[2]);
                     }
 
-                    code += std::format("}}),\n       std::vector<Math::Float3>({{ ");
+                    code += fmt::format("}}),\n       std::vector<Math::Float3>({{ ");
                     for (auto& point : mesh.pointList)
                     {
-                        code += std::format("Math::Float3({}, {}, {}), ", point.x, point.y, point.z);
+                        code += fmt::format("Math::Float3({}, {}, {}), ", point.x, point.y, point.z);
                     }
 
-                    code += std::format("}}),\n       std::vector<Math::Float2>({{ ");
+                    code += fmt::format("}}),\n       std::vector<Math::Float2>({{ ");
                     for (auto& texCoord : mesh.texCoordList)
                     {
-                        code += std::format("Math::Float2({}, {}), ", texCoord.x, texCoord.y);
+                        code += fmt::format("Math::Float2({}, {}), ", texCoord.x, texCoord.y);
                     }
 
-                    code += std::format("}}),\n       std::vector<Math::Float4>({{ ");
+                    code += fmt::format("}}),\n       std::vector<Math::Float4>({{ ");
                     for (auto& tangent : mesh.tangentList)
                     {
-                        code += std::format("Math::Float4({}, {}, {}, {}), ", tangent.x, tangent.y, tangent.z, tangent.w);
+                        code += fmt::format("Math::Float4({}, {}, {}, {}), ", tangent.x, tangent.y, tangent.z, tangent.w);
                     }
 
-                    code += std::format("}}),\n       std::vector<Math::Float3>({{ ");
+                    code += fmt::format("}}),\n       std::vector<Math::Float3>({{ ");
                     for (auto& normal : mesh.pointList)
                     {
-                        code += std::format("Math::Float3({}, {}, {}), ", normal.x, normal.y, normal.z);
+                        code += fmt::format("Math::Float3({}, {}, {}), ", normal.x, normal.y, normal.z);
                     }
 
-                    code += std::format("}})),\n");
+                    code += fmt::format("}})),\n");
                 }
 
-                code += std::format("}};");
+                code += fmt::format("}};");
                 fwrite(code.data(), 1, code.size(), file);
                 fclose(file);
             }
@@ -698,7 +700,7 @@ R"(struct StaticModel_{0}
                 auto file = fopen(outputPath.getString().data(), "wb");
                 if (file == nullptr)
                 {
-                    LockedWrite{ std::cerr } << "Unable to create output file";
+                    std::cout << "Unable to create output file";
                     return -__LINE__;
                 }
 
@@ -709,9 +711,9 @@ R"(struct StaticModel_{0}
 
                 for (auto& mesh : model.meshList)
                 {
-                    LockedWrite{ std::cout } << "   > Mesh: " << mesh.material;
-                    LockedWrite{ std::cout } << "      Num. Vertices: " << mesh.pointList.size();
-                    //LockedWrite{ std::cout } << "      Num. Faces: " << mesh.faceList.size();
+                    std::cout << "   > Mesh: " << mesh.material;
+                    std::cout << "      Num. Vertices: " << mesh.pointList.size();
+                    // << "      Num. Faces: " << mesh.faceList.size();
 
                     Header::Mesh meshHeader;
                     std::strncpy(meshHeader.material, mesh.material.data(), 63);
