@@ -119,6 +119,46 @@ namespace Gek
             return defaultValue.data();
         }
 
+        bool Evaluate(const Object& object, ShuntingYard& shuntingYard, bool defaultValue)
+        {
+            if (object.is_string())
+            {
+                return shuntingYard.evaluate(object.get<std::string>()).value_or(defaultValue);
+            }
+
+            return object.is_boolean() ? object.get<bool>() : defaultValue;
+        }
+
+        float Evaluate(const Object& object, ShuntingYard& shuntingYard, float defaultValue)
+        {
+            if (object.is_string())
+            {
+                return shuntingYard.evaluate(object.get<std::string>()).value_or(defaultValue);
+            }
+
+            return object.is_number() ? object.get<float>() : defaultValue;
+        }
+
+        int32_t Evaluate(const Object& object, ShuntingYard& shuntingYard, int32_t defaultValue)
+        {
+            if (object.is_string())
+            {
+                return shuntingYard.evaluate(object.get<std::string>()).value_or(defaultValue);
+            }
+
+            return object.is_number() ? object.get<int32_t>() : defaultValue;
+        }
+
+        uint32_t Evaluate(const Object& object, ShuntingYard& shuntingYard, uint32_t defaultValue)
+        {
+            if (object.is_string())
+            {
+                return shuntingYard.evaluate(object.get<std::string>()).value_or(defaultValue);
+            }
+
+            return object.is_number() ? object.get<uint32_t>() : defaultValue;
+        }
+
         Math::Float2 Evaluate(const Object& object, ShuntingYard& shuntingYard, Math::Float2 const& defaultValue)
         {
             if (object.is_array())
@@ -212,7 +252,7 @@ namespace Gek
 
         std::string Evaluate(const Object& object, ShuntingYard& shuntingYard, std::string const& defaultValue)
         {
-            return defaultValue;
+            return Value(object, defaultValue);
         }
     }; // namespace JSON
 }; // namespace Gek

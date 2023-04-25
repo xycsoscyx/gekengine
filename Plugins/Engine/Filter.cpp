@@ -96,7 +96,7 @@ namespace Gek
                 const auto &coreOptionsNode = core->getOption("filters")[filterName];
                 for (auto &[key, value] : coreOptionsNode.items())
                 {
-                    shuntingYard.setVariable(key, value.get<float>());
+                    shuntingYard.setVariable(key, JSON::Value(value, 0.0f));
                 }
 
                 auto &rootOptionsNode = rootNode["options"];

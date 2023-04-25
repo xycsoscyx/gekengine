@@ -57,8 +57,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 		return;
 	}
 
-	static const std::vector<uint8_t> EmptyBuffer;
-	std::vector<uint8_t> buffer(FileSystem::Load(inputFilePath, EmptyBuffer));
+	std::vector<uint8_t> buffer(FileSystem::Load(inputFilePath));
 
 	::DirectX::ScratchImage image;
 	HRESULT resultValue = load(buffer, image);

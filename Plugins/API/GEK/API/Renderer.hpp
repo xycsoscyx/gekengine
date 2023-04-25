@@ -33,7 +33,7 @@ namespace Gek
             virtual void queueCamera(Math::Float4x4 const &viewMatrix, float left, float top, float right, float bottom, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget = ResourceHandle(), std::string const &forceShader = String::Empty) = 0;
             virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *)> &&draw) = 0;
 
-            virtual void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle target) = 0;
+            virtual void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle *target = nullptr) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

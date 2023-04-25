@@ -1452,7 +1452,7 @@ float4 main(PixelInput input) : SV_Target
 						if (currentCamera.cameraTarget)
 						{
 							auto finalHandle = resources->getResourceHandle(finalOutput);
-							renderOverlay(videoDevice->getDefaultContext(), finalHandle, currentCamera.cameraTarget);
+							renderOverlay(videoDevice->getDefaultContext(), finalHandle, &currentCamera.cameraTarget);
 						}
 						else
 						{
@@ -1508,9 +1508,9 @@ float4 main(PixelInput input) : SV_Target
 				}
 				else
 				{
-					static const JSON::Object Black = { 0.0f, 0.0f, 0.0f, 1.0f };
+					static const JSON::Object Black = { 0, 0, 0, 255 };
 					auto blackPattern = resources->createPattern("color", Black);
-					renderOverlay(videoContext, blackPattern, ResourceHandle());
+					renderOverlay(videoContext, blackPattern, nullptr);
 				}
 
 				bool reloadRequired = false;
@@ -1535,7 +1535,7 @@ float4 main(PixelInput input) : SV_Target
 				};
 			}
 
-			void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle target)
+			void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle *target)
 			{
 				videoContext->setBlendState(blendState.get(), Math::Float4::Black, 0xFFFFFFFF);
 				videoContext->setDepthState(depthState.get(), 0);
@@ -1550,11 +1550,13 @@ float4 main(PixelInput input) : SV_Target
 				videoContext->pixelPipeline()->setProgram(deferredPixelProgram);
 				if (target)
 				{
-					resources->setRenderTargetList(videoContext, { target }, nullptr);
+					resources->setRenderTargetList(videoContext, { *target }, nullptr);
 				}
 				else
 				{
 					videoContext->setRenderTargetList({ videoDevice->getBackBuffer() }, nullptr);
+					auto backBufferViewPort = videoDevice->getBackBuffer()->getViewPort();
+					videoContext->setViewportList({ backBufferViewPort });
 				}
 
 				resources->drawPrimitive(videoContext, 3, 0);

@@ -373,8 +373,7 @@ namespace Gek
 
             auto fileName(filePath.getFileName());
 
-            static const std::vector<uint8_t> EmptyBuffer;
-            std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
+            std::vector<uint8_t> buffer(FileSystem::Load(filePath));
 
             Header* header = (Header*)buffer.data();
             if (buffer.size() < (sizeof(Header) + (sizeof(Header::Mesh) * header->meshCount)))
@@ -517,8 +516,7 @@ namespace Gek
                     std::string fileName(filePath.getString());
                     if (filePath.isFile() && String::GetLower(filePath.getExtension()) == ".gek")
                     {
-                        static const std::vector<uint8_t> EmptyBuffer;
-                        std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer, sizeof(Header)));
+                        std::vector<uint8_t> buffer(FileSystem::Load(filePath, sizeof(Header)));
                         if (buffer.size() < sizeof(Header))
                         {
                             std::cerr << "Model file too small to contain header: " << fileName;

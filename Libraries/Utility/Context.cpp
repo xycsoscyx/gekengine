@@ -8,7 +8,12 @@
 #ifdef _WIN32
 #include <Windows.h>
 #define LIBRARY                         HMODULE
-#define loadLibrary(FILE)               LoadLibraryA(FILE)
+LIBRARY loadLibrary(std::string_view fileName)
+{
+    std::wstring wideFileName(Gek::String::Widen(fileName));
+    return LoadLibraryW(wideFileName.data());
+}
+
 #define getFunction(HANDLE, FUNCTION)   GetProcAddress(HANDLE, FUNCTION)
 #define freeLibrary(HANDLE)             FreeLibrary(HANDLE)
 #else

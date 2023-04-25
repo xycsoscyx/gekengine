@@ -2879,17 +2879,28 @@ namespace Gek
                 std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
                 if (extension == ".dds")
                 {
-                    load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromDDSMemory(buffer.data(), buffer.size(), ::DirectX::DDS_FLAGS_NONE, nullptr, image); };
+                    load = [flags](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT
+                    {
+                        auto loadFlags = ::DirectX::DDS_FLAGS_NONE;
+                        return ::DirectX::LoadFromDDSMemory(buffer.data(), buffer.size(), loadFlags, nullptr, image);
+                    };
                 }
                 else if (extension == ".tga")
                 {
-                    load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromTGAMemory(buffer.data(), buffer.size(), nullptr, image); };
+                    load = [flags](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT
+                    {
+                        return ::DirectX::LoadFromTGAMemory(buffer.data(), buffer.size(), nullptr, image);
+                    };
                 }
                 else if (extension == ".png" || extension == ".bmp" ||
                          extension == ".jpg" || extension == ".jpeg" ||
                          extension == ".tif" || extension == ".tiff")
                 {
-                    load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_FLAGS_NONE, nullptr, image); };
+                    load = [flags](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT
+                    {
+                        auto loadFlags = (flags & Video::TextureLoadFlags::sRGB ? ::DirectX::WIC_FLAGS_NONE : ::DirectX::WIC_FLAGS_IGNORE_SRGB);
+                        return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), loadFlags, nullptr, image);
+                    };
                 }
 
                 if (!load)
@@ -2898,8 +2909,7 @@ namespace Gek
                     return nullptr;
                 }
 
-                static const std::vector<uint8_t> EmptyBuffer;
-                std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
+                std::vector<uint8_t> buffer(FileSystem::Load(filePath));
                 if (buffer.empty())
                 {
                     std::cerr << "Unable to load data from texture file";
@@ -3008,8 +3018,7 @@ namespace Gek
                     return EmptyDescription;
                 }
 
-                static const std::vector<uint8_t> EmptyBuffer;
-                std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer, 1024 * 4));
+                std::vector<uint8_t> buffer(FileSystem::Load(filePath, 1024 * 4));
                 if (buffer.empty())
                 {
                     std::cerr << "Unable to load data from texture file";

@@ -40,12 +40,10 @@ namespace Gek
         uint32_t Value(const Object& object, std::string_view key, uint32_t defaultValue);
         std::string Value(const Object& object, std::string_view key, std::string_view defaultValue);
 
-        template <typename TYPE>
-        TYPE Evaluate(const Object& object, ShuntingYard& shuntingYard, TYPE defaultValue)
-        {
-            return shuntingYard.evaluate(Value(object, String::Empty)).value_or(defaultValue);
-        }
-
+        bool Evaluate(const Object& object, ShuntingYard& shuntingYard, bool defaultValue);
+        float Evaluate(const Object& object, ShuntingYard& shuntingYard, float defaultValue);
+        int32_t Evaluate(const Object& object, ShuntingYard& shuntingYard, int32_t defaultValue);
+        uint32_t Evaluate(const Object& object, ShuntingYard& shuntingYard, uint32_t defaultValue);
         Math::Float2 Evaluate(const Object& object, ShuntingYard& shuntingYard, Math::Float2 const& defaultValue);
         Math::Float3 Evaluate(const Object& object, ShuntingYard& shuntingYard, Math::Float3 const& defaultValue);
         Math::Float4 Evaluate(const Object& object, ShuntingYard& shuntingYard, Math::Float4 const& defaultValue);

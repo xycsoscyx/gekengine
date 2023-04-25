@@ -19,24 +19,6 @@
 using namespace std::string_literals; // enables s-suffix for std::string literals  
 using namespace std::string_view_literals; // enables s-suffix for std::string literals  
 
-namespace std
-{
-    inline std::string to_string(std::string const &string)
-    {
-        return string;
-    }
-
-    inline std::string to_string(std::string_view string)
-    {
-        return std::string(string);
-    }
-
-    inline std::string to_string(void const *pointer)
-    {
-        return std::to_string(reinterpret_cast<size_t>(pointer));
-    }
-};
-
 namespace Gek
 {
     namespace String

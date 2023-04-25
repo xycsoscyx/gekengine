@@ -71,35 +71,8 @@ namespace Gek
 		Path GetModuleFilePath(void);
 		Path GetCanonicalPath(Path const& path);
 
-        template <typename CONTAINER>
-		CONTAINER Load(Path const &filePath, CONTAINER const &defaultValue = CONTAINER(), std::uintmax_t limitReadSize = 0)
-		{
-			if (filePath.isFile())
-			{
-				CONTAINER buffer;
-                std::uintmax_t fileSize = filePath.getFileSize();
-                auto size = (limitReadSize == 0 ? fileSize : std::min(fileSize, limitReadSize));
-				if (size > 0)
-				{
-                    std::ifstream file;
-                    file.open(filePath.getString().data(), std::ios::in);
-                    if (file.is_open())
-                    {
-						buffer.resize(size);
-						file.read(reinterpret_cast<char *>(buffer.data()), size);
-                        if ((limitReadSize == 0 && file.eof()) || file)
-                        {
-                            file.close();
-                            return buffer;
-                        }
-
-                        file.close();
-					}
-				}
-			}
-
-			return defaultValue;
-		}
+		std::string Read(Path const& filePath);
+		std::vector<uint8_t> Load(Path const& filePath, std::uintmax_t limitReadSize = 0);
 
 		template <typename DATA>
 		void Write(std::ofstream& file, DATA *data, uint32_t size)

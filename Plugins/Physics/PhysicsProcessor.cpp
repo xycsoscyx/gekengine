@@ -188,9 +188,8 @@ namespace Gek
                     }
                     else
                     {
-                        static const std::vector<uint8_t> EmptyBuffer;
                         auto filePath = getContext()->findDataPath(FileSystem::CreatePath("physics", modelComponent.name).withExtension(".gek"));
-                        std::vector<uint8_t> buffer(FileSystem::Load(filePath, EmptyBuffer));
+                        std::vector<uint8_t> buffer(FileSystem::Load(filePath));
                         if (buffer.size() < sizeof(Header))
                         {
                             std::cerr << "File too small to be physics model: " << modelComponent.name;

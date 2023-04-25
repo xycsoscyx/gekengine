@@ -216,6 +216,48 @@ namespace Gek
             return data.lexically_relative(root.data);
         }
 
+        std::string Read(Path const& filePath)
+        {
+            std::string buffer;
+            if (filePath.isFile())
+            {
+                std::ifstream file;
+                file.open(filePath.getString().data(), std::ios::in);
+                if (file.is_open())
+                {
+                    std::stringstream stream;
+                    stream << file.rdbuf();
+                    buffer = stream.str();
+                    file.close();
+                }
+            }
+
+            return buffer;
+        }
+
+        std::vector<uint8_t> Load(Path const& filePath, std::uintmax_t limitReadSize)
+        {
+            std::vector<uint8_t> buffer;
+            if (filePath.isFile())
+            {
+                std::uintmax_t fileSize = filePath.getFileSize();
+                auto size = (limitReadSize == 0 ? fileSize : std::min(fileSize, limitReadSize));
+                if (size > 0)
+                {
+                    std::ifstream file;
+                    file.open(filePath.getString().data(), std::ios::in | std::ios::binary);
+                    if (file.is_open())
+                    {
+                        buffer.resize(size);
+                        file.read(reinterpret_cast<char*>(buffer.data()), size);
+                        file.close();
+                    }
+                }
+            }
+
+            return buffer;
+        }
+
         Path GetCanonicalPath(Path const& path)
         {
             std::error_code errorCode;
@@ -227,7 +269,7 @@ namespace Gek
             std::string shortPath;
 #ifdef _WIN32
             std::wstring widePath(1025, L'\0');
-            GetModuleFileName(nullptr, &widePath.at(0), 1024);
+            GetModuleFileNameW(nullptr, &widePath.at(0), 1024);
             shortPath = String::Narrow(widePath);
 #else
             shortPath = "/proc/self/exe";
