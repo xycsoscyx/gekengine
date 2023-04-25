@@ -492,7 +492,7 @@ R"(namespace Lights
                                     {
                                         static constexpr std::string_view innerTemplate =
 R"(namespace {0} {{
-    {1}
+{1}
 }}; // namespace {0})";
 
                                         outerData.push_back(std::vformat(innerTemplate, std::make_format_args(optionName, innerString)));
@@ -553,7 +553,7 @@ R"(namespace {0} {{
                     {
                         static constexpr std::string_view optionsTemplate =
 R"(namespace Options {{
-    {}
+{}
 }}; // namespace Options)";
 
                         engineData.push_back(std::vformat(optionsTemplate, std::make_format_args(optionsString)));
@@ -640,7 +640,7 @@ R"(namespace Options {{
                             static constexpr std::string_view outputTemplate =
 R"(struct OutputPixel
 {{
-    {}
+{}
 }}; // struct OutputPixel)";
 
                             auto outputString = String::Join(outputData, "\r\n");
@@ -846,7 +846,7 @@ R"(struct OutputPixel
                         static constexpr std::string_view resourceTemplate =
 R"(namespace Resources
 {{
-    {}
+{}
 }}; // namespace Resources)";
 
                         auto resourceString = String::Join(resourceData, "\r\n");
@@ -882,7 +882,7 @@ R"(namespace Resources
                         static constexpr std::string_view unorderedAccessTemplate =
 R"(namespace UnorderedAccess
 {{
-    {}
+{}
 }}; // namespace UnorderedAccess)";
 
                         auto unorderedAccessString = String::Join(unorderedAccessData, "\r\n");

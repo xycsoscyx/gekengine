@@ -1127,9 +1127,9 @@ namespace Gek
                     data.push_back(quarters[3]);
                     description.format = Video::Format::R16G16_FLOAT;
                 }
-                else if (lowerPattern == "system")
+                else if (lowerPattern == "system" && parameters.is_string())
                 {
-                    parameterString = String::GetLower(parameters.dump());
+                    parameterString = String::GetLower(JSON::Value(parameters, "debug"s));
                     if (parameterString == "debug")
                     {
                         data.push_back(255);    data.push_back(0);      data.push_back(255);    data.push_back(255);
@@ -1541,7 +1541,7 @@ namespace Gek
 					information.compiledData = FileSystem::Load(compiledPath, EmptyBuffer);
 				}
                 
-                if (information.compiledData.empty())
+                //if (information.compiledData.empty())
                 {
 					std::map<std::string_view, std::string> includedMap;
 					auto onInclude = [programsPath, programDirectory, &includedMap, engineData](Video::IncludeType includeType, std::string_view fileName, void const **data, uint32_t *size) -> bool
@@ -1596,11 +1596,11 @@ namespace Gek
 					FileSystem::Save(uncompiledPath, information.uncompiledData);
 					FileSystem::Save(compiledPath, information.compiledData);
 				}
-				else
+				/*else
 				{
 					information.debugPath = uncompiledPath;
 					information.uncompiledData = std::move(uncompiledData);
-				}
+				}*/
 
                 return information;
             }

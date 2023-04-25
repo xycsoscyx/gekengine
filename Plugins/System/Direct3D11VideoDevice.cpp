@@ -2552,7 +2552,7 @@ namespace Gek
                 assert(d3dDevice);
 
                 Video::Program::Information information;
-                    if (name.empty() ||
+                if (name.empty() ||
                     uncompiledProgram.empty() ||
                     entryFunction.empty())
                 {
@@ -2586,11 +2586,6 @@ namespace Gek
                 auto typeSearch = D3DTypeMap.find(type);
                 if (typeSearch != std::end(D3DTypeMap))
                 {
-                    auto function = [](Video::IncludeType includeType, std::string_view fileName, void const **data, uint32_t *size) -> bool
-                    {
-                        return false;
-                    };
-
                     CComPtr<ID3DBlob> d3dShaderBlob;
                     CComPtr<ID3DBlob> d3dCompilerErrors;
                     Include includes(std::move(onInclude));

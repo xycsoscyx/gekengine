@@ -341,7 +341,7 @@ namespace Gek
                                     {
                                         static constexpr std::string_view optionTemplate =
 R"(namespace {0} {{
-    {1}
+{1}
 }}; // namespace {0})";
 
                                         optionsData.push_back(std::vformat(optionTemplate, std::make_format_args(optionName, optionsString)));
@@ -402,7 +402,7 @@ R"(namespace {0} {{
                     {
                         static constexpr std::string_view optionTemplate =
 R"(namespace Options {{
-    {}
+{}
 }}; // namespace Options)";
 
                         engineData = std::vformat(optionTemplate, std::make_format_args(optionsString));
@@ -489,7 +489,7 @@ R"(struct InputPixel
                             static constexpr std::string_view outputTemplate =
 R"(struct OutputPixel
 {{
-    {}
+{}
 }};)";
 
                             auto outputString = String::Join(outputData, "\r\n");
@@ -605,7 +605,7 @@ R"(struct OutputPixel
                     {
                         static constexpr std::string_view resourceTemplate =
 R"(namespace Resources {{
-    {}
+{}
 }}; // namespace Resources)";
 
                         auto resourceString = String::Join(resourceData, "\r\n");
@@ -640,7 +640,7 @@ R"(namespace Resources {{
                     {
                         static constexpr std::string_view unorderedAccessTemplate =
 R"(namespace UnorderedAccess {{
-    {}
+{}
 }}; // namespace UnorderedAccess)";
 
                         auto unorderedAccessString = String::Join(unorderedAccessData, "\r\n");

@@ -126,12 +126,12 @@ namespace Gek
                 switch (object.size())
                 {
                 case 1:
-                    return Math::Float2(shuntingYard.evaluate(object[0].dump()).value_or(0.0f));
+                    return Math::Float2(Evaluate(object[0], shuntingYard, 0.0f));
 
                 case 2:
                     return Math::Float2(
-                        shuntingYard.evaluate(object[0].dump()).value_or(defaultValue.x),
-                        shuntingYard.evaluate(object[1].dump()).value_or(defaultValue.y));
+                        Evaluate(object[0], shuntingYard, defaultValue.x),
+                        Evaluate(object[1], shuntingYard, defaultValue.y));
                 };
             }
 
@@ -145,13 +145,13 @@ namespace Gek
                 switch (object.size())
                 {
                 case 1:
-                    return Math::Float3(shuntingYard.evaluate(object[0].dump()).value_or(0.0f));
+                    return Math::Float3(Evaluate(object[0], shuntingYard, 0.0f));
 
                 case 3:
                     return Math::Float3(
-                        shuntingYard.evaluate(object[0].dump()).value_or(defaultValue.x),
-                        shuntingYard.evaluate(object[1].dump()).value_or(defaultValue.y),
-                        shuntingYard.evaluate(object[2].dump()).value_or(defaultValue.z));
+                        Evaluate(object[0], shuntingYard, defaultValue.x),
+                        Evaluate(object[1], shuntingYard, defaultValue.y),
+                        Evaluate(object[2], shuntingYard, defaultValue.z));
                 };
             }
 
@@ -165,21 +165,21 @@ namespace Gek
                 switch (object.size())
                 {
                 case 1:
-                    return Math::Float4(shuntingYard.evaluate(object[0].dump()).value_or(0.0f));
+                    return Math::Float4(Evaluate(object[0], shuntingYard, 0.0f));
 
                 case 3:
                     return Math::Float4(
-                        shuntingYard.evaluate(object[0].dump()).value_or(defaultValue.x),
-                        shuntingYard.evaluate(object[1].dump()).value_or(defaultValue.y),
-                        shuntingYard.evaluate(object[2].dump()).value_or(defaultValue.z),
+                        Evaluate(object[0], shuntingYard, defaultValue.x),
+                        Evaluate(object[1], shuntingYard, defaultValue.y),
+                        Evaluate(object[2], shuntingYard, defaultValue.z),
                         defaultValue.w);
 
                 case 4:
                     return Math::Float4(
-                        shuntingYard.evaluate(object[0].dump()).value_or(defaultValue.x),
-                        shuntingYard.evaluate(object[1].dump()).value_or(defaultValue.y),
-                        shuntingYard.evaluate(object[2].dump()).value_or(defaultValue.z),
-                        shuntingYard.evaluate(object[3].dump()).value_or(defaultValue.w));
+                        Evaluate(object[0], shuntingYard, defaultValue.x),
+                        Evaluate(object[1], shuntingYard, defaultValue.y),
+                        Evaluate(object[2], shuntingYard, defaultValue.z),
+                        Evaluate(object[3], shuntingYard, defaultValue.w));
                 };
             }
 
@@ -194,16 +194,16 @@ namespace Gek
                 {
                 case 3:
                     return Math::Quaternion::MakeEulerRotation(
-                        shuntingYard.evaluate(object[0].dump()).value_or(defaultValue.x),
-                        shuntingYard.evaluate(object[1].dump()).value_or(defaultValue.y),
-                        shuntingYard.evaluate(object[2].dump()).value_or(defaultValue.z));
+                        Evaluate(object[0], shuntingYard, defaultValue.x),
+                        Evaluate(object[1], shuntingYard, defaultValue.y),
+                        Evaluate(object[2], shuntingYard, defaultValue.z));
 
                 case 4:
                     return Math::Quaternion(
-                        shuntingYard.evaluate(object[0].dump()).value_or(defaultValue.x),
-                        shuntingYard.evaluate(object[1].dump()).value_or(defaultValue.y),
-                        shuntingYard.evaluate(object[2].dump()).value_or(defaultValue.z),
-                        shuntingYard.evaluate(object[3].dump()).value_or(defaultValue.w));
+                        Evaluate(object[0], shuntingYard, defaultValue.x),
+                        Evaluate(object[1], shuntingYard, defaultValue.y),
+                        Evaluate(object[2], shuntingYard, defaultValue.z),
+                        Evaluate(object[3], shuntingYard, defaultValue.w));
                 };
             }
 

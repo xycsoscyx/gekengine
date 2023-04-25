@@ -43,7 +43,7 @@ namespace Gek
         template <typename TYPE>
         TYPE Evaluate(const Object& object, ShuntingYard& shuntingYard, TYPE defaultValue)
         {
-            return shuntingYard.evaluate(object.dump()).value_or(defaultValue);
+            return shuntingYard.evaluate(Value(object, String::Empty)).value_or(defaultValue);
         }
 
         Math::Float2 Evaluate(const Object& object, ShuntingYard& shuntingYard, Math::Float2 const& defaultValue);
@@ -55,7 +55,7 @@ namespace Gek
         template <typename TYPE>
         TYPE Evaluate(const Object& object, std::string_view key, ShuntingYard& shuntingYard, TYPE defaultValue)
         {
-            return shuntingYard.evaluate(Find(object, key)).value_or(defaultValue);
+            return Evaluate(Find(object, key), shuntingYard, defaultValue);
         }
     }; // namespace JSON
 }; // namespace Gek

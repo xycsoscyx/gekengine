@@ -86,8 +86,8 @@ namespace Gek
                     if (file.is_open())
                     {
 						buffer.resize(size);
-                        file.read(reinterpret_cast<char *>(buffer.data()), size);
-                        if (file)
+						file.read(reinterpret_cast<char *>(buffer.data()), size);
+                        if ((limitReadSize == 0 && file.eof()) || file)
                         {
                             file.close();
                             return buffer;

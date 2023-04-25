@@ -89,13 +89,13 @@ namespace Gek
                 static constexpr std::string_view engineDataTemplate =
 R"(struct InputVertex
 {{
-    {}
+{}
 }};
 
 struct OutputVertex
 {{
     float4 projected : SV_POSITION;
-    {}
+{}
 }};
 
 OutputVertex getProjection(OutputVertex outputVertex)
