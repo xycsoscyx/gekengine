@@ -1054,57 +1054,58 @@ namespace Gek
                 {
                     description.width = 1;
                     description.height = 1;
-                    switch (parameters.size())
+                    if (parameters.is_array())
                     {
-                    case 1:
-                        data.push_back(JSON::Evaluate(parameters[0], shuntingYard, 255));
-                        description.format = Video::Format::R8_UNORM;
-                        parameterString = fmt::format("color[{}]", data[0]);
-                        break;
-
-                    case 2:
-                        data.push_back(JSON::Evaluate(parameters[0], shuntingYard, 255));
-                        data.push_back(JSON::Evaluate(parameters[1], shuntingYard, 255));
-                        description.format = Video::Format::R8G8_UNORM;
-                        parameterString = fmt::format("color2[{}, {}]", data[0], data[1]);
-                        break;
-
-                    case 3:
-                        data.push_back(JSON::Evaluate(parameters[0], shuntingYard, 255));
-                        data.push_back(JSON::Evaluate(parameters[1], shuntingYard, 255));
-                        data.push_back(JSON::Evaluate(parameters[2], shuntingYard, 255));
-                        data.push_back(0);
-                        description.format = Video::Format::R8G8B8A8_UNORM;
-                        parameterString = fmt::format("color3[{}, {}, {}]", data[0], data[1], data[2]);
-                        break;
-
-                    case 4:
-                        data.push_back(JSON::Evaluate(parameters[0], shuntingYard, 255));
-                        data.push_back(JSON::Evaluate(parameters[1], shuntingYard, 255));
-                        data.push_back(JSON::Evaluate(parameters[2], shuntingYard, 255));
-                        data.push_back(JSON::Evaluate(parameters[3], shuntingYard, 255));
-                        description.format = Video::Format::R8G8B8A8_UNORM;
-                        parameterString = fmt::format("color4[{}, {}, {}, {}]", data[0], data[1], data[2], data[3]);
-                        break;
-
-                    default:
-                        if (true)
+                        switch (parameters.size())
                         {
-                            union
-                            {
-                                float value;
-                                uint8_t quarters[4];
-                            };
+                        case 1:
+                            data.push_back(JSON::Evaluate(parameters[0], shuntingYard, 255));
+                            description.format = Video::Format::R8_UNORM;
+                            parameterString = fmt::format("color[{}]", data[0]);
+                            break;
 
-                            value = JSON::Evaluate(parameters, shuntingYard, 1.0f);
-                            data.push_back(quarters[0]);
-                            data.push_back(quarters[1]);
-                            data.push_back(quarters[2]);
-                            data.push_back(quarters[3]);
-                            description.format = Video::Format::R32_FLOAT;
-                            parameterString = fmt::format("float[{}]", value);
-                        }
-                    };
+                        case 2:
+                            data.push_back(JSON::Evaluate(parameters[0], shuntingYard, 255));
+                            data.push_back(JSON::Evaluate(parameters[1], shuntingYard, 255));
+                            description.format = Video::Format::R8G8_UNORM;
+                            parameterString = fmt::format("color2[{}, {}]", data[0], data[1]);
+                            break;
+
+                        case 3:
+                            data.push_back(JSON::Evaluate(parameters[0], shuntingYard, 255));
+                            data.push_back(JSON::Evaluate(parameters[1], shuntingYard, 255));
+                            data.push_back(JSON::Evaluate(parameters[2], shuntingYard, 255));
+                            data.push_back(0);
+                            description.format = Video::Format::R8G8B8A8_UNORM;
+                            parameterString = fmt::format("color3[{}, {}, {}]", data[0], data[1], data[2]);
+                            break;
+
+                        case 4:
+                            data.push_back(JSON::Evaluate(parameters[0], shuntingYard, 255));
+                            data.push_back(JSON::Evaluate(parameters[1], shuntingYard, 255));
+                            data.push_back(JSON::Evaluate(parameters[2], shuntingYard, 255));
+                            data.push_back(JSON::Evaluate(parameters[3], shuntingYard, 255));
+                            description.format = Video::Format::R8G8B8A8_UNORM;
+                            parameterString = fmt::format("color4[{}, {}, {}, {}]", data[0], data[1], data[2], data[3]);
+                            break;
+                        };
+                    }
+                    else
+                    {
+                        union
+                        {
+                            float value;
+                            uint8_t quarters[4];
+                        };
+
+                        value = JSON::Evaluate(parameters, shuntingYard, 1.0f);
+                        data.push_back(quarters[0]);
+                        data.push_back(quarters[1]);
+                        data.push_back(quarters[2]);
+                        data.push_back(quarters[3]);
+                        description.format = Video::Format::R32_FLOAT;
+                        parameterString = fmt::format("float[{}]", value);
+                    }
                 }
                 else if (lowerPattern == "normal")
                 {
@@ -1128,7 +1129,7 @@ namespace Gek
                 }
                 else if (lowerPattern == "system")
                 {
-                    parameterString = String::GetLower(parameters.get<std::string>());
+                    parameterString = String::GetLower(parameters.dump());
                     if (parameterString == "debug")
                     {
                         data.push_back(255);    data.push_back(0);      data.push_back(255);    data.push_back(255);

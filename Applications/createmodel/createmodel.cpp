@@ -533,7 +533,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             auto& shaderNode = materialNode["shader"];
             auto& dataNode = shaderNode["data"];
             auto& albedoNode = dataNode["albedo"];
-            FileSystem::Path albedoPath = albedoNode.value("file", String::Empty);
+            FileSystem::Path albedoPath = JSON::Value(albedoNode, "file", String::Empty);
             auto albedoFile = albedoPath.withoutExtension().getString();
 
             std::cout << "Found material: " << filePath.getString() << ", with albedo: " << albedoFile;

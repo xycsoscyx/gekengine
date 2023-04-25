@@ -651,7 +651,7 @@ float4 main(PixelInput input) : SV_Target
 				gui.renderState = videoDevice->createRenderState(renderStateInformation);
 				gui.renderState->setName("core:renderState");
 
-				auto invertedDepthBuffer = core->getOption("render").value("invertedDepthBuffer", true);
+				auto invertedDepthBuffer = JSON::Value(core->getOption("render"), "invertedDepthBuffer", true);
 
 				Video::DepthState::Description depthStateInformation;
 				depthStateInformation.enable = false;
@@ -1115,7 +1115,7 @@ float4 main(PixelInput input) : SV_Target
 
 			void queueCamera(Math::Float4x4 const &viewMatrix, float fieldOfView, float aspectRatio, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget, std::string const &forceShader)
 			{
-				if (core->getOption("render").value("invertedDepthBuffer", true))
+				if (JSON::Value(core->getOption("render"), "invertedDepthBuffer", true))
 				{
 					queueCamera(viewMatrix, Math::Float4x4::MakePerspective(fieldOfView, aspectRatio, farClip, nearClip), nearClip, farClip, name, cameraTarget, forceShader);
 				}
@@ -1222,7 +1222,7 @@ float4 main(PixelInput input) : SV_Target
 				EngineConstantData engineConstantData;
 				engineConstantData.frameTime = frameTime;
 				engineConstantData.worldTime = 0.0f;
-				engineConstantData.invertedDepthBuffer = (core->getOption("render").value("invertedDepthBuffer", true) ? 1 : 0);
+				engineConstantData.invertedDepthBuffer = (JSON::Value(core->getOption("render"), "invertedDepthBuffer", true) ? 1 : 0);
 				videoDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
 				Video::Device::Context *videoContext = videoDevice->getDefaultContext();
 				while (cameraQueue.try_pop(currentCamera))

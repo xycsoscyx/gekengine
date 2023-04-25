@@ -27,9 +27,9 @@ namespace Gek
 
         void load(Components::Transform * const data, JSON::Object const &importData)
         {
-            data->position = evaluate(importData["position"], Math::Float3::Zero);
-            data->rotation = evaluate(importData["rotation"], Math::Quaternion::Identity);
-            data->scale = evaluate(importData["scale"], Math::Float3::One);
+            data->position = evaluate(importData, "position", Math::Float3::Zero);
+            data->rotation = evaluate(importData, "rotation", Math::Quaternion::Identity);
+            data->scale = evaluate(importData, "scale", Math::Float3::One);
         }
 
         // Edit::Component

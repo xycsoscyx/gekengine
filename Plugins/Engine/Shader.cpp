@@ -120,29 +120,34 @@ namespace Gek
 
                 ShuntingYard shuntingYard(population->getShuntingYard());
                 const auto &coreOptionsNode = core->getOption("shaders")[shaderName];
-                for (auto& [key, value] : coreOptionsNode.items())
+                if (coreOptionsNode.is_object())
                 {
-                    shuntingYard.setVariable(key, JSON::Evaluate(value, shuntingYard, 0.0f));
+                    for (auto& [key, value] : coreOptionsNode.items())
+                    {
+                        shuntingYard.setVariable(key, JSON::Evaluate(value, shuntingYard, 0.0f));
+                    }
                 }
 
                 auto rootOptionsNode = rootNode["options"];
-                auto rootOptionsObject = rootOptionsNode;
-                for (auto& [key, value] : coreOptionsNode.items())
+                if (coreOptionsNode.is_object())
                 {
-                    rootOptionsObject[key] = value;
+                    for (auto& [key, value] : coreOptionsNode.items())
+                    {
+                        rootOptionsNode[key] = value;
+                    }
                 }
 
-                auto importSearch = rootOptionsObject.find("#import");
-                if (importSearch != std::end(rootOptionsObject))
+                auto importSearch = rootOptionsNode.find("#import");
+                if (importSearch != std::end(rootOptionsNode))
                 {
                     auto importExternal = [&](std::string_view importName) -> void
                     {
                         JSON::Object importOptions = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("shaders", importName).withExtension(".json")));
                         for (auto& [key, value] : importOptions.items())
                         {
-                            if (rootOptionsObject.count(key) == 0)
+                            if (!rootOptionsNode.contains(key))
                             {
-                                rootOptionsObject[key] = value;
+                                rootOptionsNode[key] = value;
                             }
                         }
                     };
@@ -159,7 +164,7 @@ namespace Gek
                         }
                     }
 
-                    rootOptionsObject.erase(importSearch);
+                    rootOptionsNode.erase(importSearch);
                 }
 
                 core->setOption("shaders", shaderName, rootOptionsNode);
@@ -179,8 +184,8 @@ namespace Gek
                 uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
                 for (auto &elementNode : rootNode["input"])
                 {
-                    std::string name(elementNode.value("name", String::Empty));
-                    std::string system(String::GetLower(elementNode.value("system", String::Empty)));
+                    std::string name(JSON::Value(elementNode, "name", String::Empty));
+                    std::string system(String::GetLower(JSON::Value(elementNode, "system", String::Empty)));
                     if (system == "isfrontfacing")
                     {
                         inputData.push_back(fmt::format("    uint {} : SV_IsFrontFace;", name));
@@ -191,9 +196,9 @@ namespace Gek
                     }
                     else
                     {
-                        Video::Format format = Video::GetFormat(elementNode.value("format", String::Empty));
-                        uint32_t count = elementNode.value("count", 1);
-                        auto semantic = Video::InputElement::GetSemantic(elementNode.value("semantic", String::Empty));
+                        Video::Format format = Video::GetFormat(JSON::Value(elementNode, "format", String::Empty));
+                        uint32_t count = JSON::Value(elementNode, "count", 1);
+                        auto semantic = Video::InputElement::GetSemantic(JSON::Value(elementNode, "semantic", String::Empty));
                         auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)];
                         semanticIndexList[static_cast<uint8_t>(semantic)] += count;
 
@@ -267,14 +272,14 @@ R"(namespace Lights
                     auto &textureNode = value;
                     if (textureNode.contains("file"))
                     {
-                        std::string fileName(textureNode.value("file", String::Empty));
-                        uint32_t flags = getTextureLoadFlags(textureNode.value("flags", String::Empty));
+                        std::string fileName(JSON::Value(textureNode, "file", String::Empty));
+                        uint32_t flags = getTextureLoadFlags(JSON::Value(textureNode, "flags", String::Empty));
                         resource = resources->loadTexture(fileName, flags);
                     }
                     else
                     {
                         Video::Texture::Description description(backBufferDescription);
-                        description.format = Video::GetFormat(textureNode.value("format", String::Empty));
+                        description.format = Video::GetFormat(JSON::Value(textureNode, "format", String::Empty));
                         auto &sizeNode = textureNode["size"];
                         if (sizeNode.is_number())
                         {
@@ -296,8 +301,8 @@ R"(namespace Lights
                             };
                         }
 
-                        description.sampleCount = textureNode.value("sampleCount", 1);
-                        description.flags = getTextureFlags(textureNode.value("flags", String::Empty));
+                        description.sampleCount = JSON::Value(textureNode, "sampleCount", 1);
+                        description.flags = getTextureFlags(JSON::Value(textureNode, "flags", String::Empty));
                         description.mipMapCount = JSON::Evaluate(textureNode["mipmaps"], shuntingYard, 1);
                         resource = resources->createTexture(textureName, description, true);
                     }
@@ -331,24 +336,24 @@ R"(namespace Lights
                     }
 
                     Video::Buffer::Description description;
-                    description.count = bufferNode.value("count", 0);
-                    description.flags = getBufferFlags(bufferNode.value("flags", String::Empty));
+                    description.count = JSON::Value(bufferNode, "count", 0);
+                    description.flags = getBufferFlags(JSON::Value(bufferNode, "flags", String::Empty));
                     if (bufferNode.contains("format"))
                     {
                         description.type = Video::Buffer::Type::Raw;
-                        description.format = Video::GetFormat(bufferNode.value("format", String::Empty));
+                        description.format = Video::GetFormat(JSON::Value(bufferNode, "format", String::Empty));
                     }
                     else
                     {
                         description.type = Video::Buffer::Type::Structured;
-                        description.stride = bufferNode.value("stride", 0);
+                        description.stride = JSON::Value(bufferNode, "stride", 0);
                     }
 
                     auto resource = resources->createBuffer(bufferName, description, true);
                     if (resource)
                     {
                         resourceMap[bufferName] = resource;
-                        if (bufferNode.value("byteaddress", false))
+                        if (JSON::Value(bufferNode, "byteaddress", false))
                         {
                             resourceSemanticsMap[bufferName] = "ByteAddressBuffer";
                         }
@@ -357,7 +362,7 @@ R"(namespace Lights
                             auto description = resources->getBufferDescription(resource);
                             if (description != nullptr)
                             {
-                                auto structure = bufferNode.value("structure", String::Empty);
+                                auto structure = JSON::Value(bufferNode, "structure", String::Empty);
                                 resourceSemanticsMap[bufferName] += fmt::format("Buffer<{}>", structure.empty() ? getFormatSemantic(description->format) : structure);
                             }
                         }
@@ -371,8 +376,8 @@ R"(namespace Lights
                     for (auto data : materialNode["data"])
                     {
                         Material::Initializer initializer;
-                        initializer.name = data.value("name", String::Empty);
-                        initializer.fallback = resources->createPattern(data.value("pattern", String::Empty), data["parameters"]);
+                        initializer.name = JSON::Value(data, "name", String::Empty);
+                        initializer.fallback = resources->createPattern(JSON::Value(data, "pattern", String::Empty), data["parameters"]);
                         materialData.initializerList.push_back(initializer);
                     }
 
@@ -387,16 +392,16 @@ R"(namespace Lights
                 for (auto &passNode : passesNode)
                 {
                     PassData &pass = *passData++;
-                    std::string entryPoint(passNode.value("entry", String::Empty));
-                    auto programName = passNode.value("program", String::Empty);
+                    std::string entryPoint(JSON::Value(passNode, "entry", String::Empty));
+                    auto programName = JSON::Value(passNode, "program", String::Empty);
                     pass.name = programName;
 
-                    auto passMaterial = passNode.value("material", String::Empty);
-                    pass.lighting = passNode.value("lighting", false);
+                    auto passMaterial = JSON::Value(passNode, "material", String::Empty);
+                    pass.lighting = JSON::Value(passNode, "lighting", false);
                     pass.materialHash = GetHash(passMaterial);
                     lightingRequired |= pass.lighting;
 
-                    auto enableOption = passNode.value("enable", String::Empty);
+                    auto enableOption = JSON::Value(passNode, "enable", String::Empty);
                     if (!enableOption.empty())
                     {
                         String::Replace(enableOption, "::", "|");
@@ -554,7 +559,7 @@ R"(namespace Options {{
                         engineData.push_back(std::vformat(optionsTemplate, std::make_format_args(optionsString)));
                     }
 
-                    std::string mode(String::GetLower(passNode.value("mode", String::Empty)));
+                    std::string mode(String::GetLower(JSON::Value(passNode, "mode", String::Empty)));
                     if (mode == "forward")
                     {
                         pass.mode = Pass::Mode::Forward;
@@ -646,10 +651,10 @@ R"(struct OutputPixel
                         if (passNode.contains("depthStyle"))
                         {
                             auto &depthStyleNode = passNode["depthStyle"];
-                            auto camera = String::GetLower(depthStyleNode.value("camera", "perspective"));
+                            auto camera = String::GetLower(JSON::Value(depthStyleNode, "camera", "perspective"s));
                             if (camera == "perspective")
                             {
-                                auto invertedDepthBuffer = core->getOption("render").value("invertedDepthBuffer", true);
+                                auto invertedDepthBuffer = JSON::Value(core->getOption("render"), "invertedDepthBuffer", true);
 
                                 depthStateInformation.enable = true;
                                 depthStateInformation.writeMask = Video::DepthState::Write::All;
@@ -662,7 +667,7 @@ R"(struct OutputPixel
                                     depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
                                 }
 
-                                auto clear = depthStyleNode.value("clear", false);
+                                auto clear = JSON::Value(depthStyleNode, "clear", false);
                                 if (clear)
                                 {
                                     pass.clearDepthValue = (invertedDepthBuffer ? 0.0f : 1.0f);
@@ -674,7 +679,7 @@ R"(struct OutputPixel
                         {
                             auto &depthStateNode = passNode["depthState"];
                             depthStateInformation.load(depthStateNode, passOptions);
-                            pass.clearDepthValue = depthStateNode.value("clear", Math::Infinity);
+                            pass.clearDepthValue = JSON::Value(depthStateNode, "clear", Math::Infinity);
                             if (pass.clearDepthValue != Math::Infinity)
                             {
                                 pass.clearDepthFlags |= Video::ClearFlags::Depth;
@@ -683,7 +688,7 @@ R"(struct OutputPixel
 
 						if (depthStateInformation.enable)
 						{
-                            auto depthBuffer = passNode.value("depthBuffer", String::Empty);
+                            auto depthBuffer = JSON::Value(passNode, "depthBuffer", String::Empty);
 							auto depthBufferSearch = resourceMap.find(depthBuffer);
                             if (depthBufferSearch != std::end(resourceMap))
                             {
@@ -711,8 +716,8 @@ R"(struct OutputPixel
                         auto resourceSearch = resourceMap.find(resourceName);
                         if (resourceSearch != std::end(resourceMap))
                         {
-                            auto clearType = getClearType(clearTargetNode.value("type", String::Empty));
-                            auto clearValue = clearTargetNode.value("value", String::Empty);
+                            auto clearType = getClearType(JSON::Value(clearTargetNode, "type", String::Empty));
+                            auto clearValue = JSON::Value(clearTargetNode, "value", String::Empty);
                             pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(clearType, clearValue)));
                         }
                         else

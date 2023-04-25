@@ -35,10 +35,10 @@ namespace Gek
 
             void load(Components::Player * const data, JSON::Object const &importData)
             {
-                data->height = evaluate(importData["height"], 0.0f);
-                data->outerRadius = evaluate(importData["outerRadius"], 0.0f);
-                data->innerRadius = evaluate(importData["innerRadius"], 0.0f);
-                data->stairStep = evaluate(importData["stairStep"], 0.0f);
+                data->height = evaluate(importData, "height", 0.0f);
+                data->outerRadius = evaluate(importData, "outerRadius", 0.0f);
+                data->innerRadius = evaluate(importData, "innerRadius", 0.0f);
+                data->stairStep = evaluate(importData, "stairStep", 0.0f);
             }
 
             // Edit::Component

@@ -34,7 +34,7 @@ namespace Gek
 
                 JSON::Object materialNode = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("materials", materialName).withExtension(".json")));
                 auto &shaderNode = materialNode["shader"];
-                auto shaderName = shaderNode.value("default", String::Empty);
+                auto shaderName = JSON::Value(shaderNode, "default", String::Empty);
                 ShaderHandle shaderHandle = resources->getShader(shaderName, materialHandle);
                 Engine::Shader *shader = resources->getShader(shaderHandle);
                 if (shader)
@@ -54,13 +54,13 @@ namespace Gek
                             auto &resourceNode = dataNode[initializer.name];
                             if (resourceNode.contains("file"))
                             {
-                                auto fileName = resourceNode.value("file", String::Empty);
-                                uint32_t flags = getTextureLoadFlags(resourceNode.value("flags", String::Empty));
+                                auto fileName = JSON::Value(resourceNode, "file", String::Empty);
+                                uint32_t flags = getTextureLoadFlags(JSON::Value(resourceNode, "flags", String::Empty));
                                 resourceHandle = resources->loadTexture(fileName, flags, initializer.fallback);
                             }
                             else if (resourceNode.contains("source"))
                             {
-                                resourceHandle = resources->getResourceHandle(resourceNode.value("source", String::Empty));
+                                resourceHandle = resources->getResourceHandle(JSON::Value(resourceNode, "source", String::Empty));
                             }
 
                             if (!resourceHandle)

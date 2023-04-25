@@ -701,7 +701,7 @@ namespace Gek
                     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5.0f, 10.0f));
                     if (ImGui::BeginMenu("Edit"))
                     {
-                        bool editorEnabled = core->getOption("editor").value("active", false);
+                        bool editorEnabled = JSON::Value(core->getOption("editor"), "active", false);
                         if (ImGui::MenuItem("Show Editor", nullptr, &editorEnabled))
                         {
                             core->setOption("editor", "active", editorEnabled);
@@ -714,7 +714,7 @@ namespace Gek
                     ImGui::EndMainMenuBar();
                 }
 
-                bool editorActive = core->getOption("editor").value("active", false);
+                bool editorActive = JSON::Value(core->getOption("editor"), "active", false);
                 if (!editorActive)
                 {
                     return;
@@ -741,7 +741,7 @@ namespace Gek
 
             void onAction(Plugin::Population::Action const &action)
             {
-                bool editorActive = core->getOption("editor").value("active", false);
+                bool editorActive = JSON::Value(core->getOption("editor"), "active", false);
                 if (!editorActive)
                 {
                     return;
@@ -776,7 +776,7 @@ namespace Gek
 
             void onUpdate(float frameTime)
             {
-                bool editorActive = core->getOption("editor").value("active", false);
+                bool editorActive = JSON::Value(core->getOption("editor"), "active", false);
                 if (editorActive)
                 {
                     Math::Float4x4 viewMatrix(Math::Float4x4::MakePitchRotation(lookingAngle) * Math::Float4x4::MakeYawRotation(headingAngle));

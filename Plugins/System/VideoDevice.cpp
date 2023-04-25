@@ -474,16 +474,16 @@ namespace Gek
 				return (result == std::end(data) ? CullMode::Back : result->second);
 			};
 
-            fillMode = getFillMode(checkConfiguration(configs, object.value("fillMode", "olid")));
-			cullMode = getCullMode(checkConfiguration(configs, object.value("cullMode", "Back")));
-            frontCounterClockwise = object.value("frontCounterClockwise", false);
-            depthBias = object.value("depthBias", 0);
-            depthBiasClamp = object.value("depthBiasClamp", 0.0f);
-            slopeScaledDepthBias = object.value("lopeScaledDepthBias", 0.0f);
-            depthClipEnable = object.value("depthClipEnable", false);
-            scissorEnable = object.value("cissorEnable", false);
-            multisampleEnable = object.value("multisampleEnable", false);
-            antialiasedLineEnable = object.value("antialiasedLineEnable", false);
+            fillMode = getFillMode(checkConfiguration(configs, JSON::Value(object, "fillMode", "Solid"s)));
+			cullMode = getCullMode(checkConfiguration(configs, JSON::Value(object, "cullMode", "Back"s)));
+            frontCounterClockwise = JSON::Value(object, "frontCounterClockwise", false);
+            depthBias = JSON::Value(object, "depthBias", 0);
+            depthBiasClamp = JSON::Value(object, "depthBiasClamp", 0.0f);
+            slopeScaledDepthBias = JSON::Value(object, "lopeScaledDepthBias", 0.0f);
+            depthClipEnable = JSON::Value(object, "depthClipEnable", false);
+            scissorEnable = JSON::Value(object, "cissorEnable", false);
+            multisampleEnable = JSON::Value(object, "multisampleEnable", false);
+            antialiasedLineEnable = JSON::Value(object, "antialiasedLineEnable", false);
         }
 
         size_t RenderState::Description::getHash(void) const
@@ -509,10 +509,10 @@ namespace Gek
 				return (result == std::end(data) ? Operation::Zero : result->second);
             };
 
-            failOperation = getOperation(object.value("failOperation", "Keep"));
-            depthFailOperation = getOperation(object.value("depthFailOperation", "Keep"));
-            passOperation = getOperation(object.value("passOperation", "Keep"));
-            comparisonFunction = getComparisonFunction(object.value("comparisonFunction", "Always"));
+            failOperation = getOperation(JSON::Value(object, "failOperation", "Keep"s));
+            depthFailOperation = getOperation(JSON::Value(object, "depthFailOperation", "Keep"s));
+            passOperation = getOperation(JSON::Value(object, "passOperation", "Keep"s));
+            comparisonFunction = getComparisonFunction(JSON::Value(object, "comparisonFunction", "Always"s));
         }
 
         size_t DepthState::Description::StencilState::getHash(void) const
@@ -534,11 +534,11 @@ namespace Gek
 			};
 
             enable = object.value("enable", false);
-            writeMask = getWriteMask(object.value("writeMask", "All"));
-            comparisonFunction = getComparisonFunction(object.value("comparisonFunction", "Always"));
-            stencilEnable = object.value("stencilEnable", false);
-            stencilReadMask = object.value("stencilReadMask", 0);
-            stencilWriteMask = object.value("stencilWriteMask", 0);
+            writeMask = getWriteMask(JSON::Value(object, "writeMask", "All"s));
+            comparisonFunction = getComparisonFunction(JSON::Value(object, "comparisonFunction", "Always"s));
+            stencilEnable = JSON::Value(object, "stencilEnable", false);
+            stencilReadMask = JSON::Value(object, "stencilReadMask", 0);
+            stencilWriteMask = JSON::Value(object, "stencilWriteMask", 0);
             stencilFrontState.load(object["stencilFrontState"], configs);
             stencilBackState.load(object["stencilBackState"], configs);
         }
@@ -593,13 +593,13 @@ namespace Gek
             };
 
             enable = object.value("enable", false);
-            colorSource = GetSource(object.value("colorSource", "One"));
-            colorDestination = GetSource(object.value("colorDestination", "One"));
-            colorOperation = getOperation(object.value("colorOperation", "Add"));
-            alphaSource = GetSource(object.value("alphaSource", "One"));
-            alphaDestination = GetSource(object.value("alphaDestination", "One"));
-            alphaOperation = getOperation(object.value("alphaOperation", "Add"));
-            std::string writeMask(String::GetLower(object.value("writeMask", "RGBA")));
+            colorSource = GetSource(JSON::Value(object, "colorSource", "One"s));
+            colorDestination = GetSource(JSON::Value(object, "colorDestination", "One"s));
+            colorOperation = getOperation(JSON::Value(object, "colorOperation", "Add"s));
+            alphaSource = GetSource(JSON::Value(object, "alphaSource", "One"s));
+            alphaDestination = GetSource(JSON::Value(object, "alphaDestination", "One"s));
+            alphaOperation = getOperation(JSON::Value(object, "alphaOperation", "Add"s));
+            std::string writeMask(String::GetLower(JSON::Value(object, "writeMask", "RGBA"s)));
             if (writeMask.empty())
             {
                 this->writeMask = Mask::RGBA;
@@ -636,9 +636,9 @@ namespace Gek
 
         void BlendState::Description::load(JSON::Object const &object, JSON::Object const &configs)
         {
-            alphaToCoverage = object.value("alphaToCoverage", false);
-            independentBlendStates = object.value("independentBlendStates", false);
-            auto targetStatesGroup = object.value("targetStates", JSON::Object::array());
+            alphaToCoverage = JSON::Value(object, "alphaToCoverage", false);
+            independentBlendStates = JSON::Value(object, "independentBlendStates", false);
+            auto targetStatesGroup = JSON::Find(object, "targetStates");
             size_t targetCount = std::min(targetStatesGroup.size(), targetStates.size());
             for (size_t target = 0; target < targetCount; ++target)
             {
@@ -718,15 +718,15 @@ namespace Gek
 				return (result == std::end(data) ? AddressMode::Clamp : result->second);
             };
 
-            filterMode = getFilterMode(object.value("filterMode", "AllPoint"));
-            addressModeU = getAddressMode(object.value("addressModeU", "Clamp"));
-            addressModeV = getAddressMode(object.value("addressModeV", "Clamp"));
-            addressModeW = getAddressMode(object.value("addressModeW", "Clamp"));
-            mipLevelBias = object.value("mipLevelBias", 0.0f);
-            maximumAnisotropy = object.value("maximumAnisotropy", 1);
-            comparisonFunction = getComparisonFunction(object.value("comparisonFunction", "Never"));
-            minimumMipLevel = object.value("minimumMipLevel", 0.0f);
-            maximumMipLevel = object.value("maximumMipLevel", Math::Infinity);
+            filterMode = getFilterMode(JSON::Value(object, "filterMode", "AllPoint"s));
+            addressModeU = getAddressMode(JSON::Value(object, "addressModeU", "Clamp"s));
+            addressModeV = getAddressMode(JSON::Value(object, "addressModeV", "Clamp"s));
+            addressModeW = getAddressMode(JSON::Value(object, "addressModeW", "Clamp"s));
+            mipLevelBias = JSON::Value(object, "mipLevelBias", 0.0f);
+            maximumAnisotropy = JSON::Value(object, "maximumAnisotropy", 1);
+            comparisonFunction = getComparisonFunction(JSON::Value(object, "comparisonFunction", "Never"s));
+            minimumMipLevel = JSON::Value(object, "minimumMipLevel", 0.0f);
+            maximumMipLevel = JSON::Value(object, "maximumMipLevel", Math::Infinity);
 
             static ShuntingYard EmptyYard;
             borderColor = JSON::Evaluate(object["borderColor"], EmptyYard, Math::Float4::White);

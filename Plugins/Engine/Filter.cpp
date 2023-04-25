@@ -151,14 +151,14 @@ namespace Gek
                     ResourceHandle resource;
                     if (textureNode.contains("file"))
                     {
-                        std::string fileName(textureNode.value("file", String::Empty));
-                        uint32_t flags = getTextureLoadFlags(textureNode.value("flags", String::Empty));
+                        std::string fileName(JSON::Value(textureNode, "file", String::Empty));
+                        uint32_t flags = getTextureLoadFlags(JSON::Value(textureNode, "flags", String::Empty));
                         resource = resources->loadTexture(fileName, flags);
                     }
                     else if (textureNode.contains("format"))
                     {
                         Video::Texture::Description description(backBufferDescription);
-                        description.format = Video::GetFormat(textureNode.value("format", String::Empty));
+                        description.format = Video::GetFormat(JSON::Value(textureNode, "format", String::Empty));
                         auto &sizeNode = textureNode["size"];
                         if (sizeNode.is_array())
                         {
@@ -174,8 +174,8 @@ namespace Gek
                             description.width = description.height = JSON::Evaluate(sizeNode, shuntingYard, 1);
                         };
 
-                        description.sampleCount = textureNode.value("sampleCount", 1);
-                        description.flags = getTextureFlags(textureNode.value("flags", String::Empty));
+                        description.sampleCount = JSON::Value(textureNode, "sampleCount", 1);
+                        description.flags = getTextureFlags(JSON::Value(textureNode, "flags", String::Empty));
                         description.mipMapCount = JSON::Evaluate(textureNode["mipmaps"], shuntingYard, 1);
                         resource = resources->createTexture(textureName, description, true);
                     }
@@ -209,11 +209,11 @@ namespace Gek
 
                     Video::Buffer::Description description;
                     description.count = JSON::Evaluate(bufferNode["count"], shuntingYard, 0);
-                    description.flags = getBufferFlags(bufferNode.value("flags", String::Empty));
+                    description.flags = getBufferFlags(JSON::Value(bufferNode, "flags", String::Empty));
                     if (bufferNode.count("format"))
                     {
                         description.type = Video::Buffer::Type::Raw;
-                        description.format = Video::GetFormat(bufferNode.value("format", String::Empty));
+                        description.format = Video::GetFormat(JSON::Value(bufferNode, "format", String::Empty));
                     }
                     else
                     {
@@ -225,7 +225,7 @@ namespace Gek
                     if (resource)
                     {
                         resourceMap[bufferName] = resource;
-                        if (bufferNode.value("byteaddress", false))
+                        if (JSON::Value(bufferNode, "byteaddress", false))
                         {
                             resourceSemanticsMap[bufferName] = "ByteAddressBuffer";
                         }
@@ -234,7 +234,7 @@ namespace Gek
                             auto description = resources->getBufferDescription(resource);
                             if (description != nullptr)
                             {
-                                auto structure = bufferNode.value("structure", String::Empty);
+                                auto structure = JSON::Value(bufferNode, "structure", String::Empty);
                                 resourceSemanticsMap[bufferName] += fmt::format("Buffer<{}>", structure.empty() ? getFormatSemantic(description->format) : structure);
                             }
                         }
@@ -247,11 +247,11 @@ namespace Gek
                 for (auto &passNode : passesNode)
                 {
                     PassData &pass = *passData++;
-                    std::string entryPoint(passNode.value("entry", String::Empty));
-                    auto programName = passNode.value("program", String::Empty);
+                    std::string entryPoint(JSON::Value(passNode, "entry", String::Empty));
+                    auto programName = JSON::Value(passNode, "program", String::Empty);
                     pass.name = programName;
 
-                    auto enableOption = passNode.value("enable", String::Empty);
+                    auto enableOption = JSON::Value(passNode, "enable", String::Empty);
                     if (!enableOption.empty())
                     {
                         String::Replace(enableOption, "::", "|");
@@ -408,7 +408,7 @@ R"(namespace Options {{
                         engineData = std::vformat(optionTemplate, std::make_format_args(optionsString));
                     }
 
-                    std::string mode(String::GetLower(passNode.value("mode", String::Empty)));
+                    std::string mode(String::GetLower(JSON::Value(passNode, "mode", String::Empty)));
                     if (mode == "compute")
                     {
                         pass.mode = Pass::Mode::Compute;
@@ -506,8 +506,8 @@ R"(struct OutputPixel
                         auto resourceSearch = resourceMap.find(resourceName);
                         if (resourceSearch != std::end(resourceMap))
                         {
-                            auto clearType = getClearType(clearTargetNode.value("type", String::Empty));
-                            auto clearValue = clearTargetNode.value("value", String::Empty);
+                            auto clearType = getClearType(JSON::Value(clearTargetNode, "type", String::Empty));
+                            auto clearValue = JSON::Value(clearTargetNode, "value", String::Empty);
                             pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(clearType, clearValue)));
                         }
                         else

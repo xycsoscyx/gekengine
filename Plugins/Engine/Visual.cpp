@@ -39,8 +39,8 @@ namespace Gek
                 uint32_t inputIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
                 for (auto &elementNode : visualNode["input"])
                 {
-                    std::string elementName(elementNode.value("name", String::Empty));
-                    std::string systemType(String::GetLower(elementNode.value("system", String::Empty)));
+                    std::string elementName(JSON::Value(elementNode, "name", String::Empty));
+                    std::string systemType(String::GetLower(JSON::Value(elementNode, "system", String::Empty)));
                     if (systemType == "instanceindex")
                     {
                         inputVertexData.push_back(fmt::format("    uint {} : SV_InstanceId;", elementName));
@@ -56,12 +56,12 @@ namespace Gek
                     else
                     {
                         Video::InputElement element;
-                        element.format = Video::GetFormat(elementNode.value("format", String::Empty));
-                        element.semantic = Video::InputElement::GetSemantic(elementNode.value("semantic", String::Empty));
-                        element.source = Video::InputElement::GetSource(elementNode.value("source", String::Empty));
-                        element.sourceIndex = elementNode.value("sourceIndex", 0U);
+                        element.format = Video::GetFormat(JSON::Value(elementNode, "format", String::Empty));
+                        element.semantic = Video::InputElement::GetSemantic(JSON::Value(elementNode, "semantic", String::Empty));
+                        element.source = Video::InputElement::GetSource(JSON::Value(elementNode, "source", String::Empty));
+                        element.sourceIndex = JSON::Value(elementNode, "sourceIndex", 0U);
 
-                        uint32_t count = elementNode.value("count", 1U);
+                        uint32_t count = JSON::Value(elementNode, "count", 1U);
                         auto semanticIndex = inputIndexList[static_cast<uint8_t>(element.semantic)];
                         inputIndexList[static_cast<uint8_t>(element.semantic)] += count;
 
@@ -77,9 +77,9 @@ namespace Gek
 				uint32_t outputIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
 				for (auto &elementNode : visualNode["output"])
 				{
-                    std::string elementName(elementNode.value("name", String::Empty));
-                    Video::Format format = Video::GetFormat(elementNode.value("format", String::Empty));
-					auto semantic = Video::InputElement::GetSemantic(elementNode.value("semantic", String::Empty));
+                    std::string elementName(JSON::Value(elementNode, "name", String::Empty));
+                    Video::Format format = Video::GetFormat(JSON::Value(elementNode, "format", String::Empty));
+					auto semantic = Video::InputElement::GetSemantic(JSON::Value(elementNode, "semantic", String::Empty));
                     uint32_t count = elementNode.value("count", 1U);
                     auto semanticIndex = outputIndexList[static_cast<uint8_t>(semantic)];
                     outputIndexList[static_cast<uint8_t>(semantic)] += count;
@@ -109,22 +109,28 @@ OutputVertex getProjection(OutputVertex outputVertex)
                 auto engineData = std::vformat(engineDataTemplate, std::make_format_args(inputVertexString, outputVertexString));
 
                 auto vertexNode = visualNode["vertex"];
-                std::string vertexEntry(vertexNode.value("entry", String::Empty));
-                std::string vertexProgram(vertexNode.value("program", String::Empty));
-                std::string vertexFileName(FileSystem::CreatePath(visualName, vertexProgram).withExtension(".hlsl").getString());
-				this->vertexProgram = resources->getProgram(Video::Program::Type::Vertex, vertexFileName, vertexEntry, engineData);
-                if (!elementList.empty() && this->vertexProgram)
-				{
-					inputLayout = videoDevice->createInputLayout(elementList, this->vertexProgram->getInformation());
-				}
+                if (vertexNode.contains("entry") && vertexNode.contains("program"))
+                {
+                    std::string vertexEntry(JSON::Value(vertexNode, "entry", String::Empty));
+                    std::string vertexProgram(JSON::Value(vertexNode, "program", String::Empty));
+                    std::string vertexFileName(FileSystem::CreatePath(visualName, vertexProgram).withExtension(".hlsl").getString());
+                    this->vertexProgram = resources->getProgram(Video::Program::Type::Vertex, vertexFileName, vertexEntry, engineData);
+                    if (!elementList.empty() && this->vertexProgram)
+                    {
+                        inputLayout = videoDevice->createInputLayout(elementList, this->vertexProgram->getInformation());
+                    }
+                }
 
                 auto geometryNode = visualNode["geometry"];
-                std::string geometryEntry(geometryNode.value("entry", String::Empty));
-                std::string geometryProgram(geometryNode.value("program", String::Empty));
-                if (!geometryEntry.empty() && !geometryProgram.empty())
+                if (geometryNode.contains("entry") && geometryNode.contains("program"))
                 {
-                    std::string geometryFileName(FileSystem::CreatePath(visualName, geometryProgram).withExtension(".hlsl").getString());
-					this->geometryProgram = resources->getProgram(Video::Program::Type::Geometry, geometryFileName, geometryEntry);
+                    std::string geometryEntry(JSON::Value(geometryNode, "entry", String::Empty));
+                    std::string geometryProgram(JSON::Value(geometryNode, "program", String::Empty));
+                    if (!geometryEntry.empty() && !geometryProgram.empty())
+                    {
+                        std::string geometryFileName(FileSystem::CreatePath(visualName, geometryProgram).withExtension(".hlsl").getString());
+                        this->geometryProgram = resources->getProgram(Video::Program::Type::Geometry, geometryFileName, geometryEntry);
+                    }
                 }
 			}
 

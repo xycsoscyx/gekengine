@@ -26,9 +26,9 @@ namespace Gek
 
         void load(Components::PointLight * const data, JSON::Object const &importData)
         {
-            data->range = evaluate(importData["range"], 0.0f);
-            data->radius = evaluate(importData["radius"], 0.0f);
-            data->intensity = evaluate(importData["intensity"], 0.0f);
+            data->range = evaluate(importData, "range", 0.0f);
+            data->radius = evaluate(importData, "radius", 0.0f);
+            data->intensity = evaluate(importData, "intensity", 0.0f);
             std::cout << "Range: " << data->range << ", Radius: " << data->radius << ", Intensity: " << data->intensity;
         }
 
@@ -83,12 +83,12 @@ namespace Gek
 
         void load(Components::SpotLight * const data, JSON::Object const &importData)
         {
-            data->range = evaluate(importData["range"], 0.0f);
-            data->radius = evaluate(importData["radius"], 0.0f);
-            data->intensity = evaluate(importData["intensity"], 0.0f);
-            data->innerAngle = std::cos(Math::DegreesToRadians(evaluate(importData["innerAngle"], 0.0f)));
-            data->outerAngle = std::cos(Math::DegreesToRadians(evaluate(importData["outerAngle"], 0.0f)));
-            data->coneFalloff = evaluate(importData["coneFalloff"], 0.0f);
+            data->range = evaluate(importData, "range", 0.0f);
+            data->radius = evaluate(importData, "radius", 0.0f);
+            data->intensity = evaluate(importData, "intensity", 0.0f);
+            data->innerAngle = std::cos(Math::DegreesToRadians(evaluate(importData, "innerAngle", 0.0f)));
+            data->outerAngle = std::cos(Math::DegreesToRadians(evaluate(importData, "outerAngle", 0.0f)));
+            data->coneFalloff = evaluate(importData, "coneFalloff", 0.0f);
         }
 
         // Edit::Component
@@ -152,7 +152,7 @@ namespace Gek
 
         void load(Components::DirectionalLight * const data, JSON::Object const &importData)
         {
-            data->intensity = evaluate(importData["intensity"], 0.0f);
+            data->intensity = evaluate(importData, "intensity", 0.0f);
         }
 
         // Edit::Component

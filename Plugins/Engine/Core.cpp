@@ -139,7 +139,7 @@ namespace Gek
                     displayModeStringList.push_back(displayModeString);
                 }
 
-				setDisplayMode(getOption("display").value("mode", preferredDisplayMode));
+				setDisplayMode(JSON::Value(getOption("display"), "mode", preferredDisplayMode));
 
                 population = getContext()->createClass<Engine::Population>("Engine::Population", (Engine::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Engine::Core *)this);
@@ -190,7 +190,7 @@ namespace Gek
                 engineRunning = true;
 
                 window->setVisibility(true);
-                setFullScreen(getOption("display").value("fullScreen", false));
+                setFullScreen(JSON::Value(getOption("display"), "fullScreen", false));
                 std::cout << "Starting engine";
                 window->readEvents();
             }
@@ -717,7 +717,7 @@ namespace Gek
                         }
                     };
 
-                    auto invertedDepthBuffer = getOption("render").value("invertedDepthBuffer", true);
+                    auto invertedDepthBuffer = JSON::Value(getOption("render"), "invertedDepthBuffer", true);
                     if (ImGui::Checkbox("Inverted Depth Buffer", &invertedDepthBuffer))
                     {
                         setOption("render"s, "invertedDepthBuffer"s, invertedDepthBuffer);
@@ -1015,7 +1015,12 @@ namespace Gek
 
             JSON::Object getOption(std::string_view system) const
             {
-                return configuration[system];
+                if (configuration.contains(system))
+                {
+                    return configuration[system];
+                }
+
+                return JSON::Object::object();
             }
 
             void setOption(std::string_view system, std::string_view name, JSON::Object const &value)

@@ -54,9 +54,15 @@ namespace Gek
             }
 
             template <typename TYPE>
-            TYPE evaluate(JSON::Object const &object, TYPE defaultValue)
+            TYPE evaluate(JSON::Object const& object, TYPE defaultValue)
             {
                 return JSON::Evaluate(object, population->getShuntingYard(), defaultValue);
+            }
+
+            template <typename TYPE>
+            TYPE evaluate(JSON::Object const& object, std::string_view key, TYPE defaultValue)
+            {
+                return JSON::Evaluate(object, key, population->getShuntingYard(), defaultValue);
             }
 
             virtual void save(COMPONENT const * const component, JSON::Object&exportData) const { };

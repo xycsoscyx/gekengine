@@ -246,7 +246,7 @@ namespace Gek
                 std::cout << "Loading population: " << populationName;
 
                 JSON::Object worldNode = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("scenes", populationName).withExtension(".json")));
-                shuntingYard.setRandomSeed(worldNode.value("Seed", uint32_t(std::time(nullptr) & 0xFFFFFFFF)));
+                shuntingYard.setRandomSeed(JSON::Value(worldNode, "Seed", uint32_t(std::time(nullptr) & 0xFFFFFFFF)));
 
                 auto templatesNode = worldNode["Templates"];
                 auto populationNode = worldNode["Population"];
@@ -268,12 +268,12 @@ namespace Gek
                         {
                             if (entityTemplateNode.contains("Base"))
                             {
-                                templateName = entityTemplateNode.value("Base", String::Empty);
+                                templateName = JSON::Value(entityTemplateNode, "Base", String::Empty);
                             }
 
                             if (entityTemplateNode.contains("Count"))
                             {
-                                count = entityTemplateNode.value("Count", 0);
+                                count = JSON::Value(entityTemplateNode, "Count", 0);
                             }
                         }
 
