@@ -92,11 +92,11 @@ struct Parameters
     bool saveAsCode;
 };
 
-bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode const *inputNode, aiMatrix4x4 const &accumulatedTransform, ModelList &modelList, std::function<std::string(const std::string &, const std::string &)> findMaterialForMesh)
+bool GetModels(Context *context, Parameters const &parameters, aiScene const *inputScene, aiNode const *inputNode, aiMatrix4x4 const &accumulatedTransform, ModelList &modelList, std::function<std::string(const std::string &, const std::string &)> findMaterialForMesh)
 {
     if (inputNode == nullptr)
     {
-        std::cerr << "Invalid scene node";
+        context->log(Context::Error, "Invalid scene node");
         return false;
     }
 
@@ -105,7 +105,7 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
     {
         if (inputNode->mMeshes == nullptr)
         {
-            std::cerr << "Invalid mesh list";
+            context->log(Context::Error, "Invalid mesh list");
             return false;
         }
 
@@ -119,13 +119,13 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
 			model.name = fmt::format("model_{}", modelList.size());
 		}
 
-		std::cout << "Found Assimp Model: " << model.name;
+		context->log(Context::Info, "Found Assimp Model: {}", model.name);
         for (uint32_t meshIndex = 0; meshIndex < inputNode->mNumMeshes; ++meshIndex)
         {
             uint32_t nodeMeshIndex = inputNode->mMeshes[meshIndex];
             if (nodeMeshIndex >= inputScene->mNumMeshes)
             {
-                std::cerr << "Invalid mesh index";
+                context->log(Context::Error, "Invalid mesh index");
                 continue;
             }
 
@@ -134,25 +134,25 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
             {
                 if (inputMesh->mFaces == nullptr)
                 {
-                    std::cerr << "Invalid inputMesh face list";
+                    context->log(Context::Error, "Invalid inputMesh face list");
                     continue;
                 }
 
                 if (inputMesh->mVertices == nullptr)
                 {
-                    std::cerr << "Invalid inputMesh vertex list";
+                    context->log(Context::Error, "Invalid inputMesh vertex list");
                     continue;
                 }
 
                 if (inputMesh->mTextureCoords[0] == nullptr)
                 {
-                    std::cerr << "Invalid inputMesh texture coordinate list";
+                    context->log(Context::Error, "Invalid inputMesh texture coordinate list");
                     continue;
                 }
 
                 if (inputMesh->mNormals == nullptr)
                 {
-                    std::cerr << "Invalid inputMesh normal list";
+                    context->log(Context::Error, "Invalid inputMesh normal list");
                     continue;
                 }
 
@@ -163,13 +163,13 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
                 auto material = findMaterialForMesh(parameters.sourceName, diffuseName);
                 if (material.empty())
                 {
-                    std::cerr << "Unable to find material for mesh " << inputMesh->mName.C_Str();
+                    context->log(Context::Error, "Unable to find material for mesh {}", inputMesh->mName.C_Str());
                     continue;
                 }
 
-                std::cout << " -> Material: " << material;
-                std::cout << " -> Num. Faces: " << inputMesh->mNumFaces;
-                std::cout << " -> Num. Vertex: " << inputMesh->mNumVertices;
+                context->log(Context::Info, "- Material: {}", material);
+                context->log(Context::Info, "- Num. Faces: {}", inputMesh->mNumFaces);
+                context->log(Context::Info, "- Num. Vertex: {}", inputMesh->mNumVertices);
 
                 IndexedMesh indexedMesh;
                 indexedMesh.material = material;
@@ -179,7 +179,7 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
                     const aiFace& face = inputMesh->mFaces[faceIndex];
                     if (face.mNumIndices != 3)
                     {
-                        std::cerr << "Skipping non-triangular face, face: " << faceIndex << ": " << face.mNumIndices << " indices";
+                        context->log(Context::Error, "Skipping non-triangular face, face: {}, {} indices", faceIndex, face.mNumIndices);
                         continue;
                     }
 
@@ -225,7 +225,7 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
                     const aiFace& face = inputMesh->mFaces[faceIndex];
                     if (face.mNumIndices != 3)
                     {
-                        std::cout << "Skipping non-triangular face, face: " << faceIndex << ": " << face.mNumIndices << " indices";
+                        context->log(Context::Error, "Skipping non-triangular face, face: {}, {} indices", faceIndex, face.mNumIndices);
                         continue;
                     }
 
@@ -314,13 +314,13 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
     {
         if (inputNode->mChildren == nullptr)
         {
-            std::cerr << "Invalid child list";
+            context->log(Context::Error, "Invalid child list");
             return false;
         }
 
         for (uint32_t childIndex = 0; childIndex < inputNode->mNumChildren; ++childIndex)
         {
-            if (!GetModels(parameters, inputScene, inputNode->mChildren[childIndex], transform, modelList, findMaterialForMesh))
+            if (!GetModels(context, parameters, inputScene, inputNode->mChildren[childIndex], transform, modelList, findMaterialForMesh))
             {
                 return false;
             }
@@ -332,8 +332,6 @@ bool GetModels(Parameters const &parameters, aiScene const *inputScene, aiNode c
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    std::cout << "GEK Model Converter";
-
     argparse::ArgumentParser program("GEK Model Converter", "1.0");
 
     program.add_argument("-i", "--input")
@@ -393,6 +391,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     ContextPtr context(Context::Create(nullptr));
     if (context)
     {
+        context->log(Context::Info, "GEK Model Converter");
         context->setCachePath(cachePath);
 
         wchar_t gekDataPath[MAX_PATH + 1] = L"\0";
@@ -404,17 +403,14 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         context->addDataPath(rootPath / "data");
         context->addDataPath(rootPath.getString());
 
-        auto filePath = context->findDataPath(FileSystem::CreatePath("models", parameters.sourceName));
-
         aiLogStream logStream;
         logStream.callback = [](char const* message, char* user) -> void
         {
-            std::string trimmedMessage(message);
-            trimmedMessage = trimmedMessage.substr(0, trimmedMessage.size() - 1);
-            std::cout << "Assimp: " << trimmedMessage;
+            Context* context = reinterpret_cast<Context*>(user);
+            context->log(Context::Info, message);
         };
 
-        logStream.user = nullptr;
+        logStream.user = reinterpret_cast<char*>(context.get());
         aiAttachLogStream(&logStream);
 
         int notRequiredComponents =
@@ -453,44 +449,45 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
         //aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_TRIANGLE_LIMIT, 65535);
 
-        std::cout << "Loading: " << filePath.getString();
+        auto filePath = context->findDataPath(FileSystem::CreatePath("models", parameters.sourceName));
+        context->log(Context::Info, "Loading: {}", filePath.getString());
         auto inputScene = aiImportFileExWithProperties(filePath.getString().data(), importFlags, nullptr, propertyStore);
         if (inputScene == nullptr)
         {
-            std::cerr << "Unable to load scene with Assimp";
+            context->log(Context::Error, "Unable to load scene with Assimp");
             return -__LINE__;
         }
 
         inputScene = aiApplyPostProcessing(inputScene, aiProcess_Triangulate);
         if (inputScene == nullptr)
         {
-            std::cerr << "Unable to apply post processing with Assimp";
+            context->log(Context::Error, "Unable to apply post processing with Assimp");
             return -__LINE__;
         }
 
         inputScene = aiApplyPostProcessing(inputScene, aiProcess_SplitLargeMeshes);
         if (inputScene == nullptr)
         {
-            std::cerr << "Unable to apply post processing with Assimp";
+            context->log(Context::Error, "Unable to apply post processing with Assimp");
             return -__LINE__;
         }
 
         inputScene = aiApplyPostProcessing(inputScene, aiProcess_CalcTangentSpace);
         if (inputScene == nullptr)
         {
-            std::cerr << "Unable to apply post processing with Assimp";
+            context->log(Context::Error, "Unable to apply post processing with Assimp");
             return -__LINE__;
         }
 
         if (!inputScene->HasMeshes())
         {
-            std::cerr << "Scene has no meshes";
+            context->log(Context::Error, "Scene has no meshes");
             return -__LINE__;
         }
 
         if (!inputScene->HasMaterials())
         {
-            std::cerr << "Exporting to model requires materials in scene";
+            context->log(Context::Error, "Exporting to model requires materials in scene");
             return -__LINE__;
         }
 
@@ -536,7 +533,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             FileSystem::Path albedoPath = JSON::Value(albedoNode, "file", String::Empty);
             auto albedoFile = albedoPath.withoutExtension().getString();
 
-            std::cout << "Found material: " << filePath.getString() << ", with albedo: " << albedoFile;
+            context->log(Context::Info, "Found material: {}, with albedo: {}", filePath.getString(), albedoFile);
             albedoToMaterialMap[String::GetLower(albedoFile)] = String::GetLower(removeRoot("materials", filePath).getString());
             return true;
         };
@@ -544,14 +541,14 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         context->findDataFiles("materials", findMaterials);
         if (albedoToMaterialMap.empty())
         {
-            std::cerr << "Unable to locate any materials";
+            context->log(Context::Error, "Unable to locate any materials");
             return -__LINE__;
         }
 
         auto findMaterial = [&](FileSystem::Path albedoPath) -> std::string
         {
             albedoPath = removeRoot("textures", albedoPath);
-            std::cout << "Searching for albedo: " << albedoPath.getString();
+            context->log(Context::Info, "Searching for albedo: {}", albedoPath.getString());
 
             auto albedoSearch = albedoToMaterialMap.find(String::GetLower(albedoPath.withoutExtension().getString()));
             if (albedoSearch == std::end(albedoToMaterialMap))
@@ -561,7 +558,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
             if (albedoSearch != std::end(albedoToMaterialMap))
             {
-                std::cout << "Found material for albedo: " << albedoPath.getString() << " belongs to " << albedoSearch->second;
+                context->log(Context::Info, "Found material for albedo: {} belongs to {}", albedoPath.getString(), albedoSearch->second);
                 return albedoSearch->second;
             }
 
@@ -570,7 +567,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
         auto findMaterialForMesh = [&](const FileSystem::Path& sourceName, std::string diffuseName) -> std::string
         {
-            std::cout << "Searching for: " << diffuseName << ", " << (filePath / diffuseName).getString();
+            context->log(Context::Info, "Searching for: {}, {}", diffuseName, (filePath / diffuseName).getString());
 
             FileSystem::Path albedoPath = FileSystem::Path(diffuseName).lexicallyRelative("textures");
             albedoPath = filePath.withoutExtension().getFileName() / albedoPath.withoutExtension();
@@ -592,7 +589,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
         ModelList modelList;
         aiMatrix4x4 rootTransform;
-        if (!GetModels(parameters, inputScene, inputScene->mRootNode, rootTransform, modelList, findMaterialForMesh))
+        if (!GetModels(context.get(), parameters, inputScene, inputScene->mRootNode, rootTransform, modelList, findMaterialForMesh))
         {
             return -__LINE__;
         }
@@ -600,7 +597,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         aiReleasePropertyStore(propertyStore);
         aiReleaseImport(inputScene);
 
-        std::cout << "> Num. Models: " << modelList.size();
+        context->log(Context::Info, "Num. Models: {}", modelList.size());
         for (auto& model : modelList)
         {
             auto modelName(model.name);
@@ -610,11 +607,10 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             }
 
             auto outputPath((filePath.withoutExtension() / modelName).withExtension(parameters.saveAsCode ? ".h" : ".gek"));
-            std::cout << "> Model: " << model.name << ": " << outputPath.getString();
-            std::cout << "   Num. Meshes: " << model.meshList.size();
-            std::cout << "   Size: Minimum[" << model.boundingBox.minimum.x << ", " << model.boundingBox.minimum.y << ", " << model.boundingBox.minimum.z << "]";
-            std::cout << "   Size: Maximum[" << model.boundingBox.maximum.x << ", " << model.boundingBox.maximum.y << ", " << model.boundingBox.maximum.z << "]";
-
+            context->log(Context::Info, "- Model: {}, {}", model.name, outputPath.getString());
+            context->log(Context::Info, "- Num. Meshes: {}", model.meshList.size());
+            context->log(Context::Info, "- Size: Minimum[{}, {}, {}]", model.boundingBox.minimum.x, model.boundingBox.minimum.y, model.boundingBox.minimum.z);
+            context->log(Context::Info, "- Size: Maximum[{}, {}, {}]", model.boundingBox.maximum.x, model.boundingBox.maximum.y, model.boundingBox.maximum.z);
             filePath.withoutExtension().createChain();
             if (parameters.saveAsCode)
             {
@@ -622,7 +618,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                 auto file = fopen(outputPath.getString().data(), "w");
                 if (file == nullptr)
                 {
-                    std::cerr << "Unable to create output file";
+                    context->log(Context::Error, "Unable to create output file");
                     return -__LINE__;
                 }
 
@@ -700,7 +696,7 @@ R"(struct StaticModel_{0}
                 auto file = fopen(outputPath.getString().data(), "wb");
                 if (file == nullptr)
                 {
-                    std::cout << "Unable to create output file";
+                    context->log(Context::Info, "Unable to create output file");
                     return -__LINE__;
                 }
 
@@ -711,9 +707,9 @@ R"(struct StaticModel_{0}
 
                 for (auto& mesh : model.meshList)
                 {
-                    std::cout << "   > Mesh: " << mesh.material;
-                    std::cout << "      Num. Vertices: " << mesh.pointList.size();
-                    // << "      Num. Faces: " << mesh.faceList.size();
+                    context->log(Context::Info, "- Mesh: {}", mesh.material);
+                    context->log(Context::Info, "- Num. Vertices: {}", mesh.pointList.size());
+                    //context->log(Context::Info, "- Num. Faces: {}", mesh.faceList.size());
 
                     Header::Mesh meshHeader;
                     std::strncpy(meshHeader.material, mesh.material.data(), 63);

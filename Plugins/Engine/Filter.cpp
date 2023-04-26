@@ -78,7 +78,7 @@ namespace Gek
 
             void reload(void)
             {
-                std::cout << "Loading filter: " << filterName;
+                getContext()->log(Context::Info, "Loading filter: {}", filterName);
 				
                 passList.clear();
 
@@ -87,19 +87,25 @@ namespace Gek
 
                 auto backBuffer = videoDevice->getBackBuffer();
                 auto &backBufferDescription = backBuffer->getDescription();
-                depthState = resources->createDepthState(Video::DepthState::Description());
-                renderState = resources->createRenderState(Video::RenderState::Description());
+
+                Video::DepthState::Description depthStateDescription;
+                depthStateDescription.name = fmt::format("{}:depthState", filterName);
+                depthState = resources->createDepthState(depthStateDescription);
+
+                Video::RenderState::Description renderStateDescription;
+                renderStateDescription.name = fmt::format("{}:renderState", filterName);
+                renderState = resources->createRenderState(renderStateDescription);
 
                 JSON::Object rootNode = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("filters", filterName).withExtension(".json")));
 
                 ShuntingYard shuntingYard(population->getShuntingYard());
-                const auto &coreOptionsNode = core->getOption("filters")[filterName];
+                const auto &coreOptionsNode = core->getOption("filters", filterName);
                 for (auto &[key, value] : coreOptionsNode.items())
                 {
                     shuntingYard.setVariable(key, JSON::Value(value, 0.0f));
                 }
 
-                auto &rootOptionsNode = rootNode["options"];
+                auto &rootOptionsNode = JSON::Find(rootNode, "options");
                 for (auto & [key, value] : coreOptionsNode.items())
                 {
                     rootOptionsNode[key] = value;
@@ -122,25 +128,25 @@ namespace Gek
 
                     if (importSearch.value().is_string())
                     {
-                        importExternal(importSearch.value().get<std::string>());
+                        importExternal(JSON::Value(importSearch.value(), String::Empty));
                     }
                     else if (importSearch.value().is_array())
                     {
                         for (auto &importName : importSearch.value())
                         {
-                            importExternal(importName.get<std::string>());
+                            importExternal(JSON::Value(importName, String::Empty));
                         }
                     }
 
                     rootOptionsNode.erase(importSearch);
                 }
 
-                for (auto &requiredNode : rootNode["requires"])
+                for (auto &requiredNode : JSON::Find(rootNode, "requires"))
                 {
-                    resources->getShader(requiredNode.get<std::string>(), MaterialHandle());
+                    resources->getShader(JSON::Value(requiredNode, String::Empty), MaterialHandle());
                 }
 
-                for (auto &[textureName, textureNode] : rootNode["textures"].items())
+                for (auto &[textureName, textureNode] : JSON::Find(rootNode, "textures").items())
                 {
                     if (resourceMap.contains(textureName))
                     {
@@ -158,8 +164,9 @@ namespace Gek
                     else if (textureNode.contains("format"))
                     {
                         Video::Texture::Description description(backBufferDescription);
+                        description.name = textureName;
                         description.format = Video::GetFormat(JSON::Value(textureNode, "format", String::Empty));
-                        auto &sizeNode = textureNode["size"];
+                        auto &sizeNode = JSON::Find(textureNode, "size");
                         if (sizeNode.is_array())
                         {
                             if (sizeNode.size() == 3)
@@ -176,8 +183,8 @@ namespace Gek
 
                         description.sampleCount = JSON::Value(textureNode, "sampleCount", 1);
                         description.flags = getTextureFlags(JSON::Value(textureNode, "flags", String::Empty));
-                        description.mipMapCount = JSON::Evaluate(textureNode["mipmaps"], shuntingYard, 1);
-                        resource = resources->createTexture(textureName, description, true);
+                        description.mipMapCount = JSON::Evaluate(textureNode, "mipmaps", shuntingYard, 1);
+                        resource = resources->createTexture(description, true);
                     }
 
                     auto description = resources->getTextureDescription(resource);
@@ -199,7 +206,7 @@ namespace Gek
                     }
                 }
 
-                for (auto& [bufferName, bufferNode] : rootNode["buffers"].items())
+                for (auto& [bufferName, bufferNode] : JSON::Find(rootNode, "buffers").items())
                 {
                     if (resourceMap.count(bufferName) > 0)
                     {
@@ -208,7 +215,8 @@ namespace Gek
                     }
 
                     Video::Buffer::Description description;
-                    description.count = JSON::Evaluate(bufferNode["count"], shuntingYard, 0);
+                    description.name = bufferName;
+                    description.count = JSON::Evaluate(bufferNode, "count", shuntingYard, 0);
                     description.flags = getBufferFlags(JSON::Value(bufferNode, "flags", String::Empty));
                     if (bufferNode.count("format"))
                     {
@@ -218,10 +226,10 @@ namespace Gek
                     else
                     {
                         description.type = Video::Buffer::Type::Structured;
-                        description.stride = JSON::Evaluate(bufferNode["stride"], shuntingYard, 0);
+                        description.stride = JSON::Evaluate(bufferNode, "stride", shuntingYard, 0);
                     }
 
-                    auto resource = resources->createBuffer(bufferName, description, true);
+                    auto resource = resources->createBuffer(description, true);
                     if (resource)
                     {
                         resourceMap[bufferName] = resource;
@@ -241,7 +249,7 @@ namespace Gek
                     }
                 }
 
-                auto &passesNode = rootNode["passes"];
+                auto &passesNode = JSON::Find(rootNode, "passes");
                 passList.resize(passesNode.size());
                 auto passData = std::begin(passList);
                 for (auto &passNode : passesNode)
@@ -270,7 +278,7 @@ namespace Gek
                     }
 
                     JSON::Object passOptions(rootOptionsNode);
-                    for (auto &[key, value] : passNode["options"].items())
+                    for (auto &[key, value] : JSON::Find(passNode, "options").items())
                     {
                         std::function<void(JSON::Object&, std::string_view, JSON::Object const &)> insertOptions;
                         insertOptions = [&](JSON::Object&options, std::string_view name, JSON::Object const &node) -> void
@@ -305,7 +313,7 @@ namespace Gek
                                     optionsData.push_back(fmt::format("    namespace {} {{", optionName));
 
                                     std::vector<std::string> choices;
-                                    for (auto &choice : optionNode["options"])
+                                    for (auto &choice : JSON::Find(optionNode, "options"))
                                     {
                                         auto name = choice.get<std::string>();
                                         optionsData.push_back(fmt::format("        static const int {} = {};", name, choices.size()));
@@ -313,7 +321,7 @@ namespace Gek
                                     }
 
                                     int selection = 0;
-                                    auto &selectionNode = optionNode["selection"];
+                                    auto &selectionNode = JSON::Find(optionNode, "selection");
                                     if (selectionNode.is_string())
                                     {
                                         auto selectedName = selectionNode.get<std::string>();
@@ -420,7 +428,7 @@ R"(namespace Options {{
 
                     if (pass.mode == Pass::Mode::Compute)
                     {
-                        auto &dispatchNode = passNode["dispatch"];
+                        auto &dispatchNode = JSON::Find(passNode, "dispatch");
                         if (dispatchNode.is_array())
                         {
                             if (dispatchNode.size() == 3)
@@ -449,7 +457,7 @@ R"(struct InputPixel
 };)";
 
                         std::vector<std::string> outputData;
-                        std::unordered_map<std::string, std::string> renderTargetsMap = getAliasedMap(passNode["targets"]);
+                        std::unordered_map<std::string, std::string> renderTargetsMap = getAliasedMap(passNode, "targets");
                         if (!renderTargetsMap.empty())
                         {
                             for (auto &renderTarget : renderTargetsMap)
@@ -497,11 +505,11 @@ R"(struct OutputPixel
                         }
 
                         Video::BlendState::Description blendStateInformation;
-                        blendStateInformation.load(passNode["blendState"]);
+                        blendStateInformation.load(JSON::Find(passNode, "blendState"));
                         pass.blendState = resources->createBlendState(blendStateInformation);
                     }
 
-                    for (auto &[resourceName, clearTargetNode] : passNode["clear"].items())
+                    for (auto &[resourceName, clearTargetNode] : JSON::Find(passNode, "clear").items())
                     {
                         auto resourceSearch = resourceMap.find(resourceName);
                         if (resourceSearch != std::end(resourceMap))
@@ -516,7 +524,7 @@ R"(struct OutputPixel
                         }
                     }
 
-                    for (auto &baseGenerateMipMapsNode : passNode["generateMipMaps"])
+                    for (auto &baseGenerateMipMapsNode : JSON::Find(passNode, "generateMipMaps"))
                     {
                         JSON::Object generateMipMapNode(baseGenerateMipMapsNode);
                         auto resourceName = generateMipMapNode.get<std::string>();
@@ -531,7 +539,7 @@ R"(struct OutputPixel
                         }
                     }
 
-                    for (auto &[targetResourceName, copyNode] : passNode["copy"].items())
+                    for (auto &[targetResourceName, copyNode] : JSON::Find(passNode, "copy").items())
                     {
                         auto nameSearch = resourceMap.find(targetResourceName);
                         if (nameSearch != std::end(resourceMap))
@@ -553,7 +561,7 @@ R"(struct OutputPixel
                         }
                     }
 
-                    for (auto &[targetResourceName, resolveNode] : passNode["resolve"].items())
+                    for (auto &[targetResourceName, resolveNode] : JSON::Find(passNode, "resolve").items())
                     {
                         auto nameSearch = resourceMap.find(targetResourceName);
                         if (nameSearch != std::end(resourceMap))
@@ -576,7 +584,7 @@ R"(struct OutputPixel
                     }
 
                     std::vector<std::string> resourceData;
-                    std::unordered_map<std::string, std::string> resourceAliasMap = getAliasedMap(passNode["resources"]);
+                    std::unordered_map<std::string, std::string> resourceAliasMap = getAliasedMap(passNode, "resources");
                     for (auto &resourcePair : resourceAliasMap)
                     {
                         uint32_t currentStage = resourceData.size();
@@ -619,7 +627,7 @@ R"(namespace Resources {{
                     }
 
                     std::vector<std::string> unorderedAccessData;
-                    std::unordered_map<std::string, std::string> unorderedAccessAliasMap = getAliasedMap(passNode["unorderedAccess"]);
+                    std::unordered_map<std::string, std::string> unorderedAccessAliasMap = getAliasedMap(passNode, "unorderedAccess");
                     for (auto &resourcePair : unorderedAccessAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);
@@ -652,8 +660,8 @@ R"(namespace UnorderedAccess {{
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
 				}
 
-				core->setOption("filters", filterName, std::move(rootOptionsNode));
-				std::cout << "Filter loaded successfully: " << filterName;
+				core->setOption("filters", filterName, rootOptionsNode);
+				getContext()->log(Context::Info, "Filter loaded successfully: {}", filterName);
 			}
 
             ~Filter(void)

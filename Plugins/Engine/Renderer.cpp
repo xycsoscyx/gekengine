@@ -252,13 +252,12 @@ namespace Gek
 						lightDataBuffer = nullptr;
 
 						Video::Buffer::Description lightBufferDescription;
+						lightBufferDescription.name = fmt::format("render:{}", COMPONENT::GetName());
 						lightBufferDescription.type = Video::Buffer::Type::Structured;
 						lightBufferDescription.flags = Video::Buffer::Flags::Mappable | Video::Buffer::Flags::Resource;
-
 						lightBufferDescription.stride = sizeof(DATA);
 						lightBufferDescription.count = createSize;
 						lightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
-						lightDataBuffer->setName(fmt::format("render:{}", COMPONENT::GetName()));
 					}
 				}
 
@@ -428,62 +427,62 @@ namespace Gek
 
 			void initializeSystem(void)
 			{
-				std::cout << "Initializing rendering system components";
+				getContext()->log(Context::Info, "Initializing rendering system components");
 
 				Video::SamplerState::Description bufferSamplerStateData;
+				bufferSamplerStateData.name = "renderer:bufferSamplerState";
 				bufferSamplerStateData.filterMode = Video::SamplerState::FilterMode::MinificationMagnificationMipMapPoint;
 				bufferSamplerStateData.addressModeU = Video::SamplerState::AddressMode::Clamp;
 				bufferSamplerStateData.addressModeV = Video::SamplerState::AddressMode::Clamp;
 				bufferSamplerState = videoDevice->createSamplerState(bufferSamplerStateData);
-				bufferSamplerState->setName("renderer:bufferSamplerState");
 
 				Video::SamplerState::Description textureSamplerStateData;
+				textureSamplerStateData.name = "renderer:textureSamplerState";
 				textureSamplerStateData.maximumAnisotropy = 8;
 				textureSamplerStateData.filterMode = Video::SamplerState::FilterMode::Anisotropic;
 				textureSamplerStateData.addressModeU = Video::SamplerState::AddressMode::Wrap;
 				textureSamplerStateData.addressModeV = Video::SamplerState::AddressMode::Wrap;
 				textureSamplerState = videoDevice->createSamplerState(textureSamplerStateData);
-				textureSamplerState->setName("renderer:textureSamplerState");
 
 				Video::SamplerState::Description mipMapSamplerStateData;
+				mipMapSamplerStateData.name ="renderer:mipMapSamplerState";
 				mipMapSamplerStateData.maximumAnisotropy = 8;
 				mipMapSamplerStateData.filterMode = Video::SamplerState::FilterMode::MinificationMagnificationMipMapLinear;
 				mipMapSamplerStateData.addressModeU = Video::SamplerState::AddressMode::Clamp;
 				mipMapSamplerStateData.addressModeV = Video::SamplerState::AddressMode::Clamp;
 				mipMapSamplerState = videoDevice->createSamplerState(mipMapSamplerStateData);
-				mipMapSamplerState->setName("renderer:mipMapSamplerState");
 
 				samplerList = { textureSamplerState.get(), mipMapSamplerState.get(), };
 
 				Video::BlendState::Description blendStateInformation;
+				blendStateInformation.name = "renderer:blendState";
 				blendState = videoDevice->createBlendState(blendStateInformation);
-				blendState->setName("renderer:blendState");
 
 				Video::RenderState::Description renderStateInformation;
+				renderStateInformation.name = "renderer:renderState";
 				renderState = videoDevice->createRenderState(renderStateInformation);
-				renderState->setName("renderer:renderState");
 
 				Video::DepthState::Description depthStateInformation;
+				depthStateInformation.name = "renderer:depthState";
 				depthState = videoDevice->createDepthState(depthStateInformation);
-				depthState->setName("renderer:depthState");
 
 				Video::Buffer::Description constantBufferDescription;
+				constantBufferDescription.name = "renderer:engineConstantBuffer";
 				constantBufferDescription.stride = sizeof(EngineConstantData);
 				constantBufferDescription.count = 1;
 				constantBufferDescription.type = Video::Buffer::Type::Constant;
 				engineConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
-				engineConstantBuffer->setName("renderer:engineConstantBuffer");
 
+				constantBufferDescription.name = "renderer:cameraConstantBuffer";
 				constantBufferDescription.stride = sizeof(CameraConstantData);
 				cameraConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
-				cameraConstantBuffer->setName("renderer:cameraConstantBuffer");
 
 				shaderBufferList = { engineConstantBuffer.get(), cameraConstantBuffer.get() };
 				filterBufferList = { engineConstantBuffer.get() };
 
+				constantBufferDescription.name = "renderer:lightConstantBuffer";
 				constantBufferDescription.stride = sizeof(LightConstantData);
 				lightConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
-				lightConstantBuffer->setName("renderer:lightConstantBuffer");
 
 				lightBufferList = { lightConstantBuffer.get() };
 
@@ -516,34 +515,32 @@ float3 mainPixelProgram(in Input input) : SV_TARGET0
     return inputBuffer[input.texCoord * float2(width, height)];
 })";
 
-				deferredVertexProgram = resources->getProgram(Video::Program::Type::Vertex, "deferredVertexProgram", "mainVertexProgram", program);
-				deferredVertexProgram->setName("renderer:deferredVertexProgram");
+				deferredVertexProgram = resources->getProgram(Video::Program::Type::Vertex, "renderer:deferredVertexProgram", "mainVertexProgram", program);
 
-				deferredPixelProgram = resources->getProgram(Video::Program::Type::Pixel, "deferredPixelProgram", "mainPixelProgram", program);
-				deferredPixelProgram->setName("renderer:deferredPixelProgram");
+				deferredPixelProgram = resources->getProgram(Video::Program::Type::Pixel, "renderer:deferredPixelProgram", "mainPixelProgram", program);
 
 				Video::Buffer::Description lightBufferDescription;
 				lightBufferDescription.type = Video::Buffer::Type::Structured;
 				lightBufferDescription.flags = Video::Buffer::Flags::Mappable | Video::Buffer::Flags::Resource;
 
 				Video::Buffer::Description tileBufferDescription;
+				tileBufferDescription.name = "renderer:tileOffsetCountBuffer";
 				tileBufferDescription.type = Video::Buffer::Type::Raw;
 				tileBufferDescription.flags = Video::Buffer::Flags::Mappable | Video::Buffer::Flags::Resource;
 				tileBufferDescription.format = Video::Format::R32G32_UINT;
 				tileBufferDescription.count = GridSize;
 				tileOffsetCountBuffer = videoDevice->createBuffer(tileBufferDescription);
-				tileOffsetCountBuffer->setName("renderer:tileOffsetCountBuffer");
 
 				lightIndexList.reserve(GridSize * 10);
+				tileBufferDescription.name = "renderer:lightIndexBuffer";
 				tileBufferDescription.format = Video::Format::R16_UINT;
 				tileBufferDescription.count = lightIndexList.capacity();
 				lightIndexBuffer = videoDevice->createBuffer(tileBufferDescription);
-				lightIndexBuffer->setName("renderer:lightIndexBuffer");
 			}
 
 			void initializeUI(void)
 			{
-				std::cout << "Initializing user interface data";
+				getContext()->log(Context::Info, "Initializing user interface data");
 
 				gui.context = ImGui::CreateContext();
 
@@ -578,8 +575,7 @@ PixelOutput main(in VertexInput input)
     return output;
 })";
 
-				gui.vertexProgram = resources->getProgram(Video::Program::Type::Vertex, "uiVertexProgram", "main", vertexShader);
-				gui.vertexProgram->setName("core:vertexProgram");
+				gui.vertexProgram = resources->getProgram(Video::Program::Type::Vertex, "core::uiVertexProgram", "main", vertexShader);
 
 				std::vector<Video::InputElement> elementList;
 
@@ -597,14 +593,13 @@ PixelOutput main(in VertexInput input)
 				elementList.push_back(element);
 
 				gui.inputLayout = videoDevice->createInputLayout(elementList, gui.vertexProgram->getInformation());
-                gui.inputLayout->setName("core:inputLayout");
 
 				Video::Buffer::Description constantBufferDescription;
+				constantBufferDescription.name = "core:constantBuffer";
 				constantBufferDescription.stride = sizeof(GUI::DataBuffer);
 				constantBufferDescription.count = 1;
 				constantBufferDescription.type = Video::Buffer::Type::Constant;
 				gui.constantBuffer = videoDevice->createBuffer(constantBufferDescription);
-				gui.constantBuffer->setName("core:constantBuffer");
 
 				static constexpr std::string_view pixelShader =
 R"(cbuffer DataBuffer : register(b0)
@@ -629,10 +624,10 @@ float4 main(PixelInput input) : SV_Target
     return (input.color * uiTexture.Sample(uiSampler, input.texCoord));
 })";
 
-				gui.pixelProgram = resources->getProgram(Video::Program::Type::Pixel, "uiPixelProgram", "main", pixelShader);
-				gui.pixelProgram->setName("core:pixelProgram");
+				gui.pixelProgram = resources->getProgram(Video::Program::Type::Pixel, "core:uiPixelProgram", "main", pixelShader);
 
 				Video::BlendState::Description blendStateInformation;
+				blendStateInformation.name = "core:blendState";
 				blendStateInformation[0].enable = true;
 				blendStateInformation[0].colorSource = Video::BlendState::Source::SourceAlpha;
 				blendStateInformation[0].colorDestination = Video::BlendState::Source::InverseSourceAlpha;
@@ -641,24 +636,23 @@ float4 main(PixelInput input) : SV_Target
 				blendStateInformation[0].alphaDestination = Video::BlendState::Source::Zero;
 				blendStateInformation[0].alphaOperation = Video::BlendState::Operation::Add;
 				gui.blendState = videoDevice->createBlendState(blendStateInformation);
-				gui.blendState->setName("core:blendState");
 
 				Video::RenderState::Description renderStateInformation;
+				renderStateInformation.name = "core:renderState";
 				renderStateInformation.fillMode = Video::RenderState::FillMode::Solid;
 				renderStateInformation.cullMode = Video::RenderState::CullMode::None;
 				renderStateInformation.scissorEnable = true;
 				renderStateInformation.depthClipEnable = true;
 				gui.renderState = videoDevice->createRenderState(renderStateInformation);
-				gui.renderState->setName("core:renderState");
 
-				auto invertedDepthBuffer = JSON::Value(core->getOption("render"), "invertedDepthBuffer", true);
+				auto invertedDepthBuffer = core->getOption("render", "invertedDepthBuffer", true);
 
 				Video::DepthState::Description depthStateInformation;
+				depthStateInformation.name = "core:depthState";
 				depthStateInformation.enable = false;
 				depthStateInformation.writeMask = Video::DepthState::Write::All;
 				depthStateInformation.comparisonFunction = Video::ComparisonFunction::Always;
 				gui.depthState = videoDevice->createDepthState(depthStateInformation);
-				gui.depthState->setName("core:depthState");
 
 				ImGuiIO &imGuiIo = ImGui::GetIO();
 				imGuiIo.Fonts->AddFontFromFileTTF(getContext()->findDataPath(FileSystem::CreatePath("fonts", "Ruda-Bold.ttf")).getString().data(), 14.0f);
@@ -736,17 +730,18 @@ float4 main(PixelInput input) : SV_Target
 				if (!gui.vertexBuffer || gui.vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
 				{
 					Video::Buffer::Description vertexBufferDescription;
+					vertexBufferDescription.name = "core:uiVertexBuffer";
 					vertexBufferDescription.stride = sizeof(ImDrawVert);
 					vertexBufferDescription.count = drawData->TotalVtxCount + 5000;
 					vertexBufferDescription.type = Video::Buffer::Type::Vertex;
 					vertexBufferDescription.flags = Video::Buffer::Flags::Mappable;
 					gui.vertexBuffer = videoDevice->createBuffer(vertexBufferDescription);
-					gui.vertexBuffer->setName(fmt::format("core:vertexBuffer:{}", reinterpret_cast<std::uintptr_t>(gui.vertexBuffer.get())));
 				}
 
 				if (!gui.indexBuffer || gui.indexBuffer->getDescription().count < uint32_t(drawData->TotalIdxCount))
 				{
 					Video::Buffer::Description vertexBufferDescription;
+					vertexBufferDescription.name = "core:uiIndexBuffer";
 					vertexBufferDescription.count = drawData->TotalIdxCount + 10000;
 					vertexBufferDescription.type = Video::Buffer::Type::Index;
 					vertexBufferDescription.flags = Video::Buffer::Flags::Mappable;
@@ -762,7 +757,6 @@ float4 main(PixelInput input) : SV_Target
 					};
 
 					gui.indexBuffer = videoDevice->createBuffer(vertexBufferDescription);
-					gui.indexBuffer->setName(fmt::format("core:vertexBuffer:{}", reinterpret_cast<std::uintptr_t>(gui.indexBuffer.get())));
 				}
 
 				bool dataUploaded = false;
@@ -1115,7 +1109,7 @@ float4 main(PixelInput input) : SV_Target
 
 			void queueCamera(Math::Float4x4 const &viewMatrix, float fieldOfView, float aspectRatio, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget, std::string const &forceShader)
 			{
-				if (JSON::Value(core->getOption("render"), "invertedDepthBuffer", true))
+				if (core->getOption("render", "invertedDepthBuffer", true))
 				{
 					queueCamera(viewMatrix, Math::Float4x4::MakePerspective(fieldOfView, aspectRatio, farClip, nearClip), nearClip, farClip, name, cameraTarget, forceShader);
 				}
@@ -1222,7 +1216,7 @@ float4 main(PixelInput input) : SV_Target
 				EngineConstantData engineConstantData;
 				engineConstantData.frameTime = frameTime;
 				engineConstantData.worldTime = 0.0f;
-				engineConstantData.invertedDepthBuffer = (JSON::Value(core->getOption("render"), "invertedDepthBuffer", true) ? 1 : 0);
+				engineConstantData.invertedDepthBuffer = (core->getOption("render", "invertedDepthBuffer", true) ? 1 : 0);
 				videoDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
 				Video::Device::Context *videoContext = videoDevice->getDefaultContext();
 				while (cameraQueue.try_pop(currentCamera))
@@ -1326,12 +1320,12 @@ float4 main(PixelInput input) : SV_Target
 									lightIndexBuffer = nullptr;
 
 									Video::Buffer::Description tileBufferDescription;
+									tileBufferDescription.name = "renderer:lightIndexBuffer";
 									tileBufferDescription.type = Video::Buffer::Type::Raw;
 									tileBufferDescription.flags = Video::Buffer::Flags::Mappable | Video::Buffer::Flags::Resource;
 									tileBufferDescription.format = Video::Format::R16_UINT;
 									tileBufferDescription.count = lightIndexList.size();
 									lightIndexBuffer = videoDevice->createBuffer(tileBufferDescription);
-									lightIndexBuffer->setName(fmt::format("renderer:lightIndexBuffer:{}", reinterpret_cast<std::uintptr_t>(lightIndexBuffer.get())));
 								}
 
 								uint16_t *lightIndexData = nullptr;

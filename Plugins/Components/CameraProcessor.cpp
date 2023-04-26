@@ -127,11 +127,12 @@ namespace Gek
                 {
                     auto backBuffer = core->getRenderer()->getVideoDevice()->getBackBuffer();
                     Video::Texture::Description description;
+                    description.name = fmt::format("camera:{}", cameraComponent.target);
                     description.format = Video::Format::R11G11B10_FLOAT;
                     description.width = backBuffer->getDescription().width;
                     description.height = backBuffer->getDescription().height;
                     description.flags = Video::Texture::Flags::RenderTarget | Video::Texture::Flags::Resource;
-                    data.target = resources->createTexture(fmt::format("camera:{}", cameraComponent.target), description);
+                    data.target = resources->createTexture(description);
                 }
             });
         }
@@ -179,7 +180,7 @@ namespace Gek
         {
             assert(renderer);
 
-            bool editorActive = JSON::Value(core->getOption("editor"), "active", false);
+            bool editorActive = core->getOption("editor", "active", false);
 			//if (frameTime > 0.0f && !editorActive)
 			{
 				parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void

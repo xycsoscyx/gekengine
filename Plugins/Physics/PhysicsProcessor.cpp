@@ -176,7 +176,7 @@ namespace Gek
                 auto shapeSearch = shapeMap.find(hash);
                 if (shapeSearch == std::end(shapeMap))
                 {
-                    std::cout << "Loading physics model: " << modelComponent.name;
+                    getContext()->log(Context::Info, "Loading physics model: {}", modelComponent.name);
 
                     if (modelComponent.name == "#cube")
                     {
@@ -192,7 +192,7 @@ namespace Gek
                         std::vector<uint8_t> buffer(FileSystem::Load(filePath));
                         if (buffer.size() < sizeof(Header))
                         {
-                            std::cerr << "File too small to be physics model: " << modelComponent.name;
+                            getContext()->log(Context::Error, "File too small to be physics model: {}", modelComponent.name);
                             return nullptr;
                         }
 
@@ -200,19 +200,19 @@ namespace Gek
                         Header* header = reader.read<Header>(0);
                         if (header->identifier != *(uint32_t*)"GEKX")
                         {
-                            std::cerr << "Unknown model file identifier encountered: " << modelComponent.name;
+                            getContext()->log(Context::Error, "Unknown model file identifier encountered: {}", modelComponent.name);
                             return nullptr;
                         }
 
                         if (header->version != 3)
                         {
-                            std::cerr << "Unsupported model version encountered (requires: 2, has: " << header->version << "): " << modelComponent.name;
+                            getContext()->log(Context::Error, "Unsupported model version encountered (requires: 2, has: {}): {}", header->version, modelComponent.name);
                             return nullptr;
                         }
 
                         if (header->type == 1)
                         {
-                            std::cout << "Loading hull: " << modelComponent.name;
+                            getContext()->log(Context::Info, "Loading hull: {}", modelComponent.name);
 
                             HullHeader* hullHeader = reader.read<HullHeader>();
                             Math::Float3* points = reader.read<Math::Float3>(hullHeader->pointCount);
@@ -220,7 +220,7 @@ namespace Gek
                         }
                         else if (header->type == 2)
                         {
-                            std::cout << "Loading tree: " << modelComponent.name;
+                            getContext()->log(Context::Info, "Loading tree: {}", modelComponent.name);
                             /*
                             TreeHeader* treeHeader = reader.read<TreeHeader>();
 
@@ -243,12 +243,12 @@ namespace Gek
                         }
                         else
                         {
-                            std::cerr << "Unsupported model type encountered: " << modelComponent.name;
+                            getContext()->log(Context::Error, "Unsupported model type encountered: {}", modelComponent.name);
                             return nullptr;
                         }
                     }
 
-                    std::cout << "Physics shape successfully loaded: " << modelComponent.name;
+                    getContext()->log(Context::Info, "Physics shape successfully loaded: {}", modelComponent.name);
                 }
 
                 if (shape)
@@ -437,7 +437,7 @@ namespace Gek
 
             void onUpdate(float frameTime)
             {
-				bool editorActive = core->getOption("editor").value("active", false);
+				bool editorActive = core->getOption("editor", "active", false);
 				if (frameTime > 0.0f && !editorActive)
 				{
 					static constexpr float StepTime = (1.0f / 60.0f);
@@ -486,11 +486,11 @@ namespace Gek
                     if (surfaceNode.is_object())
                     {
                         Surface surface;
-                        surface.ghost = surfaceNode.value("ghost", surface.ghost);
-                        surface.staticFriction = surfaceNode.value("static_friction", surface.staticFriction);
-                        surface.kineticFriction = surfaceNode.value("kinetic_friction", surface.kineticFriction);
-                        surface.elasticity = surfaceNode.value("elasticity", surface.elasticity);
-                        surface.softness = surfaceNode.value("softness", surface.softness);
+                        surface.ghost = JSON::Value(surfaceNode, "ghost", surface.ghost);
+                        surface.staticFriction = JSON::Value(surfaceNode, "static_friction", surface.staticFriction);
+                        surface.kineticFriction = JSON::Value(surfaceNode, "kinetic_friction", surface.kineticFriction);
+                        surface.elasticity = JSON::Value(surfaceNode, "elasticity", surface.elasticity);
+                        surface.softness = JSON::Value(surfaceNode, "softness", surface.softness);
 
                         surfaceIndex = surfaceList.size();
                         surfaceList.push_back(surface);

@@ -55,22 +55,22 @@ namespace Gek
                             InitializePlugin initializePlugin = (InitializePlugin)getFunction(library, "initializePlugin");
 							if (initializePlugin)
 							{
-								std::cout << "Initializing Plugin: " << filePath.getFileName();
+								log(Info, "Initializing Plugin: {}", filePath.getFileName());
 								initializePlugin([this, filePath = filePath.getString()](std::string_view className, std::function<ContextUserPtr(Context *, void *, std::vector<Hash> &)> creator) -> void
 								{
 									if (classMap.count(className) == 0)
 									{
 										classMap[className] = creator;
-                                        std::cout << "Adding " << className << " to context registry";
+                                        log(Info, "Adding {} to context registry", className);
 									}
 									else
 									{
-                                        std::cout << "Skipping duplicate class from plugin: " << className << ", from: " << filePath;
+                                        log(Info, "Skipping duplicate class from plugin: {}, from: {}", className, filePath);
 									}
 								}, [this](std::string_view typeName, std::string_view className) -> void
 								{
 									typeMap.insert(std::make_pair(typeName, className));
-                                    std::cout << "Adding " << typeName << " to " << className;
+                                    log(Info, "Adding {} to {}", typeName, className);
 								});
 
 								libraryList.push_back(library);
@@ -102,7 +102,48 @@ namespace Gek
         }
 
         // Context
-		void setCachePath(FileSystem::Path const &path)
+        void vlog(LogLevel level, const LocationMessage& message, fmt::format_args args) const
+        {
+            const auto& location = message.location;
+            auto fileName = FileSystem::Path(location.file_name()).getFileName();
+            auto formattedMessage = fmt::format("{}:{}: {}", fileName, location.line(), fmt::vformat(message.format, args));
+            switch (level)
+            {
+            case LogLevel::Error:
+#ifdef _WIN32
+                OutputDebugStringA(formattedMessage.data());
+                OutputDebugStringA("\r\n");
+#endif
+                std::cerr << formattedMessage;
+                break;
+
+            case LogLevel::Warning:
+#ifdef _WIN32
+                OutputDebugStringA(formattedMessage.data());
+                OutputDebugStringA("\r\n");
+#endif
+                std::cerr << formattedMessage;
+                break;
+
+            case LogLevel::Debug:
+#ifdef _WIN32
+                OutputDebugStringA(formattedMessage.data());
+                OutputDebugStringA("\r\n");
+#endif
+                std::cout << formattedMessage;
+                break;
+
+            case LogLevel::Info:
+#ifdef _WIN32
+                OutputDebugStringA(formattedMessage.data());
+                OutputDebugStringA("\r\n");
+#endif
+                std::cout << formattedMessage;
+                break;
+            };
+        }
+
+        void setCachePath(FileSystem::Path const &path)
 		{
 			cachePath = path;
 		}

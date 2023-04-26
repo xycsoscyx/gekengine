@@ -36,16 +36,16 @@ namespace Gek
             virtual ResourceHandle loadTexture(std::string_view textureName, uint32_t flags, ResourceHandle fallbackResource = ResourceHandle()) = 0;
             virtual ResourceHandle createPattern(std::string_view pattern, JSON::Object const &parameters) = 0;
 
-            virtual ResourceHandle createTexture(std::string_view textureName, const Video::Texture::Description &description, uint32_t flags = 0) = 0;
-            virtual ResourceHandle createBuffer(std::string_view bufferName, const Video::Buffer::Description &description, uint32_t flags = 0) = 0;
-            virtual ResourceHandle createBuffer(std::string_view bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData, uint32_t flags = 0) = 0;
+            virtual ResourceHandle createTexture(const Video::Texture::Description &description, uint32_t flags = 0) = 0;
+            virtual ResourceHandle createBuffer(const Video::Buffer::Description &description, uint32_t flags = 0) = 0;
+            virtual ResourceHandle createBuffer(const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData, uint32_t flags = 0) = 0;
 
             template <typename TYPE>
-            ResourceHandle createBuffer(std::string_view bufferName, const Video::Buffer::Description &description, const TYPE *staticData)
+            ResourceHandle createBuffer(const Video::Buffer::Description &description, const TYPE *staticData)
             {
                 auto rawData = reinterpret_cast<const uint8_t *>(staticData);
                 std::vector<uint8_t> rawBuffer(rawData, (rawData + (sizeof(TYPE) * description.count)));
-                return createBuffer(bufferName, description, std::move(rawBuffer));
+                return createBuffer(description, std::move(rawBuffer));
             }
 
             virtual void setIndexBuffer(Video::Device::Context *videoContext, ResourceHandle resourceHandle, uint32_t offset) = 0;

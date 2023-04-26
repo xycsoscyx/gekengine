@@ -182,8 +182,9 @@ namespace Gek
         return (flags | Video::Buffer::Flags::Resource);
     }
 
-    std::unordered_map<std::string, std::string> getAliasedMap(JSON::Object const &node)
+    std::unordered_map<std::string, std::string> getAliasedMap(JSON::Object const &parent, std::string_view group)
     {
+        auto &node = JSON::Find(parent, group);
         std::unordered_map<std::string, std::string> aliasedMap;
         for (auto &elementNode : node)
         {

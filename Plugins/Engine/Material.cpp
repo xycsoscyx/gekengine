@@ -33,17 +33,18 @@ namespace Gek
                 assert(resources);
 
                 JSON::Object materialNode = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("materials", materialName).withExtension(".json")));
-                auto &shaderNode = materialNode["shader"];
+                auto &shaderNode = JSON::Find(materialNode, "shader");
                 auto shaderName = JSON::Value(shaderNode, "default", String::Empty);
                 ShaderHandle shaderHandle = resources->getShader(shaderName, materialHandle);
                 Engine::Shader *shader = resources->getShader(shaderHandle);
                 if (shader)
                 {
                     Video::RenderState::Description renderStateInformation;
-                    renderStateInformation.load(shaderNode["renderState"]);
+                    renderStateInformation.name = fmt::format("{}:renderState", materialName);
+                    renderStateInformation.load(JSON::Find(shaderNode, "renderState"));
                     renderState = resources->createRenderState(renderStateInformation);
 
-                    auto &dataNode = shaderNode["data"];
+                    auto &dataNode = JSON::Find(shaderNode, "data");
                     for (auto material = shader->begin(); material; material = material->next())
                     {
                         auto materialName = material->getName();

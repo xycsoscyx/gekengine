@@ -75,7 +75,7 @@ namespace Gek
 		{
 			assert(population);
 
-			bool editorActive = JSON::Value(core->getOption("editor"), "active", false);
+			bool editorActive = core->getOption("editor", "active", false);
 			if (frameTime > 0.0f && !editorActive)
 			{
 				population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity * const entity, auto &transformComponent, auto &spinComponent) -> void

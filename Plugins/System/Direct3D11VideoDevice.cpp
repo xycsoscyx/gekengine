@@ -617,39 +617,17 @@ namespace Gek
                     reinterpret_cast<TYPE *>(InterlockedExchangePointer((void **)&d3dObject, nullptr))->Release();
                 }
             }
-        };
 
-        template <typename BASE = Video::Object>
-        class NamedObject
-            : public BASE
-        {
-        public:
-            std::string name;
-
-        public:
-            template <typename CLASS>
-            void setDebugName(CLASS *object)
-            {
-                if (object)
-                {
-                    object->SetPrivateData(WKPDID_D3DDebugObjectName, UINT(name.size()), name.data());
-                }
-            }
-
-            virtual void setName(std::string_view name)
-            {
-                this->name = name;
-            }
-
+            // Video::Object
             std::string_view getName(void) const
             {
-                return name;
+                return "object";
             }
         };
 
         template <typename TYPE, typename BASE = Video::Object>
         class BaseVideoObject
-            : public NamedObject<BASE>
+            : public BASE
         {
         public:
             TYPE * d3dObject = nullptr;
@@ -670,16 +648,16 @@ namespace Gek
                 }
             }
 
-            void setName(std::string const &name)
+            // Video::Object
+            std::string_view getName(void) const
             {
-                NamedObject::setName(name);
-                setDebugName(d3dObject);
+                return "video_object";
             }
         };
 
         template <typename TYPE, typename BASE>
         class DescribedVideoObject
-            : public NamedObject<BASE>
+            : public BASE
         {
         public:
             TYPE * d3dObject = nullptr;
@@ -702,15 +680,16 @@ namespace Gek
                 }
             }
 
-            void setName(std::string const &name)
-            {
-                NamedObject::setName(name);
-                setDebugName(d3dObject);
-            }
-
             typename BASE::Description const &getDescription(void) const
             {
                 return description;
+            }
+
+
+            // Video::Object
+            std::string_view getName(void) const
+            {
+                return description.name;
             }
         };
 
@@ -727,7 +706,7 @@ namespace Gek
         using RenderTargetView = BaseObject<ID3D11RenderTargetView>;
 
         class Query
-            : public NamedObject<Video::Query>
+            : public Video::Query
         {
         public:
             ID3D11Query * d3dObject = nullptr;
@@ -747,15 +726,15 @@ namespace Gek
                 }
             }
 
-            void setName(std::string const &name)
+            // Video::Object
+            std::string_view getName(void) const
             {
-                NamedObject::setName(name);
-                setDebugName(d3dObject);
+                return "query";
             }
         };
 
         class Buffer
-            : public NamedObject<Video::Buffer>
+            : public Video::Buffer
             , public Resource
             , public ShaderResourceView
             , public UnorderedAccessView
@@ -786,13 +765,10 @@ namespace Gek
                 }
             }
 
-            void setName(std::string const &name)
+            // Video::Object
+            std::string_view getName(void) const
             {
-                NamedObject::setName(name);
-                setDebugName(d3dObject);
-                setDebugName(Resource::d3dObject);
-                setDebugName(ShaderResourceView::d3dObject);
-                setDebugName(UnorderedAccessView::d3dObject);
+                return description.name;
             }
 
             // Video::Buffer
@@ -815,7 +791,7 @@ namespace Gek
         };
 
         class Texture
-            : virtual public NamedObject<Video::Texture>
+            : virtual public Video::Texture
             , public BaseTexture
         {
         public:
@@ -825,6 +801,12 @@ namespace Gek
             }
 
             virtual ~Texture(void) = default;
+
+            // Video::Object
+            std::string_view getName(void) const
+            {
+                return description.name;
+            }
 
             // Video::Texture
             const Video::Texture::Description &getDescription(void) const
@@ -847,13 +829,6 @@ namespace Gek
                 , ShaderResourceView(d3dShaderResourceView)
             {
             }
-
-            void setName(std::string const &name)
-            {
-                NamedObject::setName(name);
-                setDebugName(Resource::d3dObject);
-                setDebugName(ShaderResourceView::d3dObject);
-            }
         };
 
         class UnorderedViewTexture
@@ -873,18 +848,10 @@ namespace Gek
                 , UnorderedAccessView(d3dUnorderedAccessView)
             {
             }
-
-            void setName(std::string const &name)
-            {
-                NamedObject::setName(name);
-                setDebugName(Resource::d3dObject);
-                setDebugName(ShaderResourceView::d3dObject);
-                setDebugName(UnorderedAccessView::d3dObject);
-            }
         };
 
         class Target
-            : virtual public NamedObject<Video::Target>
+            : virtual public Video::Target
             , public BaseTexture
         {
         public:
@@ -898,6 +865,12 @@ namespace Gek
             }
 
             virtual ~Target(void) = default;
+
+            // Video::Object
+            std::string_view getName(void) const
+            {
+                return description.name;
+            }
 
             // Video::Texture
             const Video::Texture::Description &getDescription(void) const
@@ -928,13 +901,6 @@ namespace Gek
             }
 
             virtual ~TargetTexture(void) = default;
-
-            void setName(std::string const &name)
-            {
-                NamedObject::setName(name);
-                setDebugName(Resource::d3dObject);
-                setDebugName(RenderTargetView::d3dObject);
-            }
         };
 
         class TargetViewTexture
@@ -952,12 +918,6 @@ namespace Gek
             }
 
             virtual ~TargetViewTexture(void) = default;
-
-            void setName(std::string const &name)
-            {
-                TargetTexture::setName(name);
-                setDebugName(ShaderResourceView::d3dObject);
-            }
         };
 
         class UnorderedTargetViewTexture
@@ -978,13 +938,6 @@ namespace Gek
             }
 
             virtual ~UnorderedTargetViewTexture(void) = default;
-
-            void setName(std::string const &name)
-            {
-                TargetTexture::setName(name);
-                setDebugName(ShaderResourceView::d3dObject);
-                setDebugName(UnorderedAccessView::d3dObject);
-            }
         };
 
         class DepthTexture
@@ -1018,20 +971,11 @@ namespace Gek
                     reinterpret_cast<ID3D11DepthStencilView *>(InterlockedExchangePointer((void **)&d3dObject, nullptr))->Release();
                 }
             }
-
-            void setName(std::string const &name)
-            {
-                NamedObject::setName(name);
-                setDebugName(Resource::d3dObject);
-                setDebugName(ShaderResourceView::d3dObject);
-                setDebugName(UnorderedAccessView::d3dObject);
-                setDebugName(d3dObject);
-            }
         };
 
         template <typename D3DTYPE>
         class Program
-            : public NamedObject<Video::Program>
+            : public Video::Program
         {
         public:
             Video::Program::Information information;
@@ -1054,12 +998,13 @@ namespace Gek
                 }
             }
 
-            void setName(std::string const &name)
+            // Video::Object
+            std::string_view getName(void) const
             {
-                NamedObject::setName(name);
-                setDebugName(d3dObject);
+                return information.name;
             }
 
+            // Video::Program
             Information const &getInformation(void) const
             {
                 return information;
@@ -2579,6 +2524,7 @@ namespace Gek
 
                 static const std::vector<uint8_t> EmptyBuffer;
                 information.type = type;
+                information.name = fmt::format("{}:{}", name, entryFunction);
                 information.debugPath = debugPath;
                 information.uncompiledData = uncompiledProgram;
                 information.compiledData = EmptyBuffer;

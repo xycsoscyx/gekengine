@@ -12,25 +12,25 @@
 
 using namespace Gek;
 
-void compressTexture(Video::Debug::Device *device, FileSystem::Path const &inputFilePath)
+void compressTexture(Context *context, Video::Debug::Device *device, FileSystem::Path const &inputFilePath)
 {
 	if (!inputFilePath.isFile())
 	{
-		std::cerr << "Input file not found: " << inputFilePath.getString();
+		context->log(Context::Error, "Input file not found: {}", inputFilePath.getString());
 		return;
 	}
 
 	auto outputFilePath(inputFilePath.withExtension(".dds"));
 	if (outputFilePath.isFile() && outputFilePath.isNewerThan(inputFilePath))
 	{
-		std::cerr << "Input file hasn't changed since last compression: " << inputFilePath.getString();
+		context->log(Context::Error, "Input file hasn't changed since last compression: {}", inputFilePath.getString());
 		return;
 	}
 
 	std::string extension(String::GetLower(inputFilePath.getExtension()));
 	if (extension == ".dds")
 	{
-		std::cerr << "Input file is alrady compressed: " << inputFilePath.getString();
+		context->log(Context::Error, "Input file is alrady compressed: {}", inputFilePath.getString());
 		return;
 	}
 
@@ -53,7 +53,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 	*/
 	if (!load)
 	{
-		std::cerr << "Unknown file type of " << extension << " for input: " << inputFilePath.getString();
+		context->log(Context::Error, "Unknown file type of {} for input: {}", extension, inputFilePath.getString());
 		return;
 	}
 
@@ -63,7 +63,7 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 	HRESULT resultValue = load(buffer, image);
 	if (FAILED(resultValue))
 	{
-		std::cerr << "Unable to load input file: " << inputFilePath.getString();
+		context->log(Context::Error, "Unable to load input file: {}", inputFilePath.getString());
 		return;
 	}
 
@@ -121,43 +121,42 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 		String::EndsWith(textureName, "specular")
 		)
 	{
-		std::cerr << "Skipping unhandled texture material type: " << textureName;
+		context->log(Context::Error, "Skipping unhandled texture material type: {}", textureName);
 		return;
 	}
 	else
 	{
-		std::cerr << "Unable to determine texture material type: " << textureName;
+		context->log(Context::Error, "Unable to determine texture material type: {}", textureName);
         return;
     }
 
-    std::cout << "Compressing: -> " << inputFilePath.getString();
-    std::cout << "             <- " << outputFilePath.getString();
+	context->log(Context::Info, "Compressing: {} to {}", inputFilePath.getString(), outputFilePath.getString());
     switch (outputFormat)
     {
     case DXGI_FORMAT_BC7_UNORM_SRGB:
-        std::cout << "             Albedo BC7";
+        context->log(Context::Info, "- Albedo BC7");
         break;
 
     case DXGI_FORMAT_BC1_UNORM_SRGB:
-        std::cout << "             Albedo BC1";
+        context->log(Context::Info, "- Albedo BC1");
         break;
 
     case DXGI_FORMAT_BC5_UNORM:
-        std::cout << "             Normal BC5";
+        context->log(Context::Info, "- Normal BC5");
         break;
 
     case DXGI_FORMAT_BC4_UNORM:
-        std::cout << "             Metalness/Roughness BC4";
+        context->log(Context::Info, "- Metalness/Roughness BC4");
         break;
     };
 
-    std::cout << "             " << image.GetMetadata().width << "x" << image.GetMetadata().height;
+    context->log(Context::Info, "- {} x {}", image.GetMetadata().width, image.GetMetadata().height);
 
 	::DirectX::ScratchImage mipMapChain;
 	resultValue = ::DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), ::DirectX::TEX_FILTER_TRIANGLE, 0, mipMapChain);
 	if (FAILED(resultValue))
 	{
-		std::cerr << "Unable to create mipmap chain";
+		context->log(Context::Error, "Unable to create mipmap chain");
 	}
 
 	image = std::move(mipMapChain);
@@ -175,22 +174,20 @@ void compressTexture(Video::Debug::Device *device, FileSystem::Path const &input
 
 	if (FAILED(resultValue))
 	{
-		std::cerr << "Unable to compress image: ";
+		context->log(Context::Error, "Unable to compress image");
         return;
     }
 
     resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, String::Widen(outputFilePath.getString()).data());
 	if (FAILED(resultValue))
 	{
-        std::cout << "Unable to save image";
+        context->log(Context::Info, "Unable to save image");
         return;
     }
 }
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    std::cout << "GEK Texture Compressor";
-
 	auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
 	auto rootPath(pluginPath.getParentPath());
 	auto cachePath(rootPath / "cache");
@@ -202,7 +199,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 	ContextPtr context(Context::Create(&searchPathList));
 	if (context)
 	{
-        context->setCachePath(cachePath);
+		context->log(Context::Info, "GEK Texture Compressor");
+		context->setCachePath(cachePath);
 
 		wchar_t gekDataPath[MAX_PATH + 1] = L"\0";
 		if (GetEnvironmentVariable(L"gek_data_path", gekDataPath, MAX_PATH) > 0)
@@ -231,7 +229,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 				}
 				else if (filePath.isFile() && filePath.getExtension() != ".dds")
 				{
-					compressTexture(dynamic_cast<Video::Debug::Device *>(device.get()), String::GetLower(filePath.getString()));
+					compressTexture(context.get(), dynamic_cast<Video::Debug::Device *>(device.get()), String::GetLower(filePath.getString()));
 				}
 
 				return true;

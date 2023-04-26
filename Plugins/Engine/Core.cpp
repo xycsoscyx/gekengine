@@ -1,4 +1,5 @@
 ﻿#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/Timer.hpp"
 #include "GEK/Utility/FileSystem.hpp"
@@ -69,7 +70,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(_window)
             {
-				std::cout << "Starting GEK Engine";
+				getContext()->log(Context::Info, "Starting GEK Engine");
 
                 if (!window)
                 {
@@ -139,20 +140,20 @@ namespace Gek
                     displayModeStringList.push_back(displayModeString);
                 }
 
-				setDisplayMode(JSON::Value(getOption("display"), "mode", preferredDisplayMode));
+				setDisplayMode(Plugin::Core::getOption("display", "mode", preferredDisplayMode));
 
                 population = getContext()->createClass<Engine::Population>("Engine::Population", (Engine::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Engine::Core *)this);
                 renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Engine::Core *)this);
                 renderer->onShowUserInterface.connect(this, &Core::onShowUserInterface);
 
-                std::cout << "Loading processor plugins";
+                getContext()->log(Context::Info, "Loading processor plugins");
 
                 std::vector<std::string_view> processorNameList;
                 getContext()->listTypes("ProcessorType", [&](std::string_view className) -> void
                 {
                     processorNameList.push_back(className);
-					std::cout << "- " << className << " processor found";
+					getContext()->log(Context::Info, "- {} processor found", className);
 				});
 
                 processorList.reserve(processorNameList.size());
@@ -190,8 +191,8 @@ namespace Gek
                 engineRunning = true;
 
                 window->setVisibility(true);
-                setFullScreen(JSON::Value(getOption("display"), "fullScreen", false));
-                std::cout << "Starting engine";
+                setFullScreen(Plugin::Core::getOption("display", "fullScreen", false));
+                getContext()->log(Context::Info, "Starting engine");
                 window->readEvents();
             }
 
@@ -237,7 +238,7 @@ namespace Gek
                 if (current.mode != requestDisplayMode)
                 {
                     auto& displayModeData = displayModeList[requestDisplayMode];
-                    std::cout << "Setting display mode: " << displayModeData.width << "x" << displayModeData.height;
+                    getContext()->log(Context::Info, "Setting display mode: {} x {}", displayModeData.width, displayModeData.height);
                     if (requestDisplayMode < displayModeList.size())
                     {
                         next.mode = requestDisplayMode;
@@ -717,7 +718,7 @@ namespace Gek
                         }
                     };
 
-                    auto invertedDepthBuffer = JSON::Value(getOption("render"), "invertedDepthBuffer", true);
+                    auto invertedDepthBuffer = Plugin::Core::getOption("render", "invertedDepthBuffer", true);
                     if (ImGui::Checkbox("Inverted Depth Buffer", &invertedDepthBuffer))
                     {
                         setOption("render"s, "invertedDepthBuffer"s, invertedDepthBuffer);
@@ -1013,14 +1014,9 @@ namespace Gek
 				return ContextRegistration::getContext();
 			}
 
-            JSON::Object getOption(std::string_view system) const
+            JSON::Object getOption(std::string_view system, std::string_view name) const
             {
-                if (configuration.contains(system))
-                {
-                    return configuration[system];
-                }
-
-                return JSON::Object::object();
+                return JSON::Find(JSON::Find(configuration, system), name);
             }
 
             void setOption(std::string_view system, std::string_view name, JSON::Object const &value)

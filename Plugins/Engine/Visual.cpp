@@ -80,7 +80,7 @@ namespace Gek
                     std::string elementName(JSON::Value(elementNode, "name", String::Empty));
                     Video::Format format = Video::GetFormat(JSON::Value(elementNode, "format", String::Empty));
 					auto semantic = Video::InputElement::GetSemantic(JSON::Value(elementNode, "semantic", String::Empty));
-                    uint32_t count = elementNode.value("count", 1U);
+                    uint32_t count = JSON::Value(elementNode, "count", 1U);
                     auto semanticIndex = outputIndexList[static_cast<uint8_t>(semantic)];
                     outputIndexList[static_cast<uint8_t>(semantic)] += count;
                     outputVertexData.push_back(fmt::format("    {} {} : {}{};", getFormatSemantic(format, count), elementName, videoDevice->getSemanticMoniker(semantic), semanticIndex));

@@ -637,17 +637,6 @@ namespace Gek
                 return (videoPipeline->getType() == Video::Device::Context::Pipeline::Type::Compute ? dispatchValid : drawPrimitiveValid);
             }
 
-            Video::TexturePtr loadTextureData(FileSystem::Path const& filePath, std::string_view textureName, uint32_t flags)
-            {
-                auto texture = videoDevice->loadTexture(filePath, flags);
-                if (texture)
-                {
-                    texture->setName(textureName);
-                }
-
-                return texture;
-            }
-
             // Renderer
             bool showResources = false;
             void onShowUserInterface(void)
@@ -696,19 +685,13 @@ namespace Gek
             }
 
             template <typename CACHE, typename FUNCTOR>
-            void showObjectMap(CACHE& cache, std::string_view name, FUNCTOR&& onObject)
+            void showObjectMap(CACHE& cache, std::string_view group, FUNCTOR&& onObject)
             {
-                auto lowerName = String::GetLower(name);
-                if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_Framed))
+                if (ImGui::TreeNodeEx(group.data(), ImGuiTreeNodeFlags_Framed))
                 {
                     cache.visit([&](CACHE::HandleType handle, CACHE::TypePtr object) -> void
                     {
-                        std::string nodeName(object->getName());
-                        if (nodeName.empty())
-                        {
-                            nodeName = fmt::format("{}_{}", lowerName, static_cast<uint64_t>(handle.identifier));
-                        }
-
+                        auto nodeName = fmt::format("{}_{}", object->getName(), static_cast<uint64_t>(handle.identifier));
                         if (ImGui::TreeNodeEx(nodeName.data(), ImGuiTreeNodeFlags_Framed))
                         {
                             onObject(object);
@@ -721,11 +704,10 @@ namespace Gek
             }
 
             template <typename HANDLE, typename TYPE, typename FUNCTOR>
-            void showVideoResourceMap(ResourceCache<HANDLE, TYPE>* cache, std::string_view name, FUNCTOR&& onObject)
+            void showVideoResourceMap(ResourceCache<HANDLE, TYPE>* cache, std::string_view group, FUNCTOR&& onObject)
             {
-                if (ImGui::TreeNodeEx(name.data(), ImGuiTreeNodeFlags_Framed))
+                if (ImGui::TreeNodeEx(group.data(), ImGuiTreeNodeFlags_Framed))
                 {
-                    auto lowerName = String::GetLower(name);
                     std::unordered_map<std::string_view, std::vector<std::pair<HANDLE, std::shared_ptr<TYPE>>>> typeDataMap;
                     cache->visit([&](ResourceCache<HANDLE, TYPE>::HandleType handle, ResourceCache<HANDLE, TYPE>::TypePtr object) -> void
                     {
@@ -771,7 +753,7 @@ namespace Gek
                             {
                                 auto handle = resourcePair.first;
                                 auto& object = resourcePair.second;
-                                auto nodeName = fmt::format("{} - {}", static_cast<uint64_t>(handle.identifier), (object->getName().empty() ? lowerName : object->getName()));
+                                auto nodeName = fmt::format("{} - {}", object->getName(), static_cast<uint64_t>(handle.identifier));
                                 if (ImGui::TreeNodeEx(nodeName.data(), ImGuiTreeNodeFlags_Framed))
                                 {
                                     onObject(object);
@@ -1037,9 +1019,9 @@ namespace Gek
                     auto texturePath(getContext()->findDataPath(FileSystem::CreatePath("textures", textureName).withExtension(format)));
                     if (texturePath.isFile())
                     {
-                        auto resource = dynamicCache.getHandle(hash, flags, [this, texturePath = texturePath, textureName = std::string(textureName), flags](ResourceHandle)->Video::TexturePtr
+                        auto resource = dynamicCache.getHandle(hash, flags, [this, texturePath = texturePath, flags](ResourceHandle)->Video::TexturePtr
                         {
-                            return loadTextureData(texturePath, textureName, flags);
+                            return videoDevice->loadTexture(texturePath, flags);
                         }, 0, &fallback);
 
                         if (resource.first)
@@ -1168,13 +1150,7 @@ namespace Gek
 
                 auto resource = dynamicCache.getHandle(hash, 0, [this, name, description, data = move(data)](ResourceHandle)->Video::TexturePtr
                 {
-                    auto texture = videoDevice->createTexture(description, data.data());
-                    if (texture.get())
-                    {
-                        texture->setName(name);
-                    }
-
-                    return texture;
+                    return videoDevice->createTexture(description, data.data());
                 }, false);
 
                 if (resource.first)
@@ -1185,24 +1161,18 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createTexture(std::string_view textureName, Video::Texture::Description const& description, uint32_t flags)
+            ResourceHandle createTexture(Video::Texture::Description const& description, uint32_t flags)
             {
-                auto hash = GetHash(textureName);
+                auto hash = GetHash(description.name);
                 auto parameters = description.getHash();
                 if (description.format == Video::Format::Unknown)
                 {
                     flags |= Resources::Flags::LoadFromCache;
                 }
 
-                auto resource = dynamicCache.getHandle(hash, parameters, [this, textureName = std::string(textureName), description](ResourceHandle)->Video::TexturePtr
+                auto resource = dynamicCache.getHandle(hash, parameters, [this, description](ResourceHandle)->Video::TexturePtr
                 {
-                    auto texture = videoDevice->createTexture(description);
-                    if (texture)
-                    {
-                        texture->setName(textureName);
-                    }
-
-                    return texture;
+                    return videoDevice->createTexture(description);
                 }, flags);
 
                 if (resource.first)
@@ -1213,26 +1183,20 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createBuffer(std::string_view bufferName, Video::Buffer::Description const& description, uint32_t flags)
+            ResourceHandle createBuffer(Video::Buffer::Description const& description, uint32_t flags)
             {
                 assert(description.count > 0);
 
-                auto hash = GetHash(bufferName);
+                auto hash = GetHash(description.name);
                 auto parameters = description.getHash();
                 if (description.format == Video::Format::Unknown)
                 {
                     flags |= Resources::Flags::LoadFromCache;
                 }
 
-                auto resource = dynamicCache.getHandle(hash, parameters, [this, bufferName = std::string(bufferName), description](ResourceHandle)->Video::BufferPtr
+                auto resource = dynamicCache.getHandle(hash, parameters, [this, description](ResourceHandle)->Video::BufferPtr
                 {
-                    auto buffer = videoDevice->createBuffer(description);
-                    if (buffer)
-                    {
-                        buffer->setName(bufferName);
-                    }
-
-                    return buffer;
+                    return videoDevice->createBuffer(description);
                 }, flags);
 
                 if (resource.first)
@@ -1243,27 +1207,21 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createBuffer(std::string_view bufferName, Video::Buffer::Description const& description, std::vector<uint8_t>&& staticData, uint32_t flags)
+            ResourceHandle createBuffer(Video::Buffer::Description const& description, std::vector<uint8_t>&& staticData, uint32_t flags)
             {
                 assert(description.count > 0);
                 assert(!staticData.empty());
 
-                auto hash = GetHash(bufferName);
+                auto hash = GetHash(description.name);
                 auto parameters = reinterpret_cast<std::size_t>(staticData.data());
                 if (description.format == Video::Format::Unknown)
                 {
                     flags |= Resources::Flags::LoadFromCache;
                 }
 
-                auto resource = dynamicCache.getHandle(hash, parameters, [this, bufferName = std::string(bufferName), description, staticData = move(staticData)](ResourceHandle)->Video::BufferPtr
+                auto resource = dynamicCache.getHandle(hash, parameters, [this, description, staticData = move(staticData)](ResourceHandle)->Video::BufferPtr
                 {
-                    auto buffer = videoDevice->createBuffer(description, (void*)staticData.data());
-                    if (buffer)
-                    {
-                        buffer->setName(bufferName);
-                    }
-
-                    return buffer;
+                    return videoDevice->createBuffer(description, (void*)staticData.data());
                 }, flags);
 
                 if (resource.first)
@@ -1536,7 +1494,7 @@ namespace Gek
                 auto programsPath(getContext()->findDataPath("programs"s, false));
                 auto filePath(programsPath / name);
                 auto programDirectory(filePath.getParentPath());
-                auto uncompiledData = filePath.isFile() ? FileSystem::Read(filePath) : engineData;
+                std::string uncompiledData = filePath.isFile() ? FileSystem::Read(filePath) : engineData.data();
 
                 auto hash = GetHash(name, uncompiledData, engineData);
                 auto cachePath = getContext()->getCachePath(FileSystem::CreatePath("programs", name));
@@ -1621,13 +1579,7 @@ namespace Gek
                 auto handle = staticProgramCache.getHandle([this, type, name = std::string(name), entryFunction = std::string(entryFunction), engineData = std::string(engineData)](ProgramHandle)->Video::ProgramPtr
                 {
                     auto compiledData = getProgramInformation(type, name, entryFunction, engineData);
-                    auto program = videoDevice->createProgram(compiledData);
-                    if (program)
-                    {
-                        program->setName(fmt::format("{}:{}", name, entryFunction));
-                    }
-
-                    return program;
+                    return videoDevice->createProgram(compiledData);
                 });
 
                 return staticProgramCache.getResource(handle);
@@ -1638,13 +1590,7 @@ namespace Gek
                 return programCache.getHandle([this, type, name = std::string(name), entryFunction = std::string(entryFunction), engineData = std::string(engineData)](ProgramHandle)->Video::ProgramPtr
                 {
                     auto compiledData = getProgramInformation(type, name, entryFunction, engineData);
-                    auto program = videoDevice->createProgram(compiledData);
-                    if (program)
-                    {
-                        program->setName(fmt::format("{}:{}", name, entryFunction));
-                    }
-
-                    return program;
+                    return videoDevice->createProgram(compiledData);
                 });
             }
 
@@ -1653,9 +1599,7 @@ namespace Gek
                 auto hash = description.getHash();
                 return renderStateCache.getHandle(hash, [this, description](RenderStateHandle) -> Video::RenderStatePtr
                 {
-                    auto state = videoDevice->createRenderState(description);
-                    //state->setName(stateName);
-                    return state;
+                    return videoDevice->createRenderState(description);
                 }).second;
             }
 
@@ -1664,9 +1608,7 @@ namespace Gek
                 auto hash = description.getHash();
                 return depthStateCache.getHandle(hash, [this, description](DepthStateHandle) -> Video::DepthStatePtr
                 {
-                    auto state = videoDevice->createDepthState(description);
-                    //state->setName(stateName);
-                    return state;
+                    return videoDevice->createDepthState(description);
                 }).second;
             }
 
@@ -1675,9 +1617,7 @@ namespace Gek
                 auto hash = description.getHash();
                 return blendStateCache.getHandle(hash, [this, description](BlendStateHandle) -> Video::BlendStatePtr
                 {
-                    auto state = videoDevice->createBlendState(description);
-                    //state->setName(stateName);
-                    return state;
+                    return videoDevice->createBlendState(description);
                 }).second;
             }
 

@@ -29,7 +29,13 @@ namespace Gek
             wink::signal<wink::slot<void(bool &)>> canShutdown;
             wink::signal<wink::slot<void(void)>> onShutdown;
 
-            virtual JSON::Object getOption(std::string_view system) const = 0;
+            template <typename TYPE>
+            TYPE getOption(std::string_view system, std::string_view name, TYPE defaultValue)
+            {
+                return JSON::Value(getOption(system, name), defaultValue);
+            }
+
+            virtual JSON::Object getOption(std::string_view system, std::string_view name) const = 0;
             virtual void setOption(std::string_view system, std::string_view name, JSON::Object const &value) = 0;
             virtual void deleteOption(std::string_view system, std::string_view name) = 0;
 

@@ -10,6 +10,7 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/Hash.hpp"
+#include <source_location>
 #include <functional>
 #include <typeindex>
 #include <iostream>
@@ -25,9 +26,43 @@ namespace Gek
 
     GEK_INTERFACE(Context)
     {
+        enum LogLevel : uint8_t
+        {
+            Error = 0,
+            Warning,
+            Debug,
+            Info,
+        };
+
+        struct LocationMessage
+        {
+            fmt::string_view format;
+            std::source_location location;
+
+            LocationMessage(const char *format, const std::source_location& location = std::source_location::current())
+                : format(format)
+                , location(location)
+            {
+            }
+
+            LocationMessage(std::string_view format, const std::source_location& location = std::source_location::current())
+                : format(format)
+                , location(location)
+            {
+            }
+        };
+
         static ContextPtr Create(std::vector<FileSystem::Path> const *pluginSearchList);
 
         virtual ~Context(void) = default;
+
+        template <typename... PARAMETERS>
+        void log(LogLevel level, const LocationMessage& message, PARAMETERS&&... args) const
+        {
+            vlog(level, message, fmt::make_format_args(args...));
+        }
+
+        virtual void vlog(LogLevel level, const LocationMessage& message, fmt::format_args args) const = 0;
 
 		virtual void setCachePath(FileSystem::Path const &path) = 0;
 		virtual FileSystem::Path getCachePath(FileSystem::Path const &path) = 0;
@@ -52,7 +87,7 @@ namespace Gek
             auto derivedClass = dynamic_cast<TYPE *>(baseClass.get());
             if (!derivedClass)
             {
-                std::cerr << "Unable to cast " << className << " from base context user to requested class of " << typeid(TYPE).name();
+                log(Error, "Unable to cast {} from base context user to requested class of {}", className, typeid(TYPE).name());
                 return nullptr;
             }
 

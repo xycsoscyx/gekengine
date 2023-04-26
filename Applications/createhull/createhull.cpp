@@ -33,11 +33,11 @@ struct Parameters
     float feetPerUnit;
 };
 
-bool GetModels(Parameters const& parameters, aiScene const* inputScene, aiNode const* inputNode, aiMatrix4x4 const& parentTransform, std::vector<Math::Float3> &pointList, Shapes::AlignedBox &boundingBox)
+bool GetModels(Context *context, Parameters const& parameters, aiScene const* inputScene, aiNode const* inputNode, aiMatrix4x4 const& parentTransform, std::vector<Math::Float3> &pointList, Shapes::AlignedBox &boundingBox)
 {
     if (inputNode == nullptr)
     {
-        std::cerr << "Invalid scene node";
+        context->log(Context::Error, "Invalid scene node");
         return false;
     }
 
@@ -46,18 +46,18 @@ bool GetModels(Parameters const& parameters, aiScene const* inputScene, aiNode c
     {
         if (inputNode->mMeshes == nullptr)
         {
-            std::cerr << "Invalid mesh list";
+            context->log(Context::Error, "Invalid mesh list");
             return false;
         }
 
         std::string name = inputNode->mName.C_Str();
-        std::cout << "Found Assimp Model: " << name;
+        context->log(Context::Info, "Found Assimp Model: {}", name);
         for (uint32_t meshIndex = 0; meshIndex < inputNode->mNumMeshes; ++meshIndex)
         {
             uint32_t nodeMeshIndex = inputNode->mMeshes[meshIndex];
             if (nodeMeshIndex >= inputScene->mNumMeshes)
             {
-                std::cerr << "Invalid mesh index";
+                context->log(Context::Error, "Invalid mesh index");
                 continue;
             }
 
@@ -66,13 +66,13 @@ bool GetModels(Parameters const& parameters, aiScene const* inputScene, aiNode c
             {
                 if (inputMesh->mFaces == nullptr)
                 {
-                    std::cerr << "Invalid inputMesh face list";
+                    context->log(Context::Error, "Invalid inputMesh face list");
                     continue;
                 }
 
                 if (inputMesh->mVertices == nullptr)
                 {
-                    std::cerr << "Invalid inputMesh vertex list";
+                    context->log(Context::Error, "Invalid inputMesh vertex list");
                     continue;
                 }
 
@@ -93,13 +93,13 @@ bool GetModels(Parameters const& parameters, aiScene const* inputScene, aiNode c
     {
         if (inputNode->mChildren == nullptr)
         {
-            std::cerr << "Invalid child list";
+            context->log(Context::Error, "Invalid child list");
             return false;
         }
 
         for (uint32_t childIndex = 0; childIndex < inputNode->mNumChildren; ++childIndex)
         {
-            if (!GetModels(parameters, inputScene, inputNode->mChildren[childIndex], transform, pointList, boundingBox))
+            if (!GetModels(context, parameters, inputScene, inputNode->mChildren[childIndex], transform, pointList, boundingBox))
             {
                 return false;
             }
@@ -117,8 +117,6 @@ void serializeCollision(void* const serializeHandle, const void* const buffer, i
 
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
-    std::cout << "GEK Convex Hull Converter";
-
     argparse::ArgumentParser program("GEK Convex Hull Converter", "1.0");
 
     program.add_argument("-i", "--input")
@@ -159,17 +157,6 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     parameters.targetName = program.get<std::string>("--output");
     parameters.feetPerUnit = (1.0f / program.get<float>("--unitsperfoot"));
 
-    aiLogStream logStream;
-    logStream.callback = [](char const* message, char* user) -> void
-    {
-        std::string trimmedMessage(message);
-        trimmedMessage = trimmedMessage.substr(0, trimmedMessage.size() - 1);
-        std::cout << "Assimp: " << trimmedMessage;
-    };
-
-    logStream.user = nullptr;
-    aiAttachLogStream(&logStream);
-
     auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
     auto rootPath(pluginPath.getParentPath());
     auto cachePath(rootPath / "cache");
@@ -181,6 +168,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
     ContextPtr context(Context::Create(nullptr));
     if (context)
     {
+        context->log(Context::Info, "GEK Convex Hull Converter");
         context->setCachePath(cachePath);
 
         wchar_t gekDataPath[MAX_PATH + 1] = L"\0";
@@ -192,8 +180,15 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         context->addDataPath(rootPath / "data");
         context->addDataPath(rootPath.getString());
 
-        auto filePath = context->findDataPath(FileSystem::CreatePath("physics", parameters.sourceName));
+        aiLogStream logStream;
+        logStream.callback = [](char const* message, char* user) -> void
+        {
+            Context* context = reinterpret_cast<Context*>(user);
+            context->log(Context::Info, message);
+        };
 
+        logStream.user = reinterpret_cast<char*>(context.get());
+        aiAttachLogStream(&logStream);
 
         int notRequiredComponents =
             aiComponent_NORMALS |
@@ -225,24 +220,25 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         //aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
         //aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SLM_TRIANGLE_LIMIT, 65535);
 
-        std::cout << "Loading: " << filePath.getString();
+        auto filePath = context->findDataPath(FileSystem::CreatePath("physics", parameters.sourceName));
+        context->log(Context::Info, "Loading: {}", filePath.getString());
         auto inputScene = aiImportFileExWithProperties(filePath.getString().data(), importFlags, nullptr, propertyStore);
         if (inputScene == nullptr)
         {
-            std::cerr << "Unable to load scene with Assimp";
+            context->log(Context::Error, "Unable to load scene with Assimp");
             return -__LINE__;
         }
 
         if (!inputScene->HasMeshes())
         {
-            std::cerr << "Scene has no meshes";
+            context->log(Context::Error, "Scene has no meshes");
             return -__LINE__;
         }
 
         aiMatrix4x4 identity;
         Shapes::AlignedBox boundingBox;
         std::vector<Math::Float3> pointList;
-        if (!GetModels(parameters, inputScene, inputScene->mRootNode, identity, pointList, boundingBox))
+        if (!GetModels(context.get(), parameters, inputScene, inputScene->mRootNode, identity, pointList, boundingBox))
         {
             return -__LINE__;
         }
@@ -252,16 +248,16 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
         if (pointList.empty())
         {
-            std::cerr << "No vertex data found in scene";
+            context->log(Context::Error, "No vertex data found in scene");
             return -__LINE__;
         }
 
-        std::cout << "> Num. Points: " << pointList.size();
-        std::cout << "< Size: Minimum[" << boundingBox.minimum.x << ", " << boundingBox.minimum.y << ", " << boundingBox.minimum.z << "]";
-        std::cout << "< Size: Maximum[" << boundingBox.maximum.x << ", " << boundingBox.maximum.y << ", " << boundingBox.maximum.z << "]";
+        context->log(Context::Info, "Num. Points: {}", pointList.size());
+        context->log(Context::Info, "Size: Minimum[{}, {}, {}]", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
+        context->log(Context::Info, "Size: Maximum[{}, {}, {}]", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
 
         auto outputPath(filePath.withoutExtension().withExtension(".gek"));
-        std::cout << "Writing: " << outputPath.getString();
+        context->log(Context::Info, "Writing: {}", outputPath.getString());
         outputPath.getParentPath().createChain();
 
         std::ofstream file;
@@ -278,7 +274,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         }
         else
         {
-            std::cerr << "Unable to create output file";
+            context->log(Context::Error, "Unable to create output file");
             return -__LINE__;
         }
     }

@@ -164,11 +164,12 @@ namespace Gek
                     cameraSize = UI::GetWindowContentRegionSize();
 
                     Video::Texture::Description description;
+                    description.name = "editorTarget";
                     description.width = cameraSize.x;
                     description.height = cameraSize.y;
                     description.flags = Video::Texture::Flags::RenderTarget | Video::Texture::Flags::Resource;
                     description.format = Video::Format::R11G11B10_FLOAT;
-                    cameraTarget = core->getResources()->createTexture("editorTarget", description, Plugin::Resources::Flags::LoadImmediately);
+                    cameraTarget = core->getResources()->createTexture(description, Plugin::Resources::Flags::LoadImmediately);
 
                     auto cameraBuffer = resources->getResource(cameraTarget);
                     auto cameraTexture = (cameraBuffer ? dynamic_cast<Video::Texture *>(cameraBuffer) : nullptr);
@@ -701,7 +702,7 @@ namespace Gek
                     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(5.0f, 10.0f));
                     if (ImGui::BeginMenu("Edit"))
                     {
-                        bool editorEnabled = JSON::Value(core->getOption("editor"), "active", false);
+                        bool editorEnabled = core->getOption("editor", "active", false);
                         if (ImGui::MenuItem("Show Editor", nullptr, &editorEnabled))
                         {
                             core->setOption("editor", "active", editorEnabled);
@@ -714,7 +715,7 @@ namespace Gek
                     ImGui::EndMainMenuBar();
                 }
 
-                bool editorActive = JSON::Value(core->getOption("editor"), "active", false);
+                bool editorActive = core->getOption("editor", "active", false);
                 if (!editorActive)
                 {
                     return;
@@ -741,7 +742,7 @@ namespace Gek
 
             void onAction(Plugin::Population::Action const &action)
             {
-                bool editorActive = JSON::Value(core->getOption("editor"), "active", false);
+                bool editorActive = core->getOption("editor", "active", false);
                 if (!editorActive)
                 {
                     return;
@@ -776,7 +777,7 @@ namespace Gek
 
             void onUpdate(float frameTime)
             {
-                bool editorActive = JSON::Value(core->getOption("editor"), "active", false);
+                bool editorActive = core->getOption("editor", "active", false);
                 if (editorActive)
                 {
                     Math::Float4x4 viewMatrix(Math::Float4x4::MakePitchRotation(lookingAngle) * Math::Float4x4::MakeYawRotation(headingAngle));

@@ -345,7 +345,7 @@ namespace Gek
             assert(resources);
             assert(renderer);
 
-            std::cout << "Initializing model system";
+            getContext()->log(Context::Info, "Initializing model system");
 
             core->onInitialized.connect(this, &ModelProcessor::onInitialized);
             core->onShutdown.connect(this, &ModelProcessor::onShutdown);
@@ -359,12 +359,12 @@ namespace Gek
             visual = resources->loadVisual("model");
 
             Video::Buffer::Description instanceDescription;
+            instanceDescription.name = "model:instances";
             instanceDescription.stride = sizeof(Math::Float4x4);
             instanceDescription.count = 100;
             instanceDescription.type = Video::Buffer::Type::Vertex;
             instanceDescription.flags = Video::Buffer::Flags::Mappable;
             instanceBuffer = videoDevice->createBuffer(instanceDescription);
-            instanceBuffer->setName("model:instances");
         }
 
         Task scheduleLoadData(std::string name, FileSystem::Path filePath, ModelProcessor::Group &group, ModelProcessor::Group::Model &model)
@@ -378,11 +378,11 @@ namespace Gek
             Header* header = (Header*)buffer.data();
             if (buffer.size() < (sizeof(Header) + (sizeof(Header::Mesh) * header->meshCount)))
             {
-                std::cerr << "Model file too small to contain mesh headers: " << filePath.getString();
+                getContext()->log(Context::Error, "Model file too small to contain mesh headers: {}", filePath.getString());
                 co_return;
             }
 
-            std::cout << "Group " << name << ", loading model " << fileName << ": " << header->meshCount << " meshes";
+            getContext()->log(Context::Info, "Group {}, loading model {}: {} meshes", name, fileName, header->meshCount);
 
             model.boundingBox = header->boundingBox;
             group.boundingBox.extend(model.boundingBox.minimum);
@@ -405,27 +405,31 @@ namespace Gek
                 //mesh.indexBuffer = resources->createBuffer(fmt::format("model:{}.{}.{}:indices", meshIndex, fileName, name), indexBufferDescription, unpacker.readBlock<Face>(meshHeader.faceCount));
 
                 Video::Buffer::Description vertexBufferDescription;
+                vertexBufferDescription.name = fmt::format("model:{}.{}.{}:positions", meshIndex, fileName, name);
                 vertexBufferDescription.stride = sizeof(Math::Float3);
                 vertexBufferDescription.count = meshHeader.vertexCount;
                 vertexBufferDescription.type = Video::Buffer::Type::Vertex;
-                mesh.vertexBufferList[0] = resources->createBuffer(fmt::format("model:{}.{}.{}:positions", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
+                mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
 
                 vertexBufferDescription.stride = sizeof(Math::Float2);
-                mesh.vertexBufferList[1] = resources->createBuffer(fmt::format("model:{}.{}.{}:texcoords", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float2>(meshHeader.vertexCount));
+                vertexBufferDescription.name = fmt::format("model:{}.{}.{}:texcoords", meshIndex, fileName, name);
+                mesh.vertexBufferList[1] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float2>(meshHeader.vertexCount));
 
                 vertexBufferDescription.stride = sizeof(Math::Float4);
-                mesh.vertexBufferList[2] = resources->createBuffer(fmt::format("model:{}.{}.{}:tangents", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float4>(meshHeader.vertexCount));
+                vertexBufferDescription.name = fmt::format("model:{}.{}.{}:tangents", meshIndex, fileName, name);
+                mesh.vertexBufferList[2] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float4>(meshHeader.vertexCount));
 
                 vertexBufferDescription.stride = sizeof(Math::Float3);
-                mesh.vertexBufferList[3] = resources->createBuffer(fmt::format("model:{}.{}.{}:normals", meshIndex, fileName, name), vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
+                vertexBufferDescription.name = fmt::format("model:{}.{}.{}:normals", meshIndex, fileName, name);
+                mesh.vertexBufferList[3] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
             }
 
-            std::cout << "Group " << name << ", mesh " << fileName << " successfully loaded";
+            getContext()->log(Context::Info, "Group {}, mesh {} successfully loaded", name, fileName);
         }
 
         Task scheduleLoadGroup(std::string name, ModelProcessor::Group &group)
         {
-            std::cout << "Queueing group for load: " << name;
+            getContext()->log(Context::Info, "Queueing group for load: {}", name);
 
             co_await loadPool.schedule();
 
@@ -519,26 +523,26 @@ namespace Gek
                         std::vector<uint8_t> buffer(FileSystem::Load(filePath, sizeof(Header)));
                         if (buffer.size() < sizeof(Header))
                         {
-                            std::cerr << "Model file too small to contain header: " << fileName;
+                            getContext()->log(Context::Error, "Model file too small to contain header: {}", fileName);
                             return true;
                         }
 
                         Header* header = (Header*)buffer.data();
                         if (header->identifier != *(uint32_t*)"GEKX")
                         {
-                            std::cerr << "Unknown model file identifier encountered (requires: GEKX, has: " << header->identifier << "): " << fileName;
+                            getContext()->log(Context::Error, "Unknown model file identifier encountered (requires: GEKX, has: {}): {}", header->identifier, fileName);
                             return true;
                         }
 
                         if (header->type != 0)
                         {
-                            std::cerr << "Unsupported model type encountered (requires: 0, has: " << header->type << "): " << fileName;
+                            getContext()->log(Context::Error, "Unsupported model type encountered (requires: 0, has: {}): {}", header->type, fileName);
                             return true;
                         }
 
                         if (header->version != 8)
                         {
-                            std::cerr << "Unsupported model version encountered (requires: 8, has: " << header->version << "): " << fileName;
+                            getContext()->log(Context::Error, "Unsupported model version encountered (requires: 8, has {}): {}", header->version, fileName);
                             return true;
                         }
 
@@ -550,7 +554,7 @@ namespace Gek
 
                 if (modelPathList.empty())
                 {
-                    std::cerr << "No models found for group: " << name;
+                    getContext()->log(Context::Error, "No models found for group: {}", name);
                 }
 
                 group.modelList.resize(modelPathList.size());
@@ -562,7 +566,7 @@ namespace Gek
                 }
             }
 
-            std::cout << "Group " << name << " successfully queued";
+            getContext()->log(Context::Info, "Group {} successfully queued", name);
         }
 
         void addEntity(Plugin::Entity * const entity)
@@ -848,12 +852,12 @@ namespace Gek
 			{
 				instanceBuffer = nullptr;
 				Video::Buffer::Description instanceDescription;
+                instanceDescription.name = "model:instances";
 				instanceDescription.stride = sizeof(Math::Float4x4);
 				instanceDescription.count = maximumInstanceCount;
 				instanceDescription.type = Video::Buffer::Type::Vertex;
 				instanceDescription.flags = Video::Buffer::Flags::Mappable;
 				instanceBuffer = videoDevice->createBuffer(instanceDescription);
-				instanceBuffer->setName("model:instances");
 			}
 		}
 	};

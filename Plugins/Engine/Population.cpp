@@ -109,10 +109,10 @@ namespace Gek
             {
                 assert(core);
 
-                std::cout << "Loading component plugins";
+                getContext()->log(Context::Info, "Loading component plugins");
                 getContext()->listTypes("ComponentType", [&](std::string_view className) -> void
                 {
-                    std::cout << "Component found: " << className;
+                    getContext()->log(Context::Info, "Component found: {}", className);
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className, static_cast<Plugin::Population *>(this)));
                     if (availableComponents.count(component->getIdentifier()) > 0)
                     {
@@ -243,14 +243,14 @@ namespace Gek
 
                 co_await workerPool.schedule();
 
-                std::cout << "Loading population: " << populationName;
+                getContext()->log(Context::Info, "Loading population: {}", populationName);
 
                 JSON::Object worldNode = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("scenes", populationName).withExtension(".json")));
                 shuntingYard.setRandomSeed(JSON::Value(worldNode, "Seed", uint32_t(std::time(nullptr) & 0xFFFFFFFF)));
 
                 auto templatesNode = worldNode["Templates"];
                 auto populationNode = worldNode["Population"];
-                std::cout << "Found " << populationNode.size() << " Entity Definitions";
+                getContext()->log(Context::Info, "Found {} Entity Definitions", populationNode.size());
                 for (auto &entityNode : populationNode)
                 {
                     uint32_t count = 1;

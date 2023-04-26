@@ -40,5 +40,5 @@ namespace Gek
     uint32_t getTextureFlags(std::string const &createFlags);
     uint32_t getBufferFlags(std::string const &createFlags);
 
-    std::unordered_map<std::string, std::string> getAliasedMap(JSON::Object const &node);
+    std::unordered_map<std::string, std::string> getAliasedMap(JSON::Object const &parent, std::string_view group);
 }; // namespace Gek

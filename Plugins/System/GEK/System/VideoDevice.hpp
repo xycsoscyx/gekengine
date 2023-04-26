@@ -226,7 +226,6 @@ namespace Gek
         {
             virtual ~Object(void) = default;
 
-            virtual void setName(std::string_view name) = 0;
             virtual std::string_view getName(void) const = 0;
         };
 
@@ -251,6 +250,7 @@ namespace Gek
 
             struct Description
             {
+                std::string name;
                 FillMode fillMode = FillMode::Solid;
                 CullMode cullMode = CullMode::Back;
                 bool frontCounterClockwise = false;
@@ -308,6 +308,7 @@ namespace Gek
                     size_t getHash(void) const;
                 };
 
+                std::string name;
                 bool enable = false;
                 Write writeMask = Write::All;
                 ComparisonFunction comparisonFunction = ComparisonFunction::Always;
@@ -395,6 +396,7 @@ namespace Gek
 
                 using TargetStates = std::array<TargetState, 8>;
 
+                std::string name;
                 bool alphaToCoverage = false;
                 bool independentBlendStates = false;
                 TargetStates targetStates;
@@ -470,6 +472,7 @@ namespace Gek
 
             struct Description
             {
+                std::string name;
                 FilterMode filterMode = FilterMode::MinificationMagnificationMipMapPoint;
                 AddressMode addressModeU = AddressMode::Clamp;
                 AddressMode addressModeV = AddressMode::Clamp;
@@ -519,6 +522,7 @@ namespace Gek
 
             struct Description
             {
+                std::string name;
                 Video::Format format = Video::Format::Unknown;
                 uint32_t stride = 0;
                 uint32_t count = 0;
@@ -549,6 +553,7 @@ namespace Gek
 
             struct Description
             {
+                std::string name;
                 Video::Format format = Video::Format::Unknown;
                 uint32_t width = 1;
                 uint32_t height = 1;
@@ -617,7 +622,8 @@ namespace Gek
 			struct Information
 			{
 				Type type;
-				FileSystem::Path debugPath;
+                std::string name;
+                FileSystem::Path debugPath;
 				std::string uncompiledData;
 				std::vector<uint8_t> compiledData;
 			};
@@ -631,6 +637,7 @@ namespace Gek
         {
             struct Description
             {
+                std::string name;
                 std::string device;
                 Format displayFormat = Format::R8G8B8A8_UNORM_SRGB;
                 uint32_t sampleCount = 1;

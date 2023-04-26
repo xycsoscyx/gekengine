@@ -29,7 +29,7 @@ namespace Gek
             data->range = evaluate(importData, "range", 0.0f);
             data->radius = evaluate(importData, "radius", 0.0f);
             data->intensity = evaluate(importData, "intensity", 0.0f);
-            std::cout << "Range: " << data->range << ", Radius: " << data->radius << ", Intensity: " << data->intensity;
+            getContext()->log(Context::Info, "Range: {}, Radius: {}, Intensity: {}", data->range, data->radius, data->intensity);
         }
 
         // Edit::Component

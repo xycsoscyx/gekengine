@@ -401,54 +401,6 @@ namespace Gek
 			return (result == std::end(data) ? ComparisonFunction::Always : result->second);
         }
 
-        std::string checkConfiguration(JSON::Object const &configs, std::string const &value)
-        {
-            if (String::GetLower(value.substr(0, 8)) == "options.")
-            {
-                auto optionName = value.substr(8);
-                auto selectorGroup = configs[optionName];
-                auto optionsGroup = selectorGroup["options"];
-                if (optionsGroup.is_array())
-                {
-                    uint32_t optionValue = 0;
-                    std::vector<std::string> optionList;
-                    for (auto &choice : optionsGroup)
-                    {
-                        auto optionName = choice.get<std::string>();
-                        optionList.push_back(optionName);
-                    }
-
-                    int selection = 0;
-                    auto &selectionNode = selectorGroup["election"];
-                    if (selectionNode.is_string())
-                    {
-                        auto selectedName = selectionNode.get<std::string>();
-                        auto optionsSearch = std::find_if(std::begin(optionList), std::end(optionList), [selectedName](std::string const &choice) -> bool
-                        {
-                            return (selectedName == choice);
-                        });
-
-                        if (optionsSearch != std::end(optionList))
-                        {
-                            selection = std::distance(std::begin(optionList), optionsSearch);
-                        }
-                    }
-                    else
-                    {
-                        selection = selectionNode.get<uint32_t>();
-                    }
-
-                    return optionList[selection];
-                }
-                else
-                {
-                    return selectorGroup.get<std::string>();
-                }
-            }
-
-            return value;
-        }
-
 		void RenderState::Description::load(JSON::Object const &object, JSON::Object const &configs)
         {
 			auto getFillMode = [](std::string const &string) -> auto
@@ -474,8 +426,8 @@ namespace Gek
 				return (result == std::end(data) ? CullMode::Back : result->second);
 			};
 
-            fillMode = getFillMode(checkConfiguration(configs, JSON::Value(object, "fillMode", "Solid"s)));
-			cullMode = getCullMode(checkConfiguration(configs, JSON::Value(object, "cullMode", "Back"s)));
+            fillMode = getFillMode(JSON::Value(object, "fillMode", "Solid"s));
+			cullMode = getCullMode(JSON::Value(object, "cullMode", "Back"s));
             frontCounterClockwise = JSON::Value(object, "frontCounterClockwise", false);
             depthBias = JSON::Value(object, "depthBias", 0);
             depthBiasClamp = JSON::Value(object, "depthBiasClamp", 0.0f);
@@ -533,14 +485,14 @@ namespace Gek
 				return (result == std::end(data) ? Write::All : result->second);
 			};
 
-            enable = object.value("enable", false);
+            enable = JSON::Value(object, "enable", false);
             writeMask = getWriteMask(JSON::Value(object, "writeMask", "All"s));
             comparisonFunction = getComparisonFunction(JSON::Value(object, "comparisonFunction", "Always"s));
             stencilEnable = JSON::Value(object, "stencilEnable", false);
             stencilReadMask = JSON::Value(object, "stencilReadMask", 0);
             stencilWriteMask = JSON::Value(object, "stencilWriteMask", 0);
-            stencilFrontState.load(object["stencilFrontState"], configs);
-            stencilBackState.load(object["stencilBackState"], configs);
+            stencilFrontState.load(JSON::Find(object, "stencilFrontState"), configs);
+            stencilBackState.load(JSON::Find(object, "stencilBackState"), configs);
         }
 
         size_t DepthState::Description::getHash(void) const
@@ -592,7 +544,7 @@ namespace Gek
 				return (result == std::end(data) ? Operation::Add : result->second);
             };
 
-            enable = object.value("enable", false);
+            enable = JSON::Value(object, "enable", false);
             colorSource = GetSource(JSON::Value(object, "colorSource", "One"s));
             colorDestination = GetSource(JSON::Value(object, "colorDestination", "One"s));
             colorOperation = getOperation(JSON::Value(object, "colorOperation", "Add"s));
@@ -729,7 +681,7 @@ namespace Gek
             maximumMipLevel = JSON::Value(object, "maximumMipLevel", Math::Infinity);
 
             static ShuntingYard EmptyYard;
-            borderColor = JSON::Evaluate(object["borderColor"], EmptyYard, Math::Float4::White);
+            borderColor = JSON::Evaluate(object, "borderColor", EmptyYard, Math::Float4::White);
         }
 
         size_t SamplerState::Description::getHash(void) const
