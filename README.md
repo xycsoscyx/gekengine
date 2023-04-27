@@ -1,4 +1,4 @@
-![example workflow](https://github.com/xycsoscyx/gekengine/actions/workflows/cmake.yml/badge.svg)
+![Win32](https://github.com/xycsoscyx/gekengine/actions/workflows/win32.yml/badge.svg) ![Ubuntu](https://github.com/xycsoscyx/gekengine/actions/workflows/ubuntu.yml/badge.svg)
 
 # Game Excelleration Kit
 
