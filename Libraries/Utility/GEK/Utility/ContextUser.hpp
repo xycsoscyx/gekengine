@@ -11,10 +11,16 @@
 #include <unordered_map>
 #include <assert.h>
 
+#ifdef _WIN32
+    #define GEK_EXPORT extern "C" __declspec(dllexport)
+#else
+    #define GEK_EXPORT extern "C"
+#endif
+
 #define GEK_CONTEXT_USER(CLASS, ...) struct CLASS : public ContextRegistration<CLASS, __VA_ARGS__>
 
 #define GEK_REGISTER_CONTEXT_USER(CLASS)                                                                                                    \
-ContextUserPtr CLASS##CreateInstance(Context *context, void *typelessArguments, std::vector<Hash> &argumentTypes)                \
+ContextUserPtr CLASS##CreateInstance(Context *context, void *typelessArguments, std::vector<Hash> &argumentTypes)                           \
 {                                                                                                                                           \
     return CLASS::createObject(context, typelessArguments, argumentTypes);                                                                  \
 }
@@ -23,8 +29,8 @@ ContextUserPtr CLASS##CreateInstance(Context *context, void *typelessArguments, 
 extern ContextUserPtr CLASS##CreateInstance(Context *, void *, std::vector<Hash> &);
 
 #define GEK_CONTEXT_BEGIN(SOURCENAME)                                                                                                       \
-extern "C" __declspec(dllexport) void initializePlugin(                                                                                     \
-    std::function<void(std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<Hash> &)>)> addClass,       \
+    GEK_EXPORT void initializePlugin(                                                                                                       \
+    std::function<void(std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<Hash> &)>)> addClass,                  \
     std::function<void(std::string_view, std::string_view)> addType)                                                                        \
 {                                                                                                                                           \
     std::string_view lastClassName;

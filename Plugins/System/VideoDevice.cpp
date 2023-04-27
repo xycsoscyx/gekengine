@@ -1,7 +1,6 @@
 #include "GEK/System/VideoDevice.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/Hash.hpp"
-#include <concurrent_queue.h>
 
 template<typename A, typename B>
 std::pair<B, A> flip_pair(const std::pair<A, B> &p)

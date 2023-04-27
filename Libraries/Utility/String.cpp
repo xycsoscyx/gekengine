@@ -1,12 +1,3 @@
-/// @file
-/// @author Todd Zupan <toddzupan@gmail.com>
-/// @version $Revision: 31a07b88fab4425367fa0aa67fe970fbff7dc9dc $
-/// @section LICENSE
-/// https://en.wikipedia.org/wiki/MIT_License
-/// @section DESCRIPTION
-/// Last Changed: $Date:   Thu Oct 27 08:51:53 2016 -0700 $
-#pragma once
-
 #include "GEK/Utility/String.hpp"
 
 namespace Gek
@@ -82,16 +73,6 @@ namespace Gek
             };
 
             return did_replace;
-        }
-
-        std::wstring Widen(std::string_view string)
-        {
-            return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>{}.from_bytes(string.data());
-        }
-
-        std::string Narrow(std::wstring_view string)
-        {
-            return std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t>{}.to_bytes(string.data());
         }
 
         bool Convert(std::string_view string, bool defaultValue)

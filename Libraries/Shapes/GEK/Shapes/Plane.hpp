@@ -20,9 +20,8 @@ namespace Gek
             union
             {
                 struct { float a, b, c, d; };
-                struct { Math::Float3 normal; float distance; };
-                struct { Math::Float4 vector; };
                 struct { float data[4]; };
+                Math::Float4 vector;
             };
 
         public:

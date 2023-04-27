@@ -32,7 +32,6 @@ namespace Gek
     {
         return GlobalDLLInstance;
     }
-#endif
 
     namespace Win32
     {
@@ -53,20 +52,13 @@ namespace Gek
     {
         GEK_DECLARE_CONTEXT_USER(Device);
     };
-
-    namespace OpenGL
-    {
-        GEK_DECLARE_CONTEXT_USER(Device);
-    };
-
-    namespace Vulkan
-    {
-        GEK_DECLARE_CONTEXT_USER(Device);
-    };
+#endif
 
     GEK_CONTEXT_BEGIN(System);
+#ifdef _WIN32
         GEK_CONTEXT_ADD_CLASS(Default::System::Window, Win32::Window);
 		GEK_CONTEXT_ADD_CLASS(Default::Device::Audio, DirectSound8::Device);
         GEK_CONTEXT_ADD_CLASS(Default::Device::Video, Direct3D11::Device);
+#endif
     GEK_CONTEXT_END();
 }; // namespace Gek

@@ -47,9 +47,6 @@ namespace Gek
 
         bool Replace(std::string &string, std::string_view searchFor, std::string_view replaceWith);
 
-        std::wstring Widen(std::string_view string);
-        std::string Narrow(std::wstring_view string);
-
         bool Convert(std::string_view string, bool defaultValue);
 
         template <typename TYPE>

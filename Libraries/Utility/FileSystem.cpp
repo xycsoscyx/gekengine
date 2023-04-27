@@ -266,13 +266,11 @@ namespace Gek
 
         Path GetModuleFilePath(void)
         {
-            std::string shortPath;
 #ifdef _WIN32
-            std::wstring widePath(1025, L'\0');
-            GetModuleFileNameW(nullptr, &widePath.at(0), 1024);
-            shortPath = String::Narrow(widePath);
+            std::wstring shortPath(1025, L'\0');
+            GetModuleFileNameA(nullptr, &shortPath.at(0), 1024);
 #else
-            shortPath = "/proc/self/exe";
+            std::string shortPath = "/proc/self/exe";
 #endif
             std::error_code errorCode;
             auto processName = std::filesystem::canonical(shortPath, errorCode);

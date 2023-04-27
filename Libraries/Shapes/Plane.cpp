@@ -5,20 +5,23 @@ namespace Gek
     namespace Shapes
     {
         Plane::Plane(void) noexcept
-            : normal(0.0f, 0.0f, 0.0f)
-            , distance(0.0f)
+            : a(0.0f)
+            , b(0.0f)
+            , c(0.0f)
+            , d(0.0f)
         {
         }
 
         Plane::Plane(float a, float b, float c, float d) noexcept
-            : normal(a, b, c)
-            , distance(d)
+            : a(a)
+            , b(b)
+            , c(c)
+            , d(d)
         {
         }
 
         Plane::Plane(Math::Float3 const &normal, float distance) noexcept
-            : normal(normal)
-            , distance(distance)
+            : vector(normal, distance)
         {
         }
 
@@ -28,13 +31,12 @@ namespace Gek
             Math::Float3 sideB(pointC - pointA);
             Math::Float3 sideC(sideA.cross(sideB));
 
-            normal = sideC.getNormal();
-            distance = -normal.dot(pointA);
+            vector.xyz() = sideC.getNormal();
+            vector.w = -vector.xyz().dot(pointA);
         }
 
         Plane::Plane(Math::Float3 const &normal, Math::Float3 const &pointOnPlane) noexcept
-            : normal(normal)
-            , distance(-normal.dot(pointOnPlane))
+            : vector(normal, -normal.dot(pointOnPlane))
         {
         }
 
@@ -46,21 +48,21 @@ namespace Gek
 
         void Plane::normalize(void) noexcept
         {
-            vector *= (1.0f / normal.getLength());
+            vector *= (1.0f / vector.xyz().getLength());
         }
 
         float Plane::getDistance(Math::Float3 const &point) const noexcept
         {
             // +distance because we negated it when creating
-            return (normal.dot(point) + distance);
+            return (vector.xyz().dot(point) + vector.w);
         }
 
         Math::Float3 Plane::getIntersection(Math::Float3 const &a, Math::Float3 const &b) const noexcept
         {
-            Math::Float3 ba = b - a;
-            float nDotA = normal.dot(a);
-            float nDotBA = normal.dot(ba);
-            return a + (((distance - nDotA) / nDotBA) * ba);
+            Math::Float3 ba(b - a);
+            float NdotA = vector.xyz().dot(a);
+            float NdotBA = vector.xyz().dot(ba);
+            return a + (((vector.w - NdotA) / NdotBA) * ba);
         }
     }; // namespace Shapes
 }; // namespace Gek

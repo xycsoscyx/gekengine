@@ -10,8 +10,7 @@
 #define LIBRARY                         HMODULE
 LIBRARY loadLibrary(std::string_view fileName)
 {
-    std::wstring wideFileName(Gek::String::Widen(fileName));
-    return LoadLibraryW(wideFileName.data());
+    return LoadLibraryA(fileName.data());
 }
 
 #define getFunction(HANDLE, FUNCTION)   GetProcAddress(HANDLE, FUNCTION)
