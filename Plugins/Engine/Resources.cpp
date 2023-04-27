@@ -1144,14 +1144,13 @@ namespace Gek
                     }
                 }
 
+                description.name = fmt::format("{}:{}", lowerPattern, parameterString);
                 description.flags = Video::Texture::Flags::Resource;
-                std::string name(fmt::format("{}:{}", lowerPattern, parameterString));
-                auto hash = GetHash(name);
 
-                auto resource = dynamicCache.getHandle(hash, 0, [this, name, description, data = move(data)](ResourceHandle)->Video::TexturePtr
+                auto resource = dynamicCache.getHandle(GetHash(description.name), description.getHash(), [this, description, data = move(data)](ResourceHandle)->Video::TexturePtr
                 {
                     return videoDevice->createTexture(description, data.data());
-                }, false);
+                }, 0);
 
                 if (resource.first)
                 {
@@ -1163,14 +1162,12 @@ namespace Gek
 
             ResourceHandle createTexture(Video::Texture::Description const& description, uint32_t flags)
             {
-                auto hash = GetHash(description.name);
-                auto parameters = description.getHash();
                 if (description.format == Video::Format::Unknown)
                 {
                     flags |= Resources::Flags::LoadFromCache;
                 }
 
-                auto resource = dynamicCache.getHandle(hash, parameters, [this, description](ResourceHandle)->Video::TexturePtr
+                auto resource = dynamicCache.getHandle(GetHash(description.name), description.getHash(), [this, description](ResourceHandle)->Video::TexturePtr
                 {
                     return videoDevice->createTexture(description);
                 }, flags);
@@ -1187,14 +1184,12 @@ namespace Gek
             {
                 assert(description.count > 0);
 
-                auto hash = GetHash(description.name);
-                auto parameters = description.getHash();
                 if (description.format == Video::Format::Unknown)
                 {
                     flags |= Resources::Flags::LoadFromCache;
                 }
 
-                auto resource = dynamicCache.getHandle(hash, parameters, [this, description](ResourceHandle)->Video::BufferPtr
+                auto resource = dynamicCache.getHandle(GetHash(description.name), description.getHash(), [this, description](ResourceHandle)->Video::BufferPtr
                 {
                     return videoDevice->createBuffer(description);
                 }, flags);
@@ -1212,14 +1207,13 @@ namespace Gek
                 assert(description.count > 0);
                 assert(!staticData.empty());
 
-                auto hash = GetHash(description.name);
-                auto parameters = reinterpret_cast<std::size_t>(staticData.data());
                 if (description.format == Video::Format::Unknown)
                 {
                     flags |= Resources::Flags::LoadFromCache;
                 }
 
-                auto resource = dynamicCache.getHandle(hash, parameters, [this, description, staticData = move(staticData)](ResourceHandle)->Video::BufferPtr
+                auto parameters = reinterpret_cast<std::size_t>(staticData.data());
+                auto resource = dynamicCache.getHandle(GetHash(description.name), parameters, [this, description, staticData = move(staticData)](ResourceHandle)->Video::BufferPtr
                 {
                     return videoDevice->createBuffer(description, (void*)staticData.data());
                 }, flags);

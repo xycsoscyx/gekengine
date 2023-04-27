@@ -2540,7 +2540,7 @@ namespace Gek
                     {
                         _com_error error(resultValue);
                         std::string_view compilerError = (char const *)d3dCompilerErrors->GetBufferPointer();
-                        std::cerr << "D3DCompile Failed (" << String::Narrow(error.ErrorMessage()) << ") " << compilerError;
+                        std::cerr << "D3DCompile Failed (" << error.ErrorMessage() << ") " << compilerError;
                     }
                     else
                     {

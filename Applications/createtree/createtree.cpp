@@ -245,10 +245,10 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         context->log(Context::Info, "GEK Tree Converter");
         context->setCachePath(cachePath);
 
-        wchar_t gekDataPath[MAX_PATH + 1] = L"\0";
-        if (GetEnvironmentVariable(L"gek_data_path", gekDataPath, MAX_PATH) > 0)
+        auto gekDataPath = std::getenv("gek_data_path");
+        if (gekDataPath)
         {
-            context->addDataPath(String::Narrow(gekDataPath));
+            context->addDataPath(gekDataPath);
         }
 
         context->addDataPath(rootPath / "data");
