@@ -32,6 +32,7 @@ Models can be converted to the GEK format using the createmodel application, whi
 
 # Screens
 
+![Sponza](https://github.com/xycsoscyx/gekengine/blob/main/Screens/sponza.png?raw=true "Sponza")
 ![Super Sponza](https://github.com/xycsoscyx/gekengine/blob/main/Screens/supersponza.png?raw=true "Super Sponza")
 
 # Dependencies
