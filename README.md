@@ -30,6 +30,10 @@ The default data path includes everything needed to run demo_engine, which also 
 
 Models can be converted to the GEK format using the createmodel application, which has a built in help information.  This utility uses Assimp to load from any supported format, and MikkTSpace to generate tangent information, then saves it in a custom binary format for quick loading in engine.  The converter also uses the standard GEK context, so the gek_data_path environment variable can be setup to include a custom search path.  The created files will be placed in a subdirectory of the main model file, even if that is in the external data location.
 
+# Screens
+
+![Super Sponza](Screens/SuperSponza.png?raw=true "Super Sponza")
+
 # Dependencies
 
 [Assimp](https://github.com/assimp/assimp)
