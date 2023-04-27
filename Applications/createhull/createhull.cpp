@@ -115,7 +115,7 @@ void serializeCollision(void* const serializeHandle, const void* const buffer, i
     fwrite(buffer, 1, size, file);
 }
 
-int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
+int main(int argumentCount, char const * const argumentList[], char const * const environmentVariableList)
 {
     argparse::ArgumentParser program("GEK Convex Hull Converter", "1.0");
 
@@ -140,7 +140,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         std::vector<std::string> arguments;
         for (int argumentIndex = 0; argumentIndex < argumentCount; argumentIndex++)
         {
-            arguments.push_back(String::Narrow(argumentList[argumentIndex]));
+            arguments.push_back(argumentList[argumentIndex]);
         }
 
         program.parse_args(arguments);

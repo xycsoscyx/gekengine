@@ -147,10 +147,10 @@ namespace Gek
                         String::GetLower(device), &deviceGUID
                     };
 
-					DirectSoundEnumerateW([](LPGUID deviceGUID, LPCWSTR description, LPCWSTR module, void *context) -> BOOL
+					DirectSoundEnumerateA([](LPGUID deviceGUID, LPCSTR description, LPCSTR module, void *context) -> BOOL
 					{
 						EnumData *enumerationData = static_cast<EnumData *>(context);
-						if (enumerationData->device == String::GetLower(String::Narrow(description)))
+						if (enumerationData->device == String::GetLower(description))
 						{
 							enumerationData->deviceGUID = deviceGUID;
 							return FALSE;

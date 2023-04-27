@@ -330,7 +330,7 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
     return true;
 }
 
-int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
+int main(int argumentCount, char const * const argumentList[], char const * const environmentVariableList)
 {
     argparse::ArgumentParser program("GEK Model Converter", "1.0");
 
@@ -361,7 +361,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         std::vector<std::string> arguments;
         for (int argumentIndex = 0; argumentIndex < argumentCount; argumentIndex++)
         {
-            arguments.push_back(String::Narrow(argumentList[argumentIndex]));
+            arguments.push_back(argumentList[argumentIndex]);
         }
 
         program.parse_args(arguments);

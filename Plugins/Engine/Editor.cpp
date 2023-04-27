@@ -142,9 +142,9 @@ namespace Gek
                 for (auto &plane : frustum.planeList)
                 {
                     float distance = plane.getDistance(orientedBox.matrix.translation());
-                    float radiusX = std::abs(orientedBox.matrix.r.x.xyz().dot(plane.normal) * orientedBox.halfsize.x);
-                    float radiusY = std::abs(orientedBox.matrix.r.y.xyz().dot(plane.normal) * orientedBox.halfsize.y);
-                    float radiusZ = std::abs(orientedBox.matrix.r.z.xyz().dot(plane.normal) * orientedBox.halfsize.z);
+                    float radiusX = std::abs(orientedBox.matrix.r.x.xyz().dot(plane.vector.xyz()) * orientedBox.halfsize.x);
+                    float radiusY = std::abs(orientedBox.matrix.r.y.xyz().dot(plane.vector.xyz()) * orientedBox.halfsize.y);
+                    float radiusZ = std::abs(orientedBox.matrix.r.z.xyz().dot(plane.vector.xyz()) * orientedBox.halfsize.z);
                     float radius = (radiusX + radiusY + radiusZ);
                     if (distance < -radius)
                     {

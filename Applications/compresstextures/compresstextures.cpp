@@ -6,6 +6,9 @@
 #include "GEK/System/Window.hpp"
 #include <DirectXTex.h>
 #include <algorithm>
+#include <locale>
+#include <codecvt>
+#include <string>
 #include <map>
 
 #include <argparse/argparse.hpp>
@@ -178,7 +181,9 @@ void compressTexture(Context *context, Video::Debug::Device *device, FileSystem:
         return;
     }
 
-    resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, String::Widen(outputFilePath.getString()).data());
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+	std::wstring wide = converter.from_bytes(outputFilePath.getString());
+    resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, wide.data());
 	if (FAILED(resultValue))
 	{
         context->log(Context::Info, "Unable to save image");
