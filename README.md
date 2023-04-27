@@ -32,7 +32,7 @@ Models can be converted to the GEK format using the createmodel application, whi
 
 # Screens
 
-![Super Sponza](Screens/SuperSponza.png?raw=true "Super Sponza")
+![Super Sponza](./Screens/SuperSponza.png?raw=true "Super Sponza")
 
 # Dependencies
 
