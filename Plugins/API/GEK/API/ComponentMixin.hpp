@@ -149,7 +149,7 @@ namespace Gek
 
                 std::for_each(std::begin(entityDataMap), std::end(entityDataMap), [&](auto &entitySearch) -> void
                 {
-                    onEntity(entitySearch.first, entitySearch.second, entitySearch.first->getComponent<REQUIRED>()...);
+                    onEntity(entitySearch.first, entitySearch.second, entitySearch.first->template getComponent<REQUIRED>()...);
                 });
             }
 
@@ -159,7 +159,7 @@ namespace Gek
 
                 std::for_each(std::execution::par, std::begin(entityDataMap), std::end(entityDataMap), [&](auto& entitySearch) -> void
                 {
-                    onEntity(entitySearch.first, entitySearch.second, entitySearch.first->getComponent<REQUIRED>()...);
+                    onEntity(entitySearch.first, entitySearch.second, entitySearch.first->template getComponent<REQUIRED>()...);
                 });
             }
         };

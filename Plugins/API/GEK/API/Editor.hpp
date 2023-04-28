@@ -14,6 +14,7 @@
 #include "GEK/API/Population.hpp"
 #include "GEK/GUI/Utilities.hpp"
 #include <wink/signal.hpp>
+#include <list>
 
 namespace Gek
 {

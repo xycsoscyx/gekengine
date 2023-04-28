@@ -32,12 +32,12 @@ namespace Gek
             return identifier.load();
         }
 
-        bool operator == (typename Handle<TYPE, UNIQUE> const &handle) const
+        bool operator == (Handle<TYPE, UNIQUE> const &handle) const
         {
             return (identifier == handle.identifier);
         }
 
-        bool operator != (typename Handle<TYPE, UNIQUE> const &handle) const
+        bool operator != (Handle<TYPE, UNIQUE> const &handle) const
         {
             return (identifier != handle.identifier);
         }
