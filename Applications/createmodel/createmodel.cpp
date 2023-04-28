@@ -598,33 +598,13 @@ int main(int argumentCount, char const * const argumentList[], char const * cons
         aiReleaseImport(inputScene);
 
         context->log(Context::Info, "Num. Models: {}", modelList.size());
-        for (auto& model : modelList)
+        if (parameters.saveAsCode)
         {
-            auto modelName(model.name);
-            for (auto replacement : { "$", "<", ">" })
-            {
-                String::Replace(modelName, replacement, "");
-            }
-
-            auto outputPath((filePath.withoutExtension() / modelName).withExtension(parameters.saveAsCode ? ".h" : ".gek"));
-            context->log(Context::Info, "- Model: {}, {}", model.name, outputPath.getString());
-            context->log(Context::Info, "- Num. Meshes: {}", model.meshList.size());
-            context->log(Context::Info, "- Size: Minimum[{}, {}, {}]", model.boundingBox.minimum.x, model.boundingBox.minimum.y, model.boundingBox.minimum.z);
-            context->log(Context::Info, "- Size: Maximum[{}, {}, {}]", model.boundingBox.maximum.x, model.boundingBox.maximum.y, model.boundingBox.maximum.z);
-            filePath.withoutExtension().createChain();
-            if (parameters.saveAsCode)
-            {
-                auto modelName = filePath.withoutExtension().getFileName();
-                auto file = fopen(outputPath.getString().data(), "w");
-                if (file == nullptr)
-                {
-                    context->log(Context::Error, "Unable to create output file");
-                    return -__LINE__;
-                }
-
-                static constexpr std::string_view codeTemplate =
-R"(struct StaticModel_{0}
-{{
+            static constexpr std::string_view modelDefinition =
+                R"(#ifndef GEK_STATIC_MODEL
+#define GEK_STATIC_MODEL
+struct StaticModel
+{
     std::string material;
     std::vector<uint16_t> indices;
     std::vector<Math::Float3> positions;
@@ -632,8 +612,7 @@ R"(struct StaticModel_{0}
     std::vector<Math::Float4> tangents;
     std::vector<Math::Float3> normals;
 
-    StaticModel_{0}(std::string &&material, 
-        std::vector<uint16_t> &&indices,
+    StaticModel(std::string &&material, 
         std::vector<Math::Float3> &&positions,
         std::vector<Math::Float2> &&texCoords,
         std::vector<Math::Float4> &&tangents,
@@ -644,55 +623,83 @@ R"(struct StaticModel_{0}
         , texCoords(std::move(texCoords))
         , tangents(std::move(tangents))
         , normals(std::move(normals))
-    {{
-    }}
-}} {0}_models[] =
-{{
-)";
+    {
+    }
+};
+#endif)";
 
-                std::string code = std::vformat(codeTemplate, std::make_format_args(modelName));
-                for (auto& mesh : model.indexedMeshList)
+            auto outputPath(filePath.withoutExtension().withExtension(".h"));
+            auto file = fopen(outputPath.getString().data(), "w");
+            if (file == nullptr)
+            {
+                context->log(Context::Error, "Unable to create output file");
+                return -__LINE__;
+            }
+
+            static constexpr std::string_view modelTemplate =
+                R"(static const StaticModel {0}_models[] = {{)";
+            std::string code(modelDefinition);
+            code += "\n";
+            code += std::vformat(modelTemplate, std::make_format_args(filePath.withoutExtension().getFileName()));
+            code += "\n";
+
+            for (auto& model : modelList)
+            {
+                context->log(Context::Info, "- Model: {}", model.name);
+                context->log(Context::Info, "- Num. Meshes: {}", model.meshList.size());
+                context->log(Context::Info, "- Size: Minimum[{}, {}, {}]", model.boundingBox.minimum.x, model.boundingBox.minimum.y, model.boundingBox.minimum.z);
+                context->log(Context::Info, "- Size: Maximum[{}, {}, {}]", model.boundingBox.maximum.x, model.boundingBox.maximum.y, model.boundingBox.maximum.z);
+                for (auto& mesh : model.meshList)
                 {
                     String::Replace(mesh.material, "\\", "\\\\");
-                    code += fmt::format("   StaticModel_{}(\"{}\",\n       std::vector<uint16_t>({{ ", modelName, mesh.material);
-                    for (auto &face : mesh.faceList)
-                    {
-                        code += fmt::format("{}, {}, {}, ", face[0], face[1], face[2]);
-                    }
-
-                    code += fmt::format("}}),\n       std::vector<Math::Float3>({{ ");
+                    code += fmt::format("   StaticModel(\"{}\",\n       std::vector<Math::Float3>({{ ", mesh.material);
                     for (auto& point : mesh.pointList)
                     {
-                        code += fmt::format("Math::Float3({}, {}, {}), ", point.x, point.y, point.z);
+                        code += fmt::format("Math::Float3({:.5F}f, {:.5F}f, {:.5F}f), ", point.x, point.y, point.z);
                     }
 
                     code += fmt::format("}}),\n       std::vector<Math::Float2>({{ ");
                     for (auto& texCoord : mesh.texCoordList)
                     {
-                        code += fmt::format("Math::Float2({}, {}), ", texCoord.x, texCoord.y);
+                        code += fmt::format("Math::Float2({:.5F}f, {:.5F}f), ", texCoord.x, texCoord.y);
                     }
 
                     code += fmt::format("}}),\n       std::vector<Math::Float4>({{ ");
                     for (auto& tangent : mesh.tangentList)
                     {
-                        code += fmt::format("Math::Float4({}, {}, {}, {}), ", tangent.x, tangent.y, tangent.z, tangent.w);
+                        code += fmt::format("Math::Float4({:.5F}f, {:.5F}f, {:.5F}f, {:.5F}f), ", tangent.x, tangent.y, tangent.z, tangent.w);
                     }
 
                     code += fmt::format("}}),\n       std::vector<Math::Float3>({{ ");
-                    for (auto& normal : mesh.pointList)
+                    for (auto& normal : mesh.normalList)
                     {
-                        code += fmt::format("Math::Float3({}, {}, {}), ", normal.x, normal.y, normal.z);
+                        code += fmt::format("Math::Float3({:.5F}f, {:.5F}f, {:.5F}f), ", normal.x, normal.y, normal.z);
                     }
 
                     code += fmt::format("}})),\n");
                 }
-
-                code += fmt::format("}};");
-                fwrite(code.data(), 1, code.size(), file);
-                fclose(file);
             }
-            else
+
+            code += fmt::format("\n}};");
+            fwrite(code.data(), 1, code.size(), file);
+            fclose(file);
+        }
+        else
+        {
+            for (auto& model : modelList)
             {
+                auto modelName(model.name);
+                for (auto replacement : { "$", "<", ">" })
+                {
+                    String::Replace(modelName, replacement, "");
+                }
+
+                auto outputPath((filePath.withoutExtension() / modelName).withExtension(".gek"));
+                context->log(Context::Info, "- Model: {}, {}", model.name, outputPath.getString());
+                context->log(Context::Info, "- Num. Meshes: {}", model.meshList.size());
+                context->log(Context::Info, "- Size: Minimum[{}, {}, {}]", model.boundingBox.minimum.x, model.boundingBox.minimum.y, model.boundingBox.minimum.z);
+                context->log(Context::Info, "- Size: Maximum[{}, {}, {}]", model.boundingBox.maximum.x, model.boundingBox.maximum.y, model.boundingBox.maximum.z);
+                filePath.withoutExtension().createChain();
                 auto file = fopen(outputPath.getString().data(), "wb");
                 if (file == nullptr)
                 {

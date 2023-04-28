@@ -33,8 +33,8 @@
 
 namespace Gek
 {
-    //#include "Cube.h"
-    //#include "Sphere.h"
+    #include "Cube.h"
+    #include "Sphere.h"
 
     template<typename TYPE>
     void updateMaximumValue(std::atomic<TYPE>& maximum_value, TYPE const& value) noexcept
@@ -435,25 +435,28 @@ namespace Gek
 
             if (name == "#cube")
             {
-                /*group.modelList.resize(1);
+                group.modelList.resize(1);
                 auto& model = group.modelList[0];
-                for (auto &staticModel : cube_models)
+                for (auto& staticModel : cube_models)
                 {
-                    auto &mesh = model.meshList.emplace_back();
+                    auto& mesh = model.meshList.emplace_back();
                     mesh.material = resources->loadMaterial(staticModel.material);
+                    mesh.vertexCount = staticModel.positions.size();
 
-                    Video::Buffer::Description indexBufferDescription;
-                    indexBufferDescription.format = Video::Format::R16_UINT;
-                    indexBufferDescription.count = staticModel.indices.size();
-                    indexBufferDescription.type = Video::Buffer::Type::Index;
-                    mesh.indexBuffer = resources->createBuffer(fmt::format("model:{}.{}:indices", model.meshList.size(), "cube"), indexBufferDescription, staticModel.indices.data());
-                    mesh.indexCount = indexBufferDescription.count;
+                    //Video::Buffer::Description indexBufferDescription;
+                    //indexBufferDescription.name = "model:cube:indices";
+                    //indexBufferDescription.format = Video::Format::R16_UINT;
+                    //indexBufferDescription.count = staticModel.indices.size();
+                    //indexBufferDescription.type = Video::Buffer::Type::Index;
+                    //mesh.indexBuffer = resources->createBuffer(indexBufferDescription, staticModel.indices.data());
+                    //mesh.indexCount = indexBufferDescription.count;
 
                     Video::Buffer::Description vertexBufferDescription;
+                    vertexBufferDescription.name = fmt::format("model:cube{}:positions", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float3);
                     vertexBufferDescription.count = staticModel.positions.size();
                     vertexBufferDescription.type = Video::Buffer::Type::Vertex;
-                    mesh.vertexBufferList[0] = resources->createBuffer(fmt::format("model:{}.{}:positions", model.meshList.size(), "cube"), vertexBufferDescription, staticModel.positions.data());
+                    mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, staticModel.positions.data());
                     for (auto& position : staticModel.positions)
                     {
                         group.boundingBox.extend(position);
@@ -462,37 +465,43 @@ namespace Gek
 
                     group.boundingBox.extend(model.boundingBox.minimum);
                     group.boundingBox.extend(model.boundingBox.maximum);
+                    vertexBufferDescription.name = fmt::format("model:cube{}:texCoords", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float2);
-                    mesh.vertexBufferList[1] = resources->createBuffer(fmt::format("model:{}.{}:texcoords", model.meshList.size(), "cube"), vertexBufferDescription, staticModel.texCoords.data());
+                    mesh.vertexBufferList[1] = resources->createBuffer(vertexBufferDescription, staticModel.texCoords.data());
 
+                    vertexBufferDescription.name = fmt::format("model:cube{}:tangents", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float4);
-                    mesh.vertexBufferList[2] = resources->createBuffer(fmt::format("model:{}.{}:tangents", model.meshList.size(), "cube"), vertexBufferDescription, staticModel.tangents.data());
+                    mesh.vertexBufferList[2] = resources->createBuffer(vertexBufferDescription, staticModel.tangents.data());
 
+                    vertexBufferDescription.name = fmt::format("model:cube{}:normals", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                    mesh.vertexBufferList[3] = resources->createBuffer(fmt::format("model:{}.{}:normals", model.meshList.size(), "cube"), vertexBufferDescription, staticModel.normals.data());
-                }*/
+                    mesh.vertexBufferList[3] = resources->createBuffer(vertexBufferDescription, staticModel.normals.data());
+                }
             }
             else if (name == "#sphere")
             {
-                /*group.modelList.resize(1);
+                group.modelList.resize(1);
                 auto& model = group.modelList[0];
                 for (auto& staticModel : sphere_models)
                 {
                     auto& mesh = model.meshList.emplace_back();
                     mesh.material = resources->loadMaterial(staticModel.material);
+                    mesh.vertexCount = staticModel.positions.size();
 
-                    Video::Buffer::Description indexBufferDescription;
-                    indexBufferDescription.format = Video::Format::R16_UINT;
-                    indexBufferDescription.count = staticModel.indices.size();
-                    indexBufferDescription.type = Video::Buffer::Type::Index;
-                    mesh.indexBuffer = resources->createBuffer(fmt::format("model:{}.{}:indices", model.meshList.size(), "sphere"), indexBufferDescription, staticModel.indices.data());
-                    mesh.indexCount = indexBufferDescription.count;
+                    //Video::Buffer::Description indexBufferDescription;
+                    //indexBufferDescription.name = "model:sphere:indices";
+                    //indexBufferDescription.format = Video::Format::R16_UINT;
+                    //indexBufferDescription.count = staticModel.indices.size();
+                    //indexBufferDescription.type = Video::Buffer::Type::Index;
+                    //mesh.indexBuffer = resources->createBuffer(indexBufferDescription, staticModel.indices.data());
+                    //mesh.indexCount = indexBufferDescription.count;
 
                     Video::Buffer::Description vertexBufferDescription;
+                    vertexBufferDescription.name = fmt::format("model:sphere{}:positions", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float3);
                     vertexBufferDescription.count = staticModel.positions.size();
                     vertexBufferDescription.type = Video::Buffer::Type::Vertex;
-                    mesh.vertexBufferList[0] = resources->createBuffer(fmt::format("model:{}.{}:positions", model.meshList.size(), "sphere"), vertexBufferDescription, staticModel.positions.data());
+                    mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, staticModel.positions.data());
                     for (auto& position : staticModel.positions)
                     {
                         group.boundingBox.extend(position);
@@ -501,15 +510,18 @@ namespace Gek
 
                     group.boundingBox.extend(model.boundingBox.minimum);
                     group.boundingBox.extend(model.boundingBox.maximum);
+                    vertexBufferDescription.name = fmt::format("model:sphere{}:texCoords", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float2);
-                    mesh.vertexBufferList[1] = resources->createBuffer(fmt::format("model:{}.{}:texcoords", model.meshList.size(), "sphere"), vertexBufferDescription, staticModel.texCoords.data());
+                    mesh.vertexBufferList[1] = resources->createBuffer(vertexBufferDescription, staticModel.texCoords.data());
 
+                    vertexBufferDescription.name = fmt::format("model:sphere{}:tangents", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float4);
-                    mesh.vertexBufferList[2] = resources->createBuffer(fmt::format("model:{}.{}:tangents", model.meshList.size(), "sphere"), vertexBufferDescription, staticModel.tangents.data());
+                    mesh.vertexBufferList[2] = resources->createBuffer(vertexBufferDescription, staticModel.tangents.data());
 
+                    vertexBufferDescription.name = fmt::format("model:sphere{}:normals", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                    mesh.vertexBufferList[3] = resources->createBuffer(fmt::format("model:{}.{}:normals", model.meshList.size(), "sphere"), vertexBufferDescription, staticModel.normals.data());
-                }*/
+                    mesh.vertexBufferList[3] = resources->createBuffer(vertexBufferDescription, staticModel.normals.data());
+                }
             }
             else
             {

@@ -1,0 +1,14 @@
+{
+    "shader": {
+        "data": {
+            "albedo": {
+                "file": "debug_x_albedo",
+                "flags": "sRGB"
+            },
+            "normal": { "file": "debug_normal" },
+            "roughness": { "file": "debug_roughness" },
+            "metallic": { "file": "debug_metallic" }
+        },
+        "default": "solid"
+    }
+}

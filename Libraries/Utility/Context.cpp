@@ -113,7 +113,7 @@ namespace Gek
                 OutputDebugStringA(formattedMessage.data());
                 OutputDebugStringA("\r\n");
 #endif
-                std::cerr << formattedMessage;
+                std::cerr << formattedMessage << std::endl;
                 break;
 
             case LogLevel::Warning:
@@ -121,7 +121,7 @@ namespace Gek
                 OutputDebugStringA(formattedMessage.data());
                 OutputDebugStringA("\r\n");
 #endif
-                std::cerr << formattedMessage;
+                std::cerr << formattedMessage << std::endl;
                 break;
 
             case LogLevel::Debug:
@@ -129,7 +129,7 @@ namespace Gek
                 OutputDebugStringA(formattedMessage.data());
                 OutputDebugStringA("\r\n");
 #endif
-                std::cout << formattedMessage;
+                std::cout << formattedMessage << std::endl;
                 break;
 
             case LogLevel::Info:
@@ -137,7 +137,7 @@ namespace Gek
                 OutputDebugStringA(formattedMessage.data());
                 OutputDebugStringA("\r\n");
 #endif
-                std::cout << formattedMessage;
+                std::cout << formattedMessage << std::endl;
                 break;
             };
         }
