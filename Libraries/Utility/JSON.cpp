@@ -9,7 +9,7 @@ namespace Gek
             std::ifstream file(filePath.getString());
             if (file.is_open())
             {
-                return Object::parse(file);
+                return nlohmann::json::parse(file);
             }
             else
             {
