@@ -11,7 +11,6 @@
 #include "GEK/Math/Common.hpp"
 #include "GEK/Math/Matrix4x4.hpp"
 #include <unordered_map>
-#include <ppl.h>
 
 namespace Gek
 {
