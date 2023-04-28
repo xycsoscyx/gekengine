@@ -47,8 +47,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fPIC")
-set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -fPIC")
+if(!MSVC)
+    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fPIC")
+    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -fPIC")
+endif()
 
 include(FetchContent)
 
@@ -78,8 +80,8 @@ FetchContent_Declare(imguizmo OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://githu
 FetchContent_Populate(imguizmo)
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
-FetchContent_Declare(nlohmann_json OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG master)
-FetchContent_MakeAvailable(nlohmann_json)
+FetchContent_Declare(json OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG master)
+FetchContent_MakeAvailable(json)
 
 FetchContent_Declare(mikktspace OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/mmikk/MikkTSpace.git GIT_TAG master)
 FetchContent_Populate(mikktspace)
@@ -97,8 +99,8 @@ include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dJoints")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton")
 
 SET(TBB_TEST OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(TBB OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/oneapi-src/oneTBB GIT_TAG master)
-FetchContent_MakeAvailable(TBB)
+FetchContent_Declare(oneTBB OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/oneapi-src/oneTBB GIT_TAG master)
+FetchContent_MakeAvailable(oneTBB)
 
 FetchContent_Declare(wink OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/miguelmartin75/Wink-Signals.git GIT_TAG master)
 FetchContent_Populate(wink)
