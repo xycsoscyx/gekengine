@@ -152,11 +152,11 @@ namespace Gek
                             break;
 
                         case WM_KEYDOWN:
-                            window->onKeyPressed(NativeToKey[wParam], true);
+                            window->onKeyPressed(static_cast<Window::Key>(NativeToKey[wParam]), true);
                             break;
 
                         case WM_KEYUP:
-                            window->onKeyPressed(NativeToKey[wParam], false);
+                            window->onKeyPressed(static_cast<Window::Key>(NativeToKey[wParam]), false);
                             break;
 
                         case WM_CHAR:

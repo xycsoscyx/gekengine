@@ -313,7 +313,7 @@ namespace Gek
 					shapeZPositionList.resize(bufferedEntityCount);
 					shapeRadiusList.resize(bufferedEntityCount);
 
-					auto entityRange = std::ranges::iota_view{ 0UL, entityCount };
+					auto entityRange = std::ranges::iota_view{ size_t(0), entityCount};
 					std::for_each(std::execution::par, std::begin(entityRange), std::end(entityRange), [&](size_t entityIndex) -> void
 					{
 						Plugin::Entity *entity = this->entityList[entityIndex];
@@ -1168,7 +1168,7 @@ float4 main(PixelInput input) : SV_Target
 				});
 
 				pointLightData.cull(frustum);
-				auto visibilityRange = std::ranges::iota_view{ 0UL,  pointLightData.entityList.size() };
+				auto visibilityRange = std::ranges::iota_view{ size_t(0),  pointLightData.entityList.size() };
 				std::for_each(std::execution::par, std::begin(visibilityRange), std::end(visibilityRange), [&](size_t index) -> void
 				{
 					if (pointLightData.visibilityList[index])
@@ -1193,7 +1193,7 @@ float4 main(PixelInput input) : SV_Target
 				});
 
 				spotLightData.cull(frustum);
-				auto visibilityRange = std::ranges::iota_view{ 0UL,  spotLightData.entityList.size() };
+				auto visibilityRange = std::ranges::iota_view{ size_t(0),  spotLightData.entityList.size()};
 				std::for_each(std::execution::par, std::begin(visibilityRange), std::end(visibilityRange), [&](size_t index) -> void
 				{
 					if (spotLightData.visibilityList[index])
