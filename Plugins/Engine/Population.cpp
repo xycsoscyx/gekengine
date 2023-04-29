@@ -446,9 +446,9 @@ namespace Gek
                 }
             }
 
-            void listEntities(std::function<void(Plugin::Entity *)> onEntity) const
+            void listEntities(std::function<void(Plugin::Entity *)> &&onEntity) const
             {
-                std::for_each(std::execution::par, std::begin(registry), std::end(registry), [&](auto &entity) -> void
+                std::for_each(std::execution::par, std::begin(registry), std::end(registry), [onEntity = std::move(onEntity)](auto &entity) -> void
                 {
                     onEntity(entity.get());
                 });

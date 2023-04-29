@@ -12,7 +12,7 @@
 
 namespace Gek
 {
-    template <typename TYPE, uint8_t UNIQUE>
+    template <typename TYPE, size_t UNIQUE>
     struct Handle
     {
         TYPE identifier;
@@ -55,7 +55,7 @@ namespace Gek
 
 namespace std
 {
-    template <typename TYPE, int UNIQUE>
+    template <typename TYPE, size_t UNIQUE>
     struct hash<Gek::Handle<TYPE, UNIQUE>>
     {
         size_t operator()(const Gek::Handle<TYPE, UNIQUE> &value) const

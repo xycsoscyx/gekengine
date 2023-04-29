@@ -182,7 +182,7 @@ namespace Gek
             bool editorActive = core->getOption("editor", "active", false);
 			//if (frameTime > 0.0f && !editorActive)
 			{
-				parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void
+				parallelListEntities([core = core, renderer = renderer](Plugin::Entity * const entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void
 				{
 					std::string name;
 					if (entity->hasComponent<Components::Name>())

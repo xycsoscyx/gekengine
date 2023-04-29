@@ -78,11 +78,19 @@ namespace Gek
 			bool editorActive = core->getOption("editor", "active", false);
 			if (frameTime > 0.0f && !editorActive)
 			{
-				population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity * const entity, auto &transformComponent, auto &spinComponent) -> void
+				auto onEntity = [&](Plugin::Entity * const entity) -> void
 				{
-					auto omega(spinComponent.torque * frameTime);
-					transformComponent.rotation *= Math::Quaternion::MakeEulerRotation(omega.x, omega.y, omega.z);
-				});
+                    if (entity->hasComponents<Components::Transform, Components::Spin>())
+                    {
+						auto &spinComponent = entity->getComponent<Components::Spin>();
+						auto omega(spinComponent.torque * frameTime);
+
+						auto &transformComponent = entity->getComponent<Components::Transform>();
+						transformComponent.rotation *= Math::Quaternion::MakeEulerRotation(omega.x, omega.y, omega.z);
+                    }
+				};
+
+				population->listEntities(onEntity);
 			}
 		}
 	};

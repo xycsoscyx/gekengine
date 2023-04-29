@@ -9,11 +9,9 @@
 #include "GEK/Engine/Core.hpp"
 #include "GEK/Engine/Resources.hpp"
 #include "GEK/Engine/Population.hpp"
-#include <concurrent_unordered_map.h>
 #include <imgui_internal.h>
 #include <algorithm>
 #include <queue>
-#include <ppl.h>
 
 #ifdef _WIN32
 #include <Windows.h>

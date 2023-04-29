@@ -19,17 +19,13 @@
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Components/Color.hpp"
 #include "GEK/Model/Base.hpp"
-#include <concurrent_unordered_map.h>
-#include <concurrent_vector.h>
+#include <tbb/concurrent_unordered_map.h>
+#include <tbb/concurrent_vector.h>
 #include <xmmintrin.h>
 #include <algorithm>
 #include <execution>
 #include <memory>
 #include <future>
-#include <ppl.h>
-#include <array>
-#include <map>
-#include <set>
 
 namespace Gek
 {
@@ -311,7 +307,7 @@ namespace Gek
         Video::BufferPtr instanceBuffer;
         ThreadPool loadPool;
 
-        concurrency::concurrent_unordered_map<std::size_t, Group> groupMap;
+        tbb::concurrent_unordered_map<std::size_t, Group> groupMap;
 
         std::vector<float, AlignedAllocator<float, 16>> halfSizeXList;
         std::vector<float, AlignedAllocator<float, 16>> halfSizeYList;
@@ -319,14 +315,14 @@ namespace Gek
         std::vector<float, AlignedAllocator<float, 16>> transformList[16];
         std::vector<bool> visibilityList;
 
-        using EntityDataList = concurrency::concurrent_vector<std::tuple<Plugin::Entity * const, Data const *, uint32_t>>;
-        using EntityModelList = concurrency::concurrent_vector<std::tuple<Plugin::Entity * const, Group::Model const *, uint32_t>>;
+        using EntityDataList = tbb::concurrent_vector<std::tuple<Plugin::Entity * const, Data const *, uint32_t>>;
+        using EntityModelList = tbb::concurrent_vector<std::tuple<Plugin::Entity * const, Group::Model const *, uint32_t>>;
         EntityDataList entityDataList;
         EntityModelList entityModelList;
 
-        using InstanceList = concurrency::concurrent_vector<Math::Float4x4>;
-        using MeshInstanceMap = concurrency::concurrent_unordered_map<const Group::Model::Mesh *, InstanceList>;
-        using MaterialMeshMap = concurrency::concurrent_unordered_map<MaterialHandle, MeshInstanceMap>;
+        using InstanceList = tbb::concurrent_vector<Math::Float4x4>;
+        using MeshInstanceMap = tbb::concurrent_unordered_map<const Group::Model::Mesh *, InstanceList>;
+        using MaterialMeshMap = tbb::concurrent_unordered_map<MaterialHandle, MeshInstanceMap>;
         MaterialMeshMap renderList;
 
     public:
@@ -754,7 +750,7 @@ namespace Gek
 				auto entityDataIndex = std::get<2>(entitySearch);
 				if (visibilityList[entityDataIndex])
 				{
-					auto entity = std::get<0>(entitySearch);
+					Plugin::Entity * const entity = std::get<0>(entitySearch);
 					auto data = std::get<1>(entitySearch);
 					auto group = data->group;
 
@@ -787,7 +783,7 @@ namespace Gek
 			{
 				if (visibilityList[std::get<2>(entitySearch)])
 				{
-					auto entity = std::get<0>(entitySearch);
+					Plugin::Entity * const entity = std::get<0>(entitySearch);
 					auto model = std::get<1>(entitySearch);
 
 					auto &transformComponent = entity->getComponent<Components::Transform>();

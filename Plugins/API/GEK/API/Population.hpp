@@ -84,18 +84,6 @@ namespace Gek
 
             virtual void listEntities(std::function<void(Plugin::Entity * const entity)> onEntity) const = 0;
 
-            template<typename... COMPONENTS>
-            void listEntities(std::function<void(Plugin::Entity * const entity, COMPONENTS&... components)> onEntity) const
-            {
-                listEntities([onEntity = move(onEntity)](Plugin::Entity * const entity) -> void
-                {
-                    if (entity->hasComponents<COMPONENTS...>())
-                    {
-                        onEntity(entity, entity->getComponent<COMPONENTS>()...);
-                    }
-                });
-            }
-
             virtual void action(Action const &action) = 0;
         };
     }; // namespace Plugin
