@@ -15,12 +15,8 @@
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Physics/Base.hpp"
 #include "GEK/Model/Base.hpp"
-#include <concurrent_unordered_map.h>
-#include <concurrent_vector.h>
-
-//ndVector ndVector::m_zero(ndFloat32(0.0f));
-//ndVector ndVector::m_one(ndFloat32(1.0f));
-//ndVector ndVector::m_wOne(ndFloat32(0.0f), ndFloat32(0.0f), ndFloat32(0.0f), ndFloat32(1.0f));
+#include <tbb/concurrent_unordered_map.h>
+#include <tbb/concurrent_vector.h>
 
 namespace Gek
 {
@@ -119,12 +115,12 @@ namespace Gek
             Plugin::Renderer *renderer = nullptr;
             Edit::Events *events = nullptr;
 
-            concurrency::concurrent_vector<Surface> surfaceList;
-            concurrency::concurrent_unordered_map<std::size_t, uint32_t> surfaceIndexMap;
+            tbb::concurrent_vector<Surface> surfaceList;
+            tbb::concurrent_unordered_map<std::size_t, uint32_t> surfaceIndexMap;
             NewtonWorld* newtonWorld = nullptr;
 
-            concurrency::concurrent_unordered_map<Plugin::Entity*, Physics::Body *> entityBodyMap;
-            concurrency::concurrent_unordered_map<Hash, ndShape *> shapeMap;
+            tbb::concurrent_unordered_map<Plugin::Entity*, Physics::Body *> entityBodyMap;
+            tbb::concurrent_unordered_map<Hash, ndShape *> shapeMap;
 
         public:
             Processor(Context *context, Plugin::Core *core)
@@ -259,13 +255,13 @@ namespace Gek
                 return shape;
             }
 
-            concurrency::critical_section criticalSection;
+            //concurrency::critical_section criticalSection;
             void addEntity(Plugin::Entity * const entity)
             {
                 BodyPtr body;
                 if (entity->hasComponent<Components::Transform>())
                 {
-                    concurrency::critical_section::scoped_lock lock(criticalSection);
+                    //concurrency::critical_section::scoped_lock lock(criticalSection);
                     if (entity->hasComponents<Components::Model, Components::Scene>())
                     {
                         auto const &modelComponent = entity->getComponent<Components::Model>();

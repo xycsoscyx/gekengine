@@ -10,7 +10,11 @@
 
 using namespace Gek;
 
+#ifdef _WIN32
 int CALLBACK wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE previousInstance, _In_ wchar_t *commandLine, _In_ int commandShow)
+#else
+int main(int argumentCount, char const * const argumentList[])
+#endif
 {
     auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
     auto rootPath(pluginPath.getParentPath());

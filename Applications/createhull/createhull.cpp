@@ -115,7 +115,7 @@ void serializeCollision(void* const serializeHandle, const void* const buffer, i
     fwrite(buffer, 1, size, file);
 }
 
-int main(int argumentCount, char const * const argumentList[], char const * const environmentVariableList)
+int main(int argumentCount, char const * const argumentList[])
 {
     argparse::ArgumentParser program("GEK Convex Hull Converter", "1.0");
 

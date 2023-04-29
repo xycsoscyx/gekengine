@@ -6,19 +6,18 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include <unordered_map>
-#include <algorithm>
-#include <string.h>
-#include <vector>
-#include <map>
-
 #include <argparse/argparse.hpp>
 #include <assimp/config.h>
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-
 #include <mikktspace.h>
+#include <fmt/format.h>
+#include <unordered_map>
+#include <algorithm>
+#include <string.h>
+#include <vector>
+#include <map>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -330,7 +329,7 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
     return true;
 }
 
-int main(int argumentCount, char const * const argumentList[], char const * const environmentVariableList)
+int main(int argumentCount, char const * const argumentList[])
 {
     argparse::ArgumentParser program("GEK Model Converter", "1.0");
 
@@ -640,7 +639,7 @@ struct StaticModel
                 R"(static const StaticModel {0}_models[] = {{)";
             std::string code(modelDefinition);
             code += "\n";
-            code += std::vformat(modelTemplate, std::make_format_args(filePath.withoutExtension().getFileName()));
+            code += fmt::vformat(modelTemplate, fmt::make_format_args(filePath.withoutExtension().getFileName()));
             code += "\n";
 
             for (auto& model : modelList)

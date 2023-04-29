@@ -191,7 +191,7 @@ void compressTexture(Context *context, Video::Debug::Device *device, FileSystem:
     }
 }
 
-int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
+int main(int argumentCount, char const * const argumentList[])
 {
 	auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
 	auto rootPath(pluginPath.getParentPath());
