@@ -15,9 +15,9 @@
 #include "GEK/Components/Color.hpp"
 #include "GEK/Engine/Material.hpp"
 #include "Passes.hpp"
-#include <concurrent_vector.h>
-#include <unordered_set>
-#include <ppl.h>
+#include <fmt/format.h>
+#include <unordered_map>
+#include <vector>
 
 namespace Gek
 {
@@ -497,7 +497,7 @@ R"(namespace {0} {{
 {1}
 }}; // namespace {0})";
 
-                                        outerData.push_back(std::vformat(innerTemplate, std::make_format_args(optionName, innerString)));
+                                        outerData.push_back(fmt::vformat(innerTemplate, fmt::make_format_args(optionName, innerString)));
                                     }
                                 }
                             }
@@ -558,7 +558,7 @@ R"(namespace Options {{
 {}
 }}; // namespace Options)";
 
-                        engineData.push_back(std::vformat(optionsTemplate, std::make_format_args(optionsString)));
+                        engineData.push_back(fmt::vformat(optionsTemplate, fmt::make_format_args(optionsString)));
                     }
 
                     std::string mode(String::GetLower(JSON::Value(passNode, "mode", String::Empty)));
@@ -646,7 +646,7 @@ R"(struct OutputPixel
 }}; // struct OutputPixel)";
 
                             auto outputString = String::Join(outputData, "\r\n");
-                            engineData.push_back(std::vformat(outputTemplate, std::make_format_args(outputString)));
+                            engineData.push_back(fmt::vformat(outputTemplate, fmt::make_format_args(outputString)));
                         }
 
                         Video::DepthState::Description depthStateInformation;
@@ -852,7 +852,7 @@ R"(namespace Resources
 }}; // namespace Resources)";
 
                         auto resourceString = String::Join(resourceData, "\r\n");
-                        engineData.push_back(std::vformat(resourceTemplate, std::make_format_args(resourceString)));
+                        engineData.push_back(fmt::vformat(resourceTemplate, fmt::make_format_args(resourceString)));
                     }
 
                     uint32_t unorderedStateStart = 0;
@@ -888,7 +888,7 @@ R"(namespace UnorderedAccess
 }}; // namespace UnorderedAccess)";
 
                         auto unorderedAccessString = String::Join(unorderedAccessData, "\r\n");
-                        engineData.push_back(std::vformat(unorderedAccessTemplate, std::make_format_args(unorderedAccessString)));
+                        engineData.push_back(fmt::vformat(unorderedAccessTemplate, fmt::make_format_args(unorderedAccessString)));
                     }
 
                     std::string fileName(FileSystem::CreatePath(shaderName, programName).withExtension(".hlsl").getString());

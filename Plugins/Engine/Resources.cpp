@@ -21,12 +21,9 @@
 #include "GEK/Engine/Filter.hpp"
 #include "GEK/Engine/Material.hpp"
 #include "GEK/Engine/Visual.hpp"
-#include <concurrent_unordered_map.h>
-#include <concurrent_unordered_set.h>
-#include <concurrent_queue.h>
-#include <concurrent_vector.h>
+#include <tbb/concurrent_unordered_map.h>
+#include <tbb/concurrent_unordered_set.h>
 #include <imgui_internal.h>
-#include <ppl.h>
 
 class Float16Compressor
 {
@@ -120,9 +117,9 @@ namespace Gek
         {
         public:
             using TypePtr = std::shared_ptr<TYPE>;
-            using AtomicPtr = std::atomic<TypePtr>;
-            using ResourceHandleMap = concurrency::concurrent_unordered_map<std::size_t, HANDLE>;
-            using ResourceMap = concurrency::concurrent_unordered_map<HANDLE, AtomicPtr>;
+            //using AtomicPtr = std::atomic<TypePtr>;
+            using ResourceHandleMap = tbb::concurrent_unordered_map<std::size_t, HANDLE>;
+            using ResourceMap = tbb::concurrent_unordered_map<HANDLE, TypePtr>;
             using ResourceType = ResourceMap::value_type;
             using HandleType = HANDLE;
 
@@ -147,7 +144,7 @@ namespace Gek
             {
                 for (auto& resourcePair : resourceMap)
                 {
-                    onResource(resourcePair.first, resourcePair.second.load());
+                    onResource(resourcePair.first, std::atomic_load(&resourcePair.second));
                 }
             }
 
@@ -169,7 +166,7 @@ namespace Gek
                 auto resourceSearch = resourceMap.insert(std::make_pair(handle, blankObject));
                 if (data.get())
                 {
-                    resourceSearch.first->second.store(data);
+                    std::atomic_store(&resourceSearch.first->second, data);
                     return true;
                 }
                 else if (fallback)
@@ -177,7 +174,7 @@ namespace Gek
                     auto fallbackResource = getResource(*fallback);
                     if (fallbackResource)
                     {
-                        resourceSearch.first->second.store(TypePtr(fallbackResource));
+                        std::atomic_store(&resourceSearch.first->second, TypePtr(fallbackResource));
                         return true;
                     }
                 }
@@ -200,7 +197,7 @@ namespace Gek
                     auto resourceSearch = resourceMap.find(handle);
                     if (resourceSearch != std::end(resourceMap))
                     {
-                        return resourceSearch->second.load().get();
+                        return std::atomic_load(&resourceSearch->second).get();
                     }
                 }
 
@@ -217,11 +214,12 @@ namespace Gek
         class GeneralResourceCache
             : public ResourceCache<HANDLE, TYPE>
         {
+        public:
             using TypePtr = ResourceCache<HANDLE, TYPE>::TypePtr;
             using HandleType = ResourceCache<HANDLE, TYPE>::HandleType;
 
         private:
-            concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
+            tbb::concurrent_unordered_set<std::size_t> requestedLoadSet;
 
         public:
             GeneralResourceCache(ThreadPool& loadPool)
@@ -238,8 +236,8 @@ namespace Gek
             {
                 if (requestedLoadSet.count(hash) > 0)
                 {
-                    auto resourceSearch = this->resourceHandleMap.find(hash);
-                    if (resourceSearch != std::end(this->resourceHandleMap))
+                    auto resourceSearch = ResourceCache<HANDLE, TYPE>::resourceHandleMap.find(hash);
+                    if (resourceSearch != std::end(ResourceCache<HANDLE, TYPE>::resourceHandleMap))
                     {
                         return std::make_pair(false, resourceSearch->second);
                     }
@@ -247,9 +245,9 @@ namespace Gek
                 else
                 {
                     requestedLoadSet.insert(hash);
-                    HANDLE handle = this->getNextHandle();
-                    this->resourceHandleMap[hash] = handle;
-                    this->scheduleResource(handle, std::move(load));
+                    HANDLE handle = ResourceCache<HANDLE, TYPE>::getNextHandle();
+                    ResourceCache<HANDLE, TYPE>::resourceHandleMap[hash] = handle;
+                    ResourceCache<HANDLE, TYPE>::scheduleResource(handle, std::move(load));
                     return std::make_pair(true, handle);
                 }
 
@@ -260,8 +258,8 @@ namespace Gek
             {
                 if (requestedLoadSet.count(hash) > 0)
                 {
-                    auto resourceSearch = this->resourceHandleMap.find(hash);
-                    if (resourceSearch != std::end(this->resourceHandleMap))
+                    auto resourceSearch = ResourceCache<HANDLE, TYPE>::resourceHandleMap.find(hash);
+                    if (resourceSearch != std::end(ResourceCache<HANDLE, TYPE>::resourceHandleMap))
                     {
                         return resourceSearch->second;
                     }
@@ -275,12 +273,13 @@ namespace Gek
         class DynamicResourceCache
             : public ResourceCache<HANDLE, TYPE>
         {
+        public:
             using TypePtr = ResourceCache<HANDLE, TYPE>::TypePtr;
             using HandleType = ResourceCache<HANDLE, TYPE>::HandleType;
 
         private:
-            concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
-            concurrency::concurrent_unordered_map<HANDLE, std::size_t> loadParameters;
+            tbb::concurrent_unordered_set<std::size_t> requestedLoadSet;
+            tbb::concurrent_unordered_map<HANDLE, std::size_t> loadParameters;
 
         public:
             DynamicResourceCache(ThreadPool& loadPool)
@@ -297,8 +296,8 @@ namespace Gek
             void setHandle(std::size_t hash, HANDLE handle, TypePtr data)
             {
                 requestedLoadSet.insert(hash);
-                this->resourceHandleMap[hash] = handle;
-                this->setResource(handle, data);
+                ResourceCache<HANDLE, TYPE>::resourceHandleMap[hash] = handle;
+                ResourceCache<HANDLE, TYPE>::setResource(handle, data);
             }
 
             std::pair<bool, HANDLE> getHandle(std::size_t hash, std::size_t parameters, std::function<TypePtr(HandleType)>&& load, uint32_t flags, HANDLE *fallback = nullptr)
@@ -306,8 +305,8 @@ namespace Gek
                 HANDLE handle;
                 if (requestedLoadSet.count(hash) > 0)
                 {
-                    auto resourceSearch = this->resourceHandleMap.find(hash);
-                    if (resourceSearch != std::end(this->resourceHandleMap))
+                    auto resourceSearch = ResourceCache<HANDLE, TYPE>::resourceHandleMap.find(hash);
+                    if (resourceSearch != std::end(ResourceCache<HANDLE, TYPE>::resourceHandleMap))
                     {
                         HANDLE handle = resourceSearch->second;
                         if (!(flags & Plugin::Resources::Flags::LoadFromCache))
@@ -318,14 +317,14 @@ namespace Gek
                                 loadParameters[handle] = parameters;
                                 if (flags & Plugin::Resources::Flags::LoadImmediately)
                                 {
-                                    if (this->setResource(handle, load(handle), fallback))
+                                    if (ResourceCache<HANDLE, TYPE>::setResource(handle, load(handle), fallback))
                                     {
                                         return std::make_pair(true, handle);
                                     }
                                 }
                                 else
                                 {
-                                    this->scheduleResource(handle, std::move(load), fallback);
+                                    ResourceCache<HANDLE, TYPE>::scheduleResource(handle, std::move(load), fallback);
                                     return std::make_pair(true, handle);
                                 }
                             }
@@ -337,19 +336,19 @@ namespace Gek
                 else
                 {
                     requestedLoadSet.insert(hash);
-                    HANDLE handle = this->getNextHandle();
-                    this->resourceHandleMap[hash] = handle;
+                    HANDLE handle = ResourceCache<HANDLE, TYPE>::getNextHandle();
+                    ResourceCache<HANDLE, TYPE>::resourceHandleMap[hash] = handle;
                     loadParameters[handle] = parameters;
                     if (flags & Plugin::Resources::Flags::LoadImmediately)
                     {
-                        if (this->setResource(handle, load(handle)))
+                        if (ResourceCache<HANDLE, TYPE>::setResource(handle, load(handle)))
                         {
                             return std::make_pair(true, handle);
                         }
                     }
                     else
                     {
-                        this->scheduleResource(handle, std::move(load));
+                        ResourceCache<HANDLE, TYPE>::scheduleResource(handle, std::move(load));
                         return std::make_pair(true, handle);
                     }
                 }
@@ -361,8 +360,8 @@ namespace Gek
             {
                 if (requestedLoadSet.count(hash) > 0)
                 {
-                    auto resourceSearch = this->resourceHandleMap.find(hash);
-                    if (resourceSearch != std::end(this->resourceHandleMap))
+                    auto resourceSearch = ResourceCache<HANDLE, TYPE>::resourceHandleMap.find(hash);
+                    if (resourceSearch != std::end(ResourceCache<HANDLE, TYPE>::resourceHandleMap))
                     {
                         return resourceSearch->second;
                     }
@@ -376,6 +375,7 @@ namespace Gek
         class ProgramResourceCache
             : public ResourceCache<HANDLE, TYPE>
         {
+        public:
             using TypePtr = ResourceCache<HANDLE, TYPE>::TypePtr;
             using HandleType = ResourceCache<HANDLE, TYPE>::HandleType;
 
@@ -388,8 +388,8 @@ namespace Gek
             HANDLE getHandle(std::function<TypePtr(HandleType)>&& load)
             {
                 HANDLE handle;
-                handle = this->getNextHandle();
-                this->scheduleResource(handle, std::move(load));
+                handle = ResourceCache<HANDLE, TYPE>::getNextHandle();
+                ResourceCache<HANDLE, TYPE>::scheduleResource(handle, std::move(load));
                 return handle;
             }
         };
@@ -408,8 +408,8 @@ namespace Gek
             HANDLE getHandle(FUNCTOR&& load)
             {
                 HANDLE handle;
-                handle = this->getNextHandle();
-                this->setResource(handle, load(handle));
+                handle = ResourceCache<HANDLE, TYPE>::getNextHandle();
+                ResourceCache<HANDLE, TYPE>::setResource(handle, load(handle));
                 return handle;
             }
         };
@@ -418,11 +418,12 @@ namespace Gek
         class ReloadResourceCache
             : public ResourceCache<HANDLE, TYPE>
         {
+        public:
             using TypePtr = ResourceCache<HANDLE, TYPE>::TypePtr;
             using HandleType = ResourceCache<HANDLE, TYPE>::HandleType;
 
         private:
-            concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
+            tbb::concurrent_unordered_set<std::size_t> requestedLoadSet;
 
         public:
             ReloadResourceCache(ThreadPool& loadPool)
@@ -432,9 +433,9 @@ namespace Gek
 
             void reload(void)
             {
-                for (auto& resourceSearch : this->resourceMap)
+                for (auto& resourceSearch : ResourceCache<HANDLE, TYPE>::resourceMap)
                 {
-                    auto resource = resourceSearch.second.load();
+                    auto resource = std::atomic_load(&resourceSearch.second);
                     if (resource)
                     {
                         resource->reload();
@@ -452,8 +453,8 @@ namespace Gek
                 HANDLE handle;
                 if (requestedLoadSet.count(hash) > 0)
                 {
-                    auto resourceSearch = this->resourceHandleMap.find(hash);
-                    if (resourceSearch != std::end(this->resourceHandleMap))
+                    auto resourceSearch = ResourceCache<HANDLE, TYPE>::resourceHandleMap.find(hash);
+                    if (resourceSearch != std::end(ResourceCache<HANDLE, TYPE>::resourceHandleMap))
                     {
                         return std::make_pair(false, resourceSearch->second);
                     }
@@ -461,9 +462,9 @@ namespace Gek
                 else
                 {
                     requestedLoadSet.insert(hash);
-                    HANDLE handle = this->getNextHandle();
-                    this->resourceHandleMap[hash] = handle;
-                    this->setResource(handle, load(handle));
+                    HANDLE handle = ResourceCache<HANDLE, TYPE>::getNextHandle();
+                    ResourceCache<HANDLE, TYPE>::resourceHandleMap[hash] = handle;
+                    ResourceCache<HANDLE, TYPE>::setResource(handle, load(handle));
                     return std::make_pair(true, handle);
                 }
 
@@ -474,8 +475,8 @@ namespace Gek
             {
                 if (requestedLoadSet.count(hash) > 0)
                 {
-                    auto resourceSearch = this->resourceHandleMap.find(hash);
-                    if (resourceSearch != std::end(this->resourceHandleMap))
+                    auto resourceSearch = ResourceCache<HANDLE, TYPE>::resourceHandleMap.find(hash);
+                    if (resourceSearch != std::end(ResourceCache<HANDLE, TYPE>::resourceHandleMap))
                     {
                         return resourceSearch->second;
                     }
@@ -577,9 +578,9 @@ namespace Gek
             GeneralResourceCache<DepthStateHandle, Video::DepthState> depthStateCache;
             GeneralResourceCache<BlendStateHandle, Video::BlendState> blendStateCache;
 
-            concurrency::concurrent_unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
-            concurrency::concurrent_unordered_map<ResourceHandle, Video::Texture::Description> textureDescriptionMap;
-            concurrency::concurrent_unordered_map<ResourceHandle, Video::Buffer::Description> bufferDescriptionMap;
+            tbb::concurrent_unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
+            tbb::concurrent_unordered_map<ResourceHandle, Video::Texture::Description> textureDescriptionMap;
+            tbb::concurrent_unordered_map<ResourceHandle, Video::Buffer::Description> bufferDescriptionMap;
 
             struct Validate
             {
@@ -828,7 +829,7 @@ namespace Gek
             void showResourceValue(std::string_view text, std::string_view label, const std::string& value)
             {
                 ImGui::AlignTextToFramePadding();
-                ImGui::Text(text.data());
+                ImGui::TextUnformatted(text.data());
                 ImGui::SameLine();
                 ImGui::PushItemWidth(-1.0f);
                 UI::InputString(label.data(), value, 0);
@@ -934,7 +935,7 @@ namespace Gek
                     showResourceValue("Alpha To Coverage", "##alphaToCoverage", std::to_string(description.alphaToCoverage));
                     showResourceValue("Independent Blend States", "##independentBlendStates", std::to_string(description.independentBlendStates));
 
-                    ImGui::Text("Target State");
+                    ImGui::TextUnformatted("Target State");
                     ImGui::SameLine();
                     ImGui::PushItemWidth(-1.0f);
                     ImGui::SliderInt("##targetState", &currentBlendStateTarget, 0, 7);

@@ -21,15 +21,16 @@
 #include "GEK/Engine/Filter.hpp"
 #include "GEK/Engine/Material.hpp"
 #include "GEK/Engine/Resources.hpp"
-#include <concurrent_unordered_set.h>
-#include <concurrent_vector.h>
-#include <concurrent_queue.h>
+#include <tbb/concurrent_unordered_set.h>
+#include <tbb/concurrent_vector.h>
+#include <tbb/concurrent_queue.h>
+#include <tbb/combinable.h>
 #include <imgui_internal.h>
 #include <smmintrin.h>
 #include <algorithm>
 #include <execution>
 #include <ranges>
-#include <ppl.h>
+#include <vector>
 
 namespace Gek
 {
@@ -124,16 +125,14 @@ namespace Gek
 
 			struct DrawCallValue
 			{
-				union
+				MaterialHandle material;
+				VisualHandle plugin;
+				ShaderHandle shader;
+
+				uint32_t value(void) const
 				{
-					uint32_t value;
-					struct
-					{
-						MaterialHandle material;
-						VisualHandle plugin;
-						ShaderHandle shader;
-					};
-				};
+					return *reinterpret_cast<const uint32_t *>(this);
+				}
 
 				std::function<void(Video::Device::Context *)> onDraw;
 
@@ -146,7 +145,7 @@ namespace Gek
 				}
 			};
 
-			using DrawCallList = concurrency::concurrent_vector<DrawCallValue>;
+			using DrawCallList = tbb::concurrent_vector<DrawCallValue>;
 
 			struct DrawCallSet
 			{
@@ -195,11 +194,12 @@ namespace Gek
 			{
 				Video::Device *videoDevice = nullptr;
 				std::vector<Plugin::Entity *> entityList;
-				concurrency::concurrent_vector<DATA, AlignedAllocator<DATA, 16>> lightList;
+				tbb::concurrent_vector<DATA> lightList;
+				//tbb::concurrent_vector<DATA, AlignedAllocator<DATA, 16>> lightList;
 				Video::BufferPtr lightDataBuffer;
 
-				concurrency::critical_section addSection;
-				concurrency::critical_section removeSection;
+				//tbb::mutex addSection;
+				//tbb::mutex removeSection;
 
 				LightData(Video::Device *videoDevice)
 					: videoDevice(videoDevice)
@@ -212,7 +212,7 @@ namespace Gek
 				{
 					if (entity->hasComponent<COMPONENT>())
 					{
-						concurrency::critical_section::scoped_lock lock(addSection);
+						//tbb::critical_section::scoped_lock lock(addSection);
 						auto search = std::find_if(std::begin(entityList), std::end(entityList), [entity](Plugin::Entity * const search) -> bool
 						{
 							return (entity == search);
@@ -227,7 +227,7 @@ namespace Gek
 
 				void removeEntity(Plugin::Entity * const entity)
 				{
-					concurrency::critical_section::scoped_lock lock(removeSection);
+					//concurrency::critical_section::scoped_lock lock(removeSection);
 					auto search = std::find_if(std::begin(entityList), std::end(entityList), [entity](Plugin::Entity * const search) -> bool
 					{
 						return (entity == search);
@@ -313,10 +313,10 @@ namespace Gek
 					shapeZPositionList.resize(bufferedEntityCount);
 					shapeRadiusList.resize(bufferedEntityCount);
 
-					auto entityRange = std::ranges::iota_view{ 0ULL, entityCount };
+					auto entityRange = std::ranges::iota_view{ 0UL, entityCount };
 					std::for_each(std::execution::par, std::begin(entityRange), std::end(entityRange), [&](size_t entityIndex) -> void
 					{
-						auto entity = this->entityList[entityIndex];
+						Plugin::Entity *entity = this->entityList[entityIndex];
 						auto &transformComponent = entity->getComponent<Components::Transform>();
 						auto &lightComponent = entity->getComponent<COMPONENT>();
 
@@ -362,8 +362,8 @@ namespace Gek
 			LightVisibilityData<Components::PointLight, PointLightData> pointLightData;
 			LightVisibilityData<Components::SpotLight, SpotLightData> spotLightData;
 
-			concurrency::concurrent_vector<uint16_t> tilePointLightIndexList[GridSize];
-			concurrency::concurrent_vector<uint16_t> tileSpotLightIndexList[GridSize];
+			tbb::concurrent_vector<uint16_t> tilePointLightIndexList[GridSize];
+			tbb::concurrent_vector<uint16_t> tileSpotLightIndexList[GridSize];
 			TileOffsetCount tileOffsetCountList[GridSize];
 			std::vector<uint16_t> lightIndexList;
 
@@ -372,7 +372,7 @@ namespace Gek
 			Video::BufferPtr lightIndexBuffer;
 
 			DrawCallList drawCallList;
-			concurrency::concurrent_queue<Camera> cameraQueue;
+			tbb::concurrent_queue<Camera> cameraQueue;
 			Camera currentCamera;
 			float clipDistance;
 			float reciprocalClipDistance;
@@ -967,7 +967,7 @@ float4 main(PixelInput input) : SV_Target
 				return (std::min(tileCorners.minimum, tileCorners.maximum) >= radius);
 			}
 
-			void addLightCluster(Math::Float3 const &position, float radius, uint32_t lightIndex, concurrency::concurrent_vector<uint16_t> *gridLightList)
+			void addLightCluster(Math::Float3 const &position, float radius, uint32_t lightIndex, tbb::concurrent_vector<uint16_t> *gridLightList)
 			{
 				const Math::Float4 screenBounds(getScreenBounds(position, radius));
 				const Math::Int4 gridBounds(
@@ -1168,12 +1168,12 @@ float4 main(PixelInput input) : SV_Target
 				});
 
 				pointLightData.cull(frustum);
-				auto visibilityRange = std::ranges::iota_view{ 0ULL,  pointLightData.entityList.size() };
+				auto visibilityRange = std::ranges::iota_view{ 0UL,  pointLightData.entityList.size() };
 				std::for_each(std::execution::par, std::begin(visibilityRange), std::end(visibilityRange), [&](size_t index) -> void
 				{
 					if (pointLightData.visibilityList[index])
 					{
-						auto entity = pointLightData.entityList[index];
+						Plugin::Entity *entity = pointLightData.entityList[index];
 						auto& lightComponent = entity->getComponent<Components::PointLight>();
 						addPointLight(entity, lightComponent);
 					}
@@ -1193,7 +1193,7 @@ float4 main(PixelInput input) : SV_Target
 				});
 
 				spotLightData.cull(frustum);
-				auto visibilityRange = std::ranges::iota_view{ 0ULL,  spotLightData.entityList.size() };
+				auto visibilityRange = std::ranges::iota_view{ 0UL,  spotLightData.entityList.size() };
 				std::for_each(std::execution::par, std::begin(visibilityRange), std::end(visibilityRange), [&](size_t index) -> void
 				{
 					if (spotLightData.visibilityList[index])
@@ -1234,7 +1234,7 @@ float4 main(PixelInput input) : SV_Target
 						const auto height = backBuffer->getDescription().height;
 						std::sort(std::execution::par, std::begin(drawCallList), std::end(drawCallList), [](DrawCallValue const &leftValue, DrawCallValue const &rightValue) -> bool
 						{
-							return (leftValue.value < rightValue.value);
+							return (leftValue.value() < rightValue.value());
 						});
 
 						bool isLightingRequired = false;
@@ -1271,7 +1271,7 @@ float4 main(PixelInput input) : SV_Target
 							scheduleSpotLights(frustum);
 							workerPool.join();
 
-							concurrency::combinable<size_t> lightIndexCount;
+							tbb::combinable<size_t> lightIndexCount;
 							std::for_each(std::execution::par, std::begin(tilePointLightIndexList), std::end(tilePointLightIndexList), [&](auto &gridData) -> void
 							{
 								lightIndexCount.local() += gridData.size();

@@ -30,8 +30,6 @@ namespace Gek
 
             virtual ~Core(void) = default;
 
-			virtual Context * const getContext(void) const = 0;
-
             virtual Window * getWindow(void) const = 0;
             virtual Video::Device * getVideoDevice(void) const = 0;
 

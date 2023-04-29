@@ -8,7 +8,8 @@
 #include "GEK/Engine/Shader.hpp"
 #include "GEK/Engine/Material.hpp"
 #include "Passes.hpp"
-#include <ppl.h>
+#include <unordered_map>
+#include <vector>
 
 namespace Gek
 {

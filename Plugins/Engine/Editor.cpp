@@ -17,8 +17,6 @@
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Components/Name.hpp"
 #include "GEK/Model/Base.hpp"
-#include <concurrent_vector.h>
-#include <ppl.h>
 #include <set>
 
 namespace Gek

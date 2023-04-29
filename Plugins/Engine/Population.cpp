@@ -11,7 +11,8 @@
 #include "GEK/Engine/Population.hpp"
 #include <tbb/concurrent_queue.h>
 #include <execution>
-#include <ppl.h>
+#include <unordered_map>
+#include <vector>
 #include <map>
 
 namespace Gek

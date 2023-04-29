@@ -16,8 +16,9 @@
 #include "GEK/Engine/Core.hpp"
 #include "GEK/Engine/Material.hpp"
 #include "Passes.hpp"
-#include <format>
-#include <ppl.h>
+#include <fmt/format.h>
+#include <unordered_map>
+#include <vector>
 
 namespace Gek
 {
@@ -352,7 +353,7 @@ R"(namespace {0} {{
 {1}
 }}; // namespace {0})";
 
-                                        optionsData.push_back(std::vformat(optionTemplate, std::make_format_args(optionName, optionsString)));
+                                        optionsData.push_back(fmt::vformat(optionTemplate, fmt::make_format_args(optionName, optionsString)));
                                     }
                                 }
                             }
@@ -413,7 +414,7 @@ R"(namespace Options {{
 {}
 }}; // namespace Options)";
 
-                        engineData = std::vformat(optionTemplate, std::make_format_args(optionsString));
+                        engineData = fmt::vformat(optionTemplate, fmt::make_format_args(optionsString));
                     }
 
                     std::string mode(String::GetLower(JSON::Value(passNode, "mode", String::Empty)));
@@ -501,7 +502,7 @@ R"(struct OutputPixel
 }};)";
 
                             auto outputString = String::Join(outputData, "\r\n");
-                            engineData += std::vformat(outputTemplate, std::make_format_args(outputString));
+                            engineData += fmt::vformat(outputTemplate, fmt::make_format_args(outputString));
                         }
 
                         Video::BlendState::Description blendStateInformation;
@@ -617,7 +618,7 @@ R"(namespace Resources {{
 }}; // namespace Resources)";
 
                         auto resourceString = String::Join(resourceData, "\r\n");
-                        engineData += std::vformat(resourceTemplate, std::make_format_args(resourceString));
+                        engineData += fmt::vformat(resourceTemplate, fmt::make_format_args(resourceString));
                     }
 
                     uint32_t unorderedStateStart = 0;
@@ -652,7 +653,7 @@ R"(namespace UnorderedAccess {{
 }}; // namespace UnorderedAccess)";
 
                         auto unorderedAccessString = String::Join(unorderedAccessData, "\r\n");
-                        engineData += std::vformat(unorderedAccessTemplate, std::make_format_args(unorderedAccessString));
+                        engineData += fmt::vformat(unorderedAccessTemplate, fmt::make_format_args(unorderedAccessString));
                     }
 
                     std::string fileName(FileSystem::CreatePath(filterName, programName).withExtension(".hlsl").getString());

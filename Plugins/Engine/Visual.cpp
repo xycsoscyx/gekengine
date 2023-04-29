@@ -6,7 +6,6 @@
 #include "GEK/Engine/Resources.hpp"
 #include "GEK/Engine/Visual.hpp"
 #include "Passes.hpp"
-#include <ppl.h>
 
 namespace Gek
 {
@@ -106,7 +105,7 @@ OutputVertex getProjection(OutputVertex outputVertex)
 
                 auto inputVertexString = String::Join(inputVertexData, "\r\n");
                 auto outputVertexString = String::Join(outputVertexData, "\r\n");
-                auto engineData = std::vformat(engineDataTemplate, std::make_format_args(inputVertexString, outputVertexString));
+                auto engineData = fmt::vformat(engineDataTemplate, fmt::make_format_args(inputVertexString, outputVertexString));
 
                 auto vertexNode = visualNode["vertex"];
                 if (vertexNode.contains("entry") && vertexNode.contains("program"))
