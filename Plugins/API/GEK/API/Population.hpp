@@ -82,7 +82,7 @@ namespace Gek
             virtual void addComponent(Plugin::Entity * const entity, ComponentDefinition const &definition) = 0;
             virtual void removeComponent(Plugin::Entity * const entity, Hash type) = 0;
 
-            virtual void listEntities(std::function<void(Plugin::Entity * const entity)> onEntity) const = 0;
+            virtual void listEntities(std::function<void(Plugin::Entity * const entity)> &&onEntity) const = 0;
 
             virtual void action(Action const &action) = 0;
         };
