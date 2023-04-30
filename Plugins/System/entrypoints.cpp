@@ -57,6 +57,11 @@ namespace Gek
     {
         GEK_DECLARE_CONTEXT_USER(Window);
     };
+
+    namespace Vulkan
+    {
+        GEK_DECLARE_CONTEXT_USER(Device);
+    };
 #endif
 
     GEK_CONTEXT_BEGIN(System);
@@ -66,6 +71,7 @@ namespace Gek
         GEK_CONTEXT_ADD_CLASS(Default::Device::Video, Direct3D11::Device);
 #else
         GEK_CONTEXT_ADD_CLASS(Default::System::Window, X11::Window);
+        GEK_CONTEXT_ADD_CLASS(Default::Device::Video, Vulkan::Device);
 #endif
     GEK_CONTEXT_END();
 }; // namespace Gek

@@ -15,12 +15,14 @@ LIBRARY loadLibrary(std::string_view fileName)
 
 #define getFunction(HANDLE, FUNCTION)   GetProcAddress(HANDLE, FUNCTION)
 #define freeLibrary(HANDLE)             FreeLibrary(HANDLE)
+static const char *moduleExtension = ".dll";
 #else
 #include <dlfcn.h>
 #define LIBRARY                         void *
 #define loadLibrary(FILE)               dlopen(FILE, RTLD_LAZY);
 #define getFunction(HANDLE, FUNCTION)   dlsym(HANDLE, FUNCTION)
 #define freeLibrary(HANDLE)             dlclose(HANDLE)
+static const char *moduleExtension = ".so";
 #endif
 
 namespace Gek
@@ -44,10 +46,12 @@ namespace Gek
         {
 			for (auto const &searchPath : pluginSearchList)
             {
+                log(Info, "Looking Plugins: {}", searchPath.getString());
                 searchPath.findFiles([&](FileSystem::Path const &filePath) -> bool
                 {
-					if (filePath.isFile() && String::GetLower(filePath.getExtension()) == ".dll")
+					if (filePath.isFile() && String::GetLower(filePath.getExtension()) == moduleExtension)
 					{
+                        log(Info, "Found module to search: {}", filePath.getString());
                         LIBRARY library = loadLibrary(filePath.getString().data());
 						if (library)
 						{

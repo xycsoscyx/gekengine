@@ -13,6 +13,8 @@ if(WIN32)
 else()
     find_package(X11 REQUIRED)
     list(APPEND API_HEADERS ${X11_INCLUDE_DIR})
+    file(GLOB OS_SOURCES "Linux/*.cpp")
+    list(APPEND SOURCES ${OS_SOURCES})
 endif()
 
 add_library(${ProjectID} SHARED ${SOURCES} ${HEADERS} ${API_HEADERS})

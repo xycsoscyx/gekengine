@@ -1020,697 +1020,697 @@ namespace Gek
             , public Video::Debug::Device
         {
             class Context
-            : public Video::Device::Context
-        {
-            class ComputePipeline
-                : public Video::Device::Context::Pipeline
+                : public Video::Device::Context
             {
-            private:
-                ID3D11DeviceContext * d3dDeviceContext = nullptr;
-
-            public:
-                ComputePipeline(ID3D11DeviceContext *d3dDeviceContext)
-                    : d3dDeviceContext(d3dDeviceContext)
+                class ComputePipeline
+                    : public Video::Device::Context::Pipeline
                 {
-                    assert(d3dDeviceContext);
-                }
-
-                // Video::Pipeline
-                Type getType(void) const
-                {
-                    return Type::Compute;
-                }
-
-                void setProgram(Video::Program *program)
-                {
-                    assert(d3dDeviceContext);
-
-                    d3dDeviceContext->CSSetShader(getObject<ComputeProgram>(program), nullptr, 0);
-                }
-
-                ObjectCache<ID3D11SamplerState> samplerStateCache;
-                void setSamplerStateList(const std::vector<Video::Object *> &list, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    samplerStateCache.set<SamplerState>(list);
-                    d3dDeviceContext->CSSetSamplers(firstStage, UINT(list.size()), samplerStateCache.get());
-                }
-
-                ObjectCache<ID3D11Buffer> constantBufferCache;
-                void setConstantBufferList(const std::vector<Video::Buffer *> &list, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    constantBufferCache.set<Buffer>(list);
-                    d3dDeviceContext->CSSetConstantBuffers(firstStage, UINT(list.size()), constantBufferCache.get());
-                }
-
-                ObjectCache<ID3D11ShaderResourceView> resourceCache;
-                void setResourceList(const std::vector<Video::Object *> &list, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    resourceCache.set<ShaderResourceView>(list);
-                    d3dDeviceContext->CSSetShaderResources(firstStage, UINT(list.size()), resourceCache.get());
-                }
-
-                ObjectCache<ID3D11UnorderedAccessView> unorderedAccessCache;
-                void setUnorderedAccessList(const std::vector<Video::Object *> &list, uint32_t firstStage, uint32_t *countList)
-                {
-                    assert(d3dDeviceContext);
-
-                    unorderedAccessCache.set<UnorderedAccessView>(list);
-                    d3dDeviceContext->CSSetUnorderedAccessViews(firstStage, UINT(list.size()), unorderedAccessCache.get(), countList);
-                }
-
-                void clearSamplerStateList(uint32_t count, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    samplerStateCache.clear(count);
-                    d3dDeviceContext->CSSetSamplers(firstStage, count, samplerStateCache.get());
-                }
-
-                void clearConstantBufferList(uint32_t count, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    constantBufferCache.clear(count);
-                    d3dDeviceContext->CSSetConstantBuffers(firstStage, count, constantBufferCache.get());
-                }
-
-                void clearResourceList(uint32_t count, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    resourceCache.clear(count);
-                    d3dDeviceContext->CSSetShaderResources(firstStage, count, resourceCache.get());
-                }
-
-                void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    unorderedAccessCache.clear(count);
-                    d3dDeviceContext->CSSetUnorderedAccessViews(firstStage, count, unorderedAccessCache.get(), nullptr);
-                }
-            };
-
-            class VertexPipeline
-                : public Video::Device::Context::Pipeline
-            {
-            private:
-                ID3D11DeviceContext * d3dDeviceContext = nullptr;
-
-            public:
-                VertexPipeline(ID3D11DeviceContext *d3dDeviceContext)
-                    : d3dDeviceContext(d3dDeviceContext)
-                {
-                    assert(d3dDeviceContext);
-                }
-
-                // Video::Pipeline
-                Type getType(void) const
-                {
-                    return Type::Vertex;
-                }
-
-                void setProgram(Video::Program *program)
-                {
-                    assert(d3dDeviceContext);
-
-                    d3dDeviceContext->VSSetShader(getObject<VertexProgram>(program), nullptr, 0);
-                }
-
-                ObjectCache<ID3D11SamplerState> samplerStateCache;
-                void setSamplerStateList(const std::vector<Video::Object *> &list, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    samplerStateCache.set<SamplerState>(list);
-                    d3dDeviceContext->VSSetSamplers(firstStage, UINT(list.size()), samplerStateCache.get());
-                }
-
-                ObjectCache<ID3D11Buffer> constantBufferCache;
-                void setConstantBufferList(const std::vector<Video::Buffer *> &list, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    constantBufferCache.set<Buffer>(list);
-                    d3dDeviceContext->VSSetConstantBuffers(firstStage, UINT(list.size()), constantBufferCache.get());
-                }
-
-                ObjectCache<ID3D11ShaderResourceView> resourceCache;
-                void setResourceList(const std::vector<Video::Object *> &list, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    resourceCache.set<ShaderResourceView>(list);
-                    d3dDeviceContext->VSSetShaderResources(firstStage, UINT(list.size()), resourceCache.get());
-                }
-
-                void setUnorderedAccessList(const std::vector<Video::Object *> &list, uint32_t firstStage, uint32_t *countList)
-                {
-                    assert(false && "Vertex pipeline does not supported unordered access");
-                }
-
-                void clearSamplerStateList(uint32_t count, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    samplerStateCache.clear(count);
-                    d3dDeviceContext->VSSetSamplers(firstStage, count, samplerStateCache.get());
-                }
-
-                void clearConstantBufferList(uint32_t count, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    constantBufferCache.clear(count);
-                    d3dDeviceContext->VSSetConstantBuffers(firstStage, count, constantBufferCache.get());
-                }
-
-                void clearResourceList(uint32_t count, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    resourceCache.clear(count);
-                    d3dDeviceContext->VSSetShaderResources(firstStage, count, resourceCache.get());
-                }
-
-                void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
-                {
-                    assert(false && "Vertex pipeline does not supported unordered access");
-                }
-            };
-
-            class GeometryPipeline
-                : public Video::Device::Context::Pipeline
-            {
-            private:
-                ID3D11DeviceContext * d3dDeviceContext = nullptr;
-
-            public:
-                GeometryPipeline(ID3D11DeviceContext *d3dDeviceContext)
-                    : d3dDeviceContext(d3dDeviceContext)
-                {
-                    assert(d3dDeviceContext);
-                }
-
-                // Video::Pipeline
-                Type getType(void) const
-                {
-                    return Type::Geometry;
-                }
-
-                void setProgram(Video::Program *program)
-                {
-                    assert(d3dDeviceContext);
-
-                    d3dDeviceContext->GSSetShader(getObject<GeometryProgram>(program), nullptr, 0);
-                }
-
-                ObjectCache<ID3D11SamplerState> samplerStateCache;
-                void setSamplerStateList(const std::vector<Video::Object *> &list, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    samplerStateCache.set<SamplerState>(list);
-                    d3dDeviceContext->GSSetSamplers(firstStage, UINT(list.size()), samplerStateCache.get());
-                }
-
-                ObjectCache<ID3D11Buffer> constantBufferCache;
-                void setConstantBufferList(const std::vector<Video::Buffer *> &list, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    constantBufferCache.set<Buffer>(list);
-                    d3dDeviceContext->GSSetConstantBuffers(firstStage, UINT(list.size()), constantBufferCache.get());
-                }
-
-                ObjectCache<ID3D11ShaderResourceView> resourceCache;
-                void setResourceList(const std::vector<Video::Object *> &list, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    resourceCache.set<ShaderResourceView>(list);
-                    d3dDeviceContext->GSSetShaderResources(firstStage, UINT(list.size()), resourceCache.get());
-                }
-
-                void setUnorderedAccessList(const std::vector<Video::Object *> &list, uint32_t firstStage, uint32_t *countList)
-                {
-                    assert(false && "Geometry pipeline does not supported unordered access");
-                }
-
-                void clearSamplerStateList(uint32_t count, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    samplerStateCache.clear(count);
-                    d3dDeviceContext->GSSetSamplers(firstStage, count, samplerStateCache.get());
-                }
-
-                void clearConstantBufferList(uint32_t count, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    constantBufferCache.clear(count);
-                    d3dDeviceContext->GSSetConstantBuffers(firstStage, count, constantBufferCache.get());
-                }
-
-                void clearResourceList(uint32_t count, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    resourceCache.clear(count);
-                    d3dDeviceContext->GSSetShaderResources(firstStage, count, resourceCache.get());
-                }
-
-                void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
-                {
-                    assert(false && "Geometry pipeline does not supported unordered access");
-                }
-            };
-
-            class PixelPipeline
-                : public Video::Device::Context::Pipeline
-            {
-            private:
-                ID3D11DeviceContext * d3dDeviceContext = nullptr;
-
-            public:
-                PixelPipeline(ID3D11DeviceContext *d3dDeviceContext)
-                    : d3dDeviceContext(d3dDeviceContext)
-                {
-                    assert(d3dDeviceContext);
-                }
-
-                // Video::Pipeline
-                Type getType(void) const
-                {
-                    return Type::Pixel;
-                }
-
-                void setProgram(Video::Program *program)
-                {
-                    assert(d3dDeviceContext);
-
-                    d3dDeviceContext->PSSetShader(getObject<PixelProgram>(program), nullptr, 0);
-                }
-
-                ObjectCache<ID3D11SamplerState> samplerStateCache;
-                void setSamplerStateList(const std::vector<Video::Object *> &list, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    samplerStateCache.set<SamplerState>(list);
-                    d3dDeviceContext->PSSetSamplers(firstStage, UINT(list.size()), samplerStateCache.get());
-                }
-
-                ObjectCache<ID3D11Buffer> constantBufferCache;
-                void setConstantBufferList(const std::vector<Video::Buffer *> &list, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    constantBufferCache.set<Buffer>(list);
-                    d3dDeviceContext->PSSetConstantBuffers(firstStage, UINT(list.size()), constantBufferCache.get());
-                }
-
-                ObjectCache<ID3D11ShaderResourceView> resourceCache;
-                void setResourceList(const std::vector<Video::Object *> &list, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    resourceCache.set<ShaderResourceView>(list);
-                    d3dDeviceContext->PSSetShaderResources(firstStage, UINT(list.size()), resourceCache.get());
-                }
-
-                ObjectCache<ID3D11UnorderedAccessView> unorderedAccessCache;
-                void setUnorderedAccessList(const std::vector<Video::Object *> &list, uint32_t firstStage, uint32_t *countList)
-                {
-                    assert(d3dDeviceContext);
-
-                    unorderedAccessCache.set<UnorderedAccessView>(list);
-                    d3dDeviceContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, nullptr, nullptr, firstStage, UINT(list.size()), unorderedAccessCache.get(), countList);
-                }
-
-                void clearSamplerStateList(uint32_t count, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    samplerStateCache.clear(count);
-                    d3dDeviceContext->PSSetSamplers(firstStage, count, samplerStateCache.get());
-                }
-
-                void clearConstantBufferList(uint32_t count, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    constantBufferCache.clear(count);
-                    d3dDeviceContext->PSSetConstantBuffers(firstStage, count, constantBufferCache.get());
-                }
-
-                void clearResourceList(uint32_t count, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    resourceCache.clear(count);
-                    d3dDeviceContext->PSSetShaderResources(firstStage, count, resourceCache.get());
-                }
-
-                void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
-                {
-                    assert(d3dDeviceContext);
-
-                    unorderedAccessCache.clear(count);
-                    d3dDeviceContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, nullptr, nullptr, firstStage, count, unorderedAccessCache.get(), nullptr);
-                }
-            };
-
-        public:
-            CComPtr<ID3D11DeviceContext> d3dDeviceContext;
-            PipelinePtr computeSystemHandler;
-            PipelinePtr vertexSystemHandler;
-            PipelinePtr geomtrySystemHandler;
-            PipelinePtr pixelSystemHandler;
-
-        public:
-            Context(CComPtr<ID3D11DeviceContext> &d3dDeviceContext)
-                : d3dDeviceContext(d3dDeviceContext)
-                , computeSystemHandler(new ComputePipeline(d3dDeviceContext))
-                , vertexSystemHandler(new VertexPipeline(d3dDeviceContext))
-                , geomtrySystemHandler(new GeometryPipeline(d3dDeviceContext))
-                , pixelSystemHandler(new PixelPipeline(d3dDeviceContext))
-            {
-                assert(d3dDeviceContext);
-                assert(computeSystemHandler);
-                assert(vertexSystemHandler);
-                assert(geomtrySystemHandler);
-                assert(pixelSystemHandler);
-            }
-
-            // Video::Context
-            Pipeline * const computePipeline(void)
-            {
-                assert(computeSystemHandler);
-
-                return computeSystemHandler.get();
-            }
-
-            Pipeline * const vertexPipeline(void)
-            {
-                assert(vertexSystemHandler);
-
-                return vertexSystemHandler.get();
-            }
-
-            Pipeline * const geometryPipeline(void)
-            {
-                assert(geomtrySystemHandler);
-
-                return geomtrySystemHandler.get();
-            }
-
-            Pipeline * const pixelPipeline(void)
-            {
-                assert(pixelSystemHandler);
-
-                return pixelSystemHandler.get();
-            }
-
-            void begin(Video::Query *query)
-            {
-                assert(d3dDeviceContext);
-                assert(query);
-
-                d3dDeviceContext->Begin(getObject<Query>(query));
-            }
-
-            void end(Video::Query *query)
-            {
-                assert(d3dDeviceContext);
-                assert(query);
-
-                d3dDeviceContext->End(getObject<Query>(query));
-            }
-
-            Video::Query::Status getData(Video::Query *query, void *data, size_t dataSize, bool waitUntilReady = false)
-            {
-                assert(d3dDeviceContext);
-                assert(query);
-
-                auto queryObject = getObject<Query>(query);
-                if (waitUntilReady)
-                {
-                    while (d3dDeviceContext->GetData(queryObject, nullptr, 0, 0) == S_FALSE)
+                private:
+                    ID3D11DeviceContext * d3dDeviceContext = nullptr;
+
+                public:
+                    ComputePipeline(ID3D11DeviceContext *d3dDeviceContext)
+                        : d3dDeviceContext(d3dDeviceContext)
                     {
-                        Sleep(1);
-                    };
-                }
+                        assert(d3dDeviceContext);
+                    }
 
-                switch (d3dDeviceContext->GetData(queryObject, data, UINT(dataSize), 0))
-                {
-                case S_OK:
-                    return Video::Query::Status::Ready;
+                    // Video::Pipeline
+                    Type getType(void) const
+                    {
+                        return Type::Compute;
+                    }
 
-                case S_FALSE:
-                    return Video::Query::Status::Waiting;
+                    void setProgram(Video::Program *program)
+                    {
+                        assert(d3dDeviceContext);
+
+                        d3dDeviceContext->CSSetShader(getObject<ComputeProgram>(program), nullptr, 0);
+                    }
+
+                    ObjectCache<ID3D11SamplerState> samplerStateCache;
+                    void setSamplerStateList(const std::vector<Video::Object *> &list, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        samplerStateCache.set<SamplerState>(list);
+                        d3dDeviceContext->CSSetSamplers(firstStage, UINT(list.size()), samplerStateCache.get());
+                    }
+
+                    ObjectCache<ID3D11Buffer> constantBufferCache;
+                    void setConstantBufferList(const std::vector<Video::Buffer *> &list, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        constantBufferCache.set<Buffer>(list);
+                        d3dDeviceContext->CSSetConstantBuffers(firstStage, UINT(list.size()), constantBufferCache.get());
+                    }
+
+                    ObjectCache<ID3D11ShaderResourceView> resourceCache;
+                    void setResourceList(const std::vector<Video::Object *> &list, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        resourceCache.set<ShaderResourceView>(list);
+                        d3dDeviceContext->CSSetShaderResources(firstStage, UINT(list.size()), resourceCache.get());
+                    }
+
+                    ObjectCache<ID3D11UnorderedAccessView> unorderedAccessCache;
+                    void setUnorderedAccessList(const std::vector<Video::Object *> &list, uint32_t firstStage, uint32_t *countList)
+                    {
+                        assert(d3dDeviceContext);
+
+                        unorderedAccessCache.set<UnorderedAccessView>(list);
+                        d3dDeviceContext->CSSetUnorderedAccessViews(firstStage, UINT(list.size()), unorderedAccessCache.get(), countList);
+                    }
+
+                    void clearSamplerStateList(uint32_t count, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        samplerStateCache.clear(count);
+                        d3dDeviceContext->CSSetSamplers(firstStage, count, samplerStateCache.get());
+                    }
+
+                    void clearConstantBufferList(uint32_t count, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        constantBufferCache.clear(count);
+                        d3dDeviceContext->CSSetConstantBuffers(firstStage, count, constantBufferCache.get());
+                    }
+
+                    void clearResourceList(uint32_t count, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        resourceCache.clear(count);
+                        d3dDeviceContext->CSSetShaderResources(firstStage, count, resourceCache.get());
+                    }
+
+                    void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        unorderedAccessCache.clear(count);
+                        d3dDeviceContext->CSSetUnorderedAccessViews(firstStage, count, unorderedAccessCache.get(), nullptr);
+                    }
                 };
 
-                return Video::Query::Status::Error;
-            }
-
-            void generateMipMaps(Video::Texture *texture)
-            {
-                assert(d3dDeviceContext);
-                assert(texture);
-
-                d3dDeviceContext->GenerateMips(getObject<ShaderResourceView>(texture));
-            }
-
-            void resolveSamples(Video::Texture *destination, Video::Texture *source)
-            {
-                assert(d3dDeviceContext);
-                assert(destination);
-                assert(source);
-
-                d3dDeviceContext->ResolveSubresource(getObject<Resource>(destination), 0, getObject<Resource>(source), 0, DirectX::TextureFormatList[static_cast<uint8_t>(destination->getDescription().format)]);
-            }
-
-            void clearState(void)
-            {
-                assert(d3dDeviceContext);
-
-                d3dDeviceContext->ClearState();
-            }
-
-            void setViewportList(const std::vector<Video::ViewPort> &viewPortList)
-            {
-                assert(d3dDeviceContext);
-
-                d3dDeviceContext->RSSetViewports(UINT(viewPortList.size()), (D3D11_VIEWPORT *)viewPortList.data());
-            }
-
-            void setScissorList(const std::vector<Math::UInt4> &rectangleList)
-            {
-                assert(d3dDeviceContext);
-
-                d3dDeviceContext->RSSetScissorRects(UINT(rectangleList.size()), (D3D11_RECT *)rectangleList.data());
-            }
-
-            void clearResource(Video::Object *object, Math::Float4 const &value)
-            {
-                assert(d3dDeviceContext);
-                assert(object);
-            }
-
-            void clearUnorderedAccess(Video::Object *object, Math::Float4 const &value)
-            {
-                assert(d3dDeviceContext);
-                assert(object);
-
-                d3dDeviceContext->ClearUnorderedAccessViewFloat(getObject<UnorderedAccessView>(object), value.data);
-            }
-
-            void clearUnorderedAccess(Video::Object *object, Math::UInt4 const &value)
-            {
-                assert(d3dDeviceContext);
-                assert(object);
-
-                d3dDeviceContext->ClearUnorderedAccessViewUint(getObject<UnorderedAccessView>(object), value.data);
-            }
-
-            void clearRenderTarget(Video::Target *renderTarget, Math::Float4 const &clearColor)
-            {
-                assert(d3dDeviceContext);
-                assert(renderTarget);
-
-                d3dDeviceContext->ClearRenderTargetView(getObject<RenderTargetView>(renderTarget), clearColor.data);
-            }
-
-            void clearDepthStencilTarget(Video::Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
-            {
-                assert(d3dDeviceContext);
-                assert(depthBuffer);
-
-                d3dDeviceContext->ClearDepthStencilView(getObject<DepthTexture>(depthBuffer),
-                    ((flags & Video::ClearFlags::Depth ? D3D11_CLEAR_DEPTH : 0) |
-                    (flags & Video::ClearFlags::Stencil ? D3D11_CLEAR_STENCIL : 0)),
-                    clearDepth, clearStencil);
-            }
-
-            void clearIndexBuffer(void)
-            {
-                assert(d3dDeviceContext);
-
-                d3dDeviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
-            }
-
-            void clearVertexBufferList(uint32_t count, uint32_t firstSlot)
-            {
-                assert(d3dDeviceContext);
-
-                vertexBufferCache.clear(count);
-                vertexBufferStrideCache.resize(count);
-                vertexBufferOffsetsCache.resize(count);
-                d3dDeviceContext->IASetVertexBuffers(firstSlot, count, vertexBufferCache.get(), vertexBufferStrideCache.data(), vertexBufferOffsetsCache.data());
-            }
-
-            void clearRenderTargetList(uint32_t count, bool depthBuffer)
-            {
-                assert(d3dDeviceContext);
-
-                renderTargetViewCache.clear(count);
-                d3dDeviceContext->OMSetRenderTargets(count, renderTargetViewCache.get(), nullptr);
-            }
-
-            ObjectCache<ID3D11RenderTargetView> renderTargetViewCache;
-            void setRenderTargetList(const std::vector<Video::Target *> &renderTargetList, Video::Object *depthBuffer)
-            {
-                assert(d3dDeviceContext);
-
-                renderTargetViewCache.set<RenderTargetView>(renderTargetList);
-                d3dDeviceContext->OMSetRenderTargets(UINT(renderTargetList.size()), renderTargetViewCache.get(), getObject<DepthTexture>(depthBuffer));
-            }
-
-            void setRenderState(Video::Object *renderState)
-            {
-                assert(d3dDeviceContext);
-                assert(renderState);
-
-                d3dDeviceContext->RSSetState(getObject<RenderState>(renderState));
-            }
-
-            void setDepthState(Video::Object *depthState, uint32_t stencilReference)
-            {
-                assert(d3dDeviceContext);
-                assert(depthState);
-
-                d3dDeviceContext->OMSetDepthStencilState(getObject<DepthState>(depthState), stencilReference);
-            }
-
-            void setBlendState(Video::Object *blendState, Math::Float4 const &blendFactor, uint32_t mask)
-            {
-                assert(d3dDeviceContext);
-                assert(blendState);
-
-                d3dDeviceContext->OMSetBlendState(getObject<BlendState>(blendState), blendFactor.data, mask);
-            }
-
-            void setInputLayout(Video::Object *inputLayout)
-            {
-                assert(d3dDeviceContext);
-
-                d3dDeviceContext->IASetInputLayout(getObject<InputLayout>(inputLayout));
-            }
-
-            void setIndexBuffer(Video::Buffer *indexBuffer, uint32_t offset)
-            {
-                assert(d3dDeviceContext);
-                assert(indexBuffer);
-
-                DXGI_FORMAT format = DirectX::BufferFormatList[static_cast<uint8_t>(indexBuffer->getDescription().format)];
-                d3dDeviceContext->IASetIndexBuffer(getObject<Buffer>(indexBuffer), format, offset);
-            }
-
-            ObjectCache<ID3D11Buffer> vertexBufferCache;
-            std::vector<uint32_t> vertexBufferStrideCache;
-            std::vector<uint32_t> vertexBufferOffsetsCache;
-            void setVertexBufferList(const std::vector<Video::Buffer *> &vertexBufferList, uint32_t firstSlot, uint32_t *offsetList)
-            {
-                assert(d3dDeviceContext);
-
-                uint32_t vertexBufferCount = UINT(vertexBufferList.size());
-                vertexBufferStrideCache.resize(vertexBufferCount);
-                vertexBufferOffsetsCache.resize(vertexBufferCount);
-                for (uint32_t buffer = 0; buffer < vertexBufferCount; ++buffer)
+                class VertexPipeline
+                    : public Video::Device::Context::Pipeline
                 {
-                    vertexBufferStrideCache[buffer] = vertexBufferList[buffer]->getDescription().stride;
-                    vertexBufferOffsetsCache[buffer] = (offsetList ? offsetList[buffer] : 0);
+                private:
+                    ID3D11DeviceContext * d3dDeviceContext = nullptr;
+
+                public:
+                    VertexPipeline(ID3D11DeviceContext *d3dDeviceContext)
+                        : d3dDeviceContext(d3dDeviceContext)
+                    {
+                        assert(d3dDeviceContext);
+                    }
+
+                    // Video::Pipeline
+                    Type getType(void) const
+                    {
+                        return Type::Vertex;
+                    }
+
+                    void setProgram(Video::Program *program)
+                    {
+                        assert(d3dDeviceContext);
+
+                        d3dDeviceContext->VSSetShader(getObject<VertexProgram>(program), nullptr, 0);
+                    }
+
+                    ObjectCache<ID3D11SamplerState> samplerStateCache;
+                    void setSamplerStateList(const std::vector<Video::Object *> &list, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        samplerStateCache.set<SamplerState>(list);
+                        d3dDeviceContext->VSSetSamplers(firstStage, UINT(list.size()), samplerStateCache.get());
+                    }
+
+                    ObjectCache<ID3D11Buffer> constantBufferCache;
+                    void setConstantBufferList(const std::vector<Video::Buffer *> &list, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        constantBufferCache.set<Buffer>(list);
+                        d3dDeviceContext->VSSetConstantBuffers(firstStage, UINT(list.size()), constantBufferCache.get());
+                    }
+
+                    ObjectCache<ID3D11ShaderResourceView> resourceCache;
+                    void setResourceList(const std::vector<Video::Object *> &list, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        resourceCache.set<ShaderResourceView>(list);
+                        d3dDeviceContext->VSSetShaderResources(firstStage, UINT(list.size()), resourceCache.get());
+                    }
+
+                    void setUnorderedAccessList(const std::vector<Video::Object *> &list, uint32_t firstStage, uint32_t *countList)
+                    {
+                        assert(false && "Vertex pipeline does not supported unordered access");
+                    }
+
+                    void clearSamplerStateList(uint32_t count, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        samplerStateCache.clear(count);
+                        d3dDeviceContext->VSSetSamplers(firstStage, count, samplerStateCache.get());
+                    }
+
+                    void clearConstantBufferList(uint32_t count, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        constantBufferCache.clear(count);
+                        d3dDeviceContext->VSSetConstantBuffers(firstStage, count, constantBufferCache.get());
+                    }
+
+                    void clearResourceList(uint32_t count, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        resourceCache.clear(count);
+                        d3dDeviceContext->VSSetShaderResources(firstStage, count, resourceCache.get());
+                    }
+
+                    void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
+                    {
+                        assert(false && "Vertex pipeline does not supported unordered access");
+                    }
+                };
+
+                class GeometryPipeline
+                    : public Video::Device::Context::Pipeline
+                {
+                private:
+                    ID3D11DeviceContext * d3dDeviceContext = nullptr;
+
+                public:
+                    GeometryPipeline(ID3D11DeviceContext *d3dDeviceContext)
+                        : d3dDeviceContext(d3dDeviceContext)
+                    {
+                        assert(d3dDeviceContext);
+                    }
+
+                    // Video::Pipeline
+                    Type getType(void) const
+                    {
+                        return Type::Geometry;
+                    }
+
+                    void setProgram(Video::Program *program)
+                    {
+                        assert(d3dDeviceContext);
+
+                        d3dDeviceContext->GSSetShader(getObject<GeometryProgram>(program), nullptr, 0);
+                    }
+
+                    ObjectCache<ID3D11SamplerState> samplerStateCache;
+                    void setSamplerStateList(const std::vector<Video::Object *> &list, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        samplerStateCache.set<SamplerState>(list);
+                        d3dDeviceContext->GSSetSamplers(firstStage, UINT(list.size()), samplerStateCache.get());
+                    }
+
+                    ObjectCache<ID3D11Buffer> constantBufferCache;
+                    void setConstantBufferList(const std::vector<Video::Buffer *> &list, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        constantBufferCache.set<Buffer>(list);
+                        d3dDeviceContext->GSSetConstantBuffers(firstStage, UINT(list.size()), constantBufferCache.get());
+                    }
+
+                    ObjectCache<ID3D11ShaderResourceView> resourceCache;
+                    void setResourceList(const std::vector<Video::Object *> &list, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        resourceCache.set<ShaderResourceView>(list);
+                        d3dDeviceContext->GSSetShaderResources(firstStage, UINT(list.size()), resourceCache.get());
+                    }
+
+                    void setUnorderedAccessList(const std::vector<Video::Object *> &list, uint32_t firstStage, uint32_t *countList)
+                    {
+                        assert(false && "Geometry pipeline does not supported unordered access");
+                    }
+
+                    void clearSamplerStateList(uint32_t count, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        samplerStateCache.clear(count);
+                        d3dDeviceContext->GSSetSamplers(firstStage, count, samplerStateCache.get());
+                    }
+
+                    void clearConstantBufferList(uint32_t count, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        constantBufferCache.clear(count);
+                        d3dDeviceContext->GSSetConstantBuffers(firstStage, count, constantBufferCache.get());
+                    }
+
+                    void clearResourceList(uint32_t count, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        resourceCache.clear(count);
+                        d3dDeviceContext->GSSetShaderResources(firstStage, count, resourceCache.get());
+                    }
+
+                    void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
+                    {
+                        assert(false && "Geometry pipeline does not supported unordered access");
+                    }
+                };
+
+                class PixelPipeline
+                    : public Video::Device::Context::Pipeline
+                {
+                private:
+                    ID3D11DeviceContext * d3dDeviceContext = nullptr;
+
+                public:
+                    PixelPipeline(ID3D11DeviceContext *d3dDeviceContext)
+                        : d3dDeviceContext(d3dDeviceContext)
+                    {
+                        assert(d3dDeviceContext);
+                    }
+
+                    // Video::Pipeline
+                    Type getType(void) const
+                    {
+                        return Type::Pixel;
+                    }
+
+                    void setProgram(Video::Program *program)
+                    {
+                        assert(d3dDeviceContext);
+
+                        d3dDeviceContext->PSSetShader(getObject<PixelProgram>(program), nullptr, 0);
+                    }
+
+                    ObjectCache<ID3D11SamplerState> samplerStateCache;
+                    void setSamplerStateList(const std::vector<Video::Object *> &list, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        samplerStateCache.set<SamplerState>(list);
+                        d3dDeviceContext->PSSetSamplers(firstStage, UINT(list.size()), samplerStateCache.get());
+                    }
+
+                    ObjectCache<ID3D11Buffer> constantBufferCache;
+                    void setConstantBufferList(const std::vector<Video::Buffer *> &list, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        constantBufferCache.set<Buffer>(list);
+                        d3dDeviceContext->PSSetConstantBuffers(firstStage, UINT(list.size()), constantBufferCache.get());
+                    }
+
+                    ObjectCache<ID3D11ShaderResourceView> resourceCache;
+                    void setResourceList(const std::vector<Video::Object *> &list, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        resourceCache.set<ShaderResourceView>(list);
+                        d3dDeviceContext->PSSetShaderResources(firstStage, UINT(list.size()), resourceCache.get());
+                    }
+
+                    ObjectCache<ID3D11UnorderedAccessView> unorderedAccessCache;
+                    void setUnorderedAccessList(const std::vector<Video::Object *> &list, uint32_t firstStage, uint32_t *countList)
+                    {
+                        assert(d3dDeviceContext);
+
+                        unorderedAccessCache.set<UnorderedAccessView>(list);
+                        d3dDeviceContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, nullptr, nullptr, firstStage, UINT(list.size()), unorderedAccessCache.get(), countList);
+                    }
+
+                    void clearSamplerStateList(uint32_t count, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        samplerStateCache.clear(count);
+                        d3dDeviceContext->PSSetSamplers(firstStage, count, samplerStateCache.get());
+                    }
+
+                    void clearConstantBufferList(uint32_t count, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        constantBufferCache.clear(count);
+                        d3dDeviceContext->PSSetConstantBuffers(firstStage, count, constantBufferCache.get());
+                    }
+
+                    void clearResourceList(uint32_t count, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        resourceCache.clear(count);
+                        d3dDeviceContext->PSSetShaderResources(firstStage, count, resourceCache.get());
+                    }
+
+                    void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
+                    {
+                        assert(d3dDeviceContext);
+
+                        unorderedAccessCache.clear(count);
+                        d3dDeviceContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, nullptr, nullptr, firstStage, count, unorderedAccessCache.get(), nullptr);
+                    }
+                };
+
+            public:
+                CComPtr<ID3D11DeviceContext> d3dDeviceContext;
+                PipelinePtr computeSystemHandler;
+                PipelinePtr vertexSystemHandler;
+                PipelinePtr geomtrySystemHandler;
+                PipelinePtr pixelSystemHandler;
+
+            public:
+                Context(CComPtr<ID3D11DeviceContext> &d3dDeviceContext)
+                    : d3dDeviceContext(d3dDeviceContext)
+                    , computeSystemHandler(new ComputePipeline(d3dDeviceContext))
+                    , vertexSystemHandler(new VertexPipeline(d3dDeviceContext))
+                    , geomtrySystemHandler(new GeometryPipeline(d3dDeviceContext))
+                    , pixelSystemHandler(new PixelPipeline(d3dDeviceContext))
+                {
+                    assert(d3dDeviceContext);
+                    assert(computeSystemHandler);
+                    assert(vertexSystemHandler);
+                    assert(geomtrySystemHandler);
+                    assert(pixelSystemHandler);
                 }
 
-                vertexBufferCache.set<Buffer>(vertexBufferList);
-                d3dDeviceContext->IASetVertexBuffers(firstSlot, vertexBufferCount, vertexBufferCache.get(), vertexBufferStrideCache.data(), vertexBufferOffsetsCache.data());
-            }
-
-            void setPrimitiveType(Video::PrimitiveType primitiveType)
-            {
-                assert(d3dDeviceContext);
-
-                d3dDeviceContext->IASetPrimitiveTopology(DirectX::TopologList[static_cast<uint8_t>(primitiveType)]);
-            }
-
-            void drawPrimitive(uint32_t vertexCount, uint32_t firstVertex)
-            {
-                assert(d3dDeviceContext);
-
-                d3dDeviceContext->Draw(vertexCount, firstVertex);
-            }
-
-            void drawInstancedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex)
-            {
-                assert(d3dDeviceContext);
-
-                d3dDeviceContext->DrawInstanced(vertexCount, instanceCount, firstVertex, firstInstance);
-            }
-
-            void drawIndexedPrimitive(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
-            {
-                assert(d3dDeviceContext);
-
-                d3dDeviceContext->DrawIndexed(indexCount, firstIndex, firstVertex);
-            }
-
-            void drawInstancedIndexedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
-            {
-                assert(d3dDeviceContext);
-
-                d3dDeviceContext->DrawIndexedInstanced(indexCount, instanceCount, firstIndex, firstVertex, firstInstance);
-            }
-
-            void dispatch(uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ)
-            {
-                assert(d3dDeviceContext);
-
-                d3dDeviceContext->Dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
-            }
-
-            Video::ObjectPtr finishCommandList(void)
-            {
-                assert(d3dDeviceContext);
-
-                CComPtr<ID3D11CommandList> d3dCommandList;
-                HRESULT resultValue = d3dDeviceContext->FinishCommandList(FALSE, &d3dCommandList);
-                if (FAILED(resultValue) || !d3dCommandList)
+                // Video::Context
+                Pipeline * const computePipeline(void)
                 {
-                    std::cerr << "Unable to finish command list compilation";
-                    return nullptr;
+                    assert(computeSystemHandler);
+
+                    return computeSystemHandler.get();
                 }
 
-                return std::make_unique<CommandList>(d3dCommandList);
-            }
-        };
+                Pipeline * const vertexPipeline(void)
+                {
+                    assert(vertexSystemHandler);
+
+                    return vertexSystemHandler.get();
+                }
+
+                Pipeline * const geometryPipeline(void)
+                {
+                    assert(geomtrySystemHandler);
+
+                    return geomtrySystemHandler.get();
+                }
+
+                Pipeline * const pixelPipeline(void)
+                {
+                    assert(pixelSystemHandler);
+
+                    return pixelSystemHandler.get();
+                }
+
+                void begin(Video::Query *query)
+                {
+                    assert(d3dDeviceContext);
+                    assert(query);
+
+                    d3dDeviceContext->Begin(getObject<Query>(query));
+                }
+
+                void end(Video::Query *query)
+                {
+                    assert(d3dDeviceContext);
+                    assert(query);
+
+                    d3dDeviceContext->End(getObject<Query>(query));
+                }
+
+                Video::Query::Status getData(Video::Query *query, void *data, size_t dataSize, bool waitUntilReady = false)
+                {
+                    assert(d3dDeviceContext);
+                    assert(query);
+
+                    auto queryObject = getObject<Query>(query);
+                    if (waitUntilReady)
+                    {
+                        while (d3dDeviceContext->GetData(queryObject, nullptr, 0, 0) == S_FALSE)
+                        {
+                            Sleep(1);
+                        };
+                    }
+
+                    switch (d3dDeviceContext->GetData(queryObject, data, UINT(dataSize), 0))
+                    {
+                    case S_OK:
+                        return Video::Query::Status::Ready;
+
+                    case S_FALSE:
+                        return Video::Query::Status::Waiting;
+                    };
+
+                    return Video::Query::Status::Error;
+                }
+
+                void generateMipMaps(Video::Texture *texture)
+                {
+                    assert(d3dDeviceContext);
+                    assert(texture);
+
+                    d3dDeviceContext->GenerateMips(getObject<ShaderResourceView>(texture));
+                }
+
+                void resolveSamples(Video::Texture *destination, Video::Texture *source)
+                {
+                    assert(d3dDeviceContext);
+                    assert(destination);
+                    assert(source);
+
+                    d3dDeviceContext->ResolveSubresource(getObject<Resource>(destination), 0, getObject<Resource>(source), 0, DirectX::TextureFormatList[static_cast<uint8_t>(destination->getDescription().format)]);
+                }
+
+                void clearState(void)
+                {
+                    assert(d3dDeviceContext);
+
+                    d3dDeviceContext->ClearState();
+                }
+
+                void setViewportList(const std::vector<Video::ViewPort> &viewPortList)
+                {
+                    assert(d3dDeviceContext);
+
+                    d3dDeviceContext->RSSetViewports(UINT(viewPortList.size()), (D3D11_VIEWPORT *)viewPortList.data());
+                }
+
+                void setScissorList(const std::vector<Math::UInt4> &rectangleList)
+                {
+                    assert(d3dDeviceContext);
+
+                    d3dDeviceContext->RSSetScissorRects(UINT(rectangleList.size()), (D3D11_RECT *)rectangleList.data());
+                }
+
+                void clearResource(Video::Object *object, Math::Float4 const &value)
+                {
+                    assert(d3dDeviceContext);
+                    assert(object);
+                }
+
+                void clearUnorderedAccess(Video::Object *object, Math::Float4 const &value)
+                {
+                    assert(d3dDeviceContext);
+                    assert(object);
+
+                    d3dDeviceContext->ClearUnorderedAccessViewFloat(getObject<UnorderedAccessView>(object), value.data);
+                }
+
+                void clearUnorderedAccess(Video::Object *object, Math::UInt4 const &value)
+                {
+                    assert(d3dDeviceContext);
+                    assert(object);
+
+                    d3dDeviceContext->ClearUnorderedAccessViewUint(getObject<UnorderedAccessView>(object), value.data);
+                }
+
+                void clearRenderTarget(Video::Target *renderTarget, Math::Float4 const &clearColor)
+                {
+                    assert(d3dDeviceContext);
+                    assert(renderTarget);
+
+                    d3dDeviceContext->ClearRenderTargetView(getObject<RenderTargetView>(renderTarget), clearColor.data);
+                }
+
+                void clearDepthStencilTarget(Video::Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
+                {
+                    assert(d3dDeviceContext);
+                    assert(depthBuffer);
+
+                    d3dDeviceContext->ClearDepthStencilView(getObject<DepthTexture>(depthBuffer),
+                        ((flags & Video::ClearFlags::Depth ? D3D11_CLEAR_DEPTH : 0) |
+                        (flags & Video::ClearFlags::Stencil ? D3D11_CLEAR_STENCIL : 0)),
+                        clearDepth, clearStencil);
+                }
+
+                void clearIndexBuffer(void)
+                {
+                    assert(d3dDeviceContext);
+
+                    d3dDeviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+                }
+
+                void clearVertexBufferList(uint32_t count, uint32_t firstSlot)
+                {
+                    assert(d3dDeviceContext);
+
+                    vertexBufferCache.clear(count);
+                    vertexBufferStrideCache.resize(count);
+                    vertexBufferOffsetsCache.resize(count);
+                    d3dDeviceContext->IASetVertexBuffers(firstSlot, count, vertexBufferCache.get(), vertexBufferStrideCache.data(), vertexBufferOffsetsCache.data());
+                }
+
+                void clearRenderTargetList(uint32_t count, bool depthBuffer)
+                {
+                    assert(d3dDeviceContext);
+
+                    renderTargetViewCache.clear(count);
+                    d3dDeviceContext->OMSetRenderTargets(count, renderTargetViewCache.get(), nullptr);
+                }
+
+                ObjectCache<ID3D11RenderTargetView> renderTargetViewCache;
+                void setRenderTargetList(const std::vector<Video::Target *> &renderTargetList, Video::Object *depthBuffer)
+                {
+                    assert(d3dDeviceContext);
+
+                    renderTargetViewCache.set<RenderTargetView>(renderTargetList);
+                    d3dDeviceContext->OMSetRenderTargets(UINT(renderTargetList.size()), renderTargetViewCache.get(), getObject<DepthTexture>(depthBuffer));
+                }
+
+                void setRenderState(Video::Object *renderState)
+                {
+                    assert(d3dDeviceContext);
+                    assert(renderState);
+
+                    d3dDeviceContext->RSSetState(getObject<RenderState>(renderState));
+                }
+
+                void setDepthState(Video::Object *depthState, uint32_t stencilReference)
+                {
+                    assert(d3dDeviceContext);
+                    assert(depthState);
+
+                    d3dDeviceContext->OMSetDepthStencilState(getObject<DepthState>(depthState), stencilReference);
+                }
+
+                void setBlendState(Video::Object *blendState, Math::Float4 const &blendFactor, uint32_t mask)
+                {
+                    assert(d3dDeviceContext);
+                    assert(blendState);
+
+                    d3dDeviceContext->OMSetBlendState(getObject<BlendState>(blendState), blendFactor.data, mask);
+                }
+
+                void setInputLayout(Video::Object *inputLayout)
+                {
+                    assert(d3dDeviceContext);
+
+                    d3dDeviceContext->IASetInputLayout(getObject<InputLayout>(inputLayout));
+                }
+
+                void setIndexBuffer(Video::Buffer *indexBuffer, uint32_t offset)
+                {
+                    assert(d3dDeviceContext);
+                    assert(indexBuffer);
+
+                    DXGI_FORMAT format = DirectX::BufferFormatList[static_cast<uint8_t>(indexBuffer->getDescription().format)];
+                    d3dDeviceContext->IASetIndexBuffer(getObject<Buffer>(indexBuffer), format, offset);
+                }
+
+                ObjectCache<ID3D11Buffer> vertexBufferCache;
+                std::vector<uint32_t> vertexBufferStrideCache;
+                std::vector<uint32_t> vertexBufferOffsetsCache;
+                void setVertexBufferList(const std::vector<Video::Buffer *> &vertexBufferList, uint32_t firstSlot, uint32_t *offsetList)
+                {
+                    assert(d3dDeviceContext);
+
+                    uint32_t vertexBufferCount = UINT(vertexBufferList.size());
+                    vertexBufferStrideCache.resize(vertexBufferCount);
+                    vertexBufferOffsetsCache.resize(vertexBufferCount);
+                    for (uint32_t buffer = 0; buffer < vertexBufferCount; ++buffer)
+                    {
+                        vertexBufferStrideCache[buffer] = vertexBufferList[buffer]->getDescription().stride;
+                        vertexBufferOffsetsCache[buffer] = (offsetList ? offsetList[buffer] : 0);
+                    }
+
+                    vertexBufferCache.set<Buffer>(vertexBufferList);
+                    d3dDeviceContext->IASetVertexBuffers(firstSlot, vertexBufferCount, vertexBufferCache.get(), vertexBufferStrideCache.data(), vertexBufferOffsetsCache.data());
+                }
+
+                void setPrimitiveType(Video::PrimitiveType primitiveType)
+                {
+                    assert(d3dDeviceContext);
+
+                    d3dDeviceContext->IASetPrimitiveTopology(DirectX::TopologList[static_cast<uint8_t>(primitiveType)]);
+                }
+
+                void drawPrimitive(uint32_t vertexCount, uint32_t firstVertex)
+                {
+                    assert(d3dDeviceContext);
+
+                    d3dDeviceContext->Draw(vertexCount, firstVertex);
+                }
+
+                void drawInstancedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex)
+                {
+                    assert(d3dDeviceContext);
+
+                    d3dDeviceContext->DrawInstanced(vertexCount, instanceCount, firstVertex, firstInstance);
+                }
+
+                void drawIndexedPrimitive(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
+                {
+                    assert(d3dDeviceContext);
+
+                    d3dDeviceContext->DrawIndexed(indexCount, firstIndex, firstVertex);
+                }
+
+                void drawInstancedIndexedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
+                {
+                    assert(d3dDeviceContext);
+
+                    d3dDeviceContext->DrawIndexedInstanced(indexCount, instanceCount, firstIndex, firstVertex, firstInstance);
+                }
+
+                void dispatch(uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ)
+                {
+                    assert(d3dDeviceContext);
+
+                    d3dDeviceContext->Dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
+                }
+
+                Video::ObjectPtr finishCommandList(void)
+                {
+                    assert(d3dDeviceContext);
+
+                    CComPtr<ID3D11CommandList> d3dCommandList;
+                    HRESULT resultValue = d3dDeviceContext->FinishCommandList(FALSE, &d3dCommandList);
+                    if (FAILED(resultValue) || !d3dCommandList)
+                    {
+                        std::cerr << "Unable to finish command list compilation";
+                        return nullptr;
+                    }
+
+                    return std::make_unique<CommandList>(d3dCommandList);
+                }
+            };
 
         public:
             Window * window = nullptr;
