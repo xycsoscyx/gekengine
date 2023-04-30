@@ -25,7 +25,7 @@ namespace Gek
                 /* use the information from the environment variable DISPLAY 
                 to create the X connection:
                 */	
-                display = XOpenDisplay((char *)0);
+                display = XOpenDisplay(nullptr);
                 screen = DefaultScreen(display);
                 auto black = BlackPixel(display, screen); /* get color black */
                 auto white = WhitePixel(display, screen); /* get color white */
@@ -41,7 +41,7 @@ namespace Gek
                 at the top of the window and the name of the minimized window
                 respectively.
                 */
-                XSetStandardProperties(display, window, "My Window", "HI!", None, NULL, 0, NULL);
+                XSetStandardProperties(display, window, description.windowName.data(), "GEK", None, nullptr, 0, nullptr);
 
                 /* this routine determines which types of input are allowed in
                 the input.  see the appropriate section for details...
@@ -49,7 +49,7 @@ namespace Gek
                 XSelectInput(display, window, ExposureMask|ButtonPressMask|KeyPressMask);
 
                 /* create the Graphics Context */
-                graphicContext = XCreateGC(display, window, 0,0);        
+                graphicContext = XCreateGC(display, window, 0, 0);        
 
                 /* here is another routine to set the foreground and background
                 colors _currently_ in use in the window.

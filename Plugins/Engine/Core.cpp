@@ -90,6 +90,7 @@ namespace Gek
                 window->onMousePosition.connect(this, &Core::onMousePosition);
                 window->onMouseMovement.connect(this, &Core::onMouseMovement);
 
+                getContext()->log(Context::Info, "json");
                 configuration = JSON::Load(getContext()->findDataPath("config.json"s));
 
 #ifdef _WIN32
@@ -103,46 +104,55 @@ namespace Gek
 
                 Video::Device::Description deviceDescription;
                 videoDevice = getContext()->createClass<Video::Device>("Default::Device::Video", window.get(), deviceDescription);
+                getContext()->log(Context::Info, "video");
 
                 uint32_t preferredDisplayMode = 0;
                 auto fullDisplayModeList = videoDevice->getDisplayModeList(deviceDescription.displayFormat);
-                for (auto const &displayMode : fullDisplayModeList)
+                if (!fullDisplayModeList.empty())
                 {
-                    if (displayMode.height >= 800)
+                    for (auto const &displayMode : fullDisplayModeList)
                     {
-                        displayModeList.push_back(displayMode);
+                        if (displayMode.height >= 800)
+                        {
+                            displayModeList.push_back(displayMode);
+                        }
                     }
-                }
 
-                for (auto const &displayMode : displayModeList)
-                {
-                    auto currentDisplayMode = displayModeStringList.size();
-                    std::string displayModeString(fmt::format("{}x{}, {}hz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
-                    switch (displayMode.aspectRatio)
+                    for (auto const &displayMode : displayModeList)
                     {
-                    case Video::DisplayMode::AspectRatio::_4x3:
-                        displayModeString.append(" (4x3)");
-                        break;
+                        auto currentDisplayMode = displayModeStringList.size();
+                        std::string displayModeString(fmt::format("{}x{}, {}hz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
+                        switch (displayMode.aspectRatio)
+                        {
+                        case Video::DisplayMode::AspectRatio::_4x3:
+                            displayModeString.append(" (4x3)");
+                            break;
 
-                    case Video::DisplayMode::AspectRatio::_16x9:
-                        preferredDisplayMode = (preferredDisplayMode == 0 && displayMode.height > 800 ? currentDisplayMode : preferredDisplayMode);
-                        displayModeString.append(" (16x9)");
-                        break;
+                        case Video::DisplayMode::AspectRatio::_16x9:
+                            preferredDisplayMode = (preferredDisplayMode == 0 && displayMode.height > 800 ? currentDisplayMode : preferredDisplayMode);
+                            displayModeString.append(" (16x9)");
+                            break;
 
-                    case Video::DisplayMode::AspectRatio::_16x10:
-                        preferredDisplayMode = (preferredDisplayMode == 0 && displayMode.height > 800 ? currentDisplayMode : preferredDisplayMode);
-                        displayModeString.append(" (16x10)");
-                        break;
-                    };
+                        case Video::DisplayMode::AspectRatio::_16x10:
+                            preferredDisplayMode = (preferredDisplayMode == 0 && displayMode.height > 800 ? currentDisplayMode : preferredDisplayMode);
+                            displayModeString.append(" (16x10)");
+                            break;
+                        };
 
-                    displayModeStringList.push_back(displayModeString);
+                        displayModeStringList.push_back(displayModeString);
+                    }
+
+                    getContext()->log(Context::Info, "display");
+                    setDisplayMode(Plugin::Core::getOption("display", "mode", preferredDisplayMode));
                 }
 
-				setDisplayMode(Plugin::Core::getOption("display", "mode", preferredDisplayMode));
-
+                getContext()->log(Context::Info, "1");
                 population = getContext()->createClass<Engine::Population>("Engine::Population", (Engine::Core *)this);
+                getContext()->log(Context::Info, "2");
                 resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Engine::Core *)this);
+                getContext()->log(Context::Info, "3");
                 renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Engine::Core *)this);
+                getContext()->log(Context::Info, "4");
                 renderer->onShowUserInterface.connect(this, &Core::onShowUserInterface);
 
                 getContext()->log(Context::Info, "Loading processor plugins");
@@ -613,7 +623,7 @@ namespace Gek
                             }
                             else if (settingNode.is_array())
                             {
-                                ImGui::Text(settingName.data());
+                                ImGui::TextUnformatted(settingName.data());
                                 ImGui::SameLine();
                                 ImGui::PushItemWidth(-1.0f);
                                 switch (settingNode.size())
