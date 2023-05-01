@@ -1727,7 +1727,7 @@ namespace Gek
             Device(Gek::Context *context, Window *window, Video::Device::Description deviceDescription)
                 : ContextRegistration(context)
                 , window(window)
-                , isChildWindow(GetParent((HWND)window->getBaseWindow()) != nullptr)
+                , isChildWindow(GetParent((HWND)window->getWindowData(0)) != nullptr)
             {
                 assert(window);
 
@@ -1745,19 +1745,19 @@ namespace Gek
                 HRESULT resultValue = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevelList, 1, D3D11_SDK_VERSION, &d3dDevice, &featureLevel, &d3dDeviceContext);
                 if (featureLevel != featureLevelList[0])
                 {
-                    throw std::exception("Direct3D 11.0 feature level required");
+                    throw std::runtime_error("Direct3D 11.0 feature level required");
                 }
 
                 if (FAILED(resultValue) || !d3dDevice || !d3dDeviceContext)
                 {
-                    throw std::exception("Unable to create rendering device and context");
+                    throw std::runtime_error("Unable to create rendering device and context");
                 }
 
                 CComPtr<IDXGIFactory2> dxgiFactory;
                 resultValue = CreateDXGIFactory2(0, IID_PPV_ARGS(&dxgiFactory));
                 if (FAILED(resultValue) || !dxgiFactory)
                 {
-                    throw std::exception("Unable to get graphics factory");
+                    throw std::runtime_error("Unable to get graphics factory");
                 }
 
                 DXGI_SWAP_CHAIN_DESC1 swapChainDescription;
@@ -1776,7 +1776,7 @@ namespace Gek
                 resultValue = dxgiFactory->CreateSwapChainForHwnd(d3dDevice, (HWND)window->getBaseWindow(), &swapChainDescription, nullptr, nullptr, &dxgiSwapChain);
                 if (FAILED(resultValue) || !dxgiSwapChain)
                 {
-                    throw std::exception("Unable to create swap chain for window");
+                    throw std::runtime_error("Unable to create swap chain for window");
                 }
 
                 dxgiFactory->MakeWindowAssociation((HWND)window->getBaseWindow(), 0);
@@ -1918,11 +1918,11 @@ namespace Gek
                 {
                     if (fullScreen)
                     {
-                        throw std::exception("Unablet to set fullscreen state");
+                        throw std::runtime_error("Unablet to set fullscreen state");
                     }
                     else
                     {
-                        throw std::exception("Unablet to set windowed state");
+                        throw std::runtime_error("Unablet to set windowed state");
                     }
                 }
             }
@@ -1945,7 +1945,7 @@ namespace Gek
                 HRESULT resultValue = dxgiSwapChain->ResizeTarget(&description);
                 if (FAILED(resultValue))
                 {
-                    throw std::exception("Unable to set display mode");
+                    throw std::runtime_error("Unable to set display mode");
                 }
             }
 
@@ -1959,7 +1959,7 @@ namespace Gek
                 HRESULT resultValue = dxgiSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
                 if (FAILED(resultValue))
                 {
-                    throw std::exception("Unable to resize swap chain buffers to window size");
+                    throw std::runtime_error("Unable to resize swap chain buffers to window size");
                 }
             }
 
@@ -1975,21 +1975,21 @@ namespace Gek
                         HRESULT resultValue = dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&d3dRenderTarget));
                         if (FAILED(resultValue) || !d3dRenderTarget)
                         {
-                            throw std::exception("Unable to get swap chain primary buffer");
+                            throw std::runtime_error("Unable to get swap chain primary buffer");
                         }
 
                         CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
                         resultValue = d3dDevice->CreateRenderTargetView(d3dRenderTarget, nullptr, &d3dRenderTargetView);
                         if (FAILED(resultValue) || !d3dRenderTargetView)
                         {
-                            throw std::exception("Unable to create render target view for back buffer");
+                            throw std::runtime_error("Unable to create render target view for back buffer");
                         }
 
                         CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
                         resultValue = d3dDevice->CreateShaderResourceView(d3dRenderTarget, nullptr, &d3dShaderResourceView);
                         if (FAILED(resultValue) || !d3dShaderResourceView)
                         {
-                            throw std::exception("Unable to create shader resource view for back buffer");
+                            throw std::runtime_error("Unable to create shader resource view for back buffer");
                         }
 
                         D3D11_TEXTURE2D_DESC textureDescription;

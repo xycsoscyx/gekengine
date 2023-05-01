@@ -195,7 +195,7 @@ namespace Gek
 
         virtual void readEvents(void) = 0;
 
-        virtual void *getBaseWindow(void) const = 0;
+        virtual void *getWindowData(uint32_t data) const = 0;
 
         virtual Math::Int4 getClientRectangle(bool moveToScreen = false) const = 0;
         virtual Math::Int4 getScreenRectangle(void) const = 0;

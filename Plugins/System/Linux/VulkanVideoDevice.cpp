@@ -5,12 +5,35 @@
 #include "GEK/System/Window.hpp"
 #include <algorithm>
 #include <execution>
+#include <exception>
 #include <memory>
+
+#include <vulkan/vulkan.h>
+
+#include <X11/Xlib.h>
+#include <vulkan/vulkan_xlib.h>
+
+#undef Status
 
 namespace Gek
 {
     namespace Vulkan
     {
+        const std::vector<const char*> validationLayers =
+        {
+            "VK_LAYER_KHRONOS_validation"
+        };
+
+        struct QueueFamilyIndices
+        {
+            std::optional<uint32_t> graphicsFamily;
+
+            bool isComplete()
+            {
+                return graphicsFamily.has_value();
+            }
+        };
+
         static constexpr std::string_view SemanticNameList[] =
         {
             "POSITION",
@@ -631,6 +654,7 @@ namespace Gek
                 };
 
             public:
+    	        VkDevice device;
                 PipelinePtr computeSystemHandler;
                 PipelinePtr vertexSystemHandler;
                 PipelinePtr geomtrySystemHandler;
@@ -806,12 +830,302 @@ namespace Gek
             Video::Device::ContextPtr defaultContext;
             Video::TargetPtr backBuffer;
 
+            bool enableValidationLayer = false;
+            VkDebugUtilsMessengerEXT debugMessenger;
+
+            bool kronosBaseSurfaceAvailable = false;
+            bool kronosWin32SurfaceAvailable = false;
+            bool kronosMacOSSurfaceAvailable = false;
+            bool kronosX11SurfaceAvailable = false;
+            bool kronosX11CBSurfaceAvailable = false;
+            VkInstance instance = VK_NULL_HANDLE;
+	        VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+            VkDevice device = VK_NULL_HANDLE;
+            VkQueue graphicsQueue = VK_NULL_HANDLE;
+            VkSurfaceKHR surface = VK_NULL_HANDLE;
+
+        private:
+            void createInstance(void)
+            {
+                VkApplicationInfo appInfo{};
+                appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+                appInfo.pApplicationName = "GEK Engine";
+                appInfo.applicationVersion = VK_MAKE_VERSION(10, 0, 0);
+                appInfo.pEngineName = "GEK Engine";
+                appInfo.engineVersion = VK_MAKE_VERSION(10, 0, 0);
+                appInfo.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
+
+                uint32_t extensionCount = 0;
+                vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+                std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+                vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableExtensions.data());
+
+                for (auto &extension : availableExtensions)
+                {
+                    if (strcmp(extension.extensionName, "VK_KHR_surface") == 0)
+                    {
+                        kronosBaseSurfaceAvailable = true;
+                    }
+                    else if (strcmp(extension.extensionName, "VK_KHR_win32_surface") == 0)
+                    {
+                        kronosWin32SurfaceAvailable = true;
+                    }
+                    else if (strcmp(extension.extensionName, "VK_MVK_macos_surface") == 0)
+                    {
+                        kronosMacOSSurfaceAvailable = true;
+                    }
+                    else if (strcmp(extension.extensionName, "VK_KHR_xlib_surface") == 0)
+                    {
+                        kronosX11SurfaceAvailable = true;
+                    }
+                    else if (strcmp(extension.extensionName, "VK_KHR_xcb_surface") == 0)
+                    {
+                        kronosX11CBSurfaceAvailable = true;
+                    }
+                }
+
+                if (!kronosBaseSurfaceAvailable)
+                {
+                    throw std::runtime_error("Vulkan surface extension not available");
+                }
+
+                if (!kronosX11SurfaceAvailable)
+                {
+                    throw std::runtime_error("Vuklan X11 surface not available");
+                }
+
+                std::vector<const char*> requiredExtensions = 
+                {
+                    "VK_KHR_surface",
+                    "VK_KHR_xlib_surface",
+                };
+
+                VkInstanceCreateInfo createInfo{};
+                createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+                createInfo.pApplicationInfo = &appInfo;
+                createInfo.enabledExtensionCount = requiredExtensions.size();
+                createInfo.ppEnabledExtensionNames = requiredExtensions.data();
+                if (enableValidationLayer)
+                {
+                    createInfo.enabledLayerCount = validationLayers.size();
+                    createInfo.ppEnabledLayerNames = validationLayers.data();
+                }
+                else
+                {
+                    createInfo.enabledLayerCount = 0;
+                }
+
+                VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
+                if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) 
+                {
+                    throw std::runtime_error("Unable to create rendering device and context");
+                }
+            }
+
+            bool checkValidationLayerSupport(void)
+            {
+                uint32_t layerCount;
+                vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+                std::vector<VkLayerProperties> availableLayers(layerCount);
+                vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+                for (const char* layerName : validationLayers)
+                {
+                    bool layerFound = false;
+                    for (const auto& layerProperties : availableLayers)
+                    {
+                        if (strcmp(layerName, layerProperties.layerName) == 0)
+                        {
+                            layerFound = true;
+                            break;
+                        }
+                    }
+
+                    if (!layerFound)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            uint32_t rateDeviceSuitability(VkPhysicalDevice checkDevice)
+            {
+                VkPhysicalDeviceProperties deviceProperties;
+                vkGetPhysicalDeviceProperties(checkDevice, &deviceProperties);
+
+                VkPhysicalDeviceFeatures deviceFeatures;
+                vkGetPhysicalDeviceFeatures(checkDevice, &deviceFeatures);
+
+                if (!deviceFeatures.geometryShader)
+                {
+                    return 0;
+                }
+
+                uint32_t score = 0;
+                if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+                {
+                    score += 1000;
+                }
+
+                score += deviceProperties.limits.maxImageDimension2D;
+                return score;
+            }
+
+            void pickPhysicalDevice(void)
+            {
+                uint32_t deviceCount = 0;
+                vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+                if (deviceCount == 0)
+                {
+                    throw std::runtime_error("failed to find GPUs with Vulkan support!");
+                }
+
+                std::vector<VkPhysicalDevice> availableDevices(deviceCount);
+                vkEnumeratePhysicalDevices(instance, &deviceCount, availableDevices.data());
+
+                std::multimap<uint32_t, VkPhysicalDevice> candidates;
+                for (const auto& device : availableDevices)
+                {
+                    uint32_t score = rateDeviceSuitability(device);
+                    candidates.insert(std::make_pair(score, device));
+                }
+
+                if (!candidates.empty() && candidates.rbegin()->first > 0)
+                {
+                    physicalDevice = candidates.rbegin()->second;
+                }
+                else
+                {
+                    throw std::runtime_error("failed to find a suitable GPU!");
+                }
+            }
+
+            QueueFamilyIndices findQueueFamilies(void)
+            {
+                uint32_t queueFamilyCount = 0;
+                vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+
+                std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+                vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
+
+                uint32_t familyIndex = 0;
+                QueueFamilyIndices indices;
+                for (const auto& queueFamily : queueFamilies)
+                {
+                    if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+                    {
+                        indices.graphicsFamily = familyIndex;
+                    }
+
+                    if (indices.isComplete())
+                    {
+                        break;
+                    }
+
+                    familyIndex++;
+                }
+
+                return indices;
+            }
+
+            void createLogicalDevice(void)
+            {
+                QueueFamilyIndices indices = findQueueFamilies();
+
+                VkDeviceQueueCreateInfo queueCreateInfo{};
+                queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+                queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+                queueCreateInfo.queueCount = 1;
+
+                float queuePriority = 1.0f;
+                queueCreateInfo.pQueuePriorities = &queuePriority;
+
+                VkPhysicalDeviceFeatures deviceFeatures{};
+
+                VkDeviceCreateInfo createInfo{};
+                createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+                createInfo.pQueueCreateInfos = &queueCreateInfo;
+                createInfo.queueCreateInfoCount = 1;
+
+                createInfo.pEnabledFeatures = &deviceFeatures;
+
+                createInfo.enabledExtensionCount = 0;
+
+                if (enableValidationLayer)
+                {
+                    createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+                    createInfo.ppEnabledLayerNames = validationLayers.data();
+                }
+                else
+                {
+                    createInfo.enabledLayerCount = 0;
+                }
+
+                if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
+                {
+                    throw std::runtime_error("failed to create logical device!");
+                }
+
+                vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+            }
+
+            void createSurface(void)
+            {
+                VkXlibSurfaceCreateInfoKHR createInfo{};
+                createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+                createInfo.dpy = reinterpret_cast<Display *>(window->getWindowData(0));
+                createInfo.window = *reinterpret_cast<::Window *>(window->getWindowData(1));
+                if (vkCreateXlibSurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS)
+                {
+                    throw std::runtime_error("failed to create window surface!");
+                }
+            }
+
         public:
             Device(Gek::Context *context, Window *window, Video::Device::Description deviceDescription)
                 : ContextRegistration(context)
                 , window(window)
             {
+                enableValidationLayer = checkValidationLayerSupport();
+                createInstance();
+                if (enableValidationLayer)
+                {
+                    setupDebugMessenger();
+                }
+
+                pickPhysicalDevice();
+                createLogicalDevice();
+                createSurface();
+
                 defaultContext = std::make_unique<Context>();
+            }
+
+            void setupDebugMessenger(void)
+            {
+                VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
+                createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+                createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+                createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+                createInfo.pfnUserCallback = [](VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* callbackData, void* userData) -> VkBool32 
+                {
+                    Gek::Context *context = reinterpret_cast<Gek::Context *>(userData);
+                    context->log(Gek::Context::Info, callbackData->pMessage);
+                    return VK_FALSE;
+                };
+
+                createInfo.pUserData = reinterpret_cast<void *>(getContext());
+                auto function = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+                if (function != nullptr)
+                {
+                    if (function(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
+                    {
+                        throw std::runtime_error("Unable to create debug messenger");
+                    }
+                }
             }
 
             ~Device(void)
@@ -820,6 +1134,17 @@ namespace Gek
 
                 backBuffer = nullptr;
                 defaultContext = nullptr;
+
+                if (enableValidationLayer)
+                {
+                    auto function = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+                    if (function != nullptr)
+                    {
+                        function(instance, debugMessenger, nullptr);
+                    }
+                }
+
+                vkDestroyInstance(instance, nullptr);
             }
 
             // Video::Debug::Device

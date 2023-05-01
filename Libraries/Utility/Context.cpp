@@ -218,6 +218,11 @@ namespace Gek
             {
                 return (*classSearch).second((Context *)this, typelessArguments, argumentTypes);
             }
+            catch (std::runtime_error const &exception)
+            {
+                std::cerr << "Runtime Error raised trying to create " << exception.what() << ": " << className;
+                return nullptr;
+            }
             catch (std::exception const &exception)
             {
                 std::cerr << "Exception raised trying to create " << exception.what() << ": " << className;

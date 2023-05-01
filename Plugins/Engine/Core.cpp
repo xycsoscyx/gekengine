@@ -90,7 +90,6 @@ namespace Gek
                 window->onMousePosition.connect(this, &Core::onMousePosition);
                 window->onMouseMovement.connect(this, &Core::onMouseMovement);
 
-                getContext()->log(Context::Info, "json");
                 configuration = JSON::Load(getContext()->findDataPath("config.json"s));
 
 #ifdef _WIN32
@@ -104,7 +103,6 @@ namespace Gek
 
                 Video::Device::Description deviceDescription;
                 videoDevice = getContext()->createClass<Video::Device>("Default::Device::Video", window.get(), deviceDescription);
-                getContext()->log(Context::Info, "video");
 
                 uint32_t preferredDisplayMode = 0;
                 auto fullDisplayModeList = videoDevice->getDisplayModeList(deviceDescription.displayFormat);
@@ -146,13 +144,9 @@ namespace Gek
                     setDisplayMode(Plugin::Core::getOption("display", "mode", preferredDisplayMode));
                 }
 
-                getContext()->log(Context::Info, "1");
                 population = getContext()->createClass<Engine::Population>("Engine::Population", (Engine::Core *)this);
-                getContext()->log(Context::Info, "2");
                 resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Engine::Core *)this);
-                getContext()->log(Context::Info, "3");
                 renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Engine::Core *)this);
-                getContext()->log(Context::Info, "4");
                 renderer->onShowUserInterface.connect(this, &Core::onShowUserInterface);
 
                 getContext()->log(Context::Info, "Loading processor plugins");

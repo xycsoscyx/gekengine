@@ -163,13 +163,13 @@ namespace Gek
 				HRESULT resultValue = DirectSoundCreate8(&deviceGUID, &directSound, nullptr);
 				if (FAILED(resultValue))
 				{
-					throw std::exception("Unable to create sound controller");
+					throw runtime_error("Unable to create sound controller");
 				}
 
 				resultValue = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY);
 				if (FAILED(resultValue))
 				{
-					throw std::exception("Unable to set cooperative level");
+					throw runtime_error("Unable to set cooperative level");
 				}
 
 				DSBUFFERDESC primaryBufferDescription = { 0 };
@@ -178,7 +178,7 @@ namespace Gek
 				resultValue = directSound->CreateSoundBuffer(&primaryBufferDescription, &primarySoundBuffer, nullptr);
 				if (FAILED(resultValue))
 				{
-					throw std::exception("Unable to create primary sound buffer");
+					throw runtime_error("Unable to create primary sound buffer");
 				}
 
 				WAVEFORMATEX primaryBufferFormat;
@@ -192,13 +192,13 @@ namespace Gek
 				resultValue = primarySoundBuffer->SetFormat(&primaryBufferFormat);
 				if (FAILED(resultValue))
 				{
-					throw std::exception("Unable to set primary buffer format");
+					throw runtime_error("Unable to set primary buffer format");
 				}
 
 				directSoundListener = primarySoundBuffer;
 				if (!directSoundListener)
 				{
-					throw std::exception("Unable to create primary 3D listener");
+					throw runtime_error("Unable to create primary 3D listener");
 				}
 
 				setVolume(1.0f);
