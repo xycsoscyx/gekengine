@@ -137,7 +137,7 @@ namespace Gek
             inline Quaternion getInverse(void) const noexcept
             {
                 float inverseLength = (1.0f / getLength());
-                return (*this * inverseLength);
+                return (Quaternion(-xyz(), w) * inverseLength);
             }
 
             inline void conjugate(void) noexcept
@@ -153,6 +153,7 @@ namespace Gek
                 x *= -inverseLength;
                 y *= -inverseLength;
                 z *= -inverseLength;
+                w *= inverseLength;
             }
 
             inline Quaternion slerp(Quaternion const &quaternion, float factor) const noexcept
