@@ -68,8 +68,9 @@ namespace Gek
 			FileSystem::Path lexicallyRelative(FileSystem::Path const& root) const;
         };
 
-		Path GetModuleFilePath(void);
 		Path GetCanonicalPath(Path const& path);
+		Path GetModuleFilePath(void);
+		Path GetCacheFromModule(void);
 
 		std::string Read(Path const& filePath);
 		std::vector<uint8_t> Load(Path const& filePath, std::uintmax_t limitReadSize = 0);

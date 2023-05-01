@@ -276,5 +276,25 @@ namespace Gek
             auto processName = std::filesystem::canonical(shortPath, errorCode);
             return Path(processName);
         }
+
+        Path GetCacheFromModule(void)
+        {
+            auto modulePath = GetModuleFilePath().getParentPath();
+            auto searchPath = modulePath;
+
+            while (searchPath.isDirectory() && searchPath != modulePath.getRootPath())
+            {
+                if (searchPath.getFileName() == "bin")
+                {
+                    return searchPath / "cache";
+                }
+                else
+                {
+                    searchPath = searchPath.getParentPath();
+                }
+            };
+
+            return modulePath / "cache";
+        }
     } // namespace FileSystem
 }; // namespace Gek

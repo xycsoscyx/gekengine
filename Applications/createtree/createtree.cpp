@@ -232,8 +232,8 @@ int main(int argumentCount, char const * const argumentList[], char const * cons
     parameters.feetPerUnit = (1.0f / program.get<float>("--unitsperfoot"));
 
     auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
-    auto rootPath(pluginPath.getParentPath());
-    auto cachePath(rootPath / "cache");
+    auto cachePath(FileSystem::GetCacheFromModule());
+    auto rootPath(cachePath.getParentPath());
     cachePath.setWorkingDirectory();
 
     std::vector<FileSystem::Path> searchPathList;

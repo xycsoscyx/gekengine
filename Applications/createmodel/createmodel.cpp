@@ -380,8 +380,8 @@ int main(int argumentCount, char const * const argumentList[])
     parameters.saveAsCode = program.get<bool>("codify");
 
     auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
-    auto rootPath(pluginPath.getParentPath());
-    auto cachePath(rootPath / "cache");
+    auto cachePath(FileSystem::GetCacheFromModule());
+    auto rootPath(cachePath.getParentPath());
     cachePath.setWorkingDirectory();
 
     std::vector<FileSystem::Path> searchPathList;
