@@ -266,7 +266,7 @@ namespace Gek
                 ATOM classAtom = RegisterClassEx(&windowClass);
                 if (!classAtom)
                 {
-                    throw runtime_error("Unable to register window class");
+                    throw std::runtime_error("Unable to register window class");
                 }
 
                 auto windowFlags = (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX);
@@ -283,7 +283,7 @@ namespace Gek
                 window = CreateWindowA(description.className.data(), description.windowName.data(), windowFlags, CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
                 if (window == nullptr)
                 {
-                    throw runtime_error("Unable to create window");
+                    throw std::runtime_error("Unable to create window");
                 }
 
                 SetWindowLongPtr(window, GWLP_USERDATA, LONG_PTR(this));
@@ -318,7 +318,7 @@ namespace Gek
                 };
             }
 
-            void *getWindowData(uint32_t data)
+            void *getWindowData(uint32_t data) const
             {
                 return window;
             }

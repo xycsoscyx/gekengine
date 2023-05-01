@@ -448,7 +448,7 @@ namespace Gek
                     //mesh.indexCount = indexBufferDescription.count;
 
                     Video::Buffer::Description vertexBufferDescription;
-                    vertexBufferDescription.name = fmt::format("model:cube{}:positions", model.meshList.size());
+                    vertexBufferDescription.name = fmt::format("model:cube.{}:positions", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float3);
                     vertexBufferDescription.count = staticModel.positions.size();
                     vertexBufferDescription.type = Video::Buffer::Type::Vertex;
@@ -461,15 +461,15 @@ namespace Gek
 
                     group.boundingBox.extend(model.boundingBox.minimum);
                     group.boundingBox.extend(model.boundingBox.maximum);
-                    vertexBufferDescription.name = fmt::format("model:cube{}:texCoords", model.meshList.size());
+                    vertexBufferDescription.name = fmt::format("model:cube.{}:texCoords", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float2);
                     mesh.vertexBufferList[1] = resources->createBuffer(vertexBufferDescription, staticModel.texCoords.data());
 
-                    vertexBufferDescription.name = fmt::format("model:cube{}:tangents", model.meshList.size());
+                    vertexBufferDescription.name = fmt::format("model:cube.{}:tangents", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float4);
                     mesh.vertexBufferList[2] = resources->createBuffer(vertexBufferDescription, staticModel.tangents.data());
 
-                    vertexBufferDescription.name = fmt::format("model:cube{}:normals", model.meshList.size());
+                    vertexBufferDescription.name = fmt::format("model:cube.{}:normals", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float3);
                     mesh.vertexBufferList[3] = resources->createBuffer(vertexBufferDescription, staticModel.normals.data());
                 }
@@ -493,7 +493,7 @@ namespace Gek
                     //mesh.indexCount = indexBufferDescription.count;
 
                     Video::Buffer::Description vertexBufferDescription;
-                    vertexBufferDescription.name = fmt::format("model:sphere{}:positions", model.meshList.size());
+                    vertexBufferDescription.name = fmt::format("model:sphere.{}:positions", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float3);
                     vertexBufferDescription.count = staticModel.positions.size();
                     vertexBufferDescription.type = Video::Buffer::Type::Vertex;
@@ -506,15 +506,15 @@ namespace Gek
 
                     group.boundingBox.extend(model.boundingBox.minimum);
                     group.boundingBox.extend(model.boundingBox.maximum);
-                    vertexBufferDescription.name = fmt::format("model:sphere{}:texCoords", model.meshList.size());
+                    vertexBufferDescription.name = fmt::format("model:sphere.{}:texCoords", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float2);
                     mesh.vertexBufferList[1] = resources->createBuffer(vertexBufferDescription, staticModel.texCoords.data());
 
-                    vertexBufferDescription.name = fmt::format("model:sphere{}:tangents", model.meshList.size());
+                    vertexBufferDescription.name = fmt::format("model:sphere.{}:tangents", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float4);
                     mesh.vertexBufferList[2] = resources->createBuffer(vertexBufferDescription, staticModel.tangents.data());
 
-                    vertexBufferDescription.name = fmt::format("model:sphere{}:normals", model.meshList.size());
+                    vertexBufferDescription.name = fmt::format("model:sphere.{}:normals", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float3);
                     mesh.vertexBufferList[3] = resources->createBuffer(vertexBufferDescription, staticModel.normals.data());
                 }
