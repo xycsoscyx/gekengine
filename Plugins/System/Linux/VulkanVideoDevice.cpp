@@ -7,6 +7,7 @@
 #include <execution>
 #include <exception>
 #include <memory>
+#include <set>
 
 #include <vulkan/vulkan.h>
 
@@ -21,16 +22,22 @@ namespace Gek
     {
         const std::vector<const char*> validationLayers =
         {
-            "VK_LAYER_KHRONOS_validation"
+            "VK_LAYER_KHRONOS_validation",
+        };
+
+        const std::vector<const char*> deviceExtensions =
+        {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
         };
 
         struct QueueFamilyIndices
         {
             std::optional<uint32_t> graphicsFamily;
+            std::optional<uint32_t> presentFamily;
 
             bool isComplete()
             {
-                return graphicsFamily.has_value();
+                return graphicsFamily.has_value() && presentFamily.has_value();
             }
         };
 
@@ -838,13 +845,40 @@ namespace Gek
             bool kronosMacOSSurfaceAvailable = false;
             bool kronosX11SurfaceAvailable = false;
             bool kronosX11CBSurfaceAvailable = false;
+
             VkInstance instance = VK_NULL_HANDLE;
 	        VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
             VkDevice device = VK_NULL_HANDLE;
+            VkDisplayKHR display = VK_NULL_HANDLE;
+
             VkQueue graphicsQueue = VK_NULL_HANDLE;
+            VkQueue presentQueue = VK_NULL_HANDLE;
+
             VkSurfaceKHR surface = VK_NULL_HANDLE;
+            VkSwapchainKHR swapChain = VK_NULL_HANDLE;
+            VkFormat swapChainImageFormat;
+            VkExtent2D swapChainExtent;
+            std::vector<VkImage> swapChainImages;
+            std::vector<VkImageView> swapChainImageViews;
 
         private:
+            bool checkInstanceExtensionSupport(std::vector<const char*> &instanceExtensions)
+            {
+                uint32_t extensionCount = 0;
+                vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+
+                std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+                vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableExtensions.data());
+
+                std::set<std::string> requiredExtensions(instanceExtensions.begin(), instanceExtensions.end());
+                for (const auto& extension : availableExtensions)
+                {
+                    requiredExtensions.erase(extension.extensionName);
+                }
+
+                return requiredExtensions.empty();
+            }
+
             void createInstance(void)
             {
                 VkApplicationInfo appInfo{};
@@ -855,56 +889,22 @@ namespace Gek
                 appInfo.engineVersion = VK_MAKE_VERSION(10, 0, 0);
                 appInfo.apiVersion = VK_MAKE_API_VERSION(0, 1, 2, 0);
 
-                uint32_t extensionCount = 0;
-                vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-                std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-                vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableExtensions.data());
-
-                for (auto &extension : availableExtensions)
+                std::vector<const char*> instanceExtensions = 
                 {
-                    if (strcmp(extension.extensionName, "VK_KHR_surface") == 0)
-                    {
-                        kronosBaseSurfaceAvailable = true;
-                    }
-                    else if (strcmp(extension.extensionName, "VK_KHR_win32_surface") == 0)
-                    {
-                        kronosWin32SurfaceAvailable = true;
-                    }
-                    else if (strcmp(extension.extensionName, "VK_MVK_macos_surface") == 0)
-                    {
-                        kronosMacOSSurfaceAvailable = true;
-                    }
-                    else if (strcmp(extension.extensionName, "VK_KHR_xlib_surface") == 0)
-                    {
-                        kronosX11SurfaceAvailable = true;
-                    }
-                    else if (strcmp(extension.extensionName, "VK_KHR_xcb_surface") == 0)
-                    {
-                        kronosX11CBSurfaceAvailable = true;
-                    }
-                }
-
-                if (!kronosBaseSurfaceAvailable)
-                {
-                    throw std::runtime_error("Vulkan surface extension not available");
-                }
-
-                if (!kronosX11SurfaceAvailable)
-                {
-                    throw std::runtime_error("Vuklan X11 surface not available");
-                }
-
-                std::vector<const char*> requiredExtensions = 
-                {
-                    "VK_KHR_surface",
-                    "VK_KHR_xlib_surface",
+                    VK_KHR_SURFACE_EXTENSION_NAME,
+                    VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
                 };
+
+                if (!checkInstanceExtensionSupport(instanceExtensions))
+                {
+                    throw std::runtime_error("Required instances extensions not available");
+                }
 
                 VkInstanceCreateInfo createInfo{};
                 createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
                 createInfo.pApplicationInfo = &appInfo;
-                createInfo.enabledExtensionCount = requiredExtensions.size();
-                createInfo.ppEnabledExtensionNames = requiredExtensions.data();
+                createInfo.enabledExtensionCount = instanceExtensions.size();
+                createInfo.ppEnabledExtensionNames = instanceExtensions.data();
                 if (enableValidationLayer)
                 {
                     createInfo.enabledLayerCount = validationLayers.size();
@@ -920,6 +920,8 @@ namespace Gek
                 {
                     throw std::runtime_error("Unable to create rendering device and context");
                 }
+
+                getContext()->log(Gek::Context::Info, "Vulkan Instance Created");
             }
 
             bool checkValidationLayerSupport(void)
@@ -951,18 +953,45 @@ namespace Gek
                 return true;
             }
 
+            bool checkDeviceExtensionSupport(VkPhysicalDevice checkDevice)
+            {
+                uint32_t extensionCount;
+                vkEnumerateDeviceExtensionProperties(checkDevice, nullptr, &extensionCount, nullptr);
+
+                std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+                vkEnumerateDeviceExtensionProperties(checkDevice, nullptr, &extensionCount, availableExtensions.data());
+
+                std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+                for (const auto& extension : availableExtensions)
+                {
+                    requiredExtensions.erase(extension.extensionName);
+                }
+
+                return requiredExtensions.empty();
+            }
+
             uint32_t rateDeviceSuitability(VkPhysicalDevice checkDevice)
             {
-                VkPhysicalDeviceProperties deviceProperties;
-                vkGetPhysicalDeviceProperties(checkDevice, &deviceProperties);
-
                 VkPhysicalDeviceFeatures deviceFeatures;
                 vkGetPhysicalDeviceFeatures(checkDevice, &deviceFeatures);
-
                 if (!deviceFeatures.geometryShader)
                 {
                     return 0;
                 }
+
+                if (!checkDeviceExtensionSupport(checkDevice))
+                {
+                    return 0;
+                }
+
+                SwapChainSupportDetails swapChainSupport = querySwapChainSupport(checkDevice);
+                if (swapChainSupport.formats.empty() || swapChainSupport.presentModes.empty())
+                {
+                    return 0;
+                }
+
+                VkPhysicalDeviceProperties deviceProperties;
+                vkGetPhysicalDeviceProperties(checkDevice, &deviceProperties);
 
                 uint32_t score = 0;
                 if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
@@ -1001,6 +1030,8 @@ namespace Gek
                 {
                     throw std::runtime_error("failed to find a suitable GPU!");
                 }
+
+                getContext()->log(Gek::Context::Info, "Found suitable Vulkan physical device");
             }
 
             QueueFamilyIndices findQueueFamilies(void)
@@ -1011,13 +1042,21 @@ namespace Gek
                 std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
                 vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
 
-                uint32_t familyIndex = 0;
+                int familyIndex = 0;
                 QueueFamilyIndices indices;
                 for (const auto& queueFamily : queueFamilies)
                 {
                     if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
                     {
                         indices.graphicsFamily = familyIndex;
+                    }
+
+                    VkBool32 presentSupport = false;
+                    vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, familyIndex, surface, &presentSupport);
+
+                    if (presentSupport)
+                    {
+                        indices.presentFamily = familyIndex;
                     }
 
                     if (indices.isComplete())
@@ -1035,26 +1074,28 @@ namespace Gek
             {
                 QueueFamilyIndices indices = findQueueFamilies();
 
-                VkDeviceQueueCreateInfo queueCreateInfo{};
-                queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-                queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
-                queueCreateInfo.queueCount = 1;
-
                 float queuePriority = 1.0f;
-                queueCreateInfo.pQueuePriorities = &queuePriority;
+                std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+                std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+                for (uint32_t queueFamily : uniqueQueueFamilies)
+                {
+                    VkDeviceQueueCreateInfo queueCreateInfo{};
+                    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+                    queueCreateInfo.queueFamilyIndex = queueFamily;
+                    queueCreateInfo.queueCount = 1;
+                    queueCreateInfo.pQueuePriorities = &queuePriority;
+                    queueCreateInfos.push_back(queueCreateInfo);
+                }
 
                 VkPhysicalDeviceFeatures deviceFeatures{};
 
                 VkDeviceCreateInfo createInfo{};
                 createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-
-                createInfo.pQueueCreateInfos = &queueCreateInfo;
-                createInfo.queueCreateInfoCount = 1;
-
+                createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+                createInfo.pQueueCreateInfos = queueCreateInfos.data();
                 createInfo.pEnabledFeatures = &deviceFeatures;
-
-                createInfo.enabledExtensionCount = 0;
-
+                createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+                createInfo.ppEnabledExtensionNames = deviceExtensions.data();
                 if (enableValidationLayer)
                 {
                     createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
@@ -1071,6 +1112,8 @@ namespace Gek
                 }
 
                 vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+                vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
+                getContext()->log(Gek::Context::Info, "Vulkan logica device created");
             }
 
             void createSurface(void)
@@ -1083,6 +1126,177 @@ namespace Gek
                 {
                     throw std::runtime_error("failed to create window surface!");
                 }
+
+                getContext()->log(Gek::Context::Info, "Vulkan surface created");
+            }
+
+            struct SwapChainSupportDetails
+            {
+                VkSurfaceCapabilitiesKHR capabilities;
+                std::vector<VkSurfaceFormatKHR> formats;
+                std::vector<VkPresentModeKHR> presentModes;
+            };
+
+            SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device)
+            {
+                SwapChainSupportDetails details;
+                vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+
+                uint32_t formatCount;
+                vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+                if (formatCount != 0)
+                {
+                    details.formats.resize(formatCount);
+                    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+                }
+
+                uint32_t presentModeCount;
+                vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+                if (presentModeCount != 0)
+                {
+                    details.presentModes.resize(presentModeCount);
+                    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+                }
+
+                return details;
+            }
+
+            VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+            {
+                for (const auto& availableFormat : availableFormats)
+                {
+                    if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+                    {
+                        return availableFormat;
+                    }
+                }
+
+                return availableFormats[0];
+            }
+
+            VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+            {
+                for (const auto& availablePresentMode : availablePresentModes)
+                {
+                    if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+                    {
+                        return availablePresentMode;
+                    }
+                }
+
+                return VK_PRESENT_MODE_FIFO_KHR;
+            }
+
+            VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+            {
+                if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+                {
+                    return capabilities.currentExtent;
+                }
+                else
+                {
+                    auto clientRectangle = window->getClientRectangle();
+                    VkExtent2D actualExtent =
+                    {
+                        clientRectangle.size.x,
+                        clientRectangle.size.y,
+                    };
+
+                    actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+                    actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+                    return actualExtent;
+                }
+            }
+
+            void createSwapChain(void)
+            {
+                SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
+
+                VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+                VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+                VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
+
+                uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+                if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
+                {
+                    imageCount = swapChainSupport.capabilities.maxImageCount;
+                }
+
+                QueueFamilyIndices indices = findQueueFamilies();
+                uint32_t queueFamilyIndices[] = 
+                {
+                    indices.graphicsFamily.value(),
+                    indices.presentFamily.value()
+                };
+
+                VkSwapchainCreateInfoKHR createInfo{};
+                createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+                createInfo.surface = surface;
+                createInfo.minImageCount = imageCount;
+                createInfo.imageFormat = surfaceFormat.format;
+                createInfo.imageColorSpace = surfaceFormat.colorSpace;
+                createInfo.imageExtent = extent;
+                createInfo.imageArrayLayers = 1;
+                createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+                if (indices.graphicsFamily != indices.presentFamily)
+                {
+                    createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+                    createInfo.queueFamilyIndexCount = 2;
+                    createInfo.pQueueFamilyIndices = queueFamilyIndices;
+                }
+                else
+                {
+                    createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+                }
+
+                createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+                createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+                createInfo.presentMode = presentMode;
+                createInfo.clipped = VK_TRUE;
+                createInfo.oldSwapchain = VK_NULL_HANDLE;
+                if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS)
+                {
+                    throw std::runtime_error("failed to create swap chain!");
+                }
+
+                vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
+                swapChainImages.resize(imageCount);
+                vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+                swapChainImageFormat = surfaceFormat.format;
+                swapChainExtent = extent;
+
+                getContext()->log(Gek::Context::Info, "Vulkan swap chain created");
+            }
+
+            void createImageViews(void)
+            {
+                swapChainImageViews.resize(swapChainImages.size());
+                for (size_t i = 0; i < swapChainImages.size(); i++)
+                {
+                    VkImageViewCreateInfo createInfo{};
+                    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+                    createInfo.image = swapChainImages[i];
+
+                    createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+                    createInfo.format = swapChainImageFormat;
+
+                    createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+                    createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+                    createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+                    createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+                    createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    createInfo.subresourceRange.baseMipLevel = 0;
+                    createInfo.subresourceRange.levelCount = 1;
+                    createInfo.subresourceRange.baseArrayLayer = 0;
+                    createInfo.subresourceRange.layerCount = 1;
+                    if (vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS)
+                    {
+                        throw std::runtime_error("failed to create image views!");
+                    }
+                }
+
+                getContext()->log(Gek::Context::Info, "Vulkan image views created");
             }
 
         public:
@@ -1097,11 +1311,16 @@ namespace Gek
                     setupDebugMessenger();
                 }
 
+                createSurface();
                 pickPhysicalDevice();
                 createLogicalDevice();
-                createSurface();
+                createSwapChain();
+                createImageViews();
 
                 defaultContext = std::make_unique<Context>();
+
+                Video::Texture::Description description;
+                backBuffer = std::make_unique<Target>(description);
             }
 
             void setupDebugMessenger(void)
@@ -1135,6 +1354,14 @@ namespace Gek
                 backBuffer = nullptr;
                 defaultContext = nullptr;
 
+                for (auto imageView : swapChainImageViews)
+                {
+                    vkDestroyImageView(device, imageView, nullptr);
+                }
+
+                vkDestroySwapchainKHR(device, swapChain, nullptr);
+                vkDestroyDevice(device, nullptr);
+
                 if (enableValidationLayer)
                 {
                     auto function = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
@@ -1144,6 +1371,7 @@ namespace Gek
                     }
                 }
 
+                vkDestroySurfaceKHR(instance, surface, nullptr);
                 vkDestroyInstance(instance, nullptr);
             }
 
@@ -1157,6 +1385,17 @@ namespace Gek
             Video::DisplayModeList getDisplayModeList(Video::Format format) const
             {
                 Video::DisplayModeList displayModeList;
+
+                Video::DisplayMode displayMode(1600, 1200, Video::Format::Unknown);
+                displayMode.refreshRate.numerator = 60;
+                displayMode.refreshRate.denominator = 1;
+                displayModeList.push_back(displayMode);
+        
+                for (auto displayMode : displayModeList)
+                {
+                    getContext()->log(Gek::Context::Info, "Display Mode: {} x {}", displayMode.width, displayMode.height);
+                }
+
                 return displayModeList;
             }
 
@@ -1166,6 +1405,8 @@ namespace Gek
 
             void setDisplayMode(const Video::DisplayMode &displayMode)
             {
+                getContext()->log(Gek::Context::Info, "Setting display mode: {} x {}", displayMode.width, displayMode.height);
+                window->resize(Math::Int2(displayMode.width, displayMode.height));
             }
 
             void handleResize(void)
@@ -1251,6 +1492,7 @@ namespace Gek
                 assert(d3dDevice);
 
                 Video::Program::Information information;
+                information.type = type;
                 return information;
             }
 
@@ -1277,7 +1519,7 @@ namespace Gek
                     return createProgram<PixelProgram>(information);
                 };
 
-                std::cerr << "Unknown program pipline encountered";
+                getContext()->log(Gek::Context::Error, "Unknown program pipline encountered");
                 return nullptr;
             }
 

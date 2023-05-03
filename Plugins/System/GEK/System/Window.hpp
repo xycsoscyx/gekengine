@@ -206,5 +206,6 @@ namespace Gek
 
         virtual void setVisibility(bool isVisible) = 0;
         virtual void move(Math::Int2 const &position = Math::Int2(-1, -1)) = 0;
+        virtual void resize(Math::Int2 const &size) { };
     };
 }; // namespace Gek

@@ -20,6 +20,42 @@ namespace Gek
 {
     namespace Video
     {
+        DisplayMode::DisplayMode(void)
+        {
+        }
+
+        DisplayMode::DisplayMode(uint32_t width, uint32_t height, Format format)
+            : width(width)
+            , height(height)
+            , format(format)
+        {
+            auto getAspectRatio = [](uint32_t width, uint32_t height) -> Video::DisplayMode::AspectRatio
+            {
+                const float AspectRatio4x3 = (4.0f / 3.0f);
+                const float AspectRatio16x9 = (16.0f / 9.0f);
+                const float AspectRatio16x10 = (16.0f / 10.0f);
+                float aspectRatio = (float(width) / float(height));
+                if (std::abs(aspectRatio - AspectRatio4x3) < Math::Epsilon)
+                {
+                    return Video::DisplayMode::AspectRatio::_4x3;
+                }
+                else if (std::abs(aspectRatio - AspectRatio16x9) < Math::Epsilon)
+                {
+                    return Video::DisplayMode::AspectRatio::_16x9;
+                }
+                else if (std::abs(aspectRatio - AspectRatio16x10) < Math::Epsilon)
+                {
+                    return Video::DisplayMode::AspectRatio::_16x10;
+                }
+                else
+                {
+                    return Video::DisplayMode::AspectRatio::Unknown;
+                }
+            };
+
+            aspectRatio = getAspectRatio(width, height);
+        }
+
         bool HasAlpha(Format format)
         {
             static constexpr bool HasAlphaList[] =

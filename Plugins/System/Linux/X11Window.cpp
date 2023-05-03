@@ -41,10 +41,14 @@ namespace Gek
                 XMapRaised(display, window);
 
                 XSelectInput(display, window, ExposureMask | ButtonPressMask | KeyPressMask);
+                XFlush(display);
+
+                getContext()->log(Gek::Context::Info, "X11 Window Created");
             }
 
             ~Window(void)
             {
+                XFlush(display);
                 XFreeGC(display, graphicContext);
                 XDestroyWindow(display, window);
                 XCloseDisplay(display);	
@@ -93,13 +97,39 @@ namespace Gek
 
             Math::Int4 getClientRectangle(bool moveToScreen = false) const
             {
+                XWindowAttributes attributes;
+                XGetWindowAttributes(display, window, &attributes);
+
                 Math::Int4 rectangle;
+                rectangle.position.x = attributes.x;
+                rectangle.position.y = attributes.y;
+                rectangle.size.x = attributes.width;
+                rectangle.size.y = attributes.height;
                 return rectangle;
             }
 
             Math::Int4 getScreenRectangle(void) const
             {
+                ::Window rootWindow, currentWindow = window;
+                do
+                {
+                    uint32_t childrenCount;
+                    ::Window parentWindow, *childrenWindows;
+                    XQueryTree(display, currentWindow, &rootWindow, &parentWindow, &childrenWindows, &childrenCount);
+                    if (parentWindow != rootWindow)
+                    {
+                        currentWindow = parentWindow;
+                    } 
+                } while (currentWindow != rootWindow);
+
+                XWindowAttributes attributes;
+                XGetWindowAttributes(display, currentWindow, &attributes);
+
                 Math::Int4 rectangle;
+                rectangle.position.x = attributes.x - attributes.border_width / 2;
+                rectangle.position.y = attributes.y - attributes.border_width / 2;
+                rectangle.size.x = attributes.width + attributes.border_width;
+                rectangle.size.y = attributes.height + attributes.border_width;
                 return rectangle;
             }
 
@@ -123,6 +153,25 @@ namespace Gek
 
             void move(Math::Int2 const &position)
             {
+                int32_t x = position.x;
+                int32_t y = position.y;
+                if (x < 0 || y < 0)
+                {
+                    XWindowAttributes attributes;
+                    XGetWindowAttributes(display, window, &attributes);
+
+                    x = (x < 0 ? ((XWidthOfScreen(attributes.screen) - attributes.width) / 2) : x);
+                    y = (y < 0 ? ((XHeightOfScreen(attributes.screen) - attributes.height) / 2) : y);
+                }
+
+                XMoveWindow(display, window, x, y);
+                XFlush(display);
+            }
+
+            void resize(Math::Int2 const &size)
+            {
+                XResizeWindow(display, window, size.width, size.height);
+                XFlush(display);
             }
         };
 

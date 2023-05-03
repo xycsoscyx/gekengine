@@ -107,6 +107,9 @@ namespace Gek
                 uint32_t numerator = 0;
                 uint32_t denominator = 0;
             } refreshRate;
+
+            DisplayMode(void);
+            DisplayMode(uint32_t width, uint32_t height, Format format);
         };
 
         using DisplayModeList = std::vector<DisplayMode>;

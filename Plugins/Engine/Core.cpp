@@ -140,7 +140,6 @@ namespace Gek
                         displayModeStringList.push_back(displayModeString);
                     }
 
-                    getContext()->log(Context::Info, "display");
                     setDisplayMode(Plugin::Core::getOption("display", "mode", preferredDisplayMode));
                 }
 
@@ -247,7 +246,6 @@ namespace Gek
                 if (current.mode != requestDisplayMode)
                 {
                     auto& displayModeData = displayModeList[requestDisplayMode];
-                    getContext()->log(Context::Info, "Setting display mode: {} x {}", displayModeData.width, displayModeData.height);
                     if (requestDisplayMode < displayModeList.size())
                     {
                         next.mode = requestDisplayMode;

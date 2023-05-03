@@ -1828,35 +1828,7 @@ namespace Gek
                     dxgiOutput->GetDisplayModeList(DirectX::TextureFormatList[static_cast<uint8_t>(format)], 0, &modeCount, dxgiDisplayModeList.data());
                     for (auto const &dxgiDisplayMode : dxgiDisplayModeList)
                     {
-                        auto getAspectRatio = [](uint32_t width, uint32_t height) -> Video::DisplayMode::AspectRatio
-                        {
-                            const float AspectRatio4x3 = (4.0f / 3.0f);
-                            const float AspectRatio16x9 = (16.0f / 9.0f);
-                            const float AspectRatio16x10 = (16.0f / 10.0f);
-                            float aspectRatio = (float(width) / float(height));
-                            if (std::abs(aspectRatio - AspectRatio4x3) < Math::Epsilon)
-                            {
-                                return Video::DisplayMode::AspectRatio::_4x3;
-                            }
-                            else if (std::abs(aspectRatio - AspectRatio16x9) < Math::Epsilon)
-                            {
-                                return Video::DisplayMode::AspectRatio::_16x9;
-                            }
-                            else if (std::abs(aspectRatio - AspectRatio16x10) < Math::Epsilon)
-                            {
-                                return Video::DisplayMode::AspectRatio::_16x10;
-                            }
-                            else
-                            {
-                                return Video::DisplayMode::AspectRatio::Unknown;
-                            }
-                        };
-
-                        Video::DisplayMode displayMode;
-                        displayMode.width = dxgiDisplayMode.Width;
-                        displayMode.height = dxgiDisplayMode.Height;
-                        displayMode.format = DirectX::GetFormat(dxgiDisplayMode.Format);
-                        displayMode.aspectRatio = getAspectRatio(displayMode.width, displayMode.height);
+                        Video::DisplayMode displayMode(dxgiDisplayMode.Width, dxgiDisplayMode.Height, DirectX::GetFormat(dxgiDisplayMode.Format));
                         displayMode.refreshRate.numerator = dxgiDisplayMode.RefreshRate.Numerator;
                         displayMode.refreshRate.denominator = dxgiDisplayMode.RefreshRate.Denominator;
                         if (![&](void) -> bool
