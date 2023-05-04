@@ -180,6 +180,7 @@ namespace Gek
 
         virtual ~Window(void) = default;
         
+        wink::signal<wink::slot<void(void)>> onCreate;
         wink::signal<wink::slot<void(void)>> onClose;
         wink::signal<wink::slot<void(bool isActive)>> onActivate;
         wink::signal<wink::slot<void(bool isMinimized)>> onSizeChanged;
@@ -192,8 +193,6 @@ namespace Gek
         wink::signal<wink::slot<void(float numberOfRotations)>> onMouseWheel;
         wink::signal<wink::slot<void(int32_t xPosition, int32_t yPosition)>> onMousePosition;
         wink::signal<wink::slot<void(int32_t xMovement, int32_t yMovement)>> onMouseMovement;
-
-        virtual void readEvents(void) = 0;
 
         virtual void *getWindowData(uint32_t data) const = 0;
 

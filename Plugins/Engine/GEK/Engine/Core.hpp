@@ -35,8 +35,6 @@ namespace Gek
 
             virtual Engine::Population * getFullPopulation(void) const = 0;
             virtual Engine::Resources * getFullResources(void) const = 0;
-
-            virtual bool update(void) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

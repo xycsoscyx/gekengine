@@ -12,6 +12,7 @@
 #include <imgui_internal.h>
 #include <algorithm>
 #include <vector>
+#include <thread>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -64,21 +65,22 @@ namespace Gek
             Engine::PopulationPtr population;
 
         public:
-            Core(Context *context, Window *_window)
+            Core(Context *context, Window *stealWindow)
                 : ContextRegistration(context)
-                , window(_window)
+                , window(stealWindow)
             {
 				getContext()->log(Context::Info, "Starting GEK Engine");
 
-                if (!window)
+                configuration = JSON::Load(getContext()->findDataPath("config.json"s));
+#ifdef _WIN32
+                HRESULT resultValue = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
+                if (FAILED(resultValue))
                 {
-                    Window::Description description;
-                    description.allowResize = true;
-                    description.className = "GEK_Engine_Demo";
-                    description.windowName = "GEK Engine Demo";
-                    window = getContext()->createClass<Window>("Default::System::Window", description);
+                    std::cerr << "Call to CoInitialize failed: " << resultValue;
+                    return;
                 }
-
+#endif
+                window->onCreate.connect(this, &Core::onCreate);
                 window->onClose.connect(this, &Core::onClose);
                 window->onActivate.connect(this, &Core::onActivate);
                 window->onSizeChanged.connect(this, &Core::onSizeChanged);
@@ -89,112 +91,18 @@ namespace Gek
                 window->onMouseWheel.connect(this, &Core::onMouseWheel);
                 window->onMousePosition.connect(this, &Core::onMousePosition);
                 window->onMouseMovement.connect(this, &Core::onMouseMovement);
-
-                configuration = JSON::Load(getContext()->findDataPath("config.json"s));
-
-#ifdef _WIN32
-                HRESULT resultValue = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
-                if (FAILED(resultValue))
+                if (!window)
                 {
-                    std::cerr << "Call to CoInitialize failed: " << resultValue;
-                    return;
+                    Window::Description description;
+                    description.allowResize = true;
+                    description.className = "GEK_Engine_Demo";
+                    description.windowName = "GEK Engine Demo";
+                    window = getContext()->createClass<Window>("Default::System::Window", description);
                 }
-#endif
-
-                Video::Device::Description deviceDescription;
-                videoDevice = getContext()->createClass<Video::Device>("Default::Device::Video", window.get(), deviceDescription);
-
-                uint32_t preferredDisplayMode = 0;
-                auto fullDisplayModeList = videoDevice->getDisplayModeList(deviceDescription.displayFormat);
-                if (!fullDisplayModeList.empty())
+                else
                 {
-                    for (auto const &displayMode : fullDisplayModeList)
-                    {
-                        if (displayMode.height >= 800)
-                        {
-                            displayModeList.push_back(displayMode);
-                        }
-                    }
-
-                    for (auto const &displayMode : displayModeList)
-                    {
-                        auto currentDisplayMode = displayModeStringList.size();
-                        std::string displayModeString(fmt::format("{}x{}, {}hz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
-                        switch (displayMode.aspectRatio)
-                        {
-                        case Video::DisplayMode::AspectRatio::_4x3:
-                            displayModeString.append(" (4x3)");
-                            break;
-
-                        case Video::DisplayMode::AspectRatio::_16x9:
-                            preferredDisplayMode = (preferredDisplayMode == 0 && displayMode.height > 800 ? currentDisplayMode : preferredDisplayMode);
-                            displayModeString.append(" (16x9)");
-                            break;
-
-                        case Video::DisplayMode::AspectRatio::_16x10:
-                            preferredDisplayMode = (preferredDisplayMode == 0 && displayMode.height > 800 ? currentDisplayMode : preferredDisplayMode);
-                            displayModeString.append(" (16x10)");
-                            break;
-                        };
-
-                        displayModeStringList.push_back(displayModeString);
-                    }
-
-                    setDisplayMode(Plugin::Core::getOption("display", "mode", preferredDisplayMode));
+                    onCreate();
                 }
-
-                population = getContext()->createClass<Engine::Population>("Engine::Population", (Engine::Core *)this);
-                resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Engine::Core *)this);
-                renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Engine::Core *)this);
-                renderer->onShowUserInterface.connect(this, &Core::onShowUserInterface);
-
-                getContext()->log(Context::Info, "Loading processor plugins");
-
-                std::vector<std::string_view> processorNameList;
-                getContext()->listTypes("ProcessorType", [&](std::string_view className) -> void
-                {
-                    processorNameList.push_back(className);
-					getContext()->log(Context::Info, "- {} processor found", className);
-				});
-
-                processorList.reserve(processorNameList.size());
-                for (auto const &processorName : processorNameList)
-                {
-                    processorList.push_back(getContext()->createClass<Plugin::Processor>(processorName, (Plugin::Core *)this));
-                }
-
-                onInitialized.emit();
-
-                ImGuiIO& imGuiIo = ImGui::GetIO();
-                imGuiIo.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-                imGuiIo.KeyMap[ImGuiKey_Tab] = to_underlying(Window::Key::Tab);
-                imGuiIo.KeyMap[ImGuiKey_LeftArrow] = to_underlying(Window::Key::Left);
-                imGuiIo.KeyMap[ImGuiKey_RightArrow] = to_underlying(Window::Key::Right);
-                imGuiIo.KeyMap[ImGuiKey_UpArrow] = to_underlying(Window::Key::Up);
-                imGuiIo.KeyMap[ImGuiKey_DownArrow] = to_underlying(Window::Key::Down);
-                imGuiIo.KeyMap[ImGuiKey_PageUp] = to_underlying(Window::Key::PageUp);
-                imGuiIo.KeyMap[ImGuiKey_PageDown] = to_underlying(Window::Key::PageDown);
-                imGuiIo.KeyMap[ImGuiKey_Home] = to_underlying(Window::Key::Home);
-                imGuiIo.KeyMap[ImGuiKey_End] = to_underlying(Window::Key::End);
-                imGuiIo.KeyMap[ImGuiKey_Delete] = to_underlying(Window::Key::Delete);
-                imGuiIo.KeyMap[ImGuiKey_Backspace] = to_underlying(Window::Key::Backspace);
-                imGuiIo.KeyMap[ImGuiKey_Enter] =to_underlying( Window::Key::Return);
-                imGuiIo.KeyMap[ImGuiKey_Escape] = to_underlying(Window::Key::Escape);
-                imGuiIo.KeyMap[ImGuiKey_A] = to_underlying(Window::Key::A);
-                imGuiIo.KeyMap[ImGuiKey_C] = to_underlying(Window::Key::C);
-                imGuiIo.KeyMap[ImGuiKey_V] = to_underlying(Window::Key::V);
-                imGuiIo.KeyMap[ImGuiKey_X] = to_underlying(Window::Key::X);
-                imGuiIo.KeyMap[ImGuiKey_Y] = to_underlying(Window::Key::Y);
-                imGuiIo.KeyMap[ImGuiKey_Z] = to_underlying(Window::Key::Z);
-                imGuiIo.MouseDrawCursor = false;
-
-                windowActive = true;
-                engineRunning = true;
-
-                window->setVisibility(true);
-                setFullScreen(Plugin::Core::getOption("display", "fullScreen", false));
-                getContext()->log(Context::Info, "Starting engine");
-                window->readEvents();
             }
 
             ~Core(void)
@@ -290,6 +198,150 @@ namespace Gek
             }
 
             // Window slots
+            void onCreate(void)
+            {
+                Video::Device::Description deviceDescription;
+                videoDevice = getContext()->createClass<Video::Device>("Default::Device::Video", window.get(), deviceDescription);
+
+                uint32_t preferredDisplayMode = 0;
+                auto fullDisplayModeList = videoDevice->getDisplayModeList(deviceDescription.displayFormat);
+                if (!fullDisplayModeList.empty())
+                {
+                    for (auto const &displayMode : fullDisplayModeList)
+                    {
+                        if (displayMode.height >= 800)
+                        {
+                            displayModeList.push_back(displayMode);
+                        }
+                    }
+
+                    for (auto const &displayMode : displayModeList)
+                    {
+                        auto currentDisplayMode = displayModeStringList.size();
+                        std::string displayModeString(fmt::format("{}x{}, {}hz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
+                        switch (displayMode.aspectRatio)
+                        {
+                        case Video::DisplayMode::AspectRatio::_4x3:
+                            displayModeString.append(" (4x3)");
+                            break;
+
+                        case Video::DisplayMode::AspectRatio::_16x9:
+                            preferredDisplayMode = (preferredDisplayMode == 0 && displayMode.height > 800 ? currentDisplayMode : preferredDisplayMode);
+                            displayModeString.append(" (16x9)");
+                            break;
+
+                        case Video::DisplayMode::AspectRatio::_16x10:
+                            preferredDisplayMode = (preferredDisplayMode == 0 && displayMode.height > 800 ? currentDisplayMode : preferredDisplayMode);
+                            displayModeString.append(" (16x10)");
+                            break;
+                        };
+
+                        displayModeStringList.push_back(displayModeString);
+                    }
+
+                    getContext()->log(Context::Info, "Loading processor plugins");
+                    setDisplayMode(Plugin::Core::getOption("display", "mode", preferredDisplayMode));
+                    getContext()->log(Context::Info, "Loading processor plugins");
+                }
+
+                getContext()->log(Context::Info, "Loading processor plugins");
+                population = getContext()->createClass<Engine::Population>("Engine::Population", (Engine::Core *)this);
+                getContext()->log(Context::Info, "Loading processor plugins");
+                resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Engine::Core *)this);
+                getContext()->log(Context::Info, "Loading processor plugins");
+                renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Engine::Core *)this);
+                getContext()->log(Context::Info, "Loading processor plugins");
+                renderer->onShowUserInterface.connect(this, &Core::onShowUserInterface);
+
+                getContext()->log(Context::Info, "Loading processor plugins");
+
+                std::vector<std::string_view> processorNameList;
+                getContext()->listTypes("ProcessorType", [&](std::string_view className) -> void
+                {
+                    processorNameList.push_back(className);
+					getContext()->log(Context::Info, "- {} processor found", className);
+				});
+
+                processorList.reserve(processorNameList.size());
+                for (auto const &processorName : processorNameList)
+                {
+                    processorList.push_back(getContext()->createClass<Plugin::Processor>(processorName, (Plugin::Core *)this));
+                }
+
+                onInitialized.emit();
+
+                ImGuiIO& imGuiIo = ImGui::GetIO();
+                imGuiIo.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+                imGuiIo.KeyMap[ImGuiKey_Tab] = to_underlying(Window::Key::Tab);
+                imGuiIo.KeyMap[ImGuiKey_LeftArrow] = to_underlying(Window::Key::Left);
+                imGuiIo.KeyMap[ImGuiKey_RightArrow] = to_underlying(Window::Key::Right);
+                imGuiIo.KeyMap[ImGuiKey_UpArrow] = to_underlying(Window::Key::Up);
+                imGuiIo.KeyMap[ImGuiKey_DownArrow] = to_underlying(Window::Key::Down);
+                imGuiIo.KeyMap[ImGuiKey_PageUp] = to_underlying(Window::Key::PageUp);
+                imGuiIo.KeyMap[ImGuiKey_PageDown] = to_underlying(Window::Key::PageDown);
+                imGuiIo.KeyMap[ImGuiKey_Home] = to_underlying(Window::Key::Home);
+                imGuiIo.KeyMap[ImGuiKey_End] = to_underlying(Window::Key::End);
+                imGuiIo.KeyMap[ImGuiKey_Delete] = to_underlying(Window::Key::Delete);
+                imGuiIo.KeyMap[ImGuiKey_Backspace] = to_underlying(Window::Key::Backspace);
+                imGuiIo.KeyMap[ImGuiKey_Enter] =to_underlying( Window::Key::Return);
+                imGuiIo.KeyMap[ImGuiKey_Escape] = to_underlying(Window::Key::Escape);
+                imGuiIo.KeyMap[ImGuiKey_A] = to_underlying(Window::Key::A);
+                imGuiIo.KeyMap[ImGuiKey_C] = to_underlying(Window::Key::C);
+                imGuiIo.KeyMap[ImGuiKey_V] = to_underlying(Window::Key::V);
+                imGuiIo.KeyMap[ImGuiKey_X] = to_underlying(Window::Key::X);
+                imGuiIo.KeyMap[ImGuiKey_Y] = to_underlying(Window::Key::Y);
+                imGuiIo.KeyMap[ImGuiKey_Z] = to_underlying(Window::Key::Z);
+                imGuiIo.MouseDrawCursor = false;
+
+                windowActive = true;
+                engineRunning = true;
+
+                window->setVisibility(true);
+                setFullScreen(Plugin::Core::getOption("display", "fullScreen", false));
+
+                getContext()->log(Context::Info, "Starting game loop");
+                std::atomic<bool> stop = false;
+                std::thread logic([this, &stop]() -> void
+                {
+                    while(!stop.load())
+                    {
+                        timer.update();
+
+                        // Read keyboard modifiers inputs
+                        ImGuiIO &imGuiIo = ImGui::GetIO();
+                        //imGuiIo.KeyCtrl = (GetKeyState(Window::Key::Control) & 0x8000) != 0;
+                        //imGuiIo.KeyShift = (GetKeyState(Window::Key::Shift) & 0x8000) != 0;
+                        //imGuiIo.KeyAlt = (GetKeyState(Window::Key::Menu) & 0x8000) != 0;
+                        imGuiIo.KeySuper = false;
+                        // imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
+                        // imGuiIo.MousePos : filled by WM_MOUSEMOVE events
+                        // imGuiIo.MouseDown : filled by WM_*BUTTON* events
+                        // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
+
+                        if (windowActive)
+                        {
+                            float frameTime = timer.getUpdateTime();
+                            modeChangeTimer -= frameTime;
+                            if (enableInterfaceControl)
+                            {
+                                population->update(0.0f);
+                            }
+                            else
+                            {
+                                population->update(frameTime);
+                                auto rectangle = window->getScreenRectangle();
+                                window->setCursorPosition(Math::Int2(
+                                    int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
+                                    int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
+                            }
+                        }
+                    };
+                });
+
+                stop = false;
+                logic.join();
+            }
+
             void onClose(void)
             {
                 close(true);
@@ -1082,44 +1134,6 @@ namespace Gek
                 {
                     onProcessor(processor.get());
                 }
-            }
-
-            bool update(void)
-            {
-				window->readEvents();
-
-				timer.update();
-
-				// Read keyboard modifiers inputs
-				ImGuiIO &imGuiIo = ImGui::GetIO();
-				//imGuiIo.KeyCtrl = (GetKeyState(Window::Key::Control) & 0x8000) != 0;
-				//imGuiIo.KeyShift = (GetKeyState(Window::Key::Shift) & 0x8000) != 0;
-				//imGuiIo.KeyAlt = (GetKeyState(Window::Key::Menu) & 0x8000) != 0;
-				imGuiIo.KeySuper = false;
-				// imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
-				// imGuiIo.MousePos : filled by WM_MOUSEMOVE events
-				// imGuiIo.MouseDown : filled by WM_*BUTTON* events
-				// imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
-
-				if (windowActive)
-				{
-					float frameTime = timer.getUpdateTime();
-					modeChangeTimer -= frameTime;
-					if (enableInterfaceControl)
-					{
-						population->update(0.0f);
-					}
-					else
-					{
-						population->update(frameTime);
-						auto rectangle = window->getScreenRectangle();
-						window->setCursorPosition(Math::Int2(
-							int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
-							int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
-					}
-				}
-
-                return engineRunning;
             }
         };
 

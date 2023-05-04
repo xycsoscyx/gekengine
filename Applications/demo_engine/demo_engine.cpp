@@ -38,13 +38,7 @@ int main(int argumentCount, char const * const argumentList[])
         context->addDataPath(rootPath / "data");
         context->addDataPath(rootPath.getString());
 
-        Engine::CorePtr core(context->createClass<Engine::Core>("Engine::Core", (Window *)nullptr));
-        if (core)
-        {
-            while (core->update())
-            {
-            };
-        }
+        context->createClass<Engine::Core>("Engine::Core", (Window *)nullptr);
     }
 
     return 0;

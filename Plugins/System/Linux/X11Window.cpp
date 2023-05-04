@@ -21,6 +21,8 @@ namespace Gek
             Window(Context *context, Window::Description description)
                 : ContextRegistration(context)
             {
+                XInitThreads();
+
                 display = XOpenDisplay(nullptr);
                 screen = DefaultScreen(display);
                 auto black = BlackPixel(display, screen);
@@ -30,7 +32,7 @@ namespace Gek
 
                 XSetStandardProperties(display, window, description.windowName.data(), "GEK", None, nullptr, 0, nullptr);
 
-                XSelectInput(display, window, ExposureMask|ButtonPressMask|KeyPressMask);
+                XSelectInput(display, window, ExposureMask | ButtonPressMask | KeyPressMask | SubstructureNotifyMask);
 
                 graphicContext = XCreateGC(display, window, 0, 0);        
 
@@ -40,29 +42,19 @@ namespace Gek
                 XClearWindow(display, window);
                 XMapRaised(display, window);
 
-                XSelectInput(display, window, ExposureMask | ButtonPressMask | KeyPressMask);
-                XFlush(display);
-
                 getContext()->log(Gek::Context::Info, "X11 Window Created");
-            }
 
-            ~Window(void)
-            {
-                XFlush(display);
-                XFreeGC(display, graphicContext);
-                XDestroyWindow(display, window);
-                XCloseDisplay(display);	
-            }
-
-            void readEvents(void)
-            {
                 XEvent event;
-                KeySym key;
-                char text[255];
-                if (XCheckWindowEvent(display, window, 0, &event))
+                while (XNextEvent(display, &event))
                 {
+                    KeySym key;
+                    char text[255];
                     switch(event.type)
                     {
+                    case CreateNotify:
+                        onCreate();
+                        break;
+
                     case Expose:
                         break;
 
@@ -79,6 +71,14 @@ namespace Gek
                         break;
                     };
                 }      
+            }
+
+            ~Window(void)
+            {
+                XFlush(display);
+                XFreeGC(display, graphicContext);
+                XDestroyWindow(display, window);
+                XCloseDisplay(display);	
             }
 
             void *getWindowData(uint32_t data) const
@@ -157,21 +157,35 @@ namespace Gek
                 int32_t y = position.y;
                 if (x < 0 || y < 0)
                 {
+                    ::Window rootWindow, currentWindow = window;
+                    do
+                    {
+                        uint32_t childrenCount;
+                        ::Window parentWindow, *childrenWindows;
+                        XQueryTree(display, currentWindow, &rootWindow, &parentWindow, &childrenWindows, &childrenCount);
+                        if (parentWindow != rootWindow)
+                        {
+                            currentWindow = parentWindow;
+                        } 
+                    } while (currentWindow != rootWindow);
+
                     XWindowAttributes attributes;
-                    XGetWindowAttributes(display, window, &attributes);
+                    XGetWindowAttributes(display, currentWindow, &attributes);
 
                     x = (x < 0 ? ((XWidthOfScreen(attributes.screen) - attributes.width) / 2) : x);
                     y = (y < 0 ? ((XHeightOfScreen(attributes.screen) - attributes.height) / 2) : y);
                 }
 
+                getContext()->log(Gek::Context::Info, "Moving: {}, {}", x, y);
                 XMoveWindow(display, window, x, y);
-                XFlush(display);
+                //XFlush(display);
             }
 
             void resize(Math::Int2 const &size)
             {
+                getContext()->log(Gek::Context::Info, "Resizing: {}, {}", size.width, size.height);
                 XResizeWindow(display, window, size.width, size.height);
-                XFlush(display);
+                //XFlush(display);
             }
         };
 
