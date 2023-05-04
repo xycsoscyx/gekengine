@@ -38,7 +38,7 @@ int main(int argumentCount, char const * const argumentList[])
         context->addDataPath(rootPath / "data");
         context->addDataPath(rootPath.getString());
 
-        context->createClass<Engine::Core>("Engine::Core", (Window *)nullptr);
+        context->createClass<Engine::Core>("Engine::Core");
     }
 
     return 0;

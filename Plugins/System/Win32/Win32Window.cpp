@@ -57,34 +57,38 @@ namespace Gek
             255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255
         };
 
-        GEK_CONTEXT_USER(Window, Gek::Window::Description)
+        GEK_CONTEXT_USER(Window)
             , public Gek::Window
         {
         private:
             HWND window = nullptr;
-            HCURSOR cursorList[8];
             uint16_t highSurrogate = 0;
+            std::atomic<bool> stop = false;
 
         public:
-            Window(Context *context, Window::Description description)
+            Window(Context *context)
                 : ContextRegistration(context)
-                , cursorList{
-                nullptr,
-                LoadCursor(nullptr, IDC_ARROW),
-                LoadCursor(nullptr, IDC_IBEAM),
-                LoadCursor(nullptr, IDC_HAND),
-                LoadCursor(nullptr, IDC_SIZENS),
-                LoadCursor(nullptr, IDC_SIZEWE),
-                LoadCursor(nullptr, IDC_SIZENESW),
-                LoadCursor(nullptr, IDC_SIZENWSE),
+            {
+            }
+
+            ~Window(void)
+            {
+                if (window)
+                {
+                    SetWindowLongPtr(window, GWLP_USERDATA, 0);
+                    DestroyWindow(window);
                 }
+            }
+
+            // Window
+            void create(Description const& description)
             {
                 WNDCLASSEX windowClass;
                 windowClass.cbSize = sizeof(windowClass);
                 windowClass.style = CS_HREDRAW | CS_VREDRAW | (description.hasOwnContext ? CS_OWNDC : 0);
                 windowClass.lpfnWndProc = [](HWND handle, uint32_t message, WPARAM wParam, LPARAM lParam) -> LRESULT
                 {
-                    Window *window = reinterpret_cast<Window *>(GetWindowLongPtr(handle, GWLP_USERDATA));
+                    Window* window = reinterpret_cast<Window*>(GetWindowLongPtr(handle, GWLP_USERDATA));
                     if (window)
                     {
                         switch (message)
@@ -93,16 +97,7 @@ namespace Gek
                             switch (LOWORD(lParam))
                             {
                             case HTCLIENT:
-                                if (true)
-                                {
-                                    Cursor cursor = Cursor::None;
-                                    window->onSetCursor(cursor);
-
-                                    auto windowsCursor = window->cursorList[static_cast<uint8_t>(cursor)];
-                                    ShowCursor(windowsCursor ? true : false);
-                                    SetCursor(windowsCursor);
-                                    return TRUE;
-                                }
+                                break;
                             };
 
                             break;
@@ -194,7 +189,7 @@ namespace Gek
                                     std::vector<uint8_t> rawInputBuffer(inputSize);
                                     GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, rawInputBuffer.data(), &inputSize, sizeof(RAWINPUTHEADER));
 
-                                    RAWINPUT *rawInput = reinterpret_cast<RAWINPUT *>(rawInputBuffer.data());
+                                    RAWINPUT* rawInput = reinterpret_cast<RAWINPUT*>(rawInputBuffer.data());
                                     if (rawInput->header.dwType == RIM_TYPEMOUSE)
                                     {
                                         window->onMouseMovement(rawInput->data.mouse.lLastX, rawInput->data.mouse.lLastY);
@@ -205,7 +200,7 @@ namespace Gek
                             break;
 
                         case WM_CLOSE:
-                            window->onClose();
+                            window->onCloseRequested();
                             return TRUE;
 
                         case WM_ACTIVATE:
@@ -296,26 +291,24 @@ namespace Gek
                     inputDevice.hwndTarget = window;
                     RegisterRawInputDevices(&inputDevice, 1, sizeof(RAWINPUTDEVICE));
                 }
-            }
 
-            ~Window(void)
-            {
-                if (window)
+                onCreated();
+                while (!stop)
                 {
-                    SetWindowLongPtr(window, GWLP_USERDATA, 0);
-                    DestroyWindow(window);
-                }
-            }
+                    MSG message = { 0 };
+                    while (PeekMessage(&message, nullptr, 0U, 0U, PM_REMOVE))
+                    {
+                        TranslateMessage(&message);
+                        DispatchMessage(&message);
+                    };
 
-            // Window
-            void readEvents(void)
-            {
-                MSG message = { 0 };
-                while (PeekMessage(&message, nullptr, 0U, 0U, PM_REMOVE))
-                {
-                    TranslateMessage(&message);
-                    DispatchMessage(&message);
+                    onIdle();
                 };
+            }
+
+            void close(void)
+            {
+                stop = true;
             }
 
             void *getWindowData(uint32_t data) const

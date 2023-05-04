@@ -22,13 +22,12 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Core, Window *)
+        GEK_CONTEXT_USER(Core)
             , virtual Engine::Core
         {
         private:
             WindowPtr window;
             bool windowActive = false;
-            bool engineRunning = false;
 
             JSON::Object configuration;
             JSON::Object shadersSettings;
@@ -65,9 +64,8 @@ namespace Gek
             Engine::PopulationPtr population;
 
         public:
-            Core(Context *context, Window *stealWindow)
+            Core(Context *context)
                 : ContextRegistration(context)
-                , window(stealWindow)
             {
 				getContext()->log(Context::Info, "Starting GEK Engine");
 
@@ -80,28 +78,26 @@ namespace Gek
                     return;
                 }
 #endif
-                window->onCreate.connect(this, &Core::onCreate);
-                window->onClose.connect(this, &Core::onClose);
-                window->onActivate.connect(this, &Core::onActivate);
-                window->onSizeChanged.connect(this, &Core::onSizeChanged);
-                window->onKeyPressed.connect(this, &Core::onKeyPressed);
-                window->onCharacter.connect(this, &Core::onCharacter);
-                window->onSetCursor.connect(this, &Core::onSetCursor);
-                window->onMouseClicked.connect(this, &Core::onMouseClicked);
-                window->onMouseWheel.connect(this, &Core::onMouseWheel);
-                window->onMousePosition.connect(this, &Core::onMousePosition);
-                window->onMouseMovement.connect(this, &Core::onMouseMovement);
-                if (!window)
+                window = getContext()->createClass<Window>("Default::System::Window");
+                if (window)
                 {
+                    window->onCreated.connect(this, &Core::onWindowCreated);
+                    window->onCloseRequested.connect(this, &Core::onCloseRequested);
+                    window->onActivate.connect(this, &Core::onWindowActivate);
+                    window->onIdle.connect(this, &Core::onWindowIdle);
+                    window->onSizeChanged.connect(this, &Core::onWindowSizeChanged);
+                    window->onKeyPressed.connect(this, &Core::onKeyPressed);
+                    window->onCharacter.connect(this, &Core::onCharacter);
+                    window->onMouseClicked.connect(this, &Core::onMouseClicked);
+                    window->onMouseWheel.connect(this, &Core::onMouseWheel);
+                    window->onMousePosition.connect(this, &Core::onMousePosition);
+                    window->onMouseMovement.connect(this, &Core::onMouseMovement);
+
                     Window::Description description;
                     description.allowResize = true;
                     description.className = "GEK_Engine_Demo";
                     description.windowName = "GEK Engine Demo";
-                    window = getContext()->createClass<Window>("Default::System::Window", description);
-                }
-                else
-                {
-                    onCreate();
+                    window->create(description);
                 }
             }
 
@@ -170,20 +166,23 @@ namespace Gek
                 return false;
             }
 
-            void close(bool forceClose = false)
+            void forceClose(void)
+            {
+                window->close();
+                onShutdown.emit();
+            }
+
+            void confirmClose(void)
             {
                 bool isModified = false;
-                if (!forceClose)
+                listProcessors([&](Plugin::Processor* processor) -> void
                 {
-                    listProcessors([&](Plugin::Processor* processor) -> void
+                    auto castCheck = dynamic_cast<Edit::Events*>(processor);
+                    if (castCheck)
                     {
-                        auto castCheck = dynamic_cast<Edit::Events*>(processor);
-                        if (castCheck)
-                        {
-                            isModified = castCheck->isModified();
-                        }
-                    });
-                }
+                        isModified = castCheck->isModified();
+                    }
+                });
 
                 if (isModified)
                 {
@@ -192,13 +191,12 @@ namespace Gek
                 }
                 else
                 {
-                    engineRunning = false;
-                    onShutdown.emit();
+                    forceClose();
                 }
             }
 
             // Window slots
-            void onCreate(void)
+            void onWindowCreated(void)
             {
                 Video::Device::Description deviceDescription;
                 videoDevice = getContext()->createClass<Video::Device>("Default::Device::Video", window.get(), deviceDescription);
@@ -239,18 +237,12 @@ namespace Gek
                         displayModeStringList.push_back(displayModeString);
                     }
 
-                    getContext()->log(Context::Info, "Loading processor plugins");
                     setDisplayMode(Plugin::Core::getOption("display", "mode", preferredDisplayMode));
-                    getContext()->log(Context::Info, "Loading processor plugins");
                 }
 
-                getContext()->log(Context::Info, "Loading processor plugins");
                 population = getContext()->createClass<Engine::Population>("Engine::Population", (Engine::Core *)this);
-                getContext()->log(Context::Info, "Loading processor plugins");
                 resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Engine::Core *)this);
-                getContext()->log(Context::Info, "Loading processor plugins");
                 renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Engine::Core *)this);
-                getContext()->log(Context::Info, "Loading processor plugins");
                 renderer->onShowUserInterface.connect(this, &Core::onShowUserInterface);
 
                 getContext()->log(Context::Info, "Loading processor plugins");
@@ -294,70 +286,56 @@ namespace Gek
                 imGuiIo.MouseDrawCursor = false;
 
                 windowActive = true;
-                engineRunning = true;
 
                 window->setVisibility(true);
                 setFullScreen(Plugin::Core::getOption("display", "fullScreen", false));
-
-                getContext()->log(Context::Info, "Starting game loop");
-                std::atomic<bool> stop = false;
-                std::thread logic([this, &stop]() -> void
-                {
-                    while(!stop.load())
-                    {
-                        timer.update();
-
-                        // Read keyboard modifiers inputs
-                        ImGuiIO &imGuiIo = ImGui::GetIO();
-                        //imGuiIo.KeyCtrl = (GetKeyState(Window::Key::Control) & 0x8000) != 0;
-                        //imGuiIo.KeyShift = (GetKeyState(Window::Key::Shift) & 0x8000) != 0;
-                        //imGuiIo.KeyAlt = (GetKeyState(Window::Key::Menu) & 0x8000) != 0;
-                        imGuiIo.KeySuper = false;
-                        // imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
-                        // imGuiIo.MousePos : filled by WM_MOUSEMOVE events
-                        // imGuiIo.MouseDown : filled by WM_*BUTTON* events
-                        // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
-
-                        if (windowActive)
-                        {
-                            float frameTime = timer.getUpdateTime();
-                            modeChangeTimer -= frameTime;
-                            if (enableInterfaceControl)
-                            {
-                                population->update(0.0f);
-                            }
-                            else
-                            {
-                                population->update(frameTime);
-                                auto rectangle = window->getScreenRectangle();
-                                window->setCursorPosition(Math::Int2(
-                                    int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
-                                    int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
-                            }
-                        }
-                    };
-                });
-
-                stop = false;
-                logic.join();
             }
 
-            void onClose(void)
+            void onCloseRequested(void)
             {
-                close(true);
+                forceClose();
             }
 
-            void onActivate(bool isActive)
+            void onWindowIdle(void)
+            {
+                timer.update();
+
+                // Read keyboard modifiers inputs
+                ImGuiIO& imGuiIo = ImGui::GetIO();
+                //imGuiIo.KeyCtrl = (GetKeyState(Window::Key::Control) & 0x8000) != 0;
+                //imGuiIo.KeyShift = (GetKeyState(Window::Key::Shift) & 0x8000) != 0;
+                //imGuiIo.KeyAlt = (GetKeyState(Window::Key::Menu) & 0x8000) != 0;
+                imGuiIo.KeySuper = false;
+                // imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
+                // imGuiIo.MousePos : filled by WM_MOUSEMOVE events
+                // imGuiIo.MouseDown : filled by WM_*BUTTON* events
+                // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
+
+                if (windowActive)
+                {
+                    float frameTime = timer.getUpdateTime();
+                    modeChangeTimer -= frameTime;
+                    if (enableInterfaceControl)
+                    {
+                        population->update(0.0f);
+                    }
+                    else
+                    {
+                        population->update(frameTime);
+                        auto rectangle = window->getScreenRectangle();
+                        window->setCursorPosition(Math::Int2(
+                            int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
+                            int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
+                    }
+                }
+            }
+
+            void onWindowActivate(bool isActive)
             {
                 windowActive = isActive;
             }
 
-            void onSetCursor(Window::Cursor &cursor)
-            {
-                cursor = Window::Cursor::None;
-            }
-
-            void onSizeChanged(bool isMinimized)
+            void onWindowSizeChanged(bool isMinimized)
             {
                 if (videoDevice && !isMinimized)
                 {
@@ -546,7 +524,7 @@ namespace Gek
                         ImGui::Separator();
                         if (ImGui::MenuItem("Quit"))
                         {
-                            close();
+                            confirmClose();
                         }
 
                         ImGui::EndMenu();
@@ -921,7 +899,7 @@ namespace Gek
                         showSaveModified = false;
                         if (closeOnModified)
                         {
-                            close(true);
+                            forceClose();
                         }
                         else if (loadOnModified)
                         {
@@ -935,7 +913,7 @@ namespace Gek
                         showSaveModified = false;
                         if (closeOnModified)
                         {
-                            close(true);
+                            forceClose();
                         }
                         else if (loadOnModified)
                         {
