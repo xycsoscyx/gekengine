@@ -47,11 +47,6 @@ namespace Gek
     {
         GEK_DECLARE_CONTEXT_USER(Device);
     };
-
-    namespace Direct3D12
-    {
-        GEK_DECLARE_CONTEXT_USER(Device);
-    };
 #else
     namespace X11
     {

@@ -17,6 +17,7 @@
     #define GEK_EXPORT extern "C"
 #endif
 
+#define GEK_CONTEXT_USER_BASE(CLASS) struct CLASS : public ContextRegistration<CLASS>
 #define GEK_CONTEXT_USER(CLASS, ...) struct CLASS : public ContextRegistration<CLASS, __VA_ARGS__>
 
 #define GEK_REGISTER_CONTEXT_USER(CLASS)                                                                                                    \

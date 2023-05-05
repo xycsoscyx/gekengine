@@ -36,8 +36,7 @@ namespace Gek
     void updateMaximumValue(std::atomic<TYPE>& maximum_value, TYPE const& value) noexcept
     {
         TYPE prev_value = maximum_value;
-        while (prev_value < value &&
-            !maximum_value.compare_exchange_weak(prev_value, value))
+        while (prev_value < value && !maximum_value.compare_exchange_weak(prev_value, value))
         {
         }
     }
@@ -798,7 +797,7 @@ namespace Gek
 				}
 			});
 
-			std::atomic<size_t> maximumInstanceCount = 0;
+			std::atomic_size_t maximumInstanceCount = 0;
 			std::for_each(std::execution::par, std::begin(renderList), std::end(renderList), [&](auto &materialPair) -> void
 			{
 				const auto material = materialPair.first;

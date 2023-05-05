@@ -57,13 +57,13 @@ namespace Gek
             255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255
         };
 
-        GEK_CONTEXT_USER(Window)
+        GEK_CONTEXT_USER_BASE(Window)
             , public Gek::Window
         {
         private:
             HWND window = nullptr;
             uint16_t highSurrogate = 0;
-            std::atomic<bool> stop = false;
+            std::atomic_bool stop = false;
 
         public:
             Window(Context *context)
@@ -293,7 +293,7 @@ namespace Gek
                 }
 
                 onCreated();
-                while (!stop)
+                while (!stop.load())
                 {
                     MSG message = { 0 };
                     while (PeekMessage(&message, nullptr, 0U, 0U, PM_REMOVE))
@@ -308,7 +308,7 @@ namespace Gek
 
             void close(void)
             {
-                stop = true;
+                stop.store(true);
             }
 
             void *getWindowData(uint32_t data) const

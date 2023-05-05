@@ -1,5 +1,4 @@
 ﻿#include "GEK/Utility/ContextUser.hpp"
-#include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/Timer.hpp"
 #include "GEK/Utility/FileSystem.hpp"
@@ -22,7 +21,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Core)
+        GEK_CONTEXT_USER_BASE(Core)
             , virtual Engine::Core
         {
         private:
@@ -198,6 +197,8 @@ namespace Gek
             // Window slots
             void onWindowCreated(void)
             {
+                getContext()->log(Gek::Context::Info, "Window Created, Finishing Core Initialization");
+
                 Video::Device::Description deviceDescription;
                 videoDevice = getContext()->createClass<Video::Device>("Default::Device::Video", window.get(), deviceDescription);
 
@@ -289,6 +290,7 @@ namespace Gek
 
                 window->setVisibility(true);
                 setFullScreen(Plugin::Core::getOption("display", "fullScreen", false));
+                getContext()->log(Gek::Context::Info, "Finished Core Initialization");
             }
 
             void onCloseRequested(void)

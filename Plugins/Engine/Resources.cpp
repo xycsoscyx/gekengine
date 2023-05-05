@@ -102,16 +102,6 @@ namespace Gek
     {
         static ShuntingYard shuntingYard;
 
-        template<typename TYPE>
-        void updateMaximumValue(std::atomic<TYPE>& maximum_value, TYPE const& value) noexcept
-        {
-            TYPE prev_value = maximum_value;
-            while (prev_value < value &&
-                !maximum_value.compare_exchange_weak(prev_value, value))
-            {
-            }
-        }
-
         template <typename HANDLE, typename TYPE>
         class ResourceCache
         {
@@ -125,7 +115,7 @@ namespace Gek
 
         private:
             uint32_t validationIdentifier = 0;
-            std::atomic<uint32_t> nextIdentifier = 0;
+            std::atomic_uint32_t nextIdentifier = 0;
 
         protected:
             ThreadPool& loadPool;

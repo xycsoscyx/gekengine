@@ -60,8 +60,8 @@ namespace Gek
 
         std::mutex activeMutex;
         std::condition_variable activeCondition;
-        std::atomic<bool> stop = false;
-        std::atomic<uint32_t> activeCount = 0;
+        std::atomic_bool stop = false;
+        std::atomic_uint32_t activeCount = 0;
 
     private:
         void initializeWorker(void);

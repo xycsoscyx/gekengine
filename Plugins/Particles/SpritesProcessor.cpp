@@ -42,7 +42,7 @@ namespace Gek
 
     namespace Sprites
     {
-        GEK_CONTEXT_USER(Explosion)
+        GEK_CONTEXT_USER_BASE(Explosion)
             , public Plugin::ComponentMixin<Components::Explosion, Edit::Component>
         {
         public:
