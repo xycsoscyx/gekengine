@@ -118,11 +118,9 @@ namespace Gek
             case VK_LCONTROL:      return Window::Key::LeftControl;
             case VK_LSHIFT:      return Window::Key::LeftShift;
             case VK_LMENU:      return Window::Key::LeftAlt;
-            case VK_LWIN:      return Window::Key::LeftGUI;
             case VK_RCONTROL:      return Window::Key::RightControl;
             case VK_RSHIFT:      return Window::Key::RightShift;
             case VK_MENU:      return Window::Key::RightAlt;
-            case VK_RWIN:      return Window::Key::RightGUI;
             };
 
             return Window::Key::Unknown;

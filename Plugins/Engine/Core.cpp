@@ -98,6 +98,8 @@ namespace Gek
                     description.windowName = "GEK Engine Demo";
                     window->create(description);
                 }
+
+                getContext()->log(Gek::Context::Info, "Exiting core application");
             }
 
             ~Core(void)
@@ -167,8 +169,8 @@ namespace Gek
 
             void forceClose(void)
             {
-                window->close();
                 onShutdown.emit();
+                window->close();
             }
 
             void confirmClose(void)

@@ -38,8 +38,9 @@ int main(int argumentCount, char const * const argumentList[])
         context->addDataPath(rootPath / "data");
         context->addDataPath(rootPath.getString());
 
-        context->createClass<Engine::Core>("Engine::Core");
+        Engine::CorePtr core = context->createClass<Engine::Core>("Engine::Core");
     }
 
+    std::cout << "Exiting Application" << std::endl;
     return 0;
 }

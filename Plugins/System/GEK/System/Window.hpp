@@ -94,10 +94,10 @@ namespace Gek
             ScrollLock = 71,
             Pause = 72,
             Insert = 73,
-            Home = 74,
-            PageUp = 75,
             Delete = 76,
+            Home = 74,
             End = 77,
+            PageUp = 75,
             PageDown = 78,
             Right = 79,
             Left = 80,
@@ -122,11 +122,9 @@ namespace Gek
             LeftControl = 224,
             LeftShift = 225,
             LeftAlt = 226,
-            LeftGUI = 227,
             RightControl = 228,
             RightShift = 229,
             RightAlt = 230,
-            RightGUI = 231
         };
 
         enum class Button : uint8_t
