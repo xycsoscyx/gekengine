@@ -152,6 +152,7 @@ namespace Gek
             Right,
             Forward,
             Back,
+            Unknown,
         };
 
         enum class Cursor : uint8_t
