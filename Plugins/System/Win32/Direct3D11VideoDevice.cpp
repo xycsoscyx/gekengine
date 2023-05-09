@@ -23,7 +23,7 @@
 
 namespace Gek
 {
-    namespace DirectX
+    namespace Direct3D11
     {
         // All these lists must match, since the same GEK Format can be used for either textures or buffers
         // The size list must also match
@@ -548,10 +548,7 @@ namespace Gek
 
             return Video::Format::Unknown;
         }
-    }; // namespace DirectX
 
-    namespace Direct3D11
-    {
         template <typename CONVERT, typename SOURCE>
         auto getObject(SOURCE *source)
         {
@@ -1495,7 +1492,7 @@ namespace Gek
                     assert(destination);
                     assert(source);
 
-                    d3dDeviceContext->ResolveSubresource(getObject<Resource>(destination), 0, getObject<Resource>(source), 0, DirectX::TextureFormatList[static_cast<uint8_t>(destination->getDescription().format)]);
+                    d3dDeviceContext->ResolveSubresource(getObject<Resource>(destination), 0, getObject<Resource>(source), 0, Direct3D11::TextureFormatList[static_cast<uint8_t>(destination->getDescription().format)]);
                 }
 
                 void clearState(void)
@@ -1630,7 +1627,7 @@ namespace Gek
                     assert(d3dDeviceContext);
                     assert(indexBuffer);
 
-                    DXGI_FORMAT format = DirectX::BufferFormatList[static_cast<uint8_t>(indexBuffer->getDescription().format)];
+                    DXGI_FORMAT format = Direct3D11::BufferFormatList[static_cast<uint8_t>(indexBuffer->getDescription().format)];
                     d3dDeviceContext->IASetIndexBuffer(getObject<Buffer>(indexBuffer), format, offset);
                 }
 
@@ -1658,7 +1655,7 @@ namespace Gek
                 {
                     assert(d3dDeviceContext);
 
-                    d3dDeviceContext->IASetPrimitiveTopology(DirectX::TopologList[static_cast<uint8_t>(primitiveType)]);
+                    d3dDeviceContext->IASetPrimitiveTopology(Direct3D11::TopologList[static_cast<uint8_t>(primitiveType)]);
                 }
 
                 void drawPrimitive(uint32_t vertexCount, uint32_t firstVertex)
@@ -1763,7 +1760,7 @@ namespace Gek
                 DXGI_SWAP_CHAIN_DESC1 swapChainDescription;
                 swapChainDescription.Width = 0;
                 swapChainDescription.Height = 0;
-                swapChainDescription.Format = DirectX::TextureFormatList[static_cast<uint8_t>(deviceDescription.displayFormat)];
+                swapChainDescription.Format = Direct3D11::TextureFormatList[static_cast<uint8_t>(deviceDescription.displayFormat)];
                 swapChainDescription.Stereo = false;
                 swapChainDescription.SampleDesc.Count = deviceDescription.sampleCount;
                 swapChainDescription.SampleDesc.Quality = deviceDescription.sampleQuality;
@@ -1822,13 +1819,13 @@ namespace Gek
                 if (dxgiOutput)
                 {
                     uint32_t modeCount = 0;
-                    dxgiOutput->GetDisplayModeList(DirectX::TextureFormatList[static_cast<uint8_t>(format)], 0, &modeCount, nullptr);
+                    dxgiOutput->GetDisplayModeList(Direct3D11::TextureFormatList[static_cast<uint8_t>(format)], 0, &modeCount, nullptr);
 
                     std::vector<DXGI_MODE_DESC> dxgiDisplayModeList(modeCount);
-                    dxgiOutput->GetDisplayModeList(DirectX::TextureFormatList[static_cast<uint8_t>(format)], 0, &modeCount, dxgiDisplayModeList.data());
+                    dxgiOutput->GetDisplayModeList(Direct3D11::TextureFormatList[static_cast<uint8_t>(format)], 0, &modeCount, dxgiDisplayModeList.data());
                     for (auto const &dxgiDisplayMode : dxgiDisplayModeList)
                     {
-                        Video::DisplayMode displayMode(dxgiDisplayMode.Width, dxgiDisplayMode.Height, DirectX::GetFormat(dxgiDisplayMode.Format));
+                        Video::DisplayMode displayMode(dxgiDisplayMode.Width, dxgiDisplayMode.Height, Direct3D11::GetFormat(dxgiDisplayMode.Format));
                         displayMode.refreshRate.numerator = dxgiDisplayMode.RefreshRate.Numerator;
                         displayMode.refreshRate.denominator = dxgiDisplayMode.RefreshRate.Denominator;
                         if (![&](void) -> bool
@@ -1911,7 +1908,7 @@ namespace Gek
                 description.Height = displayMode.height;
                 description.RefreshRate.Numerator = displayMode.refreshRate.numerator;
                 description.RefreshRate.Denominator = displayMode.refreshRate.denominator;
-                description.Format = DirectX::TextureFormatList[static_cast<uint8_t>(displayMode.format)];
+                description.Format = Direct3D11::TextureFormatList[static_cast<uint8_t>(displayMode.format)];
                 description.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
                 description.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
                 HRESULT resultValue = dxgiSwapChain->ResizeTarget(&description);
@@ -1970,7 +1967,7 @@ namespace Gek
                         Video::Texture::Description description;
                         description.width = textureDescription.Width;
                         description.height = textureDescription.Height;
-                        description.format = DirectX::GetFormat(textureDescription.Format);
+                        description.format = Direct3D11::GetFormat(textureDescription.Format);
                         auto d3dRenderTargetResource = CComQIPtr<ID3D11Resource>(d3dRenderTarget);
                         backBuffer = std::make_unique<TargetViewTexture>(d3dRenderTargetResource, d3dRenderTargetView, d3dShaderResourceView, description);
                     }
@@ -2006,7 +2003,7 @@ namespace Gek
                 assert(d3dDevice);
 
                 D3D11_QUERY_DESC description;
-                description.Query = DirectX::QueryList[static_cast<uint8_t>(type)];
+                description.Query = Direct3D11::QueryList[static_cast<uint8_t>(type)];
                 description.MiscFlags = 0;
 
                 CComPtr<ID3D11Query> d3dQuery;
@@ -2033,8 +2030,8 @@ namespace Gek
                 rasterizerDescription.ScissorEnable = description.scissorEnable;
                 rasterizerDescription.MultisampleEnable = description.multisampleEnable;
                 rasterizerDescription.AntialiasedLineEnable = description.antialiasedLineEnable;
-                rasterizerDescription.FillMode = DirectX::FillModeList[static_cast<uint8_t>(description.fillMode)];
-                rasterizerDescription.CullMode = DirectX::CullModeList[static_cast<uint8_t>(description.cullMode)];
+                rasterizerDescription.FillMode = Direct3D11::FillModeList[static_cast<uint8_t>(description.fillMode)];
+                rasterizerDescription.CullMode = Direct3D11::CullModeList[static_cast<uint8_t>(description.cullMode)];
 
                 CComPtr<ID3D11RasterizerState> d3dStates;
                 HRESULT resultValue = d3dDevice->CreateRasterizerState(&rasterizerDescription, &d3dStates);
@@ -2053,19 +2050,19 @@ namespace Gek
 
                 D3D11_DEPTH_STENCIL_DESC depthStencilDescription;
                 depthStencilDescription.DepthEnable = description.enable;
-                depthStencilDescription.DepthFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(description.comparisonFunction)];
+                depthStencilDescription.DepthFunc = Direct3D11::ComparisonFunctionList[static_cast<uint8_t>(description.comparisonFunction)];
                 depthStencilDescription.StencilEnable = description.stencilEnable;
                 depthStencilDescription.StencilReadMask = description.stencilReadMask;
                 depthStencilDescription.StencilWriteMask = description.stencilWriteMask;
-                depthStencilDescription.FrontFace.StencilFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(description.stencilFrontState.failOperation)];
-                depthStencilDescription.FrontFace.StencilDepthFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(description.stencilFrontState.depthFailOperation)];
-                depthStencilDescription.FrontFace.StencilPassOp = DirectX::StencilOperationList[static_cast<uint8_t>(description.stencilFrontState.passOperation)];
-                depthStencilDescription.FrontFace.StencilFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(description.stencilFrontState.comparisonFunction)];
-                depthStencilDescription.BackFace.StencilFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(description.stencilBackState.failOperation)];
-                depthStencilDescription.BackFace.StencilDepthFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(description.stencilBackState.depthFailOperation)];
-                depthStencilDescription.BackFace.StencilPassOp = DirectX::StencilOperationList[static_cast<uint8_t>(description.stencilBackState.passOperation)];
-                depthStencilDescription.BackFace.StencilFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(description.stencilBackState.comparisonFunction)];
-                depthStencilDescription.DepthWriteMask = DirectX::DepthWriteMaskList[static_cast<uint8_t>(description.writeMask)];
+                depthStencilDescription.FrontFace.StencilFailOp = Direct3D11::StencilOperationList[static_cast<uint8_t>(description.stencilFrontState.failOperation)];
+                depthStencilDescription.FrontFace.StencilDepthFailOp = Direct3D11::StencilOperationList[static_cast<uint8_t>(description.stencilFrontState.depthFailOperation)];
+                depthStencilDescription.FrontFace.StencilPassOp = Direct3D11::StencilOperationList[static_cast<uint8_t>(description.stencilFrontState.passOperation)];
+                depthStencilDescription.FrontFace.StencilFunc = Direct3D11::ComparisonFunctionList[static_cast<uint8_t>(description.stencilFrontState.comparisonFunction)];
+                depthStencilDescription.BackFace.StencilFailOp = Direct3D11::StencilOperationList[static_cast<uint8_t>(description.stencilBackState.failOperation)];
+                depthStencilDescription.BackFace.StencilDepthFailOp = Direct3D11::StencilOperationList[static_cast<uint8_t>(description.stencilBackState.depthFailOperation)];
+                depthStencilDescription.BackFace.StencilPassOp = Direct3D11::StencilOperationList[static_cast<uint8_t>(description.stencilBackState.passOperation)];
+                depthStencilDescription.BackFace.StencilFunc = Direct3D11::ComparisonFunctionList[static_cast<uint8_t>(description.stencilBackState.comparisonFunction)];
+                depthStencilDescription.DepthWriteMask = Direct3D11::DepthWriteMaskList[static_cast<uint8_t>(description.writeMask)];
 
                 CComPtr<ID3D11DepthStencilState> d3dStates;
                 HRESULT resultValue = d3dDevice->CreateDepthStencilState(&depthStencilDescription, &d3dStates);
@@ -2088,12 +2085,12 @@ namespace Gek
                 for (uint32_t renderTarget = 0; renderTarget < 8; ++renderTarget)
                 {
                     blendDescription.RenderTarget[renderTarget].BlendEnable = description.targetStates[renderTarget].enable;
-                    blendDescription.RenderTarget[renderTarget].SrcBlend = DirectX::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].colorSource)];
-                    blendDescription.RenderTarget[renderTarget].DestBlend = DirectX::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].colorDestination)];
-                    blendDescription.RenderTarget[renderTarget].BlendOp = DirectX::BlendOperationList[static_cast<uint8_t>(description.targetStates[renderTarget].colorOperation)];
-                    blendDescription.RenderTarget[renderTarget].SrcBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].alphaSource)];
-                    blendDescription.RenderTarget[renderTarget].DestBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].alphaDestination)];
-                    blendDescription.RenderTarget[renderTarget].BlendOpAlpha = DirectX::BlendOperationList[static_cast<uint8_t>(description.targetStates[renderTarget].alphaOperation)];
+                    blendDescription.RenderTarget[renderTarget].SrcBlend = Direct3D11::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].colorSource)];
+                    blendDescription.RenderTarget[renderTarget].DestBlend = Direct3D11::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].colorDestination)];
+                    blendDescription.RenderTarget[renderTarget].BlendOp = Direct3D11::BlendOperationList[static_cast<uint8_t>(description.targetStates[renderTarget].colorOperation)];
+                    blendDescription.RenderTarget[renderTarget].SrcBlendAlpha = Direct3D11::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].alphaSource)];
+                    blendDescription.RenderTarget[renderTarget].DestBlendAlpha = Direct3D11::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].alphaDestination)];
+                    blendDescription.RenderTarget[renderTarget].BlendOpAlpha = Direct3D11::BlendOperationList[static_cast<uint8_t>(description.targetStates[renderTarget].alphaOperation)];
                     blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask = 0;
                     if (description.targetStates[renderTarget].writeMask & Video::BlendState::Mask::R)
                     {
@@ -2132,19 +2129,19 @@ namespace Gek
                 assert(d3dDevice);
 
                 D3D11_SAMPLER_DESC samplerDescription;
-                samplerDescription.AddressU = DirectX::AddressModeList[static_cast<uint8_t>(description.addressModeU)];
-                samplerDescription.AddressV = DirectX::AddressModeList[static_cast<uint8_t>(description.addressModeV)];
-                samplerDescription.AddressW = DirectX::AddressModeList[static_cast<uint8_t>(description.addressModeW)];
+                samplerDescription.AddressU = Direct3D11::AddressModeList[static_cast<uint8_t>(description.addressModeU)];
+                samplerDescription.AddressV = Direct3D11::AddressModeList[static_cast<uint8_t>(description.addressModeV)];
+                samplerDescription.AddressW = Direct3D11::AddressModeList[static_cast<uint8_t>(description.addressModeW)];
                 samplerDescription.MipLODBias = description.mipLevelBias;
                 samplerDescription.MaxAnisotropy = description.maximumAnisotropy;
-                samplerDescription.ComparisonFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(description.comparisonFunction)];
+                samplerDescription.ComparisonFunc = Direct3D11::ComparisonFunctionList[static_cast<uint8_t>(description.comparisonFunction)];
                 samplerDescription.BorderColor[0] = description.borderColor.r;
                 samplerDescription.BorderColor[1] = description.borderColor.g;
                 samplerDescription.BorderColor[2] = description.borderColor.b;
                 samplerDescription.BorderColor[3] = description.borderColor.a;
                 samplerDescription.MinLOD = description.minimumMipLevel;
                 samplerDescription.MaxLOD = description.maximumMipLevel;
-                samplerDescription.Filter = DirectX::FilterList[static_cast<uint8_t>(description.filterMode)];
+                samplerDescription.Filter = Direct3D11::FilterList[static_cast<uint8_t>(description.filterMode)];
 
                 CComPtr<ID3D11SamplerState> d3dStates;
                 HRESULT resultValue = d3dDevice->CreateSamplerState(&samplerDescription, &d3dStates);
@@ -2175,7 +2172,7 @@ namespace Gek
                         return nullptr;
                     }
 
-                    stride = DirectX::FormatStrideList[static_cast<uint8_t>(description.format)];
+                    stride = Direct3D11::FormatStrideList[static_cast<uint8_t>(description.format)];
                 }
                 else if (description.stride == 0)
                 {
@@ -2275,7 +2272,7 @@ namespace Gek
                 if (description.flags & Video::Buffer::Flags::Resource)
                 {
                     D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
-                    viewDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(description.format)];
+                    viewDescription.Format = Direct3D11::BufferFormatList[static_cast<uint8_t>(description.format)];
                     viewDescription.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
                     viewDescription.Buffer.FirstElement = 0;
                     viewDescription.Buffer.NumElements = description.count;
@@ -2291,7 +2288,7 @@ namespace Gek
                 if (description.flags & Video::Buffer::Flags::UnorderedAccess)
                 {
                     D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                    viewDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(description.format)];
+                    viewDescription.Format = Direct3D11::BufferFormatList[static_cast<uint8_t>(description.format)];
                     viewDescription.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
                     viewDescription.Buffer.FirstElement = 0;
                     viewDescription.Buffer.NumElements = description.count;
@@ -2312,7 +2309,7 @@ namespace Gek
             {
                 assert(d3dDeviceContext);
 
-                D3D11_MAP d3dMapping = DirectX::MapList[static_cast<uint8_t>(mapping)];
+                D3D11_MAP d3dMapping = Direct3D11::MapList[static_cast<uint8_t>(mapping)];
 
                 D3D11_MAPPED_SUBRESOURCE mappedSubResource;
                 mappedSubResource.pData = nullptr;
@@ -2375,7 +2372,7 @@ namespace Gek
 
             std::string_view const getSemanticMoniker(Video::InputElement::Semantic semantic)
             {
-                return DirectX::SemanticNameList[static_cast<uint8_t>(semantic)];
+                return Direct3D11::SemanticNameList[static_cast<uint8_t>(semantic)];
             }
 
             Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, Video::Program::Information const &information)
@@ -2391,9 +2388,9 @@ namespace Gek
                 for (auto const &element : elementList)
                 {
                     D3D11_INPUT_ELEMENT_DESC elementDesc;
-                    elementDesc.Format = DirectX::BufferFormatList[static_cast<uint8_t>(element.format)];
+                    elementDesc.Format = Direct3D11::BufferFormatList[static_cast<uint8_t>(element.format)];
                     elementDesc.AlignedByteOffset = (element.alignedByteOffset == Video::InputElement::AppendAligned ? D3D11_APPEND_ALIGNED_ELEMENT : element.alignedByteOffset);
-                    elementDesc.SemanticName = DirectX::SemanticNameList[static_cast<uint8_t>(element.semantic)].data();
+                    elementDesc.SemanticName = Direct3D11::SemanticNameList[static_cast<uint8_t>(element.semantic)].data();
                     elementDesc.SemanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)]++;
                     elementDesc.InputSlot = element.sourceIndex;
                     switch (element.source)
@@ -2613,7 +2610,7 @@ namespace Gek
 
                 D3D11_SUBRESOURCE_DATA resourceData;
                 resourceData.pSysMem = data;
-                resourceData.SysMemPitch = (DirectX::FormatStrideList[static_cast<uint8_t>(description.format)] * description.width);
+                resourceData.SysMemPitch = (Direct3D11::FormatStrideList[static_cast<uint8_t>(description.format)] * description.width);
                 resourceData.SysMemSlicePitch = (description.depth == 1 ? 0 : (resourceData.SysMemPitch * description.height));
 
                 CComQIPtr<ID3D11Resource> d3dResource;
@@ -2623,7 +2620,7 @@ namespace Gek
                     textureDescription.Width = description.width;
                     textureDescription.Height = description.height;
                     textureDescription.MipLevels = description.mipMapCount;
-                    textureDescription.Format = DirectX::TextureFormatList[static_cast<uint8_t>(description.format)];
+                    textureDescription.Format = Direct3D11::TextureFormatList[static_cast<uint8_t>(description.format)];
                     textureDescription.ArraySize = 1;
                     textureDescription.SampleDesc.Count = description.sampleCount;
                     textureDescription.SampleDesc.Quality = description.sampleQuality;
@@ -2656,7 +2653,7 @@ namespace Gek
                     textureDescription.Height = description.height;
                     textureDescription.Depth = description.depth;
                     textureDescription.MipLevels = description.mipMapCount;
-                    textureDescription.Format = DirectX::TextureFormatList[static_cast<uint8_t>(description.format)];
+                    textureDescription.Format = Direct3D11::TextureFormatList[static_cast<uint8_t>(description.format)];
                     textureDescription.BindFlags = bindFlags;
                     textureDescription.CPUAccessFlags = 0;
                     textureDescription.MiscFlags = (description.mipMapCount == 1 ? 0 : D3D11_RESOURCE_MISC_GENERATE_MIPS);
@@ -2690,7 +2687,7 @@ namespace Gek
                 if (description.flags & Video::Texture::Flags::Resource)
                 {
                     D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
-                    viewDescription.Format = DirectX::ViewFormatList[static_cast<uint8_t>(description.format)];
+                    viewDescription.Format = Direct3D11::ViewFormatList[static_cast<uint8_t>(description.format)];
                     if (description.depth == 1)
                     {
                         viewDescription.ViewDimension = (description.sampleCount > 1 ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D);
@@ -2716,7 +2713,7 @@ namespace Gek
                 if (description.flags & Video::Texture::Flags::UnorderedAccess)
                 {
                     D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                    viewDescription.Format = DirectX::ViewFormatList[static_cast<uint8_t>(description.format)];
+                    viewDescription.Format = Direct3D11::ViewFormatList[static_cast<uint8_t>(description.format)];
                     if (description.depth == 1)
                     {
                         viewDescription.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
@@ -2741,7 +2738,7 @@ namespace Gek
                 if (description.flags & Video::Texture::Flags::RenderTarget)
                 {
                     D3D11_RENDER_TARGET_VIEW_DESC renderViewDescription;
-                    renderViewDescription.Format = DirectX::ViewFormatList[static_cast<uint8_t>(description.format)];
+                    renderViewDescription.Format = Direct3D11::ViewFormatList[static_cast<uint8_t>(description.format)];
                     if (description.depth == 1)
                     {
                         renderViewDescription.ViewDimension = (description.sampleCount > 1 ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D);
@@ -2768,7 +2765,7 @@ namespace Gek
                 else if (description.flags & Video::Texture::Flags::DepthTarget)
                 {
                     D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilDescription;
-                    depthStencilDescription.Format = DirectX::DepthFormatList[static_cast<uint8_t>(description.format)];
+                    depthStencilDescription.Format = Direct3D11::DepthFormatList[static_cast<uint8_t>(description.format)];
                     depthStencilDescription.ViewDimension = (description.sampleCount > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D);
                     depthStencilDescription.Flags = 0;
                     depthStencilDescription.Texture2D.MipSlice = 0;
@@ -2863,7 +2860,7 @@ namespace Gek
                 description.width = image.GetMetadata().width;
                 description.height = image.GetMetadata().height;
                 description.depth = image.GetMetadata().depth;
-                description.format = DirectX::GetFormat(image.GetMetadata().format);
+                description.format = Direct3D11::GetFormat(image.GetMetadata().format);
                 description.mipMapCount = image.GetMetadata().mipLevels;
                 return std::make_unique<ViewTexture>(d3dResource, d3dShaderResourceView, description);
             }
@@ -2905,7 +2902,7 @@ namespace Gek
                 description.width = image.GetMetadata().width;
                 description.height = image.GetMetadata().height;
                 description.depth = image.GetMetadata().depth;
-                description.format = DirectX::GetFormat(image.GetMetadata().format);
+                description.format = Direct3D11::GetFormat(image.GetMetadata().format);
                 description.mipMapCount = image.GetMetadata().mipLevels;
                 return std::make_unique<ViewTexture>(d3dResource, d3dShaderResourceView, description);
             }
@@ -2956,7 +2953,7 @@ namespace Gek
                 description.height = metadata.height;
                 description.depth = metadata.depth;
                 description.mipMapCount = metadata.mipLevels;
-                description.format = DirectX::GetFormat(metadata.format);
+                description.format = Direct3D11::GetFormat(metadata.format);
                 return description;
             }
 

@@ -62,23 +62,13 @@ namespace Gek
         {
         private:
             HWND window = nullptr;
-            HCURSOR cursorList[7];
             uint16_t highSurrogate = 0;
 
         public:
             Window(Context *context, Window::Description description)
                 : ContextRegistration(context)
-                , cursorList{
-                LoadCursor(nullptr, IDC_ARROW),
-                LoadCursor(nullptr, IDC_IBEAM),
-                LoadCursor(nullptr, IDC_HAND),
-                LoadCursor(nullptr, IDC_SIZENS),
-                LoadCursor(nullptr, IDC_SIZEWE),
-                LoadCursor(nullptr, IDC_SIZENESW),
-                LoadCursor(nullptr, IDC_SIZENWSE),
-            }
             {
-                WNDCLASSEX windowClass;
+                WNDCLASSEXA windowClass;
                 windowClass.cbSize = sizeof(windowClass);
                 windowClass.style = CS_HREDRAW | CS_VREDRAW | (description.hasOwnContext ? CS_OWNDC : 0);
                 windowClass.lpfnWndProc = [](HWND handle, uint32_t message, WPARAM wParam, LPARAM lParam) -> LRESULT
@@ -91,59 +81,6 @@ namespace Gek
                         case WM_SETCURSOR:
                             if (LOWORD(lParam) == HTCLIENT)
                             {
-                                Cursor cursor = Cursor::None;
-                                window->onSetCursor(cursor);
-
-                                if (cursor == Cursor::None)
-                                {
-                                    auto cursor = window->getCursorPosition();
-                                    auto clientScreen = window->getClientRectangle(true);
-                                    if (cursor.x >= clientScreen.minimum.x &&
-                                        cursor.y >= clientScreen.minimum.y &&
-                                        cursor.x < clientScreen.maximum.x &&
-                                        cursor.y < clientScreen.maximum.y)
-                                    {
-                                        ShowCursor(false);
-                                        SetCursor(nullptr);
-                                        return TRUE;
-                                    }
-                                }
-                                else
-                                {
-                                    ShowCursor(true);
-                                    switch (cursor)
-                                    {
-                                    case Cursor::Arrow:
-                                        SetCursor(window->cursorList[0]);
-                                        break;
-
-                                    case Cursor::Text:
-                                        SetCursor(window->cursorList[1]);
-                                        break;
-
-                                    case Cursor::Hand:
-                                        SetCursor(window->cursorList[2]);
-                                        break;
-
-                                    case Cursor::SizeNS:
-                                        SetCursor(window->cursorList[3]);
-                                        break;
-
-                                    case Cursor::SizeEW:
-                                        SetCursor(window->cursorList[4]);
-                                        break;
-
-                                    case Cursor::SizeNESW:
-                                        SetCursor(window->cursorList[5]);
-                                        break;
-
-                                    case Cursor::SizeNWSE:
-                                        SetCursor(window->cursorList[6]);
-                                        break;
-                                    };
-
-                                    return TRUE;
-                                }
                             }
 
                             break;
@@ -299,12 +236,11 @@ namespace Gek
                 windowClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
                 windowClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
                 windowClass.lpszMenuName = nullptr;
-                auto wideDescription(String::Widen(description.className));
-                windowClass.lpszClassName = wideDescription.data();
+                windowClass.lpszClassName = description.className.data();
                 ATOM classAtom = RegisterClassEx(&windowClass);
                 if (!classAtom)
                 {
-                    throw runtime_error("Unable to register window class");
+                    throw std::runtime_error("Unable to register window class");
                 }
 
                 auto windowFlags = (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX);
@@ -318,10 +254,10 @@ namespace Gek
                 AdjustWindowRect(&clientRectangle, WS_OVERLAPPEDWINDOW, false);
                 int windowWidth = (clientRectangle.right - clientRectangle.left);
                 int windowHeight = (clientRectangle.bottom - clientRectangle.top);
-                window = CreateWindow(wideDescription.data(), String::Widen(description.windowName).data(), windowFlags, CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
+                window = CreateWindowA(description.className.data(), description.windowName.data(), windowFlags, CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
                 if (window == nullptr)
                 {
-                    throw runtime_error("Unable to create window");
+                    throw std::runtime_error("Unable to create window");
                 }
 
                 SetWindowLongPtr(window, GWLP_USERDATA, LONG_PTR(this));

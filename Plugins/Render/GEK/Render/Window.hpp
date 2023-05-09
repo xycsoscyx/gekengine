@@ -146,18 +146,6 @@ namespace Gek
             Right,
         };
 
-        enum class Cursor
-        {
-            None = 0,
-            Arrow,
-            Text,
-            Hand,
-            SizeNS,
-            SizeEW,
-            SizeNESW,
-            SizeNWSE,
-        };
-
         struct Description
         {
             std::string className;
@@ -179,7 +167,6 @@ namespace Gek
         wink::signal<wink::slot<void(Key key, bool state)>> onKeyPressed;
         wink::signal<wink::slot<void(uint32_t character)>> onCharacter;
 
-        wink::signal<wink::slot<void(Cursor &cursor)>> onSetCursor;
         wink::signal<wink::slot<void(Button button, bool state)>> onMouseClicked;
         wink::signal<wink::slot<void(float numberOfRotations)>> onMouseWheel;
         wink::signal<wink::slot<void(int32_t xPosition, int32_t yPosition)>> onMousePosition;

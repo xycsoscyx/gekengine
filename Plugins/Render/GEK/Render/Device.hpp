@@ -191,149 +191,241 @@ namespace Gek
 			}
         };
 
-        struct RasterizerStateInformation
+        GEK_INTERFACE(Resource)
         {
-			enum class FillMode : uint8_t
-			{
-				WireFrame = 0,
-				Solid,
-			};
+            virtual ~Resource(void) = default;
 
-			enum class CullMode : uint8_t
-			{
-				None = 0,
-				Front,
-				Back,
-			};
-
-            FillMode fillMode = FillMode::Solid;
-            CullMode cullMode = CullMode::Back;
-            bool frontCounterClockwise = false;
-            uint32_t depthBias = 0;
-            float depthBiasClamp = 0.0f;
-            float slopeScaledDepthBias = 0.0f;
-            bool depthClipEnable = true;
-            bool scissorEnable = false;
-            bool multisampleEnable = false;
-            bool antialiasedLineEnable = false;
-
-            void load(JSON const &object);
-            size_t getHash(void) const;
+            virtual std::string_view getName(void) const = 0;
         };
 
-        struct DepthStateInformation
+        GEK_INTERFACE(PipelineState)
+            : virtual public Resource
         {
-			enum class Write : uint8_t
-			{
-				Zero = 0,
-				All,
-			};
-
-			struct StencilStateInformation
+            struct RasterizerState
             {
-				enum class Operation : uint8_t
-				{
-					Zero = 0,
-					Keep,
-					Replace,
-					Invert,
-					Increase,
-					IncreaseSaturated,
-					Decrease,
-					DecreaseSaturated,
-				};
-
-                Operation failOperation = Operation::Keep;
-                Operation depthFailOperation = Operation::Keep;
-                Operation passOperation = Operation::Keep;
-                ComparisonFunction comparisonFunction = ComparisonFunction::Always;
-
-                void load(JSON const &object);
-                size_t getHash(void) const;
-            };
-
-            bool enable = false;
-            Write writeMask = Write::All;
-            ComparisonFunction comparisonFunction = ComparisonFunction::Always;
-            bool stencilEnable = false;
-            uint8_t stencilReadMask = 0xFF;
-            uint8_t stencilWriteMask = 0xFF;
-            StencilStateInformation stencilFrontState;
-            StencilStateInformation stencilBackState;
-
-            void load(JSON const &object);
-            size_t getHash(void) const;
-        };
-
-        struct BlendStateInformation
-        {
-            enum class Source : uint8_t
-            {
-                Zero = 0,
-                One,
-                BlendFactor,
-                InverseBlendFactor,
-                SourceColor,
-                InverseSourceColor,
-                SourceAlpha,
-                InverseSourceAlpha,
-                SourceAlphaSaturated,
-                DestinationColor,
-                InverseDestinationColor,
-                DestinationAlpha,
-                InverseDestinationAlpha,
-                SecondarySourceColor,
-                InverseSecondarySourceColor,
-                SecondarySourceAlpha,
-                InverseSecondarySourceAlpha,
-            };
-
-            enum class Operation : uint8_t
-            {
-                Add = 0,
-                Subtract,
-                ReverseSubtract,
-                Minimum,
-                Maximum,
-            };
-
-            struct Mask
-            {
-                enum
+                enum class FillMode : uint8_t
                 {
-                    R = 1 << 0,
-                    G = 1 << 1,
-                    B = 1 << 2,
-                    A = 1 << 3,
-                    RGB = (R | G | B),
-                    RGBA = (R | G | B | A),
+                    WireFrame = 0,
+                    Solid,
                 };
-            }; // struct Mask
 
-            struct TargetStateInformation
-            {
-                bool enable = false;
-                Source colorSource = Source::One;
-                Source colorDestination = Source::One;
-                Operation colorOperation = Operation::Add;
-                Source alphaSource = Source::One;
-                Source alphaDestination = Source::One;
-                Operation alphaOperation = Operation::Add;
-                uint8_t writeMask = Mask::RGBA;
+                enum class CullMode : uint8_t
+                {
+                    None = 0,
+                    Front,
+                    Back,
+                };
 
-                void load(JSON const &object);
-                size_t getHash(void) const;
+                struct Description
+                {
+                    FillMode fillMode = FillMode::Solid;
+                    CullMode cullMode = CullMode::Back;
+                    bool frontCounterClockwise = false;
+                    uint32_t depthBias = 0;
+                    float depthBiasClamp = 0.0f;
+                    float slopeScaledDepthBias = 0.0f;
+                    bool depthClipEnable = true;
+                    bool scissorEnable = false;
+                    bool multisampleEnable = false;
+                    bool antialiasedLineEnable = false;
+
+                    void load(JSON::Object const& object);
+                };
             };
 
-            bool alphaToCoverage = false;
-            bool unifiedBlendState = true;
-            std::array<TargetStateInformation, 8> targetStateList;
+            struct DepthState
+            {
+                enum class Write : uint8_t
+                {
+                    Zero = 0,
+                    All,
+                };
 
-            void load(JSON const &object);
-            size_t getHash(void) const;
+                struct StencilState
+                {
+                    enum class Operation : uint8_t
+                    {
+                        Zero = 0,
+                        Keep,
+                        Replace,
+                        Invert,
+                        Increase,
+                        IncreaseSaturated,
+                        Decrease,
+                        DecreaseSaturated,
+                    };
+
+                    struct Description
+                    {
+                        Operation failOperation = Operation::Keep;
+                        Operation depthFailOperation = Operation::Keep;
+                        Operation passOperation = Operation::Keep;
+                        ComparisonFunction comparisonFunction = ComparisonFunction::Always;
+
+                        void load(JSON::Object const& object);
+                    };
+                };
+
+                struct Description
+                {
+                    bool enable = false;
+                    Write writeMask = Write::All;
+                    ComparisonFunction comparisonFunction = ComparisonFunction::Always;
+                    bool stencilEnable = false;
+                    uint8_t stencilReadMask = 0xFF;
+                    uint8_t stencilWriteMask = 0xFF;
+                    StencilState::Description stencilFrontState;
+                    StencilState::Description stencilBackState;
+
+                    void load(JSON::Object const& object);
+                };
+            };
+
+            struct BlendState
+            {
+                enum class Source : uint8_t
+                {
+                    Zero = 0,
+                    One,
+                    BlendFactor,
+                    InverseBlendFactor,
+                    SourceColor,
+                    InverseSourceColor,
+                    SourceAlpha,
+                    InverseSourceAlpha,
+                    SourceAlphaSaturated,
+                    DestinationColor,
+                    InverseDestinationColor,
+                    DestinationAlpha,
+                    InverseDestinationAlpha,
+                    SecondarySourceColor,
+                    InverseSecondarySourceColor,
+                    SecondarySourceAlpha,
+                    InverseSecondarySourceAlpha,
+                };
+
+                enum class Operation : uint8_t
+                {
+                    Add = 0,
+                    Subtract,
+                    ReverseSubtract,
+                    Minimum,
+                    Maximum,
+                };
+
+                struct Mask
+                {
+                    enum
+                    {
+                        R = 1 << 0,
+                        G = 1 << 1,
+                        B = 1 << 2,
+                        A = 1 << 3,
+                        RGB = (R | G | B),
+                        RGBA = (R | G | B | A),
+                    };
+                }; // struct Mask
+
+                struct TargetState
+                {
+                    struct Description
+                    {
+                        bool enable = false;
+                        Source colorSource = Source::One;
+                        Source colorDestination = Source::One;
+                        Operation colorOperation = Operation::Add;
+                        Source alphaSource = Source::One;
+                        Source alphaDestination = Source::One;
+                        Operation alphaOperation = Operation::Add;
+                        uint8_t writeMask = Mask::RGBA;
+
+                        void load(JSON::Object const& object);
+                    };
+                };
+
+                struct Description
+                {
+                    bool alphaToCoverage = false;
+                    bool unifiedBlendState = true;
+                    std::array<TargetState::Description, 8> targetStateList;
+
+                    void load(JSON::Object const& object);
+                };
+            };
+
+            struct RenderTarget
+            {
+                std::string name;
+                Format format = Format::Unknown;
+            };
+
+            struct ElementDeclaration
+            {
+                enum class Semantic : uint8_t
+                {
+                    Position = 0,
+                    TexCoord,
+                    Tangent,
+                    BiTangent,
+                    Normal,
+                    Color,
+                    Count,
+                };
+
+                static Semantic GetSemantic(std::string const& semantic);
+
+                std::string name;
+                Format format = Format::Unknown;
+                Semantic semantic = Semantic::TexCoord;
+            };
+
+            struct VertexDeclaration
+                : public ElementDeclaration
+            {
+                enum class Source : uint8_t
+                {
+                    Vertex = 0,
+                    Instance,
+                };
+
+                static constexpr uint32_t AppendAligned = 0xFFFFFFFF;
+
+                static Source GetSource(std::string const& elementSource);
+
+                Source source = Source::Vertex;
+                uint32_t sourceIndex = 0;
+                uint32_t alignedByteOffset = AppendAligned;
+            };
+
+            struct Description
+            {
+                std::string name;
+
+                BlendState::Description blendStateDescription;
+                uint32_t sampleMask = 0xFFFFFFFF;
+
+                RasterizerState::Description rasterizerStateDescription;
+
+                DepthState::Description depthStateDescription;
+
+                PrimitiveType primitiveType = PrimitiveType::TriangleList;
+
+                std::vector<VertexDeclaration> vertexDeclaration;
+                std::vector<ElementDeclaration> pixelDeclaration;
+                std::string vertexShader, vertexShaderEntryFunction;
+                std::string pixelShader, pixelShaderEntryFunction;
+
+                std::vector<RenderTarget> renderTargetList;
+                Format depthTargetFormat = Format::Unknown;
+            };
+
+            virtual ~PipelineState(void) = default;
+
+            virtual Description const& getDescription(void) const = 0;
         };
 
-        struct SamplerStateInformation
+        GEK_INTERFACE(SamplerState)
+            : virtual public Resource
         {
             enum class FilterMode : uint8_t
             {
@@ -375,102 +467,40 @@ namespace Gek
                 MaximumAnisotropic,
             };
 
-			enum class AddressMode : uint8_t
-			{
-				Clamp = 0,
-				Wrap,
-				Mirror,
-				MirrorOnce,
-				Border,
-			};
-
-			FilterMode filterMode = FilterMode::MinificationMagnificationMipMapPoint;
-            AddressMode addressModeU = AddressMode::Clamp;
-            AddressMode addressModeV = AddressMode::Clamp;
-            AddressMode addressModeW = AddressMode::Clamp;
-            float mipLevelBias = 0.0f;
-            uint32_t maximumAnisotropy = 1;
-            ComparisonFunction comparisonFunction = ComparisonFunction::Never;
-            Math::Float4 borderColor = Math::Float4(0.0f, 0.0f, 0.0f, 1.0f);
-            float minimumMipLevel = 0.0f;
-            float maximumMipLevel = Math::Infinity;
-
-            void load(JSON const &object);
-            size_t getHash(void) const;
-        };
-
-        struct NamedDeclaration
-        {
-            std::string name;
-            Format format = Format::Unknown;
-
-            size_t getHash(void) const;
-        };
-
-        struct ElementDeclaration
-            : public NamedDeclaration
-        {
-            enum class Semantic : uint8_t
+            enum class AddressMode : uint8_t
             {
-                Position = 0,
-                TexCoord,
-                Tangent,
-                BiTangent,
-                Normal,
-                Color,
-                Count,
+                Clamp = 0,
+                Wrap,
+                Mirror,
+                MirrorOnce,
+                Border,
             };
 
-            static Semantic GetSemantic(std::string const &semantic);
-
-            Semantic semantic = Semantic::TexCoord;
-
-            size_t getHash(void) const;
-        };
-
-        struct VertexDeclaration
-            : public ElementDeclaration
-        {
-            enum class Source : uint8_t
+            struct Description
             {
-                Vertex = 0,
-                Instance,
+                std::string name;
+                FilterMode filterMode = FilterMode::MinificationMagnificationMipMapPoint;
+                AddressMode addressModeU = AddressMode::Clamp;
+                AddressMode addressModeV = AddressMode::Clamp;
+                AddressMode addressModeW = AddressMode::Clamp;
+                float mipLevelBias = 0.0f;
+                uint32_t maximumAnisotropy = 1;
+                ComparisonFunction comparisonFunction = ComparisonFunction::Never;
+                Math::Float4 borderColor = Math::Float4(0.0f, 0.0f, 0.0f, 1.0f);
+                float minimumMipLevel = 0.0f;
+                float maximumMipLevel = Math::Infinity;
+
+                void load(JSON::Object const& object);
             };
 
-			static constexpr uint32_t AppendAligned = 0xFFFFFFFF;
+            virtual ~SamplerState(void) = default;
 
-            static Source GetSource(std::string const &elementSource);
-
-            Source source = Source::Vertex;
-            uint32_t sourceIndex = 0;
-            uint32_t alignedByteOffset = AppendAligned;
-
-            size_t getHash(void) const;
+            virtual Description const& getDescription(void) const = 0;
         };
 
-        struct PipelineStateInformation
-        {
-            BlendStateInformation blendStateInformation;
-            uint32_t sampleMask = 0xFFFFFFFF;
 
-            RasterizerStateInformation rasterizerStateInformation;
-
-            DepthStateInformation depthStateInformation;
-
-            PrimitiveType primitiveType = PrimitiveType::TriangleList;
-
-            std::vector<VertexDeclaration> vertexDeclaration;
-            std::vector<ElementDeclaration> pixelDeclaration;
-            std::string vertexShader, vertexShaderEntryFunction;
-            std::string pixelShader, pixelShaderEntryFunction;
-
-            std::vector<NamedDeclaration> renderTargetList;
-            Format depthTargetFormat = Format::Unknown;
-
-            size_t getHash(void) const;
-        };
-
-        struct BufferDescription
+        GEK_INTERFACE(Buffer)
+            : virtual public Resource
         {
             struct Flags
             {
@@ -494,16 +524,23 @@ namespace Gek
                 IndirectArguments,
             };
 
-            Format format = Format::Unknown;
-            uint32_t stride = 0;
-            uint32_t count = 0;
-            Type type = Type::Raw;
-            uint32_t flags = 0;
+            struct Description
+            {
+                std::string name;
+                Format format = Format::Unknown;
+                uint32_t stride = 0;
+                uint32_t count = 0;
+                Type type = Type::Raw;
+                uint32_t flags = 0;
+            };
 
-            size_t getHash(void) const;
+            virtual ~Buffer(void) = default;
+
+            virtual Description const& getDescription(void) const = 0;
         };
 
-        struct TextureDescription
+        GEK_INTERFACE(Texture)
+            : virtual public Resource
         {
             struct Flags
             {
@@ -516,154 +553,125 @@ namespace Gek
                 };
             }; // Flags
 
-            Format format = Format::Unknown;
-            uint32_t width = 1;
-            uint32_t height = 1;
-            uint32_t depth = 1;
-            uint32_t mipMapCount = 1;
-            uint32_t sampleCount = 1;
-            uint32_t sampleQuality = 0;
-            uint32_t flags = 0;
+            struct Description
+            {
+                std::string name;
+                Format format = Format::Unknown;
+                uint32_t width = 1;
+                uint32_t height = 1;
+                uint32_t depth = 1;
+                uint32_t mipMapCount = 1;
+                uint32_t sampleCount = 1;
+                uint32_t sampleQuality = 0;
+                uint32_t flags = 0;
+            };
 
-            size_t getHash(void) const;
+            virtual ~Texture(void) = default;
+
+            virtual Description const& getDescription(void) const = 0;
         };
 
-        template <typename TYPE, size_t UNIQUE>
-        struct Handle
+        GEK_INTERFACE(CommandList)
+            : public Resource
         {
-            TYPE identifier;
-
-            Handle(uint32_t identifier = 0)
-                : identifier(TYPE(identifier))
+            struct Flags
             {
-            }
+                enum
+                {
+                };
+            }; // struct Flags
 
-            operator bool() const
-            {
-                return (identifier != 0);
-            }
+            virtual ~CommandList(void) = default;
 
-            operator std::size_t() const
-            {
-                return identifier.load();
-            }
+            virtual void finish(void) = 0;
 
-            bool operator == (typename Handle<TYPE, UNIQUE> const &handle) const
-            {
-                return (identifier == handle.identifier);
-            }
+            virtual void generateMipMaps(Resource* texture) = 0;
+            virtual void resolveSamples(Resource* destination, Resource* source) = 0;
 
-            bool operator != (typename Handle<TYPE, UNIQUE> const &handle) const
-            {
-                return (identifier != handle.identifier);
-            }
+            virtual void clearUnorderedAccess(Resource* object, Math::Float4 const& value) = 0;
+            virtual void clearUnorderedAccess(Resource* object, Math::UInt4 const& value) = 0;
+            virtual void clearRenderTarget(Texture* renderTarget, Math::Float4 const& clearColor) = 0;
+            virtual void clearDepthStencilTarget(Texture* depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
+
+            virtual void setViewportList(const std::vector<ViewPort>& viewPortList) = 0;
+            virtual void setScissorList(const std::vector<Math::UInt4>& rectangleList) = 0;
+
+            virtual void bindPipelineState(PipelineState* pipelineState) = 0;
+
+            virtual void bindSamplerStateList(const std::vector<SamplerState*>& samplerStateList, uint32_t firstStage, uint8_t pipelineFlags) = 0;
+            virtual void bindConstantBufferList(const std::vector<Buffer*>& constantBufferList, uint32_t firstStage, uint8_t pipelineFlags) = 0;
+            virtual void bindResourceList(const std::vector<Resource*>& resourceList, uint32_t firstStage, uint8_t pipelineFlags) = 0;
+            virtual void bindUnorderedAccessList(const std::vector<Resource*>& unorderedAccessList, uint32_t firstStage, uint32_t* countList = nullptr) = 0;
+
+            virtual void bindIndexBuffer(Resource* indexBuffer, uint32_t offset) = 0;
+            virtual void bindVertexBufferList(const std::vector<Resource*>& vertexBufferList, uint32_t firstSlot, uint32_t* offsetList = nullptr) = 0;
+            virtual void bindRenderTargetList(const std::vector<Texture*>& renderTargetList, Texture* depthBuffer) = 0;
+
+            virtual void drawInstancedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex) = 0;
+            virtual void drawInstancedIndexedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex) = 0;
+            virtual void dispatch(uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ) = 0;
+
+            virtual void drawInstancedPrimitive(Resource* bufferArguments) = 0;
+            virtual void drawInstancedIndexedPrimitive(Resource* bufferArguments) = 0;
+            virtual void dispatch(Resource* bufferArguments) = 0;
         };
 
-        using PipelineStateHandle = Handle<uint8_t, __LINE__>;
-        using SamplerStateHandle = Handle<uint8_t, __LINE__>;
-        using ResourceHandle = Handle<uint32_t, __LINE__>;
-        using QueueHandle = Handle<uint32_t, __LINE__>;
+        GEK_INTERFACE(Queue)
+            : public Resource
+        {
+            enum class Type : uint8_t
+            {
+                Direct = 0,
+                Compute,
+                Copy,
+            };
+
+            virtual ~Queue(void) = default;
+
+            virtual void executeCommandList(CommandList* commandList) = 0;
+        };
 
         GEK_INTERFACE(Device)
         {
             struct Description
             {
+                std::string name;
                 std::string device;
                 Format displayFormat = Format::R8G8B8A8_UNORM_SRGB;
                 uint32_t sampleCount = 1;
                 uint32_t sampleQuality = 0;
             };
 
-            static const DLL_API ResourceHandle SwapChain;
-
-            GEK_INTERFACE(Queue)
-            {
-                struct Flags
-                {
-                    enum
-                    {
-                    };
-                }; // struct Flags
-
-                virtual ~Queue(void) = default;
-
-                virtual void reset(void) = 0;
-
-                virtual void generateMipMaps(ResourceHandle texture) = 0;
-                virtual void resolveSamples(ResourceHandle destination, ResourceHandle source) = 0;
-
-                virtual void clearUnorderedAccess(ResourceHandle object, Math::Float4 const &value) = 0;
-                virtual void clearUnorderedAccess(ResourceHandle object, Math::UInt4 const &value) = 0;
-                virtual void clearRenderTarget(ResourceHandle renderTarget, Math::Float4 const &clearColor) = 0;
-                virtual void clearDepthStencilTarget(ResourceHandle depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
-
-                virtual void setViewportList(const std::vector<ViewPort> &viewPortList) = 0;
-                virtual void setScissorList(const std::vector<Math::UInt4> &rectangleList) = 0;
-
-                virtual void bindPipelineState(PipelineStateHandle pipelineState) = 0;
-
-                virtual void bindSamplerStateList(const std::vector<SamplerStateHandle> &samplerStateList, uint32_t firstStage, uint8_t pipelineFlags) = 0;
-                virtual void bindConstantBufferList(const std::vector<ResourceHandle> &constantBufferList, uint32_t firstStage, uint8_t pipelineFlags) = 0;
-                virtual void bindResourceList(const std::vector<ResourceHandle> &resourceList, uint32_t firstStage, uint8_t pipelineFlags) = 0;
-                virtual void bindUnorderedAccessList(const std::vector<ResourceHandle> &unorderedAccessList, uint32_t firstStage, uint32_t *countList = nullptr) = 0;
-
-                virtual void bindIndexBuffer(ResourceHandle indexBuffer, uint32_t offset) = 0;
-                virtual void bindVertexBufferList(const std::vector<ResourceHandle> &vertexBufferList, uint32_t firstSlot, uint32_t *offsetList = nullptr) = 0;
-                virtual void bindRenderTargetList(const std::vector<ResourceHandle> &renderTargetList, ResourceHandle depthBuffer) = 0;
-
-                virtual void drawPrimitive(uint32_t vertexCount, uint32_t firstVertex) = 0;
-                virtual void drawInstancedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex) = 0;
-                virtual void drawIndexedPrimitive(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex) = 0;
-                virtual void drawInstancedIndexedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex) = 0;
-                virtual void dispatch(uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ) = 0;
-
-                virtual void drawInstancedPrimitive(ResourceHandle bufferArguments) = 0;
-                virtual void drawInstancedIndexedPrimitive(ResourceHandle bufferArguments) = 0;
-                virtual void dispatch(ResourceHandle bufferArguments) = 0;
-
-                virtual void runQueue(QueueHandle queue) = 0;
-            };
-
             virtual ~Device(void) = default;
 
             virtual DisplayModeList getDisplayModeList(Format format) const = 0;
 
+            virtual Texture* getBackBuffer(void) = 0;
             virtual void setFullScreenState(bool fullScreen) = 0;
             virtual void setDisplayMode(const DisplayMode &displayMode) = 0;
             virtual void handleResize(void) = 0;
 
-            virtual void deletePipelineState(PipelineStateHandle pipelineState) = 0;
-            virtual void deleteSamplerState(SamplerStateHandle samplerState) = 0;
-            virtual void deleteResource(ResourceHandle resource) = 0;
-            virtual void deleteQueue(QueueHandle queue) = 0;
+            virtual PipelineStatePtr createPipelineState(const PipelineState::Description &pipelineState) = 0;
+            virtual SamplerStatePtr createSamplerState(const SamplerState::Description &samplerState) = 0;
 
-            virtual PipelineStateHandle createPipelineState(const PipelineStateInformation &pipelineState, std::string const &name = String::Empty) = 0;
-
-            virtual SamplerStateHandle createSamplerState(const SamplerStateInformation &samplerState, std::string const &name = String::Empty) = 0;
-
-            virtual ResourceHandle createBuffer(const BufferDescription &description, const void *staticData = nullptr, std::string const &name = String::Empty) = 0;
-            virtual ResourceHandle createTexture(const TextureDescription &description, const void *data = nullptr, std::string const &name = String::Empty) = 0;
-            virtual ResourceHandle loadTexture(FileSystem::Path const &filePath, uint32_t flags, ResourceHandle fallbackResource = ResourceHandle(), std::string const &name = String::Empty) = 0;
-
-            virtual BufferDescription const * const getBufferDescription(ResourceHandle resource) const = 0;
-            virtual TextureDescription const * const getTextureDescription(ResourceHandle resource) const = 0;
+            virtual BufferPtr createBuffer(const Buffer::Description &description, const void *staticData = nullptr) = 0;
+            virtual TexturePtr createTexture(const Texture::Description &description, const void *data = nullptr) = 0;
+            virtual TexturePtr loadTexture(FileSystem::Path const &filePath, uint32_t flags) = 0;
 
             template <typename TYPE>
-            bool mapResource(ResourceHandle buffer, TYPE *&data, Map mapping = Map::WriteDiscard)
+            bool mapResource(Resource* buffer, TYPE *&data, Map mapping = Map::WriteDiscard)
             {
                 return mapResource(buffer, (void *&)data, mapping);
             }
 
-            virtual bool mapResource(ResourceHandle resource, void *&data, Map mapping = Map::WriteDiscard) = 0;
-            virtual void unmapResource(ResourceHandle resource) = 0;
+            virtual bool mapResource(Resource* resource, void *&data, Map mapping = Map::WriteDiscard) = 0;
+            virtual void unmapResource(Resource* resource) = 0;
 
-            virtual void updateResource(ResourceHandle resource, const void *data) = 0;
-            virtual void copyResource(ResourceHandle destination, ResourceHandle source) = 0;
+            virtual void updateResource(Resource* resource, const void *data) = 0;
+            virtual void copyResource(Resource* destination, Resource* source) = 0;
 
-            virtual QueuePtr createQueue(uint32_t flags, std::string const &name = String::Empty) = 0;
-            virtual QueueHandle compileQueue(Queue *queue, std::string const &name = String::Empty) = 0;
-            virtual void runQueue(Queue *queue) = 0;
-            virtual void runQueue(QueueHandle queue) = 0;
+            virtual QueuePtr createQueue(Queue::Type type) = 0;
+            virtual CommandListPtr createCommandList(uint32_t flags) = 0;
 
             virtual void present(bool waitForVerticalSync) = 0;
         };
@@ -680,15 +688,3 @@ namespace Gek
         }; // namespace Debug
     }; // namespace Render
 }; // namespace Gek
-
-namespace std
-{
-    template <typename TYPE, int UNIQUE>
-    struct hash<Gek::Render::Handle<TYPE, UNIQUE>>
-    {
-        size_t operator()(const Gek::Render::Handle<TYPE, UNIQUE> &value) const
-        {
-            return value.identifier;
-        }
-    };
-};

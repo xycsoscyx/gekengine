@@ -17,7 +17,7 @@ namespace Gek
 	class Core
 	{
 	private:
-		JSON configuration;
+		JSON::Object configuration;
 
 		ContextPtr context;
 		WindowPtr window;
@@ -48,19 +48,20 @@ namespace Gek
 		{
 			ImGuiContext *context = nullptr;
 
-			Render::PipelineStateHandle pipelineState;
-			Render::SamplerStateHandle samplerState;
+			Render::PipelineStatePtr pipelineState;
+			Render::SamplerStatePtr samplerState;
 
-			Render::Device::QueuePtr renderQueue;
+			Render::QueuePtr directQueue;
+			Render::CommandListPtr commandList;
 
-			Render::ResourceHandle constantBuffer;
-			Render::ResourceHandle vertexBuffer;
-			Render::ResourceHandle indexBuffer;
+			Render::BufferPtr constantBuffer;
+			Render::BufferPtr vertexBuffer;
+			Render::BufferPtr indexBuffer;
 
-			Render::ResourceHandle fontTexture;
-			Render::ResourceHandle consoleButton;
-			Render::ResourceHandle performanceButton;
-			Render::ResourceHandle settingsButton;
+			Render::TexturePtr fontTexture;
+			Render::TexturePtr consoleButton;
+			Render::TexturePtr performanceButton;
+			Render::TexturePtr settingsButton;
 		};
 
 		std::unique_ptr<GUI> gui = std::make_unique<GUI>();
@@ -84,7 +85,7 @@ namespace Gek
 
 			context = Context::Create(&searchPathList);
 			context->addDataPath(rootPath / "data");
-			configuration.load(getContext()->findDataPath("config.json"));
+			configuration = JSON::Load(getContext()->findDataPath("config.json"));
 
 			Window::Description windowDescription;
 			windowDescription.allowResize = true;
@@ -97,7 +98,6 @@ namespace Gek
 			window->onSizeChanged.connect(this, &Core::onSizeChanged);
 			window->onKeyPressed.connect(this, &Core::onKeyPressed);
 			window->onCharacter.connect(this, &Core::onCharacter);
-			window->onSetCursor.connect(this, &Core::onSetCursor);
 			window->onMouseClicked.connect(this, &Core::onMouseClicked);
 			window->onMouseWheel.connect(this, &Core::onMouseWheel);
 			window->onMousePosition.connect(this, &Core::onMousePosition);
@@ -157,9 +157,10 @@ namespace Gek
 				displayModeStringList.push_back(displayModeString);
 			}
 
-            setDisplayMode(configuration.getMember("display").getMember("mode").convert(preferredDisplayMode));
+			auto displayConfig = JSON::Find(configuration, "display");
+            setDisplayMode(JSON::Value(displayConfig, "mode", preferredDisplayMode));
 
-			gui->renderQueue = renderDevice->createQueue(0);
+			gui->directQueue = renderDevice->createQueue(Render::Queue::Type::Direct);
 
 			static constexpr std::string_view guiProgram =
 R"(DeclareConstantBuffer(Constants, 0)
@@ -186,81 +187,85 @@ Output mainPixelProgram(in Pixel input)
     return output;
 })";
 
-			Render::PipelineStateInformation pipelineStateInformation;
-			pipelineStateInformation.vertexShader = guiProgram;
-			pipelineStateInformation.vertexShaderEntryFunction = "mainVertexProgram"s;
-			pipelineStateInformation.pixelShader = guiProgram;
-			pipelineStateInformation.pixelShaderEntryFunction = "mainPixelProgram"s;
+			Render::PipelineState::Description pipelineStateDescription;
+			pipelineStateDescription.name = "GUI";
 
-			Render::VertexDeclaration vertexDeclaration;
+			pipelineStateDescription.vertexShader = guiProgram;
+			pipelineStateDescription.vertexShaderEntryFunction = "mainVertexProgram"s;
+			pipelineStateDescription.pixelShader = guiProgram;
+			pipelineStateDescription.pixelShaderEntryFunction = "mainPixelProgram"s;
+
+			Render::PipelineState::VertexDeclaration vertexDeclaration;
 			vertexDeclaration.name = "position";
 			vertexDeclaration.format = Render::Format::R32G32_FLOAT;
-			vertexDeclaration.semantic = Render::VertexDeclaration::Semantic::Position;
-			pipelineStateInformation.vertexDeclaration.push_back(vertexDeclaration);
+			vertexDeclaration.semantic = Render::PipelineState::ElementDeclaration::Semantic::Position;
+			pipelineStateDescription.vertexDeclaration.push_back(vertexDeclaration);
 
 			vertexDeclaration.name = "texCoord";
 			vertexDeclaration.format = Render::Format::R32G32_FLOAT;
-			vertexDeclaration.semantic = Render::VertexDeclaration::Semantic::TexCoord;
-			pipelineStateInformation.vertexDeclaration.push_back(vertexDeclaration);
+			vertexDeclaration.semantic = Render::PipelineState::ElementDeclaration::Semantic::TexCoord;
+			pipelineStateDescription.vertexDeclaration.push_back(vertexDeclaration);
 
 			vertexDeclaration.name = "color";
 			vertexDeclaration.format = Render::Format::R8G8B8A8_UNORM;
-			vertexDeclaration.semantic = Render::VertexDeclaration::Semantic::Color;
-			pipelineStateInformation.vertexDeclaration.push_back(vertexDeclaration);
+			vertexDeclaration.semantic = Render::PipelineState::ElementDeclaration::Semantic::Color;
+			pipelineStateDescription.vertexDeclaration.push_back(vertexDeclaration);
 
-			Render::ElementDeclaration pixelDeclaration;
+			Render::PipelineState::ElementDeclaration pixelDeclaration;
 			pixelDeclaration.name = "position";
 			pixelDeclaration.format = Render::Format::R32G32B32A32_FLOAT;
-			pixelDeclaration.semantic = Render::VertexDeclaration::Semantic::Position;
-			pipelineStateInformation.pixelDeclaration.push_back(pixelDeclaration);
+			pixelDeclaration.semantic = Render::PipelineState::ElementDeclaration::Semantic::Position;
+			pipelineStateDescription.pixelDeclaration.push_back(pixelDeclaration);
 
 			pixelDeclaration.name = "texCoord";
 			pixelDeclaration.format = Render::Format::R32G32_FLOAT;
-			pixelDeclaration.semantic = Render::VertexDeclaration::Semantic::TexCoord;
-			pipelineStateInformation.pixelDeclaration.push_back(pixelDeclaration);
+			pixelDeclaration.semantic = Render::PipelineState::ElementDeclaration::Semantic::TexCoord;
+			pipelineStateDescription.pixelDeclaration.push_back(pixelDeclaration);
 
 			pixelDeclaration.name = "color";
 			pixelDeclaration.format = Render::Format::R8G8B8A8_UNORM;
-			pixelDeclaration.semantic = Render::VertexDeclaration::Semantic::Color;
-			pipelineStateInformation.pixelDeclaration.push_back(pixelDeclaration);
+			pixelDeclaration.semantic = Render::PipelineState::ElementDeclaration::Semantic::Color;
+			pipelineStateDescription.pixelDeclaration.push_back(pixelDeclaration);
 
-			Render::NamedDeclaration targetDeclaration;
+			Render::PipelineState::RenderTarget targetDeclaration;
 			targetDeclaration.name = "screen";
 			targetDeclaration.format = Render::Format::R8G8B8A8_UNORM_SRGB;
-			pipelineStateInformation.renderTargetList.push_back(targetDeclaration);
+			pipelineStateDescription.renderTargetList.push_back(targetDeclaration);
 
-			pipelineStateInformation.blendStateInformation.unifiedBlendState = true;
-			pipelineStateInformation.blendStateInformation.targetStateList[0].enable = true;
-			pipelineStateInformation.blendStateInformation.targetStateList[0].colorSource = Render::BlendStateInformation::Source::SourceAlpha;
-			pipelineStateInformation.blendStateInformation.targetStateList[0].colorDestination = Render::BlendStateInformation::Source::InverseSourceAlpha;
-			pipelineStateInformation.blendStateInformation.targetStateList[0].colorOperation = Render::BlendStateInformation::Operation::Add;
-			pipelineStateInformation.blendStateInformation.targetStateList[0].alphaSource = Render::BlendStateInformation::Source::InverseSourceAlpha;
-			pipelineStateInformation.blendStateInformation.targetStateList[0].alphaDestination = Render::BlendStateInformation::Source::Zero;
-			pipelineStateInformation.blendStateInformation.targetStateList[0].alphaOperation = Render::BlendStateInformation::Operation::Add;
+			pipelineStateDescription.blendStateDescription.unifiedBlendState = true;
+			pipelineStateDescription.blendStateDescription.targetStateList[0].enable = true;
+			pipelineStateDescription.blendStateDescription.targetStateList[0].colorSource = Render::PipelineState::BlendState::Source::SourceAlpha;
+			pipelineStateDescription.blendStateDescription.targetStateList[0].colorDestination = Render::PipelineState::BlendState::Source::InverseSourceAlpha;
+			pipelineStateDescription.blendStateDescription.targetStateList[0].colorOperation = Render::PipelineState::BlendState::Operation::Add;
+			pipelineStateDescription.blendStateDescription.targetStateList[0].alphaSource = Render::PipelineState::BlendState::Source::InverseSourceAlpha;
+			pipelineStateDescription.blendStateDescription.targetStateList[0].alphaDestination = Render::PipelineState::BlendState::Source::Zero;
+			pipelineStateDescription.blendStateDescription.targetStateList[0].alphaOperation = Render::PipelineState::BlendState::Operation::Add;
 
-			pipelineStateInformation.rasterizerStateInformation.fillMode = Render::RasterizerStateInformation::FillMode::Solid;
-			pipelineStateInformation.rasterizerStateInformation.cullMode = Render::RasterizerStateInformation::CullMode::None;
-			pipelineStateInformation.rasterizerStateInformation.scissorEnable = true;
-			pipelineStateInformation.rasterizerStateInformation.depthClipEnable = true;
+			pipelineStateDescription.rasterizerStateDescription.fillMode = Render::PipelineState::RasterizerState::FillMode::Solid;
+			pipelineStateDescription.rasterizerStateDescription.cullMode = Render::PipelineState::RasterizerState::CullMode::None;
+			pipelineStateDescription.rasterizerStateDescription.scissorEnable = true;
+			pipelineStateDescription.rasterizerStateDescription.depthClipEnable = true;
 
-			pipelineStateInformation.depthStateInformation.enable = true;
-			pipelineStateInformation.depthStateInformation.comparisonFunction = Render::ComparisonFunction::LessEqual;
-			pipelineStateInformation.depthStateInformation.writeMask = Render::DepthStateInformation::Write::Zero;
+			pipelineStateDescription.depthStateDescription.enable = true;
+			pipelineStateDescription.depthStateDescription.comparisonFunction = Render::ComparisonFunction::LessEqual;
+			pipelineStateDescription.depthStateDescription.writeMask = Render::PipelineState::DepthState::Write::Zero;
 
-			gui->pipelineState = renderDevice->createPipelineState(pipelineStateInformation, "GUI");
+			gui->pipelineState = renderDevice->createPipelineState(pipelineStateDescription);
 
-			Render::BufferDescription constantBufferDescription;
+			Render::Buffer::Description constantBufferDescription;
+			constantBufferDescription.name = "ImGui::Constants";
 			constantBufferDescription.stride = sizeof(Math::Float4x4);
 			constantBufferDescription.count = 1;
-			constantBufferDescription.type = Render::BufferDescription::Type::Constant;
-			gui->constantBuffer = renderDevice->createBuffer(constantBufferDescription, nullptr, "ImGui::Constants");
+			constantBufferDescription.type = Render::Buffer::Type::Constant;
+			gui->constantBuffer = renderDevice->createBuffer(constantBufferDescription, nullptr);
 
-			Render::SamplerStateInformation samplerStateInformation;
-			samplerStateInformation.filterMode = Render::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapPoint;
-			samplerStateInformation.addressModeU = Render::SamplerStateInformation::AddressMode::Clamp;
-			samplerStateInformation.addressModeV = Render::SamplerStateInformation::AddressMode::Clamp;
-			samplerStateInformation.addressModeW = Render::SamplerStateInformation::AddressMode::Clamp;
-			gui->samplerState = renderDevice->createSamplerState(samplerStateInformation, "ImGui::Sampler");
+			Render::SamplerState::Description samplerStateDescription;
+			samplerStateDescription.name = "ImGui::Sampler";
+			samplerStateDescription.filterMode = Render::SamplerState::FilterMode::MinificationMagnificationMipMapPoint;
+			samplerStateDescription.addressModeU = Render::SamplerState::AddressMode::Clamp;
+			samplerStateDescription.addressModeV = Render::SamplerState::AddressMode::Clamp;
+			samplerStateDescription.addressModeW = Render::SamplerState::AddressMode::Clamp;
+			gui->samplerState = renderDevice->createSamplerState(samplerStateDescription);
 
 			gui->context = ImGui::CreateContext();
 
@@ -305,14 +310,14 @@ Output mainPixelProgram(in Pixel input)
 			int32_t fontWidth = 0, fontHeight = 0;
 			imGuiIo.Fonts->GetTexDataAsRGBA32(&pixels, &fontWidth, &fontHeight);
 
-			Render::TextureDescription fontDescription;
+			Render::Texture::Description fontDescription;
 			fontDescription.format = Render::Format::R8G8B8A8_UNORM;
 			fontDescription.width = fontWidth;
 			fontDescription.height = fontHeight;
-			fontDescription.flags = Render::TextureDescription::Flags::Resource;
+			fontDescription.flags = Render::Texture::Flags::Resource;
 			gui->fontTexture = renderDevice->createTexture(fontDescription, pixels);
 
-			imGuiIo.Fonts->TexID = reinterpret_cast<ImTextureID>(&gui->fontTexture);
+			imGuiIo.Fonts->TexID = reinterpret_cast<ImTextureID>(gui->fontTexture.get());
 
 			auto& style = ImGui::GetStyle();
 			ImGui::StyleColorsDark(&style);
@@ -322,7 +327,7 @@ Output mainPixelProgram(in Pixel input)
 			imGuiIo.UserData = this;
 
 			window->setVisibility(true);
-            setFullScreen(configuration.getMember("display").getMember("fullScreen").convert(false));
+            setFullScreen(JSON::Value(displayConfig, "fullScreen", false));
 			engineRunning = true;
 			windowActive = true;
 		}
@@ -368,7 +373,7 @@ Output mainPixelProgram(in Pixel input)
 			if (current.mode != requestDisplayMode)
 			{
 				auto &displayModeData = displayModeList[requestDisplayMode];
-				 << "Setting display mode: " << displayModeData.width << "x" << displayModeData.height;
+				std::cout << "Setting display mode: " << displayModeData.width << "x" << displayModeData.height;
 				if (requestDisplayMode < displayModeList.size())
 				{
 					current.mode = requestDisplayMode;
@@ -528,12 +533,11 @@ Output mainPixelProgram(in Pixel input)
 			{
 				window->readEvents();
 
-				auto description = renderDevice->getTextureDescription(Render::Device::SwapChain);
-
 				ImGuiIO &imGuiIo = ImGui::GetIO();
 
-				uint32_t width = description->width;
-				uint32_t height = description->height;
+				auto windowRectangle = window->getClientRectangle();
+				uint32_t width = windowRectangle.size.x;
+				uint32_t height = windowRectangle.size.y;
 				imGuiIo.DisplaySize = ImVec2(float(width), float(height));
 				float barWidth = float(width);
 
@@ -575,22 +579,22 @@ Output mainPixelProgram(in Pixel input)
 		// ImGui Callbacks
 		void renderDrawData(ImDrawData *drawData)
 		{
-			if (!gui->vertexBuffer || renderDevice->getBufferDescription(gui->vertexBuffer)->count < uint32_t(drawData->TotalVtxCount))
+			if (!gui->vertexBuffer || gui->vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
 			{
-				Render::BufferDescription vertexBufferDescription;
+				Render::Buffer::Description vertexBufferDescription;
 				vertexBufferDescription.stride = sizeof(ImDrawVert);
 				vertexBufferDescription.count = drawData->TotalVtxCount + 5000;
-				vertexBufferDescription.type = Render::BufferDescription::Type::Vertex;
-				vertexBufferDescription.flags = Render::BufferDescription::Flags::Mappable;
+				vertexBufferDescription.type = Render::Buffer::Type::Vertex;
+				vertexBufferDescription.flags = Render::Buffer::Flags::Mappable;
 				gui->vertexBuffer = renderDevice->createBuffer(vertexBufferDescription);
 			}
 
-			if (!gui->indexBuffer || renderDevice->getBufferDescription(gui->indexBuffer)->count < uint32_t(drawData->TotalIdxCount))
+			if (!gui->indexBuffer || gui->indexBuffer->getDescription().count < uint32_t(drawData->TotalIdxCount))
 			{
-				Render::BufferDescription vertexBufferDescription;
+				Render::Buffer::Description vertexBufferDescription;
 				vertexBufferDescription.count = drawData->TotalIdxCount + 10000;
-				vertexBufferDescription.type = Render::BufferDescription::Type::Index;
-				vertexBufferDescription.flags = Render::BufferDescription::Flags::Mappable;
+				vertexBufferDescription.type = Render::Buffer::Type::Index;
+				vertexBufferDescription.flags = Render::Buffer::Flags::Mappable;
 				switch (sizeof(ImDrawIdx))
 				{
 				case 4:
@@ -609,9 +613,9 @@ Output mainPixelProgram(in Pixel input)
 			bool dataUploaded = false;
 			ImDrawVert* vertexData = nullptr;
 			ImDrawIdx* indexData = nullptr;
-			if (renderDevice->mapResource(gui->vertexBuffer, vertexData))
+			if (renderDevice->mapResource(gui->vertexBuffer.get(), vertexData))
 			{
-				if (renderDevice->mapResource(gui->indexBuffer, indexData))
+				if (renderDevice->mapResource(gui->indexBuffer.get(), indexData))
 				{
 					for (int32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
 					{
@@ -623,39 +627,39 @@ Output mainPixelProgram(in Pixel input)
 					}
 
 					dataUploaded = true;
-					renderDevice->unmapResource(gui->indexBuffer);
+					renderDevice->unmapResource(gui->indexBuffer.get());
 				}
 
-				renderDevice->unmapResource(gui->vertexBuffer);
+				renderDevice->unmapResource(gui->vertexBuffer.get());
 			}
 
+			gui->commandList = renderDevice->createCommandList(0);
 			if (dataUploaded)
 			{
 				ImGuiIO &imGuiIo = ImGui::GetIO();
 				uint32_t width = imGuiIo.DisplaySize.x;
 				uint32_t height = imGuiIo.DisplaySize.y;
 				auto orthographic = Math::Float4x4::MakeOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
-				renderDevice->updateResource(gui->constantBuffer, &orthographic);
+				renderDevice->updateResource(gui->constantBuffer.get(), &orthographic);
 
 				Render::ViewPort viewPort(Math::Float2::Zero, Math::Float2(width, height), 0.0f, 1.0f);
 
-				gui->renderQueue->reset();
-				gui->renderQueue->bindPipelineState(gui->pipelineState);
-				gui->renderQueue->bindVertexBufferList({ gui->vertexBuffer }, 0);
-				gui->renderQueue->bindIndexBuffer(gui->indexBuffer, 0);
-				gui->renderQueue->bindConstantBufferList({ gui->constantBuffer }, 0, Render::Pipeline::Vertex);
-				gui->renderQueue->bindSamplerStateList({ gui->samplerState }, 0, Render::Pipeline::Pixel);
-				gui->renderQueue->bindRenderTargetList({ Render::Device::SwapChain }, Render::ResourceHandle());
-				gui->renderQueue->setViewportList({ viewPort });
+				gui->commandList->bindPipelineState(gui->pipelineState.get());
+				gui->commandList->bindVertexBufferList({ gui->vertexBuffer.get() }, 0);
+				gui->commandList->bindIndexBuffer(gui->indexBuffer.get(), 0);
+				gui->commandList->bindConstantBufferList({ gui->constantBuffer.get() }, 0, Render::Pipeline::Vertex);
+				gui->commandList->bindSamplerStateList({ gui->samplerState.get() }, 0, Render::Pipeline::Pixel);
+				gui->commandList->bindRenderTargetList({ renderDevice->getBackBuffer()}, nullptr);
+				gui->commandList->setViewportList({ viewPort });
 
 				uint32_t vertexOffset = 0;
 				uint32_t indexOffset = 0;
 				for (int32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
 				{
-					const ImDrawList* commandList = drawData->CmdLists[commandListIndex];
+					ImDrawList* commandList = drawData->CmdLists[commandListIndex];
 					for (int32_t commandIndex = 0; commandIndex < commandList->CmdBuffer.Size; ++commandIndex)
 					{
-						const ImDrawCmd* command = &commandList->CmdBuffer[commandIndex];
+						ImDrawCmd* command = &commandList->CmdBuffer[commandIndex];
 						if (command->UserCallback)
 						{
 							command->UserCallback(commandList, command);
@@ -667,11 +671,12 @@ Output mainPixelProgram(in Pixel input)
 							scissorBoxList[0].minimum.y = uint32_t(command->ClipRect.y);
 							scissorBoxList[0].maximum.x = uint32_t(command->ClipRect.z);
 							scissorBoxList[0].maximum.y = uint32_t(command->ClipRect.w);
-							gui->renderQueue->setScissorList(scissorBoxList);
+							gui->commandList->setScissorList(scissorBoxList);
 
-							gui->renderQueue->bindResourceList({ *static_cast<Render::ResourceHandle *>(command->TextureId) }, 0, Render::Pipeline::Pixel);
+							Render::Texture* texture = static_cast<Render::Texture*>(command->TextureId);
+							gui->commandList->bindResourceList({ texture }, 0, Render::Pipeline::Pixel);
 
-							gui->renderQueue->drawIndexedPrimitive(command->ElemCount, indexOffset, vertexOffset);
+							gui->commandList->drawInstancedIndexedPrimitive(1, 0, command->ElemCount, indexOffset, vertexOffset);
 						}
 
 						indexOffset += command->ElemCount;
@@ -681,7 +686,8 @@ Output mainPixelProgram(in Pixel input)
 				}
 			}
 
-			renderDevice->runQueue(gui->renderQueue.get());
+			gui->commandList->finish();
+			gui->directQueue->executeCommandList(gui->commandList.get());
 		}
 
 		// Window slots
@@ -693,51 +699,6 @@ Output mainPixelProgram(in Pixel input)
 		void onActivate(bool isActive)
 		{
 			windowActive = isActive;
-		}
-
-		void onSetCursor(Window::Cursor &cursor)
-		{
-			if (enableInterfaceControl)
-			{
-				switch (ImGui::GetMouseCursor())
-				{
-				case ImGuiMouseCursor_None:
-					cursor = Window::Cursor::None;
-					break;
-
-				case ImGuiMouseCursor_Arrow:
-					cursor = Window::Cursor::Arrow;
-					break;
-
-				case ImGuiMouseCursor_TextInput:
-					cursor = Window::Cursor::Text;
-					break;
-
-					//case ImGuiMouseCursor_Move:
-						//cursor = Window::Cursor::Hand;
-						//break;
-
-				case ImGuiMouseCursor_ResizeNS:
-					cursor = Window::Cursor::SizeNS;
-					break;
-
-				case ImGuiMouseCursor_ResizeEW:
-					cursor = Window::Cursor::SizeEW;
-					break;
-
-				case ImGuiMouseCursor_ResizeNESW:
-					cursor = Window::Cursor::SizeNWSE;
-					break;
-
-				case ImGuiMouseCursor_ResizeNWSE:
-					cursor = Window::Cursor::SizeNWSE;
-					break;
-				};
-			}
-			else
-			{
-				cursor = Window::Cursor::None;
-			}
 		}
 
 		void onSizeChanged(bool isMinimized)
@@ -784,7 +745,7 @@ Output mainPixelProgram(in Pixel input)
 					break;
 
 				case Window::Key::F1:
-                    configuration["editor"]["active"] = !configuration.getMember("editor").getMember("active").convert(false);
+                    configuration["editor"]["active"] = !JSON::Value(JSON::Find(configuration, "editor"), "active", false);
 					break;
 				};
 			}

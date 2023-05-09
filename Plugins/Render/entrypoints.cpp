@@ -1,6 +1,7 @@
 #include "GEK/Utility/ContextUser.hpp"
 
 #ifdef _WIN32
+#include <Windows.h>
 static HINSTANCE GlobalDLLInstance = nullptr;
 BOOL WINAPI DllMain(HINSTANCE dllInstance, DWORD callReason, void *reserved)
 {
@@ -43,8 +44,14 @@ namespace Gek
         GEK_DECLARE_CONTEXT_USER(Device);
     };
 
+    namespace Direct3D12
+    {
+        //GEK_DECLARE_CONTEXT_USER(Device);
+    };
+
     GEK_CONTEXT_BEGIN(System);
         GEK_CONTEXT_ADD_CLASS(Default::Render::Window, Win32::Window);
         GEK_CONTEXT_ADD_CLASS(Default::Render::Device, Direct3D11::Device);
+        //GEK_CONTEXT_ADD_CLASS(Default::Render::Device, Direct3D12::Device);
     GEK_CONTEXT_END();
 }; // namespace Gek
