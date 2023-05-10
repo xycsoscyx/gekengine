@@ -52,7 +52,6 @@ namespace Gek
 			Render::SamplerStatePtr samplerState;
 
 			Render::QueuePtr directQueue;
-			Render::CommandListPtr commandList;
 
 			Render::BufferPtr constantBuffer;
 			Render::BufferPtr vertexBuffer;
@@ -446,7 +445,7 @@ Output mainPixelProgram(in Pixel input)
 			{
                 auto &io = ImGui::GetIO();
                 ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-				if (ImGui::Begin("Settings", &showSettings, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings))
+				if (ImGui::Begin("Settings", &showSettings, 0))
 				{
 					if (ImGui::BeginTabBar("##Settings"))
 					{
@@ -539,7 +538,6 @@ Output mainPixelProgram(in Pixel input)
 				uint32_t width = windowRectangle.size.x;
 				uint32_t height = windowRectangle.size.y;
 				imGuiIo.DisplaySize = ImVec2(float(width), float(height));
-				float barWidth = float(width);
 
 				// Read keyboard modifiers inputs
 				imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
@@ -552,7 +550,6 @@ Output mainPixelProgram(in Pixel input)
 				// imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
 
 				ImGui::NewFrame();
-				ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
 				ImGui::Begin("GEK Engine", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
 				if (windowActive)
 				{
@@ -633,7 +630,7 @@ Output mainPixelProgram(in Pixel input)
 				renderDevice->unmapResource(gui->vertexBuffer.get());
 			}
 
-			gui->commandList = renderDevice->createCommandList(0);
+			auto commandList = renderDevice->createCommandList(0);
 			if (dataUploaded)
 			{
 				ImGuiIO &imGuiIo = ImGui::GetIO();
@@ -644,25 +641,25 @@ Output mainPixelProgram(in Pixel input)
 
 				Render::ViewPort viewPort(Math::Float2::Zero, Math::Float2(width, height), 0.0f, 1.0f);
 
-				gui->commandList->bindPipelineState(gui->pipelineState.get());
-				gui->commandList->bindVertexBufferList({ gui->vertexBuffer.get() }, 0);
-				gui->commandList->bindIndexBuffer(gui->indexBuffer.get(), 0);
-				gui->commandList->bindConstantBufferList({ gui->constantBuffer.get() }, 0, Render::Pipeline::Vertex);
-				gui->commandList->bindSamplerStateList({ gui->samplerState.get() }, 0, Render::Pipeline::Pixel);
-				gui->commandList->bindRenderTargetList({ renderDevice->getBackBuffer()}, nullptr);
-				gui->commandList->setViewportList({ viewPort });
+				commandList->bindPipelineState(gui->pipelineState.get());
+				commandList->bindVertexBufferList({ gui->vertexBuffer.get() }, 0);
+				commandList->bindIndexBuffer(gui->indexBuffer.get(), 0);
+				commandList->bindConstantBufferList({ gui->constantBuffer.get() }, 0, Render::Pipeline::Vertex);
+				commandList->bindSamplerStateList({ gui->samplerState.get() }, 0, Render::Pipeline::Pixel);
+				commandList->bindRenderTargetList({ renderDevice->getBackBuffer()}, nullptr);
+				commandList->setViewportList({ viewPort });
 
 				uint32_t vertexOffset = 0;
 				uint32_t indexOffset = 0;
 				for (int32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
 				{
-					ImDrawList* commandList = drawData->CmdLists[commandListIndex];
-					for (int32_t commandIndex = 0; commandIndex < commandList->CmdBuffer.Size; ++commandIndex)
+					ImDrawList* drawCommandList = drawData->CmdLists[commandListIndex];
+					for (int32_t commandIndex = 0; commandIndex < drawCommandList->CmdBuffer.Size; ++commandIndex)
 					{
-						ImDrawCmd* command = &commandList->CmdBuffer[commandIndex];
+						ImDrawCmd* command = &drawCommandList->CmdBuffer[commandIndex];
 						if (command->UserCallback)
 						{
-							command->UserCallback(commandList, command);
+							command->UserCallback(drawCommandList, command);
 						}
 						else
 						{
@@ -671,23 +668,23 @@ Output mainPixelProgram(in Pixel input)
 							scissorBoxList[0].minimum.y = uint32_t(command->ClipRect.y);
 							scissorBoxList[0].maximum.x = uint32_t(command->ClipRect.z);
 							scissorBoxList[0].maximum.y = uint32_t(command->ClipRect.w);
-							gui->commandList->setScissorList(scissorBoxList);
+							commandList->setScissorList(scissorBoxList);
 
 							Render::Texture* texture = static_cast<Render::Texture*>(command->TextureId);
-							gui->commandList->bindResourceList({ texture }, 0, Render::Pipeline::Pixel);
+							commandList->bindResourceList({ texture }, 0, Render::Pipeline::Pixel);
 
-							gui->commandList->drawInstancedIndexedPrimitive(1, 0, command->ElemCount, indexOffset, vertexOffset);
+							commandList->drawInstancedIndexedPrimitive(1, 0, command->ElemCount, indexOffset, vertexOffset);
 						}
 
 						indexOffset += command->ElemCount;
 					}
 
-					vertexOffset += commandList->VtxBuffer.Size;
+					vertexOffset += drawCommandList->VtxBuffer.Size;
 				}
 			}
 
-			gui->commandList->finish();
-			gui->directQueue->executeCommandList(gui->commandList.get());
+			commandList->finish();
+			gui->directQueue->executeCommandList(commandList.get());
 		}
 
 		// Window slots

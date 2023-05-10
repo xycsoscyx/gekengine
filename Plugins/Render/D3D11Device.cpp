@@ -632,10 +632,29 @@ namespace Gek
         }
 
         template <typename CLASS>
-        void setDebugName(CComPtr<CLASS> &object, std::string const &name, std::string const &member = String::Empty)
+        void SetDebugName(CComPtr<CLASS> &object, std::string const &name, std::string const &member = String::Empty)
         {
 			auto finalName(name + (member.empty() ? "::" : String::Empty) + (member.empty() ? member : String::Empty));
             object->SetPrivateData(WKPDID_D3DDebugObjectName, UINT(finalName.size()), finalName.data());
+        }
+
+        template <typename D3DTYPE, typename D3DSOURCE>
+        void AtomicAddRef(D3DTYPE** d3dObject, CComPtr<D3DSOURCE>& d3dSource)
+        {
+            if (d3dSource)
+            {
+                InterlockedExchangePointer(reinterpret_cast<void**>(d3dObject), dynamic_cast<D3DTYPE*>(d3dSource.p));
+                (*d3dObject)->AddRef();
+            }
+        }
+
+        template <typename D3DTYPE>
+        void AtomicRelease(D3DTYPE** d3dObject)
+        {
+            if (*d3dObject)
+            {
+                reinterpret_cast<D3DTYPE*>(InterlockedExchangePointer((void**)d3dObject, nullptr))->Release();
+            }
         }
 
         GEK_CONTEXT_USER(Device, Window *, Render::Device::Description)
@@ -646,18 +665,18 @@ namespace Gek
             {
             public:
                 Render::PipelineState::Description description;
-                CComPtr<ID3D11RasterizerState> d3dRrasterizerState;
-                CComPtr<ID3D11DepthStencilState> d3dDepthStencilState;
-                CComPtr<ID3D11BlendState> d3dBlendState;
-                CComPtr<ID3D11InputLayout> d3dVertexLayout;
-                CComPtr<ID3D11VertexShader> d3dVertexShader;
-                CComPtr<ID3D11PixelShader> d3dPixelShader;
-                D3D11_PRIMITIVE_TOPOLOGY d3dPrimitiveTopology;
+                ID3D11RasterizerState* d3dRasterizerState = nullptr;
+                ID3D11DepthStencilState *d3dDepthStencilState = nullptr;
+                ID3D11BlendState *d3dBlendState = nullptr;
+                ID3D11InputLayout *d3dVertexLayout = nullptr;
+                ID3D11VertexShader *d3dVertexShader = nullptr;
+                ID3D11PixelShader *d3dPixelShader = nullptr;
+                D3D11_PRIMITIVE_TOPOLOGY d3dPrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
                 uint32_t d3dSampleMask = 0x0;
 
             public:
                 PipelineState(const Render::PipelineState::Description& description,
-                    CComPtr<ID3D11RasterizerState>& d3dRrasterizerState,
+                    CComPtr<ID3D11RasterizerState>& d3dRasterizerState,
                     CComPtr<ID3D11DepthStencilState>& d3dDepthStencilState,
                     CComPtr<ID3D11BlendState>& d3dBlendState,
                     CComPtr<ID3D11InputLayout>& d3dVertexLayout,
@@ -666,15 +685,25 @@ namespace Gek
                     D3D11_PRIMITIVE_TOPOLOGY d3dPrimitiveTopology,
                     uint32_t d3dSampleMask)
                     : description(description)
-                    , d3dRrasterizerState(d3dRrasterizerState)
-                    , d3dDepthStencilState(d3dDepthStencilState)
-                    , d3dBlendState(d3dBlendState)
-                    , d3dVertexLayout(d3dVertexLayout)
-                    , d3dVertexShader(d3dVertexShader)
-                    , d3dPixelShader(d3dPixelShader)
                     , d3dPrimitiveTopology(d3dPrimitiveTopology)
                     , d3dSampleMask(d3dSampleMask)
                 {
+                    AtomicAddRef(&this->d3dRasterizerState, d3dRasterizerState);
+                    AtomicAddRef(&this->d3dDepthStencilState, d3dDepthStencilState);
+                    AtomicAddRef(&this->d3dBlendState, d3dBlendState);
+                    AtomicAddRef(&this->d3dVertexLayout, d3dVertexLayout);
+                    AtomicAddRef(&this->d3dVertexShader, d3dVertexShader);
+                    AtomicAddRef(&this->d3dPixelShader, d3dPixelShader);
+                }
+
+                virtual ~PipelineState(void)
+                {
+                    AtomicRelease(&d3dPixelShader);
+                    AtomicRelease(&d3dVertexShader);
+                    AtomicRelease(&d3dVertexLayout);
+                    AtomicRelease(&d3dBlendState);
+                    AtomicRelease(&d3dDepthStencilState);
+                    AtomicRelease(&d3dRasterizerState);
                 }
 
                 std::string_view getName(void) const
@@ -693,13 +722,18 @@ namespace Gek
             {
             public:
                 Render::SamplerState::Description description;
-                CComPtr<ID3D11SamplerState> d3dSamplerState;
+                ID3D11SamplerState* d3dSamplerState = nullptr;
 
             public:
                 SamplerState(const Render::SamplerState::Description& description, CComPtr<ID3D11SamplerState>& d3dSamplerState)
                     : description(description)
-                    , d3dSamplerState(d3dSamplerState)
                 {
+                    AtomicAddRef(&this->d3dSamplerState, d3dSamplerState);
+                }
+
+                virtual ~SamplerState(void)
+                {
+                    AtomicRelease(&d3dSamplerState);
                 }
 
                 std::string_view getName(void) const
@@ -716,36 +750,51 @@ namespace Gek
             class ViewResource
             {
             public:
-                CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
+                ID3D11ShaderResourceView* d3dShaderResourceView = nullptr;
 
             public:
                 ViewResource(CComPtr<ID3D11ShaderResourceView>& d3dShaderResourceView)
-                    : d3dShaderResourceView(d3dShaderResourceView)
                 {
+                    AtomicAddRef(&this->d3dShaderResourceView, d3dShaderResourceView);
+                }
+
+                virtual ~ViewResource(void)
+                {
+                    AtomicRelease(&d3dShaderResourceView);
                 }
             };
 
             class UnorderedResource
             {
             public:
-                CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
+                ID3D11UnorderedAccessView* d3dUnorderedAccessView = nullptr;
 
             public:
                 UnorderedResource(CComPtr<ID3D11UnorderedAccessView>& d3dUnorderedAccessView)
-                    : d3dUnorderedAccessView(d3dUnorderedAccessView)
                 {
+                    AtomicAddRef(&this->d3dUnorderedAccessView, d3dUnorderedAccessView);
+                }
+
+                virtual ~UnorderedResource(void)
+                {
+                    AtomicRelease(&d3dUnorderedAccessView);
                 }
             };
 
             class TargetResource
             {
             public:
-                CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
+                ID3D11RenderTargetView* d3dRenderTargetView = nullptr;
 
             public:
                 TargetResource(CComPtr<ID3D11RenderTargetView>& d3dRenderTargetView)
-                    : d3dRenderTargetView(d3dRenderTargetView)
                 {
+                    AtomicAddRef(&this->d3dRenderTargetView, d3dRenderTargetView);
+                }
+
+                virtual ~TargetResource(void)
+                {
+                    AtomicRelease(&d3dRenderTargetView);
                 }
             };
 
@@ -756,7 +805,7 @@ namespace Gek
             {
             public:
                 Render::Buffer::Description description;
-                CComPtr<ID3D11Buffer> d3dBuffer;
+                ID3D11Buffer* d3dBuffer = nullptr;
 
             public:
                 Buffer(const Render::Buffer::Description& description,
@@ -766,8 +815,13 @@ namespace Gek
                     : ViewResource(d3dShaderResourceView)
                     , UnorderedResource(d3dUnorderedAccessView)
                     , description(description)
-                    , d3dBuffer(d3dBuffer)
                 {
+                    AtomicAddRef(&this->d3dBuffer, d3dBuffer);
+                }
+
+                virtual ~Buffer(void)
+                {
+                    AtomicRelease(&d3dBuffer);
                 }
 
                 std::string_view getName(void) const
@@ -781,44 +835,13 @@ namespace Gek
                 }
             };
 
-            class DefaultTarget
-                : public Render::Texture
-                , public TargetResource
-            {
-            public:
-                Render::Texture::Description description;
-                CComPtr<ID3D11Resource> d3dBaseResource;
-
-            public:
-                DefaultTarget(const Render::Texture::Description& description,
-                    CComPtr<ID3D11Resource>& d3dBaseResource,
-                    CComPtr<ID3D11RenderTargetView>& d3dRenderTargetView)
-                    : TargetResource(d3dRenderTargetView)
-                    , description(description)
-                    , d3dBaseResource(d3dBaseResource)
-                {
-                }
-
-                std::string_view getName(void) const
-                {
-                    return description.name;
-                }
-
-                Render::Texture::Description const& getDescription(void) const
-                {
-                    return description;
-                }
-            };
-
             class Texture
                 : public Render::Texture
                 , public ViewResource
             {
             public:
                 Render::Texture::Description description;
-                CComPtr<ID3D11Resource> d3dBaseResource;
-
-                CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
+                ID3D11Resource* d3dBaseResource = nullptr;
 
             public:
                 Texture(const Render::Texture::Description& description,
@@ -826,8 +849,13 @@ namespace Gek
                     CComPtr<ID3D11ShaderResourceView>& d3dShaderResourceView)
                     : ViewResource(d3dShaderResourceView)
                     , description(description)
-                    , d3dBaseResource(d3dBaseResource)
                 {
+                    AtomicAddRef(&this->d3dBaseResource, d3dBaseResource);
+                }
+
+                virtual ~Texture(void)
+                {
+                    AtomicRelease(&d3dBaseResource);
                 }
 
                 std::string_view getName(void) const
@@ -854,6 +882,10 @@ namespace Gek
                     , UnorderedResource(d3dUnorderedAccessView)
                 {
                 }
+
+                virtual ~UnorderedTexture(void)
+                {
+                }
             };
 
             class TargetTexture
@@ -862,12 +894,35 @@ namespace Gek
             {
             public:
                 TargetTexture(const Render::Texture::Description& description,
-                    CComPtr<ID3D11Resource> &d3dBaseResource,
-                    CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView,
-                    CComPtr<ID3D11UnorderedAccessView> &d3dUnorderedAccessView,
+                    CComPtr<ID3D11Resource>& d3dBaseResource,
+                    CComPtr<ID3D11ShaderResourceView>& d3dShaderResourceView,
+                    CComPtr<ID3D11UnorderedAccessView>& d3dUnorderedAccessView,
                     CComPtr<ID3D11RenderTargetView>& d3dRenderTargetView)
                     : UnorderedTexture(description, d3dBaseResource, d3dShaderResourceView, d3dUnorderedAccessView)
                     , TargetResource(d3dRenderTargetView)
+                {
+                }
+
+                virtual ~TargetTexture(void)
+                {
+                }
+            };
+
+            class BackBuffer
+                : public Texture
+                , public TargetResource
+            {
+            public:
+                BackBuffer(const Render::Texture::Description& description,
+                    CComPtr<ID3D11Resource>& d3dBaseResource,
+                    CComPtr<ID3D11ShaderResourceView>& d3dShaderResourceView,
+                    CComPtr<ID3D11RenderTargetView>& d3dRenderTargetView)
+                    : Texture(description, d3dBaseResource, d3dShaderResourceView)
+                    , TargetResource(d3dRenderTargetView)
+                {
+                }
+
+                virtual ~BackBuffer(void)
                 {
                 }
             };
@@ -876,7 +931,7 @@ namespace Gek
                 : public UnorderedTexture
             {
             public:
-                CComPtr<ID3D11DepthStencilView> d3dDepthStencilView;
+                ID3D11DepthStencilView* d3dDepthStencilView = nullptr;
 
             public:
                 DepthTexture(const Render::Texture::Description& description,
@@ -885,8 +940,13 @@ namespace Gek
                     CComPtr<ID3D11UnorderedAccessView>& d3dUnorderedAccessView,
                     CComPtr<ID3D11DepthStencilView> &d3dDepthStencilView)
                     : UnorderedTexture(description, d3dBaseResource, d3dShaderResourceView, d3dUnorderedAccessView)
-                    , d3dDepthStencilView(d3dDepthStencilView)
                 {
+                    AtomicAddRef(&this->d3dDepthStencilView, d3dDepthStencilView);
+                }
+
+                virtual ~DepthTexture(void)
+                {
+                    AtomicRelease(&d3dDepthStencilView);
                 }
             };
 
@@ -895,15 +955,21 @@ namespace Gek
             {
             public:
                 Device *device = nullptr;
-                CComPtr<ID3D11CommandList> d3dCommandList;
-                CComPtr<ID3D11DeviceContext> d3dDeviceContext;
+                ID3D11DeviceContext* d3dDeferredContext = nullptr;
+                ID3D11CommandList* d3dCommandList = nullptr;
 
             public:
-                CommandList(Device *device, CComPtr<ID3D11DeviceContext> &d3dDeviceContext)
+                CommandList(Device *device, CComPtr<ID3D11DeviceContext> &d3dDeferredContext)
                     : device(device)
-                    , d3dDeviceContext(d3dDeviceContext)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
+                    AtomicAddRef(&this->d3dDeferredContext, d3dDeferredContext);
+                }
+
+                virtual ~CommandList(void)
+                {
+                    AtomicRelease(&d3dCommandList);
+                    AtomicRelease(&d3dDeferredContext);
                 }
 
                 std::string_view getName(void) const
@@ -914,79 +980,82 @@ namespace Gek
                 // Render::Device::Queue
                 void finish(void)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
-                    HRESULT resultValue = d3dDeviceContext->FinishCommandList(false, &d3dCommandList);
+                    CComPtr<ID3D11CommandList> d3dCommandList;
+                    HRESULT resultValue = d3dDeferredContext->FinishCommandList(false, &d3dCommandList);
                     if (FAILED(resultValue) || !d3dCommandList)
                     {
                         std::cerr << "Unable to create render list";
                     }
+
+                    AtomicAddRef(&this->d3dCommandList, d3dCommandList);
                 }
 
                 void generateMipMaps(Render::Resource *texture)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
                     auto internalTexture = dynamic_cast<Texture*>(texture);
                     if (internalTexture)
                     {
-                        d3dDeviceContext->GenerateMips(internalTexture->d3dShaderResourceView);
+                        d3dDeferredContext->GenerateMips(internalTexture->d3dShaderResourceView);
                     }
                 }
 
                 void resolveSamples(Render::Resource* destination, Render::Resource* source)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
                     auto internalDestination = dynamic_cast<Texture*>(destination);
                     auto internalSource = dynamic_cast<Texture*>(source);
                     if (internalDestination && internalSource)
                     {
-                        //d3dDeviceContext->ResolveSubresource(device->resourceCache.get(destination), 0, device->resourceCache.get(source), 0, DXGI_FORMAT_UNKNOWN);
+                        //d3dDeferredContext->ResolveSubresource(device->resourceCache.get(destination), 0, device->resourceCache.get(source), 0, DXGI_FORMAT_UNKNOWN);
                     }
                 }
 
                 void clearUnorderedAccess(Render::Resource* object, Math::Float4 const &value)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
                     auto internalObject = dynamic_cast<UnorderedResource*>(object);
                     if (internalObject)
                     {
-                        d3dDeviceContext->ClearUnorderedAccessViewFloat(internalObject->d3dUnorderedAccessView, value.data);
+                        d3dDeferredContext->ClearUnorderedAccessViewFloat(internalObject->d3dUnorderedAccessView, value.data);
                     }
                 }
 
                 void clearUnorderedAccess(Render::Resource* object, Math::UInt4 const &value)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
                     auto internalObject = dynamic_cast<UnorderedResource*>(object);
                     if (internalObject)
                     {
-                        d3dDeviceContext->ClearUnorderedAccessViewUint(internalObject->d3dUnorderedAccessView, value.data);
+                        d3dDeferredContext->ClearUnorderedAccessViewUint(internalObject->d3dUnorderedAccessView, value.data);
                     }
                 }
 
                 void clearRenderTarget(Render::Texture* renderTarget, Math::Float4 const &clearColor)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
                     auto internalTarget = dynamic_cast<TargetResource*>(renderTarget);
                     if (internalTarget)
                     {
-                        d3dDeviceContext->ClearRenderTargetView(internalTarget->d3dRenderTargetView, clearColor.data);
+                        d3dDeferredContext->ClearRenderTargetView(internalTarget->d3dRenderTargetView, clearColor.data);
                     }
                 }
 
                 void clearDepthStencilTarget(Render::Texture* depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
                     auto internalBuffer = dynamic_cast<DepthTexture*>(depthBuffer);
                     if (internalBuffer)
                     {
-                        d3dDeviceContext->ClearDepthStencilView(internalBuffer->d3dDepthStencilView,
+                        d3dDeferredContext->ClearDepthStencilView(internalBuffer->d3dDepthStencilView,
                             ((flags & Render::ClearFlags::Depth ? D3D11_CLEAR_DEPTH : 0) |
                             (flags & Render::ClearFlags::Stencil ? D3D11_CLEAR_STENCIL : 0)),
                             clearDepth, clearStencil);
@@ -995,38 +1064,38 @@ namespace Gek
 
                 void setViewportList(const std::vector<Render::ViewPort> &viewPortList)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
-                    d3dDeviceContext->RSSetViewports(viewPortList.size(), (D3D11_VIEWPORT *)viewPortList.data());
+                    d3dDeferredContext->RSSetViewports(viewPortList.size(), (D3D11_VIEWPORT *)viewPortList.data());
                 }
 
                 void setScissorList(const std::vector<Math::UInt4> &rectangleList)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
-                    d3dDeviceContext->RSSetScissorRects(rectangleList.size(), (D3D11_RECT *)rectangleList.data());
+                    d3dDeferredContext->RSSetScissorRects(rectangleList.size(), (D3D11_RECT *)rectangleList.data());
                 }
 
                 void bindPipelineState(Render::PipelineState* pipelineState)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
                     auto internalPipelineState = dynamic_cast<PipelineState*>(pipelineState);
                     if (internalPipelineState)
                     {
-                        d3dDeviceContext->RSSetState(internalPipelineState->d3dRrasterizerState);
-                        d3dDeviceContext->OMSetDepthStencilState(internalPipelineState->d3dDepthStencilState, 0x0);
-                        d3dDeviceContext->OMSetBlendState(internalPipelineState->d3dBlendState, Math::Float4::Zero.data, internalPipelineState->d3dSampleMask);
-                        d3dDeviceContext->IASetInputLayout(internalPipelineState->d3dVertexLayout);
-                        d3dDeviceContext->VSSetShader(internalPipelineState->d3dVertexShader, nullptr, 0);
-                        d3dDeviceContext->PSSetShader(internalPipelineState->d3dPixelShader, nullptr, 0);
-                        d3dDeviceContext->IASetPrimitiveTopology(internalPipelineState->d3dPrimitiveTopology);
+                        d3dDeferredContext->RSSetState(internalPipelineState->d3dRasterizerState);
+                        d3dDeferredContext->OMSetDepthStencilState(internalPipelineState->d3dDepthStencilState, 0x0);
+                        d3dDeferredContext->OMSetBlendState(internalPipelineState->d3dBlendState, Math::Float4::Zero.data, internalPipelineState->d3dSampleMask);
+                        d3dDeferredContext->IASetInputLayout(internalPipelineState->d3dVertexLayout);
+                        d3dDeferredContext->VSSetShader(internalPipelineState->d3dVertexShader, nullptr, 0);
+                        d3dDeferredContext->PSSetShader(internalPipelineState->d3dPixelShader, nullptr, 0);
+                        d3dDeferredContext->IASetPrimitiveTopology(internalPipelineState->d3dPrimitiveTopology);
                     }
                 }
 
                 void bindSamplerStateList(const std::vector<Render::SamplerState*> & samplerStateList, uint32_t firstStage, uint8_t pipelineFlags)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
                     std::vector<ID3D11SamplerState*> d3dSamplerStateList;
                     for (auto& samplerState : samplerStateList)
@@ -1040,18 +1109,18 @@ namespace Gek
 
                     if (pipelineFlags & Render::Pipeline::Vertex)
                     {
-                        d3dDeviceContext->VSSetSamplers(firstStage, d3dSamplerStateList.size(), d3dSamplerStateList.data());
+                        d3dDeferredContext->VSSetSamplers(firstStage, d3dSamplerStateList.size(), d3dSamplerStateList.data());
                     }
 
                     if (pipelineFlags & Render::Pipeline::Pixel)
                     {
-                        d3dDeviceContext->PSSetSamplers(firstStage, d3dSamplerStateList.size(), d3dSamplerStateList.data());
+                        d3dDeferredContext->PSSetSamplers(firstStage, d3dSamplerStateList.size(), d3dSamplerStateList.data());
                     }
                 }
 
                 void bindConstantBufferList(const std::vector<Render::Buffer*> &constantBufferList, uint32_t firstStage, uint8_t pipelineFlags)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
                     std::vector<ID3D11Buffer*> d3dconstantBufferList;
                     for (auto& constantBuffer : constantBufferList)
@@ -1065,18 +1134,18 @@ namespace Gek
 
                     if (pipelineFlags & Render::Pipeline::Vertex)
                     {
-                        d3dDeviceContext->VSSetConstantBuffers(firstStage, d3dconstantBufferList.size(), d3dconstantBufferList.data());
+                        d3dDeferredContext->VSSetConstantBuffers(firstStage, d3dconstantBufferList.size(), d3dconstantBufferList.data());
                     }
 
                     if (pipelineFlags & Render::Pipeline::Pixel)
                     {
-                        d3dDeviceContext->PSSetConstantBuffers(firstStage, d3dconstantBufferList.size(), d3dconstantBufferList.data());
+                        d3dDeferredContext->PSSetConstantBuffers(firstStage, d3dconstantBufferList.size(), d3dconstantBufferList.data());
                     }
                 }
 
                 void bindResourceList(const std::vector<Render::Resource*> &resourceList, uint32_t firstStage, uint8_t pipelineFlags)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
                     std::vector<ID3D11ShaderResourceView*> d3dResourceList;
                     for (auto& resource : resourceList)
@@ -1090,18 +1159,18 @@ namespace Gek
 
                     if (pipelineFlags & Render::Pipeline::Vertex)
                     {
-                        d3dDeviceContext->VSSetShaderResources(firstStage, d3dResourceList.size(), d3dResourceList.data());
+                        d3dDeferredContext->VSSetShaderResources(firstStage, d3dResourceList.size(), d3dResourceList.data());
                     }
 
                     if (pipelineFlags & Render::Pipeline::Pixel)
                     {
-                        d3dDeviceContext->PSSetShaderResources(firstStage, d3dResourceList.size(), d3dResourceList.data());
+                        d3dDeferredContext->PSSetShaderResources(firstStage, d3dResourceList.size(), d3dResourceList.data());
                     }
                 }
 
                 void bindUnorderedAccessList(const std::vector<Render::Resource*> &unorderedResourceList, uint32_t firstStage, uint32_t *countList)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
                     std::vector<ID3D11UnorderedAccessView*> d3dResourceList;
                     for (auto& unorderedResource : unorderedResourceList)
@@ -1113,24 +1182,24 @@ namespace Gek
                         }
                     }
 
-                    d3dDeviceContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, nullptr, nullptr, firstStage, d3dResourceList.size(), d3dResourceList.data(), countList);
+                    d3dDeferredContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, nullptr, nullptr, firstStage, d3dResourceList.size(), d3dResourceList.data(), countList);
                 }
 
                 void bindIndexBuffer(Render::Resource* indexBuffer, uint32_t offset)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
                     auto internalBuffer = dynamic_cast<Buffer*>(indexBuffer);
                     if (internalBuffer)
                     {
                         DXGI_FORMAT format = Direct3D11::BufferFormatList[static_cast<uint8_t>(internalBuffer->description.format)];
-                        d3dDeviceContext->IASetIndexBuffer(internalBuffer->d3dBuffer, format, offset);
+                        d3dDeferredContext->IASetIndexBuffer(internalBuffer->d3dBuffer, format, offset);
                     }
                 }
 
                 void bindVertexBufferList(const std::vector<Render::Resource*> &vertexBufferList, uint32_t firstSlot, uint32_t *offsetList)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
                     std::vector<ID3D11Buffer*> d3dBufferList;
                     std::vector<uint32_t> d3dVertexStrideList;
@@ -1146,12 +1215,12 @@ namespace Gek
                         }
                     }
 
-                    d3dDeviceContext->IASetVertexBuffers(firstSlot, d3dBufferList.size(), d3dBufferList.data(), d3dVertexStrideList.data(), offsetList ? offsetList : d3dVertexOffsetList.data());
+                    d3dDeferredContext->IASetVertexBuffers(firstSlot, d3dBufferList.size(), d3dBufferList.data(), d3dVertexStrideList.data(), offsetList ? offsetList : d3dVertexOffsetList.data());
                 }
 
                 void bindRenderTargetList(const std::vector<Render::Texture*> &renderTargetList, Render::Texture* depthBuffer)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
                     std::vector<ID3D11RenderTargetView*> d3dTargetList;
                     for (auto& renderTarget : renderTargetList)
@@ -1166,65 +1235,65 @@ namespace Gek
                     auto internalDepth = dynamic_cast<DepthTexture*>(depthBuffer);
                     if (internalDepth)
                     {
-                        d3dDeviceContext->OMSetRenderTargets(d3dTargetList.size(), d3dTargetList.data(), internalDepth->d3dDepthStencilView);
+                        d3dDeferredContext->OMSetRenderTargets(d3dTargetList.size(), d3dTargetList.data(), internalDepth->d3dDepthStencilView);
                     }
                     else
                     {
-                        d3dDeviceContext->OMSetRenderTargets(d3dTargetList.size(), d3dTargetList.data(), nullptr);
+                        d3dDeferredContext->OMSetRenderTargets(d3dTargetList.size(), d3dTargetList.data(), nullptr);
                     }
                 }
 
                 void drawInstancedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
-                    d3dDeviceContext->DrawInstanced(vertexCount, instanceCount, firstVertex, firstInstance);
+                    d3dDeferredContext->DrawInstanced(vertexCount, instanceCount, firstVertex, firstInstance);
                 }
 
                 void drawInstancedIndexedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
-                    d3dDeviceContext->DrawIndexedInstanced(indexCount, instanceCount, firstIndex, firstVertex, firstInstance);
+                    d3dDeferredContext->DrawIndexedInstanced(indexCount, instanceCount, firstIndex, firstVertex, firstInstance);
                 }
 
                 void dispatch(uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
 
-                    d3dDeviceContext->Dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
+                    d3dDeferredContext->Dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
                 }
 
                 void drawInstancedPrimitive(Render::Resource* bufferArguments)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
                     
                     auto internalBuffer = dynamic_cast<Buffer*>(bufferArguments);
                     if (internalBuffer)
                     {
-                        d3dDeviceContext->DrawInstancedIndirect(internalBuffer->d3dBuffer, 0);
+                        d3dDeferredContext->DrawInstancedIndirect(internalBuffer->d3dBuffer, 0);
                     }
                 }
 
                 void drawInstancedIndexedPrimitive(Render::Resource* bufferArguments)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
                     
                     auto internalBuffer = dynamic_cast<Buffer*>(bufferArguments);
                     if (internalBuffer)
                     {
-                        d3dDeviceContext->DrawIndexedInstancedIndirect(internalBuffer->d3dBuffer, 0);
+                        d3dDeferredContext->DrawIndexedInstancedIndirect(internalBuffer->d3dBuffer, 0);
                     }
                 }
 
                 void dispatch(Render::Resource* bufferArguments)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
                     
                     auto internalBuffer = dynamic_cast<Buffer*>(bufferArguments);
                     if (internalBuffer)
                     {
-                        d3dDeviceContext->DispatchIndirect(internalBuffer->d3dBuffer, 0);
+                        d3dDeferredContext->DispatchIndirect(internalBuffer->d3dBuffer, 0);
                     }
                 }
             };
@@ -1234,10 +1303,10 @@ namespace Gek
             {
             public:
                 Device* device = nullptr;
-                CComPtr<ID3D11DeviceContext> d3dDeviceContext;
+                ID3D11DeviceContext* d3dDeviceContext = nullptr;
 
             public:
-                Queue(Device* device, CComPtr<ID3D11DeviceContext>& d3dDeviceContext)
+                Queue(Device* device, ID3D11DeviceContext* d3dDeviceContext)
                     : device(device)
                     , d3dDeviceContext(d3dDeviceContext)
                 {
@@ -1314,7 +1383,7 @@ namespace Gek
                 swapChainDescription.Stereo = false;
                 swapChainDescription.SampleDesc.Count = deviceDescription.sampleCount;
                 swapChainDescription.SampleDesc.Quality = deviceDescription.sampleQuality;
-                swapChainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+                swapChainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_SHADER_INPUT;
                 swapChainDescription.BufferCount = 2;
                 swapChainDescription.Scaling = DXGI_SCALING_STRETCH;
                 swapChainDescription.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
@@ -1335,8 +1404,6 @@ namespace Gek
                 d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
                 //d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
 #endif
-
-                updateSwapChain();
             }
 
             ~Device(void)
@@ -1352,29 +1419,48 @@ namespace Gek
                 d3dDevice.Release();
             }
 
+            std::mutex backBufferMutex;
             Render::Texture* getBackBuffer(void)
             {
+                if (!backBuffer)
+                {
+                    std::unique_lock<std::mutex> lock(backBufferMutex);
+                    if (!backBuffer)
+                    {
+                        CComPtr<ID3D11Texture2D> d3dRenderTarget;
+                        HRESULT resultValue = dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&d3dRenderTarget));
+                        if (FAILED(resultValue) || !d3dRenderTarget)
+                        {
+                            throw std::runtime_error("Unable to get swap chain primary buffer");
+                        }
+
+                        CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
+                        resultValue = d3dDevice->CreateRenderTargetView(d3dRenderTarget, nullptr, &d3dRenderTargetView);
+                        if (FAILED(resultValue) || !d3dRenderTargetView)
+                        {
+                            throw std::runtime_error("Unable to create render target view for back buffer");
+                        }
+
+                        CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
+                        resultValue = d3dDevice->CreateShaderResourceView(d3dRenderTarget, nullptr, &d3dShaderResourceView);
+                        if (FAILED(resultValue) || !d3dShaderResourceView)
+                        {
+                            throw std::runtime_error("Unable to create shader resource view for back buffer");
+                        }
+
+                        D3D11_TEXTURE2D_DESC textureDescription;
+                        d3dRenderTarget->GetDesc(&textureDescription);
+
+                        Render::Texture::Description description;
+                        description.width = textureDescription.Width;
+                        description.height = textureDescription.Height;
+                        description.format = Direct3D11::GetFormat(textureDescription.Format);
+                        CComQIPtr<ID3D11Resource> d3dResource(d3dRenderTarget);
+                        backBuffer = std::make_unique<BackBuffer>(description, d3dResource, d3dShaderResourceView, d3dRenderTargetView);
+                    }
+                }
+
                 return backBuffer.get();
-            }
-
-            void updateSwapChain(void)
-            {
-                CComPtr<ID3D11Resource> d3dBaseResource;
-                HRESULT resultValue = dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&d3dBaseResource));
-                if (FAILED(resultValue) || !d3dBaseResource)
-                {
-                    throw std::runtime_error("Unable to get swap chain primary buffer");
-                }
-
-                CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
-                resultValue = d3dDevice->CreateRenderTargetView(d3dBaseResource, nullptr, &d3dRenderTargetView);
-                if (FAILED(resultValue) || !d3dRenderTargetView)
-                {
-                    throw std::runtime_error("Unable to create render target view for back buffer");
-                }
-
-                Render::Texture::Description description;
-                backBuffer = std::make_unique<DefaultTarget>(description, d3dBaseResource, d3dRenderTargetView);
             }
 
             CComPtr<ID3D11RasterizerState> createRasterizerState(const Render::PipelineState::RasterizerState::Description &rasterizerStateDescription)
@@ -1714,8 +1800,6 @@ struct Output
                         throw std::runtime_error("Unablet to set windowed state");
                     }
                 }
-
-                updateSwapChain();
             }
 
             void setDisplayMode(const Render::DisplayMode &displayMode)
@@ -1738,8 +1822,6 @@ struct Output
                 {
                     throw std::runtime_error("Unable to set display mode");
                 }
-
-                updateSwapChain();
             }
 
             void handleResize(void)
@@ -1754,8 +1836,6 @@ struct Output
                 {
                     throw std::runtime_error("Unable to resize swap chain buffers to window size");
                 }
-
-                updateSwapChain();
             }
 
             Render::PipelineStatePtr createPipelineState(const Render::PipelineState::Description &pipelineStateDescription)
@@ -1795,12 +1875,12 @@ struct Output
                     return nullptr;
                 }
 
-                setDebugName(rasterizerState, pipelineStateDescription.name, "RasterizerState");
-                setDebugName(depthStencilState, pipelineStateDescription.name, "DepthStencilState");
-                setDebugName(blendState, pipelineStateDescription.name, "BlendState");
-                setDebugName(vertexLayout, pipelineStateDescription.name, "VertexLayout");
-                setDebugName(vertexShader, pipelineStateDescription.name, "VertexShader");
-                setDebugName(pixelShader, pipelineStateDescription.name, "PixelShader");
+                SetDebugName(rasterizerState, pipelineStateDescription.name, "RasterizerState");
+                SetDebugName(depthStencilState, pipelineStateDescription.name, "DepthStencilState");
+                SetDebugName(blendState, pipelineStateDescription.name, "BlendState");
+                SetDebugName(vertexLayout, pipelineStateDescription.name, "VertexLayout");
+                SetDebugName(vertexShader, pipelineStateDescription.name, "VertexShader");
+                SetDebugName(pixelShader, pipelineStateDescription.name, "PixelShader");
                 return std::make_unique<PipelineState>(pipelineStateDescription,
                     rasterizerState,
                     depthStencilState,
@@ -1833,7 +1913,7 @@ struct Output
 
                 CComPtr<ID3D11SamplerState> samplerState;
                 d3dDevice->CreateSamplerState(&samplerDescription, &samplerState);
-                setDebugName(samplerState, samplerStateDescription.name);
+                SetDebugName(samplerState, samplerStateDescription.name);
                 return std::make_unique<SamplerState>(samplerStateDescription, samplerState);
             }
 
@@ -2027,7 +2107,7 @@ struct Output
                     }
                 }
 
-                setDebugName(d3dBuffer, description.name);
+                SetDebugName(d3dBuffer, description.name);
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
                 if (description.flags & Render::Buffer::Flags::Resource)
                 {
@@ -2044,7 +2124,7 @@ struct Output
                         return nullptr;
                     }
 
-                    setDebugName(d3dShaderResourceView, description.name, "ShaderResourceView");
+                    SetDebugName(d3dShaderResourceView, description.name, "ShaderResourceView");
                 }
 
                 CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
@@ -2064,7 +2144,7 @@ struct Output
                         return nullptr;
                     }
 
-                    setDebugName(d3dUnorderedAccessView, description.name, "UnorderedAccessView");
+                    SetDebugName(d3dUnorderedAccessView, description.name, "UnorderedAccessView");
                 }
 
                 return std::make_unique<Buffer>(description, d3dBuffer, d3dShaderResourceView, d3dUnorderedAccessView);
@@ -2186,7 +2266,7 @@ struct Output
                     return nullptr;
                 }
 
-                setDebugName(d3dResource, description.name);
+                SetDebugName(d3dResource, description.name);
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
                 if (description.flags & Render::Texture::Flags::Resource)
                 {
@@ -2212,7 +2292,7 @@ struct Output
                         return nullptr;
                     }
 
-                    setDebugName(d3dShaderResourceView, description.name, "ShaderResourceView");
+                    SetDebugName(d3dShaderResourceView, description.name, "ShaderResourceView");
                 }
 
                 CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
@@ -2240,7 +2320,7 @@ struct Output
                         return nullptr;
                     }
 
-                    setDebugName(d3dUnorderedAccessView, description.name, "UnorderedAccessView");
+                    SetDebugName(d3dUnorderedAccessView, description.name, "UnorderedAccessView");
                 }
 
                 if (description.flags & Render::Texture::Flags::RenderTarget)
@@ -2268,7 +2348,7 @@ struct Output
                         return nullptr;
                     }
 
-                    setDebugName(d3dRenderTargetView, description.name, "RenderTargetView");
+                    SetDebugName(d3dRenderTargetView, description.name, "RenderTargetView");
                     return std::make_unique<TargetTexture>(description, d3dResource, d3dShaderResourceView, d3dUnorderedAccessView, d3dRenderTargetView);
                 }
                 else if (description.flags & Render::Texture::Flags::DepthTarget)
@@ -2287,7 +2367,7 @@ struct Output
                         return nullptr;
                     }
 
-                    setDebugName(d3dDepthStencilView, description.name, "DepthStencilView");
+                    SetDebugName(d3dDepthStencilView, description.name, "DepthStencilView");
                     return std::make_unique<DepthTexture>(description, d3dResource, d3dShaderResourceView, d3dUnorderedAccessView, d3dDepthStencilView);
                 }
 
@@ -2349,8 +2429,8 @@ struct Output
                     return nullptr;
                 }
 
-				setDebugName(d3dResource, filePath.getString());
-                setDebugName(d3dShaderResourceView, filePath.getString(), "ShaderResourceView");
+				SetDebugName(d3dResource, filePath.getString());
+                SetDebugName(d3dShaderResourceView, filePath.getString(), "ShaderResourceView");
 
                 Render::Texture::Description description;
                 description.name = filePath.getString();
@@ -2369,16 +2449,16 @@ struct Output
 
             Render::CommandListPtr createCommandList(uint32_t flags)
             {
-                CComPtr<ID3D11DeviceContext> d3dDeviceContext;
-                HRESULT resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeviceContext);
-                if (!d3dDeviceContext)
+                CComPtr<ID3D11DeviceContext> d3dDeferredContext;
+                HRESULT resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeferredContext);
+                if (!d3dDeferredContext)
                 {
                     std::cerr << "Unable to create deferred render queue";
                     return nullptr;
                 }
 
-                //setDebugName(d3dDeviceContext, name);
-                return std::make_unique<CommandList>(this, d3dDeviceContext);
+                //SetDebugName(d3dDeviceContext, name);
+                return std::make_unique<CommandList>(this, d3dDeferredContext);
             }
 
             void present(bool waitForVerticalSync)
