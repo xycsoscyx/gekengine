@@ -7,7 +7,7 @@
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/Allocator.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/System/VideoDevice.hpp"
+#include "GEK/System/RenderDevice.hpp"
 #include "GEK/API/Core.hpp"
 #include "GEK/API/Processor.hpp"
 #include "GEK/API/ComponentMixin.hpp"
@@ -296,7 +296,7 @@ namespace Gek
 
     private:
         Plugin::Core *core = nullptr;
-        Video::Device *videoDevice = nullptr;
+        Render::Device *videoDevice = nullptr;
         Plugin::Population *population = nullptr;
         Plugin::Resources *resources = nullptr;
         Plugin::Renderer *renderer = nullptr;
@@ -328,7 +328,7 @@ namespace Gek
         ModelProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
             , core(core)
-            , videoDevice(core->getRenderer()->getVideoDevice())
+            , videoDevice(core->getRenderer()->getRenderDevice())
             , population(core->getPopulation())
             , resources(core->getResources())
             , renderer(core->getRenderer())
@@ -826,7 +826,7 @@ namespace Gek
 				}
 
                 updateMaximumValue(maximumInstanceCount, instanceList.size());
-				renderer->queueDrawCall(visual, material, std::move([this, drawDataList = move(drawDataList), instanceList = move(instanceList)](Video::Device::Context *videoContext) -> void
+				renderer->queueDrawCall(visual, material, std::move([this, drawDataList = move(drawDataList), instanceList = move(instanceList)](Render::Device::Context *videoContext) -> void
 				{
 					Math::Float4x4 *instanceData = nullptr;
 					if (videoDevice->mapBuffer(instanceBuffer.get(), instanceData))

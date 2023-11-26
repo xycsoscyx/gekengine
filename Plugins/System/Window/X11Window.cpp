@@ -9,7 +9,7 @@
 
 namespace Gek
 {
-    namespace X11
+    namespace Window
     {
         Window::Key ConvertKey(uint32_t key, uint32_t state)
         {
@@ -120,7 +120,7 @@ namespace Gek
             return Window::Key::Unknown;
         };
 
-        GEK_CONTEXT_USER_BASE(Window)
+        GEK_CONTEXT_USER_BASE(Implementation)
             , public Gek::Window
         {
         private:
@@ -133,12 +133,12 @@ namespace Gek
             Math::Int4 windowRectangle;
 
         public:
-            Window(Context *context)
+            Implementation(Context *context)
                 : ContextRegistration(context)
             {
             }
 
-            ~Window(void)
+            ~Implementation(void)
             {
                 redraw();
                 XFreeGC(display, graphicContext);
@@ -395,6 +395,6 @@ namespace Gek
             }
         };
 
-        GEK_REGISTER_CONTEXT_USER(Window);
-    }; // namespace X11
+        GEK_REGISTER_CONTEXT_USER(Implementation);
+    }; // namespace Window
 }; // namespace Gek

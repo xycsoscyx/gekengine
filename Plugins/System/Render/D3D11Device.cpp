@@ -3,8 +3,8 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/System/VideoDevice.hpp"
-#include "GEK/System/Window.hpp"
+#include "GEK/System/RenderDevice.hpp"
+#include "GEK/System/WindowDevice.hpp"
 #include <d3dcompiler.h>
 #include <DirectXTex.h>
 #include <wincodec.h>
@@ -1013,14 +1013,14 @@ namespace Gek
         using GeometryProgram = Program<ID3D11GeometryShader>;
         using PixelProgram = Program<ID3D11PixelShader>;
 
-        GEK_CONTEXT_USER(Device, Window *, Video::Device::Description)
+        GEK_CONTEXT_USER(Implementation, Window::Device *, Render::Device::Description)
             , public Video::Debug::Device
         {
             class Context
-                : public Video::Device::Context
+                : public Render::Device::Context
             {
                 class ComputePipeline
-                    : public Video::Device::Context::Pipeline
+                    : public Render::Device::Context::Pipeline
                 {
                 private:
                     ID3D11DeviceContext * d3dDeviceContext = nullptr;
@@ -1115,7 +1115,7 @@ namespace Gek
                 };
 
                 class VertexPipeline
-                    : public Video::Device::Context::Pipeline
+                    : public Render::Device::Context::Pipeline
                 {
                 private:
                     ID3D11DeviceContext * d3dDeviceContext = nullptr;
@@ -1203,7 +1203,7 @@ namespace Gek
                 };
 
                 class GeometryPipeline
-                    : public Video::Device::Context::Pipeline
+                    : public Render::Device::Context::Pipeline
                 {
                 private:
                     ID3D11DeviceContext * d3dDeviceContext = nullptr;
@@ -1291,7 +1291,7 @@ namespace Gek
                 };
 
                 class PixelPipeline
-                    : public Video::Device::Context::Pipeline
+                    : public Render::Device::Context::Pipeline
                 {
                 private:
                     ID3D11DeviceContext * d3dDeviceContext = nullptr;
@@ -1710,18 +1710,18 @@ namespace Gek
             };
 
         public:
-            Window * window = nullptr;
+            Window::Device * window = nullptr;
             bool isChildWindow = false;
 
             CComPtr<ID3D11Device> d3dDevice;
             CComPtr<ID3D11DeviceContext> d3dDeviceContext;
             CComPtr<IDXGISwapChain1> dxgiSwapChain;
 
-            Video::Device::ContextPtr defaultContext;
+            Render::Device::ContextPtr defaultContext;
             Video::TargetPtr backBuffer;
 
         public:
-            Device(Gek::Context *context, Window *window, Video::Device::Description deviceDescription)
+            Implementation(Gek::Context *context, Window::Device *window, Render::Device::Description deviceDescription)
                 : ContextRegistration(context)
                 , window(window)
                 , isChildWindow(GetParent((HWND)window->getWindowData(0)) != nullptr)
@@ -1790,7 +1790,7 @@ namespace Gek
 
             }
 
-            ~Device(void)
+            ~Implementation(void)
             {
                 setFullScreenState(false);
 
@@ -1809,7 +1809,7 @@ namespace Gek
                 return d3dDevice.p;
             }
 
-            // Video::Device
+            // Render::Device
             Video::DisplayModeList getDisplayModeList(Video::Format format) const
             {
                 Video::DisplayModeList displayModeList;
@@ -1976,14 +1976,14 @@ namespace Gek
                 return backBuffer.get();
             }
 
-            Video::Device::Context * const getDefaultContext(void)
+            Render::Device::Context * const getDefaultContext(void)
             {
                 assert(defaultContext);
 
                 return defaultContext.get();
             }
 
-            Video::Device::ContextPtr createDeferredContext(void)
+            Render::Device::ContextPtr createDeferredContext(void)
             {
                 assert(d3dDevice);
 
@@ -2974,6 +2974,6 @@ namespace Gek
             }
         };
 
-        GEK_REGISTER_CONTEXT_USER(Device);
+        GEK_REGISTER_CONTEXT_USER(Implementation);
     }; // Direct3D11
 }; // namespace Gek

@@ -51,7 +51,7 @@ namespace Gek
 			virtual Hash getIdentifier(void) const = 0;
 			virtual std::string_view getName(void) const = 0;
 
-            virtual Pass::Iterator begin(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle output) = 0;
+            virtual Pass::Iterator begin(Render::Device::Context *videoContext, ResourceHandle input, ResourceHandle output) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

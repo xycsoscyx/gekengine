@@ -4,7 +4,8 @@ string(REPLACE " " "_" ProjectID ${ProjectID})
 project(${ProjectID})
 
 file(GLOB HEADERS "GEK/${ProjectID}/*.hpp")
-file(GLOB SOURCES "*.cpp")
+
+file(GLOB SOURCES "*.cpp" "Devices/${GEK_RENDER_DEVICE}Device.cpp")
 
 add_library(${ProjectID} SHARED ${SOURCES} ${HEADERS})
 

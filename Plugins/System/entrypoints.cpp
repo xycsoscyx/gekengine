@@ -32,41 +32,25 @@ namespace Gek
     {
         return GlobalDLLInstance;
     }
-
-    namespace Win32
-    {
-        GEK_DECLARE_CONTEXT_USER(Window);
-    };
-
-    namespace DirectSound8
-	{
-		GEK_DECLARE_CONTEXT_USER(Device);
-	};
-
-    namespace Direct3D11
-    {
-        GEK_DECLARE_CONTEXT_USER(Device);
-    };
-#else
-    namespace X11
-    {
-        GEK_DECLARE_CONTEXT_USER(Window);
-    };
-
-    namespace Vulkan
-    {
-        GEK_DECLARE_CONTEXT_USER(Device);
-    };
 #endif
+    namespace Window
+    {
+        GEK_DECLARE_CONTEXT_USER(Implementation);
+    };
+
+    namespace Render
+    {
+        GEK_DECLARE_CONTEXT_USER(Implementation);
+    };
+
+    namespace Audio
+    {
+        GEK_DECLARE_CONTEXT_USER(Implementation);
+    };
 
     GEK_CONTEXT_BEGIN(System);
-#ifdef _WIN32
-        GEK_CONTEXT_ADD_CLASS(Default::System::Window, Win32::Window);
-		GEK_CONTEXT_ADD_CLASS(Default::Device::Audio, DirectSound8::Device);
-        GEK_CONTEXT_ADD_CLASS(Default::Device::Video, Direct3D11::Device);
-#else
-        GEK_CONTEXT_ADD_CLASS(Default::System::Window, X11::Window);
-        GEK_CONTEXT_ADD_CLASS(Default::Device::Video, Vulkan::Device);
-#endif
+        GEK_CONTEXT_ADD_CLASS(Default::System::Window, Window::Implementation);
+        GEK_CONTEXT_ADD_CLASS(Default::Device::Video, Render::Implementation);
+        GEK_CONTEXT_ADD_CLASS(Default::Device::Audio, Audio::Implementation);
     GEK_CONTEXT_END();
 }; // namespace Gek

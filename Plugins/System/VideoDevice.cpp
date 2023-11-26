@@ -1,4 +1,4 @@
-#include "GEK/System/VideoDevice.hpp"
+#include "GEK/System/RenderDevice.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/Hash.hpp"
 

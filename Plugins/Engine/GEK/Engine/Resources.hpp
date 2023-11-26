@@ -47,25 +47,25 @@ namespace Gek
             virtual DepthStateHandle createDepthState(Video::DepthState::Description const &depthState) = 0;
             virtual BlendStateHandle createBlendState(Video::BlendState::Description const &blendState) = 0;
 
-            virtual void generateMipMaps(Video::Device::Context *videoContext, ResourceHandle resourceHandle) = 0;
-            virtual void resolveSamples(Video::Device::Context *videoContext, ResourceHandle destinationHandle, ResourceHandle sourceHandle) = 0;
+            virtual void generateMipMaps(Render::Device::Context *videoContext, ResourceHandle resourceHandle) = 0;
+            virtual void resolveSamples(Render::Device::Context *videoContext, ResourceHandle destinationHandle, ResourceHandle sourceHandle) = 0;
             virtual void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle) = 0;
 
-            virtual void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, Math::Float4 const &value) = 0;
-            virtual void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, Math::UInt4 const &value) = 0;
-            virtual void clearRenderTarget(Video::Device::Context *videoContext, ResourceHandle resourceHandle, Math::Float4 const &color) = 0;
-            virtual void clearDepthStencilTarget(Video::Device::Context *videoContext, ResourceHandle depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
+            virtual void clearUnorderedAccess(Render::Device::Context *videoContext, ResourceHandle resourceHandle, Math::Float4 const &value) = 0;
+            virtual void clearUnorderedAccess(Render::Device::Context *videoContext, ResourceHandle resourceHandle, Math::UInt4 const &value) = 0;
+            virtual void clearRenderTarget(Render::Device::Context *videoContext, ResourceHandle resourceHandle, Math::Float4 const &color) = 0;
+            virtual void clearDepthStencilTarget(Render::Device::Context *videoContext, ResourceHandle depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
 
-            virtual void setMaterial(Video::Device::Context *videoContext, Shader::Pass *pass, MaterialHandle handle, bool forceShader = false) = 0;
-            virtual void setVisual(Video::Device::Context *videoContext, VisualHandle handle) = 0;
-            virtual void setRenderState(Video::Device::Context *videoContext, RenderStateHandle renderStateHandle) = 0;
-            virtual void setDepthState(Video::Device::Context *videoContext, DepthStateHandle depthStateHandle, uint32_t stencilReference) = 0;
-            virtual void setBlendState(Video::Device::Context *videoContext, BlendStateHandle blendStateHandle, Math::Float4 const &blendFactor, uint32_t sampleMask) = 0;
-            virtual void setProgram(Video::Device::Context::Pipeline *videoPipeline, ProgramHandle programHandle) = 0;
+            virtual void setMaterial(Render::Device::Context *videoContext, Shader::Pass *pass, MaterialHandle handle, bool forceShader = false) = 0;
+            virtual void setVisual(Render::Device::Context *videoContext, VisualHandle handle) = 0;
+            virtual void setRenderState(Render::Device::Context *videoContext, RenderStateHandle renderStateHandle) = 0;
+            virtual void setDepthState(Render::Device::Context *videoContext, DepthStateHandle depthStateHandle, uint32_t stencilReference) = 0;
+            virtual void setBlendState(Render::Device::Context *videoContext, BlendStateHandle blendStateHandle, Math::Float4 const &blendFactor, uint32_t sampleMask) = 0;
+            virtual void setProgram(Render::Device::Context::Pipeline *videoPipeline, ProgramHandle programHandle) = 0;
 
-            virtual void setRenderTargetList(Video::Device::Context *videoContext, std::vector<ResourceHandle> const &renderTargetHandleList, ResourceHandle const *depthBuffer) = 0;
+            virtual void setRenderTargetList(Render::Device::Context *videoContext, std::vector<ResourceHandle> const &renderTargetHandleList, ResourceHandle const *depthBuffer) = 0;
 
-            virtual void clearRenderTargetList(Video::Device::Context *videoContext, int32_t count, bool depthBuffer) = 0;
+            virtual void clearRenderTargetList(Render::Device::Context *videoContext, int32_t count, bool depthBuffer) = 0;
 
             virtual void startResourceBlock(void) = 0;
         };

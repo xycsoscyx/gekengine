@@ -34,24 +34,18 @@ namespace Gek
     }
 #endif
 
-    namespace Win32
+    namespace Window
     {
-        GEK_DECLARE_CONTEXT_USER(Window);
+        GEK_DECLARE_CONTEXT_USER(Implementation);
     };
 
-    namespace Direct3D11
+    namespace Render
     {
-        GEK_DECLARE_CONTEXT_USER(Device);
-    };
-
-    namespace Direct3D12
-    {
-        GEK_DECLARE_CONTEXT_USER(Device);
+        GEK_DECLARE_CONTEXT_USER(Implementation);
     };
 
     GEK_CONTEXT_BEGIN(System);
-        GEK_CONTEXT_ADD_CLASS(Default::Render::Window, Win32::Window);
-        GEK_CONTEXT_ADD_CLASS(Default::Render::Device, Direct3D11::Device);
-        //GEK_CONTEXT_ADD_CLASS(Default::Render::Device, Direct3D12::Device);
+        GEK_CONTEXT_ADD_CLASS(Default::Render::Window, Window::Implementation);
+        GEK_CONTEXT_ADD_CLASS(Default::Render::Device, Render::Implementation);
     GEK_CONTEXT_END();
 }; // namespace Gek

@@ -2,7 +2,7 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/System/VideoDevice.hpp"
+#include "GEK/System/RenderDevice.hpp"
 #include "GEK/API/Resources.hpp"
 #include "GEK/API/Renderer.hpp"
 #include "GEK/Engine/Shader.hpp"

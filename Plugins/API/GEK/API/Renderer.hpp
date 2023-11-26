@@ -9,7 +9,7 @@
 
 #include "GEK/Shapes/Frustum.hpp"
 #include "GEK/Utility/Context.hpp"
-#include "GEK/System/VideoDevice.hpp"
+#include "GEK/System/RenderDevice.hpp"
 #include "GEK/API/Handles.hpp"
 #include "GEK/API/Entity.hpp"
 #include <wink/signal.hpp>
@@ -26,14 +26,14 @@ namespace Gek
 
             virtual ~Renderer(void) = default;
 
-            virtual Video::Device * getVideoDevice(void) const = 0;
+            virtual Render::Device * getVideoDevice(void) const = 0;
 			virtual ImGuiContext * const getGuiContext(void) const = 0;
 
             virtual void queueCamera(Math::Float4x4 const &viewMatrix, float fieldOfView, float aspectRatio, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget = ResourceHandle(), std::string const &forceShader = String::Empty) = 0;
             virtual void queueCamera(Math::Float4x4 const &viewMatrix, float left, float top, float right, float bottom, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget = ResourceHandle(), std::string const &forceShader = String::Empty) = 0;
-            virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *)> &&draw) = 0;
+            virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Render::Device::Context *)> &&draw) = 0;
 
-            virtual void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle *target = nullptr) = 0;
+            virtual void renderOverlay(Render::Device::Context *videoContext, ResourceHandle input, ResourceHandle *target = nullptr) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

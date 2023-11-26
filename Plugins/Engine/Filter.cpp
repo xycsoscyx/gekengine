@@ -51,7 +51,7 @@ namespace Gek
 
         private:
             Engine::Core *core = nullptr;
-            Video::Device *videoDevice = nullptr;
+            Render::Device *videoDevice = nullptr;
             Engine::Resources *resources = nullptr;
             Plugin::Population *population = nullptr;
 
@@ -65,7 +65,7 @@ namespace Gek
             Filter(Context *context, Engine::Core *core, std::string filterName)
                 : ContextRegistration(context)
                 , core(core)
-                , videoDevice(core->getVideoDevice())
+                , videoDevice(core->getRenderDevice())
                 , resources(core->getFullResources())
                 , population(core->getPopulation())
                 , filterName(filterName)
@@ -680,7 +680,7 @@ R"(namespace UnorderedAccess {{
                 return filterName;
             }
 
-            Pass::Mode preparePass(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle output, PassData const &pass)
+            Pass::Mode preparePass(Render::Device::Context *videoContext, ResourceHandle input, ResourceHandle output, PassData const &pass)
             {
                 if (!pass.enabled)
                 {
@@ -715,7 +715,7 @@ R"(namespace UnorderedAccess {{
                     resources->copyResource(copyResource.first, copyResource.second);
                 }
 
-                Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
+                Render::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
                 if (!pass.resourceList.empty())
                 {
                     auto resourceList(pass.resourceList);
@@ -767,14 +767,14 @@ R"(namespace UnorderedAccess {{
                 return pass.mode;
             }
 
-            void clearPass(Video::Device::Context *videoContext, PassData const &pass)
+            void clearPass(Render::Device::Context *videoContext, PassData const &pass)
             {
                 if (!pass.enabled)
                 {
                     return;
                 }
 
-                Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
+                Render::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
                 if (!pass.resourceList.empty())
                 {
                     resources->clearResourceList(videoPipeline,  pass.resourceList.size(), 0);
@@ -806,13 +806,13 @@ R"(namespace UnorderedAccess {{
                 : public Pass
             {
             public:
-                Video::Device::Context *videoContext;
+                Render::Device::Context *videoContext;
                 ResourceHandle input, output;
                 Filter *filterNode;
                 std::vector<Filter::PassData>::iterator current, end;
 
             public:
-                PassImplementation(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle output, Filter *filterNode, std::vector<Filter::PassData>::iterator current, std::vector<Filter::PassData>::iterator end)
+                PassImplementation(Render::Device::Context *videoContext, ResourceHandle input, ResourceHandle output, Filter *filterNode, std::vector<Filter::PassData>::iterator current, std::vector<Filter::PassData>::iterator end)
                     : videoContext(videoContext)
                     , input(input)
                     , output(output)
@@ -854,7 +854,7 @@ R"(namespace UnorderedAccess {{
                 }
             };
 
-            Pass::Iterator begin(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle output)
+            Pass::Iterator begin(Render::Device::Context *videoContext, ResourceHandle input, ResourceHandle output)
             {
                 assert(videoContext);
                 return Pass::Iterator(passList.empty() ? nullptr : new PassImplementation(videoContext, input, output, this, std::begin(passList), std::end(passList)));

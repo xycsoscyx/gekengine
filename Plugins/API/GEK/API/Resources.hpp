@@ -8,7 +8,7 @@
 #pragma once
 
 #include "GEK/Utility/Context.hpp"
-#include "GEK/System/VideoDevice.hpp"
+#include "GEK/System/RenderDevice.hpp"
 #include "GEK/API/Handles.hpp"
 #include <type_traits>
 #include <typeindex>
@@ -48,23 +48,23 @@ namespace Gek
                 return createBuffer(description, std::move(rawBuffer));
             }
 
-            virtual void setIndexBuffer(Video::Device::Context *videoContext, ResourceHandle resourceHandle, uint32_t offset) = 0;
-            virtual void setVertexBufferList(Video::Device::Context *videoContext, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstSlot, uint32_t *offsetList = nullptr) = 0;
-            virtual void setConstantBufferList(Video::Device::Context::Pipeline *videoPipeline, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstStage) = 0;
-            virtual void setResourceList(Video::Device::Context::Pipeline *videoPipeline, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstStage) = 0;
-            virtual void setUnorderedAccessList(Video::Device::Context::Pipeline *videoPipeline, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstStage) = 0;
+            virtual void setIndexBuffer(Render::Device::Context *videoContext, ResourceHandle resourceHandle, uint32_t offset) = 0;
+            virtual void setVertexBufferList(Render::Device::Context *videoContext, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstSlot, uint32_t *offsetList = nullptr) = 0;
+            virtual void setConstantBufferList(Render::Device::Context::Pipeline *videoPipeline, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstStage) = 0;
+            virtual void setResourceList(Render::Device::Context::Pipeline *videoPipeline, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstStage) = 0;
+            virtual void setUnorderedAccessList(Render::Device::Context::Pipeline *videoPipeline, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstStage) = 0;
 
-            virtual void clearIndexBuffer(Video::Device::Context *videoContext) = 0;
-            virtual void clearVertexBufferList(Video::Device::Context *videoContext, uint32_t count, uint32_t firstSlot) = 0;
-            virtual void clearConstantBufferList(Video::Device::Context::Pipeline *videoPipeline, uint32_t count, uint32_t firstStage) = 0;
-            virtual void clearResourceList(Video::Device::Context::Pipeline *videoPipeline, uint32_t count, uint32_t firstStage) = 0;
-            virtual void clearUnorderedAccessList(Video::Device::Context::Pipeline *videoPipeline, uint32_t count, uint32_t firstStage) = 0;
+            virtual void clearIndexBuffer(Render::Device::Context *videoContext) = 0;
+            virtual void clearVertexBufferList(Render::Device::Context *videoContext, uint32_t count, uint32_t firstSlot) = 0;
+            virtual void clearConstantBufferList(Render::Device::Context::Pipeline *videoPipeline, uint32_t count, uint32_t firstStage) = 0;
+            virtual void clearResourceList(Render::Device::Context::Pipeline *videoPipeline, uint32_t count, uint32_t firstStage) = 0;
+            virtual void clearUnorderedAccessList(Render::Device::Context::Pipeline *videoPipeline, uint32_t count, uint32_t firstStage) = 0;
 
-            virtual void drawPrimitive(Video::Device::Context *videoContext, uint32_t vertexCount, uint32_t firstVertex) = 0;
-            virtual void drawInstancedPrimitive(Video::Device::Context *videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex) = 0;
-            virtual void drawIndexedPrimitive(Video::Device::Context *videoContext, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex) = 0;
-            virtual void drawInstancedIndexedPrimitive(Video::Device::Context *videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex) = 0;
-            virtual void dispatch(Video::Device::Context *videoContext, uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ) = 0;
+            virtual void drawPrimitive(Render::Device::Context *videoContext, uint32_t vertexCount, uint32_t firstVertex) = 0;
+            virtual void drawInstancedPrimitive(Render::Device::Context *videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex) = 0;
+            virtual void drawIndexedPrimitive(Render::Device::Context *videoContext, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex) = 0;
+            virtual void drawInstancedIndexedPrimitive(Render::Device::Context *videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex) = 0;
+            virtual void dispatch(Render::Device::Context *videoContext, uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ) = 0;
         };
     }; // namespace Plugin
 }; // namespace Gek

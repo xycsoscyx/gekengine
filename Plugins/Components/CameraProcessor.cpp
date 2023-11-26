@@ -124,7 +124,7 @@ namespace Gek
             {
                 if (!cameraComponent.target.empty())
                 {
-                    auto backBuffer = core->getRenderer()->getVideoDevice()->getBackBuffer();
+                    auto backBuffer = core->getRenderer()->getRenderDevice()->getBackBuffer();
                     Video::Texture::Description description;
                     description.name = std::format("camera:{}", cameraComponent.target);
                     description.format = Video::Format::R11G11B10_FLOAT;
@@ -197,7 +197,7 @@ namespace Gek
 
 					auto viewMatrix(transformComponent.getMatrix().getInverse());
 
-					const auto backBuffer = core->getRenderer()->getVideoDevice()->getBackBuffer();
+					const auto backBuffer = core->getRenderer()->getRenderDevice()->getBackBuffer();
 					const float width = float(backBuffer->getDescription().width);
 					const float height = float(backBuffer->getDescription().height);
 					renderer->queueCamera(viewMatrix, cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip, name, data.target);

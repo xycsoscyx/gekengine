@@ -1,4 +1,4 @@
-#include "GEK/Render/Device.hpp"
+#include "GEK/Render/RenderDevice.hpp"
 #include "GEK/Utility/Hash.hpp"
 
 namespace Gek

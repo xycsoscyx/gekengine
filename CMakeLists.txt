@@ -5,9 +5,19 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 option("GEK_BUILD_TESTS" "Create unit test projects" ON)
+
+set("GEK_WINDOW_DEVICE" "win32" CACHE STRING "Compile targeting specific window device")
+set_property(CACHE GEK_WINDOW_DEVICE PROPERTY STRINGS win32 x11)
+
+set("GEK_RENDER_DEVICE" "d3d11" CACHE STRING "Compile targeting specific render device")
+set_property(CACHE GEK_RENDER_DEVICE PROPERTY STRINGS d3d11 d3d12 vulkan)
+
+set("GEK_AUDIO_DEVICE" "ds8" CACHE STRING "Compile targeting specific audio device")
+set_property(CACHE GEK_RENDER_DEVICE PROPERTY STRINGS ds8)
+
 option("GEK_CREATE_FOLDERS" "Create project folders in generated solution" OFF)
 if(MSVC)
-    SET(GEK_CREATE_FOLDERS ON CACHE BOOL "" FORCE)
+    set(GEK_CREATE_FOLDERS ON CACHE BOOL "" FORCE)
 endif()
 
 get_filename_component(ProjectID ${CMAKE_CURRENT_LIST_DIR} NAME)

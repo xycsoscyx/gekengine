@@ -201,8 +201,8 @@ namespace Gek
             {
                 getContext()->log(Gek::Context::Info, "Window Created, Finishing Core Initialization");
 
-                Video::Device::Description deviceDescription;
-                videoDevice = getContext()->createClass<Video::Device>("Default::Device::Video", window.get(), deviceDescription);
+                Render::Device::Description deviceDescription;
+                videoDevice = getContext()->createClass<Render::Device>("Default::Device::Video", window.get(), deviceDescription);
 
                 uint32_t preferredDisplayMode = 0;
                 auto fullDisplayModeList = videoDevice->getDisplayModeList(deviceDescription.displayFormat);
@@ -1080,7 +1080,7 @@ namespace Gek
                 return window.get();
             }
 
-            Video::Device * getVideoDevice(void) const
+            Render::Device * getRenderDevice(void) const
             {
                 return videoDevice.get();
             }

@@ -10,7 +10,7 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Shapes/Frustum.hpp"
 #include "GEK/Utility/Context.hpp"
-#include "GEK/System/VideoDevice.hpp"
+#include "GEK/System/RenderDevice.hpp"
 #include "GEK/Engine/Material.hpp"
 #include <memory>
 
@@ -83,7 +83,7 @@ namespace Gek
             virtual ResourceHandle getTextureResource(const std::string& name) = 0;
 
             virtual Material::Iterator begin(void) = 0;
-            virtual Pass::Iterator begin(Video::Device::Context *videoContext, Math::Float4x4 const &viewMatrix, Shapes::Frustum const &viewFrustum) = 0;
+            virtual Pass::Iterator begin(Render::Device::Context *videoContext, Math::Float4x4 const &viewMatrix, Shapes::Frustum const &viewFrustum) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

@@ -134,9 +134,9 @@ namespace Gek
 					return *reinterpret_cast<const uint32_t *>(this);
 				}
 
-				std::function<void(Video::Device::Context *)> onDraw;
+				std::function<void(Render::Device::Context *)> onDraw;
 
-				DrawCallValue(MaterialHandle material, VisualHandle plugin, ShaderHandle shader, std::function<void(Video::Device::Context *)> &&onDraw)
+				DrawCallValue(MaterialHandle material, VisualHandle plugin, ShaderHandle shader, std::function<void(Render::Device::Context *)> &&onDraw)
 					: material(material)
 					, plugin(plugin)
 					, shader(shader)
@@ -192,7 +192,7 @@ namespace Gek
 			template <typename COMPONENT, typename DATA, size_t RESERVE = 200>
 			struct LightData
 			{
-				Video::Device *videoDevice = nullptr;
+				Render::Device *videoDevice = nullptr;
 				std::vector<Plugin::Entity *> entityList;
 				tbb::concurrent_vector<DATA> lightList;
 				//tbb::concurrent_vector<DATA, AlignedAllocator<DATA, 16>> lightList;
@@ -201,7 +201,7 @@ namespace Gek
 				//tbb::mutex addSection;
 				//tbb::mutex removeSection;
 
-				LightData(Video::Device *videoDevice)
+				LightData(Render::Device *videoDevice)
 					: videoDevice(videoDevice)
 				{
 					lightList.reserve(RESERVE);
@@ -289,7 +289,7 @@ namespace Gek
 				std::vector<bool> visibilityList;
 
 				LightVisibilityData(Engine::Core *core)
-					: LightData<COMPONENT, DATA, RESERVE>(core->getVideoDevice())
+					: LightData<COMPONENT, DATA, RESERVE>(core->getRenderDevice())
 				{
 				}
 
@@ -335,7 +335,7 @@ namespace Gek
 
 		private:
 			Engine::Core *core = nullptr;
-			Video::Device *videoDevice = nullptr;
+			Render::Device *videoDevice = nullptr;
 			Plugin::Population *population = nullptr;
 			Engine::Resources *resources = nullptr;
 
@@ -404,10 +404,10 @@ namespace Gek
 			Renderer(Context *context, Engine::Core *core)
 				: ContextRegistration(context)
 				, core(core)
-				, videoDevice(core->getVideoDevice())
+				, videoDevice(core->getRenderDevice())
 				, population(core->getPopulation())
 				, resources(core->getFullResources())
-				, directionalLightData(core->getVideoDevice())
+				, directionalLightData(core->getRenderDevice())
 				, pointLightData(core)
 				, spotLightData(core)
 				, workerPool(3)
@@ -1079,7 +1079,7 @@ float4 main(PixelInput input) : SV_Target
 			}
 
 			// Renderer
-			Video::Device * getVideoDevice(void) const
+			Render::Device * getRenderDevice(void) const
 			{
 				return videoDevice;
 			}
@@ -1124,7 +1124,7 @@ float4 main(PixelInput input) : SV_Target
 				queueCamera(viewMatrix, Math::Float4x4::MakeOrthographic(left, top, right, bottom, nearClip, farClip), nearClip, farClip, name, cameraTarget, forceShader);
 			}
 
-			void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *videoContext)> &&draw)
+			void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Render::Device::Context *videoContext)> &&draw)
 			{
 				if (plugin && material && draw)
 				{
@@ -1218,7 +1218,7 @@ float4 main(PixelInput input) : SV_Target
 				engineConstantData.worldTime = 0.0f;
 				engineConstantData.invertedDepthBuffer = (core->getOption("render", "invertedDepthBuffer", true) ? 1 : 0);
 				videoDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
-				Video::Device::Context *videoContext = videoDevice->getDefaultContext();
+				Render::Device::Context *videoContext = videoDevice->getDefaultContext();
 				while (cameraQueue.try_pop(currentCamera))
 				{
 					clipDistance = (currentCamera.farClip - currentCamera.nearClip);
@@ -1470,7 +1470,7 @@ float4 main(PixelInput input) : SV_Target
 
 					uint8_t filterIndex = 0;
 					videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
-					for (auto const &filterName : { "antialias" })
+					for (auto const &filterName : { "tonemap", "antialias" })
 					{
 						auto const filter = resources->getFilter(filterName);
 						if (filter)
@@ -1529,7 +1529,7 @@ float4 main(PixelInput input) : SV_Target
 				};
 			}
 
-			void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle *target)
+			void renderOverlay(Render::Device::Context *videoContext, ResourceHandle input, ResourceHandle *target)
 			{
 				videoContext->setBlendState(blendState.get(), Math::Float4::Black, 0xFFFFFFFF);
 				videoContext->setDepthState(depthState.get(), 0);

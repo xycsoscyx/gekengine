@@ -14,10 +14,17 @@
 
 namespace Gek
 {
-    GEK_INTERFACE(Window)
+    template <typename E>
+    constexpr typename std::underlying_type<E>::type to_underlying(E e) noexcept
     {
-        enum class Key
+        return static_cast<typename std::underlying_type<E>::type>(e);
+    }
+
+    namespace Window
+    {
+        enum class Key : uint8_t
         {
+            Unknown = 0,
             A = 4,
             B = 5,
             C = 6,
@@ -54,9 +61,9 @@ namespace Gek
             Key8 = 37,
             Key9 = 38,
             Key0 = 39,
-            Enter = 40,
+            Return = 40,
             Escape = 41,
-            Delete = 42,
+            Backspace = 42,
             Tab = 43,
             Space = 44,
             Minus = 45,
@@ -87,10 +94,10 @@ namespace Gek
             ScrollLock = 71,
             Pause = 72,
             Insert = 73,
+            Delete = 76,
             Home = 74,
-            PageUp = 75,
-            DeleteForward = 76,
             End = 77,
+            PageUp = 75,
             PageDown = 78,
             Right = 79,
             Left = 80,
@@ -101,7 +108,6 @@ namespace Gek
             KeyPadMultiply = 85,
             KeyPadSubtract = 86,
             KeyPadAdd = 87,
-            KeyPadEnter = 88,
             KeyPad1 = 89,
             KeyPad2 = 90,
             KeyPad3 = 91,
@@ -113,37 +119,34 @@ namespace Gek
             KeyPad9 = 97,
             KeyPad0 = 98,
             KeyPadPoint = 99,
-            NonUSBackslash = 100,
-            KeyPadEquals = 103,
-            F13 = 104,
-            F14 = 105,
-            F15 = 106,
-            F16 = 107,
-            F17 = 108,
-            F18 = 109,
-            F19 = 110,
-            F20 = 111,
-            F21 = 112,
-            F22 = 113,
-            F23 = 114,
-            F24 = 115,
-            Help = 117,
-            Menu = 118,
             LeftControl = 224,
             LeftShift = 225,
             LeftAlt = 226,
-            LeftGUI = 227,
             RightControl = 228,
             RightShift = 229,
             RightAlt = 230,
-            RightGUI = 231
         };
 
-        enum class Button
+        enum class Button : uint8_t
         {
             Left = 0,
             Middle,
             Right,
+            Forward,
+            Back,
+            Unknown,
+        };
+
+        enum class Cursor : uint8_t
+        {
+            None = 0,
+            Arrow,
+            Text,
+            Hand,
+            SizeNS,
+            SizeEW,
+            SizeNESW,
+            SizeNWSE,
         };
 
         struct Description
@@ -158,31 +161,40 @@ namespace Gek
             uint32_t initialHeight = 1;
         };
 
-        virtual ~Window(void) = default;
+        GEK_INTERFACE(Device)
+        {
+            virtual ~Device(void) = default;
 
-        wink::signal<wink::slot<void(void)>> onClose;
-        wink::signal<wink::slot<void(bool isActive)>> onActivate;
-        wink::signal<wink::slot<void(bool isMinimized)>> onSizeChanged;
+            wink::signal<wink::slot<void(void)>> onCreated;
+            wink::signal<wink::slot<void(void)>> onCloseRequested;
+            wink::signal<wink::slot<void(void)>> onIdle;
 
-        wink::signal<wink::slot<void(Key key, bool state)>> onKeyPressed;
-        wink::signal<wink::slot<void(uint32_t character)>> onCharacter;
+            wink::signal<wink::slot<void(bool isActive)>> onActivate;
+            wink::signal<wink::slot<void(bool isMinimized)>> onSizeChanged;
 
-        wink::signal<wink::slot<void(Button button, bool state)>> onMouseClicked;
-        wink::signal<wink::slot<void(float numberOfRotations)>> onMouseWheel;
-        wink::signal<wink::slot<void(int32_t xPosition, int32_t yPosition)>> onMousePosition;
-        wink::signal<wink::slot<void(int32_t xMovement, int32_t yMovement)>> onMouseMovement;
+            wink::signal<wink::slot<void(Key keyCode, bool state)>> onKeyPressed;
+            wink::signal<wink::slot<void(uint32_t character)>> onCharacter;
 
-        virtual void readEvents(void) = 0;
+            wink::signal<wink::slot<void(Button button, bool state)>> onMouseClicked;
+            wink::signal<wink::slot<void(float numberOfRotations)>> onMouseWheel;
+            wink::signal<wink::slot<void(int32_t xPosition, int32_t yPosition)>> onMousePosition;
+            wink::signal<wink::slot<void(int32_t xMovement, int32_t yMovement)>> onMouseMovement;
 
-        virtual void *getBaseWindow(void) const = 0;
+            virtual void create(Description const& description) = 0;
+            virtual void close(void) = 0;
 
-        virtual Math::Int4 getClientRectangle(bool moveToScreen = false) const = 0;
-        virtual Math::Int4 getScreenRectangle(void) const = 0;
+            virtual void* getWindowData(uint32_t data) const = 0;
 
-        virtual Math::Int2 getCursorPosition(void) const = 0;
-        virtual void setCursorPosition(Math::Int2 const &position) = 0;
+            virtual Math::Int4 getClientRectangle(bool moveToScreen = false) const = 0;
+            virtual Math::Int4 getScreenRectangle(void) const = 0;
 
-        virtual void setVisibility(bool isVisible) = 0;
-        virtual void move(Math::Int2 const &position = Math::Int2(-1, -1)) = 0;
-    };
+            virtual Math::Int2 getCursorPosition(void) const = 0;
+            virtual void setCursorPosition(Math::Int2 const& position) = 0;
+            virtual void setCursorVisibility(bool isVisible) = 0;
+
+            virtual void setVisibility(bool isVisible) = 0;
+            virtual void move(Math::Int2 const& position = Math::Int2(-1, -1)) = 0;
+            virtual void resize(Math::Int2 const& size) { };
+        };
+    }; // namespace Window
 }; // namespace Gek

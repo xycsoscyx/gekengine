@@ -72,7 +72,7 @@ namespace Gek
 
         private:
             Engine::Core *core = nullptr;
-            Video::Device *videoDevice = nullptr;
+            Render::Device *videoDevice = nullptr;
             Engine::Resources *resources = nullptr;
             Plugin::Population *population = nullptr;
 
@@ -93,7 +93,7 @@ namespace Gek
             Shader(Context *context, Engine::Core *core, std::string shaderName)
                 : ContextRegistration(context)
                 , core(core)
-                , videoDevice(core->getVideoDevice())
+                , videoDevice(core->getRenderDevice())
                 , resources(core->getFullResources())
                 , population(core->getPopulation())
                 , shaderName(shaderName)
@@ -920,7 +920,7 @@ R"(namespace UnorderedAccess
                 return lightingRequired;
             }
 
-            Pass::Mode preparePass(Video::Device::Context *videoContext, PassData const &pass)
+            Pass::Mode preparePass(Render::Device::Context *videoContext, PassData const &pass)
             {
                 if (!pass.enabled)
                 {
@@ -955,7 +955,7 @@ R"(namespace UnorderedAccess
                     resources->generateMipMaps(videoContext, resource);
                 }
 
-                Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
+                Render::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
                 if (!pass.resourceList.empty())
                 {
                     uint32_t firstResourceStage = (pass.lighting ? 5 : 0);
@@ -1001,14 +1001,14 @@ R"(namespace UnorderedAccess
                 return pass.mode;
             }
 
-            void clearPass(Video::Device::Context *videoContext, PassData const &pass)
+            void clearPass(Render::Device::Context *videoContext, PassData const &pass)
             {
                 if (!pass.enabled)
                 {
                     return;
                 }
 
-                Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
+                Render::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
                 if (!pass.resourceList.empty())
                 {
                     uint32_t firstResourceStage = (pass.lighting ? 5 : 0);
@@ -1088,12 +1088,12 @@ R"(namespace UnorderedAccess
                 : public Pass
             {
             public:
-                Video::Device::Context *videoContext;
+                Render::Device::Context *videoContext;
                 Shader *rootNode;
                 Shader::PassList::iterator current, end;
 
             public:
-                PassImplementation(Video::Device::Context *videoContext, Shader *rootNode, Shader::PassList::iterator current, Shader::PassList::iterator end)
+                PassImplementation(Render::Device::Context *videoContext, Shader *rootNode, Shader::PassList::iterator current, Shader::PassList::iterator end)
                     : videoContext(videoContext)
                     , rootNode(rootNode)
                     , current(current)
@@ -1169,7 +1169,7 @@ R"(namespace UnorderedAccess
                 return Material::Iterator(materialMap.empty() ? nullptr : new MaterialImplementation(this, std::begin(materialMap), std::end(materialMap)));
             }
 
-            Pass::Iterator begin(Video::Device::Context *videoContext, Math::Float4x4 const &viewMatrix, Shapes::Frustum const &viewFrustum)
+            Pass::Iterator begin(Render::Device::Context *videoContext, Math::Float4x4 const &viewMatrix, Shapes::Frustum const &viewFrustum)
             {
                 assert(videoContext);
 

@@ -2,8 +2,8 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/System/VideoDevice.hpp"
-#include "GEK/System/Window.hpp"
+#include "GEK/System/RenderDevice.hpp"
+#include "GEK/System/WindowDevice.hpp"
 #include <DirectXTex.h>
 #include <algorithm>
 #include <locale>
@@ -221,8 +221,8 @@ int main(int argumentCount, char const * const argumentList[])
 		description.windowName = "GEK Engine Textures";
 		WindowPtr window(context->createClass<Window>("Default::System::Window", description));
 
-		Video::Device::Description deviceDescription;
-		Video::DevicePtr device(context->createClass<Video::Device>("Default::Device::Video", window.get(), deviceDescription));
+		Render::Device::Description deviceDescription;
+		Video::DevicePtr device(context->createClass<Render::Device>("Default::Device::Video", window.get(), deviceDescription));
 		if (device)
 		{
 			std::function<bool(FileSystem::Path const &)> searchDirectory;

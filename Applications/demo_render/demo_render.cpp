@@ -3,8 +3,8 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/Render/Window.hpp"
-#include "GEK/Render/Device.hpp"
+#include "GEK/Render/WindowDevice.hpp"
+#include "GEK/Render/RenderDevice.hpp"
 #include "GEK/GUI/Utilities.hpp"
 #include <concurrent_unordered_map.h>
 #include <imgui_internal.h>
@@ -20,7 +20,7 @@ namespace Gek
 		JSON::Object configuration;
 
 		ContextPtr context;
-		WindowPtr window;
+		Window::DevicePtr windowDevice;
 		Render::DevicePtr renderDevice;
 
 		bool engineRunning = false;
@@ -87,21 +87,21 @@ namespace Gek
 			context->addDataPath(rootPath / "data");
 			configuration = JSON::Load(getContext()->findDataPath("config.json"));
 
-			Window::Description windowDescription;
+			Window::Device::Description windowDescription;
 			windowDescription.allowResize = true;
 			windowDescription.className = "GEK_Engine_Demo";
 			windowDescription.windowName = "GEK Engine Demo";
-			window = getContext()->createClass<Window>("Default::Render::Window", windowDescription);
+			windowDevice = getContext()->createClass<Window::Device>("Default::Render::Window", windowDescription);
 
-			window->onClose.connect(this, &Core::onClose);
-			window->onActivate.connect(this, &Core::onActivate);
-			window->onSizeChanged.connect(this, &Core::onSizeChanged);
-			window->onKeyPressed.connect(this, &Core::onKeyPressed);
-			window->onCharacter.connect(this, &Core::onCharacter);
-			window->onMouseClicked.connect(this, &Core::onMouseClicked);
-			window->onMouseWheel.connect(this, &Core::onMouseWheel);
-			window->onMousePosition.connect(this, &Core::onMousePosition);
-			window->onMouseMovement.connect(this, &Core::onMouseMovement);
+			windowDevice->onClose.connect(this, &Core::onClose);
+			windowDevice->onActivate.connect(this, &Core::onActivate);
+			windowDevice->onSizeChanged.connect(this, &Core::onSizeChanged);
+			windowDevice->onKeyPressed.connect(this, &Core::onKeyPressed);
+			windowDevice->onCharacter.connect(this, &Core::onCharacter);
+			windowDevice->onMouseClicked.connect(this, &Core::onMouseClicked);
+			windowDevice->onMouseWheel.connect(this, &Core::onMouseWheel);
+			windowDevice->onMousePosition.connect(this, &Core::onMousePosition);
+			windowDevice->onMouseMovement.connect(this, &Core::onMouseMovement);
 
 			HRESULT resultValue = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
 			if (FAILED(resultValue))
@@ -110,7 +110,7 @@ namespace Gek
 			}
 
 			Render::Device::Description deviceDescription;
-			renderDevice = getContext()->createClass<Render::Device>("Default::Render::Device", window.get(), deviceDescription);
+			renderDevice = getContext()->createClass<Render::Device>("Default::Render::Device", windowDevice.get(), deviceDescription);
 
 			auto fullDisplayModeList = renderDevice->getDisplayModeList(deviceDescription.displayFormat);
 			for (auto const &displayMode : fullDisplayModeList)
@@ -329,7 +329,7 @@ Output mainPixelProgram(in Pixel input)
 
 			imGuiIo.UserData = this;
 
-			window->setVisibility(true);
+			windowDevice->setVisibility(true);
             setFullScreen(JSON::Value(displayConfig, "fullScreen", false));
 			engineRunning = true;
 			windowActive = true;
@@ -342,7 +342,7 @@ Output mainPixelProgram(in Pixel input)
 
             gui = nullptr;
 			renderDevice = nullptr;
-			window = nullptr;
+			windowDevice = nullptr;
 			context = nullptr;
 
 			CoUninitialize();
@@ -356,13 +356,13 @@ Output mainPixelProgram(in Pixel input)
 				configuration["display"]["fullScreen"] = requestFullScreen;
 				if (requestFullScreen)
 				{
-					window->move(Math::Int2::Zero);
+					windowDevice->move(Math::Int2::Zero);
 				}
 
 				renderDevice->setFullScreenState(requestFullScreen);
 				if (!requestFullScreen)
 				{
-					window->move();
+					windowDevice->move();
 				}
 
 				return true;
@@ -382,7 +382,7 @@ Output mainPixelProgram(in Pixel input)
 					current.mode = requestDisplayMode;
 					configuration["display"]["mode"] = requestDisplayMode;
 					renderDevice->setDisplayMode(displayModeData);
-					window->move();
+					windowDevice->move();
 					return true;
 				}
 			}
@@ -534,11 +534,11 @@ Output mainPixelProgram(in Pixel input)
 		{
 			while (engineRunning)
 			{
-				window->readEvents();
+				windowDevice->readEvents();
 
 				ImGuiIO &imGuiIo = ImGui::GetIO();
 
-				auto windowRectangle = window->getClientRectangle();
+				auto windowRectangle = windowDevice->getClientRectangle();
 				uint32_t width = windowRectangle.size.x;
 				uint32_t height = windowRectangle.size.y;
 				imGuiIo.DisplaySize = ImVec2(float(width), float(height));
@@ -562,8 +562,8 @@ Output mainPixelProgram(in Pixel input)
 
 				if (windowActive && !enableInterfaceControl)
 				{
-					auto rectangle = window->getScreenRectangle();
-					window->setCursorPosition(Math::Int2(
+					auto rectangle = windowDevice->getScreenRectangle();
+					windowDevice->setCursorPosition(Math::Int2(
 						int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
 						int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
 				}
@@ -733,7 +733,7 @@ Output mainPixelProgram(in Pixel input)
 					imGuiIo.MouseDrawCursor = enableInterfaceControl;
 					if (enableInterfaceControl)
 					{
-						auto client = window->getClientRectangle();
+						auto client = windowDevice->getClientRectangle();
 						imGuiIo.MousePos.x = ((float(client.maximum.x - client.minimum.x) * 0.5f) + client.minimum.x);
 						imGuiIo.MousePos.y = ((float(client.maximum.y - client.minimum.y) * 0.5f) + client.minimum.y);
 					}

@@ -10,8 +10,8 @@
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/API/Core.hpp"
-#include "GEK/System/Window.hpp"
-#include "GEK/System/VideoDevice.hpp"
+#include "GEK/System/WindowDevice.hpp"
+#include "GEK/System/RenderDevice.hpp"
 #include <wink/signal.hpp>
 #include <imgui.h>
 
@@ -30,8 +30,8 @@ namespace Gek
 
             virtual ~Core(void) = default;
 
-            virtual Window * getWindow(void) const = 0;
-            virtual Video::Device * getVideoDevice(void) const = 0;
+            virtual Window::Device * getWindow(void) const = 0;
+            virtual Render::Device * getRenderDevice(void) const = 0;
 
             virtual Engine::Population * getFullPopulation(void) const = 0;
             virtual Engine::Resources * getFullResources(void) const = 0;

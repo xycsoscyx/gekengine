@@ -1,4 +1,4 @@
-#include "GEK/System/Window.hpp"
+#include "GEK/System/WindowDevice.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include <atlbase.h>
 #include "resource.h"
@@ -15,7 +15,7 @@ namespace Gek
 {
     HINSTANCE GetDLLInstance(void);
 
-    namespace Win32
+    namespace Window
     {
         Window::Key ConvertKey(uint32_t key, uint32_t state)
         {
@@ -126,8 +126,8 @@ namespace Gek
             return Window::Key::Unknown;
         };
 
-        GEK_CONTEXT_USER_BASE(Window)
-            , public Gek::Window
+        GEK_CONTEXT_USER_BASE(Implementation)
+            , public Gek::Window::Device
         {
         private:
             HWND window = nullptr;
@@ -135,12 +135,12 @@ namespace Gek
             std::atomic_bool stop = false;
 
         public:
-            Window(Context *context)
+            Implementation(Context *context)
                 : ContextRegistration(context)
             {
             }
 
-            ~Window(void)
+            ~Implementation(void)
             {
                 if (window)
                 {
@@ -157,8 +157,8 @@ namespace Gek
                 windowClass.style = CS_HREDRAW | CS_VREDRAW | (description.hasOwnContext ? CS_OWNDC : 0);
                 windowClass.lpfnWndProc = [](HWND handle, uint32_t message, WPARAM wParam, LPARAM lParam) -> LRESULT
                 {
-                    Window* window = reinterpret_cast<Window*>(GetWindowLongPtr(handle, GWLP_USERDATA));
-                    if (window)
+                    Implementation *implementation = reinterpret_cast<Implementation*>(GetWindowLongPtr(handle, GWLP_USERDATA));
+                    if (implementation)
                     {
                         switch (message)
                         {
@@ -173,76 +173,76 @@ namespace Gek
 
                         case WM_LBUTTONDOWN:
                         case WM_LBUTTONDBLCLK:
-                            window->onMouseClicked(Window::Button::Left, true);
+                            implementation->onMouseClicked(Window::Button::Left, true);
                             break;
 
                         case WM_LBUTTONUP:
-                            window->onMouseClicked(Window::Button::Left, false);
+                            implementation->onMouseClicked(Window::Button::Left, false);
                             break;
 
                         case WM_RBUTTONDOWN:
                         case WM_RBUTTONDBLCLK:
-                            window->onMouseClicked(Window::Button::Right, true);
+                            implementation->onMouseClicked(Window::Button::Right, true);
                             break;
 
                         case WM_RBUTTONUP:
-                            window->onMouseClicked(Window::Button::Right, false);
+                            implementation->onMouseClicked(Window::Button::Right, false);
                             break;
 
                         case WM_MBUTTONDOWN:
                         case WM_MBUTTONDBLCLK:
-                            window->onMouseClicked(Window::Button::Middle, true);
+                            implementation->onMouseClicked(Window::Button::Middle, true);
                             break;
 
                         case WM_MBUTTONUP:
-                            window->onMouseClicked(Window::Button::Middle, false);
+                            implementation->onMouseClicked(Window::Button::Middle, false);
                             break;
 
                         case WM_XBUTTONDOWN:
                         case WM_XBUTTONDBLCLK:
-                            window->onMouseClicked(wParam & XBUTTON1 ? Window::Button::Forward : Window::Button::Back, true);
+                            implementation->onMouseClicked(wParam & XBUTTON1 ? Window::Button::Forward : Window::Button::Back, true);
                             return true;
 
                         case WM_XBUTTONUP:
-                            window->onMouseClicked(wParam & XBUTTON1 ? Window::Button::Forward : Window::Button::Back, false);
+                            implementation->onMouseClicked(wParam & XBUTTON1 ? Window::Button::Forward : Window::Button::Back, false);
                             return true;
 
                         case WM_MOUSEWHEEL:
-                            window->onMouseWheel(float(GET_WHEEL_DELTA_WPARAM(wParam)) / float(WHEEL_DELTA));
+                            implementation->onMouseWheel(float(GET_WHEEL_DELTA_WPARAM(wParam)) / float(WHEEL_DELTA));
                             break;
 
                         case WM_MOUSEMOVE:
-                            window->onMousePosition((int16_t)(lParam), (int16_t)(lParam >> 16));
+                            implementation->onMousePosition((int16_t)(lParam), (int16_t)(lParam >> 16));
                             break;
 
                         case WM_KEYDOWN:
-                            window->onKeyPressed(ConvertKey(wParam, 0), true);
+                            implementation->onKeyPressed(ConvertKey(wParam, 0), true);
                             break;
 
                         case WM_KEYUP:
-                            window->onKeyPressed(ConvertKey(wParam, 0), false);
+                            implementation->onKeyPressed(ConvertKey(wParam, 0), false);
                             break;
 
                         case WM_CHAR:
                             if (IS_HIGH_SURROGATE(wParam))
                             {
-                                window->highSurrogate = static_cast<uint16_t>(wParam);
+                                implementation->highSurrogate = static_cast<uint16_t>(wParam);
                             }
                             else
                             {
                                 if (IS_LOW_SURROGATE(wParam))
                                 {
                                     uint16_t lowSurrogate = static_cast<uint16_t>(wParam);
-                                    uint32_t character = (window->highSurrogate - HIGH_SURROGATE_START) << 10;
+                                    uint32_t character = (implementation->highSurrogate - HIGH_SURROGATE_START) << 10;
                                     character |= (lowSurrogate - LOW_SURROGATE_START);
                                     character += 0x10000;
-                                    window->highSurrogate = 0;
-                                    window->onCharacter(character);
+                                    implementation->highSurrogate = 0;
+                                    implementation->onCharacter(character);
                                 }
                                 else
                                 {
                                     uint16_t character = static_cast<uint16_t>(wParam);
-                                    window->onCharacter(character);
+                                    implementation->onCharacter(character);
                                 }
                             }
 
@@ -261,7 +261,7 @@ namespace Gek
                                     RAWINPUT* rawInput = reinterpret_cast<RAWINPUT*>(rawInputBuffer.data());
                                     if (rawInput->header.dwType == RIM_TYPEMOUSE)
                                     {
-                                        window->onMouseMovement(rawInput->data.mouse.lLastX, rawInput->data.mouse.lLastY);
+                                        implementation->onMouseMovement(rawInput->data.mouse.lLastX, rawInput->data.mouse.lLastY);
                                     }
                                 }
                             }
@@ -269,13 +269,13 @@ namespace Gek
                             break;
 
                         case WM_CLOSE:
-                            window->onCloseRequested();
+                            implementation->onCloseRequested();
                             return TRUE;
 
                         case WM_ACTIVATE:
                             if (HIWORD(wParam))
                             {
-                                window->onActivate(false);
+                                implementation->onActivate(false);
                             }
                             else
                             {
@@ -283,11 +283,11 @@ namespace Gek
                                 {
                                 case WA_ACTIVE:
                                 case WA_CLICKACTIVE:
-                                    window->onActivate(true);
+                                    implementation->onActivate(true);
                                     break;
 
                                 case WA_INACTIVE:
-                                    window->onActivate(false);
+                                    implementation->onActivate(false);
                                     break;
                                 };
                             }
@@ -295,7 +295,7 @@ namespace Gek
                             return TRUE;
 
                         case WM_SIZE:
-                            window->onSizeChanged(wParam == SIZE_MINIMIZED);
+                            implementation->onSizeChanged(wParam == SIZE_MINIMIZED);
                             break;
 
                         case WM_SYSCOMMAND:
@@ -444,6 +444,6 @@ namespace Gek
             }
         };
 
-        GEK_REGISTER_CONTEXT_USER(Window);
+        GEK_REGISTER_CONTEXT_USER(Implementation);
     }; // namespace Win32
 }; // namespace Gek

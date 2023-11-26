@@ -551,7 +551,7 @@ namespace Gek
         {
         private:
             Engine::Core * core = nullptr;
-            Video::Device* videoDevice = nullptr;
+            Render::Device* videoDevice = nullptr;
             Plugin::Renderer* renderer = nullptr;
 
             ThreadPool loadPool;
@@ -599,7 +599,7 @@ namespace Gek
             Resources(Context* context, Engine::Core* core)
                 : ContextRegistration(context)
                 , core(core)
-                , videoDevice(core->getVideoDevice())
+                , videoDevice(core->getRenderDevice())
                 , staticProgramCache(loadPool)
                 , programCache(loadPool)
                 , visualCache(loadPool)
@@ -621,11 +621,11 @@ namespace Gek
                 core->onShutdown.connect(this, &Resources::onShutdown);
             }
 
-            Validate& getValid(Video::Device::Context::Pipeline* videoPipeline)
+            Validate& getValid(Render::Device::Context::Pipeline* videoPipeline)
             {
                 assert(videoPipeline);
 
-                return (videoPipeline->getType() == Video::Device::Context::Pipeline::Type::Compute ? dispatchValid : drawPrimitiveValid);
+                return (videoPipeline->getType() == Render::Device::Context::Pipeline::Type::Compute ? dispatchValid : drawPrimitiveValid);
             }
 
             // Renderer
@@ -1217,7 +1217,7 @@ namespace Gek
                 return resource.second;
             }
 
-            void setIndexBuffer(Video::Device::Context* videoContext, ResourceHandle resourceHandle, uint32_t offset)
+            void setIndexBuffer(Render::Device::Context* videoContext, ResourceHandle resourceHandle, uint32_t offset)
             {
                 assert(videoContext);
 
@@ -1232,7 +1232,7 @@ namespace Gek
             }
 
             ObjectCache<Video::Buffer> vertexBufferCache;
-            void setVertexBufferList(Video::Device::Context* videoContext, std::vector<ResourceHandle> const& resourceHandleList, uint32_t firstSlot, uint32_t* offsetList)
+            void setVertexBufferList(Render::Device::Context* videoContext, std::vector<ResourceHandle> const& resourceHandleList, uint32_t firstSlot, uint32_t* offsetList)
             {
                 assert(videoContext);
 
@@ -1243,7 +1243,7 @@ namespace Gek
             }
 
             ObjectCache<Video::Buffer> constantBufferCache;
-            void setConstantBufferList(Video::Device::Context::Pipeline* videoPipeline, std::vector<ResourceHandle> const& resourceHandleList, uint32_t firstStage)
+            void setConstantBufferList(Render::Device::Context::Pipeline* videoPipeline, std::vector<ResourceHandle> const& resourceHandleList, uint32_t firstStage)
             {
                 assert(videoPipeline);
 
@@ -1255,7 +1255,7 @@ namespace Gek
             }
 
             ObjectCache<Video::Object> resourceCache;
-            void setResourceList(Video::Device::Context::Pipeline* videoPipeline, std::vector<ResourceHandle> const& resourceHandleList, uint32_t firstStage)
+            void setResourceList(Render::Device::Context::Pipeline* videoPipeline, std::vector<ResourceHandle> const& resourceHandleList, uint32_t firstStage)
             {
                 assert(videoPipeline);
 
@@ -1267,7 +1267,7 @@ namespace Gek
             }
 
             ObjectCache<Video::Object> unorderedAccessCache;
-            void setUnorderedAccessList(Video::Device::Context::Pipeline* videoPipeline, std::vector<ResourceHandle> const& resourceHandleList, uint32_t firstStage)
+            void setUnorderedAccessList(Render::Device::Context::Pipeline* videoPipeline, std::vector<ResourceHandle> const& resourceHandleList, uint32_t firstStage)
             {
                 assert(videoPipeline);
 
@@ -1278,42 +1278,42 @@ namespace Gek
                 }
             }
 
-            void clearIndexBuffer(Video::Device::Context* videoContext)
+            void clearIndexBuffer(Render::Device::Context* videoContext)
             {
                 assert(videoContext);
 
                 videoContext->clearIndexBuffer();
             }
 
-            void clearVertexBufferList(Video::Device::Context* videoContext, uint32_t count, uint32_t firstSlot)
+            void clearVertexBufferList(Render::Device::Context* videoContext, uint32_t count, uint32_t firstSlot)
             {
                 assert(videoContext);
 
                 videoContext->clearVertexBufferList(count, firstSlot);
             }
 
-            void clearConstantBufferList(Video::Device::Context::Pipeline* videoPipeline, uint32_t count, uint32_t firstStage)
+            void clearConstantBufferList(Render::Device::Context::Pipeline* videoPipeline, uint32_t count, uint32_t firstStage)
             {
                 assert(videoPipeline);
 
                 videoPipeline->clearConstantBufferList(count, firstStage);
             }
 
-            void clearResourceList(Video::Device::Context::Pipeline* videoPipeline, uint32_t count, uint32_t firstStage)
+            void clearResourceList(Render::Device::Context::Pipeline* videoPipeline, uint32_t count, uint32_t firstStage)
             {
                 assert(videoPipeline);
 
                 videoPipeline->clearResourceList(count, firstStage);
             }
 
-            void clearUnorderedAccessList(Video::Device::Context::Pipeline* videoPipeline, uint32_t count, uint32_t firstStage)
+            void clearUnorderedAccessList(Render::Device::Context::Pipeline* videoPipeline, uint32_t count, uint32_t firstStage)
             {
                 assert(videoPipeline);
 
                 videoPipeline->clearUnorderedAccessList(count, firstStage);
             }
 
-            void drawPrimitive(Video::Device::Context* videoContext, uint32_t vertexCount, uint32_t firstVertex)
+            void drawPrimitive(Render::Device::Context* videoContext, uint32_t vertexCount, uint32_t firstVertex)
             {
                 assert(videoContext);
 
@@ -1323,7 +1323,7 @@ namespace Gek
                 }
             }
 
-            void drawInstancedPrimitive(Video::Device::Context* videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex)
+            void drawInstancedPrimitive(Render::Device::Context* videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex)
             {
                 if (drawPrimitiveValid)
                 {
@@ -1331,7 +1331,7 @@ namespace Gek
                 }
             }
 
-            void drawIndexedPrimitive(Video::Device::Context* videoContext, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
+            void drawIndexedPrimitive(Render::Device::Context* videoContext, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
             {
                 assert(videoContext);
 
@@ -1341,7 +1341,7 @@ namespace Gek
                 }
             }
 
-            void drawInstancedIndexedPrimitive(Video::Device::Context* videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
+            void drawInstancedIndexedPrimitive(Render::Device::Context* videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
             {
                 assert(videoContext);
 
@@ -1351,7 +1351,7 @@ namespace Gek
                 }
             }
 
-            void dispatch(Video::Device::Context* videoContext, uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ)
+            void dispatch(Render::Device::Context* videoContext, uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ)
             {
                 assert(videoContext);
 
@@ -1606,7 +1606,7 @@ namespace Gek
                 }).second;
             }
 
-            void generateMipMaps(Video::Device::Context* videoContext, ResourceHandle resourceHandle)
+            void generateMipMaps(Render::Device::Context* videoContext, ResourceHandle resourceHandle)
             {
                 assert(videoContext);
 
@@ -1617,7 +1617,7 @@ namespace Gek
                 }
             }
 
-            void resolveSamples(Video::Device::Context* videoContext, ResourceHandle destinationHandle, ResourceHandle sourceHandle)
+            void resolveSamples(Render::Device::Context* videoContext, ResourceHandle destinationHandle, ResourceHandle sourceHandle)
             {
                 auto source = getResource(sourceHandle);
                 auto destination = getResource(destinationHandle);
@@ -1637,7 +1637,7 @@ namespace Gek
                 }
             }
 
-            void clearUnorderedAccess(Video::Device::Context* videoContext, ResourceHandle resourceHandle, Math::Float4 const& value)
+            void clearUnorderedAccess(Render::Device::Context* videoContext, ResourceHandle resourceHandle, Math::Float4 const& value)
             {
                 assert(videoContext);
 
@@ -1648,7 +1648,7 @@ namespace Gek
                 }
             }
 
-            void clearUnorderedAccess(Video::Device::Context* videoContext, ResourceHandle resourceHandle, Math::UInt4 const& value)
+            void clearUnorderedAccess(Render::Device::Context* videoContext, ResourceHandle resourceHandle, Math::UInt4 const& value)
             {
                 assert(videoContext);
 
@@ -1659,7 +1659,7 @@ namespace Gek
                 }
             }
 
-            void clearRenderTarget(Video::Device::Context* videoContext, ResourceHandle resourceHandle, Math::Float4 const& color)
+            void clearRenderTarget(Render::Device::Context* videoContext, ResourceHandle resourceHandle, Math::Float4 const& color)
             {
                 assert(videoContext);
 
@@ -1670,7 +1670,7 @@ namespace Gek
                 }
             }
 
-            void clearDepthStencilTarget(Video::Device::Context* videoContext, ResourceHandle depthBufferHandle, uint32_t flags, float clearDepth, uint32_t clearStencil)
+            void clearDepthStencilTarget(Render::Device::Context* videoContext, ResourceHandle depthBufferHandle, uint32_t flags, float clearDepth, uint32_t clearStencil)
             {
                 assert(videoContext);
 
@@ -1681,7 +1681,7 @@ namespace Gek
                 }
             }
 
-            void setMaterial(Video::Device::Context* videoContext, Engine::Shader::Pass* pass, MaterialHandle handle, bool forceShader)
+            void setMaterial(Render::Device::Context* videoContext, Engine::Shader::Pass* pass, MaterialHandle handle, bool forceShader)
             {
                 assert(videoContext);
                 assert(pass);
@@ -1705,7 +1705,7 @@ namespace Gek
                 }
             }
 
-            void setVisual(Video::Device::Context* videoContext, VisualHandle handle)
+            void setVisual(Render::Device::Context* videoContext, VisualHandle handle)
             {
                 assert(videoContext);
 
@@ -1719,7 +1719,7 @@ namespace Gek
                 }
             }
 
-            void setRenderState(Video::Device::Context* videoContext, RenderStateHandle renderStateHandle)
+            void setRenderState(Render::Device::Context* videoContext, RenderStateHandle renderStateHandle)
             {
                 assert(videoContext);
 
@@ -1733,7 +1733,7 @@ namespace Gek
                 }
             }
 
-            void setDepthState(Video::Device::Context* videoContext, DepthStateHandle depthStateHandle, uint32_t stencilReference)
+            void setDepthState(Render::Device::Context* videoContext, DepthStateHandle depthStateHandle, uint32_t stencilReference)
             {
                 assert(videoContext);
 
@@ -1747,7 +1747,7 @@ namespace Gek
                 }
             }
 
-            void setBlendState(Video::Device::Context* videoContext, BlendStateHandle blendStateHandle, Math::Float4 const& blendFactor, uint32_t sampleMask)
+            void setBlendState(Render::Device::Context* videoContext, BlendStateHandle blendStateHandle, Math::Float4 const& blendFactor, uint32_t sampleMask)
             {
                 assert(videoContext);
 
@@ -1761,7 +1761,7 @@ namespace Gek
                 }
             }
 
-            void setProgram(Video::Device::Context::Pipeline* videoPipeline, ProgramHandle programHandle)
+            void setProgram(Render::Device::Context::Pipeline* videoPipeline, ProgramHandle programHandle)
             {
                 assert(videoPipeline);
 
@@ -1778,7 +1778,7 @@ namespace Gek
 
             ObjectCache<Video::Target> renderTargetCache;
             std::vector<Video::ViewPort> viewPortCache;
-            void setRenderTargetList(Video::Device::Context* videoContext, std::vector<ResourceHandle> const& renderTargetHandleList, ResourceHandle const* depthBuffer)
+            void setRenderTargetList(Render::Device::Context* videoContext, std::vector<ResourceHandle> const& renderTargetHandleList, ResourceHandle const* depthBuffer)
             {
                 assert(videoContext);
 
@@ -1797,7 +1797,7 @@ namespace Gek
                 }
             }
 
-            void clearRenderTargetList(Video::Device::Context* videoContext, int32_t count, bool depthBuffer)
+            void clearRenderTargetList(Render::Device::Context* videoContext, int32_t count, bool depthBuffer)
             {
                 assert(videoContext);
 

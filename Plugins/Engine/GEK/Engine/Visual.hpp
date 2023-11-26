@@ -20,7 +20,7 @@ namespace Gek
 
 			virtual std::string_view getName(void) const = 0;
 
-            virtual void enable(Video::Device::Context *context) = 0;
+            virtual void enable(Render::Device::Context *context) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

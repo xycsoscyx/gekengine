@@ -438,14 +438,14 @@ namespace Gek
         using GeometryProgram = Program<3>;
         using PixelProgram = Program<4>;
 
-        GEK_CONTEXT_USER(Device, Window *, Video::Device::Description)
+        GEK_CONTEXT_USER(Implementation, Window *, Render::Device::Description)
             , public Video::Debug::Device
         {
             class Context
-                : public Video::Device::Context
+                : public Render::Device::Context
             {
                 class ComputePipeline
-                    : public Video::Device::Context::Pipeline
+                    : public Render::Device::Context::Pipeline
                 {
                 private:
 
@@ -498,7 +498,7 @@ namespace Gek
                 };
 
                 class VertexPipeline
-                    : public Video::Device::Context::Pipeline
+                    : public Render::Device::Context::Pipeline
                 {
                 private:
 
@@ -553,7 +553,7 @@ namespace Gek
                 };
 
                 class GeometryPipeline
-                    : public Video::Device::Context::Pipeline
+                    : public Render::Device::Context::Pipeline
                 {
                 private:
 
@@ -608,7 +608,7 @@ namespace Gek
                 };
 
                 class PixelPipeline
-                    : public Video::Device::Context::Pipeline
+                    : public Render::Device::Context::Pipeline
                 {
                 private:
 
@@ -834,7 +834,7 @@ namespace Gek
 
         public:
             Window * window = nullptr;
-            Video::Device::ContextPtr defaultContext;
+            Render::Device::ContextPtr defaultContext;
             Video::TargetPtr backBuffer;
 
             bool enableValidationLayer = false;
@@ -1300,7 +1300,7 @@ namespace Gek
             }
 
         public:
-            Device(Gek::Context *context, Window *window, Video::Device::Description deviceDescription)
+            Implementation(Gek::Context *context, Window *window, Render::Device::Description deviceDescription)
                 : ContextRegistration(context)
                 , window(window)
             {
@@ -1347,7 +1347,7 @@ namespace Gek
                 }
             }
 
-            ~Device(void)
+            ~Implementation(void)
             {
                 setFullScreenState(false);
 
@@ -1381,7 +1381,7 @@ namespace Gek
                 return nullptr;
             }
 
-            // Video::Device
+            // Render::Device
             Video::DisplayModeList getDisplayModeList(Video::Format format) const
             {
                 Video::DisplayModeList displayModeList;
@@ -1418,14 +1418,14 @@ namespace Gek
                 return backBuffer.get();
             }
 
-            Video::Device::Context * const getDefaultContext(void)
+            Render::Device::Context * const getDefaultContext(void)
             {
                 assert(defaultContext);
 
                 return defaultContext.get();
             }
 
-            Video::Device::ContextPtr createDeferredContext(void)
+            Render::Device::ContextPtr createDeferredContext(void)
             {
                 return std::make_unique<Context>();
             }
@@ -1566,6 +1566,6 @@ namespace Gek
             }
         };
 
-        GEK_REGISTER_CONTEXT_USER(Device);
+        GEK_REGISTER_CONTEXT_USER(Implementation);
     }; // Vulkan
 }; // namespace Gek

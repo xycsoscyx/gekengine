@@ -2,7 +2,7 @@
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/System/VideoDevice.hpp"
+#include "GEK/System/RenderDevice.hpp"
 #include "GEK/Engine/Resources.hpp"
 #include "GEK/Engine/Visual.hpp"
 #include "Passes.hpp"
@@ -11,18 +11,18 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Visual, Video::Device *, Engine::Resources *, std::string)
+        GEK_CONTEXT_USER(Visual, Render::Device *, Engine::Resources *, std::string)
             , public Engine::Visual
         {
         private:
 			std::string visualName;
-            Video::Device *videoDevice = nullptr;
+            Render::Device *videoDevice = nullptr;
 			Video::ObjectPtr inputLayout;
 			Video::Program *vertexProgram = nullptr;
 			Video::Program *geometryProgram = nullptr;
 
         public:
-            Visual(Context *context, Video::Device *videoDevice, Engine::Resources *resources, std::string visualName)
+            Visual(Context *context, Render::Device *videoDevice, Engine::Resources *resources, std::string visualName)
                 : ContextRegistration(context)
                 , videoDevice(videoDevice)
 				, visualName(visualName)
@@ -139,7 +139,7 @@ OutputVertex getProjection(OutputVertex outputVertex)
 				return visualName;
 			}
 
-            void enable(Video::Device::Context *videoContext)
+            void enable(Render::Device::Context *videoContext)
             {
 				videoContext->setInputLayout(inputLayout.get());
 				videoContext->vertexPipeline()->setProgram(vertexProgram);
