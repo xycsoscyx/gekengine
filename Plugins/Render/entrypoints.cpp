@@ -46,7 +46,7 @@ namespace Gek
 
     namespace Direct3D12
     {
-        //GEK_DECLARE_CONTEXT_USER(Device);
+        GEK_DECLARE_CONTEXT_USER(Device);
     };
 
     GEK_CONTEXT_BEGIN(System);

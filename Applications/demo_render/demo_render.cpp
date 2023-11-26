@@ -48,6 +48,7 @@ namespace Gek
 		{
 			ImGuiContext *context = nullptr;
 
+			Render::PipelineFormatPtr pipelineFormat;
 			Render::PipelineStatePtr pipelineState;
 			Render::SamplerStatePtr samplerState;
 
@@ -161,6 +162,9 @@ namespace Gek
 
 			gui->directQueue = renderDevice->createQueue(Render::Queue::Type::Direct);
 
+			Render::PipelineFormat::Description pipelineFormatDescription;
+			gui->pipelineFormat = renderDevice->createPipelineFormat(pipelineFormatDescription);
+
 			static constexpr std::string_view guiProgram =
 R"(DeclareConstantBuffer(Constants, 0)
 {
@@ -249,7 +253,7 @@ Output mainPixelProgram(in Pixel input)
 			pipelineStateDescription.depthStateDescription.comparisonFunction = Render::ComparisonFunction::LessEqual;
 			pipelineStateDescription.depthStateDescription.writeMask = Render::PipelineState::DepthState::Write::Zero;
 
-			gui->pipelineState = renderDevice->createPipelineState(pipelineStateDescription);
+			gui->pipelineState = renderDevice->createPipelineState(gui->pipelineFormat.get(), pipelineStateDescription);
 
 			Render::Buffer::Description constantBufferDescription;
 			constantBufferDescription.name = "ImGui::Constants";
@@ -264,7 +268,7 @@ Output mainPixelProgram(in Pixel input)
 			samplerStateDescription.addressModeU = Render::SamplerState::AddressMode::Clamp;
 			samplerStateDescription.addressModeV = Render::SamplerState::AddressMode::Clamp;
 			samplerStateDescription.addressModeW = Render::SamplerState::AddressMode::Clamp;
-			gui->samplerState = renderDevice->createSamplerState(samplerStateDescription);
+			gui->samplerState = renderDevice->createSamplerState(gui->pipelineFormat.get(), samplerStateDescription);
 
 			gui->context = ImGui::CreateContext();
 
@@ -313,7 +317,7 @@ Output mainPixelProgram(in Pixel input)
 			fontDescription.format = Render::Format::R8G8B8A8_UNORM;
 			fontDescription.width = fontWidth;
 			fontDescription.height = fontHeight;
-			fontDescription.flags = Render::Texture::Flags::Resource;
+			fontDescription.flags = Render::Texture::Flags::ResourceView;
 			gui->fontTexture = renderDevice->createTexture(fontDescription, pixels);
 
 			imGuiIo.Fonts->TexID = reinterpret_cast<ImTextureID>(gui->fontTexture.get());

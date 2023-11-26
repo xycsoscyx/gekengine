@@ -90,7 +90,7 @@ namespace Gek
             Count,
         };
 
-        Format GetFormat(std::string const &format);
+        Format GetFormat(std::string const& format);
 
         struct DisplayMode
         {
@@ -180,15 +180,15 @@ namespace Gek
             float nearClip = 0.0f;
             float farClip = 0.0f;
 
-			ViewPort(void) = default;
+            ViewPort(void) = default;
 
-			ViewPort(Math::Float2 const &position, Math::Float2 const &size, float nearClip, float farClip)
-				: position(position)
-				, size(size)
-				, nearClip(nearClip)
-				, farClip(farClip)
-			{
-			}
+            ViewPort(Math::Float2 const& position, Math::Float2 const& size, float nearClip, float farClip)
+                : position(position)
+                , size(size)
+                , nearClip(nearClip)
+                , farClip(farClip)
+            {
+            }
         };
 
         GEK_INTERFACE(Resource)
@@ -196,6 +196,78 @@ namespace Gek
             virtual ~Resource(void) = default;
 
             virtual std::string_view getName(void) const = 0;
+        };
+
+        GEK_INTERFACE(PipelineFormat)
+            : virtual public Resource
+        {
+            struct Descriptor
+            {
+                uint32_t index;
+                uint32_t space;
+            };
+
+            struct DescriptorRange
+                : public Descriptor
+            {
+                enum class Type : uint8_t
+                {
+                    ResourceView = 0,
+                    UnorderedView,
+                    ConstantView,
+                    Sampler,
+                };
+
+                Type type;
+                uint32_t count;
+                uint32_t offset;
+            };
+
+            struct DescriptorTable
+            {
+                std::vector<DescriptorRange> descriptorRanges;
+            };
+
+            struct Parameter
+            {
+                enum class Type : uint8_t
+                {
+                    DescriptorTable = 0,
+                    ResourceView,
+                    UnorderedView,
+                    ConstantView,
+                };
+
+                enum class Visibility : uint8_t
+                {
+                    All = 0,
+                    Vertex,
+                    Pixel,
+                };
+
+                Type type;
+                Visibility visibility;
+                union
+                {
+                    Descriptor descriptor;
+                    DescriptorRange DescriptorTable;
+                };
+            };
+
+            struct Sampler
+            {
+            };
+
+            struct Description
+            {
+                std::string name;
+                std::vector<Parameter> parameters;
+                std::vector<Sampler> samplers;
+            };
+
+            virtual ~PipelineFormat(void) = default;
+
+            virtual Description const& getDescription(void) const = 0;
         };
 
         GEK_INTERFACE(PipelineState)
@@ -548,8 +620,8 @@ namespace Gek
                 {
                     RenderTarget = 1 << 0,
                     DepthTarget = 1 << 1,
-                    Resource = 1 << 2,
-                    UnorderedAccess = 1 << 3,
+                    ResourceView = 1 << 2,
+                    UnorderedView = 1 << 3,
                 };
             }; // Flags
 
@@ -648,27 +720,28 @@ namespace Gek
 
             virtual Texture* getBackBuffer(void) = 0;
             virtual void setFullScreenState(bool fullScreen) = 0;
-            virtual void setDisplayMode(const DisplayMode &displayMode) = 0;
+            virtual void setDisplayMode(const DisplayMode & displayMode) = 0;
             virtual void handleResize(void) = 0;
 
-            virtual PipelineStatePtr createPipelineState(const PipelineState::Description &pipelineState) = 0;
-            virtual SamplerStatePtr createSamplerState(const SamplerState::Description &samplerState) = 0;
+            virtual PipelineFormatPtr createPipelineFormat(const PipelineFormat::Description & pipelineDescription) = 0;
+            virtual PipelineStatePtr createPipelineState(PipelineFormat *pipelineFormat, const PipelineState::Description & pipelineDescription) = 0;
+            virtual SamplerStatePtr createSamplerState(PipelineFormat* pipelineFormat, const SamplerState::Description & samplerDescription) = 0;
 
-            virtual BufferPtr createBuffer(const Buffer::Description &description, const void *staticData = nullptr) = 0;
-            virtual TexturePtr createTexture(const Texture::Description &description, const void *data = nullptr) = 0;
-            virtual TexturePtr loadTexture(FileSystem::Path const &filePath, uint32_t flags) = 0;
+            virtual BufferPtr createBuffer(const Buffer::Description & description, const void* staticData = nullptr) = 0;
+            virtual TexturePtr createTexture(const Texture::Description & description, const void* data = nullptr) = 0;
+            virtual TexturePtr loadTexture(FileSystem::Path const& filePath, uint32_t flags) = 0;
 
             template <typename TYPE>
-            bool mapResource(Resource* buffer, TYPE *&data, Map mapping = Map::WriteDiscard)
+            bool mapResource(Resource * buffer, TYPE * &data, Map mapping = Map::WriteDiscard)
             {
-                return mapResource(buffer, (void *&)data, mapping);
+                return mapResource(buffer, (void*&)data, mapping);
             }
 
-            virtual bool mapResource(Resource* resource, void *&data, Map mapping = Map::WriteDiscard) = 0;
-            virtual void unmapResource(Resource* resource) = 0;
+            virtual bool mapResource(Resource * resource, void*& data, Map mapping = Map::WriteDiscard) = 0;
+            virtual void unmapResource(Resource * resource) = 0;
 
-            virtual void updateResource(Resource* resource, const void *data) = 0;
-            virtual void copyResource(Resource* destination, Resource* source) = 0;
+            virtual void updateResource(Resource * resource, const void* data) = 0;
+            virtual void copyResource(Resource * destination, Resource * source) = 0;
 
             virtual QueuePtr createQueue(Queue::Type type) = 0;
             virtual CommandListPtr createCommandList(uint32_t flags) = 0;
@@ -683,7 +756,7 @@ namespace Gek
             {
                 virtual ~Device(void) = default;
 
-                virtual void *getDevice(void) = 0;
+                virtual void* getDevice(void) = 0;
             };
         }; // namespace Debug
     }; // namespace Render

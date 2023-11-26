@@ -660,6 +660,33 @@ namespace Gek
         GEK_CONTEXT_USER(Device, Window *, Render::Device::Description)
             , public Render::Debug::Device
         {
+            struct PipelineFormat
+                : public Render::PipelineFormat
+            {
+            public:
+                Render::PipelineFormat::Description description;
+
+            public:
+                PipelineFormat(const Render::PipelineFormat::Description& description)
+                    : description(description)
+                {
+                }
+
+                virtual ~PipelineFormat(void)
+                {
+                }
+
+                std::string_view getName(void) const
+                {
+                    return description.name;
+                }
+
+                Render::PipelineFormat::Description const& getDescription(void) const
+                {
+                    return description;
+                }
+            };
+
             class PipelineState
                 : public Render::PipelineState
             {
@@ -1303,12 +1330,12 @@ namespace Gek
             {
             public:
                 Device* device = nullptr;
-                ID3D11DeviceContext* d3dDeviceContext = nullptr;
+                ID3D11DeviceContext* d3dDeferredContext = nullptr;
 
             public:
-                Queue(Device* device, ID3D11DeviceContext* d3dDeviceContext)
+                Queue(Device* device, ID3D11DeviceContext* d3dDeferredContext)
                     : device(device)
-                    , d3dDeviceContext(d3dDeviceContext)
+                    , d3dDeferredContext(d3dDeferredContext)
                 {
                 }
 
@@ -1319,13 +1346,13 @@ namespace Gek
 
                 void executeCommandList(Render::CommandList *commandList)
                 {
-                    assert(d3dDeviceContext);
+                    assert(d3dDeferredContext);
                     assert(commandList);
 
                     auto d3dCommandList = dynamic_cast<CommandList *>(commandList);
                     if (d3dCommandList)
                     {
-                        d3dDeviceContext->ExecuteCommandList(d3dCommandList->d3dCommandList, false);
+                        d3dDeferredContext->ExecuteCommandList(d3dCommandList->d3dCommandList, false);
                     }
                 }
             };
@@ -1412,10 +1439,6 @@ namespace Gek
 
                 dxgiSwapChain.Release();
                 d3dDefaultContext.Release();
-#ifdef _DEBUG
-                CComQIPtr<ID3D11Debug> d3dDebug(d3dDevice);
-                d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
-#endif
                 d3dDevice.Release();
             }
 
@@ -1838,7 +1861,12 @@ struct Output
                 }
             }
 
-            Render::PipelineStatePtr createPipelineState(const Render::PipelineState::Description &pipelineStateDescription)
+            Render::PipelineFormatPtr createPipelineFormat(const Render::PipelineFormat::Description& pipelineDescription)
+            {
+                return std::make_unique<PipelineFormat>(pipelineDescription);
+            }
+
+            Render::PipelineStatePtr createPipelineState(Render::PipelineFormat* pipelineFormat, const Render::PipelineState::Description &pipelineStateDescription)
             {
                 auto shaderHeader = getShaderHeader(pipelineStateDescription);
                 auto compiledVertexShader = compileShader("", "vs_5_0", pipelineStateDescription.vertexShaderEntryFunction, pipelineStateDescription.vertexShader, shaderHeader);
@@ -1892,7 +1920,7 @@ struct Output
                     sampleMask);
             }
 
-            Render::SamplerStatePtr createSamplerState(const Render::SamplerState::Description &samplerStateDescription)
+            Render::SamplerStatePtr createSamplerState(Render::PipelineFormat* pipelineFormat, const Render::SamplerState::Description &samplerStateDescription)
             {
                 assert(d3dDevice);
 
@@ -2181,12 +2209,12 @@ struct Output
                     bindFlags |= D3D11_BIND_DEPTH_STENCIL;
                 }
 
-                if (description.flags & Render::Texture::Flags::Resource)
+                if (description.flags & Render::Texture::Flags::ResourceView)
                 {
                     bindFlags |= D3D11_BIND_SHADER_RESOURCE;
                 }
 
-                if (description.flags & Render::Texture::Flags::UnorderedAccess)
+                if (description.flags & Render::Texture::Flags::UnorderedView)
                 {
                     bindFlags |= D3D11_BIND_UNORDERED_ACCESS;
                 }
@@ -2268,7 +2296,7 @@ struct Output
 
                 SetDebugName(d3dResource, description.name);
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                if (description.flags & Render::Texture::Flags::Resource)
+                if (description.flags & Render::Texture::Flags::ResourceView)
                 {
                     D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
                     viewDescription.Format = Direct3D11::ViewFormatList[static_cast<uint8_t>(description.format)];
@@ -2296,7 +2324,7 @@ struct Output
                 }
 
                 CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
-                if (description.flags & Render::Texture::Flags::UnorderedAccess)
+                if (description.flags & Render::Texture::Flags::UnorderedView)
                 {
                     D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
                     viewDescription.Format = Direct3D11::ViewFormatList[static_cast<uint8_t>(description.format)];
@@ -2444,7 +2472,20 @@ struct Output
 
             Render::QueuePtr createQueue(Queue::Type type)
             {
-                return std::make_unique<Queue>(this, d3dDefaultContext);
+                if (type == Queue::Type::Direct)
+                {
+                    return std::make_unique<Queue>(this, d3dDefaultContext);
+                }
+
+                CComPtr<ID3D11DeviceContext> d3dDeferredContext;
+                HRESULT resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeferredContext);
+                if (!d3dDeferredContext)
+                {
+                    std::cerr << "Unable to create deferred render queue";
+                    return nullptr;
+                }
+
+                return std::make_unique<Queue>(this, d3dDeferredContext);
             }
 
             Render::CommandListPtr createCommandList(uint32_t flags)
