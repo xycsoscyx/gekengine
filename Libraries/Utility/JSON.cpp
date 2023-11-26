@@ -200,7 +200,15 @@ namespace Gek
 
         Math::Float4 Evaluate(const Object& object, ShuntingYard& shuntingYard, Math::Float4 const& defaultValue)
         {
-            if (object.is_array())
+            if (object.is_object())
+            {
+                const auto& method = object.begin();
+                if (String::GetLower(method.key()) == "normalize")
+                {
+                    return Evaluate(method.value(), shuntingYard, defaultValue).getNormal();
+                }
+            }
+            else if (object.is_array())
             {
                 switch (object.size())
                 {

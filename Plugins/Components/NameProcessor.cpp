@@ -89,7 +89,7 @@ namespace Gek
                 auto nameSearch = nameMap.find(nameComponent.name);
                 if (nameSearch != std::end(nameMap) && nameSearch->second != entity)
                 {
-                    nameComponent.name += fmt::format("{}", ++uniqueIdentifier);
+                    nameComponent.name += std::format("{}", ++uniqueIdentifier);
                 }
 
                 nameMap.insert(std::make_pair(nameComponent.name, entity));

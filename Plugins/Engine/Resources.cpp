@@ -682,7 +682,7 @@ namespace Gek
                 {
                     cache.visit([&](CACHE::HandleType handle, CACHE::TypePtr object) -> void
                     {
-                        auto nodeName = fmt::format("{}_{}", object->getName(), static_cast<uint64_t>(handle.identifier));
+                        auto nodeName = std::format("{}_{}", object->getName(), static_cast<uint64_t>(handle.identifier));
                         if (ImGui::TreeNodeEx(nodeName.data(), ImGuiTreeNodeFlags_Framed))
                         {
                             onObject(object);
@@ -744,7 +744,7 @@ namespace Gek
                             {
                                 auto handle = resourcePair.first;
                                 auto& object = resourcePair.second;
-                                auto nodeName = fmt::format("{} - {}", object->getName(), static_cast<uint64_t>(handle.identifier));
+                                auto nodeName = std::format("{} - {}", object->getName(), static_cast<uint64_t>(handle.identifier));
                                 if (ImGui::TreeNodeEx(nodeName.data(), ImGuiTreeNodeFlags_Framed))
                                 {
                                     onObject(object);
@@ -1046,14 +1046,14 @@ namespace Gek
                         case 1:
                             data.push_back(JSON::Evaluate(parameters[0], shuntingYard, 255));
                             description.format = Video::Format::R8_UNORM;
-                            parameterString = fmt::format("color[{}]", data[0]);
+                            parameterString = std::format("color[{}]", data[0]);
                             break;
 
                         case 2:
                             data.push_back(JSON::Evaluate(parameters[0], shuntingYard, 255));
                             data.push_back(JSON::Evaluate(parameters[1], shuntingYard, 255));
                             description.format = Video::Format::R8G8_UNORM;
-                            parameterString = fmt::format("color2[{}, {}]", data[0], data[1]);
+                            parameterString = std::format("color2[{}, {}]", data[0], data[1]);
                             break;
 
                         case 3:
@@ -1062,7 +1062,7 @@ namespace Gek
                             data.push_back(JSON::Evaluate(parameters[2], shuntingYard, 255));
                             data.push_back(0);
                             description.format = Video::Format::R8G8B8A8_UNORM;
-                            parameterString = fmt::format("color3[{}, {}, {}]", data[0], data[1], data[2]);
+                            parameterString = std::format("color3[{}, {}, {}]", data[0], data[1], data[2]);
                             break;
 
                         case 4:
@@ -1071,7 +1071,7 @@ namespace Gek
                             data.push_back(JSON::Evaluate(parameters[2], shuntingYard, 255));
                             data.push_back(JSON::Evaluate(parameters[3], shuntingYard, 255));
                             description.format = Video::Format::R8G8B8A8_UNORM;
-                            parameterString = fmt::format("color4[{}, {}, {}, {}]", data[0], data[1], data[2], data[3]);
+                            parameterString = std::format("color4[{}, {}, {}, {}]", data[0], data[1], data[2], data[3]);
                             break;
                         };
                     }
@@ -1089,7 +1089,7 @@ namespace Gek
                         data.push_back(quarters[2]);
                         data.push_back(quarters[3]);
                         description.format = Video::Format::R32_FLOAT;
-                        parameterString = fmt::format("float[{}]", value);
+                        parameterString = std::format("float[{}]", value);
                     }
                 }
                 else if (lowerPattern == "normal")
@@ -1101,7 +1101,7 @@ namespace Gek
                     };
 
                     Math::Float3 normal = JSON::Evaluate(parameters, shuntingYard, Math::Float3::Zero);
-                    parameterString = fmt::format("normal[{}, {}, {}]", normal.x, normal.y, normal.z);
+                    parameterString = std::format("normal[{}, {}, {}]", normal.x, normal.y, normal.z);
 
                     Float16Compressor compressor;
                     halves[0] = compressor.compress(normal.x);
@@ -1135,7 +1135,7 @@ namespace Gek
                     }
                 }
 
-                description.name = fmt::format("{}:{}", lowerPattern, parameterString);
+                description.name = std::format("{}:{}", lowerPattern, parameterString);
                 description.flags = Video::Texture::Flags::Resource;
 
                 auto resource = dynamicCache.getHandle(GetHash(description.name), description.getHash(), [this, description, data = move(data)](ResourceHandle)->Video::TexturePtr
@@ -1483,8 +1483,8 @@ namespace Gek
 
                 auto hash = GetHash(name, uncompiledData, engineData);
                 auto cachePath = getContext()->getCachePath(FileSystem::CreatePath("programs", name));
-                auto uncompiledPath(cachePath.withExtension(fmt::format(".{}.hlsl", hash)));
-                auto compiledPath(cachePath.withExtension(fmt::format(".{}.bin", hash)));
+                auto uncompiledPath(cachePath.withExtension(std::format(".{}.hlsl", hash)));
+                auto compiledPath(cachePath.withExtension(std::format(".{}.bin", hash)));
                 Video::Program::Information information =
                 {
                     type

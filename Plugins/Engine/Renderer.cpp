@@ -252,7 +252,7 @@ namespace Gek
 						lightDataBuffer = nullptr;
 
 						Video::Buffer::Description lightBufferDescription;
-						lightBufferDescription.name = fmt::format("render:{}", COMPONENT::GetName());
+						lightBufferDescription.name = std::format("render:{}", COMPONENT::GetName());
 						lightBufferDescription.type = Video::Buffer::Type::Structured;
 						lightBufferDescription.flags = Video::Buffer::Flags::Mappable | Video::Buffer::Flags::Resource;
 						lightBufferDescription.stride = sizeof(DATA);

@@ -2493,7 +2493,7 @@ namespace Gek
 
                 static const std::vector<uint8_t> EmptyBuffer;
                 information.type = type;
-                information.name = fmt::format("{}:{}", name, entryFunction);
+                information.name = std::format("{}:{}", name, entryFunction);
                 information.debugPath = debugPath;
                 information.uncompiledData = uncompiledProgram;
                 information.compiledData = EmptyBuffer;

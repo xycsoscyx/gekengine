@@ -36,7 +36,7 @@ namespace Gek
 
         struct LocationMessage
         {
-            fmt::string_view format;
+            std::string_view format;
             std::source_location location;
 
             LocationMessage(const char *format, const std::source_location& location = std::source_location::current())
@@ -59,10 +59,10 @@ namespace Gek
         template <typename... PARAMETERS>
         void log(LogLevel level, const LocationMessage& message, PARAMETERS&&... args) const
         {
-            vlog(level, message, fmt::make_format_args(args...));
+            vlog(level, message, std::make_format_args(args...));
         }
 
-        virtual void vlog(LogLevel level, const LocationMessage& message, fmt::format_args args) const = 0;
+        virtual void vlog(LogLevel level, const LocationMessage& message, std::format_args args) const = 0;
 
 		virtual void setCachePath(FileSystem::Path const &path) = 0;
 		virtual FileSystem::Path getCachePath(FileSystem::Path const &path) = 0;

@@ -15,8 +15,8 @@
 #include "GEK/Components/Color.hpp"
 #include "GEK/Engine/Material.hpp"
 #include "Passes.hpp"
-#include <fmt/format.h>
 #include <unordered_map>
+#include <format>
 #include <vector>
 
 namespace Gek
@@ -188,11 +188,11 @@ namespace Gek
                     std::string system(String::GetLower(JSON::Value(elementNode, "system", String::Empty)));
                     if (system == "isfrontfacing")
                     {
-                        inputData.push_back(fmt::format("    uint {} : SV_IsFrontFace;", name));
+                        inputData.push_back(std::format("    uint {} : SV_IsFrontFace;", name));
                     }
                     else if (system == "sampleindex")
                     {
-                        inputData.push_back(fmt::format("    uint {} : SV_SampleIndex;", name));
+                        inputData.push_back(std::format("    uint {} : SV_SampleIndex;", name));
                     }
                     else
                     {
@@ -202,7 +202,7 @@ namespace Gek
                         auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)];
                         semanticIndexList[static_cast<uint8_t>(semantic)] += count;
 
-                        inputData.push_back(fmt::format("    {} {} : {}{};", getFormatSemantic(format, count), name, videoDevice->getSemanticMoniker(semantic), semanticIndex));
+                        inputData.push_back(std::format("    {} {} : {}{};", getFormatSemantic(format, count), name, videoDevice->getSemanticMoniker(semantic), semanticIndex));
                     }
                 }
 
@@ -315,15 +315,15 @@ R"(namespace Lights
                         textureResourceMap[textureName] = resource;
                         if (description->depth > 1)
                         {
-                            resourceSemanticsMap[textureName] = fmt::format("Texture3D<{}>", getFormatSemantic(description->format));
+                            resourceSemanticsMap[textureName] = std::format("Texture3D<{}>", getFormatSemantic(description->format));
                         }
                         else if (description->height > 1 || description->width == 1)
                         {
-                            resourceSemanticsMap[textureName] = fmt::format("Texture2D<{}>", getFormatSemantic(description->format));
+                            resourceSemanticsMap[textureName] = std::format("Texture2D<{}>", getFormatSemantic(description->format));
                         }
                         else
                         {
-                            resourceSemanticsMap[textureName] = fmt::format("Texture1D<{}>", getFormatSemantic(description->format));
+                            resourceSemanticsMap[textureName] = std::format("Texture1D<{}>", getFormatSemantic(description->format));
                         }
                     }
                 }
@@ -365,7 +365,7 @@ R"(namespace Lights
                             if (description != nullptr)
                             {
                                 auto structure = JSON::Value(bufferNode, "structure", String::Empty);
-                                resourceSemanticsMap[bufferName] += fmt::format("Buffer<{}>", structure.empty() ? getFormatSemantic(description->format) : structure);
+                                resourceSemanticsMap[bufferName] += std::format("Buffer<{}>", structure.empty() ? getFormatSemantic(description->format) : structure);
                             }
                         }
                     }
@@ -454,13 +454,13 @@ R"(namespace Lights
                             {
                                 if (optionNode.contains("options"))
                                 {
-                                    outerData.push_back(fmt::format("    namespace {} {{", optionName));
+                                    outerData.push_back(std::format("    namespace {} {{", optionName));
 
                                     std::vector<std::string> choices;
                                     for (auto &choice : JSON::Find(optionNode, "options"))
                                     {
                                         auto name = choice.get<std::string>();
-                                        outerData.push_back(fmt::format("        static const int {} = {};", name, choices.size()));
+                                        outerData.push_back(std::format("        static const int {} = {};", name, choices.size()));
                                         choices.push_back(name);
                                     }
 
@@ -484,8 +484,8 @@ R"(namespace Lights
                                         selection = selectionNode.get<int32_t>();
                                     }
 
-                                    outerData.push_back(fmt::format("        static const int Selection = {};", selection));
-                                    outerData.push_back(fmt::format("    }}; // namespace {}", optionName));
+                                    outerData.push_back(std::format("        static const int Selection = {};", selection));
+                                    outerData.push_back(std::format("    }}; // namespace {}", optionName));
                                 }
                                 else
                                 {
@@ -497,7 +497,7 @@ R"(namespace {0} {{
 {1}
 }}; // namespace {0})";
 
-                                        outerData.push_back(fmt::vformat(innerTemplate, fmt::make_format_args(optionName, innerString)));
+                                        outerData.push_back(std::vformat(innerTemplate, std::make_format_args(optionName, innerString)));
                                     }
                                 }
                             }
@@ -506,25 +506,25 @@ R"(namespace {0} {{
                                 switch (optionNode.size())
                                 {
                                 case 1:
-                                    outerData.push_back(fmt::format("    static const float {} = {};", optionName,
+                                    outerData.push_back(std::format("    static const float {} = {};", optionName,
                                         optionNode[0].get<float>()));
                                     break;
 
                                 case 2:
-                                    outerData.push_back(fmt::format("    static const float2 {} = float2({}, {});", optionName,
+                                    outerData.push_back(std::format("    static const float2 {} = float2({}, {});", optionName,
                                         optionNode[0].get<float>(),
                                         optionNode[1].get<float>()));
                                     break;
 
                                 case 3:
-                                    outerData.push_back(fmt::format("    static const float3 {} = float3({}, {}, {});", optionName,
+                                    outerData.push_back(std::format("    static const float3 {} = float3({}, {}, {});", optionName,
                                         optionNode[0].get<float>(),
                                         optionNode[1].get<float>(),
                                         optionNode[2].get<float>()));
                                     break;
 
                                 case 4:
-                                    outerData.push_back(fmt::format("    static const float4 {} = float4({}, {}, {}, {})", optionName,
+                                    outerData.push_back(std::format("    static const float4 {} = float4({}, {}, {}, {})", optionName,
                                         optionNode[0].get<float>(),
                                         optionNode[1].get<float>(),
                                         optionNode[2].get<float>(),
@@ -534,15 +534,15 @@ R"(namespace {0} {{
                             }
                             else if (optionNode.is_boolean())
                             {
-                                outerData.push_back(fmt::format("    static const bool {} = {};", optionName, optionNode.get<bool>()));
+                                outerData.push_back(std::format("    static const bool {} = {};", optionName, optionNode.get<bool>()));
                             }
                             else if (optionNode.is_number_float())
                             {
-                                outerData.push_back(fmt::format("    static const float {} = {};", optionName, optionNode.get<float>()));
+                                outerData.push_back(std::format("    static const float {} = {};", optionName, optionNode.get<float>()));
                             }
                             else if (optionNode.is_number())
                             {
-                                outerData.push_back(fmt::format("    static const int {} = {};", optionName, optionNode.get<int32_t>()));
+                                outerData.push_back(std::format("    static const int {} = {};", optionName, optionNode.get<int32_t>()));
                             }
                         }
 
@@ -558,7 +558,7 @@ R"(namespace Options {{
 {}
 }}; // namespace Options)";
 
-                        engineData.push_back(fmt::vformat(optionsTemplate, fmt::make_format_args(optionsString)));
+                        engineData.push_back(std::vformat(optionsTemplate, std::make_format_args(optionsString)));
                     }
 
                     std::string mode(String::GetLower(JSON::Value(passNode, "mode", String::Empty)));
@@ -628,7 +628,7 @@ R"(namespace Options {{
                                 auto description = resources->getTextureDescription(resourceSearch->second);
                                 if (description)
                                 {
-                                    outputData.push_back(fmt::format("    {} {} : SV_TARGET{};", getFormatSemantic(description->format), renderTarget.second, outputData.size()));
+                                    outputData.push_back(std::format("    {} {} : SV_TARGET{};", getFormatSemantic(description->format), renderTarget.second, outputData.size()));
                                 }
                                 else
                                 {
@@ -646,7 +646,7 @@ R"(struct OutputPixel
 }}; // struct OutputPixel)";
 
                             auto outputString = String::Join(outputData, "\r\n");
-                            engineData.push_back(fmt::vformat(outputTemplate, fmt::make_format_args(outputString)));
+                            engineData.push_back(std::vformat(outputTemplate, std::make_format_args(outputString)));
                         }
 
                         Video::DepthState::Description depthStateInformation;
@@ -820,7 +820,7 @@ R"(struct OutputPixel
                                         textureType = "Texture1D";
                                     }
 
-                                    resourceData.push_back(fmt::format("    {}<{}> {} : register(t{});", textureType, getFormatSemantic(description->format), initializer.name, currentStage));
+                                    resourceData.push_back(std::format("    {}<{}> {} : register(t{});", textureType, getFormatSemantic(description->format), initializer.name, currentStage));
                                 }
                             }
                         }
@@ -839,7 +839,7 @@ R"(struct OutputPixel
                         auto semanticsSearch = resourceSemanticsMap.find(resourcePair.first);
                         if (semanticsSearch != std::end(resourceSemanticsMap))
                         {
-                            resourceData.push_back(fmt::format("    {} {} : register(t{});", semanticsSearch->second, resourcePair.second, currentStage));
+                            resourceData.push_back(std::format("    {} {} : register(t{});", semanticsSearch->second, resourcePair.second, currentStage));
                         }
                     }
 
@@ -852,7 +852,7 @@ R"(namespace Resources
 }}; // namespace Resources)";
 
                         auto resourceString = String::Join(resourceData, "\r\n");
-                        engineData.push_back(fmt::vformat(resourceTemplate, fmt::make_format_args(resourceString)));
+                        engineData.push_back(std::vformat(resourceTemplate, std::make_format_args(resourceString)));
                     }
 
                     uint32_t unorderedStateStart = 0;
@@ -875,7 +875,7 @@ R"(namespace Resources
                         auto semanticsSearch = resourceSemanticsMap.find(resourcePair.first);
                         if (semanticsSearch != std::end(resourceSemanticsMap))
                         {
-                            unorderedAccessData.push_back(fmt::format("    RW{} {} : register(u{});", semanticsSearch->second, resourcePair.second, currentStage));
+                            unorderedAccessData.push_back(std::format("    RW{} {} : register(u{});", semanticsSearch->second, resourcePair.second, currentStage));
                         }
                     }
 
@@ -888,7 +888,7 @@ R"(namespace UnorderedAccess
 }}; // namespace UnorderedAccess)";
 
                         auto unorderedAccessString = String::Join(unorderedAccessData, "\r\n");
-                        engineData.push_back(fmt::vformat(unorderedAccessTemplate, fmt::make_format_args(unorderedAccessString)));
+                        engineData.push_back(std::vformat(unorderedAccessTemplate, std::make_format_args(unorderedAccessString)));
                     }
 
                     std::string fileName(FileSystem::CreatePath(shaderName, programName).withExtension(".hlsl").getString());

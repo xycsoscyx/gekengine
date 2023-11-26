@@ -105,11 +105,11 @@ namespace Gek
         }
 
         // Context
-        void vlog(LogLevel level, const LocationMessage& message, fmt::format_args args) const
+        void vlog(LogLevel level, const LocationMessage& message, std::format_args args) const
         {
             const auto& location = message.location;
             auto fileName = FileSystem::Path(location.file_name()).getFileName();
-            auto formattedMessage = fmt::format("{}:{}: {}", fileName, location.line(), fmt::vformat(message.format, args));
+            auto formattedMessage = std::format("{}:{}: {}", fileName, location.line(), std::vformat(message.format, args));
             switch (level)
             {
             case LogLevel::Error:

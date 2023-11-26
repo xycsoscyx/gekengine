@@ -41,7 +41,7 @@ namespace Gek
                 if (shader)
                 {
                     Video::RenderState::Description renderStateInformation;
-                    renderStateInformation.name = fmt::format("{}:renderState", materialName);
+                    renderStateInformation.name = std::format("{}:renderState", materialName);
                     renderStateInformation.load(JSON::Find(shaderNode, "renderState"));
                     renderState = resources->createRenderState(renderStateInformation);
 

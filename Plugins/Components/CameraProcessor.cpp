@@ -126,7 +126,7 @@ namespace Gek
                 {
                     auto backBuffer = core->getRenderer()->getVideoDevice()->getBackBuffer();
                     Video::Texture::Description description;
-                    description.name = fmt::format("camera:{}", cameraComponent.target);
+                    description.name = std::format("camera:{}", cameraComponent.target);
                     description.format = Video::Format::R11G11B10_FLOAT;
                     description.width = backBuffer->getDescription().width;
                     description.height = backBuffer->getDescription().height;
@@ -192,7 +192,7 @@ namespace Gek
 
 					if (name.empty())
 					{
-						name = fmt::format("camera_{}", *reinterpret_cast<int *>(entity));
+						name = std::format("camera_{}", *reinterpret_cast<int *>(entity));
 					}
 
 					auto viewMatrix(transformComponent.getMatrix().getInverse());

@@ -18,7 +18,9 @@
                 "range": "random(25, 50)",
                 "intensity": "random(5, 10)"
             },
-            "Color": [ "random(0, 1)", "random(0, 1)", "random(0, 1)" ]
+            "Color": {
+                "normalize": [ "random(0, 1)", "random(0, 1)", "random(0, 1)" ]
+            }
         },
         "BasicSpotLight": {
             "Transform": {
@@ -32,7 +34,9 @@
                 "coneFalloff": "random(0.5, 4.0)",
                 "intensity": "random(5, 10)"
             },
-            "Color": [ "random(0, 1)", "random(0, 1)", "random(0, 1)" ],
+            "Color": {
+                "normalize": [ "random(0, 1)", "random(0, 1)", "random(0, 1)" ]
+            },
             "Spin": {}
         }
     },

@@ -12,11 +12,11 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <mikktspace.h>
-#include <fmt/format.h>
 #include <unordered_map>
 #include <algorithm>
 #include <string.h>
 #include <vector>
+#include <format>
 #include <map>
 
 #ifdef _WIN32
@@ -115,7 +115,7 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
         model.name = inputNode->mName.C_Str();
 		if (model.name.empty())
 		{
-			model.name = fmt::format("model_{}", modelList.size());
+			model.name = std::format("model_{}", modelList.size());
 		}
 
 		context->log(Context::Info, "Found Assimp Model: {}", model.name);
@@ -639,7 +639,7 @@ struct StaticModel
                 R"(static const StaticModel {0}_models[] = {{)";
             std::string code(modelDefinition);
             code += "\n";
-            code += fmt::vformat(modelTemplate, fmt::make_format_args(filePath.withoutExtension().getFileName()));
+            code += std::format(modelTemplate, filePath.withoutExtension().getFileName().c_str());
             code += "\n";
 
             for (auto& model : modelList)
@@ -651,35 +651,35 @@ struct StaticModel
                 for (auto& mesh : model.meshList)
                 {
                     String::Replace(mesh.material, "\\", "\\\\");
-                    code += fmt::format("   StaticModel(\"{}\",\n       std::vector<Math::Float3>({{ ", mesh.material);
+                    code += std::format("   StaticModel(\"{}\",\n       std::vector<Math::Float3>({{ ", mesh.material);
                     for (auto& point : mesh.pointList)
                     {
-                        code += fmt::format("Math::Float3({:.5F}f, {:.5F}f, {:.5F}f), ", point.x, point.y, point.z);
+                        code += std::format("Math::Float3({:.5F}f, {:.5F}f, {:.5F}f), ", point.x, point.y, point.z);
                     }
 
-                    code += fmt::format("}}),\n       std::vector<Math::Float2>({{ ");
+                    code += std::format("}}),\n       std::vector<Math::Float2>({{ ");
                     for (auto& texCoord : mesh.texCoordList)
                     {
-                        code += fmt::format("Math::Float2({:.5F}f, {:.5F}f), ", texCoord.x, texCoord.y);
+                        code += std::format("Math::Float2({:.5F}f, {:.5F}f), ", texCoord.x, texCoord.y);
                     }
 
-                    code += fmt::format("}}),\n       std::vector<Math::Float4>({{ ");
+                    code += std::format("}}),\n       std::vector<Math::Float4>({{ ");
                     for (auto& tangent : mesh.tangentList)
                     {
-                        code += fmt::format("Math::Float4({:.5F}f, {:.5F}f, {:.5F}f, {:.5F}f), ", tangent.x, tangent.y, tangent.z, tangent.w);
+                        code += std::format("Math::Float4({:.5F}f, {:.5F}f, {:.5F}f, {:.5F}f), ", tangent.x, tangent.y, tangent.z, tangent.w);
                     }
 
-                    code += fmt::format("}}),\n       std::vector<Math::Float3>({{ ");
+                    code += std::format("}}),\n       std::vector<Math::Float3>({{ ");
                     for (auto& normal : mesh.normalList)
                     {
-                        code += fmt::format("Math::Float3({:.5F}f, {:.5F}f, {:.5F}f), ", normal.x, normal.y, normal.z);
+                        code += std::format("Math::Float3({:.5F}f, {:.5F}f, {:.5F}f), ", normal.x, normal.y, normal.z);
                     }
 
-                    code += fmt::format("}})),\n");
+                    code += std::format("}})),\n");
                 }
             }
 
-            code += fmt::format("\n}};");
+            code += std::format("\n}};");
             fwrite(code.data(), 1, code.size(), file);
             fclose(file);
         }

@@ -42,15 +42,15 @@ namespace Gek
                     std::string systemType(String::GetLower(JSON::Value(elementNode, "system", String::Empty)));
                     if (systemType == "instanceindex")
                     {
-                        inputVertexData.push_back(fmt::format("    uint {} : SV_InstanceId;", elementName));
+                        inputVertexData.push_back(std::format("    uint {} : SV_InstanceId;", elementName));
                     }
                     else if (systemType == "vertexindex")
                     {
-                        inputVertexData.push_back(fmt::format("    uint {} : SV_VertexId;", elementName));
+                        inputVertexData.push_back(std::format("    uint {} : SV_VertexId;", elementName));
                     }
                     else if (systemType == "isfrontfacing")
                     {
-                        inputVertexData.push_back(fmt::format("    uint {} : SV_IsFrontFace;", elementName));
+                        inputVertexData.push_back(std::format("    uint {} : SV_IsFrontFace;", elementName));
                     }
                     else
                     {
@@ -64,7 +64,7 @@ namespace Gek
                         auto semanticIndex = inputIndexList[static_cast<uint8_t>(element.semantic)];
                         inputIndexList[static_cast<uint8_t>(element.semantic)] += count;
 
-                        inputVertexData.push_back(fmt::format("    {} {} : {}{};", getFormatSemantic(element.format, count), elementName, videoDevice->getSemanticMoniker(element.semantic), semanticIndex));
+                        inputVertexData.push_back(std::format("    {} {} : {}{};", getFormatSemantic(element.format, count), elementName, videoDevice->getSemanticMoniker(element.semantic), semanticIndex));
                         while (count-- > 0)
                         {
                             elementList.push_back(element);
@@ -82,7 +82,7 @@ namespace Gek
                     uint32_t count = JSON::Value(elementNode, "count", 1U);
                     auto semanticIndex = outputIndexList[static_cast<uint8_t>(semantic)];
                     outputIndexList[static_cast<uint8_t>(semantic)] += count;
-                    outputVertexData.push_back(fmt::format("    {} {} : {}{};", getFormatSemantic(format, count), elementName, videoDevice->getSemanticMoniker(semantic), semanticIndex));
+                    outputVertexData.push_back(std::format("    {} {} : {}{};", getFormatSemantic(format, count), elementName, videoDevice->getSemanticMoniker(semantic), semanticIndex));
 				}
 
                 static constexpr std::string_view engineDataTemplate =
@@ -105,7 +105,7 @@ OutputVertex getProjection(OutputVertex outputVertex)
 
                 auto inputVertexString = String::Join(inputVertexData, "\r\n");
                 auto outputVertexString = String::Join(outputVertexData, "\r\n");
-                auto engineData = fmt::vformat(engineDataTemplate, fmt::make_format_args(inputVertexString, outputVertexString));
+                auto engineData = std::vformat(engineDataTemplate, std::make_format_args(inputVertexString, outputVertexString));
 
                 auto vertexNode = visualNode["vertex"];
                 if (vertexNode.contains("entry") && vertexNode.contains("program"))

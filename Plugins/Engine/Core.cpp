@@ -219,7 +219,7 @@ namespace Gek
                     for (auto const &displayMode : displayModeList)
                     {
                         auto currentDisplayMode = displayModeStringList.size();
-                        std::string displayModeString(fmt::format("{}x{}, {}hz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
+                        std::string displayModeString(std::format("{}x{}, {}hz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
                         switch (displayMode.aspectRatio)
                         {
                         case Video::DisplayMode::AspectRatio::_4x3:
@@ -576,7 +576,7 @@ namespace Gek
                     {
                         for (auto &[settingName, settingNode] : settingNode.items())
                         {
-                            auto label(fmt::format("##{}{}", settingName, settingName));
+                            auto label(std::format("##{}{}", settingName, settingName));
                             if (settingNode.is_object())
                             {
                                 auto optionsSearch = settingNode.find("options");
@@ -873,7 +873,7 @@ namespace Gek
                         setFullScreen(previous.fullScreen);
                     }
 
-                    ImGui::TextUnformatted(fmt::format("(Revert in {} seconds)", uint32_t(modeChangeTimer)).data());
+                    ImGui::TextUnformatted(std::format("(Revert in {} seconds)", uint32_t(modeChangeTimer)).data());
                 }
 
 				ImGui::End();

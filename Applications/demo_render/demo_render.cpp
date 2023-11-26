@@ -503,7 +503,7 @@ Output mainPixelProgram(in Pixel input)
 					ImGui::Text("Keep Display Mode?");
 
 					auto &style = ImGui::GetStyle();
-					float buttonPositionX = (ImGui::GetWindowContentRegionWidth() - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
+					float buttonPositionX = (ImGui::GetContentRegionAvail().x - 200.0f - ((style.ItemSpacing.x + style.FramePadding.x) * 2.0f)) * 0.5f;
 					ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
 
 					ImGui::SameLine();
