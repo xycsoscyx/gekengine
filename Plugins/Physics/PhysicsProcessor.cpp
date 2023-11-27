@@ -9,7 +9,7 @@
 #include "GEK/API/Core.hpp"
 #include "GEK/API/Processor.hpp"
 #include "GEK/API/Population.hpp"
-#include "GEK/API/Renderer.hpp"
+#include "GEK/API/Visualizer.hpp"
 #include "GEK/API/Entity.hpp"
 #include "GEK/API/Editor.hpp"
 #include "GEK/Components/Transform.hpp"
@@ -112,7 +112,7 @@ namespace Gek
         private:
             Plugin::Core *core = nullptr;
             Plugin::Population *population = nullptr;
-            Plugin::Renderer *renderer = nullptr;
+            Plugin::Visualizer *renderer = nullptr;
             Edit::Events *events = nullptr;
 
             tbb::concurrent_vector<Surface> surfaceList;
@@ -127,7 +127,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , core(core)
                 , population(core->getPopulation())
-                , renderer(core->getRenderer())
+                , renderer(core->getVisualizer())
             {
                 assert(core);
                 assert(population);

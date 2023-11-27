@@ -15,7 +15,7 @@ namespace Gek
 {
     HINSTANCE GetDLLInstance(void);
 
-    namespace Window
+    namespace WindowImplementation
     {
         Window::Key ConvertKey(uint32_t key, uint32_t state)
         {
@@ -126,7 +126,7 @@ namespace Gek
             return Window::Key::Unknown;
         };
 
-        GEK_CONTEXT_USER_BASE(Implementation)
+        GEK_CONTEXT_USER_BASE(Device)
             , public Gek::Window::Device
         {
         private:
@@ -135,12 +135,12 @@ namespace Gek
             std::atomic_bool stop = false;
 
         public:
-            Implementation(Context *context)
+            Device(Context *context)
                 : ContextRegistration(context)
             {
             }
 
-            ~Implementation(void)
+            ~Device(void)
             {
                 if (window)
                 {
@@ -150,14 +150,14 @@ namespace Gek
             }
 
             // Window
-            void create(Description const& description)
+            void create(Window::Description const& description)
             {
                 WNDCLASSEX windowClass;
                 windowClass.cbSize = sizeof(windowClass);
                 windowClass.style = CS_HREDRAW | CS_VREDRAW | (description.hasOwnContext ? CS_OWNDC : 0);
                 windowClass.lpfnWndProc = [](HWND handle, uint32_t message, WPARAM wParam, LPARAM lParam) -> LRESULT
                 {
-                    Implementation *implementation = reinterpret_cast<Implementation*>(GetWindowLongPtr(handle, GWLP_USERDATA));
+                    Device *implementation = reinterpret_cast<Device*>(GetWindowLongPtr(handle, GWLP_USERDATA));
                     if (implementation)
                     {
                         switch (message)
@@ -444,6 +444,6 @@ namespace Gek
             }
         };
 
-        GEK_REGISTER_CONTEXT_USER(Implementation);
-    }; // namespace Win32
+        GEK_REGISTER_CONTEXT_USER(Device);
+    }; // namespace WindowImplementation
 }; // namespace Gek

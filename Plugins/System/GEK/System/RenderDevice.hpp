@@ -21,7 +21,7 @@
 
 namespace Gek
 {
-    namespace Video
+    namespace Render
     {
         enum class Format : uint8_t
         {
@@ -100,7 +100,7 @@ namespace Gek
 
             uint32_t width = 0;
             uint32_t height = 0;
-            Format format = Video::Format::Unknown;
+            Format format = Render::Format::Unknown;
             AspectRatio aspectRatio = AspectRatio::Unknown;
             struct
             {
@@ -215,7 +215,7 @@ namespace Gek
             static Semantic GetSemantic(std::string_view semantic);
             static std::string GetSemantic(Semantic semantic);
 
-            Video::Format format = Format::Unknown;
+            Render::Format format = Format::Unknown;
             Semantic semantic = Semantic::TexCoord;
 			Source source = Source::Vertex;
             uint32_t sourceIndex = 0;
@@ -523,7 +523,7 @@ namespace Gek
             struct Description
             {
                 std::string name;
-                Video::Format format = Video::Format::Unknown;
+                Render::Format format = Render::Format::Unknown;
                 uint32_t stride = 0;
                 uint32_t count = 0;
                 Type type = Type::Raw;
@@ -554,7 +554,7 @@ namespace Gek
             struct Description
             {
                 std::string name;
-                Video::Format format = Video::Format::Unknown;
+                Render::Format format = Render::Format::Unknown;
                 uint32_t width = 1;
                 uint32_t height = 1;
                 uint32_t depth = 1;
@@ -576,7 +576,7 @@ namespace Gek
         {
             virtual ~Target(void) = default;
             
-            virtual Video::ViewPort const &getViewPort(void) const = 0;
+            virtual Render::ViewPort const &getViewPort(void) const = 0;
         };
 
         GEK_INTERFACE(Query)
@@ -691,7 +691,7 @@ namespace Gek
                 virtual void clearIndexBuffer(void) = 0;
                 virtual void clearVertexBufferList(uint32_t count, uint32_t firstSlot) = 0;
 
-                virtual void setViewportList(const std::vector<Video::ViewPort> &viewPortList) = 0;
+                virtual void setViewportList(const std::vector<Render::ViewPort> &viewPortList) = 0;
                 virtual void setScissorList(const std::vector<Math::UInt4> &rectangleList) = 0;
                 virtual void setRenderTargetList(const std::vector<Target *> &renderTargetList, Object *depthBuffer) = 0;
 
@@ -702,7 +702,7 @@ namespace Gek
                 virtual void setInputLayout(Object *inputLayout) = 0;
                 virtual void setIndexBuffer(Buffer *indexBuffer, uint32_t offset) = 0;
                 virtual void setVertexBufferList(const std::vector<Buffer *> &vertexBufferList, uint32_t firstSlot, uint32_t *offsetList = nullptr) = 0;
-                virtual void setPrimitiveType(Video::PrimitiveType type) = 0;
+                virtual void setPrimitiveType(Render::PrimitiveType type) = 0;
 
                 virtual void drawPrimitive(uint32_t vertexCount, uint32_t firstVertex) = 0;
                 virtual void drawInstancedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex) = 0;
@@ -715,7 +715,7 @@ namespace Gek
 
             virtual ~Device(void) = default;
 
-            virtual DisplayModeList getDisplayModeList(Video::Format format) const = 0;
+            virtual DisplayModeList getDisplayModeList(Render::Format format) const = 0;
 
             virtual void setFullScreenState(bool fullScreen) = 0;
             virtual void setDisplayMode(const DisplayMode &displayMode) = 0;
@@ -727,10 +727,10 @@ namespace Gek
             virtual ContextPtr createDeferredContext(void) = 0;
             virtual QueryPtr createQuery(Query::Type type) = 0;
 
-            virtual RenderStatePtr createRenderState(const Video::RenderState::Description &description) = 0;
-            virtual DepthStatePtr createDepthState(const Video::DepthState::Description &description) = 0;
-            virtual BlendStatePtr createBlendState(const Video::BlendState::Description &description) = 0;
-            virtual SamplerStatePtr createSamplerState(const Video::SamplerState::Description &description) = 0;
+            virtual RenderStatePtr createRenderState(const Render::RenderState::Description &description) = 0;
+            virtual DepthStatePtr createDepthState(const Render::DepthState::Description &description) = 0;
+            virtual BlendStatePtr createBlendState(const Render::BlendState::Description &description) = 0;
+            virtual SamplerStatePtr createSamplerState(const Render::SamplerState::Description &description) = 0;
 
             virtual TexturePtr createTexture(const Texture::Description &description, const void *data = nullptr) = 0;
             virtual TexturePtr loadTexture(void const *buffer, size_t size, uint32_t flags) = 0;
@@ -740,19 +740,19 @@ namespace Gek
             virtual BufferPtr createBuffer(const Buffer::Description &description, const void *staticData = nullptr) = 0;
 
             template <typename TYPE>
-            bool mapBuffer(Buffer *buffer, TYPE *&data, Video::Map mapping = Video::Map::WriteDiscard)
+            bool mapBuffer(Buffer *buffer, TYPE *&data, Render::Map mapping = Render::Map::WriteDiscard)
             {
                 return mapBuffer(buffer, (void *&)data, mapping);
             }
 
-            virtual bool mapBuffer(Buffer *buffer, void *&data, Video::Map mapping = Video::Map::WriteDiscard) = 0;
+            virtual bool mapBuffer(Buffer *buffer, void *&data, Render::Map mapping = Render::Map::WriteDiscard) = 0;
             virtual void unmapBuffer(Buffer *buffer) = 0;
 
             virtual void updateResource(Object *buffer, const void *data) = 0;
             virtual void copyResource(Object *destination, Object *source) = 0;
 
 			virtual std::string_view const getSemanticMoniker(InputElement::Semantic semantic) = 0;
-			virtual ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, Program::Information const &information) = 0;
+			virtual ObjectPtr createInputLayout(const std::vector<Render::InputElement> &elementList, Program::Information const &information) = 0;
 			virtual Program::Information compileProgram(Program::Type type, std::string_view name, FileSystem::Path const &debugPath, std::string_view uncompiledProgram, std::string_view entryFunction, std::function<bool(IncludeType, std::string_view, void const **data, uint32_t *size)> &&onInclude = nullptr) = 0;
             virtual ProgramPtr createProgram(Program::Information const &information) = 0;
 
@@ -764,15 +764,12 @@ namespace Gek
         namespace Debug
         {
             GEK_INTERFACE(Device)
-                : public Video::Device
+                : public Render::Device
             {
                 virtual ~Device(void) = default;
 
                 virtual void *getDevice(void) = 0;
             };
         }; // namespace Debug
-    }; // namespace Video
+    }; // namespace Render
 }; // namespace Gek
-
-#define GEK_VIDEO_PROFILER_BEGIN_SCOPE(DEVICE, NAME, EVENT) Gek::Video::Profiler::Scope(DEVICE, NAME, EVENT, [&](void) -> void
-#define GEK_VIDEO_PROFILER_END_SCOPE() )

@@ -3,7 +3,7 @@
 #include "GEK/Utility/Timer.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/GUI/Utilities.hpp"
-#include "GEK/API/Renderer.hpp"
+#include "GEK/API/Visualizer.hpp"
 #include "GEK/API/Processor.hpp"
 #include "GEK/Engine/Core.hpp"
 #include "GEK/Engine/Resources.hpp"
@@ -25,7 +25,7 @@ namespace Gek
             , virtual Engine::Core
         {
         private:
-            WindowPtr window;
+            Window::DevicePtr window;
             bool windowActive = false;
 
             JSON::Object configuration;
@@ -33,7 +33,7 @@ namespace Gek
             JSON::Object filtersSettings;
             bool changedVisualOptions = false;
 
-            Video::DisplayModeList displayModeList;
+            Render::DisplayModeList displayModeList;
             std::vector<std::string> displayModeStringList;
             struct Display
             {
@@ -56,8 +56,8 @@ namespace Gek
             float mouseSensitivity = 0.5f;
             bool enableInterfaceControl = false;
 
-            Video::DevicePtr videoDevice;
-            Plugin::RendererPtr renderer;
+            Render::DevicePtr renderDevice;
+            Plugin::VisualizerPtr visualizer;
             Engine::ResourcesPtr resources;
             std::vector<Plugin::ProcessorPtr> processorList;
             Engine::PopulationPtr population;
@@ -77,7 +77,7 @@ namespace Gek
                     return;
                 }
 #endif
-                window = getContext()->createClass<Window>("Default::System::Window");
+                window = getContext()->createClass<Window::Device>("Default::System::Window");
                 if (window)
                 {
                     window->onCreated.connect(this, &Core::onWindowCreated);
@@ -105,10 +105,10 @@ namespace Gek
             ~Core(void)
             {
                 processorList.clear();
-                renderer = nullptr;
+                visualizer = nullptr;
                 resources = nullptr;
                 population = nullptr;
-                videoDevice = nullptr;
+                renderDevice = nullptr;
                 window = nullptr;
 
                 JSON::Save(configuration, getContext()->getCachePath("config.json"s));
@@ -133,7 +133,7 @@ namespace Gek
                         window->move(Math::Int2::Zero);
                     }
 
-                    videoDevice->setFullScreenState(requestFullScreen);
+                    renderDevice->setFullScreenState(requestFullScreen);
                     onChangedDisplay();
                     if (!requestFullScreen)
                     {
@@ -156,7 +156,7 @@ namespace Gek
                         next.mode = requestDisplayMode;
                         current.mode = requestDisplayMode;
                         setOption("display"s, "mode"s, requestDisplayMode);
-                        videoDevice->setDisplayMode(displayModeData);
+                        renderDevice->setDisplayMode(displayModeData);
                         window->move();
                         onChangedDisplay();
 
@@ -202,10 +202,10 @@ namespace Gek
                 getContext()->log(Gek::Context::Info, "Window Created, Finishing Core Initialization");
 
                 Render::Device::Description deviceDescription;
-                videoDevice = getContext()->createClass<Render::Device>("Default::Device::Video", window.get(), deviceDescription);
+                renderDevice = getContext()->createClass<Render::Device>("Default::Device::Video", window.get(), deviceDescription);
 
                 uint32_t preferredDisplayMode = 0;
-                auto fullDisplayModeList = videoDevice->getDisplayModeList(deviceDescription.displayFormat);
+                auto fullDisplayModeList = renderDevice->getDisplayModeList(deviceDescription.displayFormat);
                 if (!fullDisplayModeList.empty())
                 {
                     for (auto const &displayMode : fullDisplayModeList)
@@ -222,16 +222,16 @@ namespace Gek
                         std::string displayModeString(std::format("{}x{}, {}hz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
                         switch (displayMode.aspectRatio)
                         {
-                        case Video::DisplayMode::AspectRatio::_4x3:
+                        case Render::DisplayMode::AspectRatio::_4x3:
                             displayModeString.append(" (4x3)");
                             break;
 
-                        case Video::DisplayMode::AspectRatio::_16x9:
+                        case Render::DisplayMode::AspectRatio::_16x9:
                             preferredDisplayMode = (preferredDisplayMode == 0 && displayMode.height > 800 ? currentDisplayMode : preferredDisplayMode);
                             displayModeString.append(" (16x9)");
                             break;
 
-                        case Video::DisplayMode::AspectRatio::_16x10:
+                        case Render::DisplayMode::AspectRatio::_16x10:
                             preferredDisplayMode = (preferredDisplayMode == 0 && displayMode.height > 800 ? currentDisplayMode : preferredDisplayMode);
                             displayModeString.append(" (16x10)");
                             break;
@@ -245,8 +245,8 @@ namespace Gek
 
                 population = getContext()->createClass<Engine::Population>("Engine::Population", (Engine::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Engine::Core *)this);
-                renderer = getContext()->createClass<Plugin::Renderer>("Engine::Renderer", (Engine::Core *)this);
-                renderer->onShowUserInterface.connect(this, &Core::onShowUserInterface);
+                visualizer = getContext()->createClass<Plugin::Visualizer>("Engine::Visualizer", (Engine::Core *)this);
+                visualizer->onShowUserInterface.connect(this, &Core::onShowUserInterface);
 
                 getContext()->log(Context::Info, "Loading processor plugins");
 
@@ -341,9 +341,9 @@ namespace Gek
 
             void onWindowSizeChanged(bool isMinimized)
             {
-                if (videoDevice && !isMinimized)
+                if (renderDevice && !isMinimized)
                 {
-                    videoDevice->handleResize();
+                    renderDevice->handleResize();
                     onChangedDisplay();
                 }
             }
@@ -1075,14 +1075,14 @@ namespace Gek
                 }
             }
 
-            Window * getWindow(void) const
+            Window::Device * getWindowDevice(void) const
             {
                 return window.get();
             }
 
             Render::Device * getRenderDevice(void) const
             {
-                return videoDevice.get();
+                return renderDevice.get();
             }
 
             Engine::Population * getFullPopulation(void) const
@@ -1105,9 +1105,9 @@ namespace Gek
                 return resources.get();
             }
 
-            Plugin::Renderer * getRenderer(void) const
+            Plugin::Visualizer * getVisualizer(void) const
             {
-                return renderer.get();
+                return visualizer.get();
             }
 
             void listProcessors(std::function<void(Plugin::Processor *)> onProcessor)

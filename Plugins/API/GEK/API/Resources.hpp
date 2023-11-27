@@ -36,12 +36,12 @@ namespace Gek
             virtual ResourceHandle loadTexture(std::string_view textureName, uint32_t flags, ResourceHandle fallbackResource = ResourceHandle()) = 0;
             virtual ResourceHandle createPattern(std::string_view pattern, JSON::Object const &parameters) = 0;
 
-            virtual ResourceHandle createTexture(const Video::Texture::Description &description, uint32_t flags = 0) = 0;
-            virtual ResourceHandle createBuffer(const Video::Buffer::Description &description, uint32_t flags = 0) = 0;
-            virtual ResourceHandle createBuffer(const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData, uint32_t flags = 0) = 0;
+            virtual ResourceHandle createTexture(const Render::Texture::Description &description, uint32_t flags = 0) = 0;
+            virtual ResourceHandle createBuffer(const Render::Buffer::Description &description, uint32_t flags = 0) = 0;
+            virtual ResourceHandle createBuffer(const Render::Buffer::Description &description, std::vector<uint8_t> &&staticData, uint32_t flags = 0) = 0;
 
             template <typename TYPE>
-            ResourceHandle createBuffer(const Video::Buffer::Description &description, const TYPE *staticData)
+            ResourceHandle createBuffer(const Render::Buffer::Description &description, const TYPE *staticData)
             {
                 auto rawData = reinterpret_cast<const uint8_t *>(staticData);
                 std::vector<uint8_t> rawBuffer(rawData, (rawData + (sizeof(TYPE) * description.count)));

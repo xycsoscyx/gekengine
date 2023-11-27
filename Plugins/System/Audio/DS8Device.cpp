@@ -12,7 +12,7 @@
 
 namespace Gek
 {
-	namespace DirectSound8
+	namespace AudioImplementation
 	{
 /*
 		template <typename CLASS>
@@ -121,7 +121,7 @@ namespace Gek
 			}
 		};
 */
-		GEK_CONTEXT_USER(Implementation, HWND, std::string)
+		GEK_CONTEXT_USER(Device, HWND, std::string)
 			, public Audio::Device
 		{
 		private:
@@ -130,7 +130,7 @@ namespace Gek
 			CComQIPtr<IDirectSoundBuffer, &IID_IDirectSoundBuffer> primarySoundBuffer;
 
 		public:
-			Implementation(Context *context, HWND window, std::string device)
+			Device(Context *context, HWND window, std::string device)
 				: ContextRegistration(context)
 			{
 				assert(window);
@@ -354,6 +354,6 @@ namespace Gek
 */
 		};
 
-		GEK_REGISTER_CONTEXT_USER(Implementation);
-	}; // namespace DirectSound8
+		GEK_REGISTER_CONTEXT_USER(Device);
+	}; // namespace AudioImplementation
 }; // namespace Gek

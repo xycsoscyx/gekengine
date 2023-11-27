@@ -7,7 +7,7 @@
 #include "GEK/Utility/ThreadPool.hpp"
 #include "GEK/Utility/Allocator.hpp"
 #include "GEK/GUI/Utilities.hpp"
-#include "GEK/API/Renderer.hpp"
+#include "GEK/API/Visualizer.hpp"
 #include "GEK/API/Population.hpp"
 #include "GEK/API/Entity.hpp"
 #include "GEK/API/Component.hpp"
@@ -43,8 +43,8 @@ namespace Gek
 		static constexpr int32_t GridSize = (GridWidth * GridHeight * GridDepth);
 		static const Math::Float4 GridDimensions(GridWidth, GridWidth, GridHeight, GridHeight);
 
-		GEK_CONTEXT_USER(Renderer, Engine::Core *)
-			, public Plugin::Renderer
+		GEK_CONTEXT_USER(Visualizer, Engine::Core *)
+			, public Plugin::Visualizer
 		{
 		public:
 			struct DirectionalLightData
@@ -192,17 +192,17 @@ namespace Gek
 			template <typename COMPONENT, typename DATA, size_t RESERVE = 200>
 			struct LightData
 			{
-				Render::Device *videoDevice = nullptr;
+				Render::Device *renderDevice = nullptr;
 				std::vector<Plugin::Entity *> entityList;
 				tbb::concurrent_vector<DATA> lightList;
 				//tbb::concurrent_vector<DATA, AlignedAllocator<DATA, 16>> lightList;
-				Video::BufferPtr lightDataBuffer;
+				Render::BufferPtr lightDataBuffer;
 
 				//tbb::mutex addSection;
 				//tbb::mutex removeSection;
 
-				LightData(Render::Device *videoDevice)
-					: videoDevice(videoDevice)
+				LightData(Render::Device *renderDevice)
+					: renderDevice(renderDevice)
 				{
 					lightList.reserve(RESERVE);
 					createBuffer(RESERVE);
@@ -251,13 +251,13 @@ namespace Gek
 					{
 						lightDataBuffer = nullptr;
 
-						Video::Buffer::Description lightBufferDescription;
+						Render::Buffer::Description lightBufferDescription;
 						lightBufferDescription.name = std::format("render:{}", COMPONENT::GetName());
-						lightBufferDescription.type = Video::Buffer::Type::Structured;
-						lightBufferDescription.flags = Video::Buffer::Flags::Mappable | Video::Buffer::Flags::Resource;
+						lightBufferDescription.type = Render::Buffer::Type::Structured;
+						lightBufferDescription.flags = Render::Buffer::Flags::Mappable | Render::Buffer::Flags::Resource;
 						lightBufferDescription.stride = sizeof(DATA);
 						lightBufferDescription.count = createSize;
-						lightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
+						lightDataBuffer = renderDevice->createBuffer(lightBufferDescription);
 					}
 				}
 
@@ -267,10 +267,10 @@ namespace Gek
 					if (!lightList.empty())
 					{
 						DATA *lightData = nullptr;
-						if (updated = videoDevice->mapBuffer(lightDataBuffer.get(), lightData))
+						if (updated = renderDevice->mapBuffer(lightDataBuffer.get(), lightData))
 						{
 							std::copy(std::begin(lightList), std::end(lightList), lightData);
-							videoDevice->unmapBuffer(lightDataBuffer.get());
+							renderDevice->unmapBuffer(lightDataBuffer.get());
 						}
 					}
 
@@ -335,27 +335,27 @@ namespace Gek
 
 		private:
 			Engine::Core *core = nullptr;
-			Render::Device *videoDevice = nullptr;
+			Render::Device *renderDevice = nullptr;
 			Plugin::Population *population = nullptr;
 			Engine::Resources *resources = nullptr;
 
-			Video::SamplerStatePtr bufferSamplerState;
-			Video::SamplerStatePtr textureSamplerState;
-			Video::SamplerStatePtr mipMapSamplerState;
-			std::vector<Video::Object *> samplerList;
+			Render::SamplerStatePtr bufferSamplerState;
+			Render::SamplerStatePtr textureSamplerState;
+			Render::SamplerStatePtr mipMapSamplerState;
+			std::vector<Render::Object *> samplerList;
 
-			Video::BufferPtr engineConstantBuffer;
-			Video::BufferPtr cameraConstantBuffer;
-			std::vector<Video::Buffer *> shaderBufferList;
-			std::vector<Video::Buffer *> filterBufferList;
-			std::vector<Video::Buffer *> lightBufferList;
-			std::vector<Video::Object *> lightResoruceList;
+			Render::BufferPtr engineConstantBuffer;
+			Render::BufferPtr cameraConstantBuffer;
+			std::vector<Render::Buffer *> shaderBufferList;
+			std::vector<Render::Buffer *> filterBufferList;
+			std::vector<Render::Buffer *> lightBufferList;
+			std::vector<Render::Object *> lightResoruceList;
 
-			Video::Program *deferredVertexProgram = nullptr;
-			Video::Program *deferredPixelProgram = nullptr;
-			Video::BlendStatePtr blendState;
-			Video::RenderStatePtr renderState;
-			Video::DepthStatePtr depthState;
+			Render::Program *deferredVertexProgram = nullptr;
+			Render::Program *deferredPixelProgram = nullptr;
+			Render::BlendStatePtr blendState;
+			Render::RenderStatePtr renderState;
+			Render::DepthStatePtr depthState;
 
 			ThreadPool workerPool;
 			LightData<Components::DirectionalLight, DirectionalLightData> directionalLightData;
@@ -367,9 +367,9 @@ namespace Gek
 			TileOffsetCount tileOffsetCountList[GridSize];
 			std::vector<uint16_t> lightIndexList;
 
-			Video::BufferPtr lightConstantBuffer;
-			Video::BufferPtr tileOffsetCountBuffer;
-			Video::BufferPtr lightIndexBuffer;
+			Render::BufferPtr lightConstantBuffer;
+			Render::BufferPtr tileOffsetCountBuffer;
+			Render::BufferPtr lightIndexBuffer;
 
 			DrawCallList drawCallList;
 			tbb::concurrent_queue<Camera> cameraQueue;
@@ -388,23 +388,23 @@ namespace Gek
 				};
 
 				ImGuiContext *context = nullptr;
-				Video::Program *vertexProgram = nullptr;
-				Video::ObjectPtr inputLayout;
-				Video::BufferPtr constantBuffer;
-				Video::Program *pixelProgram = nullptr;
-				Video::ObjectPtr blendState;
-				Video::ObjectPtr renderState;
-				Video::ObjectPtr depthState;
-				Video::TexturePtr fontTexture;
-				Video::BufferPtr vertexBuffer;
-				Video::BufferPtr indexBuffer;
+				Render::Program *vertexProgram = nullptr;
+				Render::ObjectPtr inputLayout;
+				Render::BufferPtr constantBuffer;
+				Render::Program *pixelProgram = nullptr;
+				Render::ObjectPtr blendState;
+				Render::ObjectPtr renderState;
+				Render::ObjectPtr depthState;
+				Render::TexturePtr fontTexture;
+				Render::BufferPtr vertexBuffer;
+				Render::BufferPtr indexBuffer;
 			} gui;
 
 		public:
-			Renderer(Context *context, Engine::Core *core)
+			Visualizer(Context *context, Engine::Core *core)
 				: ContextRegistration(context)
 				, core(core)
-				, videoDevice(core->getRenderDevice())
+				, renderDevice(core->getRenderDevice())
 				, population(core->getPopulation())
 				, resources(core->getFullResources())
 				, directionalLightData(core->getRenderDevice())
@@ -412,12 +412,12 @@ namespace Gek
 				, spotLightData(core)
 				, workerPool(3)
 			{
-				population->onReset.connect(this, &Renderer::onReset);
-				population->onEntityCreated.connect(this, &Renderer::onEntityCreated);
-				population->onEntityDestroyed.connect(this, &Renderer::onEntityDestroyed);
-				population->onComponentAdded.connect(this, &Renderer::onComponentAdded);
-				population->onComponentRemoved.connect(this, &Renderer::onComponentRemoved);
-				population->onUpdate[1000].connect(this, &Renderer::onUpdate);
+				population->onReset.connect(this, &Visualizer::onReset);
+				population->onEntityCreated.connect(this, &Visualizer::onEntityCreated);
+				population->onEntityDestroyed.connect(this, &Visualizer::onEntityDestroyed);
+				population->onComponentAdded.connect(this, &Visualizer::onComponentAdded);
+				population->onComponentRemoved.connect(this, &Visualizer::onComponentRemoved);
+				population->onUpdate[1000].connect(this, &Visualizer::onUpdate);
 
 				core->setOption("render"s, "invertedDepthBuffer"s, true);
 
@@ -429,60 +429,60 @@ namespace Gek
 			{
 				getContext()->log(Context::Info, "Initializing rendering system components");
 
-				Video::SamplerState::Description bufferSamplerStateData;
+				Render::SamplerState::Description bufferSamplerStateData;
 				bufferSamplerStateData.name = "renderer:bufferSamplerState";
-				bufferSamplerStateData.filterMode = Video::SamplerState::FilterMode::MinificationMagnificationMipMapPoint;
-				bufferSamplerStateData.addressModeU = Video::SamplerState::AddressMode::Clamp;
-				bufferSamplerStateData.addressModeV = Video::SamplerState::AddressMode::Clamp;
-				bufferSamplerState = videoDevice->createSamplerState(bufferSamplerStateData);
+				bufferSamplerStateData.filterMode = Render::SamplerState::FilterMode::MinificationMagnificationMipMapPoint;
+				bufferSamplerStateData.addressModeU = Render::SamplerState::AddressMode::Clamp;
+				bufferSamplerStateData.addressModeV = Render::SamplerState::AddressMode::Clamp;
+				bufferSamplerState = renderDevice->createSamplerState(bufferSamplerStateData);
 
-				Video::SamplerState::Description textureSamplerStateData;
+				Render::SamplerState::Description textureSamplerStateData;
 				textureSamplerStateData.name = "renderer:textureSamplerState";
 				textureSamplerStateData.maximumAnisotropy = 8;
-				textureSamplerStateData.filterMode = Video::SamplerState::FilterMode::Anisotropic;
-				textureSamplerStateData.addressModeU = Video::SamplerState::AddressMode::Wrap;
-				textureSamplerStateData.addressModeV = Video::SamplerState::AddressMode::Wrap;
-				textureSamplerState = videoDevice->createSamplerState(textureSamplerStateData);
+				textureSamplerStateData.filterMode = Render::SamplerState::FilterMode::Anisotropic;
+				textureSamplerStateData.addressModeU = Render::SamplerState::AddressMode::Wrap;
+				textureSamplerStateData.addressModeV = Render::SamplerState::AddressMode::Wrap;
+				textureSamplerState = renderDevice->createSamplerState(textureSamplerStateData);
 
-				Video::SamplerState::Description mipMapSamplerStateData;
+				Render::SamplerState::Description mipMapSamplerStateData;
 				mipMapSamplerStateData.name ="renderer:mipMapSamplerState";
 				mipMapSamplerStateData.maximumAnisotropy = 8;
-				mipMapSamplerStateData.filterMode = Video::SamplerState::FilterMode::MinificationMagnificationMipMapLinear;
-				mipMapSamplerStateData.addressModeU = Video::SamplerState::AddressMode::Clamp;
-				mipMapSamplerStateData.addressModeV = Video::SamplerState::AddressMode::Clamp;
-				mipMapSamplerState = videoDevice->createSamplerState(mipMapSamplerStateData);
+				mipMapSamplerStateData.filterMode = Render::SamplerState::FilterMode::MinificationMagnificationMipMapLinear;
+				mipMapSamplerStateData.addressModeU = Render::SamplerState::AddressMode::Clamp;
+				mipMapSamplerStateData.addressModeV = Render::SamplerState::AddressMode::Clamp;
+				mipMapSamplerState = renderDevice->createSamplerState(mipMapSamplerStateData);
 
 				samplerList = { textureSamplerState.get(), mipMapSamplerState.get(), };
 
-				Video::BlendState::Description blendStateInformation;
+				Render::BlendState::Description blendStateInformation;
 				blendStateInformation.name = "renderer:blendState";
-				blendState = videoDevice->createBlendState(blendStateInformation);
+				blendState = renderDevice->createBlendState(blendStateInformation);
 
-				Video::RenderState::Description renderStateInformation;
+				Render::RenderState::Description renderStateInformation;
 				renderStateInformation.name = "renderer:renderState";
-				renderState = videoDevice->createRenderState(renderStateInformation);
+				renderState = renderDevice->createRenderState(renderStateInformation);
 
-				Video::DepthState::Description depthStateInformation;
+				Render::DepthState::Description depthStateInformation;
 				depthStateInformation.name = "renderer:depthState";
-				depthState = videoDevice->createDepthState(depthStateInformation);
+				depthState = renderDevice->createDepthState(depthStateInformation);
 
-				Video::Buffer::Description constantBufferDescription;
+				Render::Buffer::Description constantBufferDescription;
 				constantBufferDescription.name = "renderer:engineConstantBuffer";
 				constantBufferDescription.stride = sizeof(EngineConstantData);
 				constantBufferDescription.count = 1;
-				constantBufferDescription.type = Video::Buffer::Type::Constant;
-				engineConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
+				constantBufferDescription.type = Render::Buffer::Type::Constant;
+				engineConstantBuffer = renderDevice->createBuffer(constantBufferDescription);
 
 				constantBufferDescription.name = "renderer:cameraConstantBuffer";
 				constantBufferDescription.stride = sizeof(CameraConstantData);
-				cameraConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
+				cameraConstantBuffer = renderDevice->createBuffer(constantBufferDescription);
 
 				shaderBufferList = { engineConstantBuffer.get(), cameraConstantBuffer.get() };
 				filterBufferList = { engineConstantBuffer.get() };
 
 				constantBufferDescription.name = "renderer:lightConstantBuffer";
 				constantBufferDescription.stride = sizeof(LightConstantData);
-				lightConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
+				lightConstantBuffer = renderDevice->createBuffer(constantBufferDescription);
 
 				lightBufferList = { lightConstantBuffer.get() };
 
@@ -515,27 +515,27 @@ float3 mainPixelProgram(in Input input) : SV_TARGET0
     return inputBuffer[input.texCoord * float2(width, height)];
 })";
 
-				deferredVertexProgram = resources->getProgram(Video::Program::Type::Vertex, "renderer:deferredVertexProgram", "mainVertexProgram", program);
+				deferredVertexProgram = resources->getProgram(Render::Program::Type::Vertex, "renderer:deferredVertexProgram", "mainVertexProgram", program);
 
-				deferredPixelProgram = resources->getProgram(Video::Program::Type::Pixel, "renderer:deferredPixelProgram", "mainPixelProgram", program);
+				deferredPixelProgram = resources->getProgram(Render::Program::Type::Pixel, "renderer:deferredPixelProgram", "mainPixelProgram", program);
 
-				Video::Buffer::Description lightBufferDescription;
-				lightBufferDescription.type = Video::Buffer::Type::Structured;
-				lightBufferDescription.flags = Video::Buffer::Flags::Mappable | Video::Buffer::Flags::Resource;
+				Render::Buffer::Description lightBufferDescription;
+				lightBufferDescription.type = Render::Buffer::Type::Structured;
+				lightBufferDescription.flags = Render::Buffer::Flags::Mappable | Render::Buffer::Flags::Resource;
 
-				Video::Buffer::Description tileBufferDescription;
+				Render::Buffer::Description tileBufferDescription;
 				tileBufferDescription.name = "renderer:tileOffsetCountBuffer";
-				tileBufferDescription.type = Video::Buffer::Type::Raw;
-				tileBufferDescription.flags = Video::Buffer::Flags::Mappable | Video::Buffer::Flags::Resource;
-				tileBufferDescription.format = Video::Format::R32G32_UINT;
+				tileBufferDescription.type = Render::Buffer::Type::Raw;
+				tileBufferDescription.flags = Render::Buffer::Flags::Mappable | Render::Buffer::Flags::Resource;
+				tileBufferDescription.format = Render::Format::R32G32_UINT;
 				tileBufferDescription.count = GridSize;
-				tileOffsetCountBuffer = videoDevice->createBuffer(tileBufferDescription);
+				tileOffsetCountBuffer = renderDevice->createBuffer(tileBufferDescription);
 
 				lightIndexList.reserve(GridSize * 10);
 				tileBufferDescription.name = "renderer:lightIndexBuffer";
-				tileBufferDescription.format = Video::Format::R16_UINT;
+				tileBufferDescription.format = Render::Format::R16_UINT;
 				tileBufferDescription.count = lightIndexList.capacity();
-				lightIndexBuffer = videoDevice->createBuffer(tileBufferDescription);
+				lightIndexBuffer = renderDevice->createBuffer(tileBufferDescription);
 			}
 
 			void initializeUI(void)
@@ -575,31 +575,31 @@ PixelOutput main(in VertexInput input)
     return output;
 })";
 
-				gui.vertexProgram = resources->getProgram(Video::Program::Type::Vertex, "core::uiVertexProgram", "main", vertexShader);
+				gui.vertexProgram = resources->getProgram(Render::Program::Type::Vertex, "core::uiVertexProgram", "main", vertexShader);
 
-				std::vector<Video::InputElement> elementList;
+				std::vector<Render::InputElement> elementList;
 
-				Video::InputElement element;
-				element.format = Video::Format::R32G32_FLOAT;
-				element.semantic = Video::InputElement::Semantic::Position;
+				Render::InputElement element;
+				element.format = Render::Format::R32G32_FLOAT;
+				element.semantic = Render::InputElement::Semantic::Position;
 				elementList.push_back(element);
 
-				element.format = Video::Format::R32G32_FLOAT;
-				element.semantic = Video::InputElement::Semantic::TexCoord;
+				element.format = Render::Format::R32G32_FLOAT;
+				element.semantic = Render::InputElement::Semantic::TexCoord;
 				elementList.push_back(element);
 
-				element.format = Video::Format::R8G8B8A8_UNORM;
-				element.semantic = Video::InputElement::Semantic::Color;
+				element.format = Render::Format::R8G8B8A8_UNORM;
+				element.semantic = Render::InputElement::Semantic::Color;
 				elementList.push_back(element);
 
-				gui.inputLayout = videoDevice->createInputLayout(elementList, gui.vertexProgram->getInformation());
+				gui.inputLayout = renderDevice->createInputLayout(elementList, gui.vertexProgram->getInformation());
 
-				Video::Buffer::Description constantBufferDescription;
+				Render::Buffer::Description constantBufferDescription;
 				constantBufferDescription.name = "core:constantBuffer";
 				constantBufferDescription.stride = sizeof(GUI::DataBuffer);
 				constantBufferDescription.count = 1;
-				constantBufferDescription.type = Video::Buffer::Type::Constant;
-				gui.constantBuffer = videoDevice->createBuffer(constantBufferDescription);
+				constantBufferDescription.type = Render::Buffer::Type::Constant;
+				gui.constantBuffer = renderDevice->createBuffer(constantBufferDescription);
 
 				static constexpr std::string_view pixelShader =
 R"(cbuffer DataBuffer : register(b0)
@@ -624,35 +624,35 @@ float4 main(PixelInput input) : SV_Target
     return (input.color * uiTexture.Sample(uiSampler, input.texCoord));
 })";
 
-				gui.pixelProgram = resources->getProgram(Video::Program::Type::Pixel, "core:uiPixelProgram", "main", pixelShader);
+				gui.pixelProgram = resources->getProgram(Render::Program::Type::Pixel, "core:uiPixelProgram", "main", pixelShader);
 
-				Video::BlendState::Description blendStateInformation;
+				Render::BlendState::Description blendStateInformation;
 				blendStateInformation.name = "core:blendState";
 				blendStateInformation[0].enable = true;
-				blendStateInformation[0].colorSource = Video::BlendState::Source::SourceAlpha;
-				blendStateInformation[0].colorDestination = Video::BlendState::Source::InverseSourceAlpha;
-				blendStateInformation[0].colorOperation = Video::BlendState::Operation::Add;
-				blendStateInformation[0].alphaSource = Video::BlendState::Source::InverseSourceAlpha;
-				blendStateInformation[0].alphaDestination = Video::BlendState::Source::Zero;
-				blendStateInformation[0].alphaOperation = Video::BlendState::Operation::Add;
-				gui.blendState = videoDevice->createBlendState(blendStateInformation);
+				blendStateInformation[0].colorSource = Render::BlendState::Source::SourceAlpha;
+				blendStateInformation[0].colorDestination = Render::BlendState::Source::InverseSourceAlpha;
+				blendStateInformation[0].colorOperation = Render::BlendState::Operation::Add;
+				blendStateInformation[0].alphaSource = Render::BlendState::Source::InverseSourceAlpha;
+				blendStateInformation[0].alphaDestination = Render::BlendState::Source::Zero;
+				blendStateInformation[0].alphaOperation = Render::BlendState::Operation::Add;
+				gui.blendState = renderDevice->createBlendState(blendStateInformation);
 
-				Video::RenderState::Description renderStateInformation;
+				Render::RenderState::Description renderStateInformation;
 				renderStateInformation.name = "core:renderState";
-				renderStateInformation.fillMode = Video::RenderState::FillMode::Solid;
-				renderStateInformation.cullMode = Video::RenderState::CullMode::None;
+				renderStateInformation.fillMode = Render::RenderState::FillMode::Solid;
+				renderStateInformation.cullMode = Render::RenderState::CullMode::None;
 				renderStateInformation.scissorEnable = true;
 				renderStateInformation.depthClipEnable = true;
-				gui.renderState = videoDevice->createRenderState(renderStateInformation);
+				gui.renderState = renderDevice->createRenderState(renderStateInformation);
 
 				auto invertedDepthBuffer = core->getOption("render", "invertedDepthBuffer", true);
 
-				Video::DepthState::Description depthStateInformation;
+				Render::DepthState::Description depthStateInformation;
 				depthStateInformation.name = "core:depthState";
 				depthStateInformation.enable = false;
-				depthStateInformation.writeMask = Video::DepthState::Write::All;
-				depthStateInformation.comparisonFunction = Video::ComparisonFunction::Always;
-				gui.depthState = videoDevice->createDepthState(depthStateInformation);
+				depthStateInformation.writeMask = Render::DepthState::Write::All;
+				depthStateInformation.comparisonFunction = Render::ComparisonFunction::Always;
+				gui.depthState = renderDevice->createDepthState(depthStateInformation);
 
 				ImGuiIO &imGuiIo = ImGui::GetIO();
 				imGuiIo.Fonts->AddFontFromFileTTF(getContext()->findDataPath(FileSystem::CreatePath("fonts", "Ruda-Bold.ttf")).getString().data(), 14.0f);
@@ -674,12 +674,12 @@ float4 main(PixelInput input) : SV_Target
 				int32_t fontWidth = 0, fontHeight = 0;
 				imGuiIo.Fonts->GetTexDataAsRGBA32(&pixels, &fontWidth, &fontHeight);
 
-				Video::Texture::Description fontDescription;
-				fontDescription.format = Video::Format::R8G8B8A8_UNORM;
+				Render::Texture::Description fontDescription;
+				fontDescription.format = Render::Format::R8G8B8A8_UNORM;
 				fontDescription.width = fontWidth;
 				fontDescription.height = fontHeight;
-				fontDescription.flags = Video::Texture::Flags::Resource;
-				gui.fontTexture = videoDevice->createTexture(fontDescription, pixels);
+				fontDescription.flags = Render::Texture::Flags::Resource;
+				gui.fontTexture = renderDevice->createTexture(fontDescription, pixels);
 				imGuiIo.Fonts->TexID = static_cast<ImTextureID>(gui.fontTexture.get());
 
 				imGuiIo.UserData = this;
@@ -690,16 +690,16 @@ float4 main(PixelInput input) : SV_Target
 				style.FramePadding.x = style.FramePadding.y = 5.0f;
 			}
 
-			~Renderer(void)
+			~Visualizer(void)
 			{
 				workerPool.drain();
 
-				population->onReset.disconnect(this, &Renderer::onReset);
-				population->onEntityCreated.disconnect(this, &Renderer::onEntityCreated);
-				population->onEntityDestroyed.disconnect(this, &Renderer::onEntityDestroyed);
-				population->onComponentAdded.disconnect(this, &Renderer::onComponentAdded);
-				population->onComponentRemoved.disconnect(this, &Renderer::onComponentRemoved);
-				population->onUpdate[1000].disconnect(this, &Renderer::onUpdate);
+				population->onReset.disconnect(this, &Visualizer::onReset);
+				population->onEntityCreated.disconnect(this, &Visualizer::onEntityCreated);
+				population->onEntityDestroyed.disconnect(this, &Visualizer::onEntityDestroyed);
+				population->onComponentAdded.disconnect(this, &Visualizer::onComponentAdded);
+				population->onComponentRemoved.disconnect(this, &Visualizer::onComponentRemoved);
+				population->onUpdate[1000].disconnect(this, &Visualizer::onUpdate);
 
 				ImGui::GetIO().Fonts->TexID = 0;
 				ImGui::DestroyContext(gui.context);
@@ -724,47 +724,47 @@ float4 main(PixelInput input) : SV_Target
 
 			// ImGui
 			std::vector<Math::UInt4> scissorBoxList = std::vector<Math::UInt4>(1);
-			std::vector<Video::Object *> textureList = std::vector<Video::Object *>(1);
+			std::vector<Render::Object *> textureList = std::vector<Render::Object *>(1);
 			void renderUI(ImDrawData *drawData)
 			{
 				if (!gui.vertexBuffer || gui.vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
 				{
-					Video::Buffer::Description vertexBufferDescription;
+					Render::Buffer::Description vertexBufferDescription;
 					vertexBufferDescription.name = "core:uiVertexBuffer";
 					vertexBufferDescription.stride = sizeof(ImDrawVert);
 					vertexBufferDescription.count = drawData->TotalVtxCount + 5000;
-					vertexBufferDescription.type = Video::Buffer::Type::Vertex;
-					vertexBufferDescription.flags = Video::Buffer::Flags::Mappable;
-					gui.vertexBuffer = videoDevice->createBuffer(vertexBufferDescription);
+					vertexBufferDescription.type = Render::Buffer::Type::Vertex;
+					vertexBufferDescription.flags = Render::Buffer::Flags::Mappable;
+					gui.vertexBuffer = renderDevice->createBuffer(vertexBufferDescription);
 				}
 
 				if (!gui.indexBuffer || gui.indexBuffer->getDescription().count < uint32_t(drawData->TotalIdxCount))
 				{
-					Video::Buffer::Description vertexBufferDescription;
+					Render::Buffer::Description vertexBufferDescription;
 					vertexBufferDescription.name = "core:uiIndexBuffer";
 					vertexBufferDescription.count = drawData->TotalIdxCount + 10000;
-					vertexBufferDescription.type = Video::Buffer::Type::Index;
-					vertexBufferDescription.flags = Video::Buffer::Flags::Mappable;
+					vertexBufferDescription.type = Render::Buffer::Type::Index;
+					vertexBufferDescription.flags = Render::Buffer::Flags::Mappable;
 					switch (sizeof(ImDrawIdx))
 					{
 					case 2:
-						vertexBufferDescription.format = Video::Format::R16_UINT;
+						vertexBufferDescription.format = Render::Format::R16_UINT;
 						break;
 
 					case 4:
-						vertexBufferDescription.format = Video::Format::R32_UINT;
+						vertexBufferDescription.format = Render::Format::R32_UINT;
 						break;
 					};
 
-					gui.indexBuffer = videoDevice->createBuffer(vertexBufferDescription);
+					gui.indexBuffer = renderDevice->createBuffer(vertexBufferDescription);
 				}
 
 				bool dataUploaded = false;
 				ImDrawVert* vertexData = nullptr;
 				ImDrawIdx* indexData = nullptr;
-				if (videoDevice->mapBuffer(gui.vertexBuffer.get(), vertexData))
+				if (renderDevice->mapBuffer(gui.vertexBuffer.get(), vertexData))
 				{
-					if (videoDevice->mapBuffer(gui.indexBuffer.get(), indexData))
+					if (renderDevice->mapBuffer(gui.indexBuffer.get(), indexData))
 					{
 						for (int32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
 						{
@@ -776,30 +776,30 @@ float4 main(PixelInput input) : SV_Target
 						}
 
 						dataUploaded = true;
-						videoDevice->unmapBuffer(gui.indexBuffer.get());
+						renderDevice->unmapBuffer(gui.indexBuffer.get());
 					}
 
-					videoDevice->unmapBuffer(gui.vertexBuffer.get());
+					renderDevice->unmapBuffer(gui.vertexBuffer.get());
 				}
 
 				if (dataUploaded)
 				{
-					auto backBuffer = videoDevice->getBackBuffer();
+					auto backBuffer = renderDevice->getBackBuffer();
 					uint32_t width = backBuffer->getDescription().width;
 					uint32_t height = backBuffer->getDescription().height;
 
 					GUI::DataBuffer dataBuffer;
 					dataBuffer.projectionMatrix = Math::Float4x4::MakeOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
-					videoDevice->updateResource(gui.constantBuffer.get(), &dataBuffer);
+					renderDevice->updateResource(gui.constantBuffer.get(), &dataBuffer);
 
-					auto videoContext = videoDevice->getDefaultContext();
-					videoContext->setRenderTargetList({ videoDevice->getBackBuffer() }, nullptr);
-					videoContext->setViewportList({ Video::ViewPort(Math::Float2::Zero, Math::Float2(width, height), 0.0f, 1.0f) });
+					auto videoContext = renderDevice->getDefaultContext();
+					videoContext->setRenderTargetList({ renderDevice->getBackBuffer() }, nullptr);
+					videoContext->setViewportList({ Render::ViewPort(Math::Float2::Zero, Math::Float2(width, height), 0.0f, 1.0f) });
 
 					videoContext->setInputLayout(gui.inputLayout.get());
 					videoContext->setVertexBufferList({ gui.vertexBuffer.get() }, 0);
 					videoContext->setIndexBuffer(gui.indexBuffer.get(), 0);
-					videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+					videoContext->setPrimitiveType(Render::PrimitiveType::TriangleList);
 					videoContext->vertexPipeline()->setProgram(gui.vertexProgram);
 					videoContext->pixelPipeline()->setProgram(gui.pixelProgram);
 					videoContext->vertexPipeline()->setConstantBufferList({ gui.constantBuffer.get() }, 0);
@@ -835,7 +835,7 @@ float4 main(PixelInput input) : SV_Target
 								scissorBoxList[0].maximum.y = uint32_t(command->ClipRect.w);
 								videoContext->setScissorList(scissorBoxList);
 
-								textureList[0] = reinterpret_cast<Video::Texture *>(command->TextureId);
+								textureList[0] = reinterpret_cast<Render::Texture *>(command->TextureId);
 								videoContext->pixelPipeline()->setResourceList(textureList, 0);
 
 								videoContext->drawIndexedPrimitive(command->ElemCount, indexOffset, vertexOffset);
@@ -1078,10 +1078,10 @@ float4 main(PixelInput input) : SV_Target
 				removeEntity(entity);
 			}
 
-			// Renderer
+			// Visualizer
 			Render::Device * getRenderDevice(void) const
 			{
-				return videoDevice;
+				return renderDevice;
 			}
 
 			ImGuiContext * const getGuiContext(void) const
@@ -1210,15 +1210,15 @@ float4 main(PixelInput input) : SV_Target
 			// Plugin::Core Slots
 			void onUpdate(float frameTime)
 			{
-				assert(videoDevice);
+				assert(renderDevice);
 				assert(population);
 
 				EngineConstantData engineConstantData;
 				engineConstantData.frameTime = frameTime;
 				engineConstantData.worldTime = 0.0f;
 				engineConstantData.invertedDepthBuffer = (core->getOption("render", "invertedDepthBuffer", true) ? 1 : 0);
-				videoDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
-				Render::Device::Context *videoContext = videoDevice->getDefaultContext();
+				renderDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
+				Render::Device::Context *videoContext = renderDevice->getDefaultContext();
 				while (cameraQueue.try_pop(currentCamera))
 				{
 					clipDistance = (currentCamera.farClip - currentCamera.nearClip);
@@ -1229,7 +1229,7 @@ float4 main(PixelInput input) : SV_Target
 					onQueueDrawCalls(currentCamera.viewFrustum, currentCamera.viewMatrix, currentCamera.projectionMatrix);
 					if (!drawCallList.empty())
 					{
-						const auto backBuffer = videoDevice->getBackBuffer();
+						const auto backBuffer = renderDevice->getBackBuffer();
 						const auto width = backBuffer->getDescription().width;
 						const auto height = backBuffer->getDescription().height;
 						std::sort(std::execution::par, std::begin(drawCallList), std::end(drawCallList), [](DrawCallValue const &leftValue, DrawCallValue const &rightValue) -> bool
@@ -1303,10 +1303,10 @@ float4 main(PixelInput input) : SV_Target
 							}
 
 							TileOffsetCount *tileOffsetCountData = nullptr;
-							if (videoDevice->mapBuffer(tileOffsetCountBuffer.get(), tileOffsetCountData))
+							if (renderDevice->mapBuffer(tileOffsetCountBuffer.get(), tileOffsetCountData))
 							{
 								std::copy(std::begin(tileOffsetCountList), std::end(tileOffsetCountList), tileOffsetCountData);
-								videoDevice->unmapBuffer(tileOffsetCountBuffer.get());
+								renderDevice->unmapBuffer(tileOffsetCountBuffer.get());
 							}
 							else
 							{
@@ -1319,20 +1319,20 @@ float4 main(PixelInput input) : SV_Target
 								{
 									lightIndexBuffer = nullptr;
 
-									Video::Buffer::Description tileBufferDescription;
+									Render::Buffer::Description tileBufferDescription;
 									tileBufferDescription.name = "renderer:lightIndexBuffer";
-									tileBufferDescription.type = Video::Buffer::Type::Raw;
-									tileBufferDescription.flags = Video::Buffer::Flags::Mappable | Video::Buffer::Flags::Resource;
-									tileBufferDescription.format = Video::Format::R16_UINT;
+									tileBufferDescription.type = Render::Buffer::Type::Raw;
+									tileBufferDescription.flags = Render::Buffer::Flags::Mappable | Render::Buffer::Flags::Resource;
+									tileBufferDescription.format = Render::Format::R16_UINT;
 									tileBufferDescription.count = lightIndexList.size();
-									lightIndexBuffer = videoDevice->createBuffer(tileBufferDescription);
+									lightIndexBuffer = renderDevice->createBuffer(tileBufferDescription);
 								}
 
 								uint16_t *lightIndexData = nullptr;
-								if (videoDevice->mapBuffer(lightIndexBuffer.get(), lightIndexData))
+								if (renderDevice->mapBuffer(lightIndexBuffer.get(), lightIndexData))
 								{
 									std::copy(std::begin(lightIndexList), std::end(lightIndexList), lightIndexData);
-									videoDevice->unmapBuffer(lightIndexBuffer.get());
+									renderDevice->unmapBuffer(lightIndexBuffer.get());
 								}
 								else
 								{
@@ -1349,7 +1349,7 @@ float4 main(PixelInput input) : SV_Target
 							lightConstants.gridSize.z = GridDepth;
 							lightConstants.tileSize.x = (width / GridWidth);
 							lightConstants.tileSize.y = (height / GridHeight);
-							videoDevice->updateResource(lightConstantBuffer.get(), &lightConstants);
+							renderDevice->updateResource(lightConstantBuffer.get(), &lightConstants);
 						}
 
 						CameraConstantData cameraConstantData;
@@ -1359,7 +1359,7 @@ float4 main(PixelInput input) : SV_Target
 						cameraConstantData.farClip = currentCamera.farClip;
 						cameraConstantData.viewMatrix = currentCamera.viewMatrix;
 						cameraConstantData.projectionMatrix = currentCamera.projectionMatrix;
-						videoDevice->updateResource(cameraConstantBuffer.get(), &cameraConstantData);
+						renderDevice->updateResource(cameraConstantBuffer.get(), &cameraConstantData);
 
 						videoContext->clearState();
 						videoContext->geometryPipeline()->setConstantBufferList(shaderBufferList, 0);
@@ -1369,7 +1369,7 @@ float4 main(PixelInput input) : SV_Target
 
 						videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
 
-						videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+						videoContext->setPrimitiveType(Render::PrimitiveType::TriangleList);
 
 						if (isLightingRequired)
 						{
@@ -1446,7 +1446,7 @@ float4 main(PixelInput input) : SV_Target
 						if (currentCamera.cameraTarget)
 						{
 							auto finalHandle = resources->getResourceHandle(finalOutput);
-							renderOverlay(videoDevice->getDefaultContext(), finalHandle, &currentCamera.cameraTarget);
+							renderOverlay(renderDevice->getDefaultContext(), finalHandle, &currentCamera.cameraTarget);
 						}
 						else
 						{
@@ -1466,7 +1466,7 @@ float4 main(PixelInput input) : SV_Target
 
 					videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
 
-					videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+					videoContext->setPrimitiveType(Render::PrimitiveType::TriangleList);
 
 					uint8_t filterIndex = 0;
 					videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
@@ -1511,7 +1511,7 @@ float4 main(PixelInput input) : SV_Target
 				ImGuiIO &imGuiIo = ImGui::GetIO();
 				imGuiIo.DeltaTime = (1.0f / 60.0f);
 
-				auto backBuffer = videoDevice->getBackBuffer();
+				auto backBuffer = renderDevice->getBackBuffer();
 				uint32_t width = backBuffer->getDescription().width;
 				uint32_t height = backBuffer->getDescription().height;
 				imGuiIo.DisplaySize = ImVec2(float(width), float(height));
@@ -1522,7 +1522,7 @@ float4 main(PixelInput input) : SV_Target
 
 				renderUI(ImGui::GetDrawData());
 
-				videoDevice->present(true);
+				renderDevice->present(true);
 				if (reloadRequired)
 				{
 					resources->reload();
@@ -1535,7 +1535,7 @@ float4 main(PixelInput input) : SV_Target
 				videoContext->setDepthState(depthState.get(), 0);
 				videoContext->setRenderState(renderState.get());
 
-				videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+				videoContext->setPrimitiveType(Render::PrimitiveType::TriangleList);
 
 				resources->startResourceBlock();
 				resources->setResourceList(videoContext->pixelPipeline(), { input }, 0);
@@ -1548,8 +1548,8 @@ float4 main(PixelInput input) : SV_Target
 				}
 				else
 				{
-					videoContext->setRenderTargetList({ videoDevice->getBackBuffer() }, nullptr);
-					auto backBufferViewPort = videoDevice->getBackBuffer()->getViewPort();
+					videoContext->setRenderTargetList({ renderDevice->getBackBuffer() }, nullptr);
+					auto backBufferViewPort = renderDevice->getBackBuffer()->getViewPort();
 					videoContext->setViewportList({ backBufferViewPort });
 				}
 
@@ -1560,6 +1560,6 @@ float4 main(PixelInput input) : SV_Target
 			}
 		};
 
-		GEK_REGISTER_CONTEXT_USER(Renderer);
+		GEK_REGISTER_CONTEXT_USER(Visualizer);
 	}; // namespace Implementation
 }; // namespace Gek

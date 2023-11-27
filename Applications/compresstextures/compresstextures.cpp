@@ -15,7 +15,7 @@
 
 using namespace Gek;
 
-void compressTexture(Context *context, Video::Debug::Device *device, FileSystem::Path const &inputFilePath)
+void compressTexture(Context *context, Render::Debug::Device *device, FileSystem::Path const &inputFilePath)
 {
 	if (!inputFilePath.isFile())
 	{
@@ -219,10 +219,10 @@ int main(int argumentCount, char const * const argumentList[])
 		Window::Description description;
 		description.className = "GEK_Engine_Textures";
 		description.windowName = "GEK Engine Textures";
-		WindowPtr window(context->createClass<Window>("Default::System::Window", description));
+		Window::DevicePtr window(context->createClass<Window::Device>("Default::System::Window", description));
 
 		Render::Device::Description deviceDescription;
-		Video::DevicePtr device(context->createClass<Render::Device>("Default::Device::Video", window.get(), deviceDescription));
+		Render::DevicePtr device(context->createClass<Render::Device>("Default::Device::Video", window.get(), deviceDescription));
 		if (device)
 		{
 			std::function<bool(FileSystem::Path const &)> searchDirectory;
@@ -234,7 +234,7 @@ int main(int argumentCount, char const * const argumentList[])
 				}
 				else if (filePath.isFile() && filePath.getExtension() != ".dds")
 				{
-					compressTexture(context.get(), dynamic_cast<Video::Debug::Device *>(device.get()), String::GetLower(filePath.getString()));
+					compressTexture(context.get(), dynamic_cast<Render::Debug::Device *>(device.get()), String::GetLower(filePath.getString()));
 				}
 
 				return true;

@@ -15,7 +15,7 @@ namespace Gek
 {
     HINSTANCE GetDLLInstance(void);
 
-    namespace Window
+    namespace WindowImplementation
     {
         static constexpr uint8_t KeyToNative[256] =
         {
@@ -57,7 +57,7 @@ namespace Gek
             255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255
         };
 
-        GEK_CONTEXT_USER(Implementation, Gek::Window::Device::Description)
+        GEK_CONTEXT_USER(Device, Gek::Window::Device::Description)
             , public Gek::Window::Device
         {
         private:
@@ -65,7 +65,7 @@ namespace Gek
             uint16_t highSurrogate = 0;
 
         public:
-            Implementation(Context *context, Gek::Window::Device::Description description)
+            Device(Context *context, Gek::Window::Device::Description description)
                 : ContextRegistration(context)
             {
                 WNDCLASSEXA windowClass;
@@ -73,7 +73,7 @@ namespace Gek
                 windowClass.style = CS_HREDRAW | CS_VREDRAW | (description.hasOwnContext ? CS_OWNDC : 0);
                 windowClass.lpfnWndProc = [](HWND handle, uint32_t message, WPARAM wParam, LPARAM lParam) -> LRESULT
                 {
-                    Implementation *implementation = reinterpret_cast<Implementation*>(GetWindowLongPtr(handle, GWLP_USERDATA));
+                    Device *implementation = reinterpret_cast<Device*>(GetWindowLongPtr(handle, GWLP_USERDATA));
                     if (implementation)
                     {
                         switch (message)
@@ -120,7 +120,7 @@ namespace Gek
                         case WM_KEYDOWN:
                             if (wParam >= 0 && wParam < 256)
                             {
-                                implementation->onKeyPressed(static_cast<Key>(NativeToKey[wParam]), true);
+                                implementation->onKeyPressed(static_cast<Window::Key>(NativeToKey[wParam]), true);
                             }
 
                             break;
@@ -128,7 +128,7 @@ namespace Gek
                         case WM_KEYUP:
                             if (wParam >= 0 && wParam < 256)
                             {
-                                implementation->onKeyPressed(static_cast<Key>(NativeToKey[wParam]), false);
+                                implementation->onKeyPressed(static_cast<Window::Key>(NativeToKey[wParam]), false);
                             }
 
                             break;
@@ -272,7 +272,7 @@ namespace Gek
                 }
             }
 
-            ~Implementation(void)
+            ~Device(void)
             {
                 if (window)
                 {
@@ -351,6 +351,6 @@ namespace Gek
             }
         };
 
-        GEK_REGISTER_CONTEXT_USER(Implementation);
-    }; // namespace Window
+        GEK_REGISTER_CONTEXT_USER(Device);
+    }; // namespace WindowImplementation
 }; // namespace Gek

@@ -30,7 +30,7 @@ namespace Gek
 
             virtual ~Core(void) = default;
 
-            virtual Window::Device * getWindow(void) const = 0;
+            virtual Window::Device * getWindowDevice(void) const = 0;
             virtual Render::Device * getRenderDevice(void) const = 0;
 
             virtual Engine::Population * getFullPopulation(void) const = 0;

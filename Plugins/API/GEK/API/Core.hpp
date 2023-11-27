@@ -18,7 +18,7 @@ namespace Gek
     {
         GEK_PREDECLARE(Population);
         GEK_PREDECLARE(Resources);
-        GEK_PREDECLARE(Renderer);
+        GEK_PREDECLARE(Visualizer);
         GEK_PREDECLARE(Processor);
 
         GEK_INTERFACE(Core)
@@ -41,7 +41,7 @@ namespace Gek
 
             virtual Plugin::Population * getPopulation(void) const = 0;
             virtual Plugin::Resources * getResources(void) const = 0;
-            virtual Plugin::Renderer * getRenderer(void) const = 0;
+            virtual Plugin::Visualizer * getVisualizer(void) const = 0;
 
             virtual void listProcessors(std::function<void(Plugin::Processor *)> onProcessor) = 0;
         };

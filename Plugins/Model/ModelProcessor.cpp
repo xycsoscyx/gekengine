@@ -13,7 +13,7 @@
 #include "GEK/API/ComponentMixin.hpp"
 #include "GEK/API/Population.hpp"
 #include "GEK/API/Entity.hpp"
-#include "GEK/API/Renderer.hpp"
+#include "GEK/API/Visualizer.hpp"
 #include "GEK/API/Resources.hpp"
 #include "GEK/API/Editor.hpp"
 #include "GEK/Components/Transform.hpp"
@@ -299,11 +299,11 @@ namespace Gek
         Render::Device *videoDevice = nullptr;
         Plugin::Population *population = nullptr;
         Plugin::Resources *resources = nullptr;
-        Plugin::Renderer *renderer = nullptr;
+        Plugin::Visualizer *renderer = nullptr;
         Edit::Events *events = nullptr;
 
         VisualHandle visual;
-        Video::BufferPtr instanceBuffer;
+        Render::BufferPtr instanceBuffer;
         ThreadPool loadPool;
 
         tbb::concurrent_unordered_map<std::size_t, Group> groupMap;
@@ -328,10 +328,10 @@ namespace Gek
         ModelProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
             , core(core)
-            , videoDevice(core->getRenderer()->getRenderDevice())
+            , videoDevice(core->getVisualizer()->getRenderDevice())
             , population(core->getPopulation())
             , resources(core->getResources())
-            , renderer(core->getRenderer())
+            , renderer(core->getVisualizer())
             , loadPool(5)
         {
             assert(core);
@@ -353,12 +353,12 @@ namespace Gek
 
             visual = resources->loadVisual("model");
 
-            Video::Buffer::Description instanceDescription;
+            Render::Buffer::Description instanceDescription;
             instanceDescription.name = "model:instances";
             instanceDescription.stride = sizeof(Math::Float4x4);
             instanceDescription.count = 100;
-            instanceDescription.type = Video::Buffer::Type::Vertex;
-            instanceDescription.flags = Video::Buffer::Flags::Mappable;
+            instanceDescription.type = Render::Buffer::Type::Vertex;
+            instanceDescription.flags = Render::Buffer::Flags::Mappable;
             instanceBuffer = videoDevice->createBuffer(instanceDescription);
         }
 
@@ -393,17 +393,17 @@ namespace Gek
                 mesh.vertexCount = meshHeader.vertexCount;
                 mesh.indexCount = (meshHeader.faceCount * 3);
 
-                //Video::Buffer::Description indexBufferDescription;
-                //indexBufferDescription.format = Video::Format::R16_UINT;
+                //Render::Buffer::Description indexBufferDescription;
+                //indexBufferDescription.format = Render::Format::R16_UINT;
                 //indexBufferDescription.count = (meshHeader.faceCount * 3);
-                //indexBufferDescription.type = Video::Buffer::Type::Index;
+                //indexBufferDescription.type = Render::Buffer::Type::Index;
                 //mesh.indexBuffer = resources->createBuffer(std::format("model:{}.{}.{}:indices", meshIndex, fileName, name), indexBufferDescription, unpacker.readBlock<Face>(meshHeader.faceCount));
 
-                Video::Buffer::Description vertexBufferDescription;
+                Render::Buffer::Description vertexBufferDescription;
                 vertexBufferDescription.name = std::format("model:{}.{}.{}:positions", meshIndex, fileName, name);
                 vertexBufferDescription.stride = sizeof(Math::Float3);
                 vertexBufferDescription.count = meshHeader.vertexCount;
-                vertexBufferDescription.type = Video::Buffer::Type::Vertex;
+                vertexBufferDescription.type = Render::Buffer::Type::Vertex;
                 mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
 
                 vertexBufferDescription.stride = sizeof(Math::Float2);
@@ -438,19 +438,19 @@ namespace Gek
                     mesh.material = resources->loadMaterial(staticModel.material);
                     mesh.vertexCount = staticModel.positions.size();
 
-                    //Video::Buffer::Description indexBufferDescription;
+                    //Render::Buffer::Description indexBufferDescription;
                     //indexBufferDescription.name = "model:cube:indices";
-                    //indexBufferDescription.format = Video::Format::R16_UINT;
+                    //indexBufferDescription.format = Render::Format::R16_UINT;
                     //indexBufferDescription.count = staticModel.indices.size();
-                    //indexBufferDescription.type = Video::Buffer::Type::Index;
+                    //indexBufferDescription.type = Render::Buffer::Type::Index;
                     //mesh.indexBuffer = resources->createBuffer(indexBufferDescription, staticModel.indices.data());
                     //mesh.indexCount = indexBufferDescription.count;
 
-                    Video::Buffer::Description vertexBufferDescription;
+                    Render::Buffer::Description vertexBufferDescription;
                     vertexBufferDescription.name = std::format("model:cube.{}:positions", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float3);
                     vertexBufferDescription.count = staticModel.positions.size();
-                    vertexBufferDescription.type = Video::Buffer::Type::Vertex;
+                    vertexBufferDescription.type = Render::Buffer::Type::Vertex;
                     mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, staticModel.positions.data());
                     for (auto& position : staticModel.positions)
                     {
@@ -483,19 +483,19 @@ namespace Gek
                     mesh.material = resources->loadMaterial(staticModel.material);
                     mesh.vertexCount = staticModel.positions.size();
 
-                    //Video::Buffer::Description indexBufferDescription;
+                    //Render::Buffer::Description indexBufferDescription;
                     //indexBufferDescription.name = "model:sphere:indices";
-                    //indexBufferDescription.format = Video::Format::R16_UINT;
+                    //indexBufferDescription.format = Render::Format::R16_UINT;
                     //indexBufferDescription.count = staticModel.indices.size();
-                    //indexBufferDescription.type = Video::Buffer::Type::Index;
+                    //indexBufferDescription.type = Render::Buffer::Type::Index;
                     //mesh.indexBuffer = resources->createBuffer(indexBufferDescription, staticModel.indices.data());
                     //mesh.indexCount = indexBufferDescription.count;
 
-                    Video::Buffer::Description vertexBufferDescription;
+                    Render::Buffer::Description vertexBufferDescription;
                     vertexBufferDescription.name = std::format("model:sphere.{}:positions", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float3);
                     vertexBufferDescription.count = staticModel.positions.size();
-                    vertexBufferDescription.type = Video::Buffer::Type::Vertex;
+                    vertexBufferDescription.type = Render::Buffer::Type::Vertex;
                     mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, staticModel.positions.data());
                     for (auto& position : staticModel.positions)
                     {
@@ -674,7 +674,7 @@ namespace Gek
             removeEntity(entity);
         }
 
-        // Plugin::Renderer Slots
+        // Plugin::Visualizer Slots
         void onQueueDrawCalls(Shapes::Frustum const &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)
         {
             assert(renderer);
@@ -858,12 +858,12 @@ namespace Gek
 			if (instanceBuffer->getDescription().count < maximumInstanceCount)
 			{
 				instanceBuffer = nullptr;
-				Video::Buffer::Description instanceDescription;
+				Render::Buffer::Description instanceDescription;
                 instanceDescription.name = "model:instances";
 				instanceDescription.stride = sizeof(Math::Float4x4);
 				instanceDescription.count = maximumInstanceCount;
-				instanceDescription.type = Video::Buffer::Type::Vertex;
-				instanceDescription.flags = Video::Buffer::Flags::Mappable;
+				instanceDescription.type = Render::Buffer::Type::Vertex;
+				instanceDescription.flags = Render::Buffer::Flags::Mappable;
 				instanceBuffer = videoDevice->createBuffer(instanceDescription);
 			}
 		}

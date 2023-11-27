@@ -3,7 +3,7 @@
 #include "GEK/API/Core.hpp"
 #include "GEK/API/Processor.hpp"
 #include "GEK/API/Population.hpp"
-#include "GEK/API/Renderer.hpp"
+#include "GEK/API/Visualizer.hpp"
 #include "GEK/API/Editor.hpp"
 #include "GEK/API/Resources.hpp"
 #include "GEK/Components/Transform.hpp"
@@ -95,7 +95,7 @@ namespace Gek
         Plugin::Core *core = nullptr;
         Plugin::Population *population = nullptr;
         Plugin::Resources *resources = nullptr;
-        Plugin::Renderer *renderer = nullptr;
+        Plugin::Visualizer *visualizer = nullptr;
 
     public:
         CameraProcessor(Context *context, Plugin::Core *core)
@@ -103,11 +103,11 @@ namespace Gek
             , core(core)
             , population(core->getPopulation())
             , resources(core->getResources())
-            , renderer(core->getRenderer())
+            , visualizer(core->getVisualizer())
         {
             assert(population);
             assert(resources);
-            assert(renderer);
+            assert(visualizer);
 
             core->onShutdown.connect(this, &CameraProcessor::onShutdown);
             population->onReset.connect(this, &CameraProcessor::onReset);
@@ -124,13 +124,13 @@ namespace Gek
             {
                 if (!cameraComponent.target.empty())
                 {
-                    auto backBuffer = core->getRenderer()->getRenderDevice()->getBackBuffer();
-                    Video::Texture::Description description;
+                    auto backBuffer = core->getVisualizer()->getRenderDevice()->getBackBuffer();
+                    Render::Texture::Description description;
                     description.name = std::format("camera:{}", cameraComponent.target);
-                    description.format = Video::Format::R11G11B10_FLOAT;
+                    description.format = Render::Format::R11G11B10_FLOAT;
                     description.width = backBuffer->getDescription().width;
                     description.height = backBuffer->getDescription().height;
-                    description.flags = Video::Texture::Flags::RenderTarget | Video::Texture::Flags::Resource;
+                    description.flags = Render::Texture::Flags::RenderTarget | Render::Texture::Flags::Resource;
                     data.target = resources->createTexture(description);
                 }
             });
@@ -177,12 +177,12 @@ namespace Gek
         // Plugin::Population Slots
         void onUpdate(float frameTime)
         {
-            assert(renderer);
+            assert(visualizer);
 
             bool editorActive = core->getOption("editor", "active", false);
 			//if (frameTime > 0.0f && !editorActive)
 			{
-				parallelListEntities([core = core, renderer = renderer](Plugin::Entity * const entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void
+				parallelListEntities([core = core, visualizer = visualizer](Plugin::Entity * const entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void
 				{
 					std::string name;
 					if (entity->hasComponent<Components::Name>())
@@ -197,10 +197,10 @@ namespace Gek
 
 					auto viewMatrix(transformComponent.getMatrix().getInverse());
 
-					const auto backBuffer = core->getRenderer()->getRenderDevice()->getBackBuffer();
+					const auto backBuffer = core->getVisualizer()->getRenderDevice()->getBackBuffer();
 					const float width = float(backBuffer->getDescription().width);
 					const float height = float(backBuffer->getDescription().height);
-					renderer->queueCamera(viewMatrix, cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip, name, data.target);
+					visualizer->queueCamera(viewMatrix, cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip, name, data.target);
 				});
 			}
         }

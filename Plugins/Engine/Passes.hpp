@@ -9,7 +9,7 @@
 
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include "GEK/System/VideoDevice.hpp"
+#include "GEK/System/RenderDevice.hpp"
 #include "GEK/Engine/Resources.hpp"
 
 namespace Gek
@@ -31,8 +31,8 @@ namespace Gek
         ClearData(ClearType type, std::string const &data);
     };
 
-    std::string getFormatSemantic(Video::Format format);
-    std::string getFormatSemantic(Video::Format format, uint32_t count);
+    std::string getFormatSemantic(Render::Format format);
+    std::string getFormatSemantic(Render::Format format, uint32_t count);
 
     ClearType getClearType(std::string const &clearType);
 

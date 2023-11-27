@@ -4,7 +4,7 @@
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/System/RenderDevice.hpp"
 #include "GEK/API/Resources.hpp"
-#include "GEK/API/Renderer.hpp"
+#include "GEK/API/Visualizer.hpp"
 #include "GEK/Engine/Shader.hpp"
 #include "GEK/Engine/Material.hpp"
 #include "Passes.hpp"
@@ -40,7 +40,7 @@ namespace Gek
                 Engine::Shader *shader = resources->getShader(shaderHandle);
                 if (shader)
                 {
-                    Video::RenderState::Description renderStateInformation;
+                    Render::RenderState::Description renderStateInformation;
                     renderStateInformation.name = std::format("{}:renderState", materialName);
                     renderStateInformation.load(JSON::Find(shaderNode, "renderState"));
                     renderState = resources->createRenderState(renderStateInformation);

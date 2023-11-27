@@ -18,7 +18,7 @@ std::unordered_map<B, A> flip_map(const std::unordered_map<A, B> &src)
 
 namespace Gek
 {
-    namespace Video
+    namespace Render
     {
         DisplayMode::DisplayMode(void)
         {
@@ -29,7 +29,7 @@ namespace Gek
             , height(height)
             , format(format)
         {
-            auto getAspectRatio = [](uint32_t width, uint32_t height) -> Video::DisplayMode::AspectRatio
+            auto getAspectRatio = [](uint32_t width, uint32_t height) -> Render::DisplayMode::AspectRatio
             {
                 const float AspectRatio4x3 = (4.0f / 3.0f);
                 const float AspectRatio16x9 = (16.0f / 9.0f);
@@ -37,19 +37,19 @@ namespace Gek
                 float aspectRatio = (float(width) / float(height));
                 if (std::abs(aspectRatio - AspectRatio4x3) < Math::Epsilon)
                 {
-                    return Video::DisplayMode::AspectRatio::_4x3;
+                    return Render::DisplayMode::AspectRatio::_4x3;
                 }
                 else if (std::abs(aspectRatio - AspectRatio16x9) < Math::Epsilon)
                 {
-                    return Video::DisplayMode::AspectRatio::_16x9;
+                    return Render::DisplayMode::AspectRatio::_16x9;
                 }
                 else if (std::abs(aspectRatio - AspectRatio16x10) < Math::Epsilon)
                 {
-                    return Video::DisplayMode::AspectRatio::_16x10;
+                    return Render::DisplayMode::AspectRatio::_16x10;
                 }
                 else
                 {
-                    return Video::DisplayMode::AspectRatio::Unknown;
+                    return Render::DisplayMode::AspectRatio::Unknown;
                 }
             };
 
@@ -341,8 +341,8 @@ namespace Gek
             return (result == std::end(data) ? "TexCoord" : result->second);
         }
 
-        using MapStringToFormat = std::unordered_map<std::string, Video::Format>;
-        using MapFormatToString = std::unordered_map<Video::Format, std::string>;
+        using MapStringToFormat = std::unordered_map<std::string, Render::Format>;
+        using MapFormatToString = std::unordered_map<Render::Format, std::string>;
         static const MapStringToFormat FormatTypeMap =
         {
             { "R32G32B32A32_FLOAT", Format::R32G32B32A32_FLOAT },
@@ -400,7 +400,7 @@ namespace Gek
             { "D16_UNORM", Format::D16_UNORM },
         };
 
-        auto rev = [](std::pair<std::string, Video::Format> p) -> std::pair<const Video::Format, std::string>
+        auto rev = [](std::pair<std::string, Render::Format> p) -> std::pair<const Render::Format, std::string>
         {
             return std::make_pair(p.second, p.first);
         };
@@ -723,5 +723,5 @@ namespace Gek
         {
             return GetHash(filterMode, addressModeU, addressModeV, addressModeW, mipLevelBias, maximumAnisotropy, comparisonFunction, borderColor.x, borderColor.y, borderColor.z, borderColor.w, minimumMipLevel, maximumMipLevel);
         }
-    }; // namespace Video
+    }; // namespace Render
 }; // namespace Gek

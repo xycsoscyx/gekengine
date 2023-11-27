@@ -17,9 +17,9 @@ namespace Gek
         private:
 			std::string visualName;
             Render::Device *videoDevice = nullptr;
-			Video::ObjectPtr inputLayout;
-			Video::Program *vertexProgram = nullptr;
-			Video::Program *geometryProgram = nullptr;
+			Render::ObjectPtr inputLayout;
+			Render::Program *vertexProgram = nullptr;
+			Render::Program *geometryProgram = nullptr;
 
         public:
             Visual(Context *context, Render::Device *videoDevice, Engine::Resources *resources, std::string visualName)
@@ -33,9 +33,9 @@ namespace Gek
                 JSON::Object visualNode = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("visuals", visualName).withExtension(".json")));
 
 				std::vector<std::string> inputVertexData;
-				std::vector<Video::InputElement> elementList;
+				std::vector<Render::InputElement> elementList;
 
-                uint32_t inputIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
+                uint32_t inputIndexList[static_cast<uint8_t>(Render::InputElement::Semantic::Count)] = { 0 };
                 for (auto &elementNode : visualNode["input"])
                 {
                     std::string elementName(JSON::Value(elementNode, "name", String::Empty));
@@ -54,10 +54,10 @@ namespace Gek
                     }
                     else
                     {
-                        Video::InputElement element;
-                        element.format = Video::GetFormat(JSON::Value(elementNode, "format", String::Empty));
-                        element.semantic = Video::InputElement::GetSemantic(JSON::Value(elementNode, "semantic", String::Empty));
-                        element.source = Video::InputElement::GetSource(JSON::Value(elementNode, "source", String::Empty));
+                        Render::InputElement element;
+                        element.format = Render::GetFormat(JSON::Value(elementNode, "format", String::Empty));
+                        element.semantic = Render::InputElement::GetSemantic(JSON::Value(elementNode, "semantic", String::Empty));
+                        element.source = Render::InputElement::GetSource(JSON::Value(elementNode, "source", String::Empty));
                         element.sourceIndex = JSON::Value(elementNode, "sourceIndex", 0U);
 
                         uint32_t count = JSON::Value(elementNode, "count", 1U);
@@ -73,12 +73,12 @@ namespace Gek
                 }
 
 				std::vector<std::string> outputVertexData;
-				uint32_t outputIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
+				uint32_t outputIndexList[static_cast<uint8_t>(Render::InputElement::Semantic::Count)] = { 0 };
 				for (auto &elementNode : visualNode["output"])
 				{
                     std::string elementName(JSON::Value(elementNode, "name", String::Empty));
-                    Video::Format format = Video::GetFormat(JSON::Value(elementNode, "format", String::Empty));
-					auto semantic = Video::InputElement::GetSemantic(JSON::Value(elementNode, "semantic", String::Empty));
+                    Render::Format format = Render::GetFormat(JSON::Value(elementNode, "format", String::Empty));
+					auto semantic = Render::InputElement::GetSemantic(JSON::Value(elementNode, "semantic", String::Empty));
                     uint32_t count = JSON::Value(elementNode, "count", 1U);
                     auto semanticIndex = outputIndexList[static_cast<uint8_t>(semantic)];
                     outputIndexList[static_cast<uint8_t>(semantic)] += count;
@@ -113,7 +113,7 @@ OutputVertex getProjection(OutputVertex outputVertex)
                     std::string vertexEntry(JSON::Value(vertexNode, "entry", String::Empty));
                     std::string vertexProgram(JSON::Value(vertexNode, "program", String::Empty));
                     std::string vertexFileName(FileSystem::CreatePath(visualName, vertexProgram).withExtension(".hlsl").getString());
-                    this->vertexProgram = resources->getProgram(Video::Program::Type::Vertex, vertexFileName, vertexEntry, engineData);
+                    this->vertexProgram = resources->getProgram(Render::Program::Type::Vertex, vertexFileName, vertexEntry, engineData);
                     if (!elementList.empty() && this->vertexProgram)
                     {
                         inputLayout = videoDevice->createInputLayout(elementList, this->vertexProgram->getInformation());
@@ -128,7 +128,7 @@ OutputVertex getProjection(OutputVertex outputVertex)
                     if (!geometryEntry.empty() && !geometryProgram.empty())
                     {
                         std::string geometryFileName(FileSystem::CreatePath(visualName, geometryProgram).withExtension(".hlsl").getString());
-                        this->geometryProgram = resources->getProgram(Video::Program::Type::Geometry, geometryFileName, geometryEntry);
+                        this->geometryProgram = resources->getProgram(Render::Program::Type::Geometry, geometryFileName, geometryEntry);
                     }
                 }
 			}

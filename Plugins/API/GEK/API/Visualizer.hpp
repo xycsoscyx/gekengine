@@ -19,14 +19,14 @@ namespace Gek
 {
 	namespace Plugin
     {
-        GEK_INTERFACE(Renderer)
+        GEK_INTERFACE(Visualizer)
         {
             wink::signal<wink::slot<void(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)>> onQueueDrawCalls;
             wink::signal<wink::slot<void(void)>> onShowUserInterface;
 
-            virtual ~Renderer(void) = default;
+            virtual ~Visualizer(void) = default;
 
-            virtual Render::Device * getVideoDevice(void) const = 0;
+            virtual Render::Device * getRenderDevice(void) const = 0;
 			virtual ImGuiContext * const getGuiContext(void) const = 0;
 
             virtual void queueCamera(Math::Float4x4 const &viewMatrix, float fieldOfView, float aspectRatio, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget = ResourceHandle(), std::string const &forceShader = String::Empty) = 0;

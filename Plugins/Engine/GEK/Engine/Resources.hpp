@@ -9,7 +9,7 @@
 
 #include "GEK/Math/Vector4.hpp"
 #include "GEK/Utility/Context.hpp"
-#include "GEK/System/VideoDevice.hpp"
+#include "GEK/System/RenderDevice.hpp"
 #include "GEK/API/Resources.hpp"
 #include "GEK/Engine/Shader.hpp"
 
@@ -36,16 +36,16 @@ namespace Gek
             virtual Shader * const getShader(ShaderHandle handle) const = 0;
             virtual Filter * const getFilter(std::string_view filterName) = 0;
 
-            virtual Video::Texture::Description const * const getTextureDescription(ResourceHandle resourceHandle) const = 0;
-            virtual Video::Buffer::Description const * const getBufferDescription(ResourceHandle resourceHandle) const = 0;
-            virtual Video::Object * const getResource(ResourceHandle resourceHandle) const = 0;
+            virtual Render::Texture::Description const * const getTextureDescription(ResourceHandle resourceHandle) const = 0;
+            virtual Render::Buffer::Description const * const getBufferDescription(ResourceHandle resourceHandle) const = 0;
+            virtual Render::Object * const getResource(ResourceHandle resourceHandle) const = 0;
 
-            virtual Video::Program * getProgram(Video::Program::Type type, std::string_view name, std::string_view entryFunction, std::string_view engineData = String::Empty) = 0;
-            virtual ProgramHandle loadProgram(Video::Program::Type type, std::string_view name, std::string_view entryFunction, std::string_view engineData = String::Empty) = 0;
+            virtual Render::Program * getProgram(Render::Program::Type type, std::string_view name, std::string_view entryFunction, std::string_view engineData = String::Empty) = 0;
+            virtual ProgramHandle loadProgram(Render::Program::Type type, std::string_view name, std::string_view entryFunction, std::string_view engineData = String::Empty) = 0;
 
-            virtual RenderStateHandle createRenderState(Video::RenderState::Description const &renderState) = 0;
-            virtual DepthStateHandle createDepthState(Video::DepthState::Description const &depthState) = 0;
-            virtual BlendStateHandle createBlendState(Video::BlendState::Description const &blendState) = 0;
+            virtual RenderStateHandle createRenderState(Render::RenderState::Description const &renderState) = 0;
+            virtual DepthStateHandle createDepthState(Render::DepthState::Description const &depthState) = 0;
+            virtual BlendStateHandle createBlendState(Render::BlendState::Description const &blendState) = 0;
 
             virtual void generateMipMaps(Render::Device::Context *videoContext, ResourceHandle resourceHandle) = 0;
             virtual void resolveSamples(Render::Device::Context *videoContext, ResourceHandle destinationHandle, ResourceHandle sourceHandle) = 0;

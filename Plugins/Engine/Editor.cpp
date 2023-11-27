@@ -11,7 +11,7 @@
 #include "GEK/API/Entity.hpp"
 #include "GEK/API/Processor.hpp"
 #include "GEK/API/Editor.hpp"
-#include "GEK/API/Renderer.hpp"
+#include "GEK/API/Visualizer.hpp"
 #include "GEK/Engine/Resources.hpp"
 #include "GEK/Engine/Population.hpp"
 #include "GEK/Components/Transform.hpp"
@@ -39,7 +39,7 @@ namespace Gek
             Plugin::Core *core = nullptr;
             Edit::Population *population = nullptr;
             Engine::Resources *resources = nullptr;
-            Plugin::Renderer *renderer = nullptr;
+            Plugin::Visualizer *renderer = nullptr;
             Gek::Processor::Model *modelProcessor = nullptr;
 
             float headingAngle = 0.0f;
@@ -80,7 +80,7 @@ namespace Gek
                 , core(core)
                 , population(dynamic_cast<Engine::Core *>(core)->getFullPopulation())
                 , resources(dynamic_cast<Engine::Core *>(core)->getFullResources())
-                , renderer(core->getRenderer())
+                , renderer(core->getVisualizer())
             {
                 assert(population);
                 assert(core);
@@ -161,16 +161,16 @@ namespace Gek
                 {
                     cameraSize = UI::GetWindowContentRegionSize();
 
-                    Video::Texture::Description description;
+                    Render::Texture::Description description;
                     description.name = "editorTarget";
                     description.width = cameraSize.x;
                     description.height = cameraSize.y;
-                    description.flags = Video::Texture::Flags::RenderTarget | Video::Texture::Flags::Resource;
-                    description.format = Video::Format::R11G11B10_FLOAT;
+                    description.flags = Render::Texture::Flags::RenderTarget | Render::Texture::Flags::Resource;
+                    description.format = Render::Format::R11G11B10_FLOAT;
                     cameraTarget = core->getResources()->createTexture(description, Plugin::Resources::Flags::LoadImmediately);
 
                     auto cameraBuffer = resources->getResource(cameraTarget);
-                    auto cameraTexture = (cameraBuffer ? dynamic_cast<Video::Texture *>(cameraBuffer) : nullptr);
+                    auto cameraTexture = (cameraBuffer ? dynamic_cast<Render::Texture *>(cameraBuffer) : nullptr);
                     if (cameraTexture)
                     {
                         ImGui::Image(reinterpret_cast<ImTextureID>(cameraTexture), cameraSize, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f));

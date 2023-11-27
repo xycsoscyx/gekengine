@@ -3,7 +3,7 @@
 #include "GEK/API/Core.hpp"
 #include "GEK/API/Processor.hpp"
 #include "GEK/API/Population.hpp"
-#include "GEK/API/Renderer.hpp"
+#include "GEK/API/Visualizer.hpp"
 #include "GEK/API/Entity.hpp"
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Math/Common.hpp"

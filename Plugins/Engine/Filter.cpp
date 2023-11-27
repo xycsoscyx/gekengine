@@ -5,9 +5,9 @@
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Shapes/Sphere.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/System/VideoDevice.hpp"
+#include "GEK/System/RenderDevice.hpp"
 #include "GEK/API/Resources.hpp"
-#include "GEK/API/Renderer.hpp"
+#include "GEK/API/Visualizer.hpp"
 #include "GEK/API/Population.hpp"
 #include "GEK/API/Entity.hpp"
 #include "GEK/Components/Transform.hpp"
@@ -89,11 +89,11 @@ namespace Gek
                 auto backBuffer = videoDevice->getBackBuffer();
                 auto &backBufferDescription = backBuffer->getDescription();
 
-                Video::DepthState::Description depthStateDescription;
+                Render::DepthState::Description depthStateDescription;
                 depthStateDescription.name = std::format("{}:depthState", filterName);
                 depthState = resources->createDepthState(depthStateDescription);
 
-                Video::RenderState::Description renderStateDescription;
+                Render::RenderState::Description renderStateDescription;
                 renderStateDescription.name = std::format("{}:renderState", filterName);
                 renderState = resources->createRenderState(renderStateDescription);
 
@@ -164,9 +164,9 @@ namespace Gek
                     }
                     else if (textureNode.contains("format"))
                     {
-                        Video::Texture::Description description(backBufferDescription);
+                        Render::Texture::Description description(backBufferDescription);
                         description.name = textureName;
-                        description.format = Video::GetFormat(JSON::Value(textureNode, "format", String::Empty));
+                        description.format = Render::GetFormat(JSON::Value(textureNode, "format", String::Empty));
                         auto &sizeNode = JSON::Find(textureNode, "size");
                         if (sizeNode.is_array())
                         {
@@ -215,18 +215,18 @@ namespace Gek
                         continue;
                     }
 
-                    Video::Buffer::Description description;
+                    Render::Buffer::Description description;
                     description.name = bufferName;
                     description.count = JSON::Evaluate(bufferNode, "count", shuntingYard, 0);
                     description.flags = getBufferFlags(JSON::Value(bufferNode, "flags", String::Empty));
                     if (bufferNode.count("format"))
                     {
-                        description.type = Video::Buffer::Type::Raw;
-                        description.format = Video::GetFormat(JSON::Value(bufferNode, "format", String::Empty));
+                        description.type = Render::Buffer::Type::Raw;
+                        description.format = Render::GetFormat(JSON::Value(bufferNode, "format", String::Empty));
                     }
                     else
                     {
-                        description.type = Video::Buffer::Type::Structured;
+                        description.type = Render::Buffer::Type::Structured;
                         description.stride = JSON::Evaluate(bufferNode, "stride", shuntingYard, 0);
                     }
 
@@ -505,7 +505,7 @@ R"(struct OutputPixel
                             engineData += std::vformat(outputTemplate, std::make_format_args(outputString));
                         }
 
-                        Video::BlendState::Description blendStateInformation;
+                        Render::BlendState::Description blendStateInformation;
                         blendStateInformation.load(JSON::Find(passNode, "blendState"));
                         pass.blendState = resources->createBlendState(blendStateInformation);
                     }
@@ -657,7 +657,7 @@ R"(namespace UnorderedAccess {{
                     }
 
                     std::string fileName(FileSystem::CreatePath(filterName, programName).withExtension(".hlsl").getString());
-                    Video::Program::Type pipelineType = (pass.mode == Pass::Mode::Compute ? Video::Program::Type::Compute : Video::Program::Type::Pixel);
+                    Render::Program::Type pipelineType = (pass.mode == Pass::Mode::Compute ? Render::Program::Type::Compute : Render::Program::Type::Pixel);
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
 				}
 

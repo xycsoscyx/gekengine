@@ -5,9 +5,9 @@
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Shapes/Sphere.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/System/VideoDevice.hpp"
+#include "GEK/System/RenderDevice.hpp"
 #include "GEK/API/Resources.hpp"
-#include "GEK/API/Renderer.hpp"
+#include "GEK/API/Visualizer.hpp"
 #include "GEK/API/Population.hpp"
 #include "GEK/API/Entity.hpp"
 #include "GEK/Components/Transform.hpp"
@@ -181,7 +181,7 @@ namespace Gek
                 }
 
                 std::vector<std::string> inputData;
-                uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
+                uint32_t semanticIndexList[static_cast<uint8_t>(Render::InputElement::Semantic::Count)] = { 0 };
                 for (auto &elementNode : JSON::Find(rootNode, "input"))
                 {
                     std::string name(JSON::Value(elementNode, "name", String::Empty));
@@ -196,9 +196,9 @@ namespace Gek
                     }
                     else
                     {
-                        Video::Format format = Video::GetFormat(JSON::Value(elementNode, "format", String::Empty));
+                        Render::Format format = Render::GetFormat(JSON::Value(elementNode, "format", String::Empty));
                         uint32_t count = JSON::Value(elementNode, "count", 1);
-                        auto semantic = Video::InputElement::GetSemantic(JSON::Value(elementNode, "semantic", String::Empty));
+                        auto semantic = Render::InputElement::GetSemantic(JSON::Value(elementNode, "semantic", String::Empty));
                         auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)];
                         semanticIndexList[static_cast<uint8_t>(semantic)] += count;
 
@@ -278,9 +278,9 @@ R"(namespace Lights
                     }
                     else
                     {
-                        Video::Texture::Description description(backBufferDescription);
+                        Render::Texture::Description description(backBufferDescription);
                         description.name = textureName;
-                        description.format = Video::GetFormat(JSON::Value(textureNode, "format", String::Empty));
+                        description.format = Render::GetFormat(JSON::Value(textureNode, "format", String::Empty));
                         auto &sizeNode = JSON::Find(textureNode, "size");
                         if (sizeNode.is_number())
                         {
@@ -336,18 +336,18 @@ R"(namespace Lights
                         continue;
                     }
 
-                    Video::Buffer::Description description;
+                    Render::Buffer::Description description;
                     description.name = bufferName;
                     description.count = JSON::Value(bufferNode, "count", 0);
                     description.flags = getBufferFlags(JSON::Value(bufferNode, "flags", String::Empty));
                     if (bufferNode.contains("format"))
                     {
-                        description.type = Video::Buffer::Type::Raw;
-                        description.format = Video::GetFormat(JSON::Value(bufferNode, "format", String::Empty));
+                        description.type = Render::Buffer::Type::Raw;
+                        description.format = Render::GetFormat(JSON::Value(bufferNode, "format", String::Empty));
                     }
                     else
                     {
-                        description.type = Video::Buffer::Type::Structured;
+                        description.type = Render::Buffer::Type::Structured;
                         description.stride = JSON::Value(bufferNode, "stride", 0);
                     }
 
@@ -383,7 +383,7 @@ R"(namespace Lights
                         materialData.initializerList.push_back(initializer);
                     }
 
-                    Video::RenderState::Description renderStateInformation;
+                    Render::RenderState::Description renderStateInformation;
                     renderStateInformation.load(JSON::Find(materialNode, "renderState"), rootOptionsNode);
                     materialData.renderState = resources->createRenderState(renderStateInformation);
                 }
@@ -649,7 +649,7 @@ R"(struct OutputPixel
                             engineData.push_back(std::vformat(outputTemplate, std::make_format_args(outputString)));
                         }
 
-                        Video::DepthState::Description depthStateInformation;
+                        Render::DepthState::Description depthStateInformation;
                         if (passNode.contains("depthStyle"))
                         {
                             auto &depthStyleNode = JSON::Find(passNode, "depthStyle");
@@ -659,21 +659,21 @@ R"(struct OutputPixel
                                 auto invertedDepthBuffer = core->getOption("render", "invertedDepthBuffer", true);
 
                                 depthStateInformation.enable = true;
-                                depthStateInformation.writeMask = Video::DepthState::Write::All;
+                                depthStateInformation.writeMask = Render::DepthState::Write::All;
                                 if (invertedDepthBuffer)
                                 {
-                                    depthStateInformation.comparisonFunction = Video::ComparisonFunction::GreaterEqual;
+                                    depthStateInformation.comparisonFunction = Render::ComparisonFunction::GreaterEqual;
                                 }
                                 else
                                 {
-                                    depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
+                                    depthStateInformation.comparisonFunction = Render::ComparisonFunction::LessEqual;
                                 }
 
                                 auto clear = JSON::Value(depthStyleNode, "clear", false);
                                 if (clear)
                                 {
                                     pass.clearDepthValue = (invertedDepthBuffer ? 0.0f : 1.0f);
-                                    pass.clearDepthFlags |= Video::ClearFlags::Depth;
+                                    pass.clearDepthFlags |= Render::ClearFlags::Depth;
                                 }
                             }
                         }
@@ -684,7 +684,7 @@ R"(struct OutputPixel
                             pass.clearDepthValue = JSON::Value(depthStateNode, "clear", Math::Infinity);
                             if (pass.clearDepthValue != Math::Infinity)
                             {
-                                pass.clearDepthFlags |= Video::ClearFlags::Depth;
+                                pass.clearDepthFlags |= Render::ClearFlags::Depth;
                             }
                         }
 
@@ -702,10 +702,10 @@ R"(struct OutputPixel
 							}
                         }
 
-                        Video::BlendState::Description blendStateInformation;
+                        Render::BlendState::Description blendStateInformation;
                         blendStateInformation.load(JSON::Find(passNode, "blendState"), passOptions);
 
-                        Video::RenderState::Description renderStateInformation;
+                        Render::RenderState::Description renderStateInformation;
                         renderStateInformation.load(JSON::Find(passNode, "renderState"), passOptions);
 
                         pass.depthState = resources->createDepthState(depthStateInformation);
@@ -892,7 +892,7 @@ R"(namespace UnorderedAccess
                     }
 
                     std::string fileName(FileSystem::CreatePath(shaderName, programName).withExtension(".hlsl").getString());
-                    Video::Program::Type pipelineType = (pass.mode == Pass::Mode::Compute ? Video::Program::Type::Compute : Video::Program::Type::Pixel);
+                    Render::Program::Type pipelineType = (pass.mode == Pass::Mode::Compute ? Render::Program::Type::Compute : Render::Program::Type::Pixel);
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, String::Join(engineData, "\r\n"));
 				}
 
