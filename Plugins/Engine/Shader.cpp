@@ -255,7 +255,8 @@ R"(namespace Lights
     StructuredBuffer<SpotData> spotList : register(t2);
     Buffer<uint2> clusterDataList : register(t3);
     Buffer<uint> clusterIndexList : register(t4);
-};)";
+};
+)";
 
                 std::unordered_map<std::string, ResourceHandle> resourceMap;
                 std::unordered_map<std::string, std::string> resourceSemanticsMap;
@@ -495,7 +496,8 @@ R"(namespace Lights
                                         static constexpr std::string_view innerTemplate =
 R"(namespace {0} {{
 {1}
-}}; // namespace {0})";
+}}; // namespace {0}
+)";
 
                                         outerData.push_back(std::vformat(innerTemplate, std::make_format_args(optionName, innerString)));
                                     }
@@ -556,7 +558,8 @@ R"(namespace {0} {{
                         static constexpr std::string_view optionsTemplate =
 R"(namespace Options {{
 {}
-}}; // namespace Options)";
+}}; // namespace Options
+)";
 
                         engineData.push_back(std::vformat(optionsTemplate, std::make_format_args(optionsString)));
                     }
@@ -643,7 +646,8 @@ R"(namespace Options {{
 R"(struct OutputPixel
 {{
 {}
-}}; // struct OutputPixel)";
+}}; // struct OutputPixel
+)";
 
                             auto outputString = String::Join(outputData, "\r\n");
                             engineData.push_back(std::vformat(outputTemplate, std::make_format_args(outputString)));
@@ -849,7 +853,8 @@ R"(struct OutputPixel
 R"(namespace Resources
 {{
 {}
-}}; // namespace Resources)";
+}}; // namespace Resources
+)";
 
                         auto resourceString = String::Join(resourceData, "\r\n");
                         engineData.push_back(std::vformat(resourceTemplate, std::make_format_args(resourceString)));
@@ -885,7 +890,8 @@ R"(namespace Resources
 R"(namespace UnorderedAccess
 {{
 {}
-}}; // namespace UnorderedAccess)";
+}}; // namespace UnorderedAccess
+)";
 
                         auto unorderedAccessString = String::Join(unorderedAccessData, "\r\n");
                         engineData.push_back(std::vformat(unorderedAccessTemplate, std::make_format_args(unorderedAccessString)));

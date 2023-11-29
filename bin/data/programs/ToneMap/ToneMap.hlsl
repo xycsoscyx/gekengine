@@ -153,6 +153,6 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     const float3 baseColor = Resources::inputBuffer[inputPixel.screen.xy].xyz;
     const float averageLuminance = Resources::averageLuminanceBuffer[0];
 
-    float exposure = 0.0;
+    float exposure = 1.0;
     return getToneMappedColor(baseColor, averageLuminance, 0.0, exposure);
 }

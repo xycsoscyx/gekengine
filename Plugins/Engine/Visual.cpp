@@ -101,7 +101,8 @@ OutputVertex getProjection(OutputVertex outputVertex)
 {{
     outputVertex.projected = mul(Camera::ProjectionMatrix, float4(outputVertex.position, 1.0));
     return outputVertex;
-}})";
+}}
+)";
 
                 auto inputVertexString = String::Join(inputVertexData, "\r\n");
                 auto outputVertexString = String::Join(outputVertexData, "\r\n");

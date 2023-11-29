@@ -34,18 +34,18 @@ namespace Gek
     }
 #endif
 
-    namespace WindowImplementation
+    namespace Window::Implementation
     {
         GEK_DECLARE_CONTEXT_USER(Device);
     };
 
-    namespace RenderImplementation
+    namespace Render::Implementation
     {
         GEK_DECLARE_CONTEXT_USER(Device);
     };
 
     GEK_CONTEXT_BEGIN(System);
-        GEK_CONTEXT_ADD_CLASS(Default::Render::Window, WindowImplementation::Device);
-        GEK_CONTEXT_ADD_CLASS(Default::Render::Device, RenderImplementation::Device);
+        GEK_CONTEXT_ADD_CLASS(Default::Render::Window, Window::Implementation::Device);
+        GEK_CONTEXT_ADD_CLASS(Default::Render::Device, Render::Implementation::Device);
     GEK_CONTEXT_END();
 }; // namespace Gek

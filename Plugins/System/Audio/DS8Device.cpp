@@ -12,7 +12,7 @@
 
 namespace Gek
 {
-	namespace AudioImplementation
+	namespace Audio::Implementation
 	{
 /*
 		template <typename CLASS>

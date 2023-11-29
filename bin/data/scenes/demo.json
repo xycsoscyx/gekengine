@@ -5,8 +5,15 @@
                 "position": [ "random(-40, 40)", "random(10, 30)", "random(-10, 10)" ],
                 "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
             },
-            "Model": "dice_wood",
+            "Model": "cube",
             "Physical": { "mass": 100 }
+        },
+        "BasicSphere": {
+            "Transform": {
+                "position": [ "random(-40, 40)", "random(10, 30)", "random(-10, 10)" ],
+                "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
+            },
+            "Model": "sphere"
         },
         "BasicPointLight": {
             "Transform": {
@@ -59,13 +66,22 @@
                 "target": "",
                 "farClip": 100
             },
+            "Player": {
+            },
             "Name": "player"
         },
 
         {
             "Template": {
                 "Base": "BasicCube",
-                "Count": 0
+                "Count": 25
+            }
+        },
+
+        {
+            "Template": {
+                "Base": "BasicSphere",
+                "Count": 25
             }
         },
 

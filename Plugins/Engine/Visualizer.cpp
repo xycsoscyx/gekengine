@@ -378,8 +378,6 @@ namespace Gek
 			float reciprocalClipDistance;
 			float depthScale;
 
-			std::string screenOutput;
-
 			struct GUI
 			{
 				struct DataBuffer
@@ -513,7 +511,8 @@ float3 mainPixelProgram(in Input input) : SV_TARGET0
     uint width, height, mipMapCount;
     inputBuffer.GetDimensions(0, width, height, mipMapCount);
     return inputBuffer[input.texCoord * float2(width, height)];
-})";
+}
+)";
 
 				deferredVertexProgram = resources->getProgram(Render::Program::Type::Vertex, "renderer:deferredVertexProgram", "mainVertexProgram", program);
 
@@ -573,7 +572,8 @@ PixelOutput main(in VertexInput input)
     output.color = input.color;
     output.texCoord  = input.texCoord;
     return output;
-})";
+}
+)";
 
 				gui.vertexProgram = resources->getProgram(Render::Program::Type::Vertex, "core::uiVertexProgram", "main", vertexShader);
 
@@ -622,7 +622,8 @@ Texture2D<float4> uiTexture : register(t0);
 float4 main(PixelInput input) : SV_Target
 {
     return (input.color * uiTexture.Sample(uiSampler, input.texCoord));
-})";
+}
+)";
 
 				gui.pixelProgram = resources->getProgram(Render::Program::Type::Pixel, "core:uiPixelProgram", "main", pixelShader);
 
@@ -1213,6 +1214,7 @@ float4 main(PixelInput input) : SV_Target
 				assert(renderDevice);
 				assert(population);
 
+				std::string finalOutput;
 				EngineConstantData engineConstantData;
 				engineConstantData.frameTime = frameTime;
 				engineConstantData.worldTime = 0.0f;
@@ -1387,7 +1389,6 @@ float4 main(PixelInput input) : SV_Target
 						}
 
 						uint8_t shaderIndex = 0;
-						std::string finalOutput;
 						auto forceShader = (currentCamera.forceShader ? resources->getShader(currentCamera.forceShader) : nullptr);
 						for (auto const &shaderDrawCallList : drawCallSetMap)
 						{
@@ -1397,44 +1398,45 @@ float4 main(PixelInput input) : SV_Target
 								finalOutput = shader->getOutput();
 								for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentCamera.viewFrustum); pass; pass = pass->next())
 								{
-                                    if (pass->isEnabled())
-                                    {
-                                        VisualHandle currentVisual;
-                                        MaterialHandle currentMaterial;
-                                        resources->startResourceBlock();
-                                        switch (pass->prepare())
-                                        {
-                                        case Engine::Shader::Pass::Mode::Forward:
-                                            for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
-                                            {
-                                                if (currentVisual != drawCall->plugin)
-                                                {
-                                                    currentVisual = drawCall->plugin;
-                                                    resources->setVisual(videoContext, currentVisual);
-                                                }
+									auto passMode = pass->prepare();
+									if (passMode != Engine::Shader::Pass::Mode::None)
+									{
+										VisualHandle currentVisual;
+										MaterialHandle currentMaterial;
+										resources->startResourceBlock();
+										switch (passMode)
+										{
+										case Engine::Shader::Pass::Mode::Forward:
+											for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
+											{
+												if (currentVisual != drawCall->plugin)
+												{
+													currentVisual = drawCall->plugin;
+													resources->setVisual(videoContext, currentVisual);
+												}
 
-                                                if (currentMaterial != drawCall->material)
-                                                {
-                                                    currentMaterial = drawCall->material;
-                                                    resources->setMaterial(videoContext, pass.get(), currentMaterial, (forceShader == shader));
-                                                }
+												if (currentMaterial != drawCall->material)
+												{
+													currentMaterial = drawCall->material;
+													resources->setMaterial(videoContext, pass.get(), currentMaterial, (forceShader == shader));
+												}
 
-                                                drawCall->onDraw(videoContext);
-                                            }
+												drawCall->onDraw(videoContext);
+											}
 
-                                            break;
+											break;
 
-                                        case Engine::Shader::Pass::Mode::Deferred:
-                                            videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
-                                            resources->drawPrimitive(videoContext, 3, 0);
-                                            break;
+										case Engine::Shader::Pass::Mode::Deferred:
+											videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
+											resources->drawPrimitive(videoContext, 3, 0);
+											break;
 
-                                        case Engine::Shader::Pass::Mode::Compute:
-                                            break;
-                                        };
+										case Engine::Shader::Pass::Mode::Compute:
+											break;
+										};
 
-                                        pass->clear();
-                                    }
+										pass->clear();
+									}
 								}
 							}
 						}
@@ -1448,15 +1450,11 @@ float4 main(PixelInput input) : SV_Target
 							auto finalHandle = resources->getResourceHandle(finalOutput);
 							renderOverlay(renderDevice->getDefaultContext(), finalHandle, &currentCamera.cameraTarget);
 						}
-						else
-						{
-							screenOutput = finalOutput;
-						}
 					}
 				};
 
-				auto screenHandle = resources->getResourceHandle(screenOutput);
-				if (screenHandle)
+				auto finalHandle = resources->getResourceHandle(finalOutput);
+				if (finalHandle)
 				{
 					videoContext->clearState();
 					videoContext->geometryPipeline()->setConstantBufferList(filterBufferList, 0);
@@ -1468,29 +1466,31 @@ float4 main(PixelInput input) : SV_Target
 
 					videoContext->setPrimitiveType(Render::PrimitiveType::TriangleList);
 
-					uint8_t filterIndex = 0;
 					videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
-					for (auto const &filterName : { "tonemap", "antialias" })
+
+					auto filters = { "tonemap" };
+					for (auto const &filterName : filters)
 					{
 						auto const filter = resources->getFilter(filterName);
 						if (filter)
 						{
-							for (auto pass = filter->begin(videoContext, screenHandle, ResourceHandle()); pass; pass = pass->next())
+							for (auto pass = filter->begin(videoContext, finalHandle, ResourceHandle()); pass; pass = pass->next())
 							{
-                                if (pass->isEnabled())
-                                {
-                                    switch (pass->prepare())
-                                    {
-                                    case Engine::Filter::Pass::Mode::Deferred:
-                                        resources->drawPrimitive(videoContext, 3, 0);
-                                        break;
+								auto passMode = pass->prepare();
+								if (passMode != Engine::Filter::Pass::Mode::None)
+								{
+									switch(passMode)
+									{
+									case Engine::Filter::Pass::Mode::Deferred:
+										resources->drawPrimitive(videoContext, 3, 0);
+										break;
 
-                                    case Engine::Filter::Pass::Mode::Compute:
-                                        break;
-                                    };
+									case Engine::Filter::Pass::Mode::Compute:
+										break;
+									};
 
-                                    pass->clear();
-                                }
+									pass->clear();
+								}
 							}
 						}
 					}

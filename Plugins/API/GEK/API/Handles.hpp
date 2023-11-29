@@ -27,11 +27,6 @@ namespace Gek
             return (identifier != 0);
         }
 
-        operator std::size_t() const
-        {
-            return identifier.load();
-        }
-
         bool operator == (Handle<TYPE, UNIQUE> const &handle) const
         {
             return (identifier == handle.identifier);

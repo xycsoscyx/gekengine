@@ -33,24 +33,24 @@ namespace Gek
         return GlobalDLLInstance;
     }
 #endif
-    namespace WindowImplementation
+    namespace Window::Implementation
     {
         GEK_DECLARE_CONTEXT_USER(Device);
     };
 
-    namespace RenderImplementation
+    namespace Render::Implementation
     {
         GEK_DECLARE_CONTEXT_USER(Device);
     };
 
-    namespace AudioImplementation
+    namespace Audio::Implementation
     {
         GEK_DECLARE_CONTEXT_USER(Device);
     };
 
     GEK_CONTEXT_BEGIN(System);
-        GEK_CONTEXT_ADD_CLASS(Default::System::Window, WindowImplementation::Device);
-        GEK_CONTEXT_ADD_CLASS(Default::Device::Video, RenderImplementation::Device);
-        GEK_CONTEXT_ADD_CLASS(Default::Device::Audio, AudioImplementation::Device);
+        GEK_CONTEXT_ADD_CLASS(Default::System::Window, Window::Implementation::Device);
+        GEK_CONTEXT_ADD_CLASS(Default::Device::Video, Render::Implementation::Device);
+        GEK_CONTEXT_ADD_CLASS(Default::Device::Audio, Audio::Implementation::Device);
     GEK_CONTEXT_END();
 }; // namespace Gek

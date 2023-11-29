@@ -23,7 +23,7 @@
 
 namespace Gek
 {
-    namespace RenderImplementation
+    namespace Render::Implementation
     {
         // All these lists must match, since the same GEK Format can be used for either textures or buffers
         // The size list must also match
@@ -1491,7 +1491,7 @@ namespace Gek
                     assert(destination);
                     assert(source);
 
-                    d3dDeviceContext->ResolveSubresource(getObject<Resource>(destination), 0, getObject<Resource>(source), 0, RenderImplementation::TextureFormatList[static_cast<uint8_t>(destination->getDescription().format)]);
+                    d3dDeviceContext->ResolveSubresource(getObject<Resource>(destination), 0, getObject<Resource>(source), 0, Render::Implementation::TextureFormatList[static_cast<uint8_t>(destination->getDescription().format)]);
                 }
 
                 void clearState(void)
@@ -1626,7 +1626,7 @@ namespace Gek
                     assert(d3dDeviceContext);
                     assert(indexBuffer);
 
-                    DXGI_FORMAT format = RenderImplementation::BufferFormatList[static_cast<uint8_t>(indexBuffer->getDescription().format)];
+                    DXGI_FORMAT format = Render::Implementation::BufferFormatList[static_cast<uint8_t>(indexBuffer->getDescription().format)];
                     d3dDeviceContext->IASetIndexBuffer(getObject<Buffer>(indexBuffer), format, offset);
                 }
 
@@ -1654,7 +1654,7 @@ namespace Gek
                 {
                     assert(d3dDeviceContext);
 
-                    d3dDeviceContext->IASetPrimitiveTopology(RenderImplementation::TopologList[static_cast<uint8_t>(primitiveType)]);
+                    d3dDeviceContext->IASetPrimitiveTopology(Render::Implementation::TopologList[static_cast<uint8_t>(primitiveType)]);
                 }
 
                 void drawPrimitive(uint32_t vertexCount, uint32_t firstVertex)
@@ -1759,7 +1759,7 @@ namespace Gek
                 DXGI_SWAP_CHAIN_DESC1 swapChainDescription;
                 swapChainDescription.Width = 0;
                 swapChainDescription.Height = 0;
-                swapChainDescription.Format = RenderImplementation::TextureFormatList[static_cast<uint8_t>(deviceDescription.displayFormat)];
+                swapChainDescription.Format = Render::Implementation::TextureFormatList[static_cast<uint8_t>(deviceDescription.displayFormat)];
                 swapChainDescription.Stereo = false;
                 swapChainDescription.SampleDesc.Count = deviceDescription.sampleCount;
                 swapChainDescription.SampleDesc.Quality = deviceDescription.sampleQuality;
@@ -1818,13 +1818,13 @@ namespace Gek
                 if (dxgiOutput)
                 {
                     uint32_t modeCount = 0;
-                    dxgiOutput->GetDisplayModeList(RenderImplementation::TextureFormatList[static_cast<uint8_t>(format)], 0, &modeCount, nullptr);
+                    dxgiOutput->GetDisplayModeList(Render::Implementation::TextureFormatList[static_cast<uint8_t>(format)], 0, &modeCount, nullptr);
 
                     std::vector<DXGI_MODE_DESC> dxgiDisplayModeList(modeCount);
-                    dxgiOutput->GetDisplayModeList(RenderImplementation::TextureFormatList[static_cast<uint8_t>(format)], 0, &modeCount, dxgiDisplayModeList.data());
+                    dxgiOutput->GetDisplayModeList(Render::Implementation::TextureFormatList[static_cast<uint8_t>(format)], 0, &modeCount, dxgiDisplayModeList.data());
                     for (auto const &dxgiDisplayMode : dxgiDisplayModeList)
                     {
-                        Render::DisplayMode displayMode(dxgiDisplayMode.Width, dxgiDisplayMode.Height, RenderImplementation::GetFormat(dxgiDisplayMode.Format));
+                        Render::DisplayMode displayMode(dxgiDisplayMode.Width, dxgiDisplayMode.Height, Render::Implementation::GetFormat(dxgiDisplayMode.Format));
                         displayMode.refreshRate.numerator = dxgiDisplayMode.RefreshRate.Numerator;
                         displayMode.refreshRate.denominator = dxgiDisplayMode.RefreshRate.Denominator;
                         if (![&](void) -> bool
@@ -1907,7 +1907,7 @@ namespace Gek
                 description.Height = displayMode.height;
                 description.RefreshRate.Numerator = displayMode.refreshRate.numerator;
                 description.RefreshRate.Denominator = displayMode.refreshRate.denominator;
-                description.Format = RenderImplementation::TextureFormatList[static_cast<uint8_t>(displayMode.format)];
+                description.Format = Render::Implementation::TextureFormatList[static_cast<uint8_t>(displayMode.format)];
                 description.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
                 description.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
                 HRESULT resultValue = dxgiSwapChain->ResizeTarget(&description);
@@ -1966,7 +1966,7 @@ namespace Gek
                         Render::Texture::Description description;
                         description.width = textureDescription.Width;
                         description.height = textureDescription.Height;
-                        description.format = RenderImplementation::GetFormat(textureDescription.Format);
+                        description.format = Render::Implementation::GetFormat(textureDescription.Format);
                         auto d3dRenderTargetResource = CComQIPtr<ID3D11Resource>(d3dRenderTarget);
                         backBuffer = std::make_unique<TargetViewTexture>(d3dRenderTargetResource, d3dRenderTargetView, d3dShaderResourceView, description);
                     }
@@ -2002,7 +2002,7 @@ namespace Gek
                 assert(d3dDevice);
 
                 D3D11_QUERY_DESC description;
-                description.Query = RenderImplementation::QueryList[static_cast<uint8_t>(type)];
+                description.Query = Render::Implementation::QueryList[static_cast<uint8_t>(type)];
                 description.MiscFlags = 0;
 
                 CComPtr<ID3D11Query> d3dQuery;
@@ -2029,8 +2029,8 @@ namespace Gek
                 rasterizerDescription.ScissorEnable = description.scissorEnable;
                 rasterizerDescription.MultisampleEnable = description.multisampleEnable;
                 rasterizerDescription.AntialiasedLineEnable = description.antialiasedLineEnable;
-                rasterizerDescription.FillMode = RenderImplementation::FillModeList[static_cast<uint8_t>(description.fillMode)];
-                rasterizerDescription.CullMode = RenderImplementation::CullModeList[static_cast<uint8_t>(description.cullMode)];
+                rasterizerDescription.FillMode = Render::Implementation::FillModeList[static_cast<uint8_t>(description.fillMode)];
+                rasterizerDescription.CullMode = Render::Implementation::CullModeList[static_cast<uint8_t>(description.cullMode)];
 
                 CComPtr<ID3D11RasterizerState> d3dStates;
                 HRESULT resultValue = d3dDevice->CreateRasterizerState(&rasterizerDescription, &d3dStates);
@@ -2049,19 +2049,19 @@ namespace Gek
 
                 D3D11_DEPTH_STENCIL_DESC depthStencilDescription;
                 depthStencilDescription.DepthEnable = description.enable;
-                depthStencilDescription.DepthFunc = RenderImplementation::ComparisonFunctionList[static_cast<uint8_t>(description.comparisonFunction)];
+                depthStencilDescription.DepthFunc = Render::Implementation::ComparisonFunctionList[static_cast<uint8_t>(description.comparisonFunction)];
                 depthStencilDescription.StencilEnable = description.stencilEnable;
                 depthStencilDescription.StencilReadMask = description.stencilReadMask;
                 depthStencilDescription.StencilWriteMask = description.stencilWriteMask;
-                depthStencilDescription.FrontFace.StencilFailOp = RenderImplementation::StencilOperationList[static_cast<uint8_t>(description.stencilFrontState.failOperation)];
-                depthStencilDescription.FrontFace.StencilDepthFailOp = RenderImplementation::StencilOperationList[static_cast<uint8_t>(description.stencilFrontState.depthFailOperation)];
-                depthStencilDescription.FrontFace.StencilPassOp = RenderImplementation::StencilOperationList[static_cast<uint8_t>(description.stencilFrontState.passOperation)];
-                depthStencilDescription.FrontFace.StencilFunc = RenderImplementation::ComparisonFunctionList[static_cast<uint8_t>(description.stencilFrontState.comparisonFunction)];
-                depthStencilDescription.BackFace.StencilFailOp = RenderImplementation::StencilOperationList[static_cast<uint8_t>(description.stencilBackState.failOperation)];
-                depthStencilDescription.BackFace.StencilDepthFailOp = RenderImplementation::StencilOperationList[static_cast<uint8_t>(description.stencilBackState.depthFailOperation)];
-                depthStencilDescription.BackFace.StencilPassOp = RenderImplementation::StencilOperationList[static_cast<uint8_t>(description.stencilBackState.passOperation)];
-                depthStencilDescription.BackFace.StencilFunc = RenderImplementation::ComparisonFunctionList[static_cast<uint8_t>(description.stencilBackState.comparisonFunction)];
-                depthStencilDescription.DepthWriteMask = RenderImplementation::DepthWriteMaskList[static_cast<uint8_t>(description.writeMask)];
+                depthStencilDescription.FrontFace.StencilFailOp = Render::Implementation::StencilOperationList[static_cast<uint8_t>(description.stencilFrontState.failOperation)];
+                depthStencilDescription.FrontFace.StencilDepthFailOp = Render::Implementation::StencilOperationList[static_cast<uint8_t>(description.stencilFrontState.depthFailOperation)];
+                depthStencilDescription.FrontFace.StencilPassOp = Render::Implementation::StencilOperationList[static_cast<uint8_t>(description.stencilFrontState.passOperation)];
+                depthStencilDescription.FrontFace.StencilFunc = Render::Implementation::ComparisonFunctionList[static_cast<uint8_t>(description.stencilFrontState.comparisonFunction)];
+                depthStencilDescription.BackFace.StencilFailOp = Render::Implementation::StencilOperationList[static_cast<uint8_t>(description.stencilBackState.failOperation)];
+                depthStencilDescription.BackFace.StencilDepthFailOp = Render::Implementation::StencilOperationList[static_cast<uint8_t>(description.stencilBackState.depthFailOperation)];
+                depthStencilDescription.BackFace.StencilPassOp = Render::Implementation::StencilOperationList[static_cast<uint8_t>(description.stencilBackState.passOperation)];
+                depthStencilDescription.BackFace.StencilFunc = Render::Implementation::ComparisonFunctionList[static_cast<uint8_t>(description.stencilBackState.comparisonFunction)];
+                depthStencilDescription.DepthWriteMask = Render::Implementation::DepthWriteMaskList[static_cast<uint8_t>(description.writeMask)];
 
                 CComPtr<ID3D11DepthStencilState> d3dStates;
                 HRESULT resultValue = d3dDevice->CreateDepthStencilState(&depthStencilDescription, &d3dStates);
@@ -2084,12 +2084,12 @@ namespace Gek
                 for (uint32_t renderTarget = 0; renderTarget < 8; ++renderTarget)
                 {
                     blendDescription.RenderTarget[renderTarget].BlendEnable = description.targetStates[renderTarget].enable;
-                    blendDescription.RenderTarget[renderTarget].SrcBlend = RenderImplementation::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].colorSource)];
-                    blendDescription.RenderTarget[renderTarget].DestBlend = RenderImplementation::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].colorDestination)];
-                    blendDescription.RenderTarget[renderTarget].BlendOp = RenderImplementation::BlendOperationList[static_cast<uint8_t>(description.targetStates[renderTarget].colorOperation)];
-                    blendDescription.RenderTarget[renderTarget].SrcBlendAlpha = RenderImplementation::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].alphaSource)];
-                    blendDescription.RenderTarget[renderTarget].DestBlendAlpha = RenderImplementation::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].alphaDestination)];
-                    blendDescription.RenderTarget[renderTarget].BlendOpAlpha = RenderImplementation::BlendOperationList[static_cast<uint8_t>(description.targetStates[renderTarget].alphaOperation)];
+                    blendDescription.RenderTarget[renderTarget].SrcBlend = Render::Implementation::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].colorSource)];
+                    blendDescription.RenderTarget[renderTarget].DestBlend = Render::Implementation::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].colorDestination)];
+                    blendDescription.RenderTarget[renderTarget].BlendOp = Render::Implementation::BlendOperationList[static_cast<uint8_t>(description.targetStates[renderTarget].colorOperation)];
+                    blendDescription.RenderTarget[renderTarget].SrcBlendAlpha = Render::Implementation::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].alphaSource)];
+                    blendDescription.RenderTarget[renderTarget].DestBlendAlpha = Render::Implementation::BlendSourceList[static_cast<uint8_t>(description.targetStates[renderTarget].alphaDestination)];
+                    blendDescription.RenderTarget[renderTarget].BlendOpAlpha = Render::Implementation::BlendOperationList[static_cast<uint8_t>(description.targetStates[renderTarget].alphaOperation)];
                     blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask = 0;
                     if (description.targetStates[renderTarget].writeMask & Render::BlendState::Mask::R)
                     {
@@ -2128,19 +2128,19 @@ namespace Gek
                 assert(d3dDevice);
 
                 D3D11_SAMPLER_DESC samplerDescription;
-                samplerDescription.AddressU = RenderImplementation::AddressModeList[static_cast<uint8_t>(description.addressModeU)];
-                samplerDescription.AddressV = RenderImplementation::AddressModeList[static_cast<uint8_t>(description.addressModeV)];
-                samplerDescription.AddressW = RenderImplementation::AddressModeList[static_cast<uint8_t>(description.addressModeW)];
+                samplerDescription.AddressU = Render::Implementation::AddressModeList[static_cast<uint8_t>(description.addressModeU)];
+                samplerDescription.AddressV = Render::Implementation::AddressModeList[static_cast<uint8_t>(description.addressModeV)];
+                samplerDescription.AddressW = Render::Implementation::AddressModeList[static_cast<uint8_t>(description.addressModeW)];
                 samplerDescription.MipLODBias = description.mipLevelBias;
                 samplerDescription.MaxAnisotropy = description.maximumAnisotropy;
-                samplerDescription.ComparisonFunc = RenderImplementation::ComparisonFunctionList[static_cast<uint8_t>(description.comparisonFunction)];
+                samplerDescription.ComparisonFunc = Render::Implementation::ComparisonFunctionList[static_cast<uint8_t>(description.comparisonFunction)];
                 samplerDescription.BorderColor[0] = description.borderColor.r;
                 samplerDescription.BorderColor[1] = description.borderColor.g;
                 samplerDescription.BorderColor[2] = description.borderColor.b;
                 samplerDescription.BorderColor[3] = description.borderColor.a;
                 samplerDescription.MinLOD = description.minimumMipLevel;
                 samplerDescription.MaxLOD = description.maximumMipLevel;
-                samplerDescription.Filter = RenderImplementation::FilterList[static_cast<uint8_t>(description.filterMode)];
+                samplerDescription.Filter = Render::Implementation::FilterList[static_cast<uint8_t>(description.filterMode)];
 
                 CComPtr<ID3D11SamplerState> d3dStates;
                 HRESULT resultValue = d3dDevice->CreateSamplerState(&samplerDescription, &d3dStates);
@@ -2171,7 +2171,7 @@ namespace Gek
                         return nullptr;
                     }
 
-                    stride = RenderImplementation::FormatStrideList[static_cast<uint8_t>(description.format)];
+                    stride = Render::Implementation::FormatStrideList[static_cast<uint8_t>(description.format)];
                 }
                 else if (description.stride == 0)
                 {
@@ -2271,7 +2271,7 @@ namespace Gek
                 if (description.flags & Render::Buffer::Flags::Resource)
                 {
                     D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
-                    viewDescription.Format = RenderImplementation::BufferFormatList[static_cast<uint8_t>(description.format)];
+                    viewDescription.Format = Render::Implementation::BufferFormatList[static_cast<uint8_t>(description.format)];
                     viewDescription.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
                     viewDescription.Buffer.FirstElement = 0;
                     viewDescription.Buffer.NumElements = description.count;
@@ -2287,7 +2287,7 @@ namespace Gek
                 if (description.flags & Render::Buffer::Flags::UnorderedAccess)
                 {
                     D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                    viewDescription.Format = RenderImplementation::BufferFormatList[static_cast<uint8_t>(description.format)];
+                    viewDescription.Format = Render::Implementation::BufferFormatList[static_cast<uint8_t>(description.format)];
                     viewDescription.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
                     viewDescription.Buffer.FirstElement = 0;
                     viewDescription.Buffer.NumElements = description.count;
@@ -2308,7 +2308,7 @@ namespace Gek
             {
                 assert(d3dDeviceContext);
 
-                D3D11_MAP d3dMapping = RenderImplementation::MapList[static_cast<uint8_t>(mapping)];
+                D3D11_MAP d3dMapping = Render::Implementation::MapList[static_cast<uint8_t>(mapping)];
 
                 D3D11_MAPPED_SUBRESOURCE mappedSubResource;
                 mappedSubResource.pData = nullptr;
@@ -2371,7 +2371,7 @@ namespace Gek
 
             std::string_view const getSemanticMoniker(Render::InputElement::Semantic semantic)
             {
-                return RenderImplementation::SemanticNameList[static_cast<uint8_t>(semantic)];
+                return Render::Implementation::SemanticNameList[static_cast<uint8_t>(semantic)];
             }
 
             Render::ObjectPtr createInputLayout(const std::vector<Render::InputElement> &elementList, Render::Program::Information const &information)
@@ -2387,9 +2387,9 @@ namespace Gek
                 for (auto const &element : elementList)
                 {
                     D3D11_INPUT_ELEMENT_DESC elementDesc;
-                    elementDesc.Format = RenderImplementation::BufferFormatList[static_cast<uint8_t>(element.format)];
+                    elementDesc.Format = Render::Implementation::BufferFormatList[static_cast<uint8_t>(element.format)];
                     elementDesc.AlignedByteOffset = (element.alignedByteOffset == Render::InputElement::AppendAligned ? D3D11_APPEND_ALIGNED_ELEMENT : element.alignedByteOffset);
-                    elementDesc.SemanticName = RenderImplementation::SemanticNameList[static_cast<uint8_t>(element.semantic)].data();
+                    elementDesc.SemanticName = Render::Implementation::SemanticNameList[static_cast<uint8_t>(element.semantic)].data();
                     elementDesc.SemanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)]++;
                     elementDesc.InputSlot = element.sourceIndex;
                     switch (element.source)
@@ -2574,6 +2574,8 @@ namespace Gek
                     return nullptr;
                 }
 
+                Render::Texture::Description finalDescription = description;
+
                 uint32_t bindFlags = 0;
                 if (description.flags & Render::Texture::Flags::RenderTarget)
                 {
@@ -2609,7 +2611,7 @@ namespace Gek
 
                 D3D11_SUBRESOURCE_DATA resourceData;
                 resourceData.pSysMem = data;
-                resourceData.SysMemPitch = (RenderImplementation::FormatStrideList[static_cast<uint8_t>(description.format)] * description.width);
+                resourceData.SysMemPitch = (Render::Implementation::FormatStrideList[static_cast<uint8_t>(description.format)] * description.width);
                 resourceData.SysMemSlicePitch = (description.depth == 1 ? 0 : (resourceData.SysMemPitch * description.height));
 
                 CComQIPtr<ID3D11Resource> d3dResource;
@@ -2619,7 +2621,7 @@ namespace Gek
                     textureDescription.Width = description.width;
                     textureDescription.Height = description.height;
                     textureDescription.MipLevels = description.mipMapCount;
-                    textureDescription.Format = RenderImplementation::TextureFormatList[static_cast<uint8_t>(description.format)];
+                    textureDescription.Format = Render::Implementation::TextureFormatList[static_cast<uint8_t>(description.format)];
                     textureDescription.ArraySize = 1;
                     textureDescription.SampleDesc.Count = description.sampleCount;
                     textureDescription.SampleDesc.Quality = description.sampleQuality;
@@ -2643,6 +2645,8 @@ namespace Gek
                         return nullptr;
                     }
 
+                    texture2D->GetDesc(&textureDescription);
+                    finalDescription.mipMapCount = textureDescription.MipLevels;
                     d3dResource = texture2D;
                 }
                 else
@@ -2652,7 +2656,7 @@ namespace Gek
                     textureDescription.Height = description.height;
                     textureDescription.Depth = description.depth;
                     textureDescription.MipLevels = description.mipMapCount;
-                    textureDescription.Format = RenderImplementation::TextureFormatList[static_cast<uint8_t>(description.format)];
+                    textureDescription.Format = Render::Implementation::TextureFormatList[static_cast<uint8_t>(description.format)];
                     textureDescription.BindFlags = bindFlags;
                     textureDescription.CPUAccessFlags = 0;
                     textureDescription.MiscFlags = (description.mipMapCount == 1 ? 0 : D3D11_RESOURCE_MISC_GENERATE_MIPS);
@@ -2673,6 +2677,8 @@ namespace Gek
                         return nullptr;
                     }
 
+                    texture3D->GetDesc(&textureDescription);
+                    finalDescription.mipMapCount = textureDescription.MipLevels;
                     d3dResource = texture3D;
                 }
 
@@ -2686,7 +2692,7 @@ namespace Gek
                 if (description.flags & Render::Texture::Flags::Resource)
                 {
                     D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
-                    viewDescription.Format = RenderImplementation::ViewFormatList[static_cast<uint8_t>(description.format)];
+                    viewDescription.Format = Render::Implementation::ViewFormatList[static_cast<uint8_t>(description.format)];
                     if (description.depth == 1)
                     {
                         viewDescription.ViewDimension = (description.sampleCount > 1 ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D);
@@ -2712,7 +2718,7 @@ namespace Gek
                 if (description.flags & Render::Texture::Flags::UnorderedAccess)
                 {
                     D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                    viewDescription.Format = RenderImplementation::ViewFormatList[static_cast<uint8_t>(description.format)];
+                    viewDescription.Format = Render::Implementation::ViewFormatList[static_cast<uint8_t>(description.format)];
                     if (description.depth == 1)
                     {
                         viewDescription.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
@@ -2737,7 +2743,7 @@ namespace Gek
                 if (description.flags & Render::Texture::Flags::RenderTarget)
                 {
                     D3D11_RENDER_TARGET_VIEW_DESC renderViewDescription;
-                    renderViewDescription.Format = RenderImplementation::ViewFormatList[static_cast<uint8_t>(description.format)];
+                    renderViewDescription.Format = Render::Implementation::ViewFormatList[static_cast<uint8_t>(description.format)];
                     if (description.depth == 1)
                     {
                         renderViewDescription.ViewDimension = (description.sampleCount > 1 ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D);
@@ -2764,7 +2770,7 @@ namespace Gek
                 else if (description.flags & Render::Texture::Flags::DepthTarget)
                 {
                     D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilDescription;
-                    depthStencilDescription.Format = RenderImplementation::DepthFormatList[static_cast<uint8_t>(description.format)];
+                    depthStencilDescription.Format = Render::Implementation::DepthFormatList[static_cast<uint8_t>(description.format)];
                     depthStencilDescription.ViewDimension = (description.sampleCount > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D);
                     depthStencilDescription.Flags = 0;
                     depthStencilDescription.Texture2D.MipSlice = 0;
@@ -2859,7 +2865,7 @@ namespace Gek
                 description.width = image.GetMetadata().width;
                 description.height = image.GetMetadata().height;
                 description.depth = image.GetMetadata().depth;
-                description.format = RenderImplementation::GetFormat(image.GetMetadata().format);
+                description.format = Render::Implementation::GetFormat(image.GetMetadata().format);
                 description.mipMapCount = image.GetMetadata().mipLevels;
                 return std::make_unique<ViewTexture>(d3dResource, d3dShaderResourceView, description);
             }
@@ -2901,7 +2907,7 @@ namespace Gek
                 description.width = image.GetMetadata().width;
                 description.height = image.GetMetadata().height;
                 description.depth = image.GetMetadata().depth;
-                description.format = RenderImplementation::GetFormat(image.GetMetadata().format);
+                description.format = Render::Implementation::GetFormat(image.GetMetadata().format);
                 description.mipMapCount = image.GetMetadata().mipLevels;
                 return std::make_unique<ViewTexture>(d3dResource, d3dShaderResourceView, description);
             }
@@ -2952,7 +2958,7 @@ namespace Gek
                 description.height = metadata.height;
                 description.depth = metadata.depth;
                 description.mipMapCount = metadata.mipLevels;
-                description.format = RenderImplementation::GetFormat(metadata.format);
+                description.format = Render::Implementation::GetFormat(metadata.format);
                 return description;
             }
 
@@ -2974,5 +2980,5 @@ namespace Gek
         };
 
         GEK_REGISTER_CONTEXT_USER(Device);
-    }; // RenderImplementation
+    }; // Render::Implementation
 }; // namespace Gek

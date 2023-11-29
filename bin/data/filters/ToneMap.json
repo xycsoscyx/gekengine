@@ -17,7 +17,7 @@
         }
     },
     "options": {
-        "AdaptionRate": "1.25",
+        "AdaptionRate": 1.25,
         "ToneMapper": {
             "selection": "FilmicALU",
             "options": [

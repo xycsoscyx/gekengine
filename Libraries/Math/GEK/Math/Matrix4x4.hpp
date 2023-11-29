@@ -378,6 +378,11 @@ namespace Gek
                 r.x = Float4(r.x.xyz().getNormal(), 0.0f);
                 r.y = Float4(r.y.xyz().getNormal(), 0.0f);
                 r.z = Float4(r.z.xyz().getNormal(), 0.0f);
+                transpose();
+                r.x = Float4(r.x.xyz().getNormal(), 0.0f);
+                r.y = Float4(r.y.xyz().getNormal(), 0.0f);
+                r.z = Float4(r.z.xyz().getNormal(), 0.0f);
+                transpose();
                 return (*this);
             }
 

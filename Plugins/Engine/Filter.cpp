@@ -168,19 +168,25 @@ namespace Gek
                         description.name = textureName;
                         description.format = Render::GetFormat(JSON::Value(textureNode, "format", String::Empty));
                         auto &sizeNode = JSON::Find(textureNode, "size");
-                        if (sizeNode.is_array())
+                        if (sizeNode.is_number())
                         {
-                            if (sizeNode.size() == 3)
-                            {
-                                description.depth = JSON::Evaluate(sizeNode[2], shuntingYard, 1);
-                                description.height = JSON::Evaluate(sizeNode[1], shuntingYard, 1);
-                                description.width = JSON::Evaluate(sizeNode[0], shuntingYard, 1);
-                            }
+                            description.width = JSON::Evaluate(sizeNode, shuntingYard, 1);
                         }
-                        else
+                        else if (sizeNode.is_array())
                         {
-                            description.width = description.height = JSON::Evaluate(sizeNode, shuntingYard, 1);
-                        };
+                            switch (sizeNode.size())
+                            {
+                            case 3:
+                                description.depth = JSON::Evaluate(sizeNode[2], shuntingYard, 1);
+
+                            case 2:
+                                description.height = JSON::Evaluate(sizeNode[1], shuntingYard, 1);
+
+                            case 1:
+                                description.width = JSON::Evaluate(sizeNode[0], shuntingYard, 1);
+                                break;
+                            };
+                        }
 
                         description.sampleCount = JSON::Value(textureNode, "sampleCount", 1);
                         description.flags = getTextureFlags(JSON::Value(textureNode, "flags", String::Empty));
@@ -351,7 +357,8 @@ namespace Gek
                                         static constexpr std::string_view optionTemplate =
 R"(namespace {0} {{
 {1}
-}}; // namespace {0})";
+}}; // namespace {0}
+)";
 
                                         optionsData.push_back(std::vformat(optionTemplate, std::make_format_args(optionName, optionsString)));
                                     }
@@ -412,7 +419,8 @@ R"(namespace {0} {{
                         static constexpr std::string_view optionTemplate =
 R"(namespace Options {{
 {}
-}}; // namespace Options)";
+}}; // namespace Options
+)";
 
                         engineData = std::vformat(optionTemplate, std::make_format_args(optionsString));
                     }
@@ -455,7 +463,8 @@ R"(struct InputPixel
 {
     float4 screen : SV_POSITION;
     float2 texCoord : TEXCOORD0;
-};)";
+};
+)";
 
                         std::vector<std::string> outputData;
                         std::unordered_map<std::string, std::string> renderTargetsMap = getAliasedMap(passNode, "targets");
@@ -499,7 +508,8 @@ R"(struct InputPixel
 R"(struct OutputPixel
 {{
 {}
-}};)";
+}};
+)";
 
                             auto outputString = String::Join(outputData, "\r\n");
                             engineData += std::vformat(outputTemplate, std::make_format_args(outputString));
@@ -615,7 +625,8 @@ R"(struct OutputPixel
                         static constexpr std::string_view resourceTemplate =
 R"(namespace Resources {{
 {}
-}}; // namespace Resources)";
+}}; // namespace Resources
+)";
 
                         auto resourceString = String::Join(resourceData, "\r\n");
                         engineData += std::vformat(resourceTemplate, std::make_format_args(resourceString));
@@ -650,7 +661,8 @@ R"(namespace Resources {{
                         static constexpr std::string_view unorderedAccessTemplate =
 R"(namespace UnorderedAccess {{
 {}
-}}; // namespace UnorderedAccess)";
+}}; // namespace UnorderedAccess
+)";
 
                         auto unorderedAccessString = String::Join(unorderedAccessData, "\r\n");
                         engineData += std::vformat(unorderedAccessTemplate, std::make_format_args(unorderedAccessString));

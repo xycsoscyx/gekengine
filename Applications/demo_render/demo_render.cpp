@@ -188,7 +188,8 @@ Output mainPixelProgram(in Pixel input)
     Output output;
     output.screen = (input.color * SampleTexture(GuiTexture, PointSampler, input.texCoord));
     return output;
-})";
+}
+)";
 
 			Render::PipelineState::Description pipelineStateDescription;
 			pipelineStateDescription.name = "GUI";

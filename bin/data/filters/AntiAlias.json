@@ -6,6 +6,11 @@
         "depthBuffer": {
         }
     },
+    "options": {
+        "ReduceMinimum": 0.0078125,
+        "ReduceMultiplier": 0.125,
+        "SpanMaximum": 8.0
+    },
     "passes": [
         {
             "program": "AntiAlias",

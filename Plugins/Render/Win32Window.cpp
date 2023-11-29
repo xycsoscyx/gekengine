@@ -15,7 +15,7 @@ namespace Gek
 {
     HINSTANCE GetDLLInstance(void);
 
-    namespace WindowImplementation
+    namespace Window::Implementation
     {
         static constexpr uint8_t KeyToNative[256] =
         {

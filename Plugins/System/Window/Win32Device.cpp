@@ -15,7 +15,7 @@ namespace Gek
 {
     HINSTANCE GetDLLInstance(void);
 
-    namespace WindowImplementation
+    namespace Window::Implementation
     {
         Window::Key ConvertKey(uint32_t key, uint32_t state)
         {

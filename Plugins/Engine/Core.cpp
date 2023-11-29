@@ -728,6 +728,34 @@ namespace Gek
 
                                 ImGui::PopItemWidth();
                             }
+                            else if (settingNode.is_number_float())
+                            {
+                                ImGui::TextUnformatted(settingName.data());
+                                ImGui::SameLine();
+                                ImGui::PushItemWidth(-1.0f);
+                                auto value = settingNode.get<float>();
+                                if (UI::Input(label, &value))
+                                {
+                                    settingNode = value;
+                                    changedVisualOptions = true;
+                                }
+
+                                ImGui::PopItemWidth();
+                            }
+                            else if (settingNode.is_number_unsigned())
+                            {
+                                ImGui::TextUnformatted(settingName.data());
+                                ImGui::SameLine();
+                                ImGui::PushItemWidth(-1.0f);
+                                auto value = settingNode.get<uint32_t>();
+                                if (UI::Input(label, &value))
+                                {
+                                    settingNode = value;
+                                    changedVisualOptions = true;
+                                }
+
+                                ImGui::PopItemWidth();
+                            }
                             else if (settingNode.is_number())
                             {
                                 ImGui::TextUnformatted(settingName.data());
