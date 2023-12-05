@@ -1468,7 +1468,7 @@ float4 main(PixelInput input) : SV_Target
 
 					videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
 
-					auto filters = { "tonemap" };
+					auto filters = { "tonemap", "antialias" };
 					for (auto const &filterName : filters)
 					{
 						auto const filter = resources->getFilter(filterName);

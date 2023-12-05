@@ -8,40 +8,29 @@
 //texture reads can be a bottleneck
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    uint width, height, mipMapCount;
-    Resources::inputBuffer.GetDimensions(0, width, height, mipMapCount);
-    float2 pixelSize = (1.0f / float2(width, height));
+    const float luminanceMD = GetLuminance(Resources::inputBuffer[inputPixel.screen.xy].xyz);
+    const float luminanceNW = GetLuminance(Resources::inputBuffer[inputPixel.screen.xy + float2(-1, -1)].xyz);
+    const float luminanceNE = GetLuminance(Resources::inputBuffer[inputPixel.screen.xy + float2(+1, -1)].xyz);
+    const float luminanceSW = GetLuminance(Resources::inputBuffer[inputPixel.screen.xy + float2(-1, +1)].xyz);
+    const float luminanceSE = GetLuminance(Resources::inputBuffer[inputPixel.screen.xy + float2(+1, +1)].xyz);
 
-    const float3 colorMD = Resources::inputBuffer[inputPixel.screen.xy].xyz;
-    const float3 colorNW = Resources::inputBuffer[inputPixel.screen.xy + float2(-1, +1)].xyz;
-    const float3 colorNE = Resources::inputBuffer[inputPixel.screen.xy + float2(+1, +1)].xyz;
-    const float3 colorSW = Resources::inputBuffer[inputPixel.screen.xy + float2(-1, -1)].xyz;
-    const float3 colorSE = Resources::inputBuffer[inputPixel.screen.xy + float2(+1, -1)].xyz;
-
-    const float luminanceMD = GetLuminance(colorMD);
-    const float luminanceNW = GetLuminance(colorNW);
-    const float luminanceNE = GetLuminance(colorNE);
-    const float luminanceSW = GetLuminance(colorSW);
-    const float luminanceSE = GetLuminance(colorSE);
     const float luminanceMinimum = min(luminanceMD, min(min(luminanceNW, luminanceNE), min(luminanceSW, luminanceSE)));
     const float luminanceMaximum = max(luminanceMD, max(max(luminanceNW, luminanceNE), max(luminanceSW, luminanceSE)));
 
     float2 direction;
     direction.x = -((luminanceNW + luminanceNE) - (luminanceSW + luminanceSE));
     direction.y =  ((luminanceNW + luminanceSW) - (luminanceNE + luminanceSE));
-    const float dirReduce = max((luminanceNW + luminanceNE + luminanceSW + luminanceSE) * (0.25 * Options::ReduceMultiplier),
-                                Options::ReduceMinimum);
+    const float directionReduces = max((luminanceNW + luminanceNE + luminanceSW + luminanceSE) * (0.25 * Options::ReduceMultiplier), Options::ReduceMinimum);
 
-    const float reciprocalDirection = 1.0 / (min(abs(direction.x), abs(direction.y)) + dirReduce);
-    direction = min(Options::SpanMaximum, max(-Options::SpanMaximum, direction * reciprocalDirection)) * pixelSize;
+    const float reciprocalDirection = 1.0 / (min(abs(direction.x), abs(direction.y)) + directionReduces);
+    direction = min(Options::SpanMaximum.xx, max(-Options::SpanMaximum.xx, direction * reciprocalDirection));
 
-    float3 colorA = Resources::inputBuffer[inputPixel.screen.xy + direction * (1.0 / 3.0 - 0.5)].xyz
-                  + Resources::inputBuffer[inputPixel.screen.xy + direction * (2.0 / 3.0 - 0.5)].xyz;
-    colorA *= 0.5;
+    float3 colorA = 0.5 * (Resources::inputBuffer[inputPixel.screen.xy + direction * (1.0 / 3.0 - 0.5)].xyz
+                        +  Resources::inputBuffer[inputPixel.screen.xy + direction * (2.0 / 3.0 - 0.5)].xyz);
 
-    float3 colorB = Resources::inputBuffer[inputPixel.screen.xy + direction * -0.5].xyz
-                  + Resources::inputBuffer[inputPixel.screen.xy + direction *  0.5].xyz;
-    colorB = ((colorA * 0.5) + (0.25 * colorB));
+    float3 colorB = colorA * (1.0 / 2.0) + (1.0 / 4.0)
+                  * (Resources::inputBuffer[inputPixel.screen.xy + direction * -0.5].xyz
+                  +  Resources::inputBuffer[inputPixel.screen.xy + direction *  0.5].xyz);
 
     const float luminanceB = GetLuminance(colorB);
     if ((luminanceB < luminanceMinimum) || (luminanceB > luminanceMaximum))

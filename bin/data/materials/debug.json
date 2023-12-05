@@ -9,6 +9,6 @@
             "roughness": { "file": "debug_roughness" },
             "metallic": { "file": "debug_metallic" }
         },
-        "default": "solid"
+        "default": "glass"
     }
 }

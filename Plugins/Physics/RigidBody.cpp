@@ -40,17 +40,17 @@ namespace Gek
 
                 void OnObjectPick() const
                 {
-                    rigidBody->OnObjectPick();
+                    rigidBody->OnObjectPick(this);
                 }
 
                 void OnTransform(ndInt32 threadIndex, const ndMatrix& matrix)
                 {
-                    rigidBody->OnTransform(threadIndex, matrix);
+                    rigidBody->OnTransform(this, threadIndex, matrix);
                 }
 
                 void OnApplyExternalForce(ndInt32 threadIndex, ndFloat32 timeStep)
                 {
-                    rigidBody->OnApplyExternalForce(threadIndex, timeStep);
+                    rigidBody->OnApplyExternalForce(this, threadIndex, timeStep);
                 }
 			};
 
@@ -69,7 +69,7 @@ namespace Gek
                 auto& transformComponent = entity->getComponent<Components::Transform>();
                 auto matrix(transformComponent.getMatrix());
                 SetMatrix(matrix.data);
-                SetAutoSleep(false);
+                //SetAutoSleep(false);
             }
 
             ~RigidBody(void)
@@ -83,11 +83,11 @@ namespace Gek
             }
 
             // NotifyCallback
-            void OnObjectPick() const
+            void OnObjectPick(ndBodyNotify const *bodyNotify) const
             {
             }
 
-            void OnTransform(ndInt32 threadIndex, const ndMatrix& matrixData)
+            void OnTransform(ndBodyNotify* bodyNotify, ndInt32 threadIndex, const ndMatrix& matrixData)
             {
                 auto matrix = reinterpret_cast<const Math::Float4x4*>(&matrixData);
                 auto& transformComponent = entity->getComponent<Components::Transform>();
@@ -95,14 +95,19 @@ namespace Gek
                 transformComponent.position = matrix->translation();
             }
 
-            void OnApplyExternalForce(ndInt32 threadIndex, ndFloat32 timeStep)
+            void OnApplyExternalForce(ndBodyNotify *bodyNotify, ndInt32 threadIndex, ndFloat32 timeStep)
             {
                 auto const& physicalComponent = entity->getComponent<Components::Physical>();
                 auto const& transformComponent = entity->getComponent<Components::Transform>();
 
-                Math::Float3 gravity(world->getGravity(&transformComponent.position));
-                GetAsBodyKinematic()->SetForce((gravity * physicalComponent.mass).data);
-                GetAsBodyKinematic()->SetTorque(Math::Float3::Zero.data);
+                auto kinematicBody = GetAsBodyKinematic();
+                if (kinematicBody->GetInvMass() > 0.0f)
+                {
+                    Math::Float3 gravity(world->getGravity(&transformComponent.position));
+                    Math::Float3 force(gravity * physicalComponent.mass);
+                    kinematicBody->SetForce(force.data);
+                    kinematicBody->SetTorque(Math::Float3::Zero.data);
+                }
             }
         };
 
