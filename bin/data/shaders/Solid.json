@@ -70,10 +70,6 @@
             "format": "R8G8_UNORM",
             "flags": "target"
         },
-        "finalBuffer": {
-            "format": "R11G11B10_FLOAT",
-            "flags": "target"
-        },
         "ambientBuffer": {
             "format": "R8_UNORM",
             "flags": "target"
@@ -83,7 +79,6 @@
             "flags": "target"
         }
     },
-    "output": "finalBuffer",
     "options": {
         "#import":  "Lighting.json",
         "AmbientOcclusion": {

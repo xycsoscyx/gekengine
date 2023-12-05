@@ -167,7 +167,7 @@ namespace Gek
                     description.height = cameraSize.y;
                     description.flags = Render::Texture::Flags::RenderTarget | Render::Texture::Flags::Resource;
                     description.format = Render::Format::R11G11B10_FLOAT;
-                    cameraTarget = core->getResources()->createTexture(description, Plugin::Resources::Flags::LoadImmediately);
+                    cameraTarget = core->getResources()->createTexture(description, Plugin::Resources::Flags::Immediate);
 
                     auto cameraBuffer = resources->getResource(cameraTarget);
                     auto cameraTexture = (cameraBuffer ? dynamic_cast<Render::Texture *>(cameraBuffer) : nullptr);

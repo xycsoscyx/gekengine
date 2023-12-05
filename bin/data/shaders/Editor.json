@@ -61,13 +61,8 @@
         "depthBuffer": {
             "format": "D32_FLOAT",
             "flags": "depth"
-        },
-        "finalBuffer": {
-            "format": "R11G11B10_FLOAT",
-            "flags": "target"
         }
     },
-    "output": "finalBuffer",
     "options": {
         "fillMode": {
             "selection": "Solid",

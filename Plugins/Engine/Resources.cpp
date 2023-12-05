@@ -299,13 +299,13 @@ namespace Gek
                     if (resourceSearch != std::end(ResourceCache<HANDLE, TYPE>::resourceHandleMap))
                     {
                         HANDLE handle = resourceSearch->second;
-                        if (!(flags & Plugin::Resources::Flags::LoadFromCache))
+                        if (!(flags & Plugin::Resources::Flags::Cached))
                         {
                             auto loadParametersSearch = loadParameters.find(handle);
                             if (loadParametersSearch == std::end(loadParameters) || loadParametersSearch->second != parameters)
                             {
                                 loadParameters[handle] = parameters;
-                                if (flags & Plugin::Resources::Flags::LoadImmediately)
+                                if (flags & Plugin::Resources::Flags::Immediate)
                                 {
                                     if (ResourceCache<HANDLE, TYPE>::setResource(handle, load(handle), fallback))
                                     {
@@ -329,7 +329,7 @@ namespace Gek
                     HANDLE handle = ResourceCache<HANDLE, TYPE>::getNextHandle();
                     ResourceCache<HANDLE, TYPE>::resourceHandleMap[hash] = handle;
                     loadParameters[handle] = parameters;
-                    if (flags & Plugin::Resources::Flags::LoadImmediately)
+                    if (flags & Plugin::Resources::Flags::Immediate)
                     {
                         if (ResourceCache<HANDLE, TYPE>::setResource(handle, load(handle)))
                         {
@@ -1155,7 +1155,7 @@ namespace Gek
             {
                 if (description.format == Render::Format::Unknown)
                 {
-                    flags |= Resources::Flags::LoadFromCache;
+                    flags |= Resources::Flags::Cached;
                 }
 
                 auto resource = dynamicCache.getHandle(GetHash(description.name), description.getHash(), [this, description](ResourceHandle)->Render::TexturePtr
@@ -1177,7 +1177,7 @@ namespace Gek
 
                 if (description.format == Render::Format::Unknown)
                 {
-                    flags |= Resources::Flags::LoadFromCache;
+                    flags |= Resources::Flags::Cached;
                 }
 
                 auto resource = dynamicCache.getHandle(GetHash(description.name), description.getHash(), [this, description](ResourceHandle)->Render::BufferPtr
@@ -1200,7 +1200,7 @@ namespace Gek
 
                 if (description.format == Render::Format::Unknown)
                 {
-                    flags |= Resources::Flags::LoadFromCache;
+                    flags |= Resources::Flags::Cached;
                 }
 
                 auto parameters = reinterpret_cast<std::size_t>(staticData.data());

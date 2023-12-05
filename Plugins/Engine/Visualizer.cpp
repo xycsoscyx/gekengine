@@ -21,6 +21,7 @@
 #include "GEK/Engine/Filter.hpp"
 #include "GEK/Engine/Material.hpp"
 #include "GEK/Engine/Resources.hpp"
+#include "Passes.hpp"
 #include <tbb/concurrent_unordered_set.h>
 #include <tbb/concurrent_vector.h>
 #include <tbb/concurrent_queue.h>
@@ -1214,7 +1215,6 @@ float4 main(PixelInput input) : SV_Target
 				assert(renderDevice);
 				assert(population);
 
-				std::string finalOutput;
 				EngineConstantData engineConstantData;
 				engineConstantData.frameTime = frameTime;
 				engineConstantData.worldTime = 0.0f;
@@ -1395,7 +1395,6 @@ float4 main(PixelInput input) : SV_Target
 							for (auto const &shaderDrawCall : shaderDrawCallList.second)
 							{
 								auto &shader = shaderDrawCall.shader;
-								finalOutput = shader->getOutput();
 								for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentCamera.viewFrustum); pass; pass = pass->next())
 								{
 									auto passMode = pass->prepare();
@@ -1447,15 +1446,31 @@ float4 main(PixelInput input) : SV_Target
 						videoContext->computePipeline()->clearConstantBufferList(2, 0);
 						if (currentCamera.cameraTarget)
 						{
-							auto finalHandle = resources->getResourceHandle(finalOutput);
+							auto finalHandle = resources->getResourceHandle("finalBuffer");
 							renderOverlay(renderDevice->getDefaultContext(), finalHandle, &currentCamera.cameraTarget);
 						}
 					}
 				};
 
-				auto finalHandle = resources->getResourceHandle(finalOutput);
+				auto finalHandle = resources->getResourceHandle("finalBuffer");
 				if (finalHandle)
 				{
+					auto alternateHandle = resources->getResourceHandle("alternateBuffer");
+					if (!alternateHandle)
+					{
+						auto finalDescription = resources->getTextureDescription(finalHandle);
+						Render::Texture::Description description(*finalDescription);
+						description.name = "alternateBuffer";
+						description.format = Render::Format::R11G11B10_FLOAT;
+						description.sampleCount = 1;
+						description.flags = getTextureFlags("target");
+						description.mipMapCount = 1;
+						alternateHandle = resources->createTexture(description, Plugin::Resources::Flags::Cached);
+					}
+
+					uint32_t currentBuffer = 0;
+					ResourceHandle buffers[2] = { finalHandle, alternateHandle };
+
 					videoContext->clearState();
 					videoContext->geometryPipeline()->setConstantBufferList(filterBufferList, 0);
 					videoContext->vertexPipeline()->setConstantBufferList(filterBufferList, 0);
@@ -1468,18 +1483,41 @@ float4 main(PixelInput input) : SV_Target
 
 					videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
 
-					auto filters = { "tonemap", "antialias" };
-					for (auto const &filterName : filters)
+					auto filterNames = { "antialias", "tonemap" };
+					std::vector<std::tuple<Engine::Filter* const, ResourceHandle, ResourceHandle>> filters;
+					for (auto const& filterName : filterNames)
 					{
-						auto const filter = resources->getFilter(filterName);
-						if (filter)
+						const auto& filterOptions = core->getOption("filters", filterName);
+						if (JSON::Value(filterOptions, "enable", true))
 						{
-							for (auto pass = filter->begin(videoContext, finalHandle, ResourceHandle()); pass; pass = pass->next())
+							auto const filter = resources->getFilter(filterName);
+							if (filter)
+							{
+								auto nextBuffer = (currentBuffer + 1) % 2;
+								filters.push_back(std::make_tuple(filter, buffers[currentBuffer], buffers[nextBuffer]));
+								currentBuffer = nextBuffer;
+							}
+						}
+					}
+
+					if (filters.empty())
+					{
+						renderOverlay(videoContext, finalHandle, nullptr);
+					}
+					else
+					{
+						std::get<2>(*std::prev(std::end(filters))) = ResourceHandle();
+						for (auto const& filterGroup : filters)
+						{
+							auto filter = std::get<0>(filterGroup);
+							auto currentBuffer = std::get<1>(filterGroup);
+							auto targetBuffer = std::get<2>(filterGroup);
+							for (auto pass = filter->begin(videoContext, currentBuffer, targetBuffer); pass; pass = pass->next())
 							{
 								auto passMode = pass->prepare();
 								if (passMode != Engine::Filter::Pass::Mode::None)
 								{
-									switch(passMode)
+									switch (passMode)
 									{
 									case Engine::Filter::Pass::Mode::Deferred:
 										resources->drawPrimitive(videoContext, 3, 0);

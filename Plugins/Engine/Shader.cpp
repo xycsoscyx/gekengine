@@ -72,12 +72,11 @@ namespace Gek
 
         private:
             Engine::Core *core = nullptr;
-            Render::Device *videoDevice = nullptr;
+            Render::Device *renderDevice = nullptr;
             Engine::Resources *resources = nullptr;
             Plugin::Population *population = nullptr;
 
             std::string shaderName;
-            std::string outputResource;
             uint32_t drawOrder = 0;
 
             std::map<std::string, ResourceHandle> textureResourceMap;
@@ -93,12 +92,12 @@ namespace Gek
             Shader(Context *context, Engine::Core *core, std::string shaderName)
                 : ContextRegistration(context)
                 , core(core)
-                , videoDevice(core->getRenderDevice())
+                , renderDevice(core->getRenderDevice())
                 , resources(core->getFullResources())
                 , population(core->getPopulation())
                 , shaderName(shaderName)
             {
-                assert(videoDevice);
+                assert(renderDevice);
                 assert(resources);
                 assert(population);
 
@@ -112,11 +111,10 @@ namespace Gek
                 passList.clear();
                 materialMap.clear();
 
-                auto backBuffer = videoDevice->getBackBuffer();
+                auto backBuffer = renderDevice->getBackBuffer();
                 auto &backBufferDescription = backBuffer->getDescription();
 
                 JSON::Object rootNode = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("shaders", shaderName).withExtension(".json")));
-                outputResource = JSON::Value(rootNode, "output", String::Empty);
 
                 ShuntingYard shuntingYard(population->getShuntingYard());
                 const auto &coreOptionsNode = core->getOption("shaders", shaderName);
@@ -202,7 +200,7 @@ namespace Gek
                         auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)];
                         semanticIndexList[static_cast<uint8_t>(semantic)] += count;
 
-                        inputData.push_back(std::format("    {} {} : {}{};", getFormatSemantic(format, count), name, videoDevice->getSemanticMoniker(semantic), semanticIndex));
+                        inputData.push_back(std::format("    {} {} : {}{};", getFormatSemantic(format, count), name, renderDevice->getSemanticMoniker(semantic), semanticIndex));
                     }
                 }
 
@@ -260,6 +258,27 @@ R"(namespace Lights
 
                 std::unordered_map<std::string, ResourceHandle> resourceMap;
                 std::unordered_map<std::string, std::string> resourceSemanticsMap;
+
+                auto finalBuffer = resources->getResourceHandle("finalBuffer");
+                if (!finalBuffer)
+                {
+                    Render::Texture::Description description(backBufferDescription);
+                    description.name = "finalBuffer";
+                    description.format = Render::Format::R11G11B10_FLOAT;
+                    description.sampleCount = 1;
+                    description.flags = getTextureFlags("target");
+                    description.mipMapCount = 1;
+                    finalBuffer = resources->createTexture(description, Plugin::Resources::Flags::Cached);
+                }
+
+                auto description = resources->getTextureDescription(finalBuffer);
+                if (description)
+                {
+                    resourceMap["finalBuffer"] = finalBuffer;
+                    textureResourceMap["finalBuffer"] = finalBuffer;
+                    resourceSemanticsMap["finalBuffer"] = std::format("Texture2D<{}>", getFormatSemantic(description->format));
+                }
+
                 for (auto& [key, value] : JSON::Find(rootNode, "textures").items())
                 {
                     std::string textureName(key);
@@ -306,7 +325,7 @@ R"(namespace Lights
                         description.sampleCount = JSON::Value(textureNode, "sampleCount", 1);
                         description.flags = getTextureFlags(JSON::Value(textureNode, "flags", String::Empty));
                         description.mipMapCount = JSON::Evaluate(textureNode["mipmaps"], shuntingYard, 1);
-                        resource = resources->createTexture(description, true);
+                        resource = resources->createTexture(description, Plugin::Resources::Flags::Cached);
                     }
 
                     auto description = resources->getTextureDescription(resource);
@@ -352,7 +371,7 @@ R"(namespace Lights
                         description.stride = JSON::Value(bufferNode, "stride", 0);
                     }
 
-                    auto resource = resources->createBuffer(description, true);
+                    auto resource = resources->createBuffer(description, Plugin::Resources::Flags::Cached);
                     if (resource)
                     {
                         resourceMap[bufferName] = resource;
@@ -1153,11 +1172,6 @@ R"(namespace UnorderedAccess
                     return (*current).name;
                 }
             };
-
-            std::string const &getOutput(void) const
-            {
-                return outputResource;
-            }
 
             ResourceHandle getTextureResource(const std::string& name)
             {

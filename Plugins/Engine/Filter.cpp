@@ -107,6 +107,8 @@ namespace Gek
                 }
 
                 auto &rootOptionsNode = JSON::Find(rootNode, "options");
+                rootOptionsNode["enable"] = true;
+
                 for (auto & [key, value] : coreOptionsNode.items())
                 {
                     rootOptionsNode[key] = value;
@@ -191,7 +193,7 @@ namespace Gek
                         description.sampleCount = JSON::Value(textureNode, "sampleCount", 1);
                         description.flags = getTextureFlags(JSON::Value(textureNode, "flags", String::Empty));
                         description.mipMapCount = JSON::Evaluate(textureNode, "mipmaps", shuntingYard, 1);
-                        resource = resources->createTexture(description, true);
+                        resource = resources->createTexture(description, Plugin::Resources::Flags::Cached);
                     }
 
                     auto description = resources->getTextureDescription(resource);
@@ -236,7 +238,7 @@ namespace Gek
                         description.stride = JSON::Evaluate(bufferNode, "stride", shuntingYard, 0);
                     }
 
-                    auto resource = resources->createBuffer(description, true);
+                    auto resource = resources->createBuffer(description, Plugin::Resources::Flags::Cached);
                     if (resource)
                     {
                         resourceMap[bufferName] = resource;

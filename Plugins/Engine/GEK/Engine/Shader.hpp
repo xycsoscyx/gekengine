@@ -78,7 +78,6 @@ namespace Gek
 
             virtual uint32_t getDrawOrder(void) const = 0;
             virtual bool isLightingRequired(void) const = 0;
-            virtual std::string const &getOutput(void) const = 0;
 
             virtual ResourceHandle getTextureResource(const std::string& name) = 0;
 

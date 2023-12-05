@@ -23,8 +23,8 @@ namespace Gek
             {
                 enum
                 {
-                    LoadImmediately = 1 << 0,
-                    LoadFromCache = 1 << 1,
+                    Immediate = 1 << 0,
+                    Cached = 1 << 1,
                 };
             }; // namespace Flags
 
