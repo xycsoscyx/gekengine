@@ -719,7 +719,7 @@ namespace Gek
                     return;
                 }
 
-                auto dockspaceID = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+                auto dockspaceID = ImGui::DockSpaceOverViewport();
 
                 ImGui::SetNextWindowDockID(dockspaceID, ImGuiCond_FirstUseEver);
                 showScene();

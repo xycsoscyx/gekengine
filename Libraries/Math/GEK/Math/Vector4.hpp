@@ -72,6 +72,15 @@ namespace Gek
 			{
             }
 
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            explicit Vector4(OTHER x, OTHER y, OTHER z, OTHER w) noexcept
+				: x(TYPE(x))
+				, y(TYPE(y))
+				, z(TYPE(z))
+				, w(TYPE(w))
+			{
+            }
+            
             explicit Vector4(TYPE const *data) noexcept
 				: x(data[0])
 				, y(data[1])

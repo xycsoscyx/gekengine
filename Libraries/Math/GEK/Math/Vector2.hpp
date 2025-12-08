@@ -46,11 +46,17 @@ namespace Gek
             }
 
             explicit Vector2(TYPE scalar) noexcept
-                : data{ TYPE(scalar), TYPE(scalar) }
+                : data{ scalar, scalar }
             {
             }
 
             explicit Vector2(TYPE x, TYPE y) noexcept
+                : data{ x, y }
+            {
+            }
+
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            explicit Vector2(OTHER x, OTHER y) noexcept
                 : data{ TYPE(x), TYPE(y) }
             {
             }

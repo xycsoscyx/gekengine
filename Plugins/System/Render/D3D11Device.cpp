@@ -2874,11 +2874,11 @@ namespace Gek
             {
                 HRESULT resultValue = E_FAIL;
                 ::DirectX::ScratchImage image;
-                if (FAILED(resultValue = ::DirectX::LoadFromDDSMemory(buffer, size, ::DirectX::DDS_FLAGS_NONE, nullptr, image)))
+                if (FAILED(resultValue = ::DirectX::LoadFromDDSMemory((const std::byte *)buffer, size, ::DirectX::DDS_FLAGS_NONE, nullptr, image)))
                 {
-                    if (FAILED(resultValue = ::DirectX::LoadFromTGAMemory(buffer, size, nullptr, image)))
+                    if (FAILED(resultValue = ::DirectX::LoadFromTGAMemory((const uint8_t *)buffer, size, nullptr, image)))
                     {
-                        if (FAILED(resultValue = ::DirectX::LoadFromWICMemory(buffer, size, ::DirectX::WIC_FLAGS_NONE, nullptr, image)))
+                        if (FAILED(resultValue = ::DirectX::LoadFromWICMemory((const std::byte *)buffer, size, ::DirectX::WIC_FLAGS_NONE, nullptr, image)))
                         {
                             std::cerr << "Unable to load image from texture file";
                             return nullptr;

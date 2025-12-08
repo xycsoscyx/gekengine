@@ -16,8 +16,9 @@ namespace Gek
 {
     namespace Window
     {
-        enum class Key
+        enum class Key : uint8_t
         {
+            Unknown = 0,
             A = 4,
             B = 5,
             C = 6,
@@ -54,9 +55,9 @@ namespace Gek
             Key8 = 37,
             Key9 = 38,
             Key0 = 39,
-            Enter = 40,
+            Return = 40,
             Escape = 41,
-            Delete = 42,
+            Backspace = 42,
             Tab = 43,
             Space = 44,
             Minus = 45,
@@ -87,10 +88,10 @@ namespace Gek
             ScrollLock = 71,
             Pause = 72,
             Insert = 73,
+            Delete = 76,
             Home = 74,
-            PageUp = 75,
-            DeleteForward = 76,
             End = 77,
+            PageUp = 75,
             PageDown = 78,
             Right = 79,
             Left = 80,
@@ -101,7 +102,6 @@ namespace Gek
             KeyPadMultiply = 85,
             KeyPadSubtract = 86,
             KeyPadAdd = 87,
-            KeyPadEnter = 88,
             KeyPad1 = 89,
             KeyPad2 = 90,
             KeyPad3 = 91,
@@ -113,30 +113,12 @@ namespace Gek
             KeyPad9 = 97,
             KeyPad0 = 98,
             KeyPadPoint = 99,
-            NonUSBackslash = 100,
-            KeyPadEquals = 103,
-            F13 = 104,
-            F14 = 105,
-            F15 = 106,
-            F16 = 107,
-            F17 = 108,
-            F18 = 109,
-            F19 = 110,
-            F20 = 111,
-            F21 = 112,
-            F22 = 113,
-            F23 = 114,
-            F24 = 115,
-            Help = 117,
-            Menu = 118,
             LeftControl = 224,
             LeftShift = 225,
             LeftAlt = 226,
-            LeftGUI = 227,
             RightControl = 228,
             RightShift = 229,
             RightAlt = 230,
-            RightGUI = 231
         };
 
         enum class Button

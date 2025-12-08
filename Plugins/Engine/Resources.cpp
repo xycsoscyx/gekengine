@@ -107,9 +107,9 @@ namespace Gek
         {
         public:
             using TypePtr = std::shared_ptr<TYPE>;
-            //using AtomicPtr = std::atomic<TypePtr>;
+            using AtomicPtr = std::atomic<TypePtr>;
             using ResourceHandleMap = tbb::concurrent_unordered_map<std::size_t, HANDLE>;
-            using ResourceMap = tbb::concurrent_unordered_map<HANDLE, TypePtr>;
+            using ResourceMap = tbb::concurrent_unordered_map<HANDLE, AtomicPtr>;
             using ResourceType = ResourceMap::value_type;
             using HandleType = HANDLE;
 
@@ -134,7 +134,7 @@ namespace Gek
             {
                 for (auto& resourcePair : resourceMap)
                 {
-                    onResource(resourcePair.first, std::atomic_load(&resourcePair.second));
+                    onResource(resourcePair.first, resourcePair.second.load());
                 }
             }
 
@@ -156,7 +156,7 @@ namespace Gek
                 auto resourceSearch = resourceMap.insert(std::make_pair(handle, blankObject));
                 if (data.get())
                 {
-                    std::atomic_store(&resourceSearch.first->second, data);
+                    resourceSearch.first->second.store(data);
                     return true;
                 }
                 else if (fallback)
@@ -187,7 +187,7 @@ namespace Gek
                     auto resourceSearch = resourceMap.find(handle);
                     if (resourceSearch != std::end(resourceMap))
                     {
-                        return std::atomic_load(&resourceSearch->second).get();
+                        return resourceSearch->second.load().get();
                     }
                 }
 
@@ -425,7 +425,7 @@ namespace Gek
             {
                 for (auto& resourceSearch : ResourceCache<HANDLE, TYPE>::resourceMap)
                 {
-                    auto resource = std::atomic_load(&resourceSearch.second);
+                    auto resource = resourceSearch.second.load();
                     if (resource)
                     {
                         resource->reload();

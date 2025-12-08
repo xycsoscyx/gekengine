@@ -14,6 +14,122 @@ using namespace Gek;
 
 namespace Gek
 {
+	ImGuiKey GetImGuiKey(Window::Key key)
+	{		
+		static std::unordered_map<Window::Key, ImGuiKey> windowKeyToImGuiKey = {
+			{ Window::Key::A, ImGuiKey_A },
+			{ Window::Key::B, ImGuiKey_B },
+			{ Window::Key::C, ImGuiKey_C },
+			{ Window::Key::D, ImGuiKey_D },
+			{ Window::Key::E, ImGuiKey_E },
+			{ Window::Key::F, ImGuiKey_F },
+			{ Window::Key::G, ImGuiKey_G },
+			{ Window::Key::H, ImGuiKey_H },
+			{ Window::Key::I, ImGuiKey_I },
+			{ Window::Key::J, ImGuiKey_J },
+			{ Window::Key::K, ImGuiKey_K },
+			{ Window::Key::L, ImGuiKey_L },
+			{ Window::Key::M, ImGuiKey_M },
+			{ Window::Key::N, ImGuiKey_N },
+			{ Window::Key::O, ImGuiKey_O },
+			{ Window::Key::P, ImGuiKey_P },
+			{ Window::Key::Q, ImGuiKey_Q },
+			{ Window::Key::R, ImGuiKey_R },
+			{ Window::Key::S, ImGuiKey_S },
+			{ Window::Key::T, ImGuiKey_T },
+			{ Window::Key::U, ImGuiKey_U },
+			{ Window::Key::V, ImGuiKey_V },
+			{ Window::Key::W, ImGuiKey_W },
+			{ Window::Key::X, ImGuiKey_X },
+			{ Window::Key::Y, ImGuiKey_Y },
+			{ Window::Key::Z, ImGuiKey_Z },
+			{ Window::Key::Key1, ImGuiKey_1 },
+			{ Window::Key::Key2, ImGuiKey_2 },
+			{ Window::Key::Key3, ImGuiKey_3 },
+			{ Window::Key::Key4, ImGuiKey_4 },
+			{ Window::Key::Key5, ImGuiKey_5 },
+			{ Window::Key::Key6, ImGuiKey_6 },
+			{ Window::Key::Key7, ImGuiKey_7 },
+			{ Window::Key::Key8, ImGuiKey_8 },
+			{ Window::Key::Key9, ImGuiKey_9 },
+			{ Window::Key::Key0, ImGuiKey_0 },
+			{ Window::Key::Return, ImGuiKey_Enter },
+			{ Window::Key::Escape, ImGuiKey_Escape },
+			{ Window::Key::Backspace, ImGuiKey_Backspace },
+			{ Window::Key::Tab, ImGuiKey_Tab },
+			{ Window::Key::Space, ImGuiKey_Space },
+			{ Window::Key::Minus, ImGuiKey_Minus },
+			{ Window::Key::Equals, ImGuiKey_Equal },
+			{ Window::Key::LeftBracket, ImGuiKey_LeftBracket },
+			{ Window::Key::RightBracket, ImGuiKey_RightBracket },
+			{ Window::Key::Backslash, ImGuiKey_Backslash },
+			{ Window::Key::Semicolon, ImGuiKey_Semicolon },
+			{ Window::Key::Quote, ImGuiKey_Apostrophe },
+			{ Window::Key::Grave, ImGuiKey_GraveAccent },
+			{ Window::Key::Comma, ImGuiKey_Comma },
+			{ Window::Key::Period, ImGuiKey_Period },
+			{ Window::Key::Slash, ImGuiKey_Slash },
+			{ Window::Key::CapsLock, ImGuiKey_CapsLock },
+			{ Window::Key::F1, ImGuiKey_F1 },
+			{ Window::Key::F2, ImGuiKey_F2 },
+			{ Window::Key::F3, ImGuiKey_F3 },
+			{ Window::Key::F4, ImGuiKey_F4 },
+			{ Window::Key::F5, ImGuiKey_F5 },
+			{ Window::Key::F6, ImGuiKey_F6 },
+			{ Window::Key::F7, ImGuiKey_F7 },
+			{ Window::Key::F8, ImGuiKey_F8 },
+			{ Window::Key::F9, ImGuiKey_F9 },
+			{ Window::Key::F10, ImGuiKey_F10 },
+			{ Window::Key::F11, ImGuiKey_F11 },
+			{ Window::Key::F12, ImGuiKey_F12 },
+			{ Window::Key::PrintScreen, ImGuiKey_PrintScreen },
+			{ Window::Key::ScrollLock, ImGuiKey_ScrollLock },
+			{ Window::Key::Pause, ImGuiKey_Pause },
+			{ Window::Key::Insert, ImGuiKey_Insert },
+			{ Window::Key::Delete, ImGuiKey_Delete },
+			{ Window::Key::Home, ImGuiKey_Home },
+			{ Window::Key::End, ImGuiKey_End },
+			{ Window::Key::PageUp, ImGuiKey_PageUp },
+			{ Window::Key::PageDown, ImGuiKey_PageDown },
+			{ Window::Key::Right, ImGuiKey_RightArrow },
+			{ Window::Key::Left, ImGuiKey_LeftArrow },
+			{ Window::Key::Down, ImGuiKey_DownArrow },
+			{ Window::Key::Up, ImGuiKey_UpArrow },
+			{ Window::Key::KeyPadNumLock, ImGuiKey_NumLock },
+			{ Window::Key::KeyPadDivide, ImGuiKey_KeypadDivide },
+			{ Window::Key::KeyPadMultiply, ImGuiKey_KeypadMultiply },
+			{ Window::Key::KeyPadSubtract, ImGuiKey_KeypadSubtract },
+			{ Window::Key::KeyPadAdd, ImGuiKey_KeypadAdd },
+			{ Window::Key::KeyPad1, ImGuiKey_Keypad1 },
+			{ Window::Key::KeyPad2, ImGuiKey_Keypad2 },
+			{ Window::Key::KeyPad3, ImGuiKey_Keypad3 },
+			{ Window::Key::KeyPad4, ImGuiKey_Keypad4 },
+			{ Window::Key::KeyPad5, ImGuiKey_Keypad5 },
+			{ Window::Key::KeyPad6, ImGuiKey_Keypad6 },
+			{ Window::Key::KeyPad7, ImGuiKey_Keypad7 },
+			{ Window::Key::KeyPad8, ImGuiKey_Keypad8 },
+			{ Window::Key::KeyPad9, ImGuiKey_Keypad9 },
+			{ Window::Key::KeyPad0, ImGuiKey_Keypad0 },
+			{ Window::Key::KeyPadPoint, ImGuiKey_KeypadDecimal },
+			{ Window::Key::LeftControl, ImGuiKey_LeftCtrl },
+			{ Window::Key::LeftShift, ImGuiKey_LeftShift },
+			{ Window::Key::LeftAlt, ImGuiKey_LeftAlt },
+			{ Window::Key::RightControl, ImGuiKey_RightCtrl },
+			{ Window::Key::RightShift, ImGuiKey_RightShift },
+			{ Window::Key::RightAlt, ImGuiKey_RightAlt },
+		};
+
+		return windowKeyToImGuiKey[key];
+	}
+
+	bool IsKeyDown(Window::Key key)
+	{
+		ImGuiKey imguiKey = GetImGuiKey(key);
+		ImGuiIO& imGuiIo = ImGui::GetIO();
+		return ImGui::IsKeyDown(imguiKey);
+	}
+
+
 	class Core
 	{
 	private:
@@ -274,25 +390,6 @@ Output mainPixelProgram(in Pixel input)
 			gui->context = ImGui::CreateContext();
 
             ImGuiIO &imGuiIo = ImGui::GetIO();
-            imGuiIo.KeyMap[ImGuiKey_Tab] = VK_TAB;
-            imGuiIo.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
-            imGuiIo.KeyMap[ImGuiKey_RightArrow] = VK_RIGHT;
-            imGuiIo.KeyMap[ImGuiKey_UpArrow] = VK_UP;
-            imGuiIo.KeyMap[ImGuiKey_DownArrow] = VK_DOWN;
-            imGuiIo.KeyMap[ImGuiKey_PageUp] = VK_PRIOR;
-            imGuiIo.KeyMap[ImGuiKey_PageDown] = VK_NEXT;
-            imGuiIo.KeyMap[ImGuiKey_Home] = VK_HOME;
-            imGuiIo.KeyMap[ImGuiKey_End] = VK_END;
-            imGuiIo.KeyMap[ImGuiKey_Delete] = VK_DELETE;
-            imGuiIo.KeyMap[ImGuiKey_Backspace] = VK_BACK;
-            imGuiIo.KeyMap[ImGuiKey_Enter] = VK_RETURN;
-            imGuiIo.KeyMap[ImGuiKey_Escape] = VK_ESCAPE;
-            imGuiIo.KeyMap[ImGuiKey_A] = 'A';
-            imGuiIo.KeyMap[ImGuiKey_C] = 'C';
-            imGuiIo.KeyMap[ImGuiKey_V] = 'V';
-            imGuiIo.KeyMap[ImGuiKey_X] = 'X';
-            imGuiIo.KeyMap[ImGuiKey_Y] = 'Y';
-            imGuiIo.KeyMap[ImGuiKey_Z] = 'Z';
 
             auto fontPath = getContext()->findDataPath("fonts");
 			imGuiIo.Fonts->AddFontFromFileTTF((fontPath / "Ruda-Bold.ttf").getString().data(), 14.0f);
@@ -338,7 +435,7 @@ Output mainPixelProgram(in Pixel input)
 
 		~Core(void)
 		{
-			ImGui::GetIO().Fonts->TexID = 0;
+			ImGui::GetIO().Fonts->SetTexID(nullptr);
 			ImGui::DestroyContext(gui->context);
 
             gui = nullptr;
@@ -466,9 +563,8 @@ Output mainPixelProgram(in Pixel input)
 					ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
 
 					ImGui::SameLine();
-					if (ImGui::Button("Accept", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[static_cast<int>(Window::Key::Enter)])
+					if (ImGui::Button("Accept", ImVec2(100.0f, 25.0f)) || IsKeyDown(Window::Key::Return))
 					{
-						ImGui::GetIO().KeysDown[static_cast<int>(Window::Key::Enter)] = false;
 						bool changedDisplayMode = setDisplayMode(next.mode);
 						bool changedFullScreen = setFullScreen(next.fullScreen);
 						if (changedDisplayMode || changedFullScreen)
@@ -481,7 +577,7 @@ Output mainPixelProgram(in Pixel input)
 					}
 
 					ImGui::SameLine();
-					if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[static_cast<int>(Window::Key::Escape)])
+					if (ImGui::Button("Cancel", ImVec2(100.0f, 25.0f)) || IsKeyDown(Window::Key::Escape))
 					{
 						showSettings = false;
 					}
@@ -508,15 +604,14 @@ Output mainPixelProgram(in Pixel input)
 					ImGui::Dummy(ImVec2(buttonPositionX, 0.0f));
 
 					ImGui::SameLine();
-					if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[static_cast<int>(Window::Key::Enter)])
+					if (ImGui::Button("Yes", ImVec2(100.0f, 25.0f)) || IsKeyDown(Window::Key::Return))
 					{
-						ImGui::GetIO().KeysDown[static_cast<int>(Window::Key::Enter)] = false;
 						showModeChange = false;
 						previous = current;
 					}
 
 					ImGui::SameLine();
-					if (modeChangeTimer <= 0.0f || ImGui::Button("No", ImVec2(100.0f, 25.0f)) || ImGui::GetIO().KeysDown[static_cast<int>(Window::Key::Escape)])
+					if (modeChangeTimer <= 0.0f || ImGui::Button("No", ImVec2(100.0f, 25.0f)) || IsKeyDown(Window::Key::Escape))
 					{
 						showModeChange = false;
 						setDisplayMode(previous.mode);
@@ -549,7 +644,6 @@ Output mainPixelProgram(in Pixel input)
 				imGuiIo.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
 				imGuiIo.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
 				imGuiIo.KeySuper = false;
-				// imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
 				// imGuiIo.MousePos : filled by WM_MOUSEMOVE events
 				// imGuiIo.MouseDown : filled by WM_*BUTTON* events
 				// imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
@@ -675,7 +769,7 @@ Output mainPixelProgram(in Pixel input)
 							scissorBoxList[0].maximum.y = uint32_t(command->ClipRect.w);
 							commandList->setScissorList(scissorBoxList);
 
-							Render::Texture* texture = static_cast<Render::Texture*>(command->TextureId);
+							Render::Texture* texture = reinterpret_cast<Render::Texture *>(command->GetTexID());
 							commandList->bindResourceList({ texture }, 0, Render::Pipeline::Pixel);
 
 							commandList->drawInstancedIndexedPrimitive(1, 0, command->ElemCount, indexOffset, vertexOffset);
@@ -722,7 +816,7 @@ Output mainPixelProgram(in Pixel input)
 			ImGuiIO &imGuiIo = ImGui::GetIO();
 			if (enableInterfaceControl)
 			{
-				imGuiIo.KeysDown[static_cast<int>(key)] = state;
+				//imGuiIo.KeysDown[static_cast<int>(key)] = state;
 			}
 
 			if (!state)

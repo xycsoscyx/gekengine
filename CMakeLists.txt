@@ -1,8 +1,6 @@
-cmake_minimum_required(VERSION 3.5.2)
+cmake_minimum_required(VERSION 3.10)
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}")
 
 option("GEK_BUILD_TESTS" "Create unit test projects" ON)
 
@@ -69,6 +67,8 @@ FetchContent_MakeAvailable(argparse)
 
 if(MSVC)
     add_compile_options(/wd4702)
+    add_compile_options(/wd4005)
+    add_compile_options(/wd4365)
 endif()
 
 SET(ASSIMP_BUILD_IFC_IMPORTER False CACHE BOOL "" FORCE)
@@ -95,9 +95,16 @@ FetchContent_Populate(mikktspace)
 
 SET(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(newton OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/MADEAPPS/newton-dynamics.git GIT_TAG master SOURCE_SUBDIR newton-4.00)
+# Build Newton as a static/single library so internal, non-exported virtual
+# methods (used by deriving classes) are available to plugins that link
+# against it. Building Newton as shared DLLs hides private symbols and
+# causes unresolved externals when a plugin inherits internal classes.
+set(NEWTON_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(newton)
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore/tinyxml")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCollision")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCollision/dMesh")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dModels")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dModels/dCharacter")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dModels/dVehicle")
@@ -147,7 +154,6 @@ if(GEK_CREATE_FOLDERS)
     set_property(TARGET ndFileFormat PROPERTY FOLDER "External")
     set_property(TARGET ndModel PROPERTY FOLDER "External")
     set_property(TARGET ndNewton PROPERTY FOLDER "External")
-    set_property(TARGET ndSolverAvx2 PROPERTY FOLDER "External")
     set_property(TARGET ndTinyxml PROPERTY FOLDER "External")
     set_property(TARGET newton_tests PROPERTY FOLDER "External")
     set_property(TARGET openfbx PROPERTY FOLDER "External")

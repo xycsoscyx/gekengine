@@ -11,6 +11,6 @@ add_library(${ProjectID} SHARED ${SOURCES} ${HEADERS} ${API_HEADERS})
 
 target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
-target_link_libraries(${ProjectID} Math Shapes Utility GUI API Components Model ndNewton ndSolverAvx2)
+target_link_libraries(${ProjectID} Math Shapes Utility GUI API Components Model ndNewton)
 
 install(TARGETS ${ProjectID} DESTINATION "bin")

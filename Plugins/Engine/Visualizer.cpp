@@ -682,7 +682,7 @@ float4 main(PixelInput input) : SV_Target
 				fontDescription.height = fontHeight;
 				fontDescription.flags = Render::Texture::Flags::Resource;
 				gui.fontTexture = renderDevice->createTexture(fontDescription, pixels);
-				imGuiIo.Fonts->TexID = static_cast<ImTextureID>(gui.fontTexture.get());
+				imGuiIo.Fonts->SetTexID(static_cast<ImTextureRef>(gui.fontTexture.get()));
 
 				imGuiIo.UserData = this;
 
@@ -703,7 +703,7 @@ float4 main(PixelInput input) : SV_Target
 				population->onComponentRemoved.disconnect(this, &Visualizer::onComponentRemoved);
 				population->onUpdate[1000].disconnect(this, &Visualizer::onUpdate);
 
-				ImGui::GetIO().Fonts->TexID = 0;
+				ImGui::GetIO().Fonts->SetTexID(nullptr);
 				ImGui::DestroyContext(gui.context);
 			}
 
@@ -837,7 +837,7 @@ float4 main(PixelInput input) : SV_Target
 								scissorBoxList[0].maximum.y = uint32_t(command->ClipRect.w);
 								videoContext->setScissorList(scissorBoxList);
 
-								textureList[0] = reinterpret_cast<Render::Texture *>(command->TextureId);
+								textureList[0] = reinterpret_cast<Render::Texture *>(command->GetTexID());
 								videoContext->pixelPipeline()->setResourceList(textureList, 0);
 
 								videoContext->drawIndexedPrimitive(command->ElemCount, indexOffset, vertexOffset);
@@ -944,7 +944,7 @@ float4 main(PixelInput input) : SV_Target
 				const float minimumZ = ((z - 0.1f) * depthScale);
 				const float maximumZ = ((z + 1.1f) * depthScale);
 
-				const Math::Float4 tileBounds(Math::Float4(x, x, y, y) + TileBoundsOffset);
+				const Math::Float4 tileBounds(Math::Float4(float(x), float(x), float(y), float(y)) + TileBoundsOffset);
 				const Math::Float4 projectionScale(GridScaleOne / Math::Float4(
 					currentCamera.projectionMatrix.r.x.x, currentCamera.projectionMatrix.r.x.x,
 					currentCamera.projectionMatrix.r.y.y, currentCamera.projectionMatrix.r.y.y));
