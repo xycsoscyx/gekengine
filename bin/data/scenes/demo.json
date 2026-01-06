@@ -5,7 +5,7 @@
                 "position": [ "random(-40, 40)", "random(10, 30)", "random(-10, 10)" ],
                 "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
             },
-            "Model": "cube",
+            "Model": "#cube",
             "Physical": { "mass": 100 }
         },
         "BasicSphere": {
@@ -13,7 +13,8 @@
                 "position": [ "random(-40, 40)", "random(10, 30)", "random(-10, 10)" ],
                 "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
             },
-            "Model": "sphere"
+            "Model": "#sphere",
+            "Physical": { "mass": 100 }
         },
         "BasicPointLight": {
             "Transform": {
@@ -49,12 +50,6 @@
     },
     "Population": [
         {
-            "Transform": {},
-            "Model": "supersponza",
-            "Scene": {}
-        },
-
-        {
             "Transform": {
                 "position": [ 34, 26, 0 ],
                 "rotation": [ 0.12278781, -0.6963644, 0.122787766, 0.6963641 ],
@@ -67,6 +62,10 @@
                 "farClip": 100
             },
             "Player": {
+                "height": 10,
+                "outerRadius": 4,
+                "innerRadius": 2,
+                "stairStep": 0.5
             },
             "Name": "player"
         },
@@ -97,6 +96,12 @@
                 "Base": "BasicSpotLight",
                 "Count": 50
             }
+        },
+
+        {
+            "Transform": {},
+            "Model": "supersponza",
+            "Scene": {}
         }
     ]
 }

@@ -177,6 +177,8 @@ namespace Gek
             std::vector<Plugin::ProcessorPtr> processorList;
             Engine::PopulationPtr population;
 
+            bool loadingPopulation = false;
+
         public:
             Core(Context *context)
                 : ContextRegistration(context)
@@ -354,7 +356,9 @@ namespace Gek
                 }
 
                 population = getContext()->createClass<Engine::Population>("Engine::Population", (Engine::Core *)this);
+
                 resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Engine::Core *)this);
+
                 visualizer = getContext()->createClass<Plugin::Visualizer>("Engine::Visualizer", (Engine::Core *)this);
                 visualizer->onShowUserInterface.connect(this, &Core::onShowUserInterface);
 
@@ -624,6 +628,8 @@ namespace Gek
                     showLoadWindow();
                     showReset();
                 }
+
+                showLoading();
             }
 
             void showDisplay(void)
@@ -1151,6 +1157,23 @@ namespace Gek
                 }
 
                 ImGui::End();
+            }
+
+            void showLoading(void)
+            {
+                if (!loadingPopulation)
+                {
+                    return;
+                }
+
+                auto &io = ImGui::GetIO();
+                ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+                if (ImGui::Begin("Loading", &loadingPopulation, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar))
+                {
+                    ImGui::TextUnformatted("Loading...");
+                }
+
+				ImGui::End();
             }
 
             // Plugin::Core

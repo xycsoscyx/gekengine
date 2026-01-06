@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
-set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}")
+set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}" CACHE PATH "Installation prefix" FORCE)
+message("CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
 
 option("GEK_BUILD_TESTS" "Create unit test projects" ON)
 
@@ -8,7 +9,7 @@ set("GEK_WINDOW_DEVICE" "win32" CACHE STRING "Compile targeting specific window 
 set_property(CACHE GEK_WINDOW_DEVICE PROPERTY STRINGS win32 x11)
 
 set("GEK_RENDER_DEVICE" "d3d11" CACHE STRING "Compile targeting specific render device")
-set_property(CACHE GEK_RENDER_DEVICE PROPERTY STRINGS d3d11 d3d12 vulkan)
+set_property(CACHE GEK_RENDER_DEVICE PROPERTY STRINGS d3d11 d3d12 vulkan opengl)
 
 set("GEK_AUDIO_DEVICE" "ds8" CACHE STRING "Compile targeting specific audio device")
 set_property(CACHE GEK_AUDIO_DEVICE PROPERTY STRINGS ds8)
@@ -81,17 +82,17 @@ FetchContent_MakeAvailable(assimp)
 
 add_definitions(-DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_DEFINE_PLACEMENT_NEW)
 FetchContent_Declare(imgui OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/ocornut/imgui.git GIT_TAG docking)
-FetchContent_Populate(imgui)
+FetchContent_MakeAvailable(imgui)
 
 FetchContent_Declare(imguizmo OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/CedricGuillemet/ImGuizmo.git GIT_TAG master)
-FetchContent_Populate(imguizmo)
+FetchContent_MakeAvailable(imguizmo)
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 FetchContent_Declare(json OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG master)
 FetchContent_MakeAvailable(json)
 
 FetchContent_Declare(mikktspace OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/mmikk/MikkTSpace.git GIT_TAG master)
-FetchContent_Populate(mikktspace)
+FetchContent_MakeAvailable(mikktspace)
 
 SET(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(newton OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/MADEAPPS/newton-dynamics.git GIT_TAG master SOURCE_SUBDIR newton-4.00)
@@ -117,7 +118,7 @@ FetchContent_Declare(oneTBB OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.
 FetchContent_MakeAvailable(oneTBB)
 
 FetchContent_Declare(wink OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/miguelmartin75/Wink-Signals.git GIT_TAG master)
-FetchContent_Populate(wink)
+FetchContent_MakeAvailable(wink)
 include_directories("${wink_SOURCE_DIR}")
 
 if(GEK_BUILD_TESTS)

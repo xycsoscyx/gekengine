@@ -690,6 +690,12 @@ float4 main(PixelInput input) : SV_Target
 				ImGui::StyleColorsDark(&style);
 				style.WindowPadding.x = style.WindowPadding.y;
 				style.FramePadding.x = style.FramePadding.y = 5.0f;
+
+				auto filterNames = { "antialias", "tonemap" };
+				for (auto const& filterName : filterNames)
+				{
+					auto const filter = resources->getFilter(filterName);
+				}
 			}
 
 			~Visualizer(void)
@@ -1091,7 +1097,7 @@ float4 main(PixelInput input) : SV_Target
 				return gui.context;
 			}
 
-			void queueCamera(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &perspectiveMatrix, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget, std::string const &forceShader)
+			void scheduleCamera(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &perspectiveMatrix, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget, std::string const &forceShader)
 			{
 				Camera renderCall;
 				renderCall.viewMatrix = viewMatrix;
@@ -1113,17 +1119,17 @@ float4 main(PixelInput input) : SV_Target
 			{
 				if (core->getOption("render", "invertedDepthBuffer", true))
 				{
-					queueCamera(viewMatrix, Math::Float4x4::MakePerspective(fieldOfView, aspectRatio, farClip, nearClip), nearClip, farClip, name, cameraTarget, forceShader);
+					scheduleCamera(viewMatrix, Math::Float4x4::MakePerspective(fieldOfView, aspectRatio, farClip, nearClip), nearClip, farClip, name, cameraTarget, forceShader);
 				}
 				else
 				{
-					queueCamera(viewMatrix, Math::Float4x4::MakePerspective(fieldOfView, aspectRatio, nearClip, farClip), nearClip, farClip, name, cameraTarget, forceShader);
+					scheduleCamera(viewMatrix, Math::Float4x4::MakePerspective(fieldOfView, aspectRatio, nearClip, farClip), nearClip, farClip, name, cameraTarget, forceShader);
 				}
 			}
 
-			void queueCamera(Math::Float4x4 const &viewMatrix, float left, float top, float right, float bottom, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget, std::string const &forceShader)
+			void queueViewport(Math::Float4x4 const &viewMatrix, float left, float top, float right, float bottom, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget, std::string const &forceShader)
 			{
-				queueCamera(viewMatrix, Math::Float4x4::MakeOrthographic(left, top, right, bottom, nearClip, farClip), nearClip, farClip, name, cameraTarget, forceShader);
+				scheduleCamera(viewMatrix, Math::Float4x4::MakeOrthographic(left, top, right, bottom, nearClip, farClip), nearClip, farClip, name, cameraTarget, forceShader);
 			}
 
 			void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Render::Device::Context *videoContext)> &&draw)

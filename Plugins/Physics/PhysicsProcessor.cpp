@@ -4,6 +4,7 @@
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/String.hpp"
+#include "GEK/Utility/ThreadPool.hpp"
 #include "GEK/Utility/Hash.hpp"
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/API/Core.hpp"
@@ -17,6 +18,7 @@
 #include "GEK/Model/Base.hpp"
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/concurrent_vector.h>
+#include <future>
 
 namespace Gek
 {
@@ -118,9 +120,11 @@ namespace Gek
             tbb::concurrent_vector<Surface> surfaceList;
             tbb::concurrent_unordered_map<std::size_t, uint32_t> surfaceIndexMap;
             NewtonWorld* newtonWorld = nullptr;
+            ThreadPool loadPool;
 
             tbb::concurrent_unordered_map<Plugin::Entity*, Physics::Body *> entityBodyMap;
-            tbb::concurrent_unordered_map<Hash, ndShape *> shapeMap;
+            tbb::concurrent_unordered_map<Hash, std::promise<ndShape *>> shapePromiseMap;
+            tbb::concurrent_unordered_map<Hash, std::shared_future<ndShape *>> shapeFutureMap;
 
         public:
             Processor(Context *context, Plugin::Core *core)
@@ -128,6 +132,7 @@ namespace Gek
                 , core(core)
                 , population(core->getPopulation())
                 , renderer(core->getVisualizer())
+                , loadPool(5)
             {
                 assert(core);
                 assert(population);
@@ -158,101 +163,115 @@ namespace Gek
                     newtonWorld->CleanUp();
 
                     entityBodyMap.clear();
-                    shapeMap.clear();
+                    shapePromiseMap.clear();
+                    shapeFutureMap.clear();
 
                     delete newtonWorld;
                     newtonWorld = nullptr;
                 }
             }
 
-            ndShape* loadShape(Components::Model const& modelComponent)
+            Task scheduleLoadShape(std::promise<ndShape *> &promise, Components::Model const& modelComponent)
             {
-                ndShape* shape = nullptr;
-                auto hash = GetHash(modelComponent.name);
-                auto shapeSearch = shapeMap.find(hash);
-                if (shapeSearch == std::end(shapeMap))
-                {
-                    getContext()->log(Context::Info, "Loading physics model: {}", modelComponent.name);
+                co_await loadPool.schedule();
 
-                    if (modelComponent.name == "#cube")
+                ndShape* shape = nullptr;
+                if (modelComponent.name == "#cube")
+                {
+                    shape = new ndShapeBox(1.0f, 1.0f, 1.0f);
+                }
+                else if (modelComponent.name == "#sphere")
+                {
+                    shape = new ndShapeSphere(1.0f);
+                }
+                else
+                {
+                    auto filePath = getContext()->findDataPath(FileSystem::CreatePath("physics", modelComponent.name).withExtension(".gek"));
+                    std::vector<uint8_t> buffer(FileSystem::Load(filePath));
+                    if (buffer.size() < sizeof(Header))
                     {
-                        shape = new ndShapeBox(1.0f, 1.0f, 1.0f);
+                        getContext()->log(Context::Error, "File too small to be physics model: {}", modelComponent.name);
+                        co_return;
                     }
-                    else if (modelComponent.name == "#sphere")
+
+                    BufferReader reader(buffer.data());
+                    Header* header = reader.read<Header>(0);
+                    if (header->identifier != *(uint32_t*)"GEKX")
                     {
-                        shape = new ndShapeSphere(1.0f);
+                        getContext()->log(Context::Error, "Unknown model file identifier encountered: {}", modelComponent.name);
+                        co_return;
+                    }
+
+                    if (header->version != 3)
+                    {
+                        getContext()->log(Context::Error, "Unsupported model version encountered (requires: 2, has: {}): {}", header->version, modelComponent.name);
+                        co_return;
+                    }
+
+                    if (header->type == 1)
+                    {
+                        getContext()->log(Context::Info, "Loading hull: {}", modelComponent.name);
+
+                        HullHeader* hullHeader = reader.read<HullHeader>();
+                        Math::Float3* points = reader.read<Math::Float3>(hullHeader->pointCount);
+                        shape = new ndShapeConvexHull(hullHeader->pointCount, sizeof(Math::Float3), 0.0f, points->data);
+                    }
+                    else if (header->type == 2)
+                    {
+                        getContext()->log(Context::Info, "Loading tree: {}", modelComponent.name);
+                        /*
+                        TreeHeader* treeHeader = reader.read<TreeHeader>();
+
+                        for (uint32_t materialIndex = 0; materialIndex < treeHeader->materialCount; ++materialIndex)
+                        {
+                            TreeHeader::Material* materialHeader = reader.read<TreeHeader::Material>();
+                            loadSurface(materialHeader->name);
+                        }
+
+                        for (uint32_t meshIndex = 0; meshIndex < treeHeader->meshCount; meshIndex++)
+                        {
+                            TreeHeader::Mesh* mesh = reader.read<TreeHeader::Mesh>();
+                            TreeHeader::Face* faces = reader.read<TreeHeader::Face>(mesh->faceCount);
+                            Math::Float3* points = reader.read<Math::Float3>(mesh->pointCount);
+
+                            for (uint32_t faceIndex = 0; faceIndex < mesh->faceCount; faceIndex++)
+                            {
+                            }
+                        }*/
                     }
                     else
                     {
-                        auto filePath = getContext()->findDataPath(FileSystem::CreatePath("physics", modelComponent.name).withExtension(".gek"));
-                        std::vector<uint8_t> buffer(FileSystem::Load(filePath));
-                        if (buffer.size() < sizeof(Header))
-                        {
-                            getContext()->log(Context::Error, "File too small to be physics model: {}", modelComponent.name);
-                            return nullptr;
-                        }
-
-                        BufferReader reader(buffer.data());
-                        Header* header = reader.read<Header>(0);
-                        if (header->identifier != *(uint32_t*)"GEKX")
-                        {
-                            getContext()->log(Context::Error, "Unknown model file identifier encountered: {}", modelComponent.name);
-                            return nullptr;
-                        }
-
-                        if (header->version != 3)
-                        {
-                            getContext()->log(Context::Error, "Unsupported model version encountered (requires: 2, has: {}): {}", header->version, modelComponent.name);
-                            return nullptr;
-                        }
-
-                        if (header->type == 1)
-                        {
-                            getContext()->log(Context::Info, "Loading hull: {}", modelComponent.name);
-
-                            HullHeader* hullHeader = reader.read<HullHeader>();
-                            Math::Float3* points = reader.read<Math::Float3>(hullHeader->pointCount);
-                            shape = new ndShapeConvexHull(hullHeader->pointCount, sizeof(Math::Float3), 0.0f, points->data);
-                        }
-                        else if (header->type == 2)
-                        {
-                            getContext()->log(Context::Info, "Loading tree: {}", modelComponent.name);
-                            /*
-                            TreeHeader* treeHeader = reader.read<TreeHeader>();
-
-                            for (uint32_t materialIndex = 0; materialIndex < treeHeader->materialCount; ++materialIndex)
-                            {
-                                TreeHeader::Material* materialHeader = reader.read<TreeHeader::Material>();
-                                loadSurface(materialHeader->name);
-                            }
-
-                            for (uint32_t meshIndex = 0; meshIndex < treeHeader->meshCount; meshIndex++)
-                            {
-                                TreeHeader::Mesh* mesh = reader.read<TreeHeader::Mesh>();
-                                TreeHeader::Face* faces = reader.read<TreeHeader::Face>(mesh->faceCount);
-                                Math::Float3* points = reader.read<Math::Float3>(mesh->pointCount);
-
-                                for (uint32_t faceIndex = 0; faceIndex < mesh->faceCount; faceIndex++)
-                                {
-                                }
-                            }*/
-                        }
-                        else
-                        {
-                            getContext()->log(Context::Error, "Unsupported model type encountered: {}", modelComponent.name);
-                            return nullptr;
-                        }
+                        getContext()->log(Context::Error, "Unsupported model type encountered: {}", modelComponent.name);
+                        co_return;
                     }
-
-                    getContext()->log(Context::Info, "Physics shape successfully loaded: {}", modelComponent.name);
                 }
 
                 if (shape)
                 {
-                    shapeMap[hash] = shape;
+                    getContext()->log(Context::Info, "Physics shape successfully loaded: {}", modelComponent.name);
+                    promise.set_value(shape);
+                }
+            }
+
+            ndShape* loadShape(Components::Model const& modelComponent)
+            {
+                auto hash = GetHash(modelComponent.name);
+                auto shapeInsert = shapePromiseMap.insert(std::make_pair(hash, std::promise<ndShape *>()));
+                if (shapeInsert.second)
+                {
+                    auto& promise = shapeInsert.first->second;
+                    shapeFutureMap.insert(std::make_pair(hash, promise.get_future()));
+                    scheduleLoadShape(promise, modelComponent);
                 }
 
-                return shape;
+                auto shapeFuture = shapeFutureMap.find(hash);
+                if (shapeFuture != std::end(shapeFutureMap))
+                {
+                    ndShape* shape = shapeFuture->second.get();
+                    return shape;
+                }
+
+                return nullptr;
             }
 
             //concurrency::critical_section criticalSection;

@@ -324,6 +324,8 @@ namespace Gek
         using MaterialMeshMap = tbb::concurrent_unordered_map<MaterialHandle, MeshInstanceMap>;
         MaterialMeshMap renderList;
 
+        bool shuttingDown = false;
+
     public:
         ModelProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
@@ -362,16 +364,59 @@ namespace Gek
             instanceBuffer = videoDevice->createBuffer(instanceDescription);
         }
 
+        Task scheduleLoadMesh(Header::Mesh& meshHeader, Group::Model::Mesh& mesh, uint32_t meshIndex, std::string fileName, std::string name, uint8_t* meshBuffer, std::shared_ptr<std::vector<uint8_t>> buffer)
+        {
+            co_await loadPool.schedule();
+            if (shuttingDown)
+            {
+                co_return;
+            }
+
+            Unpacker unpacker(meshBuffer);
+            mesh.material = resources->loadMaterial(meshHeader.material);
+            mesh.vertexCount = meshHeader.vertexCount;
+            mesh.indexCount = (meshHeader.faceCount * 3);
+
+            //Render::Buffer::Description indexBufferDescription;
+            //indexBufferDescription.format = Render::Format::R16_UINT;
+            //indexBufferDescription.count = (meshHeader.faceCount * 3);
+            //indexBufferDescription.type = Render::Buffer::Type::Index;
+            //mesh.indexBuffer = resources->createBuffer(std::format("model:{}.{}.{}:indices", meshIndex, fileName, name), indexBufferDescription, unpacker.readBlock<Face>(meshHeader.faceCount));
+
+            Render::Buffer::Description vertexBufferDescription;
+            vertexBufferDescription.name = std::format("model:{}.{}.{}:positions", meshIndex, fileName, name);
+            vertexBufferDescription.stride = sizeof(Math::Float3);
+            vertexBufferDescription.count = meshHeader.vertexCount;
+            vertexBufferDescription.type = Render::Buffer::Type::Vertex;
+            mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
+
+            vertexBufferDescription.stride = sizeof(Math::Float2);
+            vertexBufferDescription.name = std::format("model:{}.{}.{}:texcoords", meshIndex, fileName, name);
+            mesh.vertexBufferList[1] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float2>(meshHeader.vertexCount));
+
+            vertexBufferDescription.stride = sizeof(Math::Float4);
+            vertexBufferDescription.name = std::format("model:{}.{}.{}:tangents", meshIndex, fileName, name);
+            mesh.vertexBufferList[2] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float4>(meshHeader.vertexCount));
+
+            vertexBufferDescription.stride = sizeof(Math::Float3);
+            vertexBufferDescription.name = std::format("model:{}.{}.{}:normals", meshIndex, fileName, name);
+            mesh.vertexBufferList[3] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
+        }
+
         Task scheduleLoadData(std::string name, FileSystem::Path filePath, ModelProcessor::Group &group, ModelProcessor::Group::Model &model)
         {
             co_await loadPool.schedule();
+            if (shuttingDown)
+            {
+                co_return;
+            }
 
             auto fileName(filePath.getFileName());
 
-            std::vector<uint8_t> buffer(FileSystem::Load(filePath));
+            std::shared_ptr<std::vector<uint8_t>> buffer = std::make_shared<std::vector<uint8_t>>(FileSystem::Load(filePath));
 
-            Header* header = (Header*)buffer.data();
-            if (buffer.size() < (sizeof(Header) + (sizeof(Header::Mesh) * header->meshCount)))
+            Header* header = (Header*)buffer->data();
+            if (buffer->size() < (sizeof(Header) + (sizeof(Header::Mesh) * header->meshCount)))
             {
                 getContext()->log(Context::Error, "Model file too small to contain mesh headers: {}", filePath.getString());
                 co_return;
@@ -383,40 +428,14 @@ namespace Gek
             group.boundingBox.extend(model.boundingBox.minimum);
             group.boundingBox.extend(model.boundingBox.maximum);
             model.meshList.resize(header->meshCount);
-            Unpacker unpacker((uint8_t*)&header->meshList[header->meshCount]);
+            uint8_t *meshBuffer = (uint8_t*)&header->meshList[header->meshCount];
             for (uint32_t meshIndex = 0; meshIndex < header->meshCount; ++meshIndex)
             {
                 Header::Mesh& meshHeader = header->meshList[meshIndex];
                 Group::Model::Mesh& mesh = model.meshList[meshIndex];
 
-                mesh.material = resources->loadMaterial(meshHeader.material);
-                mesh.vertexCount = meshHeader.vertexCount;
-                mesh.indexCount = (meshHeader.faceCount * 3);
-
-                //Render::Buffer::Description indexBufferDescription;
-                //indexBufferDescription.format = Render::Format::R16_UINT;
-                //indexBufferDescription.count = (meshHeader.faceCount * 3);
-                //indexBufferDescription.type = Render::Buffer::Type::Index;
-                //mesh.indexBuffer = resources->createBuffer(std::format("model:{}.{}.{}:indices", meshIndex, fileName, name), indexBufferDescription, unpacker.readBlock<Face>(meshHeader.faceCount));
-
-                Render::Buffer::Description vertexBufferDescription;
-                vertexBufferDescription.name = std::format("model:{}.{}.{}:positions", meshIndex, fileName, name);
-                vertexBufferDescription.stride = sizeof(Math::Float3);
-                vertexBufferDescription.count = meshHeader.vertexCount;
-                vertexBufferDescription.type = Render::Buffer::Type::Vertex;
-                mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
-
-                vertexBufferDescription.stride = sizeof(Math::Float2);
-                vertexBufferDescription.name = std::format("model:{}.{}.{}:texcoords", meshIndex, fileName, name);
-                mesh.vertexBufferList[1] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float2>(meshHeader.vertexCount));
-
-                vertexBufferDescription.stride = sizeof(Math::Float4);
-                vertexBufferDescription.name = std::format("model:{}.{}.{}:tangents", meshIndex, fileName, name);
-                mesh.vertexBufferList[2] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float4>(meshHeader.vertexCount));
-
-                vertexBufferDescription.stride = sizeof(Math::Float3);
-                vertexBufferDescription.name = std::format("model:{}.{}.{}:normals", meshIndex, fileName, name);
-                mesh.vertexBufferList[3] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
+                scheduleLoadMesh(meshHeader, mesh, meshIndex, fileName, name, meshBuffer, buffer);
+                meshBuffer += (meshHeader.vertexCount * (sizeof(Math::Float3) + sizeof(Math::Float2) + sizeof(Math::Float4) + sizeof(Math::Float3)));
             }
 
             getContext()->log(Context::Info, "Group {}, mesh {} successfully loaded", name, fileName);
@@ -427,6 +446,10 @@ namespace Gek
             getContext()->log(Context::Info, "Queueing group for load: {}", name);
 
             co_await loadPool.schedule();
+            if (shuttingDown)
+            {
+                co_return;
+            }
 
             if (name == "#cube")
             {
@@ -437,14 +460,6 @@ namespace Gek
                     auto& mesh = model.meshList.emplace_back();
                     mesh.material = resources->loadMaterial(staticModel.material);
                     mesh.vertexCount = staticModel.positions.size();
-
-                    //Render::Buffer::Description indexBufferDescription;
-                    //indexBufferDescription.name = "model:cube:indices";
-                    //indexBufferDescription.format = Render::Format::R16_UINT;
-                    //indexBufferDescription.count = staticModel.indices.size();
-                    //indexBufferDescription.type = Render::Buffer::Type::Index;
-                    //mesh.indexBuffer = resources->createBuffer(indexBufferDescription, staticModel.indices.data());
-                    //mesh.indexCount = indexBufferDescription.count;
 
                     Render::Buffer::Description vertexBufferDescription;
                     vertexBufferDescription.name = std::format("model:cube.{}:positions", model.meshList.size());
@@ -482,14 +497,6 @@ namespace Gek
                     auto& mesh = model.meshList.emplace_back();
                     mesh.material = resources->loadMaterial(staticModel.material);
                     mesh.vertexCount = staticModel.positions.size();
-
-                    //Render::Buffer::Description indexBufferDescription;
-                    //indexBufferDescription.name = "model:sphere:indices";
-                    //indexBufferDescription.format = Render::Format::R16_UINT;
-                    //indexBufferDescription.count = staticModel.indices.size();
-                    //indexBufferDescription.type = Render::Buffer::Type::Index;
-                    //mesh.indexBuffer = resources->createBuffer(indexBufferDescription, staticModel.indices.data());
-                    //mesh.indexCount = indexBufferDescription.count;
 
                     Render::Buffer::Description vertexBufferDescription;
                     vertexBufferDescription.name = std::format("model:sphere.{}:positions", model.meshList.size());
@@ -613,6 +620,8 @@ namespace Gek
 
         void onShutdown(void)
         {
+            shuttingDown = true;
+
             loadPool.drain();
             if (events)
             {
@@ -778,7 +787,7 @@ namespace Gek
 			visibilityList.resize(bufferedModelCount);
 			Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedModelCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
 
-			std::for_each(std::execution::par, std::begin(entityModelList), std::end(entityModelList), [&](auto &entitySearch) -> void
+            std::for_each(std::execution::par, std::begin(entityModelList), std::end(entityModelList), [&](auto &entitySearch) -> void
 			{
 				if (visibilityList[std::get<2>(entitySearch)])
 				{

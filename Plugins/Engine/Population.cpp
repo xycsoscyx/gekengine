@@ -10,6 +10,7 @@
 #include "GEK/Engine/Core.hpp"
 #include "GEK/Engine/Population.hpp"
 #include <tbb/concurrent_queue.h>
+#include <tbb/parallel_for_each.h>
 #include <execution>
 #include <unordered_map>
 #include <vector>
@@ -96,17 +97,20 @@ namespace Gek
             std::unordered_map<Hash, std::string> componentNameTypeMap;
             AvailableComponents availableComponents;
 
-            ThreadPool workerPool;
-            tbb::concurrent_queue<std::function<void(void)>> entityQueue;
+            ThreadPool sceneWorkerPool;
+            ThreadPool entityWorkerPool;
             Registry registry;
 
             uint32_t uniqueEntityIdentifier = 0;
+
+            bool shuttingDown = false;
 
         public:
             Population(Context *context, Engine::Core *core)
                 : ContextRegistration(context)
                 , core(core)
-                , workerPool(1)
+                , sceneWorkerPool(1)
+                , entityWorkerPool(5)
             {
                 assert(core);
 
@@ -137,24 +141,18 @@ namespace Gek
 
             ~Population(void)
             {
-                workerPool.drain();
+                entityWorkerPool.drain();
+                sceneWorkerPool.drain();
                 componentTypeNameMap.clear();
                 availableComponents.clear();
-            }
-
-            void queueEntity(Plugin::Entity *entity)
-            {
-                entityQueue.push([this, entity](void) -> void
-                {
-                    registry.push_back(Plugin::EntityPtr(entity));
-                    onEntityCreated(entity);
-                });
             }
 
             // Core
             void onShutdown(void)
             {
-                workerPool.reset();
+                shuttingDown = true;
+                entityWorkerPool.reset();
+                sceneWorkerPool.reset();
                 registry.clear();
             }
 
@@ -205,12 +203,6 @@ namespace Gek
 				{
 					slot.second(frameTime);
 				}
-
-				std::function<void(void)> entityAction;
-				while (entityQueue.try_pop(entityAction))
-				{
-					entityAction();
-				};
             }
 
             void action(Action const &action)
@@ -227,7 +219,7 @@ namespace Gek
 
             Task scheduleReset(void)
             {
-                co_await workerPool.schedule();
+                co_await sceneWorkerPool.schedule();
                 fullReset();
             }
 
@@ -240,9 +232,9 @@ namespace Gek
             {
                 std::string populationName(_populationName);
                 fullReset();
-                workerPool.join();
+                sceneWorkerPool.join();
 
-                co_await workerPool.schedule();
+                co_await sceneWorkerPool.schedule();
 
                 getContext()->log(Context::Info, "Loading population: {}", populationName);
 
@@ -306,13 +298,13 @@ namespace Gek
                     while (count-- > 0)
                     {
                         auto populationEntity = new Entity();
-                        for (auto const& componentDefiniti9on : entityDefinition)
+                        for (auto const& componentDefinition : entityDefinition)
                         {
-                            addComponent(populationEntity, componentDefiniti9on);
+                            addComponent(populationEntity, componentDefinition);
                         }
 
                         auto entity = dynamic_cast<Plugin::Entity*>(populationEntity);
-                        queueEntity(entity);
+                        loadEntityTask(entity);
                     };
                 }
 
@@ -373,28 +365,41 @@ namespace Gek
                 }
 
                 auto entity = dynamic_cast<Plugin::Entity *>(populationEntity);
-                queueEntity(entity);
+                loadEntityTask(entity);
                 return entity;
+            }
+
+            Task loadEntityTask(Plugin::Entity * const entity)
+            {
+                co_await entityWorkerPool.schedule();
+
+                registry.push_back(Plugin::EntityPtr(entity));
+                onEntityCreated(entity);
+                std::cout << "Entity created" << std::endl;
             }
 
             void killEntity(Plugin::Entity * const entity)
             {
-                entityQueue.push([this, entity](void) -> void
-                {
-                    auto entitySearch = std::find_if(std::begin(registry), std::end(registry), [entity](auto const &entitySearch) -> bool
-                    {
-                        return (entitySearch.get() == entity);
-                    });
-
-                    if (entitySearch != std::end(registry))
-                    {
-                        onEntityDestroyed(entity);
-                        registry.erase(entitySearch);
-                    }
-                });
+                killEntityTask(entity);
             }
 
-            bool addComponent(Entity *entity, ComponentDefinition const &definition)
+            Task killEntityTask(Plugin::Entity * const entity)
+            {
+                co_await entityWorkerPool.schedule();
+
+                auto entitySearch = std::find_if(std::begin(registry), std::end(registry), [entity](auto const &entitySearch) -> bool
+                {
+                    return (entitySearch.get() == entity);
+                });
+
+                if (entitySearch != std::end(registry))
+                {
+                    onEntityDestroyed(entity);
+                    registry.erase(entitySearch);
+                }
+            }
+
+            bool addComponentData(Entity *entity, ComponentDefinition const &definition)
             {
                 assert(entity);
 
@@ -430,7 +435,7 @@ namespace Gek
 
             void addComponent(Plugin::Entity * const entity, ComponentDefinition const &definition)
             {
-                if (addComponent(static_cast<Entity *>(entity), definition))
+                if (addComponentData(static_cast<Entity *>(entity), definition))
                 {
                     onComponentAdded(static_cast<Plugin::Entity *>(entity));
                 }
@@ -449,7 +454,7 @@ namespace Gek
 
             void listEntities(std::function<void(Plugin::Entity *)> &&onEntity) const
             {
-                std::for_each(std::execution::par, std::begin(registry), std::end(registry), [onEntity = std::move(onEntity)](auto &entity) -> void
+                tbb::parallel_for_each(std::begin(registry), std::end(registry), [onEntity = std::move(onEntity)](auto &entity) -> void
                 {
                     onEntity(entity.get());
                 });

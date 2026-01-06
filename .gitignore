@@ -1,2 +1,7 @@
-build/
+.vscode/
 bin/*
+build/
+include/
+install/
+lib/
+share/

@@ -143,6 +143,11 @@ namespace Gek
 		ThreadPool& operator= (ThreadPool const &) = delete;
         ThreadPool& operator= (ThreadPool const &&) = delete;
 
+        bool empty(void) const
+        {
+            return coroutineQueue.empty();
+        }
+
         void join(void)
         {
             while (activeCount.load() > 0)

@@ -45,6 +45,7 @@ namespace Gek
 
                 void OnTransform(ndInt32 threadIndex, const ndMatrix& matrix)
                 {
+                    std::cout << "OnTransform" << std::endl;
                     rigidBody->OnTransform(this, threadIndex, matrix);
                 }
 

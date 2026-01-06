@@ -96,6 +96,8 @@ public:
     }
 };
 
+#include "GEK/Engine/ResourcesHelpers.hpp"
+
 namespace Gek
 {
     namespace Implementation
@@ -1012,6 +1014,7 @@ namespace Gek
                     {
                         auto resource = dynamicCache.getHandle(hash, flags, [this, texturePath = texturePath, flags](ResourceHandle)->Render::TexturePtr
                         {
+                            std::cout << "Loading texture: " << texturePath.getString() << std::endl;
                             return videoDevice->loadTexture(texturePath, flags);
                         }, 0, &fallback);
 
@@ -1490,9 +1493,34 @@ namespace Gek
                     type
                 };
 
-                if (compiledPath.isFile())
+                // Prefer pre-generated SPIR-V artifacts (name.entry.spv or name.spv) when present
+                auto spvPathEntry = programsPath / FileSystem::CreatePath(std::format("{}.{}", name, entryFunction)).replaceExtension(".spv");
+                auto spvPathSimple = programsPath / FileSystem::CreatePath(std::string(name)).replaceExtension(".spv");
+                if (spvPathEntry.isFile())
                 {
-                    information.compiledData = FileSystem::Load(compiledPath);
+                    information.compiledData = FileSystem::Load(spvPathEntry);
+                }
+                else if (spvPathSimple.isFile())
+                {
+                    information.compiledData = FileSystem::Load(spvPathSimple);
+                }
+                // Prefer pre-converted GLSL files next to source (name.entry.glsl or name.glsl) when present
+                auto glslPathEntry = programsPath / FileSystem::CreatePath(std::format("{}.{}", name, entryFunction)).replaceExtension(".glsl");
+                auto glslPathSimple = programsPath / FileSystem::CreatePath(std::string(name)).replaceExtension(".glsl");
+                if (information.compiledData.empty())
+                {
+                    if (glslPathEntry.isFile())
+                    {
+                        information.compiledData = FileSystem::Load(glslPathEntry);
+                    }
+                    else if (glslPathSimple.isFile())
+                    {
+                        information.compiledData = FileSystem::Load(glslPathSimple);
+                    }
+                    else if (compiledPath.isFile())
+                    {
+                        information.compiledData = FileSystem::Load(compiledPath);
+                    }
                 }
 
                 //if (information.compiledData.empty())
@@ -1548,7 +1576,7 @@ namespace Gek
 
                     information = videoDevice->compileProgram(type, name, uncompiledPath, uncompiledData, entryFunction, onInclude);
                     FileSystem::Save(uncompiledPath, information.uncompiledData);
-                    FileSystem::Save(compiledPath, information.compiledData);
+                    Implementation::SaveCompiledSidecar(compiledPath, information.compiledData);
                 }
                 /*else
                 {

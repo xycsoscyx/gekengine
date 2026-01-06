@@ -30,7 +30,7 @@ namespace Gek
 			virtual ImGuiContext * const getGuiContext(void) const = 0;
 
             virtual void queueCamera(Math::Float4x4 const &viewMatrix, float fieldOfView, float aspectRatio, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget = ResourceHandle(), std::string const &forceShader = String::Empty) = 0;
-            virtual void queueCamera(Math::Float4x4 const &viewMatrix, float left, float top, float right, float bottom, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget = ResourceHandle(), std::string const &forceShader = String::Empty) = 0;
+            virtual void queueViewport(Math::Float4x4 const &viewMatrix, float left, float top, float right, float bottom, float nearClip, float farClip, std::string const &name, ResourceHandle cameraTarget = ResourceHandle(), std::string const &forceShader = String::Empty) = 0;
             virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Render::Device::Context *)> &&draw) = 0;
 
             virtual void renderOverlay(Render::Device::Context *videoContext, ResourceHandle input, ResourceHandle *target = nullptr) = 0;
