@@ -6,7 +6,6 @@
 #include "GEK/Utility/Hash.hpp"
 #include "GEK/Render/RenderDevice.hpp"
 #include "GEK/Render/WindowDevice.hpp"
-#include "GEK/System/RenderDevice.hpp"
 #include <Windows.h>
 #include <GL/gl.h>
 #include <glatter/glatter.h>

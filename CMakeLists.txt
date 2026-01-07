@@ -8,7 +8,7 @@ set("GEK_WINDOW_DEVICE" "win32" CACHE STRING "Compile targeting specific window 
 set_property(CACHE GEK_WINDOW_DEVICE PROPERTY STRINGS win32 x11)
 
 set("GEK_RENDER_DEVICE" "d3d11" CACHE STRING "Compile targeting specific render device")
-set_property(CACHE GEK_RENDER_DEVICE PROPERTY STRINGS d3d11 d3d12 vulkan opengl)
+set_property(CACHE GEK_RENDER_DEVICE PROPERTY STRINGS d3d11 vulkan)
 
 set("GEK_AUDIO_DEVICE" "ds8" CACHE STRING "Compile targeting specific audio device")
 set_property(CACHE GEK_AUDIO_DEVICE PROPERTY STRINGS ds8)

@@ -1,6 +1,6 @@
 project (Applications)
 
-add_subdirectory("demo_render")
+#add_subdirectory("demo_render")
 add_subdirectory("demo_engine")
 add_subdirectory("createtree")
 add_subdirectory("createmodel")
@@ -10,7 +10,7 @@ if(MSVC)
 endif()
 
 if(GEK_CREATE_FOLDERS)
-    set_property(TARGET demo_render PROPERTY FOLDER "Applications")
+    #set_property(TARGET demo_render PROPERTY FOLDER "Applications")
     set_property(TARGET demo_engine PROPERTY FOLDER "Applications")
     set_property(TARGET createtree PROPERTY FOLDER "Applications")
     set_property(TARGET createmodel PROPERTY FOLDER "Applications")
