@@ -1,8 +1,8 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/System/VideoDevice.hpp"
-#include "GEK/System/Window.hpp"
+#include "GEK/System/RenderDevice.hpp"
+#include "GEK/System/WindowDevice.hpp"
 #include <algorithm>
 #include <execution>
 #include <exception>
@@ -11,14 +11,9 @@
 
 #include <vulkan/vulkan.h>
 
-#include <X11/Xlib.h>
-#include <vulkan/vulkan_xlib.h>
-
-#undef Status
-
 namespace Gek
 {
-    namespace Vulkan
+    namespace Render::Implementation
     {
         const std::vector<const char*> validationLayers =
         {
@@ -106,14 +101,14 @@ namespace Gek
             {
             }
 
-            // Video::Object
+            // Render::Object
             std::string_view getName(void) const
             {
                 return "object";
             }
         };
 
-        template <int UNIQUE, typename BASE = Video::Object>
+        template <int UNIQUE, typename BASE = Render::Object>
         class BaseVideoObject
             : public BASE
         {
@@ -128,7 +123,7 @@ namespace Gek
             {
             }
 
-            // Video::Object
+            // Render::Object
             std::string_view getName(void) const
             {
                 return "video_object";
@@ -158,7 +153,7 @@ namespace Gek
             }
 
 
-            // Video::Object
+            // Render::Object
             std::string_view getName(void) const
             {
                 return description.name;
@@ -166,10 +161,10 @@ namespace Gek
         };
 
         using CommandList = BaseVideoObject<1>;
-        using RenderState = DescribedVideoObject<Video::RenderState>;
-        using DepthState = DescribedVideoObject<Video::DepthState>;
-        using BlendState = DescribedVideoObject<Video::BlendState>;
-        using SamplerState = DescribedVideoObject<Video::SamplerState>;
+        using RenderState = DescribedVideoObject<Render::RenderState>;
+        using DepthState = DescribedVideoObject<Render::DepthState>;
+        using BlendState = DescribedVideoObject<Render::BlendState>;
+        using SamplerState = DescribedVideoObject<Render::SamplerState>;
         using InputLayout = BaseVideoObject<2>;
 
         using Resource = BaseObject<2>;
@@ -178,7 +173,7 @@ namespace Gek
         using RenderTargetView = BaseObject<5>;
 
         class Query
-            : public Video::Query
+            : public Render::Query
         {
         public:
 
@@ -191,7 +186,7 @@ namespace Gek
             {
             }
 
-            // Video::Object
+            // Render::Object
             std::string_view getName(void) const
             {
                 return "query";
@@ -199,16 +194,16 @@ namespace Gek
         };
 
         class Buffer
-            : public Video::Buffer
+            : public Render::Buffer
             , public Resource
             , public ShaderResourceView
             , public UnorderedAccessView
         {
         public:
-            Video::Buffer::Description description;
+            Render::Buffer::Description description;
 
         public:
-            Buffer(const Video::Buffer::Description &description)
+            Buffer(const Render::Buffer::Description &description)
                 : Resource()
                 , ShaderResourceView()
                 , UnorderedAccessView()
@@ -220,14 +215,14 @@ namespace Gek
             {
             }
 
-            // Video::Object
+            // Render::Object
             std::string_view getName(void) const
             {
                 return description.name;
             }
 
-            // Video::Buffer
-            const Video::Buffer::Description &getDescription(void) const
+            // Render::Buffer
+            const Render::Buffer::Description &getDescription(void) const
             {
                 return description;
             }
@@ -236,35 +231,35 @@ namespace Gek
         class BaseTexture
         {
         public:
-            Video::Texture::Description description;
+            Render::Texture::Description description;
 
         public:
-            BaseTexture(const Video::Texture::Description &description)
+            BaseTexture(const Render::Texture::Description &description)
                 : description(description)
             {
             }
         };
 
         class Texture
-            : virtual public Video::Texture
+            : virtual public Render::Texture
             , public BaseTexture
         {
         public:
-            Texture(const Video::Texture::Description &description)
+            Texture(const Render::Texture::Description &description)
                 : BaseTexture(description)
             {
             }
 
             virtual ~Texture(void) = default;
 
-            // Video::Object
+            // Render::Object
             std::string_view getName(void) const
             {
                 return description.name;
             }
 
-            // Video::Texture
-            const Video::Texture::Description &getDescription(void) const
+            // Render::Texture
+            const Render::Texture::Description &getDescription(void) const
             {
                 return description;
             }
@@ -276,7 +271,7 @@ namespace Gek
             , public ShaderResourceView
         {
         public:
-            ViewTexture(const Video::Texture::Description &description)
+            ViewTexture(const Render::Texture::Description &description)
                 : Texture(description)
                 , Resource()
                 , ShaderResourceView()
@@ -291,7 +286,7 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            UnorderedViewTexture(const Video::Texture::Description &description)
+            UnorderedViewTexture(const Render::Texture::Description &description)
                 : Texture(description)
                 , Resource()
                 , ShaderResourceView()
@@ -301,14 +296,14 @@ namespace Gek
         };
 
         class Target
-            : virtual public Video::Target
+            : virtual public Render::Target
             , public BaseTexture
         {
         public:
-            Video::ViewPort viewPort;
+            Render::ViewPort viewPort;
 
         public:
-            Target(const Video::Texture::Description &description)
+            Target(const Render::Texture::Description &description)
                 : BaseTexture(description)
                 , viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(description.width), float(description.height)), 0.0f, 1.0f)
             {
@@ -316,20 +311,20 @@ namespace Gek
 
             virtual ~Target(void) = default;
 
-            // Video::Object
+            // Render::Object
             std::string_view getName(void) const
             {
                 return description.name;
             }
 
-            // Video::Texture
-            const Video::Texture::Description &getDescription(void) const
+            // Render::Texture
+            const Render::Texture::Description &getDescription(void) const
             {
                 return description;
             }
 
-            // Video::Target
-            const Video::ViewPort &getViewPort(void) const
+            // Render::Target
+            const Render::ViewPort &getViewPort(void) const
             {
                 return viewPort;
             }
@@ -341,7 +336,7 @@ namespace Gek
             , public RenderTargetView
         {
         public:
-            TargetTexture(const Video::Texture::Description &description)
+            TargetTexture(const Render::Texture::Description &description)
                 : Target(description)
                 , Resource()
                 , RenderTargetView()
@@ -356,7 +351,7 @@ namespace Gek
             , public ShaderResourceView
         {
         public:
-            TargetViewTexture(const Video::Texture::Description &description)
+            TargetViewTexture(const Render::Texture::Description &description)
                 : TargetTexture(description)
                 , ShaderResourceView()
             {
@@ -371,7 +366,7 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            UnorderedTargetViewTexture(const Video::Texture::Description &description)
+            UnorderedTargetViewTexture(const Render::Texture::Description &description)
                 : TargetTexture(description)
                 , ShaderResourceView()
                 , UnorderedAccessView()
@@ -390,7 +385,7 @@ namespace Gek
         public:
 
         public:
-            DepthTexture(const Video::Texture::Description &description)
+            DepthTexture(const Render::Texture::Description &description)
                 : Texture(description)
                 , Resource()
                 , ShaderResourceView()
@@ -405,13 +400,13 @@ namespace Gek
 
         template <int UNIQUE>
         class Program
-            : public Video::Program
+            : public Render::Program
         {
         public:
-            Video::Program::Information information;
+            Render::Program::Information information;
 
         public:
-            Program(Video::Program::Information information)
+            Program(Render::Program::Information information)
                 : information(information)
             {
             }
@@ -420,13 +415,13 @@ namespace Gek
             {
             }
 
-            // Video::Object
+            // Render::Object
             std::string_view getName(void) const
             {
                 return information.name;
             }
 
-            // Video::Program
+            // Render::Program
             Information const &getInformation(void) const
             {
                 return information;
@@ -438,8 +433,8 @@ namespace Gek
         using GeometryProgram = Program<3>;
         using PixelProgram = Program<4>;
 
-        GEK_CONTEXT_USER(Implementation, Window *, Render::Device::Description)
-            , public Video::Debug::Device
+        GEK_CONTEXT_USER(Device, Window::Device *, Render::Device::Description)
+            , public Render::Debug::Device
         {
             class Context
                 : public Render::Device::Context
@@ -454,29 +449,29 @@ namespace Gek
                     {
                     }
 
-                    // Video::Pipeline
+                    // Render::Pipeline
                     Type getType(void) const
                     {
                         return Type::Compute;
                     }
 
-                    void setProgram(Video::Program *program)
+                    void setProgram(Render::Program *program)
                     {
                     }
 
-                    void setSamplerStateList(const std::vector<Video::Object *> &list, uint32_t firstStage)
+                    void setSamplerStateList(const std::vector<Render::Object *> &list, uint32_t firstStage)
                     {
                     }
 
-                    void setConstantBufferList(const std::vector<Video::Buffer *> &list, uint32_t firstStage)
+                    void setConstantBufferList(const std::vector<Render::Buffer *> &list, uint32_t firstStage)
                     {
                     }
 
-                    void setResourceList(const std::vector<Video::Object *> &list, uint32_t firstStage)
+                    void setResourceList(const std::vector<Render::Object *> &list, uint32_t firstStage)
                     {
                     }
 
-                    void setUnorderedAccessList(const std::vector<Video::Object *> &list, uint32_t firstStage, uint32_t *countList)
+                    void setUnorderedAccessList(const std::vector<Render::Object *> &list, uint32_t firstStage, uint32_t *countList)
                     {
                     }
 
@@ -507,29 +502,29 @@ namespace Gek
                     {
                     }
 
-                    // Video::Pipeline
+                    // Render::Pipeline
                     Type getType(void) const
                     {
                         return Type::Vertex;
                     }
 
-                    void setProgram(Video::Program *program)
+                    void setProgram(Render::Program *program)
                     {
                     }
 
-                    void setSamplerStateList(const std::vector<Video::Object *> &list, uint32_t firstStage)
+                    void setSamplerStateList(const std::vector<Render::Object *> &list, uint32_t firstStage)
                     {
                     }
 
-                    void setConstantBufferList(const std::vector<Video::Buffer *> &list, uint32_t firstStage)
+                    void setConstantBufferList(const std::vector<Render::Buffer *> &list, uint32_t firstStage)
                     {
                     }
 
-                    void setResourceList(const std::vector<Video::Object *> &list, uint32_t firstStage)
+                    void setResourceList(const std::vector<Render::Object *> &list, uint32_t firstStage)
                     {
                     }
 
-                    void setUnorderedAccessList(const std::vector<Video::Object *> &list, uint32_t firstStage, uint32_t *countList)
+                    void setUnorderedAccessList(const std::vector<Render::Object *> &list, uint32_t firstStage, uint32_t *countList)
                     {
                         assert(false && "Vertex pipeline does not supported unordered access");
                     }
@@ -562,29 +557,29 @@ namespace Gek
                     {
                     }
 
-                    // Video::Pipeline
+                    // Render::Pipeline
                     Type getType(void) const
                     {
                         return Type::Geometry;
                     }
 
-                    void setProgram(Video::Program *program)
+                    void setProgram(Render::Program *program)
                     {
                     }
 
-                    void setSamplerStateList(const std::vector<Video::Object *> &list, uint32_t firstStage)
+                    void setSamplerStateList(const std::vector<Render::Object *> &list, uint32_t firstStage)
                     {
                     }
 
-                    void setConstantBufferList(const std::vector<Video::Buffer *> &list, uint32_t firstStage)
+                    void setConstantBufferList(const std::vector<Render::Buffer *> &list, uint32_t firstStage)
                     {
                     }
 
-                    void setResourceList(const std::vector<Video::Object *> &list, uint32_t firstStage)
+                    void setResourceList(const std::vector<Render::Object *> &list, uint32_t firstStage)
                     {
                     }
 
-                    void setUnorderedAccessList(const std::vector<Video::Object *> &list, uint32_t firstStage, uint32_t *countList)
+                    void setUnorderedAccessList(const std::vector<Render::Object *> &list, uint32_t firstStage, uint32_t *countList)
                     {
                         assert(false && "Geometry pipeline does not supported unordered access");
                     }
@@ -617,29 +612,29 @@ namespace Gek
                     {
                     }
 
-                    // Video::Pipeline
+                    // Render::Pipeline
                     Type getType(void) const
                     {
                         return Type::Pixel;
                     }
 
-                    void setProgram(Video::Program *program)
+                    void setProgram(Render::Program *program)
                     {
                     }
 
-                    void setSamplerStateList(const std::vector<Video::Object *> &list, uint32_t firstStage)
+                    void setSamplerStateList(const std::vector<Render::Object *> &list, uint32_t firstStage)
                     {
                     }
 
-                    void setConstantBufferList(const std::vector<Video::Buffer *> &list, uint32_t firstStage)
+                    void setConstantBufferList(const std::vector<Render::Buffer *> &list, uint32_t firstStage)
                     {
                     }
 
-                    void setResourceList(const std::vector<Video::Object *> &list, uint32_t firstStage)
+                    void setResourceList(const std::vector<Render::Object *> &list, uint32_t firstStage)
                     {
                     }
 
-                    void setUnorderedAccessList(const std::vector<Video::Object *> &list, uint32_t firstStage, uint32_t *countList)
+                    void setUnorderedAccessList(const std::vector<Render::Object *> &list, uint32_t firstStage, uint32_t *countList)
                     {
                     }
 
@@ -680,7 +675,7 @@ namespace Gek
                     assert(pixelSystemHandler);
                 }
 
-                // Video::Context
+                // Render::Context
                 Pipeline * const computePipeline(void)
                 {
                     assert(computeSystemHandler);
@@ -709,24 +704,24 @@ namespace Gek
                     return pixelSystemHandler.get();
                 }
 
-                void begin(Video::Query *query)
+                void begin(Render::Query *query)
                 {
                 }
 
-                void end(Video::Query *query)
+                void end(Render::Query *query)
                 {
                 }
 
-                Video::Query::Status getData(Video::Query *query, void *data, size_t dataSize, bool waitUntilReady = false)
+                Render::Query::Status getData(Render::Query *query, void *data, size_t dataSize, bool waitUntilReady = false)
                 {
-                    return Video::Query::Status::Error;
+                    return Render::Query::Status::Error;
                 }
 
-                void generateMipMaps(Video::Texture *texture)
+                void generateMipMaps(Render::Texture *texture)
                 {
                 }
 
-                void resolveSamples(Video::Texture *destination, Video::Texture *source)
+                void resolveSamples(Render::Texture *destination, Render::Texture *source)
                 {
                 }
 
@@ -734,7 +729,7 @@ namespace Gek
                 {
                 }
 
-                void setViewportList(const std::vector<Video::ViewPort> &viewPortList)
+                void setViewportList(const std::vector<Render::ViewPort> &viewPortList)
                 {
                 }
 
@@ -742,23 +737,23 @@ namespace Gek
                 {
                 }
 
-                void clearResource(Video::Object *object, Math::Float4 const &value)
+                void clearResource(Render::Object *object, Math::Float4 const &value)
                 {
                 }
 
-                void clearUnorderedAccess(Video::Object *object, Math::Float4 const &value)
+                void clearUnorderedAccess(Render::Object *object, Math::Float4 const &value)
                 {
                 }
 
-                void clearUnorderedAccess(Video::Object *object, Math::UInt4 const &value)
+                void clearUnorderedAccess(Render::Object *object, Math::UInt4 const &value)
                 {
                 }
 
-                void clearRenderTarget(Video::Target *renderTarget, Math::Float4 const &clearColor)
+                void clearRenderTarget(Render::Target *renderTarget, Math::Float4 const &clearColor)
                 {
                 }
 
-                void clearDepthStencilTarget(Video::Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
+                void clearDepthStencilTarget(Render::Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
                 {
                 }
 
@@ -774,35 +769,35 @@ namespace Gek
                 {
                 }
 
-                void setRenderTargetList(const std::vector<Video::Target *> &renderTargetList, Video::Object *depthBuffer)
+                void setRenderTargetList(const std::vector<Render::Target *> &renderTargetList, Render::Object *depthBuffer)
                 {
                 }
 
-                void setRenderState(Video::Object *renderState)
+                void setRenderState(Render::Object *renderState)
                 {
                 }
 
-                void setDepthState(Video::Object *depthState, uint32_t stencilReference)
+                void setDepthState(Render::Object *depthState, uint32_t stencilReference)
                 {
                 }
 
-                void setBlendState(Video::Object *blendState, Math::Float4 const &blendFactor, uint32_t mask)
+                void setBlendState(Render::Object *blendState, Math::Float4 const &blendFactor, uint32_t mask)
                 {
                 }
 
-                void setInputLayout(Video::Object *inputLayout)
+                void setInputLayout(Render::Object *inputLayout)
                 {
                 }
 
-                void setIndexBuffer(Video::Buffer *indexBuffer, uint32_t offset)
+                void setIndexBuffer(Render::Buffer *indexBuffer, uint32_t offset)
                 {
                 }
 
-                void setVertexBufferList(const std::vector<Video::Buffer *> &vertexBufferList, uint32_t firstSlot, uint32_t *offsetList)
+                void setVertexBufferList(const std::vector<Render::Buffer *> &vertexBufferList, uint32_t firstSlot, uint32_t *offsetList)
                 {
                 }
 
-                void setPrimitiveType(Video::PrimitiveType primitiveType)
+                void setPrimitiveType(Render::PrimitiveType primitiveType)
                 {
                 }
 
@@ -826,16 +821,16 @@ namespace Gek
                 {
                 }
 
-                Video::ObjectPtr finishCommandList(void)
+                Render::ObjectPtr finishCommandList(void)
                 {
                     return std::make_unique<CommandList>();
                 }
             };
 
         public:
-            Window * window = nullptr;
+            Window::Device * window = nullptr;
             Render::Device::ContextPtr defaultContext;
-            Video::TargetPtr backBuffer;
+            Render::TargetPtr backBuffer;
 
             bool enableValidationLayer = false;
             VkDebugUtilsMessengerEXT debugMessenger;
@@ -892,7 +887,7 @@ namespace Gek
                 std::vector<const char*> instanceExtensions = 
                 {
                     VK_KHR_SURFACE_EXTENSION_NAME,
-                    VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
+                    //VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
                 };
 
                 if (!checkInstanceExtensionSupport(instanceExtensions))
@@ -1118,6 +1113,7 @@ namespace Gek
 
             void createSurface(void)
             {
+                /*
                 VkXlibSurfaceCreateInfoKHR createInfo{};
                 createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
                 createInfo.dpy = reinterpret_cast<Display *>(window->getWindowData(0));
@@ -1126,7 +1122,7 @@ namespace Gek
                 {
                     throw std::runtime_error("failed to create window surface!");
                 }
-
+                */
                 getContext()->log(Gek::Context::Info, "Vulkan surface created");
             }
 
@@ -1300,7 +1296,7 @@ namespace Gek
             }
 
         public:
-            Implementation(Gek::Context *context, Window *window, Render::Device::Description deviceDescription)
+            Device(Gek::Context *context, Window::Device *window, Render::Device::Description deviceDescription)
                 : ContextRegistration(context)
                 , window(window)
             {
@@ -1319,7 +1315,7 @@ namespace Gek
 
                 defaultContext = std::make_unique<Context>();
 
-                Video::Texture::Description description;
+                Render::Texture::Description description;
                 backBuffer = std::make_unique<Target>(description);
             }
 
@@ -1347,7 +1343,7 @@ namespace Gek
                 }
             }
 
-            ~Implementation(void)
+            ~Device(void)
             {
                 setFullScreenState(false);
 
@@ -1375,18 +1371,18 @@ namespace Gek
                 vkDestroyInstance(instance, nullptr);
             }
 
-            // Video::Debug::Device
+            // Render::Debug::Device
             void * getDevice(void)
             {
                 return nullptr;
             }
 
             // Render::Device
-            Video::DisplayModeList getDisplayModeList(Video::Format format) const
+            Render::DisplayModeList getDisplayModeList(Render::Format format) const
             {
-                Video::DisplayModeList displayModeList;
+                Render::DisplayModeList displayModeList;
 
-                Video::DisplayMode displayMode(1600, 1200, Video::Format::Unknown);
+                Render::DisplayMode displayMode(1600, 1200, Render::Format::Unknown);
                 displayMode.refreshRate.numerator = 60;
                 displayMode.refreshRate.denominator = 1;
                 displayModeList.push_back(displayMode);
@@ -1403,7 +1399,7 @@ namespace Gek
             {
             }
 
-            void setDisplayMode(const Video::DisplayMode &displayMode)
+            void setDisplayMode(const Render::DisplayMode &displayMode)
             {
                 getContext()->log(Gek::Context::Info, "Setting display mode: {} x {}", displayMode.width, displayMode.height);
                 window->resize(Math::Int2(displayMode.width, displayMode.height));
@@ -1413,7 +1409,7 @@ namespace Gek
             {
             }
 
-            Video::Target * const getBackBuffer(void)
+            Render::Target * const getBackBuffer(void)
             {
                 return backBuffer.get();
             }
@@ -1430,92 +1426,92 @@ namespace Gek
                 return std::make_unique<Context>();
             }
 
-            Video::QueryPtr createQuery(Video::Query::Type type)
+            Render::QueryPtr createQuery(Render::Query::Type type)
             {
                 return std::make_unique<Query>();
             }
 
-            Video::RenderStatePtr createRenderState(Video::RenderState::Description const &description)
+            Render::RenderStatePtr createRenderState(Render::RenderState::Description const &description)
             {
                 return std::make_unique<RenderState>(description);
             }
 
-            Video::DepthStatePtr createDepthState(Video::DepthState::Description const &description)
+            Render::DepthStatePtr createDepthState(Render::DepthState::Description const &description)
             {
                 return std::make_unique<DepthState>(description);
             }
 
-            Video::BlendStatePtr createBlendState(Video::BlendState::Description const &description)
+            Render::BlendStatePtr createBlendState(Render::BlendState::Description const &description)
             {
                 return std::make_unique<BlendState>(description);
             }
 
-            Video::SamplerStatePtr createSamplerState(Video::SamplerState::Description const &description)
+            Render::SamplerStatePtr createSamplerState(Render::SamplerState::Description const &description)
             {
                 return std::make_unique<SamplerState>(description);
             }
 
-            Video::BufferPtr createBuffer(const Video::Buffer::Description &description, const void *data)
+            Render::BufferPtr createBuffer(const Render::Buffer::Description &description, const void *data)
             {
                 return std::make_unique<Buffer>(description);
             }
 
-            bool mapBuffer(Video::Buffer *buffer, void *&data, Video::Map mapping)
+            bool mapBuffer(Render::Buffer *buffer, void *&data, Render::Map mapping)
             {
                 return false;
             }
 
-            void unmapBuffer(Video::Buffer *buffer)
+            void unmapBuffer(Render::Buffer *buffer)
             {
             }
 
-            void updateResource(Video::Object *object, const void *data)
+            void updateResource(Render::Object *object, const void *data)
             {
             }
 
-            void copyResource(Video::Object *destination, Video::Object *source)
+            void copyResource(Render::Object *destination, Render::Object *source)
             {
             }
 
-            std::string_view const getSemanticMoniker(Video::InputElement::Semantic semantic)
+            std::string_view const getSemanticMoniker(Render::InputElement::Semantic semantic)
             {
                 return SemanticNameList[static_cast<uint8_t>(semantic)];
             }
 
-            Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, Video::Program::Information const &information)
+            Render::ObjectPtr createInputLayout(const std::vector<Render::InputElement> &elementList, Render::Program::Information const &information)
             {
                 return std::make_unique<InputLayout>();
             }
 
-            Video::Program::Information compileProgram(Video::Program::Type type, std::string_view name, FileSystem::Path const &debugPath, std::string_view uncompiledProgram, std::string_view entryFunction, std::function<bool(Video::IncludeType, std::string_view, void const **data, uint32_t *size)> &&onInclude)
+            Render::Program::Information compileProgram(Render::Program::Type type, std::string_view name, FileSystem::Path const &debugPath, std::string_view uncompiledProgram, std::string_view entryFunction, std::function<bool(Render::IncludeType, std::string_view, void const **data, uint32_t *size)> &&onInclude)
             {
                 assert(d3dDevice);
 
-                Video::Program::Information information;
+                Render::Program::Information information;
                 information.type = type;
                 return information;
             }
 
             template <class TYPE>
-            Video::ProgramPtr createProgram(Video::Program::Information const &information)
+            Render::ProgramPtr createProgram(Render::Program::Information const &information)
             {
                 return std::make_unique<TYPE>(information);
             }
 
-            Video::ProgramPtr createProgram(Video::Program::Information const &information)
+            Render::ProgramPtr createProgram(Render::Program::Information const &information)
             {
                 switch (information.type)
                 {
-                case Video::Program::Type::Compute:
+                case Render::Program::Type::Compute:
                     return createProgram<ComputeProgram>(information);
 
-                case Video::Program::Type::Vertex:
+                case Render::Program::Type::Vertex:
                     return createProgram<VertexProgram>(information);
 
-                case Video::Program::Type::Geometry:
+                case Render::Program::Type::Geometry:
                     return createProgram<GeometryProgram>(information);
 
-                case Video::Program::Type::Pixel:
+                case Render::Program::Type::Pixel:
                     return createProgram<PixelProgram>(information);
                 };
 
@@ -1523,13 +1519,13 @@ namespace Gek
                 return nullptr;
             }
 
-            Video::TexturePtr createTexture(const Video::Texture::Description &description, const void *data)
+            Render::TexturePtr createTexture(const Render::Texture::Description &description, const void *data)
             {
-                if (description.flags & Video::Texture::Flags::RenderTarget)
+                if (description.flags & Render::Texture::Flags::RenderTarget)
                 {
                     return std::make_unique<UnorderedTargetViewTexture>(description);
                 }
-                else if (description.flags & Video::Texture::Flags::DepthTarget)
+                else if (description.flags & Render::Texture::Flags::DepthTarget)
                 {
                     return std::make_unique<DepthTexture>(description);
                 }
@@ -1539,15 +1535,15 @@ namespace Gek
                 }
             }
 
-            Video::TexturePtr loadTexture(FileSystem::Path const &filePath, uint32_t flags)
+            Render::TexturePtr loadTexture(FileSystem::Path const &filePath, uint32_t flags)
             {
-                Video::Texture::Description description;
+                Render::Texture::Description description;
                 return std::make_unique<ViewTexture>(description);
             }
 
-            Video::TexturePtr loadTexture(void const *buffer, size_t size, uint32_t flags)
+            Render::TexturePtr loadTexture(void const *buffer, size_t size, uint32_t flags)
             {
-                Video::Texture::Description description;
+                Render::Texture::Description description;
                 return std::make_unique<ViewTexture>(description);
             }
 
@@ -1557,7 +1553,7 @@ namespace Gek
                 return description;
             }
 
-            void executeCommandList(Video::Object *commandList)
+            void executeCommandList(Render::Object *commandList)
             {
             }
 
@@ -1566,6 +1562,6 @@ namespace Gek
             }
         };
 
-        GEK_REGISTER_CONTEXT_USER(Implementation);
-    }; // Vulkan
+        GEK_REGISTER_CONTEXT_USER(Device);
+    }; // Render::Implementation
 }; // namespace Gek

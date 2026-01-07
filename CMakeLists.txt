@@ -7,7 +7,7 @@ option("GEK_BUILD_TESTS" "Create unit test projects" ON)
 set("GEK_WINDOW_DEVICE" "win32" CACHE STRING "Compile targeting specific window device")
 set_property(CACHE GEK_WINDOW_DEVICE PROPERTY STRINGS win32 x11)
 
-set("GEK_RENDER_DEVICE" "d3d11" CACHE STRING "Compile targeting specific render device")
+set("GEK_RENDER_DEVICE" "vulkan" CACHE STRING "Compile targeting specific render device")
 set_property(CACHE GEK_RENDER_DEVICE PROPERTY STRINGS d3d11 vulkan)
 
 set("GEK_AUDIO_DEVICE" "ds8" CACHE STRING "Compile targeting specific audio device")
