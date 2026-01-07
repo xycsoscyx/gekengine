@@ -13,4 +13,4 @@ target_include_directories(${ProjectID} BEFORE PUBLIC "${mikktspace_SOURCE_DIR}"
 
 target_link_libraries(${ProjectID} Math Utility Shapes Resources assimp argparse)
 
-install(TARGETS ${ProjectID} DESTINATION "bin")
+install(TARGETS ${ProjectID} DESTINATION "")

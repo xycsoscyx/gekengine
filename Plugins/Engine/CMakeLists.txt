@@ -13,8 +13,4 @@ target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
 target_link_libraries(${ProjectID} Math Shapes Utility GUI System API Components Model)
 
-install(TARGETS ${ProjectID} DESTINATION "bin")
-
-if(GEK_BUILD_TESTS)
-    add_subdirectory(Tests)
-endif()
+install(TARGETS ${ProjectID} DESTINATION "")

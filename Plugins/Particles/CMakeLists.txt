@@ -11,4 +11,4 @@ target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
 target_link_libraries(${ProjectID} Math Utility Shapes imgui)
 
-install(TARGETS ${ProjectID} DESTINATION "bin")
+install(TARGETS ${ProjectID} DESTINATION "")

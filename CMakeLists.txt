@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}" CACHE PATH "Installation prefix" FORCE)
-message("CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
+set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_LIST_DIR}/bin" CACHE PATH "Installation prefix" FORCE)
 
 option("GEK_BUILD_TESTS" "Create unit test projects" ON)
 
@@ -63,7 +62,7 @@ endif()
 
 include(FetchContent)
 
-FetchContent_Declare(argparse OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/p-ranav/argparse.git GIT_TAG master)
+FetchContent_Declare(argparse OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/p-ranav/argparse.git GIT_TAG v3.2)
 FetchContent_MakeAvailable(argparse)
 
 if(MSVC)
@@ -77,7 +76,7 @@ SET(ASSIMP_BUILD_ASSIMP_TOOLS False CACHE BOOL "" FORCE)
 SET(ASSIMP_BUILD_ASSIMP_VIEW False CACHE BOOL "" FORCE)
 SET(ASSIMP_BUILD_TESTS False CACHE BOOL "" FORCE)
 SET(ASSIMP_INSTALL_PDB False CACHE BOOL "" FORCE)
-FetchContent_Declare(assimp OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/assimp/assimp.git GIT_TAG master)
+FetchContent_Declare(assimp OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/assimp/assimp.git GIT_TAG v6.0.2)
 FetchContent_MakeAvailable(assimp)
 
 add_definitions(-DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_DEFINE_PLACEMENT_NEW)
@@ -88,7 +87,7 @@ FetchContent_Declare(imguizmo OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://githu
 FetchContent_MakeAvailable(imguizmo)
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
-FetchContent_Declare(json OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG master)
+FetchContent_Declare(json OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG v3.12.0)
 FetchContent_MakeAvailable(json)
 
 FetchContent_Declare(mikktspace OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/mmikk/MikkTSpace.git GIT_TAG master)
@@ -114,15 +113,25 @@ include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dJoints")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton")
 
 SET(TBB_TEST OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(oneTBB OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/oneapi-src/oneTBB GIT_TAG master)
+FetchContent_Declare(oneTBB OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/oneapi-src/oneTBB GIT_TAG v2022.3.0)
 FetchContent_MakeAvailable(oneTBB)
 
 FetchContent_Declare(wink OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/miguelmartin75/Wink-Signals.git GIT_TAG master)
 FetchContent_MakeAvailable(wink)
 include_directories("${wink_SOURCE_DIR}")
 
+FetchContent_Declare(hwloc GIT_REPOSITORY https://github.com/open-mpi/hwloc.git GIT_TAG master)
+FetchContent_MakeAvailable(hwloc)
+
+# Disable Slang's internal use of mimalloc to avoid the Windows shared-build error
+# Ensure everything else is static as intended
+set(SLANG_LIB_TYPE "STATIC" CACHE STRING "" FORCE)
+set(SLANG_USE_MIMALLOC OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(slang OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/MikePopoloski/slang.git GIT_TAG v9.1)
+FetchContent_MakeAvailable(slang)
+
 if(GEK_BUILD_TESTS)
-    FetchContent_Declare(googletest OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/google/googletest.git GIT_TAG main)
+    FetchContent_Declare(googletest OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/google/googletest.git GIT_TAG v1.17.0)
 
     if(WIN32)
         # For Windows: Prevent overriding the parent project's compiler/linker settings
@@ -138,7 +147,7 @@ if(WIN32)
     SET(BUILD_DX12 OFF CACHE BOOL "" FORCE)
     SET(BC_USE_OPENMP OFF CACHE BOOL "" FORCE)
     SET(DISABLE_MSVC_ITERATOR_DEBUGGING ON CACHE BOOL "" FORCE)
-    FetchContent_Declare(DirectXTex OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/microsoft/DirectXTex.git GIT_TAG main)
+    FetchContent_Declare(DirectXTex OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/microsoft/DirectXTex.git GIT_TAG oct2025)
     FetchContent_MakeAvailable(DirectXTex)
 endif()
 
@@ -150,7 +159,7 @@ add_subdirectory("Plugins")
 add_subdirectory("Applications")
 
 if(GEK_CREATE_FOLDERS)
-    set_property(TARGET assimp PROPERTY FOLDER "External")
+    set_property(TARGET assimp PROPERTY FOLDER "External") 
     set_property(TARGET ndBrain PROPERTY FOLDER "External")
     set_property(TARGET ndFileFormat PROPERTY FOLDER "External")
     set_property(TARGET ndModel PROPERTY FOLDER "External")

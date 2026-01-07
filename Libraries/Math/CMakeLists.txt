@@ -18,8 +18,15 @@ if(GEK_BUILD_TESTS)
     if(WIN32)
         add_custom_command(
             TARGET ${ProjectID}_test POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DLLS:${ProjectID}_test> $<TARGET_FILE_DIR:${ProjectID}_test>
+            # 1. Ensure the destination directory exists
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${ProjectID}_test>"
+            
+            # 2. Source files go first, destination directory goes last
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different 
+                    $<TARGET_RUNTIME_DLLS:${ProjectID}_test> 
+                    "$<TARGET_FILE_DIR:${ProjectID}_test>"
             COMMAND_EXPAND_LISTS
+            VERBATIM
         )
     endif()
     gtest_discover_tests(${ProjectID}_test)

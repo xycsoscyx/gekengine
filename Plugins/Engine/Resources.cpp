@@ -96,8 +96,6 @@ public:
     }
 };
 
-#include "GEK/Engine/ResourcesHelpers.hpp"
-
 namespace Gek
 {
     namespace Implementation
@@ -1576,7 +1574,6 @@ namespace Gek
 
                     information = videoDevice->compileProgram(type, name, uncompiledPath, uncompiledData, entryFunction, onInclude);
                     FileSystem::Save(uncompiledPath, information.uncompiledData);
-                    Implementation::SaveCompiledSidecar(compiledPath, information.compiledData);
                 }
                 /*else
                 {

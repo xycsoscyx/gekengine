@@ -13,4 +13,4 @@ target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
 target_link_libraries(${ProjectID} Math Shapes Utility GUI System API)
 
-install(TARGETS ${ProjectID} DESTINATION "bin")
+install(TARGETS ${ProjectID} DESTINATION "")

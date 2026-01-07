@@ -13,7 +13,7 @@ set_property(TARGET ${ProjectID} PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS True)
 
 target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
-target_link_libraries(${ProjectID} PUBLIC Math Utility Resources DirectXTex)
+target_link_libraries(${ProjectID} PUBLIC Math Utility Resources DirectXTex slang::slang)
 
 # Link lodepng if available (provides lodepng.h). This fixes builds when the OpenGL device
 # needs to include "lodepng.h" from Newton's thirdParty.
@@ -55,4 +55,4 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/Plugins/System/GEK")
     target_include_directories(${ProjectID} PRIVATE "${CMAKE_SOURCE_DIR}/Plugins/System/GEK")
 endif()
 
-install(TARGETS ${ProjectID} DESTINATION "bin")
+install(TARGETS ${ProjectID} DESTINATION "")

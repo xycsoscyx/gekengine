@@ -8,4 +8,4 @@ add_executable(${ProjectID} ${SOURCES})
 
 target_link_libraries(${ProjectID} Math Utility System Resources argparse DirectXTex)
 
-install(TARGETS ${ProjectID} DESTINATION "bin")
+install(TARGETS ${ProjectID} DESTINATION "")

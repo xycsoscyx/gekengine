@@ -32,4 +32,4 @@ else()
     target_link_libraries(${ProjectID} ${X11_LIBRARIES} ${Vulkan_LIBRARIES})
 endif()
 
-install(TARGETS ${ProjectID} DESTINATION "bin")
+install(TARGETS ${ProjectID} DESTINATION "")
