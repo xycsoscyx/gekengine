@@ -9,14 +9,14 @@ add_library(${ProjectID} STATIC ${SOURCES} ${HEADERS})
 
 target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
-target_link_libraries(${ProjectID} Math Utility)
+target_link_libraries(${ProjectID} PUBLIC Math Utility)
 
 if(GEK_BUILD_TESTS)
     file(GLOB TESTS "Tests/*.[hc]pp")
     include(GoogleTest)
     enable_testing()
     add_executable(${ProjectID}_test ${TESTS})
-    target_link_libraries(${ProjectID}_test GTest::gtest GTest::gtest_main ${ProjectID})
+    target_link_libraries(${ProjectID}_test PRIVATE GTest::gtest GTest::gtest_main ${ProjectID})
     if(WIN32)
         add_custom_command(
             TARGET ${ProjectID}_test POST_BUILD

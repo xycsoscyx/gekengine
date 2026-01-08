@@ -13,20 +13,11 @@ set_property(CACHE GEK_RENDER_DEVICE PROPERTY STRINGS d3d11 vulkan)
 set("GEK_AUDIO_DEVICE" "ds8" CACHE STRING "Compile targeting specific audio device")
 set_property(CACHE GEK_AUDIO_DEVICE PROPERTY STRINGS ds8)
 
-option("GEK_CREATE_FOLDERS" "Create project folders in generated solution" OFF)
-if(MSVC)
-    set(GEK_CREATE_FOLDERS ON CACHE BOOL "" FORCE)
-endif()
-
 get_filename_component(ProjectID ${CMAKE_CURRENT_LIST_DIR} NAME)
 string(REPLACE " " "_" ProjectID ${ProjectID})
 project(${ProjectID})
 
 if(MSVC)
-    if(GEK_CREATE_FOLDERS)
-        set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-    endif()
-
     add_definitions(/await:strict) # Enable coroutines
     add_definitions(/std:c++20)
 	add_definitions(-D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_ITERATOR_DEBUG_LEVEL=0)
@@ -62,7 +53,7 @@ endif()
 
 include(FetchContent)
 
-FetchContent_Declare(argparse OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/p-ranav/argparse.git GIT_TAG v3.2)
+FetchContent_Declare(argparse OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/p-ranav/argparse.git GIT_TAG v3.2 OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(argparse)
 
 if(MSVC)
@@ -76,25 +67,25 @@ SET(ASSIMP_BUILD_ASSIMP_TOOLS False CACHE BOOL "" FORCE)
 SET(ASSIMP_BUILD_ASSIMP_VIEW False CACHE BOOL "" FORCE)
 SET(ASSIMP_BUILD_TESTS False CACHE BOOL "" FORCE)
 SET(ASSIMP_INSTALL_PDB False CACHE BOOL "" FORCE)
-FetchContent_Declare(assimp OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/assimp/assimp.git GIT_TAG v6.0.2)
+FetchContent_Declare(assimp OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/assimp/assimp.git GIT_TAG v6.0.2 OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(assimp)
 
 add_definitions(-DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_DEFINE_PLACEMENT_NEW)
-FetchContent_Declare(imgui OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/ocornut/imgui.git GIT_TAG docking)
+FetchContent_Declare(imgui OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/ocornut/imgui.git GIT_TAG docking OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(imgui)
 
-FetchContent_Declare(imguizmo OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/CedricGuillemet/ImGuizmo.git GIT_TAG master)
+FetchContent_Declare(imguizmo OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/CedricGuillemet/ImGuizmo.git GIT_TAG master OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(imguizmo)
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
-FetchContent_Declare(json OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG v3.12.0)
-FetchContent_MakeAvailable(json)
+FetchContent_Declare(nlohmann_json OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG v3.12.0 OVERRIDE_FIND_PACKAGE)
+FetchContent_MakeAvailable(nlohmann_json)
 
-FetchContent_Declare(mikktspace OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/mmikk/MikkTSpace.git GIT_TAG master)
+FetchContent_Declare(mikktspace OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/mmikk/MikkTSpace.git GIT_TAG master OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(mikktspace)
 
 SET(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(newton OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/MADEAPPS/newton-dynamics.git GIT_TAG master SOURCE_SUBDIR newton-4.00)
+FetchContent_Declare(newton OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/MADEAPPS/newton-dynamics.git GIT_TAG master SOURCE_SUBDIR newton-4.00 OVERRIDE_FIND_PACKAGE)
 # Build Newton as a static/single library so internal, non-exported virtual
 # methods (used by deriving classes) are available to plugins that link
 # against it. Building Newton as shared DLLs hides private symbols and
@@ -113,25 +104,25 @@ include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dJoints")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton")
 
 SET(TBB_TEST OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(oneTBB OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/oneapi-src/oneTBB GIT_TAG v2022.3.0)
+FetchContent_Declare(oneTBB OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/oneapi-src/oneTBB GIT_TAG v2022.3.0 OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(oneTBB)
 
-FetchContent_Declare(wink OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/miguelmartin75/Wink-Signals.git GIT_TAG master)
+FetchContent_Declare(wink OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/miguelmartin75/Wink-Signals.git GIT_TAG master OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(wink)
 include_directories("${wink_SOURCE_DIR}")
 
-FetchContent_Declare(hwloc GIT_REPOSITORY https://github.com/open-mpi/hwloc.git GIT_TAG master)
+FetchContent_Declare(hwloc GIT_REPOSITORY https://github.com/open-mpi/hwloc.git GIT_TAG master OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(hwloc)
 
 # Disable Slang's internal use of mimalloc to avoid the Windows shared-build error
 # Ensure everything else is static as intended
 set(SLANG_LIB_TYPE "STATIC" CACHE STRING "" FORCE)
 set(SLANG_USE_MIMALLOC OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(slang OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/MikePopoloski/slang.git GIT_TAG v9.1)
+FetchContent_Declare(slang OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/MikePopoloski/slang.git GIT_TAG v9.1 OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(slang)
 
 if(GEK_BUILD_TESTS)
-    FetchContent_Declare(googletest OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/google/googletest.git GIT_TAG v1.17.0)
+    FetchContent_Declare(googletest OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/google/googletest.git GIT_TAG v1.17.0 OVERRIDE_FIND_PACKAGE)
 
     if(WIN32)
         # For Windows: Prevent overriding the parent project's compiler/linker settings
@@ -147,7 +138,7 @@ if(WIN32)
     SET(BUILD_DX12 OFF CACHE BOOL "" FORCE)
     SET(BC_USE_OPENMP OFF CACHE BOOL "" FORCE)
     SET(DISABLE_MSVC_ITERATOR_DEBUGGING ON CACHE BOOL "" FORCE)
-    FetchContent_Declare(DirectXTex OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/microsoft/DirectXTex.git GIT_TAG oct2025)
+    FetchContent_Declare(DirectXTex OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/microsoft/DirectXTex.git GIT_TAG oct2025 OVERRIDE_FIND_PACKAGE)
     FetchContent_MakeAvailable(DirectXTex)
 endif()
 
@@ -157,35 +148,6 @@ add_definitions(-DNOMINMAX)
 add_subdirectory("Libraries")
 add_subdirectory("Plugins")
 add_subdirectory("Applications")
-
-if(GEK_CREATE_FOLDERS)
-    set_property(TARGET assimp PROPERTY FOLDER "External") 
-    set_property(TARGET ndBrain PROPERTY FOLDER "External")
-    set_property(TARGET ndFileFormat PROPERTY FOLDER "External")
-    set_property(TARGET ndModel PROPERTY FOLDER "External")
-    set_property(TARGET ndNewton PROPERTY FOLDER "External")
-    set_property(TARGET ndTinyxml PROPERTY FOLDER "External")
-    set_property(TARGET newton_tests PROPERTY FOLDER "External")
-    set_property(TARGET openfbx PROPERTY FOLDER "External")
-    set_property(TARGET tbb PROPERTY FOLDER "External")
-    set_property(TARGET tbbmalloc PROPERTY FOLDER "External")
-    set_property(TARGET tbbmalloc_proxy PROPERTY FOLDER "External")
-    set_property(TARGET uninstall PROPERTY FOLDER "External")
-    set_property(TARGET UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTY FOLDER "External")
-    set_property(TARGET vhacd PROPERTY FOLDER "External")
-    set_property(TARGET zlibstatic PROPERTY FOLDER "External")
-    if(GEK_BUILD_TESTS)
-        set_property(TARGET Math_test PROPERTY FOLDER "Tests")
-
-        set_property(TARGET gmock PROPERTY FOLDER "External")
-        set_property(TARGET gtest PROPERTY FOLDER "External")
-        set_property(TARGET gmock_main PROPERTY FOLDER "External")
-        set_property(TARGET gtest_main PROPERTY FOLDER "External")
-    endif()
-    if(WIN32)
-        set_property(TARGET DirectXTex PROPERTY FOLDER "External")
-    endif()
-endif()
 
 if(MSVC)
     set_property(DIRECTORY ${CMAKE_CURRENT_LIST_DIR} PROPERTY VS_STARTUP_PROJECT demo_engine)

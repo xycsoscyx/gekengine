@@ -17,4 +17,4 @@ target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 target_include_directories(${ProjectID} BEFORE PUBLIC "${imgui_SOURCE_DIR}")
 target_include_directories(${ProjectID} BEFORE PUBLIC "${imguizmo_SOURCE_DIR}")
 
-target_link_libraries(${ProjectID} Math Utility Shapes)
+target_link_libraries(${ProjectID} PUBLIC Math Utility Shapes)

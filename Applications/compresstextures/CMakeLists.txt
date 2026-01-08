@@ -6,6 +6,7 @@ project(${ProjectID})
 file(GLOB SOURCES "*.cpp" "*.rc")
 add_executable(${ProjectID} ${SOURCES})
 
-target_link_libraries(${ProjectID} Math Utility System Resources argparse DirectXTex)
+target_link_libraries(${ProjectID} PRIVATE argparse DirectXTex)
+target_link_libraries(${ProjectID} PUBLIC Math Utility System Resources)
 
 install(TARGETS ${ProjectID} DESTINATION "")

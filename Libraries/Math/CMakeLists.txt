@@ -14,7 +14,7 @@ if(GEK_BUILD_TESTS)
     include(GoogleTest)
     enable_testing()
     add_executable(${ProjectID}_test ${TESTS})
-    target_link_libraries(${ProjectID}_test GTest::gtest GTest::gtest_main ${ProjectID})
+    target_link_libraries(${ProjectID}_test PRIVATE GTest::gtest GTest::gtest_main ${ProjectID})
     if(WIN32)
         add_custom_command(
             TARGET ${ProjectID}_test POST_BUILD

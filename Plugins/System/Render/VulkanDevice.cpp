@@ -9,12 +9,73 @@
 #include <memory>
 #include <set>
 
+#ifdef WIN32
+    #define VK_USE_PLATFORM_WIN32_KHR
+#endif
 #include <vulkan/vulkan.h>
+
+#include <slang/slang.h>
 
 namespace Gek
 {
     namespace Render::Implementation
     {
+        Render::Format GetFormat(VkFormat format)
+        {
+            switch (format)
+            {
+            case VK_FORMAT_R32G32B32A32_SFLOAT: return Render::Format::R32G32B32A32_FLOAT;
+            case VK_FORMAT_R16G16B16A16_SFLOAT: return Render::Format::R16G16B16A16_FLOAT;
+            case VK_FORMAT_R32G32B32_SFLOAT: return Render::Format::R32G32B32_FLOAT;
+            //case VK_FORMAT_R11G11B10_SFLOAT: return Render::Format::R11G11B10_FLOAT;
+            case VK_FORMAT_R32G32_SFLOAT: return Render::Format::R32G32_FLOAT;
+            case VK_FORMAT_R16G16_SFLOAT: return Render::Format::R16G16_FLOAT;
+            case VK_FORMAT_R32_SFLOAT: return Render::Format::R32_FLOAT;
+            case VK_FORMAT_R16_SFLOAT: return Render::Format::R16_FLOAT;
+
+            case VK_FORMAT_R32G32B32A32_UINT: return Render::Format::R32G32B32A32_UINT;
+            case VK_FORMAT_R16G16B16A16_UINT: return Render::Format::R16G16B16A16_UINT;
+            //case VK_FORMAT_R10G10B10A2_UINT: return Render::Format::R10G10B10A2_UINT;
+            case VK_FORMAT_R8G8B8A8_UINT: return Render::Format::R8G8B8A8_UINT;
+            case VK_FORMAT_R32G32B32_UINT: return Render::Format::R32G32B32_UINT;
+            case VK_FORMAT_R32G32_UINT: return Render::Format::R32G32_UINT;
+            case VK_FORMAT_R16G16_UINT: return Render::Format::R16G16_UINT;
+            case VK_FORMAT_R8G8_UINT: return Render::Format::R8G8_UINT;
+            case VK_FORMAT_R32_UINT: return Render::Format::R32_UINT;
+            case VK_FORMAT_R16_UINT: return Render::Format::R16_UINT;
+            case VK_FORMAT_R8_UINT: return Render::Format::R8_UINT;
+
+            case VK_FORMAT_R32G32B32A32_SINT: return Render::Format::R32G32B32A32_INT;
+            case VK_FORMAT_R16G16B16A16_SINT: return Render::Format::R16G16B16A16_INT;
+            case VK_FORMAT_R8G8B8A8_SINT: return Render::Format::R8G8B8A8_INT;
+            case VK_FORMAT_R32G32B32_SINT: return Render::Format::R32G32B32_INT;
+            case VK_FORMAT_R32G32_SINT: return Render::Format::R32G32_INT;
+            case VK_FORMAT_R16G16_SINT: return Render::Format::R16G16_INT;
+            case VK_FORMAT_R8G8_SINT: return Render::Format::R8G8_INT;
+            case VK_FORMAT_R32_SINT: return Render::Format::R32_INT;
+            case VK_FORMAT_R16_SINT: return Render::Format::R16_INT;
+            case VK_FORMAT_R8_SINT: return Render::Format::R8_INT;
+
+            case VK_FORMAT_R16G16B16A16_UNORM: return Render::Format::R16G16B16A16_UNORM;
+            //case VK_FORMAT_R10G10B10A2_UNORM: return Render::Format::R10G10B10A2_UNORM;
+            case VK_FORMAT_R8G8B8A8_UNORM: return Render::Format::R8G8B8A8_UNORM;
+            case VK_FORMAT_R8G8B8A8_SRGB: return Render::Format::R8G8B8A8_UNORM_SRGB;
+            case VK_FORMAT_R16G16_UNORM: return Render::Format::R16G16_UNORM;
+            case VK_FORMAT_R8G8_UNORM: return Render::Format::R8G8_UNORM;
+            case VK_FORMAT_R16_UNORM: return Render::Format::R16_UNORM;
+            case VK_FORMAT_R8_UNORM: return Render::Format::R8_UNORM;
+
+            case VK_FORMAT_R16G16B16A16_SNORM: return Render::Format::R16G16B16A16_NORM;
+            case VK_FORMAT_R8G8B8A8_SNORM: return Render::Format::R8G8B8A8_NORM;
+            case VK_FORMAT_R16G16_SNORM: return Render::Format::R16G16_NORM;
+            case VK_FORMAT_R8G8_SNORM: return Render::Format::R8G8_NORM;
+            case VK_FORMAT_R16_SNORM: return Render::Format::R16_NORM;
+            case VK_FORMAT_R8_SNORM: return Render::Format::R8_NORM;
+            };
+
+            return Render::Format::Unknown;
+        }
+
         const std::vector<const char*> validationLayers =
         {
             "VK_LAYER_KHRONOS_validation",
@@ -887,7 +948,13 @@ namespace Gek
                 std::vector<const char*> instanceExtensions = 
                 {
                     VK_KHR_SURFACE_EXTENSION_NAME,
-                    //VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
+                    VK_KHR_DISPLAY_EXTENSION_NAME,
+#ifdef WIN32
+                    VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+#else
+                    VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
+#endif
+                    
                 };
 
                 if (!checkInstanceExtensionSupport(instanceExtensions))
@@ -1027,6 +1094,16 @@ namespace Gek
                 }
 
                 getContext()->log(Gek::Context::Info, "Found suitable Vulkan physical device");
+
+                uint32_t displayCount;
+                vkGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, &displayCount, NULL);
+
+                std::vector<VkDisplayPropertiesKHR> displayProperties(displayCount);
+                VkResult result = vkGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, &displayCount, displayProperties.data());
+                if (result == VK_SUCCESS)
+                {
+                    display = displayProperties[0].display;
+                }
             }
 
             QueueFamilyIndices findQueueFamilies(void)
@@ -1108,22 +1185,32 @@ namespace Gek
 
                 vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
                 vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
-                getContext()->log(Gek::Context::Info, "Vulkan logica device created");
+                getContext()->log(Gek::Context::Info, "Vulkan logical device created");
             }
 
             void createSurface(void)
             {
-                /*
+#ifdef WIN32
+                VkWin32SurfaceCreateInfoKHR createInfo{};
+                createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+                createInfo.hinstance = GetModuleHandle(nullptr);
+                createInfo.hwnd = reinterpret_cast<HWND>(window->getWindowData(0));
+                auto result = vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface);
+#else
                 VkXlibSurfaceCreateInfoKHR createInfo{};
                 createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
                 createInfo.dpy = reinterpret_cast<Display *>(window->getWindowData(0));
                 createInfo.window = *reinterpret_cast<::Window *>(window->getWindowData(1));
-                if (vkCreateXlibSurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS)
+                auto result = vkCreateXlibSurfaceKHR(instance, &createInfo, nullptr, &surface);
+#endif
+                if (result == VK_SUCCESS)
+                {
+                    getContext()->log(Gek::Context::Info, "Vulkan surface created");
+                }
+                else
                 {
                     throw std::runtime_error("failed to create window surface!");
                 }
-                */
-                getContext()->log(Gek::Context::Info, "Vulkan surface created");
             }
 
             struct SwapChainSupportDetails
@@ -1380,15 +1467,21 @@ namespace Gek
             // Render::Device
             Render::DisplayModeList getDisplayModeList(Render::Format format) const
             {
-                Render::DisplayModeList displayModeList;
+                uint32_t modeCount;
+                vkGetDisplayModePropertiesKHR(physicalDevice, display, &modeCount, NULL);
 
-                Render::DisplayMode displayMode(1600, 1200, Render::Format::Unknown);
-                displayMode.refreshRate.numerator = 60;
-                displayMode.refreshRate.denominator = 1;
-                displayModeList.push_back(displayMode);
-        
-                for (auto displayMode : displayModeList)
+                std::vector<VkDisplayModePropertiesKHR> vulkanDisplayModes(modeCount);
+                vkGetDisplayModePropertiesKHR(physicalDevice, display, &modeCount, vulkanDisplayModes.data());
+
+
+                Render::DisplayModeList displayModeList;
+                for (auto vulkanDisplayMode : vulkanDisplayModes)
                 {
+                    Render::DisplayMode displayMode(vulkanDisplayMode.parameters.visibleRegion.width, vulkanDisplayMode.parameters.visibleRegion.height, Render::Implementation::GetFormat(VK_FORMAT_B8G8R8A8_SRGB));
+                    displayMode.refreshRate.numerator = vulkanDisplayMode.parameters.refreshRate;
+                    displayMode.refreshRate.denominator = 1;
+                    displayModeList.push_back(displayMode);
+
                     getContext()->log(Gek::Context::Info, "Display Mode: {} x {}", displayMode.width, displayMode.height);
                 }
 

@@ -6,7 +6,7 @@ project(${ProjectID})
 file(GLOB SOURCES "*.cpp")
 add_executable(${ProjectID} WIN32 ${SOURCES})
 
-target_link_libraries(${ProjectID} Math Utility Engine Resources)
+target_link_libraries(${ProjectID} PUBLIC Math Utility Engine Resources)
 
 install(TARGETS ${ProjectID} DESTINATION "")
 

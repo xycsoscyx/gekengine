@@ -1723,7 +1723,7 @@ namespace Gek
             Device(Gek::Context *context, Window::Device *window, Render::Device::Description deviceDescription)
                 : ContextRegistration(context)
                 , window(window)
-                , isChildWindow(GetParent((HWND)window->getWindowData(0)) != nullptr)
+                , isChildWindow(GetParent(reinterpret_cast<HWND>(window->getWindowData(0)) != nullptr)
             {
                 assert(window);
 
@@ -1769,13 +1769,13 @@ namespace Gek
                 swapChainDescription.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
                 swapChainDescription.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
                 swapChainDescription.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-                resultValue = dxgiFactory->CreateSwapChainForHwnd(d3dDevice, (HWND)window->getWindowData(0), &swapChainDescription, nullptr, nullptr, &dxgiSwapChain);
+                resultValue = dxgiFactory->CreateSwapChainForHwnd(d3dDevice, reinterpret_cast<HWND>(window->getWindowData(0), &swapChainDescription, nullptr, nullptr, &dxgiSwapChain);
                 if (FAILED(resultValue) || !dxgiSwapChain)
                 {
                     throw std::runtime_error("Unable to create swap chain for window");
                 }
 
-                dxgiFactory->MakeWindowAssociation((HWND)window->getWindowData(0), 0);
+                dxgiFactory->MakeWindowAssociation(reinterpret_cast<HWND>(window->getWindowData(0), 0);
 
 #ifdef _DEBUG
                 CComQIPtr<ID3D11Debug> d3dDebug(d3dDevice);
