@@ -3,6 +3,25 @@ string(REPLACE " " "_" ProjectID ${ProjectID})
 
 project(${ProjectID})
 
+SET(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(newton OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/MADEAPPS/newton-dynamics.git GIT_TAG master SOURCE_SUBDIR newton-4.00 OVERRIDE_FIND_PACKAGE)
+# Build Newton as a static/single library so internal, non-exported virtual
+# methods (used by deriving classes) are available to plugins that link
+# against it. Building Newton as shared DLLs hides private symbols and
+# causes unresolved externals when a plugin inherits internal classes.
+set(NEWTON_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(newton)
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore/tinyxml")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCollision")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCollision/dMesh")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dModels")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dModels/dCharacter")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dModels/dVehicle")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dIkSolver")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dJoints")
+include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton")
+
 file(GLOB API_HEADERS "${CMAKE_SOURCE_DIR}/Plugins/API/GEK/API/*.hpp")
 
 file(GLOB HEADERS "GEK/Newton/*.hpp")

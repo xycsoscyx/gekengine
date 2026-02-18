@@ -15,6 +15,7 @@
 #include <vulkan/vulkan.h>
 
 #include <slang/slang.h>
+#include <slang/slang-com-ptr.h>
 
 namespace Gek
 {
@@ -917,6 +918,8 @@ namespace Gek
             std::vector<VkImage> swapChainImages;
             std::vector<VkImageView> swapChainImageViews;
 
+            Slang::ComPtr<slang::IGlobalSession> slangGlobalSession;
+
         private:
             bool checkInstanceExtensionSupport(std::vector<const char*> &instanceExtensions)
             {
@@ -948,7 +951,6 @@ namespace Gek
                 std::vector<const char*> instanceExtensions = 
                 {
                     VK_KHR_SURFACE_EXTENSION_NAME,
-                    VK_KHR_DISPLAY_EXTENSION_NAME,
 #ifdef WIN32
                     VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
 #else
@@ -1094,16 +1096,6 @@ namespace Gek
                 }
 
                 getContext()->log(Gek::Context::Info, "Found suitable Vulkan physical device");
-
-                uint32_t displayCount;
-                vkGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, &displayCount, NULL);
-
-                std::vector<VkDisplayPropertiesKHR> displayProperties(displayCount);
-                VkResult result = vkGetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, &displayCount, displayProperties.data());
-                if (result == VK_SUCCESS)
-                {
-                    display = displayProperties[0].display;
-                }
             }
 
             QueueFamilyIndices findQueueFamilies(void)
@@ -1391,7 +1383,7 @@ namespace Gek
                 createInstance();
                 if (enableValidationLayer)
                 {
-                    setupDebugMessenger();
+                    //setupDebugMessenger();
                 }
 
                 createSurface();
@@ -1404,6 +1396,8 @@ namespace Gek
 
                 Render::Texture::Description description;
                 backBuffer = std::make_unique<Target>(description);
+
+                slang::createGlobalSession(slangGlobalSession.writeRef());
             }
 
             void setupDebugMessenger(void)
@@ -1467,24 +1461,25 @@ namespace Gek
             // Render::Device
             Render::DisplayModeList getDisplayModeList(Render::Format format) const
             {
-                uint32_t modeCount;
-                vkGetDisplayModePropertiesKHR(physicalDevice, display, &modeCount, NULL);
-
-                std::vector<VkDisplayModePropertiesKHR> vulkanDisplayModes(modeCount);
-                vkGetDisplayModePropertiesKHR(physicalDevice, display, &modeCount, vulkanDisplayModes.data());
-
-
                 Render::DisplayModeList displayModeList;
-                for (auto vulkanDisplayMode : vulkanDisplayModes)
+#ifdef WIN32
+                DEVMODE windowsDisplayMode;
+                ZeroMemory(&windowsDisplayMode, sizeof(DEVMODE));
+                windowsDisplayMode.dmSize = sizeof(DEVMODE);
+
+                int modeIndex = 0;
+                while (EnumDisplaySettings(NULL, modeIndex, &windowsDisplayMode))
                 {
-                    Render::DisplayMode displayMode(vulkanDisplayMode.parameters.visibleRegion.width, vulkanDisplayMode.parameters.visibleRegion.height, Render::Implementation::GetFormat(VK_FORMAT_B8G8R8A8_SRGB));
-                    displayMode.refreshRate.numerator = vulkanDisplayMode.parameters.refreshRate;
+                    Render::DisplayMode displayMode(windowsDisplayMode.dmPelsWidth, windowsDisplayMode.dmPelsHeight, Render::Implementation::GetFormat(VK_FORMAT_B8G8R8A8_SRGB));
+                    displayMode.refreshRate.numerator = windowsDisplayMode.dmDisplayFrequency;
                     displayMode.refreshRate.denominator = 1;
                     displayModeList.push_back(displayMode);
 
                     getContext()->log(Gek::Context::Info, "Display Mode: {} x {}", displayMode.width, displayMode.height);
-                }
 
+                    modeIndex++;
+                }
+#endif
                 return displayModeList;
             }
 
@@ -1578,7 +1573,42 @@ namespace Gek
 
             Render::Program::Information compileProgram(Render::Program::Type type, std::string_view name, FileSystem::Path const &debugPath, std::string_view uncompiledProgram, std::string_view entryFunction, std::function<bool(Render::IncludeType, std::string_view, void const **data, uint32_t *size)> &&onInclude)
             {
-                assert(d3dDevice);
+                // Next we create a compilation session to generate SPIRV code from Slang source.
+                slang::TargetDesc targetDesc = {};
+                targetDesc.format = SLANG_SPIRV;
+                targetDesc.profile = slangGlobalSession->findProfile("spirv_1_5");
+                targetDesc.flags = 0;
+
+                slang::SessionDesc sessionDesc = {};
+                sessionDesc.targets = &targetDesc;
+                sessionDesc.targetCount = 1;
+                sessionDesc.compilerOptionEntryCount = 0;
+
+                Slang::ComPtr<slang::ISession> session;
+                slangGlobalSession->createSession(sessionDesc, session.writeRef());
+
+                slang::IModule* slangModule = session->loadModule(uncompiledProgram.data(), nullptr);
+
+                Slang::ComPtr<slang::IEntryPoint> entryPoint;
+                slangModule->findEntryPointByName("computeMain", entryPoint.writeRef());
+
+                std::vector<slang::IComponentType *> componentTypes;
+                componentTypes.push_back(slangModule);
+                componentTypes.push_back(entryPoint);
+
+                Slang::ComPtr<slang::IComponentType> composedProgram;
+                session->createCompositeComponentType(
+                    componentTypes.data(),
+                    componentTypes.size(),
+                    composedProgram.writeRef(),
+                    nullptr);
+
+                Slang::ComPtr<slang::IBlob> spirvCode;
+                composedProgram->getEntryPointCode(
+                    0,
+                    0,
+                    spirvCode.writeRef(),
+                    nullptr);
 
                 Render::Program::Information information;
                 information.type = type;

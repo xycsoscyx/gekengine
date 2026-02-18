@@ -84,25 +84,6 @@ FetchContent_MakeAvailable(nlohmann_json)
 FetchContent_Declare(mikktspace OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/mmikk/MikkTSpace.git GIT_TAG master OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(mikktspace)
 
-SET(NEWTON_BUILD_SANDBOX_DEMOS OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(newton OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/MADEAPPS/newton-dynamics.git GIT_TAG master SOURCE_SUBDIR newton-4.00 OVERRIDE_FIND_PACKAGE)
-# Build Newton as a static/single library so internal, non-exported virtual
-# methods (used by deriving classes) are available to plugins that link
-# against it. Building Newton as shared DLLs hides private symbols and
-# causes unresolved externals when a plugin inherits internal classes.
-set(NEWTON_BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(newton)
-include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore")
-include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCore/tinyxml")
-include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCollision")
-include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dCollision/dMesh")
-include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dModels")
-include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dModels/dCharacter")
-include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dModels/dVehicle")
-include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dIkSolver")
-include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dJoints")
-include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton")
-
 SET(TBB_TEST OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(oneTBB OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/oneapi-src/oneTBB GIT_TAG v2022.3.0 OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(oneTBB)
@@ -110,16 +91,6 @@ FetchContent_MakeAvailable(oneTBB)
 FetchContent_Declare(wink OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/miguelmartin75/Wink-Signals.git GIT_TAG master OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(wink)
 include_directories("${wink_SOURCE_DIR}")
-
-FetchContent_Declare(hwloc GIT_REPOSITORY https://github.com/open-mpi/hwloc.git GIT_TAG master OVERRIDE_FIND_PACKAGE)
-FetchContent_MakeAvailable(hwloc)
-
-# Disable Slang's internal use of mimalloc to avoid the Windows shared-build error
-# Ensure everything else is static as intended
-set(SLANG_LIB_TYPE "STATIC" CACHE STRING "" FORCE)
-set(SLANG_USE_MIMALLOC OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(slang OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/MikePopoloski/slang.git GIT_TAG v9.1 OVERRIDE_FIND_PACKAGE)
-FetchContent_MakeAvailable(slang)
 
 if(GEK_BUILD_TESTS)
     FetchContent_Declare(googletest OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/google/googletest.git GIT_TAG v1.17.0 OVERRIDE_FIND_PACKAGE)

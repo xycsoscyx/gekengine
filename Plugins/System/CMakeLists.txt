@@ -39,7 +39,56 @@ if(GEK_WINDOW_DEVICE STREQUAL "x11")
 endif()
 
 if(GEK_RENDER_DEVICE STREQUAL "vulkan")
-    target_link_libraries(${ProjectID} PRIVATE Vulkan::Vulkan slang::slang)
+    set(SLANG_EXTERNAL_IMGUI_TARGET "imgui" CACHE STRING "Rename external imgui to prevent collision" FORCE)
+    set(SLANG_ENABLE_EXAMPLES OFF CACHE BOOL "Disable slang examples" FORCE)
+    set(SLANG_ENABLE_GFX OFF CACHE BOOL "Disable slang gfx" FORCE)
+    set(SLANG_ENABLE_TESTS OFF CACHE BOOL "Disable slang tests" FORCE)
+    set(SPIRV_WERROR OFF CACHE BOOL "Disable warnings-as-errors for SPIRV-Tools" FORCE)
+    set(SLANG_LIBRARY_TYPE "STATIC" CACHE STRING "Build slang as a static library" FORCE)
+    set(SLANG_ENABLE_MIMALLOC OFF CACHE BOOL "Disable mimalloc in slang" FORCE)
+    set(BUILD_SHARED_LIBS OFF)
+    
+    include(FetchContent)
+    FetchContent_Declare(slang
+        GIT_REPOSITORY https://github.com/shader-slang/slang.git
+        GIT_TAG v2026.2.2  
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(slang)
+
+    if(MSVC)
+        # Define internal targets that enforce strict warnings
+        set(SLANG_INTERNAL_TARGETS 
+            slang-rhi 
+            slang-compiler 
+            slang-common-objects
+            SPIRV-Tools 
+            SPIRV-Tools-opt
+        )
+        
+        foreach(target_name ${SLANG_INTERNAL_TARGETS})
+            if(TARGET ${target_name})
+                # Resolve aliases to modify the actual target properties
+                get_target_property(real_target ${target_name} ALIASED_TARGET)
+                if(NOT real_target)
+                    set(real_target ${target_name})
+                endif()
+
+                # Disable "Warnings as Errors" and silence specific C++20 deprecations
+                target_compile_options(${real_target} PRIVATE "/WX-" "/wd4996" "/wd5232")
+                
+                # Silence MSVC's C++20 'is_pod' deprecation specifically
+                target_compile_definitions(${real_target} PRIVATE _SILENCE_CXX20_IS_POD_DEPRECATION_WARNING)
+            endif()
+        endforeach()
+    endif()
+
+    target_link_libraries(${ProjectID} PRIVATE 
+        Vulkan::Vulkan 
+        slang
+    )
+
+    target_compile_definitions(${ProjectID} PRIVATE SLANG_STATIC)
 endif()
 
 install(TARGETS ${ProjectID} DESTINATION "")

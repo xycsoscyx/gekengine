@@ -557,7 +557,7 @@ namespace Gek
                         };
 
                         ImGui::PopItemWidth();
-                        if (ImGui::BeginChildFrame(665, ImVec2(-1.0f, -1.0f)))
+                        if (ImGui::BeginChildEx("Entity", 665, ImVec2(-1.0f, -1.0f), 0, 0))
                         {
                             auto entity = selectedEntity;
                             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.5f, 0.0f, 1.0f));
@@ -681,7 +681,7 @@ namespace Gek
                             }
                         }
 
-                        ImGui::EndChildFrame();
+                        ImGui::EndChild();
                     }
                 }
 

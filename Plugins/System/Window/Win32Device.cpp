@@ -130,6 +130,7 @@ namespace Gek
             , public Gek::Window::Device
         {
         private:
+            uint32_t windowFlags;
             HWND window = nullptr;
             uint16_t highSurrogate = 0;
             std::atomic_bool stop = false;
@@ -333,7 +334,7 @@ namespace Gek
                     throw std::runtime_error("Unable to register window class");
                 }
 
-                auto windowFlags = (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX);
+                windowFlags = (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX);
                 windowFlags |= (description.allowResize ? WS_THICKFRAME | WS_MAXIMIZEBOX : 0);
 
                 RECT clientRectangle;
@@ -428,19 +429,36 @@ namespace Gek
                 UpdateWindow(window);
             }
 
+            Math::Int2 getCenteredRect(Math::Int4 const &rectangle)
+            {
+                return Math::Int2(
+                    ((GetSystemMetrics(SM_CXSCREEN) - (rectangle.maximum.x - rectangle.minimum.x)) / 2),
+                    ((GetSystemMetrics(SM_CYSCREEN) - (rectangle.maximum.y - rectangle.minimum.y)) / 2));
+            }
             void move(Math::Int2 const &position)
             {
                 int32_t x = position.x;
                 int32_t y = position.y;
                 if (x < 0 || y < 0)
                 {
-                    RECT clientRectangle;
-                    GetWindowRect(window, &clientRectangle);
-                    x = (x < 0 ? ((GetSystemMetrics(SM_CXSCREEN) - (clientRectangle.right - clientRectangle.left)) / 2) : x);
-                    y = (y < 0 ? ((GetSystemMetrics(SM_CYSCREEN) - (clientRectangle.bottom - clientRectangle.top)) / 2) : y);
+                    Math::Int4 clientRectangle;
+                    GetWindowRect(window, (RECT *)&clientRectangle);
+                    Math::Int2 centeredPosition = getCenteredRect(clientRectangle);
+                    x = x < 0 ? centeredPosition.x : x;                    
+                    y = y < 0 ? centeredPosition.y : y;
                 }
 
                 SetWindowPos(window, nullptr, x, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+            }
+
+            void resize(Math::Int2 const &size)
+            {
+                Math::Int4 clientRectangle(0, 0, size.x, size.y);
+                AdjustWindowRect((RECT *)&clientRectangle, windowFlags, FALSE);
+                auto windowWidth = (clientRectangle.maximum.x - clientRectangle.minimum.x);
+                auto windowHeight = (clientRectangle.maximum.y - clientRectangle.minimum.y);
+                Math::Int2 centeredPosition = getCenteredRect(clientRectangle);
+                SetWindowPos(window, NULL, centeredPosition.x, centeredPosition.y, windowWidth, windowHeight, SWP_NOZORDER | SWP_NOACTIVATE);
             }
         };
 

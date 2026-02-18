@@ -1,6 +1,5 @@
 project (Applications)
 
-#add_subdirectory("demo_render")
 add_subdirectory("demo_engine")
 add_subdirectory("createtree")
 add_subdirectory("createmodel")
