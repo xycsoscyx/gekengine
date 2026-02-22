@@ -1,0 +1,61 @@
+# GEK Engine Build Options Configuration
+# This file allows you to easily configure build options without modifying CMakeLists.txt directly
+# Simply set the desired values below and run CMake configure
+
+# ============================================================================
+# Window System (Platform-specific window handling)
+# Options: win32 (Windows), x11 (Linux/X11)
+# ============================================================================
+set(GEK_WINDOW_DEVICE "win32" CACHE STRING "Window device implementation" FORCE)
+
+# ============================================================================
+# Render Device (Graphics API backend)
+# Options: d3d11 (Direct3D 11 - Windows), vulkan (Vulkan - cross-platform)
+# ============================================================================
+set(GEK_RENDER_DEVICE "d3d11" CACHE STRING "Render device implementation" FORCE)
+
+# ============================================================================
+# Audio System
+# Options: ds8 (DirectSound 8 - Windows)
+# ============================================================================
+set(GEK_AUDIO_DEVICE "ds8" CACHE STRING "Audio device implementation" FORCE)
+
+# ============================================================================
+# Build Configuration Options
+# ============================================================================
+
+# Enable unit tests
+set(GEK_BUILD_TESTS ON CACHE BOOL "Create unit test projects" FORCE)
+
+# Slang shader compiler optimization
+# Disable examples, tests, and GFX for faster builds
+set(SLANG_ENABLE_EXAMPLES OFF CACHE BOOL "Disable Slang examples" FORCE)
+set(SLANG_ENABLE_TESTS OFF CACHE BOOL "Disable Slang tests" FORCE)
+set(SLANG_ENABLE_GFX OFF CACHE BOOL "Disable Slang GFX module" FORCE)
+
+# SPIR-V Tools configuration
+set(SPIRV_WERROR OFF CACHE BOOL "Disable warnings-as-errors for SPIRV-Tools" FORCE)
+
+# OneTBB configuration
+set(TBB_TEST OFF CACHE BOOL "Disable TBB tests" FORCE)
+
+# ASSIMP configuration (3D model loader)
+set(ASSIMP_BUILD_IFC_IMPORTER OFF CACHE BOOL "Disable IFC importer" FORCE)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "Disable Assimp tools" FORCE)
+set(ASSIMP_BUILD_ASSIMP_VIEW OFF CACHE BOOL "Disable Assimp viewer" FORCE)
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "Disable Assimp tests" FORCE)
+set(ASSIMP_INSTALL_PDB OFF CACHE BOOL "Don't install Assimp PDB files" FORCE)
+
+# Json library configuration
+set(JSON_BuildTests OFF CACHE BOOL "Disable JSON tests" FORCE)
+
+# ============================================================================
+# Advanced Options (Change only if you know what you're doing)
+# ============================================================================
+
+# Vulkan SDK path (only needed if GEK_RENDER_DEVICE is "vulkan")
+# Adjust this if Vulkan is not found automatically
+# set(VULKAN_SDK "C:/VulkanSDK/1.4.335.0" CACHE STRING "Vulkan SDK path" FORCE)
+
+# Mark this file as processed to avoid re-inclusion
+set(GEK_OPTIONS_FILE_PROCESSED TRUE)

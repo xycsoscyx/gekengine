@@ -4,6 +4,7 @@
 #include <GEKUtility.hlsl>
 #include <GEKLighting.hlsl>
 
+[shader("fragment")]
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
 	float2 materialInfo = Resources::materialBuffer[inputPixel.screen.xy];

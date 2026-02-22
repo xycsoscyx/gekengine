@@ -5,21 +5,26 @@
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/System/RenderDevice.hpp"
 #include "GEK/System/WindowDevice.hpp"
-#include <d3dcompiler.h>
 #include <DirectXTex.h>
 #include <wincodec.h>
 #include <atlbase.h>
 #include <dxgi1_3.h>
+#include <slang.h>
+#include <slang-com-ptr.h>
 #include <algorithm>
 #include <execution>
 #include <comdef.h>
 #include <d3d11.h>
+#include <d3dcompiler.h>
+#include <fstream>
+#include <chrono>
+#include <ctime>
+#include <sstream>
 #include <memory>
 #include <ppl.h>
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
-#pragma comment(lib, "d3dcompiler.lib")
 
 namespace Gek
 {
@@ -1723,7 +1728,7 @@ namespace Gek
             Device(Gek::Context *context, Window::Device *window, Render::Device::Description deviceDescription)
                 : ContextRegistration(context)
                 , window(window)
-                , isChildWindow(GetParent(reinterpret_cast<HWND>(window->getWindowData(0)) != nullptr)
+                , isChildWindow(GetParent(reinterpret_cast<HWND>(window->getWindowData(0))) != nullptr)
             {
                 assert(window);
 
@@ -1769,13 +1774,13 @@ namespace Gek
                 swapChainDescription.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
                 swapChainDescription.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
                 swapChainDescription.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-                resultValue = dxgiFactory->CreateSwapChainForHwnd(d3dDevice, reinterpret_cast<HWND>(window->getWindowData(0), &swapChainDescription, nullptr, nullptr, &dxgiSwapChain);
+                resultValue = dxgiFactory->CreateSwapChainForHwnd(d3dDevice, reinterpret_cast<HWND>(window->getWindowData(0)), &swapChainDescription, nullptr, nullptr, &dxgiSwapChain);
                 if (FAILED(resultValue) || !dxgiSwapChain)
                 {
                     throw std::runtime_error("Unable to create swap chain for window");
                 }
 
-                dxgiFactory->MakeWindowAssociation(reinterpret_cast<HWND>(window->getWindowData(0), 0);
+                dxgiFactory->MakeWindowAssociation(reinterpret_cast<HWND>(window->getWindowData(0)), 0);
 
 #ifdef _DEBUG
                 CComQIPtr<ID3D11Debug> d3dDebug(d3dDevice);
@@ -2472,16 +2477,13 @@ namespace Gek
                     return information;
                 }
 
-                uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
-#ifdef _DEBUG
-                flags |= D3DCOMPILE_DEBUG;
-                flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
-                //flags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
-#else
-                flags |= D3DCOMPILE_SKIP_VALIDATION;
-                flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
-#endif
-
+                // Map program type -> Slang/DXC profile string. Use SM6-style
+                // profile strings so Slang can resolve a matching profile
+                // (e.g. "vs_6_0", "ps_6_0"). We'll still fall back to
+                // generic DXIL/dx_* profiles if a specific shader-model
+                // profile isn't available.
+                // Map program type to Slang SM5.0 shader model profiles for DXBC output.
+                // SM5.0 is the most compatible with D3D11 and should produce DXBC bytecode.
                 static const std::unordered_map<Render::Program::Type, std::string_view> D3DTypeMap =
                 {
                     { Render::Program::Type::Compute, "cs_5_0", },
@@ -2500,20 +2502,109 @@ namespace Gek
                 auto typeSearch = D3DTypeMap.find(type);
                 if (typeSearch != std::end(D3DTypeMap))
                 {
-                    CComPtr<ID3DBlob> d3dShaderBlob;
-                    CComPtr<ID3DBlob> d3dCompilerErrors;
-                    Include includes(std::move(onInclude));
-                    HRESULT resultValue = D3DCompile(uncompiledProgram.data(), (uncompiledProgram.size() + 1), name.data(), nullptr, &includes, entryFunction.data(), typeSearch->second.data(), flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
-                    if (FAILED(resultValue) || !d3dShaderBlob)
+                    Slang::ComPtr<slang::IGlobalSession> slangGlobalSession;
+                    if (SLANG_SUCCEEDED(slang::createGlobalSession(slangGlobalSession.writeRef())))
                     {
-                        _com_error error(resultValue);
-                        std::string_view compilerError = (char const *)d3dCompilerErrors->GetBufferPointer();
-                        std::cerr << "D3DCompile Failed (" << error.ErrorMessage() << ") " << compilerError;
-                    }
-                    else
-                    {
-                        uint8_t *data = (uint8_t *)d3dShaderBlob->GetBufferPointer();
-                        information.compiledData.assign(data, (data + d3dShaderBlob->GetBufferSize()));
+                        slang::TargetDesc targetDesc = {};
+                        // Use DXBC format for D3D11 compatibility (not DXIL, which is D3D12-only).
+                        targetDesc.format = SLANG_DXBC;
+
+                        // Prefer trying a stage-specific profile (from D3DTypeMap)
+                        // so Slang can select the correct shader model. If that
+                        // fails, fall back to generic DXIL/dx_* profiles.
+                        SlangProfileID profile = SLANG_PROFILE_UNKNOWN;
+                        const std::string mappedProfile = std::string(typeSearch->second);
+                        // First try the mapped stage-specific profile (e.g. "vs_6_0").
+                        profile = slangGlobalSession->findProfile(mappedProfile.c_str());
+                        if (!profile || profile == SLANG_PROFILE_UNKNOWN)
+                        {
+                            std::cerr << "Requested Slang profile '" << mappedProfile << "' not available while compiling '" << name << "'; trying more generic profiles." << std::endl;
+                            return information;
+                        }
+
+                        targetDesc.profile = profile;
+                        if (profile == SLANG_PROFILE_UNKNOWN)
+                        {
+                            std::cerr << "Requested Slang profile '" << mappedProfile << "' not available while compiling '" << name << "'; compilation failed." << std::endl;
+                            return information;
+                        }
+
+                        std::cout << "Using Slang profile (" << (uint32_t)profile << ") for mapped target '" << mappedProfile << "' while compiling '" << name << "'." << std::endl;
+
+                        slang::SessionDesc sessionDesc = {};
+                        sessionDesc.targets = &targetDesc;
+                        sessionDesc.targetCount = 1;
+
+                        Slang::ComPtr<slang::ISession> session;
+                        if (SLANG_SUCCEEDED(slangGlobalSession->createSession(sessionDesc, session.writeRef())) && session)
+                        {
+                            std::cerr << "Loading Slang module for '" << name << "' with entry point '" << entryFunction << "'" << std::endl;
+                            
+                            slang::IBlob* outDiagnosticsRaw = nullptr;
+                            slang::IModule* slangModule = session->loadModuleFromSourceString(name.data(), debugPath.getFileName().data(), uncompiledProgram.data(), &outDiagnosticsRaw);
+                            Slang::ComPtr<slang::IBlob> outDiagnostics(outDiagnosticsRaw);
+                            
+                            if (outDiagnostics)
+                            {
+                                const char *diagnosticMessage = reinterpret_cast<const char *>(outDiagnostics->getBufferPointer());
+                                std::cerr << "Slang module load diagnostics: " << diagnosticMessage << std::endl;
+                            }
+                            
+                            if (slangModule)
+                            {
+                                std::cerr << "Module loaded successfully, searching for entry point '" << entryFunction << "'" << std::endl;
+                                
+                                Slang::ComPtr<slang::IEntryPoint> entryPoint;
+                                slangModule->findEntryPointByName(entryFunction.data(), entryPoint.writeRef());
+                                if (entryPoint)
+                                {
+                                    std::cout << "Entry point found! Composing program..." << std::endl;
+                                    
+                                    // Include both module and entry point in composite
+                                    std::vector<slang::IComponentType*> componentTypes;
+                                    componentTypes.push_back(slangModule);
+                                    componentTypes.push_back(entryPoint);
+
+                                    Slang::ComPtr<slang::IComponentType> composedProgram;
+                                    slang::IBlob* compositeDiagnosticsRaw = nullptr;
+                                    session->createCompositeComponentType(componentTypes.data(), componentTypes.size(), composedProgram.writeRef(), &compositeDiagnosticsRaw);
+                                    Slang::ComPtr<slang::IBlob> compositeDiagnostics(compositeDiagnosticsRaw);
+                                    if (composedProgram)
+                                    {
+                                        Slang::ComPtr<slang::IBlob> dxilCode;
+                                        // Entry point is at index 0 in the composite (first and only entry point)
+                                        // Target index 0 refers to the first (and only) target descriptor
+                                        SlangResult codeResult = composedProgram->getEntryPointCode(0, 0, dxilCode.writeRef());
+                                        if (SLANG_SUCCEEDED(codeResult) && dxilCode)
+                                        {
+                                            const uint8_t *data = reinterpret_cast<const uint8_t *>(dxilCode->getBufferPointer());
+                                            information.compiledData.assign(data, data + dxilCode->getBufferSize());
+                                            std::cerr << "Slang compilation succeeded for '" << name << "' entry '" << entryFunction << "' (" << information.compiledData.size() << " bytes)" << std::endl;
+                                            return information;
+                                        }
+                                        else
+                                        {
+                                            std::cerr << "Slang DXIL generation failed for '" << name << "': getEntryPointCode returned error code " << codeResult << std::endl;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        const char *diagnosticMessage = compositeDiagnostics ? reinterpret_cast<const char *>(compositeDiagnostics->getBufferPointer()) : "Unknown Slang composite error";
+                                        std::cerr << "Slang composite program failed for '" << name << "': " << diagnosticMessage << std::endl;
+                                    }
+                                }
+                                else
+                                {
+                                    const char *diagnosticMessage = outDiagnostics ? reinterpret_cast<const char *>(outDiagnostics->getBufferPointer()) : "Unknown Slang entry point error";
+                                    std::cerr << "Slang entry point '" << entryFunction << "' not found in module '" << name << "': " << diagnosticMessage << std::endl;
+                                }
+                            }
+                            else
+                            {
+                                const char *diagnosticMessage = outDiagnostics ? reinterpret_cast<const char *>(outDiagnostics->getBufferPointer()) : "Unknown Slang loadModule error";
+                                std::cerr << "Failed to load Slang module for '" << name << "': " << diagnosticMessage << std::endl;
+                            }
+                        }
                     }
                 }
 
@@ -2534,8 +2625,54 @@ namespace Gek
                 HRESULT resultValue = (d3dDevice->*function)(information.compiledData.data(), information.compiledData.size(), nullptr, &d3dShader);
                 if (FAILED(resultValue) || !d3dShader)
                 {
-                    std::cerr << "Unable to create program from compiled data";
                     return nullptr;
+                }
+
+                std::cerr << "D3D shader created successfully: " << information.compiledData.size() << " bytes" << std::endl;
+
+                // Perform shader reflection to verify resource bindings
+                {
+                    CComPtr<ID3D11ShaderReflection> shaderReflection;
+                    HRESULT reflectResult = D3DReflect(information.compiledData.data(), information.compiledData.size(), IID_ID3D11ShaderReflection, (void**)&shaderReflection);
+                    if (SUCCEEDED(reflectResult) && shaderReflection)
+                    {
+                        D3D11_SHADER_DESC shaderDesc;
+                        shaderReflection->GetDesc(&shaderDesc);
+                        
+                        std::cerr << "Shader reflection for '" << information.name << "':" << std::endl;
+                        std::cerr << "  Constant Buffers: " << shaderDesc.ConstantBuffers << std::endl;
+                        std::cerr << "  Input Parameters: " << shaderDesc.InputParameters << std::endl;
+                        std::cerr << "  Output Parameters: " << shaderDesc.OutputParameters << std::endl;
+                        std::cerr << "  Texture Normal Instructions: " << shaderDesc.TextureNormalInstructions << std::endl;
+                        std::cerr << "  Texture Load Instructions: " << shaderDesc.TextureLoadInstructions << std::endl;
+                        
+                        // List constant buffers and their bindings
+                        for (uint32_t i = 0; i < shaderDesc.ConstantBuffers; ++i)
+                        {
+                            ID3D11ShaderReflectionConstantBuffer* cbuffer = shaderReflection->GetConstantBufferByIndex(i);
+                            if (cbuffer)
+                            {
+                                D3D11_SHADER_BUFFER_DESC cbDesc;
+                                cbuffer->GetDesc(&cbDesc);
+                                std::cerr << "  CB[" << i << "]: " << cbDesc.Name << " (size=" << cbDesc.Size << ", vars=" << cbDesc.Variables << ")" << std::endl;
+                            }
+                        }
+                        
+                        // List bound resources (textures, samplers, etc.)
+                        for (uint32_t i = 0; i < shaderDesc.BoundResources; ++i)
+                        {
+                            D3D11_SHADER_INPUT_BIND_DESC bindDesc;
+                            shaderReflection->GetResourceBindingDesc(i, &bindDesc);
+                            std::cerr << "  Resource[" << i << "]: " << bindDesc.Name 
+                                      << " (type=" << bindDesc.Type 
+                                      << ", bind_point=" << bindDesc.BindPoint 
+                                      << ", bind_count=" << bindDesc.BindCount << ")" << std::endl;
+                        }
+                    }
+                    else
+                    {
+                        std::cerr << "Failed to reflect shader: " << std::hex << reflectResult << std::dec << std::endl;
+                    }
                 }
 
                 return std::make_unique<TYPE>(d3dShader, information);

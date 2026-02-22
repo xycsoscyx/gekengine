@@ -14,8 +14,8 @@
 #endif
 #include <vulkan/vulkan.h>
 
-#include <slang/slang.h>
-#include <slang/slang-com-ptr.h>
+#include <slang.h>
+#include <slang-com-ptr.h>
 
 namespace Gek
 {
@@ -1586,32 +1586,69 @@ namespace Gek
 
                 Slang::ComPtr<slang::ISession> session;
                 slangGlobalSession->createSession(sessionDesc, session.writeRef());
+                if (!session)
+                {
+                    getContext()->log(Gek::Context::Error, "Failed to create Slang compilation session");
+                    return {};
+                }
 
-                slang::IModule* slangModule = session->loadModule(uncompiledProgram.data(), nullptr);
+                slang::IBlob* outDiagnosticsRaw = nullptr;
+                slang::IModule* slangModule = session->loadModuleFromSourceString(name.data(), debugPath.getFileName().data(), uncompiledProgram.data(), &outDiagnosticsRaw);
+                Slang::ComPtr<slang::IBlob> outDiagnostics(outDiagnosticsRaw);
+                if (!slangModule)
+                {
+                    const char *diagMsg = outDiagnostics ? reinterpret_cast<const char *>(outDiagnostics->getBufferPointer()) : "Unknown error";
+                    getContext()->log(Gek::Context::Error, "Failed to load Slang module from source string: {}", diagMsg);
+                    return {};
+                }
 
                 Slang::ComPtr<slang::IEntryPoint> entryPoint;
-                slangModule->findEntryPointByName("computeMain", entryPoint.writeRef());
+                slangModule->findEntryPointByName(entryFunction.data(), entryPoint.writeRef());
+                if (!entryPoint)
+                {
+                    getContext()->log(Gek::Context::Error, "Failed to find entry point '{}' in Slang module", entryFunction);
+                    return {};
+                }
 
                 std::vector<slang::IComponentType *> componentTypes;
                 componentTypes.push_back(slangModule);
                 componentTypes.push_back(entryPoint);
 
                 Slang::ComPtr<slang::IComponentType> composedProgram;
+                slang::IBlob* compositeDiagnosticsRaw = nullptr;
                 session->createCompositeComponentType(
                     componentTypes.data(),
                     componentTypes.size(),
                     composedProgram.writeRef(),
-                    nullptr);
+                    &compositeDiagnosticsRaw);
+                Slang::ComPtr<slang::IBlob> compositeDiagnostics(compositeDiagnosticsRaw);
+                if (!composedProgram)
+                {
+                    const char *diagMsg = compositeDiagnostics ? reinterpret_cast<const char *>(compositeDiagnostics->getBufferPointer()) : "Unknown error";
+                    getContext()->log(Gek::Context::Error, "Failed to create composite component type for Slang program: {}", diagMsg);
+                    return {};
+                }
 
                 Slang::ComPtr<slang::IBlob> spirvCode;
+                slang::IBlob* spirvDiagnosticsRaw = nullptr;
                 composedProgram->getEntryPointCode(
                     0,
                     0,
                     spirvCode.writeRef(),
-                    nullptr);
+                    &spirvDiagnosticsRaw);
+                Slang::ComPtr<slang::IBlob> spirvDiagnostics(spirvDiagnosticsRaw);
+                if (!spirvCode)
+                {
+                    const char *diagMsg = spirvDiagnostics ? reinterpret_cast<const char *>(spirvDiagnostics->getBufferPointer()) : "Unknown error";
+                    getContext()->log(Gek::Context::Error, "Failed to generate SPIRV code for Slang program: {}", diagMsg);
+                    return {};
+                }
 
                 Render::Program::Information information;
                 information.type = type;
+                information.name = name;
+                information.uncompiledData = uncompiledProgram;
+                information.compiledData = spirvCode ? std::vector<uint8_t>((uint8_t*)spirvCode->getBufferPointer(), (uint8_t*)spirvCode->getBufferPointer() + spirvCode->getBufferSize()) : std::vector<uint8_t>();
                 return information;
             }
 

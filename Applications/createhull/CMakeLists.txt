@@ -11,4 +11,4 @@ add_executable(${ProjectID} ${SOURCES})
 target_link_libraries(${ProjectID} PRIVATE assimp argparse)
 target_link_libraries(${ProjectID} PUBLIC Math Utility Shapes Resources)
 
-install(TARGETS ${ProjectID} DESTINATION "")
+install(TARGETS ${ProjectID} DESTINATION "bin")

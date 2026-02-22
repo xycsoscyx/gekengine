@@ -53,6 +53,7 @@ float3 GetBiCubicSample(in float2 screenCoord, float glassLevel)
         lerp(sample1, sample0, sx), sy);
 }
 
+[shader("fragment")]
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     // final images will be sRGB format and converted to linear automatically

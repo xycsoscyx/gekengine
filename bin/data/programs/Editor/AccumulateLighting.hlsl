@@ -12,7 +12,8 @@ float3 ConvertNormal(float2 encoded)
     return normal;
 }
 
-OutputPixel mainPixelProgram(InputPixel inputPixel)
+[shader("fragment")]
+OutputPixel mainPixelProgram(InputPixel inputPixel) : SV_Target0
 {
     // final images will be sRGB format and converted to linear automatically
     const float4 albedo = Resources::albedo.Sample(Global::TextureSampler, inputPixel.texCoord);

@@ -8,19 +8,16 @@ add_executable(${ProjectID} WIN32 ${SOURCES})
 
 target_link_libraries(${ProjectID} PUBLIC Math Utility Engine Resources)
 
-install(TARGETS ${ProjectID} DESTINATION "")
+install(TARGETS ${ProjectID} DESTINATION "bin")
 
 if(WIN32)
     add_custom_command(
         TARGET ${ProjectID} POST_BUILD
-        # 1. Ensure the destination directory exists
         COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${ProjectID}>"
-        
-        # 2. Source files go first, destination directory goes last
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-                $<TARGET_RUNTIME_DLLS:${ProjectID}> 
-                "$<TARGET_FILE_DIR:${ProjectID}>"
-        COMMAND_EXPAND_LISTS
+        COMMAND ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_LIST_DIR}/../../cmake/CopyRuntimeDLLs.cmake"
+            -D TARGET_DLLS="$<TARGET_RUNTIME_DLLS:${ProjectID}>"
+            -D DEST_DIR="$<TARGET_FILE_DIR:${ProjectID}>"
         VERBATIM
     )
 endif()
+  

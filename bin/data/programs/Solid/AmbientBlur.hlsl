@@ -18,6 +18,7 @@ float getGaussianWeight(float offset)
     return (numerator * exp(-(offset * offset) * denominator));
 }
 
+[shader("fragment")]
 float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     const float surfaceDepth = GetLinearDepthFromSampleDepth(Resources::depthBuffer[inputPixel.screen.xy]);

@@ -108,6 +108,7 @@ float getAmbientObscurance(float2 texCoord, float3 surfacePosition, float3 surfa
 // Scalable Ambient Obscurance
 // http://graphics.cs.williams.edu/papers/SAOHPG12/
 // https://github.com/PeterTh/gedosato/blob/master/pack/assets/dx9/SAO.fx
+[shader("fragment")]
 float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     const float3 surfacePosition = GetPositionFromDepthBuffer(inputPixel.texCoord);

@@ -20,14 +20,10 @@ if(GEK_BUILD_TESTS)
     if(WIN32)
         add_custom_command(
             TARGET ${ProjectID}_test POST_BUILD
-            # 1. Ensure the destination directory exists
             COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${ProjectID}_test>"
-            
-            # 2. Source files go first, destination directory goes last
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-                    $<TARGET_RUNTIME_DLLS:${ProjectID}_test> 
-                    "$<TARGET_FILE_DIR:${ProjectID}_test>"
-            COMMAND_EXPAND_LISTS
+            COMMAND ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_LIST_DIR}/../../cmake/CopyRuntimeDLLs.cmake"
+                -D TARGET_DLLS="$<TARGET_RUNTIME_DLLS:${ProjectID}_test>"
+                -D DEST_DIR="$<TARGET_FILE_DIR:${ProjectID}_test>"
             VERBATIM
         )
     endif()

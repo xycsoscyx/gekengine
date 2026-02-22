@@ -27,6 +27,7 @@ static const uint indexBuffer[6] =
     1, 3, 2,
 };
 
+[shader("vertex")]
 OutputVertex mainVertexProgram(InputVertex inputVertex)
 {
     uint spriteIndex = (inputVertex.vertexIndex / 6);

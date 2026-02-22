@@ -3,6 +3,7 @@
 #include <GEKGlobal.hlsl>
 
 [numthreads(1, 1, 1)]
+[shader("compute")]
 void mainComputeProgram(void)
 {
     uint width, height, mipMapCount;

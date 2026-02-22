@@ -2,6 +2,7 @@
 
 #include <GEKEngine>
 
+[shader("vertex")]
 OutputVertex mainVertexProgram(InputVertex inputVertex)
 {
     float3x3 directionTransform = (float3x3)inputVertex.transform;

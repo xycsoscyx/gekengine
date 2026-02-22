@@ -3,6 +3,7 @@
 #include <GEKGlobal.hlsl>
 #include <GEKUtility.hlsl>
 
+[shader("fragment")]
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     float ambient = Resources::ambientBuffer[inputPixel.screen.xy];

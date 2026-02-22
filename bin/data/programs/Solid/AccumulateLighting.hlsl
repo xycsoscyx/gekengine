@@ -4,7 +4,8 @@
 #include <GEKUtility.hlsl>
 #include <GEKLighting.hlsl>
 
-OutputPixel mainPixelProgram(InputPixel inputPixel)
+[shader("fragment")]
+OutputPixel mainPixelProgram(InputPixel inputPixel) : SV_Target0
 {
     const float4 albedo = Resources::albedo.Sample(Global::TextureSampler, inputPixel.texCoord);
 

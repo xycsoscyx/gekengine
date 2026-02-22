@@ -8,6 +8,7 @@ Texture2D<float>    gs_pDepthBuffer         : register(t3);
 Texture2D           gs_pInfoBuffer          : register(t4);
 Texture2D           gs_pOutputBuffer        : register(t5);
 
+[shader("fragment")]
 float4 MainPixelProgram(INPUT kInput) : SV_TARGET
 {
     float4 nScreen = gs_pOutputBuffer.Sample(gs_pBufferSampler, kInput.texCoord);

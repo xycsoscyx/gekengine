@@ -384,6 +384,9 @@ namespace Gek
 				struct DataBuffer
 				{
 					Math::Float4x4 projectionMatrix;
+					// Slang reports 128 bytes for the matrix (likely treating float4x4 as 128-byte)
+					// Pad to match what Slang expects
+					float _padding[16];
 				};
 
 				ImGuiContext *context = nullptr;
@@ -485,13 +488,14 @@ namespace Gek
 
 				lightBufferList = { lightConstantBuffer.get() };
 
-				static constexpr std::string_view program = 
+				static constexpr std::string_view vertexProgram = 
 R"(struct Output
 {
     float4 screen : SV_POSITION;
     float2 texCoord : TEXCOORD0;
 };
 
+[shader("vertex")]
 Output mainVertexProgram(in uint vertexID : SV_VertexID)
 {
     Output output;
@@ -499,25 +503,29 @@ Output mainVertexProgram(in uint vertexID : SV_VertexID)
     output.screen = float4(output.texCoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f);
     return output;
 }
+)";
 
-struct Input
+				static constexpr std::string_view pixelProgram = 
+R"(struct Input
 {
     float4 screen : SV_POSITION;
     float2 texCoord : TEXCOORD0;
 };
 
 Texture2D<float3> inputBuffer : register(t0);
+
+[shader("fragment")]
 float3 mainPixelProgram(in Input input) : SV_TARGET0
 {
     uint width, height, mipMapCount;
     inputBuffer.GetDimensions(0, width, height, mipMapCount);
-    return inputBuffer[input.texCoord * float2(width, height)];
+    return inputBuffer[uint2(input.texCoord * float2(width, height))];
 }
 )";
 
-				deferredVertexProgram = resources->getProgram(Render::Program::Type::Vertex, "renderer:deferredVertexProgram", "mainVertexProgram", program);
+				deferredVertexProgram = resources->getProgram(Render::Program::Type::Vertex, "renderer:deferredVertexProgram", "mainVertexProgram", vertexProgram);
 
-				deferredPixelProgram = resources->getProgram(Render::Program::Type::Pixel, "renderer:deferredPixelProgram", "mainPixelProgram", program);
+				deferredPixelProgram = resources->getProgram(Render::Program::Type::Pixel, "renderer:deferredPixelProgram", "mainPixelProgram", pixelProgram);
 
 				Render::Buffer::Description lightBufferDescription;
 				lightBufferDescription.type = Render::Buffer::Type::Structured;
@@ -547,9 +555,7 @@ float3 mainPixelProgram(in Input input) : SV_TARGET0
 				static constexpr std::string_view vertexShader =
 R"(cbuffer DataBuffer : register(b0)
 {
-    float4x4 ProjectionMatrix;
-    bool TextureHasAlpha;
-    bool buffer[3];
+    row_major float4x4 ProjectionMatrix;
 };
 
 struct VertexInput
@@ -566,10 +572,12 @@ struct PixelOutput
     float2 texCoord  : TEXCOORD0;
 };
 
+[shader("vertex")]
 PixelOutput main(in VertexInput input)
 {
     PixelOutput output;
-    output.position = mul(ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));
+    float4 pos = float4(input.position.xy, 0.0, 1.0);
+    output.position = mul(pos, (float4x4)ProjectionMatrix);
     output.color = input.color;
     output.texCoord  = input.texCoord;
     return output;
@@ -603,23 +611,17 @@ PixelOutput main(in VertexInput input)
 				gui.constantBuffer = renderDevice->createBuffer(constantBufferDescription);
 
 				static constexpr std::string_view pixelShader =
-R"(cbuffer DataBuffer : register(b0)
-{
-    float4x4 ProjectionMatrix;
-    bool TextureHasAlpha;
-    bool buffer[3];
-};
-
-struct PixelInput
+R"(struct PixelInput
 {
     float4 position : SV_POSITION;
     float4 color : COLOR0;
     float2 texCoord  : TEXCOORD0;
 };
 
-sampler uiSampler;
 Texture2D<float4> uiTexture : register(t0);
+SamplerState uiSampler : register(s0);
 
+[shader("fragment")]
 float4 main(PixelInput input) : SV_Target
 {
     return (input.color * uiTexture.Sample(uiSampler, input.texCoord));

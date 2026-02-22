@@ -6,6 +6,7 @@
 // https://github.com/mattdesl/glsl-fxaa
 //optimized version for mobile, where dependent 
 //texture reads can be a bottleneck
+[shader("fragment")]
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     const float luminanceMD = GetLuminance(Resources::inputBuffer[inputPixel.screen.xy].xyz);

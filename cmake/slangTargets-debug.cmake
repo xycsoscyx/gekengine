@@ -1,0 +1,66 @@
+#----------------------------------------------------------------
+# Generated CMake target import file for configuration "Debug".
+#----------------------------------------------------------------
+
+# Commands may need to know the format version.
+set(CMAKE_IMPORT_FILE_VERSION 1)
+
+# Import target "slang::slang-glslang" for configuration "Debug"
+set_property(TARGET slang::slang-glslang APPEND PROPERTY IMPORTED_CONFIGURATIONS DEBUG)
+set_target_properties(slang::slang-glslang PROPERTIES
+  IMPORTED_COMMON_LANGUAGE_RUNTIME_DEBUG ""
+  IMPORTED_LOCATION_DEBUG "${_IMPORT_PREFIX}/bin/slang-glslangd.dll"
+  )
+
+list(APPEND _cmake_import_check_targets slang::slang-glslang )
+list(APPEND _cmake_import_check_files_for_slang::slang-glslang "${_IMPORT_PREFIX}/bin/slang-glslangd.dll" )
+
+# Import target "slang::slangd" for configuration "Debug"
+set_property(TARGET slang::slangd APPEND PROPERTY IMPORTED_CONFIGURATIONS DEBUG)
+set_target_properties(slang::slangd PROPERTIES
+  IMPORTED_LOCATION_DEBUG "${_IMPORT_PREFIX}/bin/slangd.exe"
+  )
+
+list(APPEND _cmake_import_check_targets slang::slangd )
+list(APPEND _cmake_import_check_files_for_slang::slangd "${_IMPORT_PREFIX}/bin/slangd.exe" )
+
+# Import target "slang::slangi" for configuration "Debug"
+set_property(TARGET slang::slangi APPEND PROPERTY IMPORTED_CONFIGURATIONS DEBUG)
+set_target_properties(slang::slangi PROPERTIES
+  IMPORTED_LOCATION_DEBUG "${_IMPORT_PREFIX}/bin/slangi.exe"
+  )
+
+list(APPEND _cmake_import_check_targets slang::slangi )
+list(APPEND _cmake_import_check_files_for_slang::slangi "${_IMPORT_PREFIX}/bin/slangi.exe" )
+
+# Import target "slang::slang-glsl-module" for configuration "Debug"
+set_property(TARGET slang::slang-glsl-module APPEND PROPERTY IMPORTED_CONFIGURATIONS DEBUG)
+set_target_properties(slang::slang-glsl-module PROPERTIES
+  IMPORTED_COMMON_LANGUAGE_RUNTIME_DEBUG ""
+  IMPORTED_LOCATION_DEBUG "${_IMPORT_PREFIX}/bin/slang-glsl-moduled.dll"
+  )
+
+list(APPEND _cmake_import_check_targets slang::slang-glsl-module )
+list(APPEND _cmake_import_check_files_for_slang::slang-glsl-module "${_IMPORT_PREFIX}/bin/slang-glsl-moduled.dll" )
+
+# Import target "slang::slang" for configuration "Debug"
+set_property(TARGET slang::slang APPEND PROPERTY IMPORTED_CONFIGURATIONS DEBUG)
+set_target_properties(slang::slang PROPERTIES
+  IMPORTED_IMPLIB_DEBUG "${_IMPORT_PREFIX}/lib/slang-compilerd.lib"
+  IMPORTED_LOCATION_DEBUG "${_IMPORT_PREFIX}/bin/slang-compilerd.dll"
+  )
+
+list(APPEND _cmake_import_check_targets slang::slang )
+list(APPEND _cmake_import_check_files_for_slang::slang "${_IMPORT_PREFIX}/lib/slang-compilerd.lib" "${_IMPORT_PREFIX}/bin/slang-compilerd.dll" )
+
+# Import target "slang::slangc" for configuration "Debug"
+set_property(TARGET slang::slangc APPEND PROPERTY IMPORTED_CONFIGURATIONS DEBUG)
+set_target_properties(slang::slangc PROPERTIES
+  IMPORTED_LOCATION_DEBUG "${_IMPORT_PREFIX}/bin/slangc.exe"
+  )
+
+list(APPEND _cmake_import_check_targets slang::slangc )
+list(APPEND _cmake_import_check_files_for_slang::slangc "${_IMPORT_PREFIX}/bin/slangc.exe" )
+
+# Commands beyond this point should not need to know the version.
+set(CMAKE_IMPORT_FILE_VERSION)
