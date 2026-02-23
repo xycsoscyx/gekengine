@@ -670,7 +670,7 @@ R"(namespace UnorderedAccess {{
                         engineData += std::vformat(unorderedAccessTemplate, std::make_format_args(unorderedAccessString));
                     }
 
-                    std::string fileName(FileSystem::CreatePath(filterName, programName).withExtension(".hlsl").getString());
+                    std::string fileName(FileSystem::CreatePath(filterName, programName).withExtension(".slang").getString());
                     Render::Program::Type pipelineType = (pass.mode == Pass::Mode::Compute ? Render::Program::Type::Compute : Render::Program::Type::Pixel);
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, engineData);
 				}

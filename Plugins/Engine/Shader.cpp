@@ -916,7 +916,7 @@ R"(namespace UnorderedAccess
                         engineData.push_back(std::vformat(unorderedAccessTemplate, std::make_format_args(unorderedAccessString)));
                     }
 
-                    std::string fileName(FileSystem::CreatePath(shaderName, programName).withExtension(".hlsl").getString());
+                    std::string fileName(FileSystem::CreatePath(shaderName, programName).withExtension(".slang").getString());
                     Render::Program::Type pipelineType = (pass.mode == Pass::Mode::Compute ? Render::Program::Type::Compute : Render::Program::Type::Pixel);
                     pass.program = resources->loadProgram(pipelineType, fileName, entryPoint, String::Join(engineData, "\r\n"));
 				}

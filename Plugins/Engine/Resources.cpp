@@ -1484,7 +1484,7 @@ namespace Gek
 
                 auto hash = GetHash(name, uncompiledData, engineData);
                 auto cachePath = getContext()->getCachePath(FileSystem::CreatePath("programs", name));
-                auto uncompiledPath(cachePath.withExtension(std::format(".{}.hlsl", hash)));
+                auto uncompiledPath(cachePath.withExtension(std::format(".{}.slang", hash)));
                 auto compiledPath(cachePath.withExtension(std::format(".{}.bin", hash)));
                 Render::Program::Information information =
                 {

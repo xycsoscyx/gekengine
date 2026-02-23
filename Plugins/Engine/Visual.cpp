@@ -113,7 +113,7 @@ OutputVertex getProjection(OutputVertex outputVertex)
                 {
                     std::string vertexEntry(JSON::Value(vertexNode, "entry", String::Empty));
                     std::string vertexProgram(JSON::Value(vertexNode, "program", String::Empty));
-                    std::string vertexFileName(FileSystem::CreatePath(visualName, vertexProgram).withExtension(".hlsl").getString());
+                    std::string vertexFileName(FileSystem::CreatePath(visualName, vertexProgram).withExtension(".slang").getString());
                     this->vertexProgram = resources->getProgram(Render::Program::Type::Vertex, vertexFileName, vertexEntry, engineData);
                     if (!elementList.empty() && this->vertexProgram)
                     {
@@ -128,7 +128,7 @@ OutputVertex getProjection(OutputVertex outputVertex)
                     std::string geometryProgram(JSON::Value(geometryNode, "program", String::Empty));
                     if (!geometryEntry.empty() && !geometryProgram.empty())
                     {
-                        std::string geometryFileName(FileSystem::CreatePath(visualName, geometryProgram).withExtension(".hlsl").getString());
+                        std::string geometryFileName(FileSystem::CreatePath(visualName, geometryProgram).withExtension(".slang").getString());
                         this->geometryProgram = resources->getProgram(Render::Program::Type::Geometry, geometryFileName, geometryEntry);
                     }
                 }
