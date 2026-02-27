@@ -384,8 +384,6 @@ namespace Gek
                 imGuiIo.MouseDrawCursor = enableInterfaceControl;
                 window->setCursorVisibility(enableInterfaceControl);
 
-                triggerLoadWindow();
-
                 windowActive = true;
 
                 window->setVisibility(true);
@@ -563,17 +561,6 @@ namespace Gek
             void onShowUserInterface(void)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-
-                ImGui::SetNextWindowPos(ImVec2(20.0f, 20.0f), ImGuiCond_Always);
-                ImGui::SetNextWindowBgAlpha(0.85f);
-                if (ImGui::Begin("UI Probe", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize))
-                {
-                    ImGui::TextUnformatted("UI probe active");
-                    ImGui::TextUnformatted("No scene loaded by default");
-                    ImGui::TextUnformatted("Open File -> Load Scene to load content");
-                }
-                ImGui::End();
-
                 if (enableInterfaceControl)
                 {
                     ImGui::BeginMainMenuBar();

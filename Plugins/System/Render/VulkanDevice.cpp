@@ -1276,17 +1276,13 @@ namespace Gek
                         return;
                     }
 
-                    ++owner->frameDrawAttemptCount;
-
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
-                        ++owner->frameDrawRejectedNoProgramCount;
                         return;
                     }
 
                     if (vertexCount == 0)
                     {
-                        ++owner->frameDrawRejectedZeroCount;
                         return;
                     }
 
@@ -1326,17 +1322,13 @@ namespace Gek
                         return;
                     }
 
-                    ++owner->frameDrawAttemptCount;
-
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
-                        ++owner->frameDrawRejectedNoProgramCount;
                         return;
                     }
 
                     if (vertexCount == 0 || instanceCount == 0)
                     {
-                        ++owner->frameDrawRejectedZeroCount;
                         return;
                     }
 
@@ -1376,29 +1368,23 @@ namespace Gek
                         return;
                     }
 
-                    ++owner->frameDrawAttemptCount;
-
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
-                        ++owner->frameDrawRejectedNoProgramCount;
                         return;
                     }
 
                     if (!currentVertexBuffer)
                     {
-                        ++owner->frameDrawRejectedNoVertexBufferCount;
                         return;
                     }
 
                     if (!currentIndexBuffer)
                     {
-                        ++owner->frameDrawRejectedNoIndexBufferCount;
                         return;
                     }
 
                     if (indexCount == 0)
                     {
-                        ++owner->frameDrawRejectedZeroCount;
                         return;
                     }
 
@@ -1440,29 +1426,23 @@ namespace Gek
                         return;
                     }
 
-                    ++owner->frameDrawAttemptCount;
-
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
-                        ++owner->frameDrawRejectedNoProgramCount;
                         return;
                     }
 
                     if (!currentVertexBuffer)
                     {
-                        ++owner->frameDrawRejectedNoVertexBufferCount;
                         return;
                     }
 
                     if (!currentIndexBuffer)
                     {
-                        ++owner->frameDrawRejectedNoIndexBufferCount;
                         return;
                     }
 
                     if (indexCount == 0 || instanceCount == 0)
                     {
-                        ++owner->frameDrawRejectedZeroCount;
                         return;
                     }
 
@@ -1582,12 +1562,6 @@ namespace Gek
 
             std::vector<DrawCommand> pendingDrawCommands;
             VkViewport currentViewport = { 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f };
-            uint64_t frameCounter = 0;
-            uint32_t frameDrawAttemptCount = 0;
-            uint32_t frameDrawRejectedNoProgramCount = 0;
-            uint32_t frameDrawRejectedNoVertexBufferCount = 0;
-            uint32_t frameDrawRejectedNoIndexBufferCount = 0;
-            uint32_t frameDrawRejectedZeroCount = 0;
 
             struct PipelineKey
             {
@@ -3866,9 +3840,6 @@ namespace Gek
 
                 const bool hasDrawCommands = !pendingDrawCommands.empty();
                 std::vector<VkDescriptorSet> descriptorSets;
-                uint32_t successfulDrawCalls = 0;
-                uint32_t pipelineFailureCount = 0;
-                uint32_t uiMissingImageBindingCount = 0;
                 if (hasDrawCommands)
                 {
                     VkImageMemoryBarrier toColorAttachment{};
@@ -4025,7 +3996,6 @@ namespace Gek
                         if (pipeline == VK_NULL_HANDLE)
                         {
                             endRenderPassForCurrentTarget();
-                            ++pipelineFailureCount;
                             continue;
                         }
 
@@ -4155,10 +4125,6 @@ namespace Gek
                                         write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                                         write.pImageInfo = &sampledImageInfo;
                                     }
-                                    else
-                                    {
-                                        ++uiMissingImageBindingCount;
-                                    }
 
                                     if (samplerInfo.sampler != VK_NULL_HANDLE)
                                     {
@@ -4233,10 +4199,6 @@ namespace Gek
                                     write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                                     write.pImageInfo = &sampledImageInfo;
                                 }
-                                else if (isUiDraw)
-                                {
-                                    ++uiMissingImageBindingCount;
-                                }
 
                                 if (samplerInfo.sampler != VK_NULL_HANDLE)
                                 {
@@ -4265,12 +4227,10 @@ namespace Gek
                         if (drawCommand.indexed)
                         {
                             vkCmdDrawIndexed(commandBuffer, drawCommand.indexCount, std::max(drawCommand.instanceCount, 1u), 0, drawCommand.firstVertex, drawCommand.firstInstance);
-                            ++successfulDrawCalls;
                         }
                         else if (drawCommand.vertexCount > 0)
                         {
                             vkCmdDraw(commandBuffer, drawCommand.vertexCount, std::max(drawCommand.instanceCount, 1u), static_cast<uint32_t>(drawCommand.firstVertex), drawCommand.firstInstance);
-                            ++successfulDrawCalls;
                         }
 
                         endRenderPassForCurrentTarget();
@@ -4339,38 +4299,7 @@ namespace Gek
                     throw std::runtime_error("failed to present swap chain image!");
                 }
 
-                ++frameCounter;
-                if ((frameCounter % 120u) == 0u)
-                {
-                    getContext()->log(
-                        Gek::Context::Info,
-                        "Vulkan frame {}: drawAttempts={}, queuedDraws={}, successfulDraws={}, pipelineFailures={}, rejected(noProgram={}, noVertex={}, noIndex={}, zero={})",
-                        frameCounter,
-                        frameDrawAttemptCount,
-                        static_cast<uint32_t>(pendingDrawCommands.size()),
-                        successfulDrawCalls,
-                        pipelineFailureCount,
-                        frameDrawRejectedNoProgramCount,
-                        frameDrawRejectedNoVertexBufferCount,
-                        frameDrawRejectedNoIndexBufferCount,
-                        frameDrawRejectedZeroCount);
-
-                    if (uiMissingImageBindingCount > 0)
-                    {
-                        getContext()->log(
-                            Gek::Context::Warning,
-                            "Vulkan frame {}: uiMissingImageBinding={}",
-                            frameCounter,
-                            uiMissingImageBindingCount);
-                    }
-                }
-
                 pendingDrawCommands.clear();
-                frameDrawAttemptCount = 0;
-                frameDrawRejectedNoProgramCount = 0;
-                frameDrawRejectedNoVertexBufferCount = 0;
-                frameDrawRejectedNoIndexBufferCount = 0;
-                frameDrawRejectedZeroCount = 0;
             }
         };
 
