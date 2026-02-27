@@ -330,7 +330,7 @@ namespace Gek
 
                     for (auto const &displayMode : displayModeList)
                     {
-                        auto currentDisplayMode = displayModeStringList.size();
+                        auto currentDisplayMode = static_cast<uint32_t>(displayModeStringList.size());
                         std::string displayModeString(std::format("{}x{}, {}hz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
                         switch (displayMode.aspectRatio)
                         {
@@ -405,7 +405,7 @@ namespace Gek
                 ImGuiIO& imGuiIo = ImGui::GetIO();
                 if (windowActive)
                 {
-                    float frameTime = timer.getUpdateTime();
+                    float frameTime = static_cast<float>(timer.getUpdateTime());
                     modeChangeTimer -= frameTime;
                     if (enableInterfaceControl)
                     {
@@ -545,8 +545,8 @@ namespace Gek
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 if (enableInterfaceControl)
                 {
-                    imGuiIo.MousePos.x = xPosition;
-                    imGuiIo.MousePos.y = yPosition;
+                    imGuiIo.MousePos.x = static_cast<float>(xPosition);
+                    imGuiIo.MousePos.y = static_cast<float>(yPosition);
                 }
             }
 
@@ -653,13 +653,17 @@ namespace Gek
                     ImGui::ShowStyleSelector("style");
 
                     ImGui::PushItemWidth(-1.0f);
-                    ImGui::ListBox("##DisplayMode", &next.mode, [](void *data, int index, const char **text) -> bool
+                    ImGui::ListBox("##DisplayMode", &next.mode, [](void *data, int index) -> const char *
                     {
                         Core *core = static_cast<Core *>(data);
+                        if (index < 0 || index >= static_cast<int>(core->displayModeStringList.size()))
+                        {
+                            return "";
+                        }
+
                         auto &mode = core->displayModeStringList[index];
-                        (*text) = mode.data();
-                        return true;
-                    }, this, displayModeStringList.size(), 10);
+                        return mode.c_str();
+                    }, this, static_cast<int>(displayModeStringList.size()), 10);
 
                     ImGui::PopItemWidth();
                     ImGui::Spacing();
@@ -707,7 +711,7 @@ namespace Gek
 
                                                 if (optionsSearch != std::end(optionList))
                                                 {
-                                                    selection = std::distance(std::begin(optionList), optionsSearch);
+                                                    selection = static_cast<int>(std::distance(std::begin(optionList), optionsSearch));
                                                     settingNode["selection"] = selection;
                                                 }
                                             }
@@ -720,17 +724,16 @@ namespace Gek
                                         ImGui::TextUnformatted(settingName.data());
                                         ImGui::SameLine();
                                         ImGui::PushItemWidth(-1.0f);
-                                        if (ImGui::Combo(label.data(), &selection, [](void *userData, int index, char const **outputText) -> bool
+                                        if (ImGui::Combo(label.data(), &selection, [](void *userData, int index) -> const char *
                                         {
-                                            auto &optionList = *(std::vector<std::string> *)userData;
-                                            if (index >= 0 && index < optionList.size())
+                                            auto &optionList = *static_cast<std::vector<std::string> *>(userData);
+                                            if (index >= 0 && index < static_cast<int>(optionList.size()))
                                             {
-                                                *outputText = optionList[index].data();
-                                                return true;
+                                                return optionList[index].c_str();
                                             }
 
-                                            return false;
-                                        }, &optionList, optionList.size(), 10))
+                                            return "";
+                                        }, &optionList, static_cast<int>(optionList.size()), 10))
                                         {
                                             settingNode["selection"] = selection;
                                             changedVisualOptions = true;

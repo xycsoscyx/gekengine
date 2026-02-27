@@ -12,7 +12,7 @@ set(GEK_WINDOW_DEVICE "win32" CACHE STRING "Window device implementation" FORCE)
 # Render Device (Graphics API backend)
 # Options: d3d11 (Direct3D 11 - Windows), vulkan (Vulkan - cross-platform)
 # ============================================================================
-set(GEK_RENDER_DEVICE "d3d11" CACHE STRING "Render device implementation" FORCE)
+set(GEK_RENDER_DEVICE "vulkan" CACHE STRING "Render device implementation")
 
 # ============================================================================
 # Audio System

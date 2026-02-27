@@ -601,6 +601,7 @@ namespace Gek
             VkDeviceMemory memory = VK_NULL_HANDLE;
             VkImageView imageView = VK_NULL_HANDLE;
             VkSampler sampler = VK_NULL_HANDLE;
+            VkImageLayout currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
             TargetTexture(const Render::Texture::Description &description)
                 : Target(description)
@@ -1176,14 +1177,31 @@ namespace Gek
 
                 void clearIndexBuffer(void)
                 {
+                    currentIndexBuffer = nullptr;
+                    currentIndexBufferOffset = 0;
                 }
 
                 void clearVertexBufferList(uint32_t count, uint32_t firstSlot)
                 {
+                    if (firstSlot >= currentVertexBufferList.size())
+                    {
+                        return;
+                    }
+
+                    const uint32_t endSlot = std::min<uint32_t>(static_cast<uint32_t>(currentVertexBufferList.size()), firstSlot + count);
+                    for (uint32_t slot = firstSlot; slot < endSlot; ++slot)
+                    {
+                        currentVertexBufferList[slot] = nullptr;
+                        currentVertexBufferOffsetList[slot] = 0;
+                    }
+
+                    currentVertexBuffer = currentVertexBufferList[0];
+                    currentVertexBufferOffset = currentVertexBufferOffsetList[0];
                 }
 
                 void clearRenderTargetList(uint32_t count, bool depthBuffer)
                 {
+                    currentRenderTarget = nullptr;
                 }
 
                 void setRenderTargetList(const std::vector<Render::Target *> &renderTargetList, Render::Object *depthBuffer)
@@ -1530,6 +1548,9 @@ namespace Gek
             VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
             VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
             VkPipelineLayout graphicsPipelineLayout = VK_NULL_HANDLE;
+            VkDescriptorSetLayout uiDescriptorSetLayout = VK_NULL_HANDLE;
+            VkDescriptorPool uiDescriptorPool = VK_NULL_HANDLE;
+            VkPipelineLayout uiGraphicsPipelineLayout = VK_NULL_HANDLE;
 
             struct DrawCommand
             {
@@ -1848,11 +1869,29 @@ namespace Gek
 
                 VkPhysicalDeviceFeatures deviceFeatures{};
 
+                VkPhysicalDeviceVulkan11Features availableVulkan11Features{};
+                availableVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+
+                VkPhysicalDeviceFeatures2 availableFeatures2{};
+                availableFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+                availableFeatures2.pNext = &availableVulkan11Features;
+                vkGetPhysicalDeviceFeatures2(physicalDevice, &availableFeatures2);
+
+                if (!availableVulkan11Features.shaderDrawParameters)
+                {
+                    throw std::runtime_error("Vulkan device missing required shaderDrawParameters feature for SPIR-V DrawParameters capability");
+                }
+
+                VkPhysicalDeviceVulkan11Features enabledVulkan11Features{};
+                enabledVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+                enabledVulkan11Features.shaderDrawParameters = VK_TRUE;
+
                 VkDeviceCreateInfo createInfo{};
                 createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
                 createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
                 createInfo.pQueueCreateInfos = queueCreateInfos.data();
                 createInfo.pEnabledFeatures = &deviceFeatures;
+                createInfo.pNext = &enabledVulkan11Features;
                 createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
                 createInfo.ppEnabledExtensionNames = deviceExtensions.data();
                 if (enableValidationLayer)
@@ -2008,6 +2047,10 @@ namespace Gek
                 createInfo.imageExtent = extent;
                 createInfo.imageArrayLayers = 1;
                 createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+                if ((swapChainSupport.capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT) != 0)
+                {
+                    createInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+                }
                 if (indices.graphicsFamily != indices.presentFamily)
                 {
                     createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
@@ -2271,6 +2314,67 @@ namespace Gek
                 {
                     throw std::runtime_error("failed to create graphics pipeline layout");
                 }
+
+                VkDescriptorSetLayoutBinding uiUniformBinding{};
+                uiUniformBinding.binding = 0;
+                uiUniformBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                uiUniformBinding.descriptorCount = 1;
+                uiUniformBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+                VkDescriptorSetLayoutBinding uiSampledImageBinding{};
+                uiSampledImageBinding.binding = 1;
+                uiSampledImageBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                uiSampledImageBinding.descriptorCount = 1;
+                uiSampledImageBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+                VkDescriptorSetLayoutBinding uiSamplerBinding{};
+                uiSamplerBinding.binding = 2;
+                uiSamplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+                uiSamplerBinding.descriptorCount = 1;
+                uiSamplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+                std::array<VkDescriptorSetLayoutBinding, 3> uiBindings =
+                {
+                    uiUniformBinding,
+                    uiSampledImageBinding,
+                    uiSamplerBinding,
+                };
+
+                VkDescriptorSetLayoutCreateInfo uiSetLayoutInfo{};
+                uiSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+                uiSetLayoutInfo.bindingCount = static_cast<uint32_t>(uiBindings.size());
+                uiSetLayoutInfo.pBindings = uiBindings.data();
+                if (vkCreateDescriptorSetLayout(device, &uiSetLayoutInfo, nullptr, &uiDescriptorSetLayout) != VK_SUCCESS)
+                {
+                    throw std::runtime_error("failed to create UI descriptor set layout");
+                }
+
+                std::array<VkDescriptorPoolSize, 3> uiPoolSizes =
+                {
+                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 256 },
+                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 256 },
+                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 256 },
+                };
+
+                VkDescriptorPoolCreateInfo uiPoolInfo{};
+                uiPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+                uiPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+                uiPoolInfo.maxSets = 256;
+                uiPoolInfo.poolSizeCount = static_cast<uint32_t>(uiPoolSizes.size());
+                uiPoolInfo.pPoolSizes = uiPoolSizes.data();
+                if (vkCreateDescriptorPool(device, &uiPoolInfo, nullptr, &uiDescriptorPool) != VK_SUCCESS)
+                {
+                    throw std::runtime_error("failed to create UI descriptor pool");
+                }
+
+                VkPipelineLayoutCreateInfo uiPipelineLayoutInfo{};
+                uiPipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+                uiPipelineLayoutInfo.setLayoutCount = 1;
+                uiPipelineLayoutInfo.pSetLayouts = &uiDescriptorSetLayout;
+                if (vkCreatePipelineLayout(device, &uiPipelineLayoutInfo, nullptr, &uiGraphicsPipelineLayout) != VK_SUCCESS)
+                {
+                    throw std::runtime_error("failed to create UI graphics pipeline layout");
+                }
             }
 
             VkPipeline getOrCreateGraphicsPipeline(const DrawCommand &command, VkRenderPass activeRenderPass)
@@ -2279,6 +2383,8 @@ namespace Gek
                 {
                     return VK_NULL_HANDLE;
                 }
+
+                const bool isUiProgram = (command.pixelProgram && command.pixelProgram->getInformation().name.find("core:uiPixelProgram") != std::string::npos);
 
                 PipelineKey key;
                 key.vertexModule = command.vertexProgram->shaderModule;
@@ -2330,7 +2436,28 @@ namespace Gek
                         }
 
                         VkVertexInputAttributeDescription attribute{};
-                        attribute.location = index;
+                        if (isUiProgram)
+                        {
+                            switch (element.semantic)
+                            {
+                            case Render::InputElement::Semantic::Position:
+                                attribute.location = 0;
+                                break;
+                            case Render::InputElement::Semantic::Color:
+                                attribute.location = 1;
+                                break;
+                            case Render::InputElement::Semantic::TexCoord:
+                                attribute.location = 2;
+                                break;
+                            default:
+                                attribute.location = index;
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            attribute.location = index;
+                        }
                         attribute.binding = slot;
                         attribute.format = format;
                         attribute.offset = (element.alignedByteOffset == Render::InputElement::AppendAligned) ? runningOffset[slot] : element.alignedByteOffset;
@@ -2457,7 +2584,7 @@ namespace Gek
                 pipelineInfo.pDepthStencilState = &depthStencil;
                 pipelineInfo.pColorBlendState = &colorBlending;
                 pipelineInfo.pDynamicState = &dynamicState;
-                pipelineInfo.layout = graphicsPipelineLayout;
+                pipelineInfo.layout = (isUiProgram ? uiGraphicsPipelineLayout : graphicsPipelineLayout);
                 pipelineInfo.renderPass = activeRenderPass;
                 pipelineInfo.subpass = 0;
 
@@ -2548,6 +2675,13 @@ namespace Gek
                 description.height = swapChainExtent.height;
                 description.format = Render::Implementation::GetFormat(swapChainImageFormat);
                 backBuffer = std::make_unique<Target>(description);
+
+                currentViewport.x = 0.0f;
+                currentViewport.y = 0.0f;
+                currentViewport.width = static_cast<float>(std::max<uint32_t>(swapChainExtent.width, 1u));
+                currentViewport.height = static_cast<float>(std::max<uint32_t>(swapChainExtent.height, 1u));
+                currentViewport.minDepth = 0.0f;
+                currentViewport.maxDepth = 1.0f;
             }
 
         public:
@@ -2639,16 +2773,34 @@ namespace Gek
                     graphicsPipelineLayout = VK_NULL_HANDLE;
                 }
 
+                if (uiGraphicsPipelineLayout != VK_NULL_HANDLE)
+                {
+                    vkDestroyPipelineLayout(device, uiGraphicsPipelineLayout, nullptr);
+                    uiGraphicsPipelineLayout = VK_NULL_HANDLE;
+                }
+
                 if (descriptorPool != VK_NULL_HANDLE)
                 {
                     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
                     descriptorPool = VK_NULL_HANDLE;
                 }
 
+                if (uiDescriptorPool != VK_NULL_HANDLE)
+                {
+                    vkDestroyDescriptorPool(device, uiDescriptorPool, nullptr);
+                    uiDescriptorPool = VK_NULL_HANDLE;
+                }
+
                 if (descriptorSetLayout != VK_NULL_HANDLE)
                 {
                     vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
                     descriptorSetLayout = VK_NULL_HANDLE;
+                }
+
+                if (uiDescriptorSetLayout != VK_NULL_HANDLE)
+                {
+                    vkDestroyDescriptorSetLayout(device, uiDescriptorSetLayout, nullptr);
+                    uiDescriptorSetLayout = VK_NULL_HANDLE;
                 }
 
                 for (auto framebuffer : transientFramebuffers)
@@ -3129,6 +3281,35 @@ namespace Gek
                 };
 
                 std::string resolvedProgram = resolveIncludes(uncompiledProgram, 0);
+
+                if (name == "core::uiVertexProgram")
+                {
+                    static constexpr std::string_view from = "cbuffer DataBuffer : register(b0)";
+                    static constexpr std::string_view to = "[[vk::binding(0, 0)]] cbuffer DataBuffer : register(b0)";
+                    size_t position = resolvedProgram.find(from);
+                    if (position != std::string::npos)
+                    {
+                        resolvedProgram.replace(position, from.size(), to);
+                    }
+                }
+                else if (name == "core:uiPixelProgram")
+                {
+                    static constexpr std::string_view textureFrom = "Texture2D<float4> uiTexture : register(t0);";
+                    static constexpr std::string_view textureTo = "[[vk::binding(1, 0)]] Texture2D<float4> uiTexture : register(t0);";
+                    size_t texturePosition = resolvedProgram.find(textureFrom);
+                    if (texturePosition != std::string::npos)
+                    {
+                        resolvedProgram.replace(texturePosition, textureFrom.size(), textureTo);
+                    }
+
+                    static constexpr std::string_view samplerFrom = "SamplerState uiSampler : register(s0);";
+                    static constexpr std::string_view samplerTo = "[[vk::binding(2, 0)]] SamplerState uiSampler : register(s0);";
+                    size_t samplerPosition = resolvedProgram.find(samplerFrom);
+                    if (samplerPosition != std::string::npos)
+                    {
+                        resolvedProgram.replace(samplerPosition, samplerFrom.size(), samplerTo);
+                    }
+                }
 
                 // Next we create a compilation session to generate SPIRV code from Slang source.
                 slang::TargetDesc targetDesc = {};
@@ -3624,6 +3805,11 @@ namespace Gek
                     vkResetDescriptorPool(device, descriptorPool, 0);
                 }
 
+                if (uiDescriptorPool != VK_NULL_HANDLE)
+                {
+                    vkResetDescriptorPool(device, uiDescriptorPool, 0);
+                }
+
                 uint32_t imageIndex = 0;
                 VkResult acquireResult = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
                 if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR)
@@ -3740,7 +3926,7 @@ namespace Gek
 
                             VkImageMemoryBarrier toColorAttachmentTarget{};
                             toColorAttachmentTarget.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                            toColorAttachmentTarget.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                            toColorAttachmentTarget.oldLayout = offscreenTarget->currentLayout;
                             toColorAttachmentTarget.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                             toColorAttachmentTarget.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                             toColorAttachmentTarget.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -3750,17 +3936,33 @@ namespace Gek
                             toColorAttachmentTarget.subresourceRange.levelCount = 1;
                             toColorAttachmentTarget.subresourceRange.baseArrayLayer = 0;
                             toColorAttachmentTarget.subresourceRange.layerCount = 1;
-                            toColorAttachmentTarget.srcAccessMask = 0;
+                            VkPipelineStageFlags targetSourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                            if (toColorAttachmentTarget.oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                            {
+                                toColorAttachmentTarget.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                                targetSourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+                            }
+                            else if (toColorAttachmentTarget.oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+                            {
+                                toColorAttachmentTarget.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                                targetSourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                            }
+                            else
+                            {
+                                toColorAttachmentTarget.srcAccessMask = 0;
+                            }
                             toColorAttachmentTarget.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
                             vkCmdPipelineBarrier(
                                 commandBuffer,
-                                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                targetSourceStage,
                                 VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                 0,
                                 0, nullptr,
                                 0, nullptr,
                                 1, &toColorAttachmentTarget);
+
+                            offscreenTarget->currentLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
                             VkFramebufferCreateInfo framebufferInfo{};
                             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -3814,6 +4016,8 @@ namespace Gek
                                     0, nullptr,
                                     0, nullptr,
                                     1, &toShaderReadTarget);
+
+                                offscreenTarget->currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                             }
                         };
 
@@ -3828,7 +4032,7 @@ namespace Gek
                         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
                         VkViewport viewport = drawCommand.viewport;
-                        if (viewport.width <= 0.0f || viewport.height <= 0.0f)
+                        if (viewport.width <= 1.0f || viewport.height <= 1.0f)
                         {
                             viewport.x = 0.0f;
                             viewport.y = 0.0f;
@@ -3902,7 +4106,85 @@ namespace Gek
                             vkCmdBindIndexBuffer(commandBuffer, drawCommand.indexBuffer->buffer, drawCommand.indexOffset, indexType);
                         }
 
-                        if (descriptorSetLayout != VK_NULL_HANDLE && descriptorPool != VK_NULL_HANDLE && graphicsPipelineLayout != VK_NULL_HANDLE)
+                        if (isUiDraw)
+                        {
+                            if (uiDescriptorSetLayout != VK_NULL_HANDLE && uiDescriptorPool != VK_NULL_HANDLE && uiGraphicsPipelineLayout != VK_NULL_HANDLE)
+                            {
+                                VkDescriptorSetAllocateInfo descriptorAllocateInfo{};
+                                descriptorAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+                                descriptorAllocateInfo.descriptorPool = uiDescriptorPool;
+                                descriptorAllocateInfo.descriptorSetCount = 1;
+                                descriptorAllocateInfo.pSetLayouts = &uiDescriptorSetLayout;
+
+                                VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+                                if (vkAllocateDescriptorSets(device, &descriptorAllocateInfo, &descriptorSet) == VK_SUCCESS)
+                                {
+                                    VkDescriptorBufferInfo bufferInfo{};
+                                    bufferInfo.buffer = drawCommand.vertexConstantBuffer ? drawCommand.vertexConstantBuffer->buffer : VK_NULL_HANDLE;
+                                    bufferInfo.offset = 0;
+                                    bufferInfo.range = drawCommand.vertexConstantBuffer ? drawCommand.vertexConstantBuffer->size : 0;
+
+                                    VkDescriptorImageInfo sampledImageInfo{};
+                                    sampledImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                                    sampledImageInfo.imageView = drawCommand.pixelImageView;
+
+                                    VkDescriptorImageInfo samplerInfo{};
+                                    samplerInfo.sampler = drawCommand.pixelSampler;
+
+                                    std::array<VkWriteDescriptorSet, 3> writes{};
+                                    uint32_t writeCount = 0;
+
+                                    if (bufferInfo.buffer != VK_NULL_HANDLE)
+                                    {
+                                        auto &write = writes[writeCount++];
+                                        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                                        write.dstSet = descriptorSet;
+                                        write.dstBinding = 0;
+                                        write.descriptorCount = 1;
+                                        write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                                        write.pBufferInfo = &bufferInfo;
+                                    }
+
+                                    if (sampledImageInfo.imageView != VK_NULL_HANDLE)
+                                    {
+                                        auto &write = writes[writeCount++];
+                                        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                                        write.dstSet = descriptorSet;
+                                        write.dstBinding = 1;
+                                        write.descriptorCount = 1;
+                                        write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                                        write.pImageInfo = &sampledImageInfo;
+                                    }
+                                    else
+                                    {
+                                        ++uiMissingImageBindingCount;
+                                    }
+
+                                    if (samplerInfo.sampler != VK_NULL_HANDLE)
+                                    {
+                                        auto &write = writes[writeCount++];
+                                        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                                        write.dstSet = descriptorSet;
+                                        write.dstBinding = 2;
+                                        write.descriptorCount = 1;
+                                        write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+                                        write.pImageInfo = &samplerInfo;
+                                    }
+
+                                    if (writeCount > 0)
+                                    {
+                                        vkUpdateDescriptorSets(device, writeCount, writes.data(), 0, nullptr);
+                                        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, uiGraphicsPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+                                    }
+                                }
+                                else
+                                {
+                                    endRenderPassForCurrentTarget();
+                                    continue;
+                                }
+                            }
+                        }
+                        else if (descriptorSetLayout != VK_NULL_HANDLE && descriptorPool != VK_NULL_HANDLE && graphicsPipelineLayout != VK_NULL_HANDLE)
                         {
                             VkDescriptorSetAllocateInfo descriptorAllocateInfo{};
                             descriptorAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -4055,11 +4337,6 @@ namespace Gek
                 else if (presentResult != VK_SUCCESS)
                 {
                     throw std::runtime_error("failed to present swap chain image!");
-                }
-
-                if (!descriptorSets.empty())
-                {
-                    vkFreeDescriptorSets(device, descriptorPool, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data());
                 }
 
                 ++frameCounter;

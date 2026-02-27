@@ -140,8 +140,14 @@ namespace Gek
                 {
                     selectedModel = 0;
                 }
-                else if (selectedModel <= 0 || selectedModel >= modelList.size() || modelList[selectedModel - 3] != modelComponent.name)
+                else
                 {
+                    constexpr int FirstFileModelIndex = 3;
+                    const int fileModelCount = static_cast<int>(modelList.size());
+                    const bool hasValidFileSelection =
+                        (selectedModel >= FirstFileModelIndex) &&
+                        (selectedModel < (FirstFileModelIndex + fileModelCount));
+
                     if (modelComponent.name == "#cube")
                     {
                         selectedModel = 1;
@@ -150,7 +156,7 @@ namespace Gek
                     {
                         selectedModel = 2;
                     }
-                    else
+                    else if (!hasValidFileSelection || modelList[selectedModel - FirstFileModelIndex] != modelComponent.name)
                     {
                         auto modelSearch = std::find_if(std::begin(modelList), std::end(modelList), [&](std::string const& modelName) -> bool
                         {
@@ -159,7 +165,7 @@ namespace Gek
 
                         if (modelSearch != std::end(modelList))
                         {
-                            selectedModel = (std::distance(std::begin(modelList), modelSearch) + 3);
+                            selectedModel = static_cast<int>(std::distance(std::begin(modelList), modelSearch)) + FirstFileModelIndex;
                         }
                         else
                         {
@@ -168,30 +174,58 @@ namespace Gek
                     }
                 }
 
-                return ImGui::Combo("##model", &selectedModel, [](void *userData, int index, char const **outputText) -> bool
+                constexpr int FirstFileModelIndex = 3;
+                const int itemCount = static_cast<int>(modelList.size()) + FirstFileModelIndex;
+                auto getModelLabel = [&](int index) -> const char *
                 {
                     switch (index)
                     {
                     case 0:
-                        *outputText = "(none)";
-                        return true;
-                    
+                        return "(none)";
                     case 1:
-                        *outputText = "* Physics Cube";
-                        return true;
-                    
+                        return "* Physics Cube";
                     case 2:
-                        *outputText = "* Physics Sphere";
-                        return true;
-
+                        return "* Physics Sphere";
                     default:
-                        auto& modelList = *(std::vector<std::string> *)userData;
-                        *outputText = modelList[index - 3].data();
-                        return true;
-                    };
+                        break;
+                    }
 
-                    return false;
-                }, &modelList, (modelList.size() + 3), 10);
+                    const int modelIndex = index - FirstFileModelIndex;
+                    if (modelIndex < 0 || modelIndex >= static_cast<int>(modelList.size()))
+                    {
+                        return "";
+                    }
+
+                    return modelList[modelIndex].c_str();
+                };
+
+                if (selectedModel < 0 || selectedModel >= itemCount)
+                {
+                    selectedModel = 0;
+                }
+
+                bool selectionChanged = false;
+                if (ImGui::BeginCombo("##model", getModelLabel(selectedModel)))
+                {
+                    for (int index = 0; index < itemCount; ++index)
+                    {
+                        const bool isSelected = (selectedModel == index);
+                        if (ImGui::Selectable(getModelLabel(index), isSelected))
+                        {
+                            selectedModel = index;
+                            selectionChanged = true;
+                        }
+
+                        if (isSelected)
+                        {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+
+                    ImGui::EndCombo();
+                }
+
+                return selectionChanged;
             });
 
             if (changed)
@@ -459,12 +493,12 @@ namespace Gek
                 {
                     auto& mesh = model.meshList.emplace_back();
                     mesh.material = resources->loadMaterial(staticModel.material);
-                    mesh.vertexCount = staticModel.positions.size();
+                    mesh.vertexCount = static_cast<uint32_t>(staticModel.positions.size());
 
                     Render::Buffer::Description vertexBufferDescription;
                     vertexBufferDescription.name = std::format("model:cube.{}:positions", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                    vertexBufferDescription.count = staticModel.positions.size();
+                    vertexBufferDescription.count = static_cast<uint32_t>(staticModel.positions.size());
                     vertexBufferDescription.type = Render::Buffer::Type::Vertex;
                     mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, staticModel.positions.data());
                     for (auto& position : staticModel.positions)
@@ -496,12 +530,12 @@ namespace Gek
                 {
                     auto& mesh = model.meshList.emplace_back();
                     mesh.material = resources->loadMaterial(staticModel.material);
-                    mesh.vertexCount = staticModel.positions.size();
+                    mesh.vertexCount = static_cast<uint32_t>(staticModel.positions.size());
 
                     Render::Buffer::Description vertexBufferDescription;
                     vertexBufferDescription.name = std::format("model:sphere.{}:positions", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                    vertexBufferDescription.count = staticModel.positions.size();
+                    vertexBufferDescription.count = static_cast<uint32_t>(staticModel.positions.size());
                     vertexBufferDescription.type = Render::Buffer::Type::Vertex;
                     mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, staticModel.positions.data());
                     for (auto& position : staticModel.positions)

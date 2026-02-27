@@ -84,10 +84,10 @@ FetchContent_Declare(assimp OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.
 FetchContent_MakeAvailable(assimp)
 
 add_definitions(-DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_DEFINE_PLACEMENT_NEW)
-FetchContent_Declare(imgui OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/ocornut/imgui.git GIT_TAG docking OVERRIDE_FIND_PACKAGE)
+FetchContent_Declare(imgui OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/ocornut/imgui.git GIT_TAG 934c6a5f5ef2355d6df25395d555cb71f790c4e9 OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(imgui)
 
-FetchContent_Declare(imguizmo OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/CedricGuillemet/ImGuizmo.git GIT_TAG master OVERRIDE_FIND_PACKAGE)
+FetchContent_Declare(imguizmo OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/CedricGuillemet/ImGuizmo.git GIT_TAG a15acd87a3f3241a29ea1363ceafc680dca3a96b OVERRIDE_FIND_PACKAGE)
 FetchContent_MakeAvailable(imguizmo)
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
