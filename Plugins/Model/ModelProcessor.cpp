@@ -687,6 +687,8 @@ namespace Gek
         void onQueueDrawCalls(Shapes::Frustum const &viewFrustum, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix)
         {
             assert(renderer);
+            static uint64_t modelQueueFrameCounter = 0;
+            ++modelQueueFrameCounter;
 
 			// Cull by entity/group
 			const auto entityCount = getEntityCount();
@@ -728,6 +730,24 @@ namespace Gek
 			visibilityList.resize(bufferedEntityCount);
 			Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedEntityCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
 
+            const auto visibleEntityCount = std::accumulate(std::begin(entityDataList), std::end(entityDataList), size_t(0), [&](size_t count, auto const &entitySearch) -> size_t
+            {
+                return (count + (visibilityList[std::get<2>(entitySearch)] ? 1 : 0));
+            });
+
+            if (!entityDataList.empty() && visibleEntityCount == 0)
+            {
+                for (auto const &entitySearch : entityDataList)
+                {
+                    visibilityList[std::get<2>(entitySearch)] = true;
+                }
+
+                if ((modelQueueFrameCounter % 240) == 0)
+                {
+                    getContext()->log(Context::Warning, "ModelProcessor culling fallback: forcing entity visibility (entities={})", entityDataList.size());
+                }
+            }
+
 			// Cull by model inside group
 			const auto modelCount = std::accumulate(std::begin(entityDataList), std::end(entityDataList), 0U, [this](auto count, auto const &entitySearch) -> auto
 			{
@@ -767,8 +787,10 @@ namespace Gek
 
 					std::for_each(std::execution::par, std::begin(group->modelList), std::end(group->modelList), [&](Group::Model const &model) -> void
 					{
-						auto halfSize(group->boundingBox.getHalfSize() * transformComponent.scale);
-						auto center = Math::Float4x4::MakeTranslation(model.boundingBox.getCenter());
+                        auto halfSize(model.boundingBox.getHalfSize() * transformComponent.scale);
+                        auto center(model.boundingBox.getCenter() * transformComponent.scale);
+                        auto centerTransform(matrix);
+                        centerTransform.translation() = matrix.transform(center);
 
 						auto entityInsert = entityModelList.push_back(std::make_tuple(entity, &model, 0));
 						auto entityModelIndex = std::get<2>(*entityInsert) = std::distance(std::begin(entityModelList), entityInsert);
@@ -778,7 +800,7 @@ namespace Gek
 						halfSizeZList[entityModelIndex] = halfSize.z;
 						for (size_t element = 0; element < 16; ++element)
 						{
-							transformList[element][entityModelIndex] = (matrix.data[element] + center.data[element]);
+                            transformList[element][entityModelIndex] = centerTransform.data[element];
 						}
 					});
 				}
@@ -786,6 +808,24 @@ namespace Gek
 
 			visibilityList.resize(bufferedModelCount);
 			Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedModelCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
+
+            const auto visibleModelCount = std::accumulate(std::begin(entityModelList), std::end(entityModelList), size_t(0), [&](size_t count, auto const &entitySearch) -> size_t
+            {
+                return (count + (visibilityList[std::get<2>(entitySearch)] ? 1 : 0));
+            });
+
+            if (!entityModelList.empty() && visibleModelCount == 0)
+            {
+                for (auto const &entitySearch : entityModelList)
+                {
+                    visibilityList[std::get<2>(entitySearch)] = true;
+                }
+
+                if ((modelQueueFrameCounter % 240) == 0)
+                {
+                    getContext()->log(Context::Warning, "ModelProcessor culling fallback: forcing model visibility (models={})", entityModelList.size());
+                }
+            }
 
             std::for_each(std::execution::par, std::begin(entityModelList), std::end(entityModelList), [&](auto &entitySearch) -> void
 			{
@@ -807,6 +847,7 @@ namespace Gek
 			});
 
 			std::atomic_size_t maximumInstanceCount = 0;
+            std::atomic_size_t queuedBatchCount = 0;
 			std::for_each(std::execution::par, std::begin(renderList), std::end(renderList), [&](auto &materialPair) -> void
 			{
 				const auto material = materialPair.first;
@@ -820,21 +861,24 @@ namespace Gek
 					materialInstanceCount += materialInstanceList.size();
 				}
 
-				std::vector<DrawData> drawDataList(materialMap.size());
-				std::vector<Math::Float4x4> instanceList(materialInstanceCount);
+                std::vector<DrawData> drawDataList;
+                drawDataList.reserve(materialMap.size());
+                std::vector<Math::Float4x4> instanceList;
+                instanceList.reserve(materialInstanceCount);
 				for (auto &levelPair : materialMap)
 				{
 					auto level = levelPair.first;
 					if (level)
 					{
 						auto &levelInstanceList = levelPair.second;
-						drawDataList.push_back(DrawData(instanceList.size(), levelInstanceList.size(), level));
+                        drawDataList.push_back(DrawData(static_cast<uint32_t>(instanceList.size()), static_cast<uint32_t>(levelInstanceList.size()), level));
 						instanceList.insert(std::end(instanceList), std::begin(levelInstanceList), std::end(levelInstanceList));
 						levelInstanceList.clear();
 					}
 				}
 
                 updateMaximumValue(maximumInstanceCount, instanceList.size());
+                queuedBatchCount.fetch_add(1);
 				renderer->queueDrawCall(visual, material, std::move([this, drawDataList = move(drawDataList), instanceList = move(instanceList)](Render::Device::Context *videoContext) -> void
 				{
 					Math::Float4x4 *instanceData = nullptr;
@@ -870,11 +914,24 @@ namespace Gek
 				Render::Buffer::Description instanceDescription;
                 instanceDescription.name = "model:instances";
 				instanceDescription.stride = sizeof(Math::Float4x4);
-				instanceDescription.count = maximumInstanceCount;
+                instanceDescription.count = static_cast<uint32_t>(maximumInstanceCount.load());
 				instanceDescription.type = Render::Buffer::Type::Vertex;
 				instanceDescription.flags = Render::Buffer::Flags::Mappable;
 				instanceBuffer = videoDevice->createBuffer(instanceDescription);
 			}
+
+            if ((modelQueueFrameCounter % 120) == 0)
+            {
+                getContext()->log(Context::Info,
+                    "ModelProcessor frame {}: entities={}, visibleEntities={}, models={}, visibleModels={}, queuedBatches={}, maxInstances={}",
+                    modelQueueFrameCounter,
+                    entityDataList.size(),
+                    visibleEntityCount,
+                    entityModelList.size(),
+                    visibleModelCount,
+                    queuedBatchCount.load(),
+                    maximumInstanceCount.load());
+            }
 		}
 	};
 

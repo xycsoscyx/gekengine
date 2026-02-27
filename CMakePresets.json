@@ -23,6 +23,14 @@
       "name": "vs2022-x64",
       "displayName": "Build VS2022 x64",
       "configurePreset": "vs2022-x64"
+    },
+    {
+      "name": "vs2022-x64-demo_engine",
+      "displayName": "Build VS2022 x64 (demo_engine)",
+      "configurePreset": "vs2022-x64",
+      "targets": [
+        "demo_engine"
+      ]
     }
   ]
 }

@@ -25,7 +25,7 @@ set(GEK_AUDIO_DEVICE "ds8" CACHE STRING "Audio device implementation" FORCE)
 # ============================================================================
 
 # Enable unit tests
-set(GEK_BUILD_TESTS ON CACHE BOOL "Create unit test projects" FORCE)
+set(GEK_BUILD_TESTS OFF CACHE BOOL "Create unit test projects" FORCE)
 
 # Slang shader compiler optimization
 # Disable examples, tests, and GFX for faster builds

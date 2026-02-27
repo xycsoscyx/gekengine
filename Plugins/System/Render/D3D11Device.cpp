@@ -25,6 +25,7 @@
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "d3dcompiler.lib")
 
 namespace Gek
 {
@@ -2388,12 +2389,26 @@ namespace Gek
                 }
 
                 uint32_t semanticIndexList[static_cast<uint8_t>(Render::InputElement::Semantic::Count)] = { 0 };
+                std::array<bool, D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT> slotHasElement{};
                 std::vector<D3D11_INPUT_ELEMENT_DESC> d3dElementList;
                 for (auto const &element : elementList)
                 {
+                    if (element.sourceIndex >= D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT)
+                    {
+                        std::cerr << "Input layout creation failed: sourceIndex " << element.sourceIndex << " exceeds D3D11 slot limit." << std::endl;
+                        return nullptr;
+                    }
+
                     D3D11_INPUT_ELEMENT_DESC elementDesc;
                     elementDesc.Format = Render::Implementation::BufferFormatList[static_cast<uint8_t>(element.format)];
-                    elementDesc.AlignedByteOffset = (element.alignedByteOffset == Render::InputElement::AppendAligned ? D3D11_APPEND_ALIGNED_ELEMENT : element.alignedByteOffset);
+                    if (element.alignedByteOffset == Render::InputElement::AppendAligned)
+                    {
+                        elementDesc.AlignedByteOffset = slotHasElement[element.sourceIndex] ? D3D11_APPEND_ALIGNED_ELEMENT : 0;
+                    }
+                    else
+                    {
+                        elementDesc.AlignedByteOffset = element.alignedByteOffset;
+                    }
                     elementDesc.SemanticName = Render::Implementation::SemanticNameList[static_cast<uint8_t>(element.semantic)].data();
                     elementDesc.SemanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)]++;
                     elementDesc.InputSlot = element.sourceIndex;
@@ -2412,13 +2427,143 @@ namespace Gek
                     };
 
                     d3dElementList.push_back(elementDesc);
+                    slotHasElement[element.sourceIndex] = true;
                 }
 
                 CComPtr<ID3D11InputLayout> d3dInputLayout;
                 HRESULT resultValue = d3dDevice->CreateInputLayout(d3dElementList.data(), UINT(d3dElementList.size()), information.compiledData.data(), information.compiledData.size(), &d3dInputLayout);
                 if (FAILED(resultValue) || !d3dInputLayout)
                 {
-                    std::cerr << "Unable to create input vertex layout";
+                    std::cerr << "Unable to create input vertex layout for program '" << information.name << "' (HRESULT=0x" << std::hex << uint32_t(resultValue) << std::dec << ")" << std::endl;
+
+                    for (size_t elementIndex = 0; elementIndex < d3dElementList.size(); ++elementIndex)
+                    {
+                        auto const &element = d3dElementList[elementIndex];
+                        std::cerr
+                            << "  Layout[" << elementIndex << "]: semantic=" << element.SemanticName << element.SemanticIndex
+                            << ", format=" << uint32_t(element.Format)
+                            << ", slot=" << element.InputSlot
+                            << ", offset=" << element.AlignedByteOffset
+                            << ", class=" << (element.InputSlotClass == D3D11_INPUT_PER_INSTANCE_DATA ? "instance" : "vertex")
+                            << ", step=" << element.InstanceDataStepRate
+                            << std::endl;
+                    }
+
+                    CComPtr<ID3D11ShaderReflection> shaderReflection;
+                    HRESULT reflectionResult = D3DReflect(
+                        information.compiledData.data(),
+                        information.compiledData.size(),
+                        IID_ID3D11ShaderReflection,
+                        reinterpret_cast<void **>(&shaderReflection));
+
+                    if (SUCCEEDED(reflectionResult) && shaderReflection)
+                    {
+                        D3D11_SHADER_DESC shaderDescription = {};
+                        if (SUCCEEDED(shaderReflection->GetDesc(&shaderDescription)))
+                        {
+                            std::cerr << "  Shader input parameter count: " << shaderDescription.InputParameters << std::endl;
+
+                            std::vector<bool> usedElement(d3dElementList.size(), false);
+                            std::vector<D3D11_INPUT_ELEMENT_DESC> reflectedElementList;
+                            reflectedElementList.reserve(shaderDescription.InputParameters);
+                            std::vector<std::string> reflectedSemanticNames;
+                            reflectedSemanticNames.reserve(shaderDescription.InputParameters);
+
+                            auto splitSemantic = [](std::string_view semanticName, uint32_t semanticIndex) -> std::pair<std::string, uint32_t>
+                            {
+                                size_t suffixStart = semanticName.size();
+                                while (suffixStart > 0 && std::isdigit(static_cast<unsigned char>(semanticName[suffixStart - 1])) != 0)
+                                {
+                                    --suffixStart;
+                                }
+
+                                uint32_t embeddedIndex = 0;
+                                if (suffixStart < semanticName.size())
+                                {
+                                    embeddedIndex = static_cast<uint32_t>(std::strtoul(std::string(semanticName.substr(suffixStart)).c_str(), nullptr, 10));
+                                }
+
+                                std::string baseName(semanticName.substr(0, suffixStart));
+                                return { baseName, embeddedIndex + semanticIndex };
+                            };
+
+                            for (UINT parameterIndex = 0; parameterIndex < shaderDescription.InputParameters; ++parameterIndex)
+                            {
+                                D3D11_SIGNATURE_PARAMETER_DESC parameterDescription = {};
+                                if (FAILED(shaderReflection->GetInputParameterDesc(parameterIndex, &parameterDescription)))
+                                {
+                                    continue;
+                                }
+
+                                std::cerr
+                                    << "  Reflect[" << parameterIndex << "]: semantic=" << parameterDescription.SemanticName << parameterDescription.SemanticIndex
+                                    << ", mask=0x" << std::hex << uint32_t(parameterDescription.Mask)
+                                    << ", componentType=" << std::dec << uint32_t(parameterDescription.ComponentType)
+                                    << ", stream=" << parameterDescription.Stream
+                                    << std::endl;
+
+                                size_t matchedIndex = d3dElementList.size();
+
+                                auto reflectedSemantic = splitSemantic(parameterDescription.SemanticName, parameterDescription.SemanticIndex);
+                                for (size_t elementIndex = 0; elementIndex < d3dElementList.size(); ++elementIndex)
+                                {
+                                    if (usedElement[elementIndex])
+                                    {
+                                        continue;
+                                    }
+
+                                    auto const &candidate = d3dElementList[elementIndex];
+                                    auto candidateSemantic = splitSemantic(candidate.SemanticName, candidate.SemanticIndex);
+                                    if ((_stricmp(candidateSemantic.first.c_str(), reflectedSemantic.first.c_str()) == 0) && (candidateSemantic.second == reflectedSemantic.second))
+                                    {
+                                        matchedIndex = elementIndex;
+                                        break;
+                                    }
+                                }
+
+                                if (matchedIndex == d3dElementList.size() && parameterIndex < d3dElementList.size() && !usedElement[parameterIndex])
+                                {
+                                    matchedIndex = parameterIndex;
+                                }
+
+                                if (matchedIndex != d3dElementList.size())
+                                {
+                                    usedElement[matchedIndex] = true;
+                                    D3D11_INPUT_ELEMENT_DESC reflectedElement = d3dElementList[matchedIndex];
+                                    reflectedSemanticNames.emplace_back(parameterDescription.SemanticName);
+                                    reflectedElement.SemanticName = reflectedSemanticNames.back().c_str();
+                                    reflectedElement.SemanticIndex = parameterDescription.SemanticIndex;
+                                    reflectedElementList.push_back(reflectedElement);
+                                }
+                                else
+                                {
+                                    std::cerr << "Input layout reflection mismatch: missing semantic '" << parameterDescription.SemanticName << parameterDescription.SemanticIndex << "'" << std::endl;
+                                }
+                            }
+
+                            if (!reflectedElementList.empty())
+                            {
+                                CComPtr<ID3D11InputLayout> reflectedInputLayout;
+                                HRESULT reflectedCreateResult = d3dDevice->CreateInputLayout(
+                                    reflectedElementList.data(),
+                                    UINT(reflectedElementList.size()),
+                                    information.compiledData.data(),
+                                    information.compiledData.size(),
+                                    &reflectedInputLayout);
+
+                                if (SUCCEEDED(reflectedCreateResult) && reflectedInputLayout)
+                                {
+                                    std::cerr << "Recovered input layout creation for program '" << information.name << "' using shader-reflection signature mapping." << std::endl;
+                                    return std::make_unique<InputLayout>(reflectedInputLayout);
+                                }
+                                else
+                                {
+                                    std::cerr << "Reflected input layout creation still failed for program '" << information.name << "' (HRESULT=0x" << std::hex << uint32_t(reflectedCreateResult) << std::dec << ")" << std::endl;
+                                }
+                            }
+                        }
+                    }
+
                     return nullptr;
                 }
 
@@ -2493,10 +2638,176 @@ namespace Gek
                 };
 
                 static const std::vector<uint8_t> EmptyBuffer;
+
+                std::function<std::string(std::string_view, uint32_t)> resolveIncludes;
+                resolveIncludes = [&](std::string_view source, uint32_t depth) -> std::string
+                {
+                    if (depth > 32)
+                    {
+                        return std::string(source);
+                    }
+
+                    std::string resolved;
+                    resolved.reserve(source.size());
+
+                    auto tryLoadInclude = [&](Render::IncludeType includeType, std::string const &includeName, void const **includeData, uint32_t *includeSize) -> bool
+                    {
+                        if (!onInclude || includeName.empty())
+                        {
+                            return false;
+                        }
+
+                        auto addUnique = [](std::vector<std::string> &list, std::string const &candidate)
+                        {
+                            if (candidate.empty())
+                            {
+                                return;
+                            }
+
+                            if (std::find(list.begin(), list.end(), candidate) == list.end())
+                            {
+                                list.push_back(candidate);
+                            }
+                        };
+
+                        std::vector<std::string> candidates;
+                        addUnique(candidates, includeName);
+
+                        std::string forwardSlashes = includeName;
+                        for (char &character : forwardSlashes)
+                        {
+                            if (character == '\\')
+                            {
+                                character = '/';
+                            }
+                        }
+                        addUnique(candidates, forwardSlashes);
+
+                        std::string backSlashes = includeName;
+                        for (char &character : backSlashes)
+                        {
+                            if (character == '/')
+                            {
+                                character = '\\';
+                            }
+                        }
+                        addUnique(candidates, backSlashes);
+
+                        size_t slashPosition = includeName.find_last_of("/\\");
+                        size_t extensionPosition = includeName.find_last_of('.');
+                        bool hasExtension = (extensionPosition != std::string::npos) && (slashPosition == std::string::npos || extensionPosition > slashPosition);
+
+                        if (!hasExtension)
+                        {
+                            addUnique(candidates, includeName + ".slang");
+                            addUnique(candidates, includeName + ".hlsl");
+                            addUnique(candidates, forwardSlashes + ".slang");
+                            addUnique(candidates, forwardSlashes + ".hlsl");
+                            addUnique(candidates, backSlashes + ".slang");
+                            addUnique(candidates, backSlashes + ".hlsl");
+                        }
+                        else if ((includeName.substr(extensionPosition) == ".slang") || (includeName.substr(extensionPosition) == ".SLANG"))
+                        {
+                            std::string hlslName = includeName;
+                            hlslName.replace(extensionPosition, std::string::npos, ".hlsl");
+                            addUnique(candidates, hlslName);
+                        }
+
+                        for (auto const &candidate : candidates)
+                        {
+                            if (onInclude(includeType, candidate, includeData, includeSize) && (*includeData) && (*includeSize) > 0)
+                            {
+                                return true;
+                            }
+                        }
+
+                        return false;
+                    };
+
+                    size_t cursor = 0;
+                    while (cursor < source.size())
+                    {
+                        size_t lineEnd = source.find('\n', cursor);
+                        if (lineEnd == std::string_view::npos)
+                        {
+                            lineEnd = source.size();
+                        }
+
+                        std::string_view line = source.substr(cursor, lineEnd - cursor);
+
+                        size_t scan = 0;
+                        while (scan < line.size() && (line[scan] == ' ' || line[scan] == '\t'))
+                        {
+                            ++scan;
+                        }
+
+                        size_t includePos = std::string_view::npos;
+                        if (scan < line.size() && line[scan] == '#')
+                        {
+                            ++scan;
+                            while (scan < line.size() && (line[scan] == ' ' || line[scan] == '\t'))
+                            {
+                                ++scan;
+                            }
+
+                            if ((scan + 7) <= line.size() && line.substr(scan, 7) == "include")
+                            {
+                                includePos = scan;
+                            }
+                        }
+
+                        if (includePos != std::string_view::npos)
+                        {
+                            size_t openAngle = line.find('<', includePos);
+                            size_t closeAngle = (openAngle != std::string_view::npos) ? line.find('>', openAngle + 1) : std::string_view::npos;
+                            size_t openQuote = line.find('"', includePos);
+                            size_t closeQuote = (openQuote != std::string_view::npos) ? line.find('"', openQuote + 1) : std::string_view::npos;
+
+                            bool isGlobal = (openAngle != std::string_view::npos && closeAngle != std::string_view::npos);
+                            bool isLocal = (openQuote != std::string_view::npos && closeQuote != std::string_view::npos);
+                            if (isGlobal || isLocal)
+                            {
+                                size_t begin = isGlobal ? (openAngle + 1) : (openQuote + 1);
+                                size_t end = isGlobal ? closeAngle : closeQuote;
+                                std::string includeName(line.substr(begin, end - begin));
+                                Render::IncludeType includeType = isGlobal ? Render::IncludeType::Global : Render::IncludeType::Local;
+
+                                const void *includeData = nullptr;
+                                uint32_t includeSize = 0;
+                                bool includeLoaded = tryLoadInclude(includeType, includeName, &includeData, &includeSize);
+
+                                if (includeLoaded && includeData && includeSize > 0)
+                                {
+                                    std::string_view includeText(reinterpret_cast<const char *>(includeData), includeSize);
+                                    resolved += resolveIncludes(includeText, depth + 1);
+                                    if (lineEnd < source.size())
+                                    {
+                                        resolved.push_back('\n');
+                                    }
+                                    cursor = (lineEnd < source.size()) ? (lineEnd + 1) : lineEnd;
+                                    continue;
+                                }
+                            }
+                        }
+
+                        resolved.append(line.data(), line.size());
+                        if (lineEnd < source.size())
+                        {
+                            resolved.push_back('\n');
+                        }
+                        cursor = (lineEnd < source.size()) ? (lineEnd + 1) : lineEnd;
+                    }
+
+                    return resolved;
+                };
+
+                std::string resolvedProgram = resolveIncludes(uncompiledProgram, 0);
+
                 information.type = type;
                 information.name = std::format("{}:{}", name, entryFunction);
                 information.debugPath = debugPath;
-                information.uncompiledData = uncompiledProgram;
+                information.entryFunction = entryFunction;
+                information.uncompiledData = resolvedProgram;
                 information.compiledData = EmptyBuffer;
 
                 auto typeSearch = D3DTypeMap.find(type);
@@ -2506,8 +2817,9 @@ namespace Gek
                     if (SLANG_SUCCEEDED(slang::createGlobalSession(slangGlobalSession.writeRef())))
                     {
                         slang::TargetDesc targetDesc = {};
-                        // Use DXBC format for D3D11 compatibility (not DXIL, which is D3D12-only).
-                        targetDesc.format = SLANG_DXBC;
+                        // Generate HLSL from Slang, then compile with D3DCompile.
+                        // This preserves D3D11 input-signature behavior used by the pre-Slang pipeline.
+                        targetDesc.format = SLANG_HLSL;
 
                         // Prefer trying a stage-specific profile (from D3DTypeMap)
                         // so Slang can select the correct shader model. If that
@@ -2518,18 +2830,13 @@ namespace Gek
                         profile = slangGlobalSession->findProfile(mappedProfile.c_str());
                         if (!profile || profile == SLANG_PROFILE_UNKNOWN)
                         {
-                            std::cerr << "Requested Slang profile '" << mappedProfile << "' not available while compiling '" << name << "'; trying more generic profiles." << std::endl;
-                            return information;
+                            std::cerr << "Requested Slang profile '" << mappedProfile << "' not available while compiling '" << name << "'; continuing without explicit Slang profile." << std::endl;
+                            profile = SLANG_PROFILE_UNKNOWN;
                         }
 
                         targetDesc.profile = profile;
-                        if (profile == SLANG_PROFILE_UNKNOWN)
-                        {
-                            std::cerr << "Requested Slang profile '" << mappedProfile << "' not available while compiling '" << name << "'; compilation failed." << std::endl;
-                            return information;
-                        }
 
-                        std::cout << "Using Slang profile (" << (uint32_t)profile << ") for mapped target '" << mappedProfile << "' while compiling '" << name << "'." << std::endl;
+                        std::cout << "Using Slang profile ('" << mappedProfile << "') while compiling '" << name << "'." << std::endl;
 
                         slang::SessionDesc sessionDesc = {};
                         sessionDesc.targets = &targetDesc;
@@ -2541,7 +2848,7 @@ namespace Gek
                             std::cerr << "Loading Slang module for '" << name << "' with entry point '" << entryFunction << "'" << std::endl;
                             
                             slang::IBlob* outDiagnosticsRaw = nullptr;
-                            slang::IModule* slangModule = session->loadModuleFromSourceString(name.data(), debugPath.getFileName().data(), uncompiledProgram.data(), &outDiagnosticsRaw);
+                            slang::IModule* slangModule = session->loadModuleFromSourceString(name.data(), debugPath.getFileName().data(), resolvedProgram.c_str(), &outDiagnosticsRaw);
                             Slang::ComPtr<slang::IBlob> outDiagnostics(outDiagnosticsRaw);
                             
                             if (outDiagnostics)
@@ -2571,20 +2878,70 @@ namespace Gek
                                     Slang::ComPtr<slang::IBlob> compositeDiagnostics(compositeDiagnosticsRaw);
                                     if (composedProgram)
                                     {
-                                        Slang::ComPtr<slang::IBlob> dxilCode;
+                                        Slang::ComPtr<slang::IBlob> hlslCode;
                                         // Entry point is at index 0 in the composite (first and only entry point)
                                         // Target index 0 refers to the first (and only) target descriptor
-                                        SlangResult codeResult = composedProgram->getEntryPointCode(0, 0, dxilCode.writeRef());
-                                        if (SLANG_SUCCEEDED(codeResult) && dxilCode)
+                                        SlangResult codeResult = composedProgram->getEntryPointCode(0, 0, hlslCode.writeRef());
+                                        if (SLANG_SUCCEEDED(codeResult) && hlslCode)
                                         {
-                                            const uint8_t *data = reinterpret_cast<const uint8_t *>(dxilCode->getBufferPointer());
-                                            information.compiledData.assign(data, data + dxilCode->getBufferSize());
-                                            std::cerr << "Slang compilation succeeded for '" << name << "' entry '" << entryFunction << "' (" << information.compiledData.size() << " bytes)" << std::endl;
-                                            return information;
+                                            const char *generatedHlsl = reinterpret_cast<const char *>(hlslCode->getBufferPointer());
+                                            const size_t generatedHlslSize = hlslCode->getBufferSize();
+
+                                            if (generatedHlsl && generatedHlslSize > 0)
+                                            {
+                                                const UINT compileFlags =
+                                                    D3DCOMPILE_ENABLE_STRICTNESS |
+                                                    D3DCOMPILE_PACK_MATRIX_ROW_MAJOR |
+                                                    (_DEBUG ? D3DCOMPILE_DEBUG : D3DCOMPILE_OPTIMIZATION_LEVEL3);
+
+                                                CComPtr<ID3DBlob> compiledShader;
+                                                CComPtr<ID3DBlob> compileErrors;
+
+                                                HRESULT compileResult = D3DCompile(
+                                                    generatedHlsl,
+                                                    generatedHlslSize,
+                                                    information.name.c_str(),
+                                                    nullptr,
+                                                    nullptr,
+                                                    entryFunction.data(),
+                                                    typeSearch->second.data(),
+                                                    compileFlags,
+                                                    0,
+                                                    &compiledShader,
+                                                    &compileErrors);
+
+                                                if (FAILED(compileResult) && entryFunction != "main")
+                                                {
+                                                    compileErrors.Release();
+                                                    compileResult = D3DCompile(
+                                                        generatedHlsl,
+                                                        generatedHlslSize,
+                                                        information.name.c_str(),
+                                                        nullptr,
+                                                        nullptr,
+                                                        "main",
+                                                        typeSearch->second.data(),
+                                                        compileFlags,
+                                                        0,
+                                                        &compiledShader,
+                                                        &compileErrors);
+                                                }
+
+                                                if (SUCCEEDED(compileResult) && compiledShader)
+                                                {
+                                                    const uint8_t *data = reinterpret_cast<const uint8_t *>(compiledShader->GetBufferPointer());
+                                                    information.compiledData.assign(data, data + compiledShader->GetBufferSize());
+                                                    std::cerr << "Slang->HLSL->D3DCompile succeeded for '" << name << "' entry '" << entryFunction << "' (" << information.compiledData.size() << " bytes)" << std::endl;
+                                                    return information;
+                                                }
+
+                                                const char *compileErrorText = compileErrors ? reinterpret_cast<const char *>(compileErrors->GetBufferPointer()) : "Unknown D3DCompile error";
+                                                std::cerr << "D3DCompile failed for Slang-generated HLSL in '" << name << "': " << compileErrorText << std::endl;
+                                            }
                                         }
                                         else
                                         {
-                                            std::cerr << "Slang DXIL generation failed for '" << name << "': getEntryPointCode returned error code " << codeResult << std::endl;
+                                            std::cerr << "Slang HLSL generation failed for '" << name << "': getEntryPointCode returned error code " << codeResult << std::endl;
                                         }
                                     }
                                     else
@@ -2629,51 +2986,6 @@ namespace Gek
                 }
 
                 std::cerr << "D3D shader created successfully: " << information.compiledData.size() << " bytes" << std::endl;
-
-                // Perform shader reflection to verify resource bindings
-                {
-                    CComPtr<ID3D11ShaderReflection> shaderReflection;
-                    HRESULT reflectResult = D3DReflect(information.compiledData.data(), information.compiledData.size(), IID_ID3D11ShaderReflection, (void**)&shaderReflection);
-                    if (SUCCEEDED(reflectResult) && shaderReflection)
-                    {
-                        D3D11_SHADER_DESC shaderDesc;
-                        shaderReflection->GetDesc(&shaderDesc);
-                        
-                        std::cerr << "Shader reflection for '" << information.name << "':" << std::endl;
-                        std::cerr << "  Constant Buffers: " << shaderDesc.ConstantBuffers << std::endl;
-                        std::cerr << "  Input Parameters: " << shaderDesc.InputParameters << std::endl;
-                        std::cerr << "  Output Parameters: " << shaderDesc.OutputParameters << std::endl;
-                        std::cerr << "  Texture Normal Instructions: " << shaderDesc.TextureNormalInstructions << std::endl;
-                        std::cerr << "  Texture Load Instructions: " << shaderDesc.TextureLoadInstructions << std::endl;
-                        
-                        // List constant buffers and their bindings
-                        for (uint32_t i = 0; i < shaderDesc.ConstantBuffers; ++i)
-                        {
-                            ID3D11ShaderReflectionConstantBuffer* cbuffer = shaderReflection->GetConstantBufferByIndex(i);
-                            if (cbuffer)
-                            {
-                                D3D11_SHADER_BUFFER_DESC cbDesc;
-                                cbuffer->GetDesc(&cbDesc);
-                                std::cerr << "  CB[" << i << "]: " << cbDesc.Name << " (size=" << cbDesc.Size << ", vars=" << cbDesc.Variables << ")" << std::endl;
-                            }
-                        }
-                        
-                        // List bound resources (textures, samplers, etc.)
-                        for (uint32_t i = 0; i < shaderDesc.BoundResources; ++i)
-                        {
-                            D3D11_SHADER_INPUT_BIND_DESC bindDesc;
-                            shaderReflection->GetResourceBindingDesc(i, &bindDesc);
-                            std::cerr << "  Resource[" << i << "]: " << bindDesc.Name 
-                                      << " (type=" << bindDesc.Type 
-                                      << ", bind_point=" << bindDesc.BindPoint 
-                                      << ", bind_count=" << bindDesc.BindCount << ")" << std::endl;
-                        }
-                    }
-                    else
-                    {
-                        std::cerr << "Failed to reflect shader: " << std::hex << reflectResult << std::dec << std::endl;
-                    }
-                }
 
                 return std::make_unique<TYPE>(d3dShader, information);
             }

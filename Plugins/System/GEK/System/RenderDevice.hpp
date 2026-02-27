@@ -624,6 +624,7 @@ namespace Gek
 				Type type;
                 std::string name;
                 FileSystem::Path debugPath;
+                std::string entryFunction;
 				std::string uncompiledData;
 				std::vector<uint8_t> compiledData;
 			};

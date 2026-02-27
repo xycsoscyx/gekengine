@@ -8,6 +8,34 @@
 #ifdef _WIN32
 #include <Windows.h>
 #define LIBRARY                         HMODULE
+
+std::string getWindowsLastErrorMessage(DWORD errorCode)
+{
+    if (errorCode == 0)
+    {
+        return std::string();
+    }
+
+    LPSTR messageBuffer = nullptr;
+    DWORD size = FormatMessageA(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        nullptr,
+        errorCode,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPSTR)&messageBuffer,
+        0,
+        nullptr);
+
+    std::string message;
+    if (size && messageBuffer)
+    {
+        message.assign(messageBuffer, size);
+        LocalFree(messageBuffer);
+    }
+
+    return message;
+}
+
 LIBRARY loadLibrary(std::string_view fileName)
 {
     return LoadLibraryA(fileName.data());
@@ -85,7 +113,9 @@ namespace Gek
 						}
 						else
 						{
-                            std::cerr << "Unable to load plugin: " << filePath.getString();
+                            DWORD errorCode = GetLastError();
+                            std::string errorMessage = getWindowsLastErrorMessage(errorCode);
+                            std::cerr << "Unable to load plugin: " << filePath.getString() << " (error " << errorCode << ": " << errorMessage << ")\n";
 						}
 					}
 
