@@ -6,7 +6,8 @@
 [shader("fragment")]
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    float ambient = Resources::ambientBuffer[inputPixel.screen.xy];
-    float3 albedo = Resources::albedoBuffer[inputPixel.screen.xy];
+    const uint2 screenCoord = uint2(inputPixel.screen.xy);
+    float ambient = Resources::ambientBuffer[screenCoord];
+    float3 albedo = Resources::albedoBuffer[screenCoord];
     return (ambient * albedo) * 0.025;
 }

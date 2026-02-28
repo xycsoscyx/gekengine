@@ -5,14 +5,16 @@
                 "position": [ "random(-40, 40)", "random(10, 30)", "random(-10, 10)" ],
                 "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
             },
-            "Model": "#cube"
+            "Model": "#cube",
+            "Physical": { "mass": 100 }
         },
         "BasicSphere": {
             "Transform": {
                 "position": [ "random(-40, 40)", "random(10, 30)", "random(-10, 10)" ],
                 "rotation": [ "random(0,pi*2)", "random(0,pi*2)", "random(0,pi*2)" ]
             },
-            "Model": "#sphere"
+            "Model": "#sphere",
+            "Physical": { "mass": 100 }
         },
         "BasicPointLight": {
             "Transform": {

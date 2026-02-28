@@ -48,7 +48,7 @@
   ],
   "buildPresets": [
     {
-      "name": "vs2022-x64",
+      "name": "vs2022-x64",  
       "displayName": "Build VS2022 x64",
       "configurePreset": "vs2022-x64"
     },
@@ -69,11 +69,27 @@
       ]
     },
     {
+      "name": "vs2022-x64-d3d11-install",
+      "displayName": "Install VS2022 x64 D3D11",
+      "configurePreset": "vs2022-x64-d3d11",
+      "targets": [
+        "install"
+      ]
+    },
+    {
       "name": "vs2022-x64-vulkan-demo_engine",
       "displayName": "Build VS2022 x64 Vulkan (demo_engine)",
       "configurePreset": "vs2022-x64-vulkan",
       "targets": [
         "demo_engine"
+      ]
+    },
+    {
+      "name": "vs2022-x64-vulkan-install",
+      "displayName": "Install VS2022 x64 Vulkan",
+      "configurePreset": "vs2022-x64-vulkan",
+      "targets": [
+        "install"
       ]
     }
   ]

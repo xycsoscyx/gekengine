@@ -32,7 +32,7 @@
             "name": "transform",
             "format": "R32G32B32A32_FLOAT",
             "count": 4,
-            "semantic": "TEXCOORD",
+            "semantic": "COLOR",
             "source": "instance",
             "sourceIndex": 4
         }

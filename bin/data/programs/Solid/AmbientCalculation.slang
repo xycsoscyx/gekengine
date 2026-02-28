@@ -111,8 +111,9 @@ float getAmbientObscurance(float2 texCoord, float3 surfacePosition, float3 surfa
 [shader("fragment")]
 float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
+    const uint2 screenCoord = uint2(inputPixel.screen.xy);
     const float3 surfacePosition = GetPositionFromDepthBuffer(inputPixel.texCoord);
-    const float3 surfaceNormal = GetDecodedNormal(Resources::normalBuffer[inputPixel.screen.xy]);
+    const float3 surfaceNormal = GetDecodedNormal(Resources::normalBuffer[screenCoord]);
 
     // McGuire noise function
     // Hash function used the HPG12 AlchemyAO paper

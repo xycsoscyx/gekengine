@@ -9,10 +9,10 @@ OutputVertex mainVertexProgram(InputVertex inputVertex)
     float3 biTangent = cross(inputVertex.normal, inputVertex.tangent.xyz) * inputVertex.tangent.w;
 
     OutputVertex outputVertex;
-    outputVertex.position = mul(inputVertex.transform, float4(inputVertex.position, 1.0)).xyz;
-	outputVertex.tangent = mul(directionTransform, inputVertex.tangent.xyz);
-    outputVertex.biTangent = mul(directionTransform, biTangent);
-    outputVertex.normal = mul(directionTransform, inputVertex.normal);
+    outputVertex.position = mul(float4(inputVertex.position, 1.0), inputVertex.transform).xyz;
+	outputVertex.tangent = mul(inputVertex.tangent.xyz, directionTransform);
+    outputVertex.biTangent = mul(biTangent, directionTransform);
+    outputVertex.normal = mul(inputVertex.normal, directionTransform);
     outputVertex.texCoord = inputVertex.texCoord;
     return getProjection(outputVertex);
 }

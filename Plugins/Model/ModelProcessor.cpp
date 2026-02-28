@@ -26,6 +26,8 @@
 #include <execution>
 #include <memory>
 #include <future>
+#include <mutex>
+#include <unordered_set>
 
 namespace Gek
 {
@@ -359,6 +361,8 @@ namespace Gek
         MaterialMeshMap renderList;
 
         bool shuttingDown = false;
+        std::mutex missingMaterialMutex;
+        std::unordered_set<std::string> warnedMissingMaterials;
 
     public:
         ModelProcessor(Context *context, Plugin::Core *core)
@@ -408,6 +412,26 @@ namespace Gek
 
             Unpacker unpacker(meshBuffer);
             mesh.material = resources->loadMaterial(meshHeader.material);
+            if (!mesh.material)
+            {
+                auto const missingMaterialName = std::string(meshHeader.material);
+                bool shouldLog = false;
+                {
+                    std::lock_guard<std::mutex> lock(missingMaterialMutex);
+                    shouldLog = warnedMissingMaterials.insert(missingMaterialName).second;
+                }
+
+                if (shouldLog)
+                {
+                    getContext()->log(Context::Warning,
+                        "Unable to resolve material '{}' while loading model '{}' in group '{}'; using debug fallback material",
+                        missingMaterialName,
+                        fileName,
+                        name);
+                }
+
+                mesh.material = resources->loadMaterial("debug");
+            }
             mesh.vertexCount = meshHeader.vertexCount;
             mesh.indexCount = (meshHeader.faceCount * 3);
 

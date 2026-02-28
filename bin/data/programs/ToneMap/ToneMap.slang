@@ -151,7 +151,8 @@ float3 getToneMappedColor(float3 color, float averageLuminance, float threshold,
 [shader("fragment")]
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    const float3 baseColor = Resources::inputBuffer[inputPixel.screen.xy].xyz;
+    const uint2 screenCoord = uint2(inputPixel.screen.xy);
+    const float3 baseColor = Resources::inputBuffer[screenCoord].xyz;
     const float averageLuminance = Resources::averageLuminanceBuffer[0];
 
     float exposure = 1.0;

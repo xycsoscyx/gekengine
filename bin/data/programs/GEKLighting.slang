@@ -15,10 +15,10 @@ float getSpotFactor(float3 lightDataDirection, float3 lightDirection, float inne
 
 uint getClusterOffset(const float2 screenPosition, const float surfaceDepth)
 {
-    uint2 gridLocation = floor(screenPosition * Lights::ReciprocalTileSize.xy);
+    uint2 gridLocation = uint2(floor(screenPosition * Lights::ReciprocalTileSize.xy));
 
     float depth = ((surfaceDepth - Camera::NearClip) * Camera::ReciprocalClipDistance);
-    uint gridSlice = floor(depth * Lights::gridSize.z);
+    uint gridSlice = uint(floor(depth * Lights::gridSize.z));
 
     return ((((gridSlice * Lights::gridSize.y) + gridLocation.y) * Lights::gridSize.x) + gridLocation.x);
 }
@@ -136,7 +136,8 @@ float3 getLightIrradiance(
         float2 angle = float2(NdotL, NdotV);
         float2 angleSquared = square(angle);
         float2 calculation = angle / (materialAlpha * sqrt(1 - angleSquared));
-        calculation = calculation < 1.6 ? (((3.535 * calculation) + (2.181 * square(calculation))) / (1.0 + (2.276 * calculation) + (2.577 * square(calculation)))) : 1.0;
+        float2 beckmanTerm = ((3.535 * calculation) + (2.181 * square(calculation))) / (1.0 + (2.276 * calculation) + (2.577 * square(calculation)));
+        calculation = lerp(beckmanTerm, 1.0.xx, step(1.6.xx, calculation));
         geometricShadowing = calculation.x * calculation.y;
         break; }
 
@@ -289,9 +290,9 @@ float3 getSurfaceIrradiance(const float2 screenCoord, const float3 surfacePositi
     const uint pointLightEnd = ((clusterData.y & 0x0000FFFF) + indexOffset);
     const uint spotLightEnd = (((clusterData.y >> 16) & 0x0000FFFF) + pointLightEnd);
 
-    uint2 gridLocation = floor(screenCoord * Lights::ReciprocalTileSize.xy);
+    uint2 gridLocation = uint2(floor(screenCoord * Lights::ReciprocalTileSize.xy));
     float depth = ((surfacePosition.z - Camera::NearClip) * Camera::ReciprocalClipDistance);
-    uint gridSlice = floor(depth * Lights::gridSize.z);
+    uint gridSlice = uint(floor(depth * Lights::gridSize.z));
 
     while (indexOffset < pointLightEnd) 
     {

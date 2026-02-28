@@ -71,7 +71,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     surfaceNormal.y *= -1.0; // grrr, inverted y axis, WHY?!?
     surfaceNormal.z = sqrt(1.0 - dot(surfaceNormal.xy, surfaceNormal.xy));
     surfaceNormal = mul(surfaceNormal, viewBasis);
-    surfaceNormal = normalize(inputPixel.isFrontFacing ? surfaceNormal : -surfaceNormal);
+    surfaceNormal = normalize((inputPixel.isFrontFacing != 0) ? surfaceNormal : -surfaceNormal);
 
     float3 materialAlbedo = albedo.rgb;
     float materialRoughness = Resources::roughness.Sample(Global::TextureSampler, inputPixel.texCoord.xy);

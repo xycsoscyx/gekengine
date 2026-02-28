@@ -128,7 +128,8 @@ float3 GetPositionFromSampleDepth(float2 texCoord, float depthSample)
 // https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/
 float2 OctWrap(float2 normal)
 {
-    return (1.0 - abs(normal.yx)) * (normal.xy >= 0.0 ? 1.0 : -1.0);
+    const float2 wrappedSign = (step(0.0.xx, normal.xy) * 2.0.xx) - 1.0.xx;
+    return (1.0 - abs(normal.yx)) * wrappedSign;
 }
 
 float2 GetEncodedNormal(float3 normal)
@@ -146,6 +147,7 @@ float3 GetDecodedNormal(float2 encoded)
     // https://twitter.com/Stubbesaurus/status/937994790553227264
     float3 normal = float3(encoded.x, encoded.y, 1.0 - abs(encoded.x) - abs(encoded.y));
     float sign = saturate(-normal.z);
-    normal.xy += normal.xy >= 0.0 ? -sign : sign;
+    const float2 decodeSign = 1.0.xx - (2.0.xx * step(0.0.xx, normal.xy));
+    normal.xy += decodeSign * sign;
     return normalize(normal);
 }

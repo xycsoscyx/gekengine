@@ -25,7 +25,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
 	normal.y *= -1.0; // grrr, inverted y axis, WHY?!?
     normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
     normal = mul(normal, viewBasis);
-    normal = normalize(inputPixel.isFrontFacing ? normal : -normal);
+    normal = normalize((inputPixel.isFrontFacing != 0) ? normal : -normal);
 
     OutputPixel outputPixel;
     outputPixel.albedoBuffer = albedo.rgb;

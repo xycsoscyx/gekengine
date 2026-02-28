@@ -99,7 +99,7 @@ struct OutputVertex
 
 OutputVertex getProjection(OutputVertex outputVertex)
 {{
-    outputVertex.projected = mul(Camera::ProjectionMatrix, float4(outputVertex.position, 1.0));
+    outputVertex.projected = mul(float4(outputVertex.position, 1.0), Camera::ProjectionMatrix);
     return outputVertex;
 }}
 )";

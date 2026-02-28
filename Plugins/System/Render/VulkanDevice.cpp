@@ -1515,10 +1515,11 @@ namespace Gek
             VkExtent2D swapChainExtent;
             std::vector<VkImage> swapChainImages;
             std::vector<VkImageView> swapChainImageViews;
+            std::vector<VkImageLayout> swapChainImageLayouts;
             VkCommandPool commandPool = VK_NULL_HANDLE;
             VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
             VkSemaphore imageAvailableSemaphore = VK_NULL_HANDLE;
-            VkSemaphore renderFinishedSemaphore = VK_NULL_HANDLE;
+            std::vector<VkSemaphore> renderFinishedSemaphores;
             VkFence inFlightFence = VK_NULL_HANDLE;
             VkRenderPass renderPass = VK_NULL_HANDLE;
             std::vector<VkFramebuffer> swapChainFramebuffers;
@@ -1588,6 +1589,7 @@ namespace Gek
             };
 
             std::map<PipelineKey, VkPipeline> graphicsPipelineCache;
+            std::set<PipelineKey> failedGraphicsPipelineKeys;
 
             VkClearColorValue pendingClearColor = {{ 0.1f, 0.1f, 0.15f, 1.0f }};
 
@@ -1842,6 +1844,16 @@ namespace Gek
                 }
 
                 VkPhysicalDeviceFeatures deviceFeatures{};
+                VkPhysicalDeviceFeatures availableDeviceFeatures{};
+                vkGetPhysicalDeviceFeatures(physicalDevice, &availableDeviceFeatures);
+
+                if (!availableDeviceFeatures.shaderStorageImageReadWithoutFormat || !availableDeviceFeatures.shaderStorageImageWriteWithoutFormat)
+                {
+                    throw std::runtime_error("Vulkan device missing required formatless storage image read/write features");
+                }
+
+                deviceFeatures.shaderStorageImageReadWithoutFormat = VK_TRUE;
+                deviceFeatures.shaderStorageImageWriteWithoutFormat = VK_TRUE;
 
                 VkPhysicalDeviceVulkan11Features availableVulkan11Features{};
                 availableVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
@@ -2049,6 +2061,7 @@ namespace Gek
                 vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
                 swapChainImages.resize(imageCount);
                 vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+                swapChainImageLayouts.assign(swapChainImages.size(), VK_IMAGE_LAYOUT_UNDEFINED);
                 swapChainImageFormat = surfaceFormat.format;
                 swapChainExtent = extent;
 
@@ -2096,6 +2109,7 @@ namespace Gek
                     }
                 }
                 graphicsPipelineCache.clear();
+                failedGraphicsPipelineKeys.clear();
 
                 for (auto framebuffer : swapChainFramebuffers)
                 {
@@ -2463,15 +2477,13 @@ namespace Gek
                 vertexStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
                 vertexStage.stage = VK_SHADER_STAGE_VERTEX_BIT;
                 vertexStage.module = key.vertexModule;
-                const char *vertexEntryName = command.vertexProgram->getInformation().entryFunction.empty() ? "main" : command.vertexProgram->getInformation().entryFunction.c_str();
-                vertexStage.pName = vertexEntryName;
+                vertexStage.pName = "main";
 
                 VkPipelineShaderStageCreateInfo pixelStage{};
                 pixelStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
                 pixelStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
                 pixelStage.module = key.pixelModule;
-                const char *pixelEntryName = command.pixelProgram->getInformation().entryFunction.empty() ? "main" : command.pixelProgram->getInformation().entryFunction.c_str();
-                pixelStage.pName = pixelEntryName;
+                pixelStage.pName = "main";
 
                 VkPipelineShaderStageCreateInfo shaderStages[] = { vertexStage, pixelStage };
 
@@ -2566,7 +2578,26 @@ namespace Gek
                 const VkResult pipelineResult = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline);
                 if (pipelineResult != VK_SUCCESS)
                 {
-                    getContext()->log(Gek::Context::Error, "Failed to create Vulkan graphics pipeline ({}).", static_cast<int32_t>(pipelineResult));
+                    if (failedGraphicsPipelineKeys.find(key) == std::end(failedGraphicsPipelineKeys))
+                    {
+                        failedGraphicsPipelineKeys.insert(key);
+                        const auto &vertexInfo = command.vertexProgram->getInformation();
+                        const auto &pixelInfo = command.pixelProgram->getInformation();
+                        getContext()->log(
+                            Gek::Context::Error,
+                            "Failed Vulkan graphics pipeline (result={}) vp='{}' pp='{}' vEntry='{}' pEntry='{}' renderPass={} depthEnabled={} depthWrite={} blendEnabled={} attrs={} bindings={}",
+                            static_cast<int32_t>(pipelineResult),
+                            vertexInfo.name,
+                            pixelInfo.name,
+                            vertexInfo.entryFunction,
+                            pixelInfo.entryFunction,
+                            static_cast<uint64_t>(reinterpret_cast<uintptr_t>(activeRenderPass)),
+                            static_cast<uint32_t>(key.depthEnabled),
+                            static_cast<uint32_t>(key.depthWrite),
+                            static_cast<uint32_t>(key.blendEnabled),
+                            static_cast<uint32_t>(attributeDescriptions.size()),
+                            static_cast<uint32_t>(bindingDescriptions.size()));
+                    }
                     return VK_NULL_HANDLE;
                 }
 
@@ -2599,10 +2630,18 @@ namespace Gek
 
                 VkSemaphoreCreateInfo semaphoreInfo{};
                 semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-                if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
-                    vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS)
+                if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS)
                 {
                     throw std::runtime_error("failed to create synchronization semaphores!");
+                }
+
+                renderFinishedSemaphores.assign(std::max<size_t>(swapChainImages.size(), 1), VK_NULL_HANDLE);
+                for (auto &renderFinished : renderFinishedSemaphores)
+                {
+                    if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinished) != VK_SUCCESS)
+                    {
+                        throw std::runtime_error("failed to create synchronization semaphores!");
+                    }
                 }
 
                 VkFenceCreateInfo fenceInfo{};
@@ -2623,6 +2662,7 @@ namespace Gek
                     vkDestroyImageView(device, imageView, nullptr);
                 }
                 swapChainImageViews.clear();
+                swapChainImageLayouts.clear();
 
                 if (swapChain != VK_NULL_HANDLE)
                 {
@@ -2638,6 +2678,26 @@ namespace Gek
                 createSwapChain();
                 createImageViews();
                 createRenderPassResources();
+
+                VkSemaphoreCreateInfo semaphoreInfo{};
+                semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+                for (auto &renderFinished : renderFinishedSemaphores)
+                {
+                    if (renderFinished != VK_NULL_HANDLE)
+                    {
+                        vkDestroySemaphore(device, renderFinished, nullptr);
+                        renderFinished = VK_NULL_HANDLE;
+                    }
+                }
+                renderFinishedSemaphores.assign(std::max<size_t>(swapChainImages.size(), 1), VK_NULL_HANDLE);
+                for (auto &renderFinished : renderFinishedSemaphores)
+                {
+                    if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinished) != VK_SUCCESS)
+                    {
+                        throw std::runtime_error("failed to create synchronization semaphores!");
+                    }
+                }
+
                 updateBackBufferDescription();
             }
 
@@ -2667,7 +2727,7 @@ namespace Gek
                 createInstance();
                 if (enableValidationLayer)
                 {
-                    //setupDebugMessenger();
+                    setupDebugMessenger();
                 }
 
                 createSurface();
@@ -2713,23 +2773,28 @@ namespace Gek
             {
                 setFullScreenState(false);
 
-                backBuffer = nullptr;
-                defaultContext = nullptr;
-
                 if (device != VK_NULL_HANDLE)
                 {
                     vkDeviceWaitIdle(device);
                 }
+
+                backBuffer = nullptr;
+                defaultContext = nullptr;
 
                 if (inFlightFence != VK_NULL_HANDLE)
                 {
                     vkDestroyFence(device, inFlightFence, nullptr);
                 }
 
-                if (renderFinishedSemaphore != VK_NULL_HANDLE)
+                for (auto &renderFinishedSemaphore : renderFinishedSemaphores)
                 {
-                    vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
+                    if (renderFinishedSemaphore != VK_NULL_HANDLE)
+                    {
+                        vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
+                        renderFinishedSemaphore = VK_NULL_HANDLE;
+                    }
                 }
+                renderFinishedSemaphores.clear();
 
                 if (imageAvailableSemaphore != VK_NULL_HANDLE)
                 {
@@ -3796,6 +3861,80 @@ namespace Gek
                     throw std::runtime_error("failed to acquire swap chain image!");
                 }
 
+                if (renderFinishedSemaphores.empty() || imageIndex >= renderFinishedSemaphores.size())
+                {
+                    throw std::runtime_error("invalid render-finished semaphore state for swapchain image");
+                }
+
+                auto transitionSwapChainImage = [&](uint32_t trackedImageIndex, VkImageLayout newLayout, VkAccessFlags dstAccessMask, VkPipelineStageFlags dstStageMask)
+                {
+                    if (trackedImageIndex >= swapChainImages.size() || trackedImageIndex >= swapChainImageLayouts.size())
+                    {
+                        return;
+                    }
+
+                    const VkImageLayout oldLayout = swapChainImageLayouts[trackedImageIndex];
+                    if (oldLayout == newLayout)
+                    {
+                        return;
+                    }
+
+                    VkImageMemoryBarrier barrier{};
+                    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                    barrier.oldLayout = oldLayout;
+                    barrier.newLayout = newLayout;
+                    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    barrier.image = swapChainImages[trackedImageIndex];
+                    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    barrier.subresourceRange.baseMipLevel = 0;
+                    barrier.subresourceRange.levelCount = 1;
+                    barrier.subresourceRange.baseArrayLayer = 0;
+                    barrier.subresourceRange.layerCount = 1;
+
+                    VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                    switch (oldLayout)
+                    {
+                    case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+                        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                        srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                        break;
+
+                    case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+                        barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                        srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                        break;
+
+                    case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+                        barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                        srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+                        break;
+
+                    case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+                        barrier.srcAccessMask = 0;
+                        srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                        break;
+
+                    default:
+                        barrier.srcAccessMask = 0;
+                        srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                        break;
+                    }
+
+                    barrier.dstAccessMask = dstAccessMask;
+
+                    vkCmdPipelineBarrier(
+                        commandBuffer,
+                        srcStageMask,
+                        dstStageMask,
+                        0,
+                        0, nullptr,
+                        0, nullptr,
+                        1, &barrier);
+
+                    swapChainImageLayouts[trackedImageIndex] = newLayout;
+                };
+
                 vkResetCommandBuffer(commandBuffer, 0);
 
                 VkCommandBufferBeginInfo beginInfo{};
@@ -3806,29 +3945,7 @@ namespace Gek
                     throw std::runtime_error("failed to begin recording command buffer!");
                 }
 
-                VkImageMemoryBarrier toTransfer{};
-                toTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                toTransfer.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-                toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-                toTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                toTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                toTransfer.image = swapChainImages[imageIndex];
-                toTransfer.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                toTransfer.subresourceRange.baseMipLevel = 0;
-                toTransfer.subresourceRange.levelCount = 1;
-                toTransfer.subresourceRange.baseArrayLayer = 0;
-                toTransfer.subresourceRange.layerCount = 1;
-                toTransfer.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-                toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-                vkCmdPipelineBarrier(
-                    commandBuffer,
-                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                    VK_PIPELINE_STAGE_TRANSFER_BIT,
-                    0,
-                    0, nullptr,
-                    0, nullptr,
-                    1, &toTransfer);
+                transitionSwapChainImage(imageIndex, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
                 VkImageSubresourceRange clearRange{};
                 clearRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -3842,25 +3959,7 @@ namespace Gek
                 std::vector<VkDescriptorSet> descriptorSets;
                 if (hasDrawCommands)
                 {
-                    VkImageMemoryBarrier toColorAttachment{};
-                    toColorAttachment.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                    toColorAttachment.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-                    toColorAttachment.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                    toColorAttachment.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                    toColorAttachment.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                    toColorAttachment.image = swapChainImages[imageIndex];
-                    toColorAttachment.subresourceRange = clearRange;
-                    toColorAttachment.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                    toColorAttachment.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-                    vkCmdPipelineBarrier(
-                        commandBuffer,
-                        VK_PIPELINE_STAGE_TRANSFER_BIT,
-                        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                        0,
-                        0, nullptr,
-                        0, nullptr,
-                        1, &toColorAttachment);
+                    transitionSwapChainImage(imageIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
                     for (const auto &drawCommand : pendingDrawCommands)
                     {
@@ -4237,25 +4336,7 @@ namespace Gek
                     }
                 }
 
-                VkImageMemoryBarrier toPresent{};
-                toPresent.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                toPresent.oldLayout = hasDrawCommands ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-                toPresent.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-                toPresent.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                toPresent.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                toPresent.image = swapChainImages[imageIndex];
-                toPresent.subresourceRange = clearRange;
-                toPresent.srcAccessMask = hasDrawCommands ? VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT : VK_ACCESS_TRANSFER_WRITE_BIT;
-                toPresent.dstAccessMask = 0;
-
-                vkCmdPipelineBarrier(
-                    commandBuffer,
-                    hasDrawCommands ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT : VK_PIPELINE_STAGE_TRANSFER_BIT,
-                    VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                    0,
-                    0, nullptr,
-                    0, nullptr,
-                    1, &toPresent);
+                transitionSwapChainImage(imageIndex, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 0, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
 
                 if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
                 {
@@ -4264,7 +4345,7 @@ namespace Gek
 
                 VkSemaphore waitSemaphores[] = { imageAvailableSemaphore };
                 VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_TRANSFER_BIT };
-                VkSemaphore signalSemaphores[] = { renderFinishedSemaphore };
+                VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[imageIndex] };
 
                 VkSubmitInfo submitInfo{};
                 submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
