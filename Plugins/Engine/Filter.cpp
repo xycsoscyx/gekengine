@@ -53,7 +53,6 @@ namespace Gek
             Engine::Core *core = nullptr;
             Render::Device *videoDevice = nullptr;
             Engine::Resources *resources = nullptr;
-            Plugin::Population *population = nullptr;
 
             std::string filterName;
 
@@ -67,12 +66,10 @@ namespace Gek
                 , core(core)
                 , videoDevice(core->getRenderDevice())
                 , resources(core->getFullResources())
-                , population(core->getPopulation())
                 , filterName(filterName)
             {
                 assert(videoDevice);
                 assert(resources);
-                assert(population);
 
                 reload();
             }
@@ -86,7 +83,19 @@ namespace Gek
                 std::unordered_map<std::string, ResourceHandle> resourceMap;
                 std::unordered_map<std::string, std::string> resourceSemanticsMap;
 
+                if (!core || !videoDevice || !resources)
+                {
+                    getContext()->log(Context::Warning, "Skipping filter reload for {}: core/resources/renderDevice not ready", filterName);
+                    return;
+                }
+
                 auto backBuffer = videoDevice->getBackBuffer();
+                if (!backBuffer)
+                {
+                    getContext()->log(Context::Warning, "Skipping filter reload for {}: back buffer not ready", filterName);
+                    return;
+                }
+
                 auto &backBufferDescription = backBuffer->getDescription();
 
                 Render::DepthState::Description depthStateDescription;
@@ -99,7 +108,7 @@ namespace Gek
 
                 JSON::Object rootNode = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("filters", filterName).withExtension(".json")));
 
-                ShuntingYard shuntingYard(population->getShuntingYard());
+                ShuntingYard shuntingYard;
                 const auto &coreOptionsNode = core->getOption("filters", filterName);
                 for (auto &[key, value] : coreOptionsNode.items())
                 {

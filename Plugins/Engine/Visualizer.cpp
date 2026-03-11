@@ -29,6 +29,7 @@
 #include <imgui_internal.h>
 #include <smmintrin.h>
 #include <algorithm>
+#include <cmath>
 #include <execution>
 #include <ranges>
 #include <vector>
@@ -366,7 +367,7 @@ namespace Gek
 			tbb::concurrent_vector<uint16_t> tilePointLightIndexList[GridSize];
 			tbb::concurrent_vector<uint16_t> tileSpotLightIndexList[GridSize];
 			TileOffsetCount tileOffsetCountList[GridSize];
-			std::vector<uint16_t> lightIndexList;
+			std::vector<uint32_t> lightIndexList;
 
 			Render::BufferPtr lightConstantBuffer;
 			Render::BufferPtr tileOffsetCountBuffer;
@@ -378,6 +379,7 @@ namespace Gek
 			float clipDistance;
 			float reciprocalClipDistance;
 			float depthScale;
+			uint64_t renderFrameCounter = 0;
 
 			struct GUI
 			{
@@ -533,15 +535,15 @@ float3 mainPixelProgram(in Input input) : SV_TARGET0
 
 				Render::Buffer::Description tileBufferDescription;
 				tileBufferDescription.name = "renderer:tileOffsetCountBuffer";
-				tileBufferDescription.type = Render::Buffer::Type::Raw;
+				tileBufferDescription.type = Render::Buffer::Type::Structured;
 				tileBufferDescription.flags = Render::Buffer::Flags::Mappable | Render::Buffer::Flags::Resource;
-				tileBufferDescription.format = Render::Format::R32G32_UINT;
+				tileBufferDescription.stride = sizeof(TileOffsetCount);
 				tileBufferDescription.count = GridSize;
 				tileOffsetCountBuffer = renderDevice->createBuffer(tileBufferDescription);
 
 				lightIndexList.reserve(GridSize * 10);
 				tileBufferDescription.name = "renderer:lightIndexBuffer";
-				tileBufferDescription.format = Render::Format::R16_UINT;
+				tileBufferDescription.stride = sizeof(uint32_t);
 				tileBufferDescription.count = lightIndexList.capacity();
 				lightIndexBuffer = renderDevice->createBuffer(tileBufferDescription);
 			}
@@ -704,13 +706,6 @@ float4 main(PixelInput input) : SV_Target
 			{
 				workerPool.drain();
 
-				population->onReset.disconnect(this, &Visualizer::onReset);
-				population->onEntityCreated.disconnect(this, &Visualizer::onEntityCreated);
-				population->onEntityDestroyed.disconnect(this, &Visualizer::onEntityDestroyed);
-				population->onComponentAdded.disconnect(this, &Visualizer::onComponentAdded);
-				population->onComponentRemoved.disconnect(this, &Visualizer::onComponentRemoved);
-				population->onUpdate[1000].disconnect(this, &Visualizer::onUpdate);
-
 				ImGui::GetIO().Fonts->SetTexID(nullptr);
 				ImGui::DestroyContext(gui.context);
 			}
@@ -839,13 +834,19 @@ float4 main(PixelInput input) : SV_Target
 							}
 							else
 							{
-								scissorBoxList[0].minimum.x = uint32_t(command->ClipRect.x);
-								scissorBoxList[0].minimum.y = uint32_t(command->ClipRect.y);
-								scissorBoxList[0].maximum.x = uint32_t(command->ClipRect.z);
-								scissorBoxList[0].maximum.y = uint32_t(command->ClipRect.w);
+								const int32_t clipMinX = std::clamp(static_cast<int32_t>(std::floor(command->ClipRect.x)), 0, static_cast<int32_t>(width));
+								const int32_t clipMinY = std::clamp(static_cast<int32_t>(std::floor(command->ClipRect.y)), 0, static_cast<int32_t>(height));
+								const int32_t clipMaxX = std::clamp(static_cast<int32_t>(std::ceil(command->ClipRect.z)), clipMinX, static_cast<int32_t>(width));
+								const int32_t clipMaxY = std::clamp(static_cast<int32_t>(std::ceil(command->ClipRect.w)), clipMinY, static_cast<int32_t>(height));
+
+								scissorBoxList[0].minimum.x = static_cast<uint32_t>(clipMinX);
+								scissorBoxList[0].minimum.y = static_cast<uint32_t>(clipMinY);
+								scissorBoxList[0].maximum.x = static_cast<uint32_t>(clipMaxX);
+								scissorBoxList[0].maximum.y = static_cast<uint32_t>(clipMaxY);
 								videoContext->setScissorList(scissorBoxList);
 
-								textureList[0] = reinterpret_cast<Render::Texture *>(command->GetTexID());
+								auto *textureFromCommand = reinterpret_cast<Render::Texture *>(command->GetTexID());
+								textureList[0] = (textureFromCommand ? textureFromCommand : gui.fontTexture.get());
 								videoContext->pixelPipeline()->setResourceList(textureList, 0);
 
 								videoContext->drawIndexedPrimitive(command->ElemCount, indexOffset, vertexOffset);
@@ -1223,6 +1224,17 @@ float4 main(PixelInput input) : SV_Target
 				assert(renderDevice);
 				assert(population);
 
+				++renderFrameCounter;
+				uint32_t processedCameras = 0;
+				uint32_t queuedDrawCalls = 0;
+				uint32_t shaderGroupCount = 0;
+				uint32_t preparedPassCount = 0;
+				uint32_t forwardPassCount = 0;
+				uint32_t deferredPassCount = 0;
+				uint32_t computePassCount = 0;
+				uint32_t forwardDrawDispatchCount = 0;
+				uint32_t deferredDrawDispatchCount = 0;
+
 				EngineConstantData engineConstantData;
 				engineConstantData.frameTime = frameTime;
 				engineConstantData.worldTime = 0.0f;
@@ -1231,12 +1243,14 @@ float4 main(PixelInput input) : SV_Target
 				Render::Device::Context *videoContext = renderDevice->getDefaultContext();
 				while (cameraQueue.try_pop(currentCamera))
 				{
+					++processedCameras;
 					clipDistance = (currentCamera.farClip - currentCamera.nearClip);
 					reciprocalClipDistance = (1.0f / clipDistance);
 					depthScale = ((ReciprocalGridDepth * clipDistance) + currentCamera.nearClip);
 
 					drawCallList.clear();
 					onQueueDrawCalls(currentCamera.viewFrustum, currentCamera.viewMatrix, currentCamera.projectionMatrix);
+					queuedDrawCalls += static_cast<uint32_t>(drawCallList.size());
 					if (!drawCallList.empty())
 					{
 						const auto backBuffer = renderDevice->getBackBuffer();
@@ -1271,6 +1285,11 @@ float4 main(PixelInput input) : SV_Target
 							isLightingRequired |= shader->isLightingRequired();
 							auto &shaderList = drawCallSetMap[shader->getDrawOrder()];
 							shaderList.push_back(DrawCallSet(shader, beginShaderList, endShaderList));
+						}
+
+						for (auto const &shaderDrawCallList : drawCallSetMap)
+						{
+							shaderGroupCount += static_cast<uint32_t>(shaderDrawCallList.second.size());
 						}
 
 						if (isLightingRequired)
@@ -1331,14 +1350,14 @@ float4 main(PixelInput input) : SV_Target
 
 									Render::Buffer::Description tileBufferDescription;
 									tileBufferDescription.name = "renderer:lightIndexBuffer";
-									tileBufferDescription.type = Render::Buffer::Type::Raw;
+									tileBufferDescription.type = Render::Buffer::Type::Structured;
 									tileBufferDescription.flags = Render::Buffer::Flags::Mappable | Render::Buffer::Flags::Resource;
-									tileBufferDescription.format = Render::Format::R16_UINT;
+									tileBufferDescription.stride = sizeof(uint32_t);
 									tileBufferDescription.count = lightIndexList.size();
 									lightIndexBuffer = renderDevice->createBuffer(tileBufferDescription);
 								}
 
-								uint16_t *lightIndexData = nullptr;
+								uint32_t *lightIndexData = nullptr;
 								if (renderDevice->mapBuffer(lightIndexBuffer.get(), lightIndexData))
 								{
 									std::copy(std::begin(lightIndexList), std::end(lightIndexList), lightIndexData);
@@ -1405,17 +1424,20 @@ float4 main(PixelInput input) : SV_Target
 								auto &shader = shaderDrawCall.shader;
 								for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentCamera.viewFrustum); pass; pass = pass->next())
 								{
+									resources->startResourceBlock();
 									auto passMode = pass->prepare();
 									if (passMode != Engine::Shader::Pass::Mode::None)
 									{
+										++preparedPassCount;
 										VisualHandle currentVisual;
 										MaterialHandle currentMaterial;
-										resources->startResourceBlock();
 										switch (passMode)
 										{
 										case Engine::Shader::Pass::Mode::Forward:
+											++forwardPassCount;
 											for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
 											{
+												resources->startResourceBlock();
 												if (currentVisual != drawCall->plugin)
 												{
 													currentVisual = drawCall->plugin;
@@ -1429,16 +1451,21 @@ float4 main(PixelInput input) : SV_Target
 												}
 
 												drawCall->onDraw(videoContext);
+												++forwardDrawDispatchCount;
 											}
 
 											break;
 
 										case Engine::Shader::Pass::Mode::Deferred:
+											++deferredPassCount;
 											videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
+											videoContext->pixelPipeline()->setProgram(deferredPixelProgram);
 											resources->drawPrimitive(videoContext, 3, 0);
+											++deferredDrawDispatchCount;
 											break;
 
 										case Engine::Shader::Pass::Mode::Compute:
+											++computePassCount;
 											break;
 										};
 
@@ -1461,7 +1488,7 @@ float4 main(PixelInput input) : SV_Target
 				};
 
 				auto finalHandle = resources->getResourceHandle("finalBuffer");
-				if (finalHandle)
+				if (finalHandle && processedCameras > 0)
 				{
 					auto alternateHandle = resources->getResourceHandle("alternateBuffer");
 					if (!alternateHandle)
@@ -1490,6 +1517,7 @@ float4 main(PixelInput input) : SV_Target
 					videoContext->setPrimitiveType(Render::PrimitiveType::TriangleList);
 
 					videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
+					videoContext->pixelPipeline()->setProgram(deferredPixelProgram);
 
 					auto filterNames = { "antialias", "tonemap" };
 					std::vector<std::tuple<Engine::Filter* const, ResourceHandle, ResourceHandle>> filters;
@@ -1522,6 +1550,7 @@ float4 main(PixelInput input) : SV_Target
 							auto targetBuffer = std::get<2>(filterGroup);
 							for (auto pass = filter->begin(videoContext, currentBuffer, targetBuffer); pass; pass = pass->next())
 							{
+								resources->startResourceBlock();
 								auto passMode = pass->prepare();
 								if (passMode != Engine::Filter::Pass::Mode::None)
 								{
@@ -1563,10 +1592,49 @@ float4 main(PixelInput input) : SV_Target
 				imGuiIo.DisplaySize = ImVec2(float(width), float(height));
 
                 ImGui::NewFrame();
+
+				if (auto *debugRenderDevice = dynamic_cast<Render::Debug::Device *>(renderDevice))
+				{
+					const std::string debugOverlayText = debugRenderDevice->getDebugOverlayText();
+					if (!debugOverlayText.empty())
+					{
+						ImGuiWindowFlags debugWindowFlags = ImGuiWindowFlags_NoDecoration
+							| ImGuiWindowFlags_AlwaysAutoResize
+							| ImGuiWindowFlags_NoMove
+							| ImGuiWindowFlags_NoSavedSettings
+							| ImGuiWindowFlags_NoFocusOnAppearing
+							| ImGuiWindowFlags_NoNav;
+						ImGui::SetNextWindowPos(ImVec2(8.0f, 8.0f), ImGuiCond_Always);
+						ImGui::SetNextWindowBgAlpha(0.35f);
+						if (ImGui::Begin("RendererDebugOverlay", nullptr, debugWindowFlags))
+						{
+							ImGui::TextUnformatted(debugOverlayText.c_str());
+						}
+						ImGui::End();
+					}
+				}
+
 				onShowUserInterface();
                 ImGui::Render();
 
 				renderUI(ImGui::GetDrawData());
+
+				if ((renderFrameCounter % 240u) == 0u)
+				{
+					getContext()->log(
+						Context::Info,
+						"Visualizer frame {}: processedCameras={} queuedDrawCalls={} shaderGroups={} preparedPasses={} forwardPasses={} deferredPasses={} computePasses={} forwardDrawDispatches={} deferredDrawDispatches={}",
+						renderFrameCounter,
+						processedCameras,
+						queuedDrawCalls,
+						shaderGroupCount,
+						preparedPassCount,
+						forwardPassCount,
+						deferredPassCount,
+						computePassCount,
+						forwardDrawDispatchCount,
+						deferredDrawDispatchCount);
+				}
 
 				renderDevice->present(true);
 				if (reloadRequired)

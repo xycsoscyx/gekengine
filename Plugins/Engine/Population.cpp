@@ -151,8 +151,8 @@ namespace Gek
             void onShutdown(void)
             {
                 shuttingDown = true;
-                entityWorkerPool.reset();
-                sceneWorkerPool.reset();
+                entityWorkerPool.drain(false);
+                sceneWorkerPool.drain(false);
                 registry.clear();
             }
 
@@ -231,10 +231,14 @@ namespace Gek
             Task scheduleLoad(std::string const& _populationName)
             {
                 std::string populationName(_populationName);
-                fullReset();
-                sceneWorkerPool.join();
-
                 co_await sceneWorkerPool.schedule();
+
+                if (shuttingDown)
+                {
+                    co_return;
+                }
+
+                fullReset();
 
                 getContext()->log(Context::Info, "Loading population: {}", populationName);
 
@@ -246,6 +250,11 @@ namespace Gek
                 getContext()->log(Context::Info, "Found {} Entity Definitions", populationNode.size());
                 for (auto &entityNode : populationNode)
                 {
+                    if (shuttingDown)
+                    {
+                        co_return;
+                    }
+
                     uint32_t count = 1;
                     EntityDefinition entityDefinition;
                     auto templateSearch = entityNode.find("Template");
@@ -297,18 +306,38 @@ namespace Gek
 
                     while (count-- > 0)
                     {
+                        if (shuttingDown)
+                        {
+                            co_return;
+                        }
+
                         auto populationEntity = new Entity();
                         for (auto const& componentDefinition : entityDefinition)
                         {
+                            if (shuttingDown)
+                            {
+                                delete populationEntity;
+                                co_return;
+                            }
+
                             addComponent(populationEntity, componentDefinition);
                         }
 
                         auto entity = dynamic_cast<Plugin::Entity*>(populationEntity);
+                        if (shuttingDown)
+                        {
+                            delete populationEntity;
+                            co_return;
+                        }
+
                         loadEntityTask(entity);
                     };
                 }
 
-                onLoad.emit(populationName);
+                if (!shuttingDown)
+                {
+                    onLoad.emit(populationName);
+                }
             }
 
             void load(std::string const& populationName)
@@ -371,7 +400,19 @@ namespace Gek
 
             Task loadEntityTask(Plugin::Entity * const entity)
             {
+                if (shuttingDown)
+                {
+                    delete static_cast<Entity *>(entity);
+                    co_return;
+                }
+
                 co_await entityWorkerPool.schedule();
+
+                if (shuttingDown)
+                {
+                    delete static_cast<Entity *>(entity);
+                    co_return;
+                }
 
                 registry.push_back(Plugin::EntityPtr(entity));
                 onEntityCreated(entity);

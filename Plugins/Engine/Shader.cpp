@@ -74,7 +74,6 @@ namespace Gek
             Engine::Core *core = nullptr;
             Render::Device *renderDevice = nullptr;
             Engine::Resources *resources = nullptr;
-            Plugin::Population *population = nullptr;
 
             std::string shaderName;
             uint32_t drawOrder = 0;
@@ -94,12 +93,10 @@ namespace Gek
                 , core(core)
                 , renderDevice(core->getRenderDevice())
                 , resources(core->getFullResources())
-                , population(core->getPopulation())
                 , shaderName(shaderName)
             {
                 assert(renderDevice);
                 assert(resources);
-                assert(population);
 
                 reload();
             }
@@ -111,12 +108,24 @@ namespace Gek
                 passList.clear();
                 materialMap.clear();
 
+                if (!core || !renderDevice || !resources)
+                {
+                    getContext()->log(Context::Warning, "Skipping shader reload for {}: core/resources/renderDevice not ready", shaderName);
+                    return;
+                }
+
                 auto backBuffer = renderDevice->getBackBuffer();
+                if (!backBuffer)
+                {
+                    getContext()->log(Context::Warning, "Skipping shader reload for {}: back buffer not ready", shaderName);
+                    return;
+                }
+
                 auto &backBufferDescription = backBuffer->getDescription();
 
                 JSON::Object rootNode = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("shaders", shaderName).withExtension(".json")));
 
-                ShuntingYard shuntingYard(population->getShuntingYard());
+                ShuntingYard shuntingYard;
                 const auto &coreOptionsNode = core->getOption("shaders", shaderName);
                 if (coreOptionsNode.is_object())
                 {

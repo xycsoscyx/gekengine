@@ -309,11 +309,12 @@ namespace Gek
 
             std::vector<Model> modelList;
             Shapes::AlignedBox boundingBox;
+            std::atomic_bool ready = false;
         };
 
         struct Data
         {
-            Group *group = nullptr;
+            std::shared_ptr<Group> group;
         };
 
         struct DrawData
@@ -342,7 +343,7 @@ namespace Gek
         Render::BufferPtr instanceBuffer;
         ThreadPool loadPool;
 
-        tbb::concurrent_unordered_map<std::size_t, Group> groupMap;
+        tbb::concurrent_unordered_map<std::size_t, std::shared_ptr<Group>> groupMap;
 
         std::vector<float, AlignedAllocator<float, 16>> halfSizeXList;
         std::vector<float, AlignedAllocator<float, 16>> halfSizeYList;
@@ -402,12 +403,11 @@ namespace Gek
             instanceBuffer = videoDevice->createBuffer(instanceDescription);
         }
 
-        Task scheduleLoadMesh(Header::Mesh& meshHeader, Group::Model::Mesh& mesh, uint32_t meshIndex, std::string fileName, std::string name, uint8_t* meshBuffer, std::shared_ptr<std::vector<uint8_t>> buffer)
+        void scheduleLoadMesh(Header::Mesh& meshHeader, Group::Model::Mesh& mesh, uint32_t meshIndex, std::string fileName, std::string name, uint8_t* meshBuffer, std::shared_ptr<std::vector<uint8_t>> buffer)
         {
-            co_await loadPool.schedule();
             if (shuttingDown)
             {
-                co_return;
+                return;
             }
 
             Unpacker unpacker(meshBuffer);
@@ -461,12 +461,11 @@ namespace Gek
             mesh.vertexBufferList[3] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
         }
 
-        Task scheduleLoadData(std::string name, FileSystem::Path filePath, ModelProcessor::Group &group, ModelProcessor::Group::Model &model)
+        void scheduleLoadData(std::string name, FileSystem::Path filePath, ModelProcessor::Group &group, ModelProcessor::Group::Model &model)
         {
-            co_await loadPool.schedule();
             if (shuttingDown)
             {
-                co_return;
+                return;
             }
 
             auto fileName(filePath.getFileName());
@@ -477,7 +476,7 @@ namespace Gek
             if (buffer->size() < (sizeof(Header) + (sizeof(Header::Mesh) * header->meshCount)))
             {
                 getContext()->log(Context::Error, "Model file too small to contain mesh headers: {}", filePath.getString());
-                co_return;
+                return;
             }
 
             getContext()->log(Context::Info, "Group {}, loading model {}: {} meshes", name, fileName, header->meshCount);
@@ -499,20 +498,22 @@ namespace Gek
             getContext()->log(Context::Info, "Group {}, mesh {} successfully loaded", name, fileName);
         }
 
-        Task scheduleLoadGroup(std::string name, ModelProcessor::Group &group)
+        Task scheduleLoadGroup(std::string name, std::shared_ptr<ModelProcessor::Group> group)
         {
             getContext()->log(Context::Info, "Queueing group for load: {}", name);
 
             co_await loadPool.schedule();
-            if (shuttingDown)
+            if (shuttingDown || !group)
             {
                 co_return;
             }
 
+            Group loadedGroup;
+
             if (name == "#cube")
             {
-                group.modelList.resize(1);
-                auto& model = group.modelList[0];
+                loadedGroup.modelList.resize(1);
+                auto& model = loadedGroup.modelList[0];
                 for (auto& staticModel : cube_models)
                 {
                     auto& mesh = model.meshList.emplace_back();
@@ -527,12 +528,12 @@ namespace Gek
                     mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, staticModel.positions.data());
                     for (auto& position : staticModel.positions)
                     {
-                        group.boundingBox.extend(position);
+                        loadedGroup.boundingBox.extend(position);
                         model.boundingBox.extend(position);
                     }
 
-                    group.boundingBox.extend(model.boundingBox.minimum);
-                    group.boundingBox.extend(model.boundingBox.maximum);
+                    loadedGroup.boundingBox.extend(model.boundingBox.minimum);
+                    loadedGroup.boundingBox.extend(model.boundingBox.maximum);
                     vertexBufferDescription.name = std::format("model:cube.{}:texCoords", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float2);
                     mesh.vertexBufferList[1] = resources->createBuffer(vertexBufferDescription, staticModel.texCoords.data());
@@ -548,8 +549,8 @@ namespace Gek
             }
             else if (name == "#sphere")
             {
-                group.modelList.resize(1);
-                auto& model = group.modelList[0];
+                loadedGroup.modelList.resize(1);
+                auto& model = loadedGroup.modelList[0];
                 for (auto& staticModel : sphere_models)
                 {
                     auto& mesh = model.meshList.emplace_back();
@@ -564,12 +565,12 @@ namespace Gek
                     mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, staticModel.positions.data());
                     for (auto& position : staticModel.positions)
                     {
-                        group.boundingBox.extend(position);
+                        loadedGroup.boundingBox.extend(position);
                         model.boundingBox.extend(position);
                     }
 
-                    group.boundingBox.extend(model.boundingBox.minimum);
-                    group.boundingBox.extend(model.boundingBox.maximum);
+                    loadedGroup.boundingBox.extend(model.boundingBox.minimum);
+                    loadedGroup.boundingBox.extend(model.boundingBox.maximum);
                     vertexBufferDescription.name = std::format("model:sphere.{}:texCoords", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float2);
                     mesh.vertexBufferList[1] = resources->createBuffer(vertexBufferDescription, staticModel.texCoords.data());
@@ -629,14 +630,18 @@ namespace Gek
                     getContext()->log(Context::Error, "No models found for group: {}", name);
                 }
 
-                group.modelList.resize(modelPathList.size());
+                loadedGroup.modelList.resize(modelPathList.size());
                 for (size_t modelIndex = 0; modelIndex < modelPathList.size(); ++modelIndex)
                 {
-                    auto& model = group.modelList[modelIndex];
+                    auto& model = loadedGroup.modelList[modelIndex];
                     auto& filePath = modelPathList[modelIndex];
-                    scheduleLoadData(name, filePath, group, model);
+                    scheduleLoadData(name, filePath, loadedGroup, model);
                 }
             }
+
+            group->boundingBox = loadedGroup.boundingBox;
+            group->modelList = std::move(loadedGroup.modelList);
+            group->ready.store(true, std::memory_order_release);
 
             getContext()->log(Context::Info, "Group {} successfully queued", name);
         }
@@ -651,14 +656,14 @@ namespace Gek
                 }
                 else
                 {
-                    static const Group BlankGroup;
-                    auto pair = groupMap.insert(std::make_pair(GetHash(modelComponent.name), BlankGroup));
+                    auto pair = groupMap.insert(std::make_pair(GetHash(modelComponent.name), std::make_shared<Group>()));
                     if (pair.second)
                     {
+                        pair.first->second->ready.store(false, std::memory_order_relaxed);
                         scheduleLoadGroup(modelComponent.name, pair.first->second);
                     }
 
-                    data.group = &pair.first->second;
+                    data.group = pair.first->second;
                 }
             });
         }
@@ -698,9 +703,9 @@ namespace Gek
         Shapes::AlignedBox getBoundingBox(std::string const &modelName)
         {
             auto modelSearch = groupMap.find(GetHash(modelName));
-            if (modelSearch != std::end(groupMap))
+            if ((modelSearch != std::end(groupMap)) && modelSearch->second && modelSearch->second->ready.load(std::memory_order_acquire))
             {
-                return modelSearch->second.boundingBox;
+                return modelSearch->second->boundingBox;
             }
 
             return Shapes::AlignedBox();
@@ -762,10 +767,10 @@ namespace Gek
 			}
 
 			entityDataList.clear();
-			entityDataList.reserve(entityCount);
+			entityDataList.reserve(static_cast<EntityDataList::size_type>(entityCount));
 			parallelListEntities([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
 			{
-                if (data.group)
+                if (data.group && data.group->ready.load(std::memory_order_acquire))
                 {
                     auto group = data.group;
                     auto matrix(transformComponent.getMatrix());
@@ -773,7 +778,7 @@ namespace Gek
                     auto halfSize(group->boundingBox.getHalfSize() * transformComponent.scale);
 
                     auto entityInsert = entityDataList.push_back(std::make_tuple(entity, &data, 0));
-                    auto entityIndex = std::get<2>(*entityInsert) = std::distance(std::begin(entityDataList), entityInsert);
+					auto entityIndex = std::get<2>(*entityInsert) = static_cast<uint32_t>(std::distance(std::begin(entityDataList), entityInsert));
 
                     halfSizeXList[entityIndex] = halfSize.x;
                     halfSizeYList[entityIndex] = halfSize.y;
@@ -786,7 +791,7 @@ namespace Gek
 			});
 
 			visibilityList.resize(bufferedEntityCount);
-			Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedEntityCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
+            Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, static_cast<uint32_t>(bufferedEntityCount), halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
 
             const auto visibleEntityCount = std::accumulate(std::begin(entityDataList), std::end(entityDataList), size_t(0), [&](size_t count, auto const &entitySearch) -> size_t
             {
@@ -807,7 +812,7 @@ namespace Gek
             }
 
 			// Cull by model inside group
-			const auto modelCount = std::accumulate(std::begin(entityDataList), std::end(entityDataList), 0U, [this](auto count, auto const &entitySearch) -> auto
+            const auto modelCount = std::accumulate(std::begin(entityDataList), std::end(entityDataList), size_t(0), [this](size_t count, auto const &entitySearch) -> size_t
 			{
 				if (visibilityList[std::get<2>(entitySearch)])
 				{
@@ -830,7 +835,7 @@ namespace Gek
 			}
 
 			entityModelList.clear();
-			entityModelList.reserve(bufferedModelCount);
+            entityModelList.reserve(static_cast<EntityModelList::size_type>(bufferedModelCount));
 			std::for_each(std::execution::par, std::begin(entityDataList), std::end(entityDataList), [&](auto &entitySearch) -> void
 			{
 				auto entityDataIndex = std::get<2>(entitySearch);
@@ -851,7 +856,7 @@ namespace Gek
                         centerTransform.translation() = matrix.transform(center);
 
 						auto entityInsert = entityModelList.push_back(std::make_tuple(entity, &model, 0));
-						auto entityModelIndex = std::get<2>(*entityInsert) = std::distance(std::begin(entityModelList), entityInsert);
+                        auto entityModelIndex = std::get<2>(*entityInsert) = static_cast<uint32_t>(std::distance(std::begin(entityModelList), entityInsert));
 
 						halfSizeXList[entityModelIndex] = halfSize.x;
 						halfSizeYList[entityModelIndex] = halfSize.y;
@@ -865,7 +870,7 @@ namespace Gek
 			});
 
 			visibilityList.resize(bufferedModelCount);
-			Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, bufferedModelCount, halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
+            Math::SIMD::cullOrientedBoundingBoxes(viewMatrix, projectionMatrix, static_cast<uint32_t>(bufferedModelCount), halfSizeXList, halfSizeYList, halfSizeZList, transformList, visibilityList);
 
             const auto visibleModelCount = std::accumulate(std::begin(entityModelList), std::end(entityModelList), size_t(0), [&](size_t count, auto const &entitySearch) -> size_t
             {
@@ -906,7 +911,7 @@ namespace Gek
 
 			std::atomic_size_t maximumInstanceCount = 0;
             std::atomic_size_t queuedBatchCount = 0;
-			std::for_each(std::execution::par, std::begin(renderList), std::end(renderList), [&](auto &materialPair) -> void
+            std::for_each(std::begin(renderList), std::end(renderList), [&](auto &materialPair) -> void
 			{
 				const auto material = materialPair.first;
 				auto &materialMap = materialPair.second;

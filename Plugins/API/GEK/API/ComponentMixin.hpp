@@ -12,7 +12,9 @@
 #include "GEK/API/Population.hpp"
 #include <tbb/concurrent_unordered_map.h>
 #include <execution>
+#include <mutex>
 #include <new>
+#include <shared_mutex>
 
 #include <imgui.h>
 
@@ -102,6 +104,7 @@ namespace Gek
         protected:
             using EntityDataMap = tbb::concurrent_unordered_map<Plugin::Entity *, Data>;
             EntityDataMap entityDataMap;
+            mutable std::shared_mutex entityDataMapMutex;
 
         public:
             virtual ~EntityProcessor(void) = default;
@@ -109,6 +112,7 @@ namespace Gek
             // ProcessorMixin
             void clear(void)
             {
+                std::unique_lock<std::shared_mutex> lock(entityDataMapMutex);
                 entityDataMap.clear();
             }
 
@@ -118,6 +122,7 @@ namespace Gek
 
                 if (entity->hasComponents<REQUIRED...>())
                 {
+                    std::unique_lock<std::shared_mutex> lock(entityDataMapMutex);
                     static const Data BlankData;
                     auto insertSearch = entityDataMap.insert(std::make_pair(entity, BlankData));
                     if (onAdded)
@@ -131,6 +136,7 @@ namespace Gek
             {
                 assert(entity);
 
+                std::unique_lock<std::shared_mutex> lock(entityDataMapMutex);
                 auto entitySearch = entityDataMap.find(entity);
                 if (entitySearch != std::end(entityDataMap))
                 {
@@ -140,6 +146,7 @@ namespace Gek
 
             size_t getEntityCount(void)
             {
+                std::shared_lock<std::shared_mutex> lock(entityDataMapMutex);
                 return entityDataMap.size();
             }
 
@@ -147,6 +154,7 @@ namespace Gek
             {
                 assert(onEntity);
 
+                std::shared_lock<std::shared_mutex> lock(entityDataMapMutex);
                 std::for_each(std::begin(entityDataMap), std::end(entityDataMap), [&](auto &entitySearch) -> void
                 {
                     onEntity(entitySearch.first, entitySearch.second, entitySearch.first->template getComponent<REQUIRED>()...);
@@ -157,6 +165,7 @@ namespace Gek
             {
                 assert(onEntity);
 
+                std::shared_lock<std::shared_mutex> lock(entityDataMapMutex);
                 std::for_each(std::execution::par, std::begin(entityDataMap), std::end(entityDataMap), [&](auto& entitySearch) -> void
                 {
                     onEntity(entitySearch.first, entitySearch.second, entitySearch.first->template getComponent<REQUIRED>()...);

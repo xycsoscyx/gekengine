@@ -12,11 +12,19 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <cctype>
+#include <cstdlib>
 #include <cstring>
 #include <array>
+#include <utility>
+#include <mutex>
 
 #ifdef WIN32
     #define VK_USE_PLATFORM_WIN32_KHR
+#endif
+#include <DirectXTex.h>
+#ifdef WIN32
+#include <objbase.h>
 #endif
 #include <vulkan/vulkan.h>
 
@@ -268,13 +276,7 @@ namespace Gek
         class BaseObject
         {
         public:
-
-        public:
             BaseObject(void)
-            {
-            }
-
-            virtual ~BaseObject(void)
             {
             }
 
@@ -337,7 +339,12 @@ namespace Gek
             }
         };
 
-        using CommandList = BaseVideoObject<1>;
+        class CommandList
+            : public BaseVideoObject<1>
+        {
+        public:
+            uint64_t identifier = 0;
+        };
         using RenderState = DescribedVideoObject<Render::RenderState>;
         using DepthState = DescribedVideoObject<Render::DepthState>;
         using BlendState = DescribedVideoObject<Render::BlendState>;
@@ -706,6 +713,12 @@ namespace Gek
             {
                 if (!information.compiledData.empty())
                 {
+                    if ((information.compiledData.size() < sizeof(uint32_t)) || ((information.compiledData.size() % sizeof(uint32_t)) != 0))
+                    {
+                        shaderModule = VK_NULL_HANDLE;
+                        return;
+                    }
+
                     VkShaderModuleCreateInfo createInfo{};
                     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
                     createInfo.codeSize = information.compiledData.size();
@@ -750,6 +763,8 @@ namespace Gek
             class Context
                 : public Render::Device::Context
             {
+                static constexpr uint32_t ContextResourceSlotCount = 16;
+
                 class ComputePipeline
                     : public Render::Device::Context::Pipeline
                 {
@@ -834,10 +849,23 @@ namespace Gek
 
                     void setConstantBufferList(const std::vector<Render::Buffer *> &list, uint32_t firstStage)
                     {
-                        if (!list.empty() && firstStage == 0)
+                        if (list.empty())
                         {
-                            context->currentVertexConstantBuffer = getObject<Buffer>(list[0]);
+                            return;
                         }
+
+                        for (uint32_t bufferIndex = 0; bufferIndex < list.size(); ++bufferIndex)
+                        {
+                            const uint32_t slot = firstStage + bufferIndex;
+                            if (slot >= context->currentVertexConstantBuffers.size())
+                            {
+                                continue;
+                            }
+
+                            context->currentVertexConstantBuffers[slot] = getObject<Buffer>(list[bufferIndex]);
+                        }
+
+                        context->currentVertexConstantBuffer = context->currentVertexConstantBuffers[0];
                     }
 
                     void setResourceList(const std::vector<Render::Object *> &list, uint32_t firstStage)
@@ -855,6 +883,18 @@ namespace Gek
 
                     void clearConstantBufferList(uint32_t count, uint32_t firstStage)
                     {
+                        if (count == 0 || firstStage >= context->currentVertexConstantBuffers.size())
+                        {
+                            return;
+                        }
+
+                        const uint32_t endStage = std::min<uint32_t>(static_cast<uint32_t>(context->currentVertexConstantBuffers.size()), firstStage + count);
+                        for (uint32_t stage = firstStage; stage < endStage; ++stage)
+                        {
+                            context->currentVertexConstantBuffers[stage] = nullptr;
+                        }
+
+                        context->currentVertexConstantBuffer = context->currentVertexConstantBuffers[0];
                     }
 
                     void clearResourceList(uint32_t count, uint32_t firstStage)
@@ -958,27 +998,74 @@ namespace Gek
 
                     void setConstantBufferList(const std::vector<Render::Buffer *> &list, uint32_t firstStage)
                     {
+                        if (list.empty())
+                        {
+                            return;
+                        }
+
+                        for (uint32_t bufferIndex = 0; bufferIndex < list.size(); ++bufferIndex)
+                        {
+                            const uint32_t slot = firstStage + bufferIndex;
+                            if (slot >= context->currentPixelConstantBuffers.size())
+                            {
+                                continue;
+                            }
+
+                            context->currentPixelConstantBuffers[slot] = getObject<Buffer>(list[bufferIndex]);
+                        }
+
+                        context->currentPixelConstantBuffer = context->currentPixelConstantBuffers[0];
                     }
 
                     void setResourceList(const std::vector<Render::Object *> &list, uint32_t firstStage)
                     {
-                        if (!list.empty() && firstStage == 0)
+                        if (list.empty())
                         {
-                            if (auto viewTexture = getObject<ViewTexture>(list[0]))
+                            return;
+                        }
+
+                        for (uint32_t resourceIndex = 0; resourceIndex < list.size(); ++resourceIndex)
+                        {
+                            const uint32_t slot = firstStage + resourceIndex;
+                            if (slot >= context->currentPixelResourceImageViews.size())
                             {
-                                context->currentPixelImageView = viewTexture->imageView;
-                                context->currentPixelImageSampler = viewTexture->sampler;
+                                continue;
                             }
-                            else if (auto targetTexture = getObject<TargetTexture>(list[0]))
+
+                            auto *resource = list[resourceIndex];
+                            VkImageView imageView = VK_NULL_HANDLE;
+                            VkSampler imageSampler = VK_NULL_HANDLE;
+                            if (auto viewTexture = getObject<ViewTexture>(resource))
                             {
-                                context->currentPixelImageView = targetTexture->imageView;
-                                context->currentPixelImageSampler = targetTexture->sampler;
+                                imageView = viewTexture->imageView;
+                                imageSampler = viewTexture->sampler;
+                                context->currentPixelResourceBuffers[slot] = nullptr;
+                            }
+                            else if (auto targetTexture = getObject<TargetTexture>(resource))
+                            {
+                                imageView = targetTexture->imageView;
+                                imageSampler = targetTexture->sampler;
+                                context->currentPixelResourceBuffers[slot] = nullptr;
+                            }
+                            else if (auto resourceBuffer = getObject<Buffer>(resource))
+                            {
+                                context->currentPixelResourceBuffers[slot] = resourceBuffer;
+                                imageView = VK_NULL_HANDLE;
+                                imageSampler = VK_NULL_HANDLE;
                             }
                             else
                             {
-                                context->currentPixelImageView = VK_NULL_HANDLE;
-                                context->currentPixelImageSampler = VK_NULL_HANDLE;
+                                context->currentPixelResourceBuffers[slot] = nullptr;
                             }
+
+                            context->currentPixelResourceImageViews[slot] = imageView;
+                            context->currentPixelResourceSamplers[slot] = imageSampler;
+                        }
+
+                        if (firstStage == 0 && !context->currentPixelResourceImageViews.empty())
+                        {
+                            context->currentPixelImageView = context->currentPixelResourceImageViews[0];
+                            context->currentPixelImageSampler = context->currentPixelResourceSamplers[0];
                         }
                     }
 
@@ -992,10 +1079,37 @@ namespace Gek
 
                     void clearConstantBufferList(uint32_t count, uint32_t firstStage)
                     {
+                        if (count == 0 || firstStage >= context->currentPixelConstantBuffers.size())
+                        {
+                            return;
+                        }
+
+                        const uint32_t endStage = std::min<uint32_t>(static_cast<uint32_t>(context->currentPixelConstantBuffers.size()), firstStage + count);
+                        for (uint32_t stage = firstStage; stage < endStage; ++stage)
+                        {
+                            context->currentPixelConstantBuffers[stage] = nullptr;
+                        }
+
+                        context->currentPixelConstantBuffer = context->currentPixelConstantBuffers[0];
                     }
 
                     void clearResourceList(uint32_t count, uint32_t firstStage)
                     {
+                        if (count == 0 || firstStage >= context->currentPixelResourceImageViews.size())
+                        {
+                            return;
+                        }
+
+                        const uint32_t endStage = std::min<uint32_t>(static_cast<uint32_t>(context->currentPixelResourceImageViews.size()), firstStage + count);
+                        for (uint32_t stage = firstStage; stage < endStage; ++stage)
+                        {
+                            context->currentPixelResourceImageViews[stage] = VK_NULL_HANDLE;
+                            context->currentPixelResourceSamplers[stage] = VK_NULL_HANDLE;
+                            context->currentPixelResourceBuffers[stage] = nullptr;
+                        }
+
+                        context->currentPixelImageView = context->currentPixelResourceImageViews[0];
+                        context->currentPixelImageSampler = context->currentPixelResourceSamplers[0];
                     }
 
                     void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
@@ -1006,6 +1120,7 @@ namespace Gek
             public:
 	            Device *owner = nullptr;
     	        VkDevice device;
+                bool isDeferredContext = false;
                 PipelinePtr computeSystemHandler;
                 PipelinePtr vertexSystemHandler;
                 PipelinePtr geomtrySystemHandler;
@@ -1021,19 +1136,28 @@ namespace Gek
                 Render::PrimitiveType currentPrimitiveType = Render::PrimitiveType::TriangleList;
                 VkRect2D currentScissor = { {0, 0}, {0, 0} };
                 TargetTexture *currentRenderTarget = nullptr;
+                std::array<TargetTexture *, 8> currentRenderTargetList{};
+                uint32_t currentRenderTargetCount = 0;
 
                 VertexProgram *currentVertexProgram = nullptr;
                 PixelProgram *currentPixelProgram = nullptr;
                 Buffer *currentVertexConstantBuffer = nullptr;
+                Buffer *currentPixelConstantBuffer = nullptr;
+                std::array<Buffer *, ContextResourceSlotCount> currentVertexConstantBuffers{};
+                std::array<Buffer *, ContextResourceSlotCount> currentPixelConstantBuffers{};
                 VkImageView currentPixelImageView = VK_NULL_HANDLE;
                 VkSampler currentPixelImageSampler = VK_NULL_HANDLE;
+                std::array<VkImageView, 16> currentPixelResourceImageViews{};
+                std::array<VkSampler, 16> currentPixelResourceSamplers{};
+                std::array<Buffer *, ContextResourceSlotCount> currentPixelResourceBuffers{};
                 SamplerState *currentPixelSamplerState = nullptr;
                 BlendState *currentBlendState = nullptr;
                 DepthState *currentDepthState = nullptr;
 
             public:
-                Context(Device *owner)
+                Context(Device *owner, bool isDeferredContext = false)
                     : owner(owner)
+                    , isDeferredContext(isDeferredContext)
                     , computeSystemHandler(new ComputePipeline(this))
                     , vertexSystemHandler(new VertexPipeline(this))
                     , geomtrySystemHandler(new GeometryPipeline(this))
@@ -1104,11 +1228,19 @@ namespace Gek
                     currentIndexBuffer = nullptr;
                     currentScissor = { {0, 0}, {0, 0} };
                     currentRenderTarget = nullptr;
+                    currentRenderTargetList.fill(nullptr);
+                    currentRenderTargetCount = 0;
                     currentVertexProgram = nullptr;
                     currentPixelProgram = nullptr;
                     currentVertexConstantBuffer = nullptr;
+                    currentPixelConstantBuffer = nullptr;
+                    currentVertexConstantBuffers.fill(nullptr);
+                    currentPixelConstantBuffers.fill(nullptr);
                     currentPixelImageView = VK_NULL_HANDLE;
                     currentPixelImageSampler = VK_NULL_HANDLE;
+                    currentPixelResourceImageViews.fill(VK_NULL_HANDLE);
+                    currentPixelResourceSamplers.fill(VK_NULL_HANDLE);
+                    currentPixelResourceBuffers.fill(nullptr);
                     currentPixelSamplerState = nullptr;
                     currentBlendState = nullptr;
                     currentDepthState = nullptr;
@@ -1202,18 +1334,40 @@ namespace Gek
                 void clearRenderTargetList(uint32_t count, bool depthBuffer)
                 {
                     currentRenderTarget = nullptr;
+                    currentRenderTargetList.fill(nullptr);
+                    currentRenderTargetCount = 0;
                 }
 
                 void setRenderTargetList(const std::vector<Render::Target *> &renderTargetList, Render::Object *depthBuffer)
                 {
                     currentRenderTarget = nullptr;
-                    if (!renderTargetList.empty() && renderTargetList[0] && owner)
+                    currentRenderTargetList.fill(nullptr);
+                    currentRenderTargetCount = 0;
+                    if (!owner)
                     {
-                        if (renderTargetList[0] != owner->backBuffer.get())
+                        return;
+                    }
+
+                    for (auto *renderTarget : renderTargetList)
+                    {
+                        if (!renderTarget || renderTarget == owner->backBuffer.get())
                         {
-                            currentRenderTarget = getObject<TargetTexture>(renderTargetList[0]);
+                            continue;
+                        }
+
+                        auto *targetTexture = getObject<TargetTexture>(renderTarget);
+                        if (!targetTexture)
+                        {
+                            continue;
+                        }
+
+                        if (currentRenderTargetCount < currentRenderTargetList.size())
+                        {
+                            currentRenderTargetList[currentRenderTargetCount++] = targetTexture;
                         }
                     }
+
+                    currentRenderTarget = (currentRenderTargetCount > 0) ? currentRenderTargetList[0] : nullptr;
                 }
 
                 void setRenderState(Render::Object *renderState)
@@ -1245,8 +1399,11 @@ namespace Gek
                 {
                     if (vertexBufferList.empty())
                     {
+                        clearVertexBufferList(static_cast<uint32_t>(currentVertexBufferList.size()), 0);
                         return;
                     }
+
+                    clearVertexBufferList(static_cast<uint32_t>(vertexBufferList.size()), firstSlot);
 
                     for (uint32_t bufferIndex = 0; bufferIndex < vertexBufferList.size(); ++bufferIndex)
                     {
@@ -1276,13 +1433,31 @@ namespace Gek
                         return;
                     }
 
+                    ++owner->contextDrawCallAttempts;
+
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
+                        ++owner->contextDrawSkipsMissingProgram;
+                        if (!owner->loggedMissingProgramSkip)
+                        {
+                            owner->loggedMissingProgramSkip = true;
+                            owner->getContext()->log(
+                                Gek::Context::Error,
+                                "Vulkan draw skip: missing program (vertexProgram={} pixelProgram={})",
+                                static_cast<uint32_t>(currentVertexProgram != nullptr),
+                                static_cast<uint32_t>(currentPixelProgram != nullptr));
+                        }
                         return;
                     }
 
                     if (vertexCount == 0)
                     {
+                        ++owner->contextDrawSkipsZeroCount;
+                        if (!owner->loggedZeroCountSkip)
+                        {
+                            owner->loggedZeroCountSkip = true;
+                            owner->getContext()->log(Gek::Context::Warning, "Vulkan draw skip: zero vertex count");
+                        }
                         return;
                     }
 
@@ -1303,16 +1478,95 @@ namespace Gek
                     command.vertexProgram = currentVertexProgram;
                     command.pixelProgram = currentPixelProgram;
                     command.vertexConstantBuffer = currentVertexConstantBuffer;
-                    command.pixelImageView = currentPixelImageView;
-                    command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
+                    command.pixelConstantBuffer = currentPixelConstantBuffer;
+                    command.vertexConstantBuffers = currentVertexConstantBuffers;
+                    command.pixelConstantBuffers = currentPixelConstantBuffers;
+                    command.pixelResourceImageViews = currentPixelResourceImageViews;
+                    command.pixelResourceSamplers = currentPixelResourceSamplers;
+                    command.pixelResourceBuffers = currentPixelResourceBuffers;
+                    command.pixelImageView = command.pixelResourceImageViews[0];
+                    command.pixelSampler = command.pixelResourceSamplers[0];
+                    if (command.pixelSampler == VK_NULL_HANDLE)
+                    {
+                        command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
+                    }
                     command.renderTarget = currentRenderTarget;
+                    command.hasOffscreenTarget = (currentRenderTargetCount > 0);
+                    command.offscreenTargetCount = currentRenderTargetCount;
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
                     if (command.pixelSampler == VK_NULL_HANDLE)
                     {
                         command.pixelSampler = currentPixelImageSampler;
                     }
-                    owner->pendingDrawCommands.push_back(command);
+                    if (command.pixelSampler != VK_NULL_HANDLE && command.pixelResourceSamplers[0] == VK_NULL_HANDLE)
+                    {
+                        command.pixelResourceSamplers[0] = command.pixelSampler;
+                    }
+                    if (command.pixelImageView == VK_NULL_HANDLE)
+                    {
+                        command.pixelImageView = currentPixelImageView;
+                        if (command.pixelResourceImageViews[0] == VK_NULL_HANDLE)
+                        {
+                            command.pixelResourceImageViews[0] = command.pixelImageView;
+                        }
+                    }
+                    {
+                        std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
+                        std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
+                        auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
+                        {
+                            if (!buffer)
+                            {
+                                return nullptr;
+                            }
+
+                            auto snapshotSearch = constantBufferSnapshotMap.find(buffer);
+                            if (snapshotSearch != std::end(constantBufferSnapshotMap))
+                            {
+                                return snapshotSearch->second;
+                            }
+
+                            Buffer *snapshotBuffer = owner->createConstantBufferSnapshot(buffer);
+                            constantBufferSnapshotMap[buffer] = snapshotBuffer;
+                            return snapshotBuffer;
+                        };
+
+                        command.vertexConstantBuffer = snapshotConstantBuffer(command.vertexConstantBuffer);
+                        command.pixelConstantBuffer = snapshotConstantBuffer(command.pixelConstantBuffer);
+                        for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
+                        {
+                            command.vertexConstantBuffers[slot] = snapshotConstantBuffer(command.vertexConstantBuffers[slot]);
+                            command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
+                        }
+
+                        for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
+                        {
+                            auto *target = currentRenderTargetList[targetIndex];
+                            if (!target)
+                            {
+                                continue;
+                            }
+
+                            command.offscreenImages[targetIndex] = target->image;
+                            command.offscreenImageViews[targetIndex] = target->imageView;
+                            command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
+                            command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
+                            command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
+                            owner->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
+                        }
+
+                        if (isDeferredContext)
+                        {
+                            owner->deferredContextDrawCommands[this].push_back(command);
+                            ++owner->deferredCommandEnqueueCount;
+                        }
+                        else
+                        {
+                            owner->pendingDrawCommands.push_back(command);
+                            ++owner->pendingCommandEnqueueCount;
+                        }
+                    }
                 }
 
                 void drawInstancedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex)
@@ -1322,13 +1576,31 @@ namespace Gek
                         return;
                     }
 
+                    ++owner->contextDrawCallAttempts;
+
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
+                        ++owner->contextDrawSkipsMissingProgram;
+                        if (!owner->loggedMissingProgramSkip)
+                        {
+                            owner->loggedMissingProgramSkip = true;
+                            owner->getContext()->log(
+                                Gek::Context::Error,
+                                "Vulkan draw skip: missing program (vertexProgram={} pixelProgram={})",
+                                static_cast<uint32_t>(currentVertexProgram != nullptr),
+                                static_cast<uint32_t>(currentPixelProgram != nullptr));
+                        }
                         return;
                     }
 
                     if (vertexCount == 0 || instanceCount == 0)
                     {
+                        ++owner->contextDrawSkipsZeroCount;
+                        if (!owner->loggedZeroCountSkip)
+                        {
+                            owner->loggedZeroCountSkip = true;
+                            owner->getContext()->log(Gek::Context::Warning, "Vulkan draw skip: zero count in instanced draw");
+                        }
                         return;
                     }
 
@@ -1349,16 +1621,95 @@ namespace Gek
                     command.vertexProgram = currentVertexProgram;
                     command.pixelProgram = currentPixelProgram;
                     command.vertexConstantBuffer = currentVertexConstantBuffer;
-                    command.pixelImageView = currentPixelImageView;
-                    command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
+                    command.pixelConstantBuffer = currentPixelConstantBuffer;
+                    command.vertexConstantBuffers = currentVertexConstantBuffers;
+                    command.pixelConstantBuffers = currentPixelConstantBuffers;
+                    command.pixelResourceImageViews = currentPixelResourceImageViews;
+                    command.pixelResourceSamplers = currentPixelResourceSamplers;
+                    command.pixelResourceBuffers = currentPixelResourceBuffers;
+                    command.pixelImageView = command.pixelResourceImageViews[0];
+                    command.pixelSampler = command.pixelResourceSamplers[0];
+                    if (command.pixelSampler == VK_NULL_HANDLE)
+                    {
+                        command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
+                    }
                     command.renderTarget = currentRenderTarget;
+                    command.hasOffscreenTarget = (currentRenderTargetCount > 0);
+                    command.offscreenTargetCount = currentRenderTargetCount;
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
                     if (command.pixelSampler == VK_NULL_HANDLE)
                     {
                         command.pixelSampler = currentPixelImageSampler;
                     }
-                    owner->pendingDrawCommands.push_back(command);
+                    if (command.pixelSampler != VK_NULL_HANDLE && command.pixelResourceSamplers[0] == VK_NULL_HANDLE)
+                    {
+                        command.pixelResourceSamplers[0] = command.pixelSampler;
+                    }
+                    if (command.pixelImageView == VK_NULL_HANDLE)
+                    {
+                        command.pixelImageView = currentPixelImageView;
+                        if (command.pixelResourceImageViews[0] == VK_NULL_HANDLE)
+                        {
+                            command.pixelResourceImageViews[0] = command.pixelImageView;
+                        }
+                    }
+                    {
+                        std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
+                        std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
+                        auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
+                        {
+                            if (!buffer)
+                            {
+                                return nullptr;
+                            }
+
+                            auto snapshotSearch = constantBufferSnapshotMap.find(buffer);
+                            if (snapshotSearch != std::end(constantBufferSnapshotMap))
+                            {
+                                return snapshotSearch->second;
+                            }
+
+                            Buffer *snapshotBuffer = owner->createConstantBufferSnapshot(buffer);
+                            constantBufferSnapshotMap[buffer] = snapshotBuffer;
+                            return snapshotBuffer;
+                        };
+
+                        command.vertexConstantBuffer = snapshotConstantBuffer(command.vertexConstantBuffer);
+                        command.pixelConstantBuffer = snapshotConstantBuffer(command.pixelConstantBuffer);
+                        for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
+                        {
+                            command.vertexConstantBuffers[slot] = snapshotConstantBuffer(command.vertexConstantBuffers[slot]);
+                            command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
+                        }
+
+                        for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
+                        {
+                            auto *target = currentRenderTargetList[targetIndex];
+                            if (!target)
+                            {
+                                continue;
+                            }
+
+                            command.offscreenImages[targetIndex] = target->image;
+                            command.offscreenImageViews[targetIndex] = target->imageView;
+                            command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
+                            command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
+                            command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
+                            owner->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
+                        }
+
+                        if (isDeferredContext)
+                        {
+                            owner->deferredContextDrawCommands[this].push_back(command);
+                            ++owner->deferredCommandEnqueueCount;
+                        }
+                        else
+                        {
+                            owner->pendingDrawCommands.push_back(command);
+                            ++owner->pendingCommandEnqueueCount;
+                        }
+                    }
                 }
 
                 void drawIndexedPrimitive(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
@@ -1368,23 +1719,53 @@ namespace Gek
                         return;
                     }
 
+                    ++owner->contextDrawCallAttempts;
+
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
+                        ++owner->contextDrawSkipsMissingProgram;
+                        if (!owner->loggedMissingProgramSkip)
+                        {
+                            owner->loggedMissingProgramSkip = true;
+                            owner->getContext()->log(
+                                Gek::Context::Error,
+                                "Vulkan draw skip: missing program (vertexProgram={} pixelProgram={})",
+                                static_cast<uint32_t>(currentVertexProgram != nullptr),
+                                static_cast<uint32_t>(currentPixelProgram != nullptr));
+                        }
                         return;
                     }
 
                     if (!currentVertexBuffer)
                     {
+                        ++owner->contextDrawSkipsMissingVertexBuffer;
+                        if (!owner->loggedMissingVertexBufferSkip)
+                        {
+                            owner->loggedMissingVertexBufferSkip = true;
+                            owner->getContext()->log(Gek::Context::Error, "Vulkan draw skip: missing vertex buffer for indexed draw");
+                        }
                         return;
                     }
 
                     if (!currentIndexBuffer)
                     {
+                        ++owner->contextDrawSkipsMissingIndexBuffer;
+                        if (!owner->loggedMissingIndexBufferSkip)
+                        {
+                            owner->loggedMissingIndexBufferSkip = true;
+                            owner->getContext()->log(Gek::Context::Error, "Vulkan draw skip: missing index buffer for indexed draw");
+                        }
                         return;
                     }
 
                     if (indexCount == 0)
                     {
+                        ++owner->contextDrawSkipsZeroCount;
+                        if (!owner->loggedZeroCountSkip)
+                        {
+                            owner->loggedZeroCountSkip = true;
+                            owner->getContext()->log(Gek::Context::Warning, "Vulkan draw skip: zero index count");
+                        }
                         return;
                     }
 
@@ -1407,16 +1788,95 @@ namespace Gek
                     command.vertexProgram = currentVertexProgram;
                     command.pixelProgram = currentPixelProgram;
                     command.vertexConstantBuffer = currentVertexConstantBuffer;
-                    command.pixelImageView = currentPixelImageView;
-                    command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
+                    command.pixelConstantBuffer = currentPixelConstantBuffer;
+                    command.vertexConstantBuffers = currentVertexConstantBuffers;
+                    command.pixelConstantBuffers = currentPixelConstantBuffers;
+                    command.pixelResourceImageViews = currentPixelResourceImageViews;
+                    command.pixelResourceSamplers = currentPixelResourceSamplers;
+                    command.pixelResourceBuffers = currentPixelResourceBuffers;
+                    command.pixelImageView = command.pixelResourceImageViews[0];
+                    command.pixelSampler = command.pixelResourceSamplers[0];
+                    if (command.pixelSampler == VK_NULL_HANDLE)
+                    {
+                        command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
+                    }
                     command.renderTarget = currentRenderTarget;
+                    command.hasOffscreenTarget = (currentRenderTargetCount > 0);
+                    command.offscreenTargetCount = currentRenderTargetCount;
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
                     if (command.pixelSampler == VK_NULL_HANDLE)
                     {
                         command.pixelSampler = currentPixelImageSampler;
                     }
-                    owner->pendingDrawCommands.push_back(command);
+                    if (command.pixelSampler != VK_NULL_HANDLE && command.pixelResourceSamplers[0] == VK_NULL_HANDLE)
+                    {
+                        command.pixelResourceSamplers[0] = command.pixelSampler;
+                    }
+                    if (command.pixelImageView == VK_NULL_HANDLE)
+                    {
+                        command.pixelImageView = currentPixelImageView;
+                        if (command.pixelResourceImageViews[0] == VK_NULL_HANDLE)
+                        {
+                            command.pixelResourceImageViews[0] = command.pixelImageView;
+                        }
+                    }
+                    {
+                        std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
+                        std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
+                        auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
+                        {
+                            if (!buffer)
+                            {
+                                return nullptr;
+                            }
+
+                            auto snapshotSearch = constantBufferSnapshotMap.find(buffer);
+                            if (snapshotSearch != std::end(constantBufferSnapshotMap))
+                            {
+                                return snapshotSearch->second;
+                            }
+
+                            Buffer *snapshotBuffer = owner->createConstantBufferSnapshot(buffer);
+                            constantBufferSnapshotMap[buffer] = snapshotBuffer;
+                            return snapshotBuffer;
+                        };
+
+                        command.vertexConstantBuffer = snapshotConstantBuffer(command.vertexConstantBuffer);
+                        command.pixelConstantBuffer = snapshotConstantBuffer(command.pixelConstantBuffer);
+                        for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
+                        {
+                            command.vertexConstantBuffers[slot] = snapshotConstantBuffer(command.vertexConstantBuffers[slot]);
+                            command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
+                        }
+
+                        for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
+                        {
+                            auto *target = currentRenderTargetList[targetIndex];
+                            if (!target)
+                            {
+                                continue;
+                            }
+
+                            command.offscreenImages[targetIndex] = target->image;
+                            command.offscreenImageViews[targetIndex] = target->imageView;
+                            command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
+                            command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
+                            command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
+                            owner->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
+                        }
+
+                        if (isDeferredContext)
+                        {
+                            owner->deferredContextDrawCommands[this].push_back(command);
+                            ++owner->deferredCommandEnqueueCount;
+                        }
+                        else
+                        {
+                            owner->pendingDrawCommands.push_back(command);
+                            ++owner->pendingCommandEnqueueCount;
+                        }
+                    }
                 }
 
                 void drawInstancedIndexedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
@@ -1426,23 +1886,53 @@ namespace Gek
                         return;
                     }
 
+                    ++owner->contextDrawCallAttempts;
+
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
+                        ++owner->contextDrawSkipsMissingProgram;
+                        if (!owner->loggedMissingProgramSkip)
+                        {
+                            owner->loggedMissingProgramSkip = true;
+                            owner->getContext()->log(
+                                Gek::Context::Error,
+                                "Vulkan draw skip: missing program (vertexProgram={} pixelProgram={})",
+                                static_cast<uint32_t>(currentVertexProgram != nullptr),
+                                static_cast<uint32_t>(currentPixelProgram != nullptr));
+                        }
                         return;
                     }
 
                     if (!currentVertexBuffer)
                     {
+                        ++owner->contextDrawSkipsMissingVertexBuffer;
+                        if (!owner->loggedMissingVertexBufferSkip)
+                        {
+                            owner->loggedMissingVertexBufferSkip = true;
+                            owner->getContext()->log(Gek::Context::Error, "Vulkan draw skip: missing vertex buffer for instanced indexed draw");
+                        }
                         return;
                     }
 
                     if (!currentIndexBuffer)
                     {
+                        ++owner->contextDrawSkipsMissingIndexBuffer;
+                        if (!owner->loggedMissingIndexBufferSkip)
+                        {
+                            owner->loggedMissingIndexBufferSkip = true;
+                            owner->getContext()->log(Gek::Context::Error, "Vulkan draw skip: missing index buffer for instanced indexed draw");
+                        }
                         return;
                     }
 
                     if (indexCount == 0 || instanceCount == 0)
                     {
+                        ++owner->contextDrawSkipsZeroCount;
+                        if (!owner->loggedZeroCountSkip)
+                        {
+                            owner->loggedZeroCountSkip = true;
+                            owner->getContext()->log(Gek::Context::Warning, "Vulkan draw skip: zero count in instanced indexed draw");
+                        }
                         return;
                     }
 
@@ -1465,16 +1955,95 @@ namespace Gek
                     command.vertexProgram = currentVertexProgram;
                     command.pixelProgram = currentPixelProgram;
                     command.vertexConstantBuffer = currentVertexConstantBuffer;
-                    command.pixelImageView = currentPixelImageView;
-                    command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
+                    command.pixelConstantBuffer = currentPixelConstantBuffer;
+                    command.vertexConstantBuffers = currentVertexConstantBuffers;
+                    command.pixelConstantBuffers = currentPixelConstantBuffers;
+                    command.pixelResourceImageViews = currentPixelResourceImageViews;
+                    command.pixelResourceSamplers = currentPixelResourceSamplers;
+                    command.pixelResourceBuffers = currentPixelResourceBuffers;
+                    command.pixelImageView = command.pixelResourceImageViews[0];
+                    command.pixelSampler = command.pixelResourceSamplers[0];
+                    if (command.pixelSampler == VK_NULL_HANDLE)
+                    {
+                        command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
+                    }
                     command.renderTarget = currentRenderTarget;
+                    command.hasOffscreenTarget = (currentRenderTargetCount > 0);
+                    command.offscreenTargetCount = currentRenderTargetCount;
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
                     if (command.pixelSampler == VK_NULL_HANDLE)
                     {
                         command.pixelSampler = currentPixelImageSampler;
                     }
-                    owner->pendingDrawCommands.push_back(command);
+                    if (command.pixelSampler != VK_NULL_HANDLE && command.pixelResourceSamplers[0] == VK_NULL_HANDLE)
+                    {
+                        command.pixelResourceSamplers[0] = command.pixelSampler;
+                    }
+                    if (command.pixelImageView == VK_NULL_HANDLE)
+                    {
+                        command.pixelImageView = currentPixelImageView;
+                        if (command.pixelResourceImageViews[0] == VK_NULL_HANDLE)
+                        {
+                            command.pixelResourceImageViews[0] = command.pixelImageView;
+                        }
+                    }
+                    {
+                        std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
+                        std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
+                        auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
+                        {
+                            if (!buffer)
+                            {
+                                return nullptr;
+                            }
+
+                            auto snapshotSearch = constantBufferSnapshotMap.find(buffer);
+                            if (snapshotSearch != std::end(constantBufferSnapshotMap))
+                            {
+                                return snapshotSearch->second;
+                            }
+
+                            Buffer *snapshotBuffer = owner->createConstantBufferSnapshot(buffer);
+                            constantBufferSnapshotMap[buffer] = snapshotBuffer;
+                            return snapshotBuffer;
+                        };
+
+                        command.vertexConstantBuffer = snapshotConstantBuffer(command.vertexConstantBuffer);
+                        command.pixelConstantBuffer = snapshotConstantBuffer(command.pixelConstantBuffer);
+                        for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
+                        {
+                            command.vertexConstantBuffers[slot] = snapshotConstantBuffer(command.vertexConstantBuffers[slot]);
+                            command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
+                        }
+
+                        for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
+                        {
+                            auto *target = currentRenderTargetList[targetIndex];
+                            if (!target)
+                            {
+                                continue;
+                            }
+
+                            command.offscreenImages[targetIndex] = target->image;
+                            command.offscreenImageViews[targetIndex] = target->imageView;
+                            command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
+                            command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
+                            command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
+                            owner->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
+                        }
+
+                        if (isDeferredContext)
+                        {
+                            owner->deferredContextDrawCommands[this].push_back(command);
+                            ++owner->deferredCommandEnqueueCount;
+                        }
+                        else
+                        {
+                            owner->pendingDrawCommands.push_back(command);
+                            ++owner->pendingCommandEnqueueCount;
+                        }
+                    }
                 }
 
                 void dispatch(uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ)
@@ -1483,7 +2052,26 @@ namespace Gek
 
                 Render::ObjectPtr finishCommandList(void)
                 {
-                    return std::make_unique<CommandList>();
+                    if (!owner)
+                    {
+                        return nullptr;
+                    }
+
+                    auto commandList = std::make_unique<CommandList>();
+                    commandList->identifier = owner->nextCommandListIdentifier++;
+                    if (isDeferredContext)
+                    {
+                        ++owner->deferredFinishCalls;
+                        std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
+                        auto deferredContextCommandIterator = owner->deferredContextDrawCommands.find(this);
+                        if (deferredContextCommandIterator != owner->deferredContextDrawCommands.end())
+                        {
+                            owner->deferredCommandLists[commandList->identifier] = std::move(deferredContextCommandIterator->second);
+                            owner->deferredContextDrawCommands.erase(deferredContextCommandIterator);
+                        }
+                    }
+
+                    return commandList;
                 }
             };
 
@@ -1517,13 +2105,15 @@ namespace Gek
             std::vector<VkImageView> swapChainImageViews;
             std::vector<VkImageLayout> swapChainImageLayouts;
             VkCommandPool commandPool = VK_NULL_HANDLE;
+            VkCommandPool uploadCommandPool = VK_NULL_HANDLE;
             VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
             VkSemaphore imageAvailableSemaphore = VK_NULL_HANDLE;
             std::vector<VkSemaphore> renderFinishedSemaphores;
             VkFence inFlightFence = VK_NULL_HANDLE;
+            bool inFlightFencePending = false;
             VkRenderPass renderPass = VK_NULL_HANDLE;
             std::vector<VkFramebuffer> swapChainFramebuffers;
-            std::map<VkFormat, VkRenderPass> offscreenRenderPassCache;
+            std::map<std::vector<VkFormat>, VkRenderPass> offscreenRenderPassCache;
             std::vector<VkFramebuffer> transientFramebuffers;
 
             VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
@@ -1532,6 +2122,13 @@ namespace Gek
             VkDescriptorSetLayout uiDescriptorSetLayout = VK_NULL_HANDLE;
             VkDescriptorPool uiDescriptorPool = VK_NULL_HANDLE;
             VkPipelineLayout uiGraphicsPipelineLayout = VK_NULL_HANDLE;
+            static constexpr uint32_t PixelResourceSlotCount = 16;
+            static constexpr uint32_t DescriptorSampledImageBase = 0;
+            static constexpr uint32_t DescriptorStorageBufferBase = 64;
+            static constexpr uint32_t DescriptorVertexUniformBufferBase = 128;
+            static constexpr uint32_t DescriptorPixelUniformBufferBase = 144;
+            static constexpr uint32_t DescriptorSamplerBase = 192;
+            static constexpr uint32_t DescriptorStorageImageBase = 224;
 
             struct DrawCommand
             {
@@ -1554,15 +2151,52 @@ namespace Gek
                 VertexProgram *vertexProgram = nullptr;
                 PixelProgram *pixelProgram = nullptr;
                 Buffer *vertexConstantBuffer = nullptr;
+                Buffer *pixelConstantBuffer = nullptr;
+                std::array<Buffer *, PixelResourceSlotCount> vertexConstantBuffers{};
+                std::array<Buffer *, PixelResourceSlotCount> pixelConstantBuffers{};
                 VkImageView pixelImageView = VK_NULL_HANDLE;
                 VkSampler pixelSampler = VK_NULL_HANDLE;
+                std::array<VkImageView, PixelResourceSlotCount> pixelResourceImageViews{};
+                std::array<VkSampler, PixelResourceSlotCount> pixelResourceSamplers{};
+                std::array<Buffer *, PixelResourceSlotCount> pixelResourceBuffers{};
                 TargetTexture *renderTarget = nullptr;
+                bool hasOffscreenTarget = false;
+                uint32_t offscreenTargetCount = 0;
+                std::array<VkImage, 8> offscreenImages{};
+                std::array<VkImageView, 8> offscreenImageViews{};
+                std::array<VkFormat, 8> offscreenFormats{};
+                std::array<VkExtent2D, 8> offscreenExtents{};
                 BlendState *blendState = nullptr;
                 DepthState *depthState = nullptr;
             };
 
             std::vector<DrawCommand> pendingDrawCommands;
+            std::map<Context *, std::vector<DrawCommand>> deferredContextDrawCommands;
+            std::map<uint64_t, std::vector<DrawCommand>> deferredCommandLists;
+            std::vector<Render::BufferPtr> transientFrameConstantBufferSnapshotsPending;
+            std::vector<Render::BufferPtr> transientFrameConstantBufferSnapshotsInFlight;
+            uint64_t nextCommandListIdentifier = 1;
+            uint64_t deferredFinishCalls = 0;
+            uint64_t deferredExecuteCalls = 0;
+            uint64_t deferredExecutedCommandCount = 0;
+            uint64_t pendingCommandEnqueueCount = 0;
+            uint64_t deferredCommandEnqueueCount = 0;
+            std::map<VkImage, VkImageLayout> offscreenImageLayouts;
+            uint64_t presentFrameIndex = 0;
+            bool loggedMrtFallback = false;
             VkViewport currentViewport = { 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f };
+            uint64_t contextDrawCallAttempts = 0;
+            uint64_t contextDrawSkipsMissingProgram = 0;
+            uint64_t contextDrawSkipsMissingVertexBuffer = 0;
+            uint64_t contextDrawSkipsMissingIndexBuffer = 0;
+            uint64_t contextDrawSkipsZeroCount = 0;
+            bool loggedMissingProgramSkip = false;
+            bool loggedMissingVertexBufferSkip = false;
+            bool loggedMissingIndexBufferSkip = false;
+            bool loggedZeroCountSkip = false;
+            bool deviceLost = false;
+            bool loggedDeviceLost = false;
+            std::string debugOverlayText = "VK: init";
 
             struct PipelineKey
             {
@@ -1596,6 +2230,30 @@ namespace Gek
             Slang::ComPtr<slang::IGlobalSession> slangGlobalSession;
 
         private:
+            static std::mutex &getUploadCommandPoolMutex(void)
+            {
+                static std::mutex *mutex = new std::mutex();
+                return *mutex;
+            }
+
+            static std::mutex &getQueueSubmitMutex(void)
+            {
+                static std::mutex *mutex = new std::mutex();
+                return *mutex;
+            }
+
+            static std::mutex &getDrawCommandMutex(void)
+            {
+                static std::mutex *mutex = new std::mutex();
+                return *mutex;
+            }
+
+            static std::mutex &getTextureDecodeMutex(void)
+            {
+                static std::mutex *mutex = new std::mutex();
+                return *mutex;
+            }
+
             uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const
             {
                 VkPhysicalDeviceMemoryProperties memoryProperties{};
@@ -1611,6 +2269,71 @@ namespace Gek
                 }
 
                 return UINT32_MAX;
+            }
+
+            Buffer *createConstantBufferSnapshot(Buffer *sourceBuffer)
+            {
+                if (!sourceBuffer || sourceBuffer->buffer == VK_NULL_HANDLE)
+                {
+                    return nullptr;
+                }
+
+                if (sourceBuffer->getDescription().type != Render::Buffer::Type::Constant)
+                {
+                    return sourceBuffer;
+                }
+
+                Render::BufferPtr snapshotResource = createBuffer(sourceBuffer->getDescription(), nullptr);
+                Buffer *snapshotBuffer = getObject<Buffer>(snapshotResource.get());
+                if (!snapshotBuffer || snapshotBuffer->buffer == VK_NULL_HANDLE)
+                {
+                    return sourceBuffer;
+                }
+
+                void *sourceData = sourceBuffer->mappedData;
+                bool sourceMappedForCopy = false;
+                if (!sourceData)
+                {
+                    if (vkMapMemory(device, sourceBuffer->memory, 0, sourceBuffer->size, 0, &sourceData) != VK_SUCCESS)
+                    {
+                        return sourceBuffer;
+                    }
+
+                    sourceMappedForCopy = true;
+                }
+
+                void *destinationData = snapshotBuffer->mappedData;
+                bool destinationMappedForCopy = false;
+                if (!destinationData)
+                {
+                    if (vkMapMemory(device, snapshotBuffer->memory, 0, snapshotBuffer->size, 0, &destinationData) != VK_SUCCESS)
+                    {
+                        if (sourceMappedForCopy)
+                        {
+                            vkUnmapMemory(device, sourceBuffer->memory);
+                        }
+
+                        return sourceBuffer;
+                    }
+
+                    destinationMappedForCopy = true;
+                }
+
+                const VkDeviceSize copySize = std::min(sourceBuffer->size, snapshotBuffer->size);
+                std::memcpy(destinationData, sourceData, static_cast<size_t>(copySize));
+
+                if (destinationMappedForCopy)
+                {
+                    vkUnmapMemory(device, snapshotBuffer->memory);
+                }
+
+                if (sourceMappedForCopy)
+                {
+                    vkUnmapMemory(device, sourceBuffer->memory);
+                }
+
+                transientFrameConstantBufferSnapshotsPending.push_back(std::move(snapshotResource));
+                return snapshotBuffer;
             }
 
             bool checkInstanceExtensionSupport(std::vector<const char*> &instanceExtensions)
@@ -1973,7 +2696,7 @@ namespace Gek
             {
                 for (const auto& availablePresentMode : availablePresentModes)
                 {
-                    if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+                    if (availablePresentMode == VK_PRESENT_MODE_FIFO_KHR)
                     {
                         return availablePresentMode;
                     }
@@ -2186,32 +2909,48 @@ namespace Gek
                 }
             }
 
-            VkRenderPass getOrCreateOffscreenRenderPass(VkFormat format)
+            VkRenderPass getOrCreateOffscreenRenderPass(const std::vector<VkFormat> &formats)
             {
-                auto renderPassSearch = offscreenRenderPassCache.find(format);
+                if (formats.empty())
+                {
+                    return VK_NULL_HANDLE;
+                }
+
+                auto renderPassSearch = offscreenRenderPassCache.find(formats);
                 if (renderPassSearch != std::end(offscreenRenderPassCache))
                 {
                     return renderPassSearch->second;
                 }
 
-                VkAttachmentDescription colorAttachment{};
-                colorAttachment.format = format;
-                colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-                colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-                colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-                colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-                colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-                colorAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                std::vector<VkAttachmentDescription> colorAttachments;
+                colorAttachments.reserve(formats.size());
 
-                VkAttachmentReference colorAttachmentRef{};
-                colorAttachmentRef.attachment = 0;
-                colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                std::vector<VkAttachmentReference> colorAttachmentRefs;
+                colorAttachmentRefs.reserve(formats.size());
+
+                for (uint32_t attachmentIndex = 0; attachmentIndex < formats.size(); ++attachmentIndex)
+                {
+                    VkAttachmentDescription colorAttachment{};
+                    colorAttachment.format = formats[attachmentIndex];
+                    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+                    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+                    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+                    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+                    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+                    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                    colorAttachments.push_back(colorAttachment);
+
+                    VkAttachmentReference colorAttachmentRef{};
+                    colorAttachmentRef.attachment = attachmentIndex;
+                    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                    colorAttachmentRefs.push_back(colorAttachmentRef);
+                }
 
                 VkSubpassDescription subpass{};
                 subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-                subpass.colorAttachmentCount = 1;
-                subpass.pColorAttachments = &colorAttachmentRef;
+                subpass.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentRefs.size());
+                subpass.pColorAttachments = colorAttachmentRefs.data();
 
                 VkSubpassDependency dependency{};
                 dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -2223,8 +2962,8 @@ namespace Gek
 
                 VkRenderPassCreateInfo renderPassInfo{};
                 renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-                renderPassInfo.attachmentCount = 1;
-                renderPassInfo.pAttachments = &colorAttachment;
+                renderPassInfo.attachmentCount = static_cast<uint32_t>(colorAttachments.size());
+                renderPassInfo.pAttachments = colorAttachments.data();
                 renderPassInfo.subpassCount = 1;
                 renderPassInfo.pSubpasses = &subpass;
                 renderPassInfo.dependencyCount = 1;
@@ -2236,36 +2975,59 @@ namespace Gek
                     return VK_NULL_HANDLE;
                 }
 
-                offscreenRenderPassCache[format] = offscreenRenderPass;
+                offscreenRenderPassCache[formats] = offscreenRenderPass;
                 return offscreenRenderPass;
             }
 
             void createDescriptorResources(void)
             {
-                VkDescriptorSetLayoutBinding uniformBinding{};
-                uniformBinding.binding = 0;
-                uniformBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                uniformBinding.descriptorCount = 1;
-                uniformBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+                std::vector<VkDescriptorSetLayoutBinding> bindings;
+                bindings.reserve((PixelResourceSlotCount * 6));
 
-                VkDescriptorSetLayoutBinding sampledImageBinding{};
-                sampledImageBinding.binding = 1;
-                sampledImageBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                sampledImageBinding.descriptorCount = 1;
-                sampledImageBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-                VkDescriptorSetLayoutBinding samplerBinding{};
-                samplerBinding.binding = 2;
-                samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-                samplerBinding.descriptorCount = 1;
-                samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-                std::array<VkDescriptorSetLayoutBinding, 3> bindings =
+                for (uint32_t slot = 0; slot < PixelResourceSlotCount; ++slot)
                 {
-                    uniformBinding,
-                    sampledImageBinding,
-                    samplerBinding,
-                };
+                    VkDescriptorSetLayoutBinding sampledImageBinding{};
+                    sampledImageBinding.binding = DescriptorSampledImageBase + slot;
+                    sampledImageBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                    sampledImageBinding.descriptorCount = 1;
+                    sampledImageBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+                    bindings.push_back(sampledImageBinding);
+
+                    VkDescriptorSetLayoutBinding storageBufferBinding{};
+                    storageBufferBinding.binding = DescriptorStorageBufferBase + slot;
+                    storageBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                    storageBufferBinding.descriptorCount = 1;
+                    storageBufferBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+                    bindings.push_back(storageBufferBinding);
+
+                    VkDescriptorSetLayoutBinding vertexUniformBinding{};
+                    vertexUniformBinding.binding = DescriptorVertexUniformBufferBase + slot;
+                    vertexUniformBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    vertexUniformBinding.descriptorCount = 1;
+                    vertexUniformBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+                    bindings.push_back(vertexUniformBinding);
+
+                    VkDescriptorSetLayoutBinding pixelUniformBinding{};
+                    pixelUniformBinding.binding = DescriptorPixelUniformBufferBase + slot;
+                    pixelUniformBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    pixelUniformBinding.descriptorCount = 1;
+                    pixelUniformBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+                    bindings.push_back(pixelUniformBinding);
+
+                    VkDescriptorSetLayoutBinding samplerBinding{};
+                    samplerBinding.binding = DescriptorSamplerBase + slot;
+                    samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+                    samplerBinding.descriptorCount = 1;
+                    samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+                    bindings.push_back(samplerBinding);
+
+                    VkDescriptorSetLayoutBinding storageImageBinding{};
+                    storageImageBinding.binding = DescriptorStorageImageBase + slot;
+                    storageImageBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+                    storageImageBinding.descriptorCount = 1;
+                    storageImageBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+                    bindings.push_back(storageImageBinding);
+                }
 
                 VkDescriptorSetLayoutCreateInfo setLayoutInfo{};
                 setLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -2276,17 +3038,19 @@ namespace Gek
                     throw std::runtime_error("failed to create descriptor set layout");
                 }
 
-                std::array<VkDescriptorPoolSize, 3> poolSizes =
+                std::array<VkDescriptorPoolSize, 5> poolSizes =
                 {
-                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 256 },
-                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 256 },
-                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 256 },
+                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 32768 },
+                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 32768 },
+                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 32768 },
+                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 32768 },
+                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 8192 },
                 };
 
                 VkDescriptorPoolCreateInfo poolInfo{};
                 poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
                 poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-                poolInfo.maxSets = 256;
+                poolInfo.maxSets = 8192;
                 poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
                 poolInfo.pPoolSizes = poolSizes.data();
                 if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
@@ -2339,15 +3103,15 @@ namespace Gek
 
                 std::array<VkDescriptorPoolSize, 3> uiPoolSizes =
                 {
-                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 256 },
-                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 256 },
-                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 256 },
+                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1024 },
+                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1024 },
+                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 1024 },
                 };
 
                 VkDescriptorPoolCreateInfo uiPoolInfo{};
                 uiPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
                 uiPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-                uiPoolInfo.maxSets = 256;
+                uiPoolInfo.maxSets = 1024;
                 uiPoolInfo.poolSizeCount = static_cast<uint32_t>(uiPoolSizes.size());
                 uiPoolInfo.pPoolSizes = uiPoolSizes.data();
                 if (vkCreateDescriptorPool(device, &uiPoolInfo, nullptr, &uiDescriptorPool) != VK_SUCCESS)
@@ -2372,7 +3136,13 @@ namespace Gek
                     return VK_NULL_HANDLE;
                 }
 
-                const bool isUiProgram = (command.pixelProgram && command.pixelProgram->getInformation().name.find("core:uiPixelProgram") != std::string::npos);
+                const bool isUiProgram =
+                    (command.pixelProgram &&
+                    (
+                        command.pixelProgram->getInformation().name.find("core::uiPixelProgram") != std::string::npos ||
+                        command.pixelProgram->getInformation().name.find("core:uiPixelProgram") != std::string::npos ||
+                        command.pixelProgram->getInformation().name.find("uiPixelProgram") != std::string::npos
+                    ));
 
                 PipelineKey key;
                 key.vertexModule = command.vertexProgram->shaderModule;
@@ -2541,11 +3311,19 @@ namespace Gek
                     VK_COLOR_COMPONENT_B_BIT |
                     VK_COLOR_COMPONENT_A_BIT;
 
+                uint32_t colorAttachmentCount = 1;
+                if (command.hasOffscreenTarget && command.offscreenTargetCount > 0)
+                {
+                    colorAttachmentCount = command.offscreenTargetCount;
+                }
+
+                std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(colorAttachmentCount, colorBlendAttachment);
+
                 VkPipelineColorBlendStateCreateInfo colorBlending{};
                 colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
                 colorBlending.logicOpEnable = VK_FALSE;
-                colorBlending.attachmentCount = 1;
-                colorBlending.pAttachments = &colorBlendAttachment;
+                colorBlending.attachmentCount = colorAttachmentCount;
+                colorBlending.pAttachments = colorBlendAttachments.data();
 
                 std::array<VkDynamicState, 2> dynamicStates =
                 {
@@ -2616,6 +3394,15 @@ namespace Gek
                 if (vkCreateCommandPool(device, &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS)
                 {
                     throw std::runtime_error("failed to create command pool!");
+                }
+
+                VkCommandPoolCreateInfo uploadCommandPoolInfo{};
+                uploadCommandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+                uploadCommandPoolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+                uploadCommandPoolInfo.queueFamilyIndex = indices.graphicsFamily.value();
+                if (vkCreateCommandPool(device, &uploadCommandPoolInfo, nullptr, &uploadCommandPool) != VK_SUCCESS)
+                {
+                    throw std::runtime_error("failed to create upload command pool!");
                 }
 
                 VkCommandBufferAllocateInfo allocInfo{};
@@ -2806,6 +3593,11 @@ namespace Gek
                     vkDestroyCommandPool(device, commandPool, nullptr);
                 }
 
+                if (uploadCommandPool != VK_NULL_HANDLE)
+                {
+                    vkDestroyCommandPool(device, uploadCommandPool, nullptr);
+                }
+
                 if (graphicsPipelineLayout != VK_NULL_HANDLE)
                 {
                     vkDestroyPipelineLayout(device, graphicsPipelineLayout, nullptr);
@@ -2882,6 +3674,11 @@ namespace Gek
                 return nullptr;
             }
 
+            std::string getDebugOverlayText(void) const
+            {
+                return debugOverlayText;
+            }
+
             // Render::Device
             Render::DisplayModeList getDisplayModeList(Render::Format format) const
             {
@@ -2936,7 +3733,7 @@ namespace Gek
 
             Render::Device::ContextPtr createDeferredContext(void)
             {
-                return std::make_unique<Context>(this);
+                return std::make_unique<Context>(this, true);
             }
 
             Render::QueryPtr createQuery(Render::Query::Type type)
@@ -3321,7 +4118,145 @@ namespace Gek
 
                 std::string resolvedProgram = resolveIncludes(uncompiledProgram, 0);
 
-                if (name == "core::uiVertexProgram")
+                auto normalizeBufferResources = [](std::string &source)
+                {
+                    const std::string token = "Buffer<";
+                    size_t searchPosition = 0;
+                    while (true)
+                    {
+                        size_t position = source.find(token, searchPosition);
+                        if (position == std::string::npos)
+                        {
+                            break;
+                        }
+
+                        const bool hasIdentifierPrefix =
+                            (position > 0) &&
+                            (std::isalnum(static_cast<unsigned char>(source[position - 1])) || source[position - 1] == '_');
+
+                        if (!hasIdentifierPrefix)
+                        {
+                            source.replace(position, token.size(), "StructuredBuffer<");
+                            searchPosition = position + std::string("StructuredBuffer<").size();
+                        }
+                        else
+                        {
+                            searchPosition = position + token.size();
+                        }
+                    }
+                };
+
+                normalizeBufferResources(resolvedProgram);
+
+                auto extractRegisterIndex = [](std::string_view line, char registerClass, uint32_t &registerIndex) -> bool
+                {
+                    std::string token = std::string("register(") + registerClass;
+                    size_t registerPos = line.find(token);
+                    if (registerPos == std::string_view::npos)
+                    {
+                        return false;
+                    }
+
+                    size_t numberBegin = registerPos + token.size();
+                    size_t numberEnd = numberBegin;
+                    while (numberEnd < line.size() && std::isdigit(static_cast<unsigned char>(line[numberEnd])))
+                    {
+                        ++numberEnd;
+                    }
+
+                    if (numberBegin == numberEnd)
+                    {
+                        return false;
+                    }
+
+                    registerIndex = static_cast<uint32_t>(std::strtoul(std::string(line.substr(numberBegin, numberEnd - numberBegin)).c_str(), nullptr, 10));
+                    return true;
+                };
+
+                auto isResourceDeclarationLine = [](std::string_view line) -> bool
+                {
+                    if (line.find("register(") == std::string_view::npos)
+                    {
+                        return false;
+                    }
+
+                    return (line.find("cbuffer") != std::string_view::npos) ||
+                           (line.find("SamplerState") != std::string_view::npos) ||
+                           (line.find("Texture") != std::string_view::npos) ||
+                           (line.find("StructuredBuffer") != std::string_view::npos) ||
+                           (line.find("ByteAddressBuffer") != std::string_view::npos) ||
+                           (line.find("RW") != std::string_view::npos) ||
+                           (line.find("Buffer<") != std::string_view::npos);
+                };
+
+                auto annotateVulkanBindings = [&](std::string &source)
+                {
+                    std::string annotated;
+                    annotated.reserve(source.size() + 1024);
+
+                    size_t cursor = 0;
+                    while (cursor < source.size())
+                    {
+                        size_t lineEnd = source.find('\n', cursor);
+                        if (lineEnd == std::string::npos)
+                        {
+                            lineEnd = source.size();
+                        }
+
+                        std::string_view line(source.data() + cursor, lineEnd - cursor);
+                        std::string prefix;
+                        if (line.find("[[vk::binding(") == std::string_view::npos && isResourceDeclarationLine(line))
+                        {
+                            uint32_t registerIndex = 0;
+                            if (extractRegisterIndex(line, 'b', registerIndex))
+                            {
+                                const uint32_t uniformBindingBase =
+                                    (type == Render::Program::Type::Pixel)
+                                    ? DescriptorPixelUniformBufferBase
+                                    : DescriptorVertexUniformBufferBase;
+                                prefix = std::format("[[vk::binding({}, 0)]] ", uniformBindingBase + registerIndex);
+                            }
+                            else if (extractRegisterIndex(line, 's', registerIndex))
+                            {
+                                prefix = std::format("[[vk::binding({}, 0)]] ", DescriptorSamplerBase + registerIndex);
+                            }
+                            else if (extractRegisterIndex(line, 'u', registerIndex))
+                            {
+                                prefix = std::format("[[vk::binding({}, 0)]] ", DescriptorStorageImageBase + registerIndex);
+                            }
+                            else if (extractRegisterIndex(line, 't', registerIndex))
+                            {
+                                if (line.find("StructuredBuffer") != std::string_view::npos ||
+                                    line.find("ByteAddressBuffer") != std::string_view::npos ||
+                                    line.find("RWStructuredBuffer") != std::string_view::npos ||
+                                    line.find("Buffer<") != std::string_view::npos)
+                                {
+                                    prefix = std::format("[[vk::binding({}, 0)]] ", DescriptorStorageBufferBase + registerIndex);
+                                }
+                                else
+                                {
+                                    prefix = std::format("[[vk::binding({}, 0)]] ", DescriptorSampledImageBase + registerIndex);
+                                }
+                            }
+                        }
+
+                        annotated += prefix;
+                        annotated.append(line.data(), line.size());
+                        if (lineEnd < source.size())
+                        {
+                            annotated.push_back('\n');
+                        }
+
+                        cursor = (lineEnd < source.size()) ? (lineEnd + 1) : lineEnd;
+                    }
+
+                    source = std::move(annotated);
+                };
+
+                const bool isUiVertexProgram = (name == "core::uiVertexProgram") || (name == "core:uiVertexProgram");
+                const bool isUiPixelProgram = (name == "core::uiPixelProgram") || (name == "core:uiPixelProgram");
+
+                if (isUiVertexProgram)
                 {
                     static constexpr std::string_view from = "cbuffer DataBuffer : register(b0)";
                     static constexpr std::string_view to = "[[vk::binding(0, 0)]] cbuffer DataBuffer : register(b0)";
@@ -3331,26 +4266,36 @@ namespace Gek
                         resolvedProgram.replace(position, from.size(), to);
                     }
                 }
-                else if (name == "core:uiPixelProgram")
+                else if (isUiPixelProgram)
                 {
                     static constexpr std::string_view textureFrom = "Texture2D<float4> uiTexture : register(t0);";
                     static constexpr std::string_view textureTo = "[[vk::binding(1, 0)]] Texture2D<float4> uiTexture : register(t0);";
+                    static constexpr std::string_view samplerFrom = "SamplerState uiSampler : register(s0);";
+                    static constexpr std::string_view samplerTo = "[[vk::binding(2, 0)]] SamplerState uiSampler : register(s0);";
                     size_t texturePosition = resolvedProgram.find(textureFrom);
                     if (texturePosition != std::string::npos)
                     {
                         resolvedProgram.replace(texturePosition, textureFrom.size(), textureTo);
                     }
+                    else
+                    {
+                        getContext()->log(Gek::Context::Warning, "Vulkan UI pixel texture binding annotation not applied for '{}'", name);
+                    }
 
-                    static constexpr std::string_view samplerFrom = "SamplerState uiSampler : register(s0);";
-                    static constexpr std::string_view samplerTo = "[[vk::binding(2, 0)]] SamplerState uiSampler : register(s0);";
                     size_t samplerPosition = resolvedProgram.find(samplerFrom);
                     if (samplerPosition != std::string::npos)
                     {
                         resolvedProgram.replace(samplerPosition, samplerFrom.size(), samplerTo);
                     }
+                    else
+                    {
+                        getContext()->log(Gek::Context::Warning, "Vulkan UI pixel sampler binding annotation not applied for '{}'", name);
+                    }
+                }
+                else
+                {
                 }
 
-                // Next we create a compilation session to generate SPIRV code from Slang source.
                 slang::TargetDesc targetDesc = {};
                 targetDesc.format = SLANG_SPIRV;
                 targetDesc.profile = slangGlobalSession->findProfile("spirv_1_5");
@@ -3369,8 +4314,12 @@ namespace Gek
                     return {};
                 }
 
+                const std::string moduleName(name);
+                const std::string debugFileName(debugPath.getFileName());
+                const std::string entryPointName(entryFunction);
+
                 slang::IBlob* outDiagnosticsRaw = nullptr;
-                slang::IModule* slangModule = session->loadModuleFromSourceString(name.data(), debugPath.getFileName().data(), resolvedProgram.c_str(), &outDiagnosticsRaw);
+                slang::IModule* slangModule = session->loadModuleFromSourceString(moduleName.c_str(), debugFileName.c_str(), resolvedProgram.c_str(), &outDiagnosticsRaw);
                 Slang::ComPtr<slang::IBlob> outDiagnostics(outDiagnosticsRaw);
                 if (!slangModule)
                 {
@@ -3380,7 +4329,7 @@ namespace Gek
                 }
 
                 Slang::ComPtr<slang::IEntryPoint> entryPoint;
-                slangModule->findEntryPointByName(entryFunction.data(), entryPoint.writeRef());
+                slangModule->findEntryPointByName(entryPointName.c_str(), entryPoint.writeRef());
                 if (!entryPoint)
                 {
                     getContext()->log(Gek::Context::Error, "Failed to find entry point '{}' in Slang module", entryFunction);
@@ -3485,7 +4434,7 @@ namespace Gek
                     imageInfo.format = imageFormat;
                     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
                     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                    imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+                    imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
                     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
                     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
                     if (vkCreateImage(device, &imageInfo, nullptr, &texture->image) != VK_SUCCESS)
@@ -3513,6 +4462,105 @@ namespace Gek
                     {
                         return nullptr;
                     }
+
+                    {
+                        std::lock_guard<std::mutex> uploadLock(getUploadCommandPoolMutex());
+
+                        VkCommandBufferAllocateInfo commandAllocInfo{};
+                        commandAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+                        commandAllocInfo.commandPool = uploadCommandPool;
+                        commandAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+                        commandAllocInfo.commandBufferCount = 1;
+
+                        VkCommandBuffer uploadCommandBuffer = VK_NULL_HANDLE;
+                        if (vkAllocateCommandBuffers(device, &commandAllocInfo, &uploadCommandBuffer) != VK_SUCCESS)
+                        {
+                            return nullptr;
+                        }
+
+                        VkCommandBufferBeginInfo beginInfo{};
+                        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+                        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+                        if (vkBeginCommandBuffer(uploadCommandBuffer, &beginInfo) != VK_SUCCESS)
+                        {
+                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                            return nullptr;
+                        }
+
+                        VkImageMemoryBarrier toShaderRead{};
+                        toShaderRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                        toShaderRead.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                        toShaderRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                        toShaderRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                        toShaderRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                        toShaderRead.image = texture->image;
+                        toShaderRead.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                        toShaderRead.subresourceRange.baseMipLevel = 0;
+                        toShaderRead.subresourceRange.levelCount = 1;
+                        toShaderRead.subresourceRange.baseArrayLayer = 0;
+                        toShaderRead.subresourceRange.layerCount = 1;
+                        toShaderRead.srcAccessMask = 0;
+                        toShaderRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+                        vkCmdPipelineBarrier(
+                            uploadCommandBuffer,
+                            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                            0,
+                            0, nullptr,
+                            0, nullptr,
+                            1, &toShaderRead);
+
+                        if (vkEndCommandBuffer(uploadCommandBuffer) != VK_SUCCESS)
+                        {
+                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                            return nullptr;
+                        }
+
+                        VkFence uploadFence = VK_NULL_HANDLE;
+                        VkFenceCreateInfo uploadFenceInfo{};
+                        uploadFenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+                        if (vkCreateFence(device, &uploadFenceInfo, nullptr, &uploadFence) != VK_SUCCESS)
+                        {
+                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                            return nullptr;
+                        }
+
+                        VkSubmitInfo submitInfo{};
+                        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                        submitInfo.commandBufferCount = 1;
+                        submitInfo.pCommandBuffers = &uploadCommandBuffer;
+                        {
+                            std::lock_guard<std::mutex> queueLock(getQueueSubmitMutex());
+                            const VkResult uploadSubmitResult = vkQueueSubmit(graphicsQueue, 1, &submitInfo, uploadFence);
+                            if (uploadSubmitResult != VK_SUCCESS)
+                            {
+                                vkDestroyFence(device, uploadFence, nullptr);
+                                vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                                return nullptr;
+                            }
+                        }
+
+                        constexpr uint64_t kUploadFenceTimeoutNs = 5ull * 1000ull * 1000ull * 1000ull;
+                        const VkResult uploadWaitResult = vkWaitForFences(device, 1, &uploadFence, VK_TRUE, kUploadFenceTimeoutNs);
+                        vkDestroyFence(device, uploadFence, nullptr);
+                        if (uploadWaitResult == VK_TIMEOUT)
+                        {
+                            getContext()->log(Gek::Context::Error, "Vulkan texture upload wait timed out (staging upload path)");
+                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                            return nullptr;
+                        }
+
+                        if (uploadWaitResult != VK_SUCCESS)
+                        {
+                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                            return nullptr;
+                        }
+
+                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                    }
+
+                    texture->currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
                     VkImageViewCreateInfo imageViewInfo{};
                     imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -3636,6 +4684,8 @@ namespace Gek
 
                     if (data)
                     {
+                        std::lock_guard<std::mutex> uploadLock(getUploadCommandPoolMutex());
+
                         const VkDeviceSize uploadSize = static_cast<VkDeviceSize>(std::max(description.width, 1u)) * static_cast<VkDeviceSize>(std::max(description.height, 1u)) * 4u;
 
                         VkBuffer stagingBuffer = VK_NULL_HANDLE;
@@ -3682,12 +4732,17 @@ namespace Gek
 
                         VkCommandBufferAllocateInfo commandAllocInfo{};
                         commandAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-                        commandAllocInfo.commandPool = commandPool;
+                        commandAllocInfo.commandPool = uploadCommandPool;
                         commandAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
                         commandAllocInfo.commandBufferCount = 1;
 
                         VkCommandBuffer uploadCommandBuffer = VK_NULL_HANDLE;
-                        vkAllocateCommandBuffers(device, &commandAllocInfo, &uploadCommandBuffer);
+                        if (vkAllocateCommandBuffers(device, &commandAllocInfo, &uploadCommandBuffer) != VK_SUCCESS)
+                        {
+                            vkDestroyBuffer(device, stagingBuffer, nullptr);
+                            vkFreeMemory(device, stagingMemory, nullptr);
+                            return nullptr;
+                        }
 
                         VkCommandBufferBeginInfo beginInfo{};
                         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -3750,18 +4805,162 @@ namespace Gek
                             0, nullptr,
                             1, &toShaderRead);
 
-                        vkEndCommandBuffer(uploadCommandBuffer);
+                        if (vkEndCommandBuffer(uploadCommandBuffer) != VK_SUCCESS)
+                        {
+                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                            vkDestroyBuffer(device, stagingBuffer, nullptr);
+                            vkFreeMemory(device, stagingMemory, nullptr);
+                            return nullptr;
+                        }
+
+                        VkFence uploadFence = VK_NULL_HANDLE;
+                        VkFenceCreateInfo uploadFenceInfo{};
+                        uploadFenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+                        if (vkCreateFence(device, &uploadFenceInfo, nullptr, &uploadFence) != VK_SUCCESS)
+                        {
+                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                            vkDestroyBuffer(device, stagingBuffer, nullptr);
+                            vkFreeMemory(device, stagingMemory, nullptr);
+                            return nullptr;
+                        }
 
                         VkSubmitInfo submitInfo{};
                         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
                         submitInfo.commandBufferCount = 1;
                         submitInfo.pCommandBuffers = &uploadCommandBuffer;
-                        vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-                        vkQueueWaitIdle(graphicsQueue);
+                        {
+                            std::lock_guard<std::mutex> queueLock(getQueueSubmitMutex());
+                            const VkResult uploadSubmitResult = vkQueueSubmit(graphicsQueue, 1, &submitInfo, uploadFence);
+                            if (uploadSubmitResult != VK_SUCCESS)
+                            {
+                                vkDestroyFence(device, uploadFence, nullptr);
+                                vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                                vkDestroyBuffer(device, stagingBuffer, nullptr);
+                                vkFreeMemory(device, stagingMemory, nullptr);
+                                return nullptr;
+                            }
+                        }
 
-                        vkFreeCommandBuffers(device, commandPool, 1, &uploadCommandBuffer);
+                        constexpr uint64_t kUploadFenceTimeoutNs = 5ull * 1000ull * 1000ull * 1000ull;
+                        const VkResult uploadWaitResult = vkWaitForFences(device, 1, &uploadFence, VK_TRUE, kUploadFenceTimeoutNs);
+                        vkDestroyFence(device, uploadFence, nullptr);
+                        if (uploadWaitResult == VK_TIMEOUT)
+                        {
+                            getContext()->log(Gek::Context::Error, "Vulkan texture upload wait timed out (copy-to-image path)");
+                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                            vkDestroyBuffer(device, stagingBuffer, nullptr);
+                            vkFreeMemory(device, stagingMemory, nullptr);
+                            return nullptr;
+                        }
+
+                        if (uploadWaitResult != VK_SUCCESS)
+                        {
+                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                            vkDestroyBuffer(device, stagingBuffer, nullptr);
+                            vkFreeMemory(device, stagingMemory, nullptr);
+                            return nullptr;
+                        }
+
+                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
                         vkDestroyBuffer(device, stagingBuffer, nullptr);
                         vkFreeMemory(device, stagingMemory, nullptr);
+                    }
+                    else
+                    {
+                        std::lock_guard<std::mutex> uploadLock(getUploadCommandPoolMutex());
+
+                        VkCommandBufferAllocateInfo commandAllocInfo{};
+                        commandAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+                        commandAllocInfo.commandPool = uploadCommandPool;
+                        commandAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+                        commandAllocInfo.commandBufferCount = 1;
+
+                        VkCommandBuffer uploadCommandBuffer = VK_NULL_HANDLE;
+                        if (vkAllocateCommandBuffers(device, &commandAllocInfo, &uploadCommandBuffer) != VK_SUCCESS)
+                        {
+                            return nullptr;
+                        }
+
+                        VkCommandBufferBeginInfo beginInfo{};
+                        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+                        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+                        if (vkBeginCommandBuffer(uploadCommandBuffer, &beginInfo) != VK_SUCCESS)
+                        {
+                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                            return nullptr;
+                        }
+
+                        VkImageMemoryBarrier toShaderRead{};
+                        toShaderRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                        toShaderRead.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                        toShaderRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                        toShaderRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                        toShaderRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                        toShaderRead.image = texture->image;
+                        toShaderRead.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                        toShaderRead.subresourceRange.baseMipLevel = 0;
+                        toShaderRead.subresourceRange.levelCount = 1;
+                        toShaderRead.subresourceRange.baseArrayLayer = 0;
+                        toShaderRead.subresourceRange.layerCount = 1;
+                        toShaderRead.srcAccessMask = 0;
+                        toShaderRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+                        vkCmdPipelineBarrier(
+                            uploadCommandBuffer,
+                            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                            0,
+                            0, nullptr,
+                            0, nullptr,
+                            1, &toShaderRead);
+
+                        if (vkEndCommandBuffer(uploadCommandBuffer) != VK_SUCCESS)
+                        {
+                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                            return nullptr;
+                        }
+
+                        VkFence uploadFence = VK_NULL_HANDLE;
+                        VkFenceCreateInfo uploadFenceInfo{};
+                        uploadFenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+                        if (vkCreateFence(device, &uploadFenceInfo, nullptr, &uploadFence) != VK_SUCCESS)
+                        {
+                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                            return nullptr;
+                        }
+
+                        VkSubmitInfo submitInfo{};
+                        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                        submitInfo.commandBufferCount = 1;
+                        submitInfo.pCommandBuffers = &uploadCommandBuffer;
+                        {
+                            std::lock_guard<std::mutex> queueLock(getQueueSubmitMutex());
+                            const VkResult uploadSubmitResult = vkQueueSubmit(graphicsQueue, 1, &submitInfo, uploadFence);
+                            if (uploadSubmitResult != VK_SUCCESS)
+                            {
+                                vkDestroyFence(device, uploadFence, nullptr);
+                                vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                                return nullptr;
+                            }
+                        }
+
+                        constexpr uint64_t kUploadFenceTimeoutNs = 5ull * 1000ull * 1000ull * 1000ull;
+                        const VkResult uploadWaitResult = vkWaitForFences(device, 1, &uploadFence, VK_TRUE, kUploadFenceTimeoutNs);
+                        vkDestroyFence(device, uploadFence, nullptr);
+                        if (uploadWaitResult == VK_TIMEOUT)
+                        {
+                            getContext()->log(Gek::Context::Error, "Vulkan texture upload wait timed out (render-target init path)");
+                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                            return nullptr;
+                        }
+
+                        if (uploadWaitResult != VK_SUCCESS)
+                        {
+                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                            return nullptr;
+                        }
+
+                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
                     }
 
                     VkImageViewCreateInfo imageViewInfo{};
@@ -3800,24 +4999,397 @@ namespace Gek
 
             Render::TexturePtr loadTexture(FileSystem::Path const &filePath, uint32_t flags)
             {
+                std::lock_guard<std::mutex> decodeLock(getTextureDecodeMutex());
+
+                std::vector<uint8_t> sourceData = FileSystem::Load(filePath);
+                if (sourceData.empty())
+                {
+                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed: unable to read file '{}'", filePath.getString());
+                    return nullptr;
+                }
+
+                std::string extension = String::GetLower(filePath.getExtension());
+                ::DirectX::ScratchImage decodedImage;
+                HRESULT decodeResult = E_FAIL;
+
+#ifdef WIN32
+                struct ScopedComInitialize
+                {
+                    bool shouldUninitialize = false;
+
+                    ScopedComInitialize(void)
+                    {
+                        const HRESULT initializeResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+                        if (initializeResult == S_OK || initializeResult == S_FALSE)
+                        {
+                            shouldUninitialize = true;
+                        }
+                    }
+
+                    ~ScopedComInitialize(void)
+                    {
+                        if (shouldUninitialize)
+                        {
+                            CoUninitialize();
+                        }
+                    }
+                } scopedComInitialize;
+#endif
+
+                if (extension == ".dds")
+                {
+                    decodeResult = ::DirectX::LoadFromDDSMemory(sourceData.data(), sourceData.size(), ::DirectX::DDS_FLAGS_NONE, nullptr, decodedImage);
+                }
+                else if (extension == ".tga")
+                {
+                    decodeResult = ::DirectX::LoadFromTGAMemory(sourceData.data(), sourceData.size(), nullptr, decodedImage);
+                }
+                else
+                {
+                    auto wicFlags = (flags & Render::TextureLoadFlags::sRGB) ? ::DirectX::WIC_FLAGS_NONE : ::DirectX::WIC_FLAGS_IGNORE_SRGB;
+                    wicFlags |= ::DirectX::WIC_FLAGS_FORCE_RGB;
+                    decodeResult = ::DirectX::LoadFromWICMemory(sourceData.data(), sourceData.size(), wicFlags, nullptr, decodedImage);
+                }
+
+                if (FAILED(decodeResult))
+                {
+                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed: decode error for '{}'", filePath.getString());
+                    return nullptr;
+                }
+
+                const auto metadata = decodedImage.GetMetadata();
+                if (metadata.width == 0 || metadata.height == 0 || metadata.depth == 0)
+                {
+                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed: invalid metadata for '{}'", filePath.getString());
+                    return nullptr;
+                }
+
+                const DXGI_FORMAT targetFormat = (flags & Render::TextureLoadFlags::sRGB) ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
+                ::DirectX::ScratchImage convertedImage;
+                const ::DirectX::Image *image = nullptr;
+                if (metadata.format == targetFormat)
+                {
+                    image = decodedImage.GetImage(0, 0, 0);
+                }
+                else
+                {
+                    if (FAILED(::DirectX::Convert(decodedImage.GetImages(), decodedImage.GetImageCount(), metadata, targetFormat, ::DirectX::TEX_FILTER_DEFAULT, ::DirectX::TEX_THRESHOLD_DEFAULT, convertedImage)))
+                    {
+                        getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed: RGBA conversion error for '{}'", filePath.getString());
+                        return nullptr;
+                    }
+
+                    image = convertedImage.GetImage(0, 0, 0);
+                }
+                if (!image || !image->pixels)
+                {
+                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed: converted image missing pixels for '{}'", filePath.getString());
+                    return nullptr;
+                }
+
+                const uint32_t width = static_cast<uint32_t>(image->width);
+                const uint32_t height = static_cast<uint32_t>(image->height);
+                if (width == 0 || height == 0)
+                {
+                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed: converted image has zero extent for '{}'", filePath.getString());
+                    return nullptr;
+                }
+
+                constexpr uint32_t kMaxTextureDimension = 2048;
+                ::DirectX::ScratchImage resizedImage;
+                const ::DirectX::Image *uploadImage = image;
+                if (width > kMaxTextureDimension || height > kMaxTextureDimension)
+                {
+                    const uint32_t maxDimension = std::max(width, height);
+                    const uint32_t scaledWidth = std::max(1u, static_cast<uint32_t>((static_cast<uint64_t>(width) * kMaxTextureDimension) / maxDimension));
+                    const uint32_t scaledHeight = std::max(1u, static_cast<uint32_t>((static_cast<uint64_t>(height) * kMaxTextureDimension) / maxDimension));
+
+                    if (SUCCEEDED(::DirectX::Resize(*image, scaledWidth, scaledHeight, ::DirectX::TEX_FILTER_DEFAULT, resizedImage)))
+                    {
+                        const ::DirectX::Image *resizedLevel = resizedImage.GetImage(0, 0, 0);
+                        if (resizedLevel && resizedLevel->pixels)
+                        {
+                            uploadImage = resizedLevel;
+                            getContext()->log(
+                                Gek::Context::Warning,
+                                "Vulkan loadTexture downscaled '{}' from {}x{} to {}x{} to reduce GPU memory pressure",
+                                filePath.getString(),
+                                width,
+                                height,
+                                scaledWidth,
+                                scaledHeight);
+                        }
+                    }
+                }
+
+                const uint32_t uploadWidth = static_cast<uint32_t>(uploadImage->width);
+                const uint32_t uploadHeight = static_cast<uint32_t>(uploadImage->height);
+
+                const size_t requiredRowPitch = static_cast<size_t>(uploadWidth) * 4u;
+                if (uploadImage->rowPitch < requiredRowPitch)
+                {
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan loadTexture failed: converted row pitch too small for '{}' (rowPitch={} required={})",
+                        filePath.getString(),
+                        static_cast<uint64_t>(uploadImage->rowPitch),
+                        static_cast<uint64_t>(requiredRowPitch));
+                    return nullptr;
+                }
+
+                std::vector<uint8_t> uploadData(static_cast<size_t>(uploadWidth) * static_cast<size_t>(uploadHeight) * 4u);
+                for (uint32_t row = 0; row < uploadHeight; ++row)
+                {
+                    const uint8_t *sourceRow = uploadImage->pixels + (static_cast<size_t>(row) * uploadImage->rowPitch);
+                    uint8_t *destRow = uploadData.data() + (static_cast<size_t>(row) * requiredRowPitch);
+                    std::memcpy(destRow, sourceRow, requiredRowPitch);
+                }
+
                 Render::Texture::Description description;
-                return std::make_unique<ViewTexture>(description);
+                description.name = filePath.getString();
+                description.format = (flags & Render::TextureLoadFlags::sRGB)
+                    ? Render::Format::R8G8B8A8_UNORM_SRGB
+                    : Render::Format::R8G8B8A8_UNORM;
+                description.width = uploadWidth;
+                description.height = uploadHeight;
+                description.depth = 1;
+                description.mipMapCount = 1;
+                description.flags = Render::Texture::Flags::Resource;
+                return createTexture(description, uploadData.data());
             }
 
             Render::TexturePtr loadTexture(void const *buffer, size_t size, uint32_t flags)
             {
+                std::lock_guard<std::mutex> decodeLock(getTextureDecodeMutex());
+
+                if (!buffer || size == 0)
+                {
+                    return nullptr;
+                }
+
+                ::DirectX::ScratchImage decodedImage;
+
+#ifdef WIN32
+                struct ScopedComInitialize
+                {
+                    bool shouldUninitialize = false;
+
+                    ScopedComInitialize(void)
+                    {
+                        const HRESULT initializeResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+                        if (initializeResult == S_OK || initializeResult == S_FALSE)
+                        {
+                            shouldUninitialize = true;
+                        }
+                    }
+
+                    ~ScopedComInitialize(void)
+                    {
+                        if (shouldUninitialize)
+                        {
+                            CoUninitialize();
+                        }
+                    }
+                } scopedComInitialize;
+#endif
+
+                HRESULT decodeResult = ::DirectX::LoadFromDDSMemory(reinterpret_cast<const std::byte *>(buffer), size, ::DirectX::DDS_FLAGS_NONE, nullptr, decodedImage);
+                if (FAILED(decodeResult))
+                {
+                    decodeResult = ::DirectX::LoadFromTGAMemory(reinterpret_cast<const uint8_t *>(buffer), size, nullptr, decodedImage);
+                }
+
+                if (FAILED(decodeResult))
+                {
+                    auto wicFlags = (flags & Render::TextureLoadFlags::sRGB) ? ::DirectX::WIC_FLAGS_NONE : ::DirectX::WIC_FLAGS_IGNORE_SRGB;
+                    wicFlags |= ::DirectX::WIC_FLAGS_FORCE_RGB;
+                    decodeResult = ::DirectX::LoadFromWICMemory(reinterpret_cast<const std::byte *>(buffer), size, wicFlags, nullptr, decodedImage);
+                }
+
+                if (FAILED(decodeResult))
+                {
+                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture(memory) failed: decode error");
+                    return nullptr;
+                }
+
+                const auto metadata = decodedImage.GetMetadata();
+                if (metadata.width == 0 || metadata.height == 0 || metadata.depth == 0)
+                {
+                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture(memory) failed: invalid metadata");
+                    return nullptr;
+                }
+
+                const DXGI_FORMAT targetFormat = (flags & Render::TextureLoadFlags::sRGB) ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
+                ::DirectX::ScratchImage convertedImage;
+                const ::DirectX::Image *image = nullptr;
+                if (metadata.format == targetFormat)
+                {
+                    image = decodedImage.GetImage(0, 0, 0);
+                }
+                else
+                {
+                    if (FAILED(::DirectX::Convert(decodedImage.GetImages(), decodedImage.GetImageCount(), metadata, targetFormat, ::DirectX::TEX_FILTER_DEFAULT, ::DirectX::TEX_THRESHOLD_DEFAULT, convertedImage)))
+                    {
+                        getContext()->log(Gek::Context::Error, "Vulkan loadTexture(memory) failed: RGBA conversion error");
+                        return nullptr;
+                    }
+
+                    image = convertedImage.GetImage(0, 0, 0);
+                }
+                if (!image || !image->pixels)
+                {
+                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture(memory) failed: converted image missing pixels");
+                    return nullptr;
+                }
+
+                const uint32_t width = static_cast<uint32_t>(image->width);
+                const uint32_t height = static_cast<uint32_t>(image->height);
+                if (width == 0 || height == 0)
+                {
+                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture(memory) failed: converted image has zero extent");
+                    return nullptr;
+                }
+
+                constexpr uint32_t kMaxTextureDimension = 2048;
+                ::DirectX::ScratchImage resizedImage;
+                const ::DirectX::Image *uploadImage = image;
+                if (width > kMaxTextureDimension || height > kMaxTextureDimension)
+                {
+                    const uint32_t maxDimension = std::max(width, height);
+                    const uint32_t scaledWidth = std::max(1u, static_cast<uint32_t>((static_cast<uint64_t>(width) * kMaxTextureDimension) / maxDimension));
+                    const uint32_t scaledHeight = std::max(1u, static_cast<uint32_t>((static_cast<uint64_t>(height) * kMaxTextureDimension) / maxDimension));
+
+                    if (SUCCEEDED(::DirectX::Resize(*image, scaledWidth, scaledHeight, ::DirectX::TEX_FILTER_DEFAULT, resizedImage)))
+                    {
+                        const ::DirectX::Image *resizedLevel = resizedImage.GetImage(0, 0, 0);
+                        if (resizedLevel && resizedLevel->pixels)
+                        {
+                            uploadImage = resizedLevel;
+                        }
+                    }
+                }
+
+                const uint32_t uploadWidth = static_cast<uint32_t>(uploadImage->width);
+                const uint32_t uploadHeight = static_cast<uint32_t>(uploadImage->height);
+
+                const size_t requiredRowPitch = static_cast<size_t>(uploadWidth) * 4u;
+                if (uploadImage->rowPitch < requiredRowPitch)
+                {
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan loadTexture(memory) failed: converted row pitch too small (rowPitch={} required={})",
+                        static_cast<uint64_t>(uploadImage->rowPitch),
+                        static_cast<uint64_t>(requiredRowPitch));
+                    return nullptr;
+                }
+
+                std::vector<uint8_t> uploadData(static_cast<size_t>(uploadWidth) * static_cast<size_t>(uploadHeight) * 4u);
+                for (uint32_t row = 0; row < uploadHeight; ++row)
+                {
+                    const uint8_t *sourceRow = uploadImage->pixels + (static_cast<size_t>(row) * uploadImage->rowPitch);
+                    uint8_t *destRow = uploadData.data() + (static_cast<size_t>(row) * requiredRowPitch);
+                    std::memcpy(destRow, sourceRow, requiredRowPitch);
+                }
+
                 Render::Texture::Description description;
-                return std::make_unique<ViewTexture>(description);
+                description.name = "memory_texture";
+                description.format = (flags & Render::TextureLoadFlags::sRGB)
+                    ? Render::Format::R8G8B8A8_UNORM_SRGB
+                    : Render::Format::R8G8B8A8_UNORM;
+                description.width = uploadWidth;
+                description.height = uploadHeight;
+                description.depth = 1;
+                description.mipMapCount = 1;
+                description.flags = Render::Texture::Flags::Resource;
+                return createTexture(description, uploadData.data());
             }
 
             Texture::Description loadTextureDescription(FileSystem::Path const &filePath)
             {
+                std::lock_guard<std::mutex> decodeLock(getTextureDecodeMutex());
+
                 Texture::Description description;
+                std::vector<uint8_t> sourceData = FileSystem::Load(filePath, 1024 * 4);
+                if (sourceData.empty())
+                {
+                    return description;
+                }
+
+                ::DirectX::TexMetadata metadata{};
+                std::string extension = String::GetLower(filePath.getExtension());
+
+#ifdef WIN32
+                struct ScopedComInitialize
+                {
+                    bool shouldUninitialize = false;
+
+                    ScopedComInitialize(void)
+                    {
+                        const HRESULT initializeResult = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+                        if (initializeResult == S_OK || initializeResult == S_FALSE)
+                        {
+                            shouldUninitialize = true;
+                        }
+                    }
+
+                    ~ScopedComInitialize(void)
+                    {
+                        if (shouldUninitialize)
+                        {
+                            CoUninitialize();
+                        }
+                    }
+                } scopedComInitialize;
+#endif
+
+                HRESULT metadataResult = E_FAIL;
+                if (extension == ".dds")
+                {
+                    metadataResult = ::DirectX::GetMetadataFromDDSMemory(sourceData.data(), sourceData.size(), ::DirectX::DDS_FLAGS_NONE, metadata);
+                }
+                else if (extension == ".tga")
+                {
+                    metadataResult = ::DirectX::GetMetadataFromTGAMemory(sourceData.data(), sourceData.size(), metadata);
+                }
+                else
+                {
+                    metadataResult = ::DirectX::GetMetadataFromWICMemory(sourceData.data(), sourceData.size(), ::DirectX::WIC_FLAGS_NONE, metadata);
+                }
+
+                if (FAILED(metadataResult))
+                {
+                    return description;
+                }
+
+                description.name = filePath.getString();
+                description.format = Render::Format::R8G8B8A8_UNORM;
+                description.width = static_cast<uint32_t>(metadata.width);
+                description.height = static_cast<uint32_t>(metadata.height);
+                description.depth = static_cast<uint32_t>(std::max<size_t>(metadata.depth, 1));
+                description.mipMapCount = static_cast<uint32_t>(std::max<size_t>(metadata.mipLevels, 1));
+                description.flags = Render::Texture::Flags::Resource;
                 return description;
             }
 
             void executeCommandList(Render::Object *commandList)
             {
+                auto *vkCommandList = getObject<CommandList>(commandList);
+                if (!vkCommandList || vkCommandList->identifier == 0)
+                {
+                    return;
+                }
+
+                std::lock_guard<std::mutex> lock(getDrawCommandMutex());
+                auto deferredListIterator = deferredCommandLists.find(vkCommandList->identifier);
+                if (deferredListIterator == deferredCommandLists.end())
+                {
+                    return;
+                }
+
+                ++deferredExecuteCalls;
+                deferredExecutedCommandCount += static_cast<uint64_t>(deferredListIterator->second.size());
+                pendingDrawCommands.insert(pendingDrawCommands.end(), deferredListIterator->second.begin(), deferredListIterator->second.end());
+                deferredCommandLists.erase(deferredListIterator);
             }
 
             void present(bool waitForVerticalSync)
@@ -3827,8 +5399,49 @@ namespace Gek
                     return;
                 }
 
-                vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
-                vkResetFences(device, 1, &inFlightFence);
+                if (deviceLost)
+                {
+                    std::lock_guard<std::mutex> lock(getDrawCommandMutex());
+                    pendingDrawCommands.clear();
+                    debugOverlayText = "VK: deviceLost=1";
+                    return;
+                }
+
+                auto clearQueuedDrawCommands = [&]()
+                {
+                    std::lock_guard<std::mutex> lock(getDrawCommandMutex());
+                    pendingDrawCommands.clear();
+                    transientFrameConstantBufferSnapshotsPending.clear();
+                };
+
+                auto handleDeviceLost = [&](VkResult errorCode, std::string_view operation)
+                {
+                    if (!loggedDeviceLost)
+                    {
+                        loggedDeviceLost = true;
+                        getContext()->log(
+                            Gek::Context::Error,
+                            "Vulkan device lost during {}: result={}. Rendering is suspended until restart.",
+                            operation,
+                            static_cast<int32_t>(errorCode));
+                    }
+
+                    deviceLost = true;
+                    debugOverlayText = std::format("VK: deviceLost=1 op={} code={}", operation, static_cast<int32_t>(errorCode));
+                    clearQueuedDrawCommands();
+                };
+
+                if (inFlightFencePending)
+                {
+                    const VkResult frameWaitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+                    if (frameWaitResult != VK_SUCCESS)
+                    {
+                        handleDeviceLost(frameWaitResult, "vkWaitForFences(inFlightFence)");
+                        return;
+                    }
+
+                    inFlightFencePending = false;
+                }
 
                 for (auto framebuffer : transientFramebuffers)
                 {
@@ -3838,6 +5451,7 @@ namespace Gek
                     }
                 }
                 transientFramebuffers.clear();
+                transientFrameConstantBufferSnapshotsInFlight.clear();
 
                 if (descriptorPool != VK_NULL_HANDLE)
                 {
@@ -3853,17 +5467,36 @@ namespace Gek
                 VkResult acquireResult = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
                 if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR)
                 {
+                    clearQueuedDrawCommands();
                     recreateSwapChain();
+                    return;
+                }
+                else if (acquireResult == VK_ERROR_DEVICE_LOST)
+                {
+                    handleDeviceLost(acquireResult, "vkAcquireNextImageKHR");
                     return;
                 }
                 else if (acquireResult != VK_SUCCESS && acquireResult != VK_SUBOPTIMAL_KHR)
                 {
-                    throw std::runtime_error("failed to acquire swap chain image!");
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan acquire swap-chain image failed: result={}",
+                        static_cast<int32_t>(acquireResult));
+                    clearQueuedDrawCommands();
+                    recreateSwapChain();
+                    return;
                 }
 
                 if (renderFinishedSemaphores.empty() || imageIndex >= renderFinishedSemaphores.size())
                 {
-                    throw std::runtime_error("invalid render-finished semaphore state for swapchain image");
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan render-finished semaphore state invalid: imageIndex={} semaphoreCount={}",
+                        imageIndex,
+                        static_cast<uint32_t>(renderFinishedSemaphores.size()));
+                    clearQueuedDrawCommands();
+                    recreateSwapChain();
+                    return;
                 }
 
                 auto transitionSwapChainImage = [&](uint32_t trackedImageIndex, VkImageLayout newLayout, VkAccessFlags dstAccessMask, VkPipelineStageFlags dstStageMask)
@@ -3955,95 +5588,196 @@ namespace Gek
                 clearRange.layerCount = 1;
                 vkCmdClearColorImage(commandBuffer, swapChainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &pendingClearColor, 1, &clearRange);
 
+                std::lock_guard<std::mutex> drawCommandLock(getDrawCommandMutex());
                 const bool hasDrawCommands = !pendingDrawCommands.empty();
                 std::vector<VkDescriptorSet> descriptorSets;
+                uint32_t sceneCommandCount = 0;
+                uint32_t sceneDrawCallsIssued = 0;
+                uint32_t sceneBackBufferDrawCalls = 0;
+                uint32_t sceneOffscreenDrawCalls = 0;
+                uint32_t sceneBackBufferMissingImageDrawCalls = 0;
+                bool sceneFallbackCopyPerformed = false;
+                uint32_t sceneOffscreenInvalidSkips = 0;
+                uint32_t scenePipelineSkips = 0;
+                uint32_t sceneDescriptorSkips = 0;
+                VkImage sceneOffscreenCopySourceImage = VK_NULL_HANDLE;
+                VkExtent2D sceneOffscreenCopySourceExtent = { 0, 0 };
+                std::map<VkImageView, std::pair<VkImage, VkExtent2D>> frameOffscreenViewLookup;
                 if (hasDrawCommands)
                 {
                     transitionSwapChainImage(imageIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
                     for (const auto &drawCommand : pendingDrawCommands)
                     {
-                        const bool isUiDraw = (drawCommand.pixelProgram && drawCommand.pixelProgram->getInformation().name.find("core:uiPixelProgram") != std::string::npos);
-                        const bool drawToBackBuffer = (drawCommand.renderTarget == nullptr);
+                        const bool isUiDraw =
+                            ((drawCommand.pixelProgram &&
+                                (
+                                    drawCommand.pixelProgram->getInformation().name.find("core::uiPixelProgram") != std::string::npos ||
+                                    drawCommand.pixelProgram->getInformation().name.find("core:uiPixelProgram") != std::string::npos ||
+                                    drawCommand.pixelProgram->getInformation().name.find("uiPixelProgram") != std::string::npos
+                                )) ||
+                            (drawCommand.vertexProgram &&
+                                (
+                                    drawCommand.vertexProgram->getInformation().name.find("core::uiVertexProgram") != std::string::npos ||
+                                    drawCommand.vertexProgram->getInformation().name.find("core:uiVertexProgram") != std::string::npos ||
+                                    drawCommand.vertexProgram->getInformation().name.find("uiVertexProgram") != std::string::npos
+                                )));
+                        if (!isUiDraw)
+                        {
+                            ++sceneCommandCount;
+                        }
+                        const bool drawToBackBuffer = !drawCommand.hasOffscreenTarget;
 
                         VkRenderPass activeRenderPass = renderPass;
                         VkFramebuffer activeFramebuffer = swapChainFramebuffers[imageIndex];
                         VkExtent2D activeExtent = swapChainExtent;
-                        TargetTexture *offscreenTarget = nullptr;
+                        uint32_t offscreenTargetCount = drawCommand.offscreenTargetCount;
+                        if (offscreenTargetCount > 8)
+                        {
+                            offscreenTargetCount = 8;
+                        }
+                        std::array<VkImage, 8> offscreenImages = drawCommand.offscreenImages;
+                        std::array<VkImageView, 8> offscreenImageViews = drawCommand.offscreenImageViews;
+                        std::array<VkFormat, 8> offscreenFormats = drawCommand.offscreenFormats;
+                        std::array<uint8_t, 8> transitionedToColorAttachment{};
 
                         if (!drawToBackBuffer)
                         {
-                            offscreenTarget = drawCommand.renderTarget;
-                            if (!offscreenTarget || offscreenTarget->imageView == VK_NULL_HANDLE || offscreenTarget->image == VK_NULL_HANDLE)
+                            if (offscreenTargetCount == 0)
                             {
+                                if (!isUiDraw)
+                                {
+                                    ++sceneOffscreenInvalidSkips;
+                                }
                                 continue;
                             }
 
-                            const VkFormat targetFormat = GetVkFormat(offscreenTarget->getDescription().format);
-                            if (targetFormat == VK_FORMAT_UNDEFINED)
+                            std::vector<VkFormat> targetFormats;
+                            targetFormats.reserve(offscreenTargetCount);
+                            bool validTargets = true;
+                            for (uint32_t targetIndex = 0; targetIndex < offscreenTargetCount; ++targetIndex)
                             {
+                                if (offscreenImages[targetIndex] == VK_NULL_HANDLE || offscreenImageViews[targetIndex] == VK_NULL_HANDLE || offscreenFormats[targetIndex] == VK_FORMAT_UNDEFINED)
+                                {
+                                    validTargets = false;
+                                    break;
+                                }
+
+                                targetFormats.push_back(offscreenFormats[targetIndex]);
+                            }
+
+                            if (!validTargets)
+                            {
+                                if (!isUiDraw)
+                                {
+                                    ++sceneOffscreenInvalidSkips;
+                                }
                                 continue;
                             }
 
-                            activeRenderPass = getOrCreateOffscreenRenderPass(targetFormat);
+                            activeRenderPass = getOrCreateOffscreenRenderPass(targetFormats);
                             if (activeRenderPass == VK_NULL_HANDLE)
                             {
+                                if (!isUiDraw)
+                                {
+                                    ++sceneOffscreenInvalidSkips;
+                                }
                                 continue;
                             }
 
-                            activeExtent.width = std::max(offscreenTarget->getDescription().width, 1u);
-                            activeExtent.height = std::max(offscreenTarget->getDescription().height, 1u);
-
-                            VkImageMemoryBarrier toColorAttachmentTarget{};
-                            toColorAttachmentTarget.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                            toColorAttachmentTarget.oldLayout = offscreenTarget->currentLayout;
-                            toColorAttachmentTarget.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                            toColorAttachmentTarget.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                            toColorAttachmentTarget.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                            toColorAttachmentTarget.image = offscreenTarget->image;
-                            toColorAttachmentTarget.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                            toColorAttachmentTarget.subresourceRange.baseMipLevel = 0;
-                            toColorAttachmentTarget.subresourceRange.levelCount = 1;
-                            toColorAttachmentTarget.subresourceRange.baseArrayLayer = 0;
-                            toColorAttachmentTarget.subresourceRange.layerCount = 1;
-                            VkPipelineStageFlags targetSourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                            if (toColorAttachmentTarget.oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                            activeExtent = drawCommand.offscreenExtents[0];
+                            if (!isUiDraw && offscreenTargetCount > 0)
                             {
-                                toColorAttachmentTarget.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                                targetSourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+                                sceneOffscreenCopySourceImage = offscreenImages[0];
+                                sceneOffscreenCopySourceExtent = activeExtent;
                             }
-                            else if (toColorAttachmentTarget.oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-                            {
-                                toColorAttachmentTarget.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-                                targetSourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-                            }
-                            else
-                            {
-                                toColorAttachmentTarget.srcAccessMask = 0;
-                            }
-                            toColorAttachmentTarget.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-                            vkCmdPipelineBarrier(
-                                commandBuffer,
-                                targetSourceStage,
-                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                0,
-                                0, nullptr,
-                                0, nullptr,
-                                1, &toColorAttachmentTarget);
+                            for (uint32_t targetIndex = 0; targetIndex < offscreenTargetCount; ++targetIndex)
+                            {
+                                if (offscreenImageViews[targetIndex] == VK_NULL_HANDLE || offscreenImages[targetIndex] == VK_NULL_HANDLE)
+                                {
+                                    continue;
+                                }
 
-                            offscreenTarget->currentLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                                VkExtent2D targetExtent = drawCommand.offscreenExtents[targetIndex];
+                                if (targetExtent.width == 0 || targetExtent.height == 0)
+                                {
+                                    targetExtent = activeExtent;
+                                }
+
+                                frameOffscreenViewLookup[offscreenImageViews[targetIndex]] = std::make_pair(offscreenImages[targetIndex], targetExtent);
+                            }
+
+                            for (uint32_t targetIndex = 0; targetIndex < offscreenTargetCount; ++targetIndex)
+                            {
+                                if (offscreenImages[targetIndex] == VK_NULL_HANDLE)
+                                {
+                                    continue;
+                                }
+
+                                auto trackedLayoutSearch = offscreenImageLayouts.find(offscreenImages[targetIndex]);
+                                VkImageLayout trackedLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                                if (trackedLayoutSearch != std::end(offscreenImageLayouts))
+                                {
+                                    trackedLayout = trackedLayoutSearch->second;
+                                }
+
+                                VkImageMemoryBarrier toColorAttachmentTarget{};
+                                toColorAttachmentTarget.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                                toColorAttachmentTarget.oldLayout = trackedLayout;
+                                toColorAttachmentTarget.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                                toColorAttachmentTarget.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                toColorAttachmentTarget.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                toColorAttachmentTarget.image = offscreenImages[targetIndex];
+                                toColorAttachmentTarget.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                                toColorAttachmentTarget.subresourceRange.baseMipLevel = 0;
+                                toColorAttachmentTarget.subresourceRange.levelCount = 1;
+                                toColorAttachmentTarget.subresourceRange.baseArrayLayer = 0;
+                                toColorAttachmentTarget.subresourceRange.layerCount = 1;
+                                VkPipelineStageFlags targetSourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                                if (toColorAttachmentTarget.oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                                {
+                                    toColorAttachmentTarget.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                                    targetSourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+                                }
+                                else if (toColorAttachmentTarget.oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+                                {
+                                    toColorAttachmentTarget.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                                    targetSourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                                }
+                                else
+                                {
+                                    toColorAttachmentTarget.srcAccessMask = 0;
+                                }
+                                toColorAttachmentTarget.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+                                vkCmdPipelineBarrier(
+                                    commandBuffer,
+                                    targetSourceStage,
+                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                    0,
+                                    0, nullptr,
+                                    0, nullptr,
+                                    1, &toColorAttachmentTarget);
+
+                                offscreenImageLayouts[offscreenImages[targetIndex]] = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                                transitionedToColorAttachment[targetIndex] = 1;
+                            }
 
                             VkFramebufferCreateInfo framebufferInfo{};
                             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
                             framebufferInfo.renderPass = activeRenderPass;
-                            framebufferInfo.attachmentCount = 1;
-                            framebufferInfo.pAttachments = &offscreenTarget->imageView;
+                            framebufferInfo.attachmentCount = offscreenTargetCount;
+                            framebufferInfo.pAttachments = offscreenImageViews.data();
                             framebufferInfo.width = activeExtent.width;
                             framebufferInfo.height = activeExtent.height;
                             framebufferInfo.layers = 1;
                             if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &activeFramebuffer) != VK_SUCCESS)
                             {
+                                if (!isUiDraw)
+                                {
+                                    ++sceneOffscreenInvalidSkips;
+                                }
                                 continue;
                             }
                             transientFramebuffers.push_back(activeFramebuffer);
@@ -4061,39 +5795,51 @@ namespace Gek
                         {
                             vkCmdEndRenderPass(commandBuffer);
 
-                            if (!drawToBackBuffer && offscreenTarget)
+                            if (!drawToBackBuffer)
                             {
-                                VkImageMemoryBarrier toShaderReadTarget{};
-                                toShaderReadTarget.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                                toShaderReadTarget.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                                toShaderReadTarget.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                                toShaderReadTarget.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                                toShaderReadTarget.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                                toShaderReadTarget.image = offscreenTarget->image;
-                                toShaderReadTarget.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                                toShaderReadTarget.subresourceRange.baseMipLevel = 0;
-                                toShaderReadTarget.subresourceRange.levelCount = 1;
-                                toShaderReadTarget.subresourceRange.baseArrayLayer = 0;
-                                toShaderReadTarget.subresourceRange.layerCount = 1;
-                                toShaderReadTarget.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-                                toShaderReadTarget.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                                for (uint32_t targetIndex = 0; targetIndex < offscreenTargetCount; ++targetIndex)
+                                {
+                                    if (offscreenImages[targetIndex] == VK_NULL_HANDLE || transitionedToColorAttachment[targetIndex] == 0)
+                                    {
+                                        continue;
+                                    }
 
-                                vkCmdPipelineBarrier(
-                                    commandBuffer,
-                                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                    0,
-                                    0, nullptr,
-                                    0, nullptr,
-                                    1, &toShaderReadTarget);
+                                    VkImageMemoryBarrier toShaderReadTarget{};
+                                    toShaderReadTarget.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                                    toShaderReadTarget.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                                    toShaderReadTarget.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                                    toShaderReadTarget.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                    toShaderReadTarget.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                    toShaderReadTarget.image = offscreenImages[targetIndex];
+                                    toShaderReadTarget.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                                    toShaderReadTarget.subresourceRange.baseMipLevel = 0;
+                                    toShaderReadTarget.subresourceRange.levelCount = 1;
+                                    toShaderReadTarget.subresourceRange.baseArrayLayer = 0;
+                                    toShaderReadTarget.subresourceRange.layerCount = 1;
+                                    toShaderReadTarget.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                                    toShaderReadTarget.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-                                offscreenTarget->currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                                    vkCmdPipelineBarrier(
+                                        commandBuffer,
+                                        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                        VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+                                        0,
+                                        0, nullptr,
+                                        0, nullptr,
+                                        1, &toShaderReadTarget);
+
+                                    offscreenImageLayouts[offscreenImages[targetIndex]] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                                }
                             }
                         };
 
                         VkPipeline pipeline = getOrCreateGraphicsPipeline(drawCommand, activeRenderPass);
                         if (pipeline == VK_NULL_HANDLE)
                         {
+                            if (!isUiDraw)
+                            {
+                                ++scenePipelineSkips;
+                            }
                             endRenderPassForCurrentTarget();
                             continue;
                         }
@@ -4175,6 +5921,22 @@ namespace Gek
                             vkCmdBindIndexBuffer(commandBuffer, drawCommand.indexBuffer->buffer, drawCommand.indexOffset, indexType);
                         }
 
+                        if (!isUiDraw && drawToBackBuffer)
+                        {
+                            VkImageView sourceView = drawCommand.pixelResourceImageViews[0];
+                            if (sourceView == VK_NULL_HANDLE)
+                            {
+                                sourceView = drawCommand.pixelImageView;
+                            }
+
+                            auto sourceViewSearch = frameOffscreenViewLookup.find(sourceView);
+                            if (sourceViewSearch != std::end(frameOffscreenViewLookup))
+                            {
+                                sceneOffscreenCopySourceImage = sourceViewSearch->second.first;
+                                sceneOffscreenCopySourceExtent = sourceViewSearch->second.second;
+                            }
+                        }
+
                         if (isUiDraw)
                         {
                             if (uiDescriptorSetLayout != VK_NULL_HANDLE && uiDescriptorPool != VK_NULL_HANDLE && uiGraphicsPipelineLayout != VK_NULL_HANDLE)
@@ -4244,6 +6006,10 @@ namespace Gek
                                 }
                                 else
                                 {
+                                    if (!isUiDraw)
+                                    {
+                                        ++sceneDescriptorSkips;
+                                    }
                                     endRenderPassForCurrentTarget();
                                     continue;
                                 }
@@ -4261,63 +6027,150 @@ namespace Gek
                             if (vkAllocateDescriptorSets(device, &descriptorAllocateInfo, &descriptorSet) == VK_SUCCESS)
                             {
                                 descriptorSets.push_back(descriptorSet);
+                                std::array<VkDescriptorImageInfo, PixelResourceSlotCount> sampledImageInfos{};
+                                uint32_t sampledImageInfoCount = 0;
 
-                                VkDescriptorBufferInfo bufferInfo{};
-                                bufferInfo.buffer = drawCommand.vertexConstantBuffer ? drawCommand.vertexConstantBuffer->buffer : VK_NULL_HANDLE;
-                                bufferInfo.offset = 0;
-                                bufferInfo.range = drawCommand.vertexConstantBuffer ? drawCommand.vertexConstantBuffer->size : 0;
+                                std::array<VkDescriptorImageInfo, PixelResourceSlotCount> samplerInfos{};
+                                uint32_t samplerInfoCount = 0;
 
-                                VkDescriptorImageInfo sampledImageInfo{};
-                                sampledImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                                sampledImageInfo.imageView = drawCommand.pixelImageView;
+                                std::array<VkDescriptorBufferInfo, PixelResourceSlotCount * 3> bufferInfos{};
+                                uint32_t bufferInfoCount = 0;
 
-                                VkDescriptorImageInfo samplerInfo{};
-                                samplerInfo.sampler = drawCommand.pixelSampler;
+                                std::vector<VkWriteDescriptorSet> writes;
+                                writes.reserve((PixelResourceSlotCount * 4) + PixelResourceSlotCount);
 
-                                std::array<VkWriteDescriptorSet, 3> writes{};
-                                uint32_t writeCount = 0;
-
-                                if (bufferInfo.buffer != VK_NULL_HANDLE)
+                                for (uint32_t resourceSlot = 0; resourceSlot < PixelResourceSlotCount; ++resourceSlot)
                                 {
-                                    auto &write = writes[writeCount++];
+                                    VkImageView imageView = drawCommand.pixelResourceImageViews[resourceSlot];
+                                    VkSampler sampler = drawCommand.pixelResourceSamplers[resourceSlot];
+                                    Buffer *resourceBuffer = drawCommand.pixelResourceBuffers[resourceSlot];
+
+                                    if (resourceSlot == 0)
+                                    {
+                                        if (imageView == VK_NULL_HANDLE)
+                                        {
+                                            imageView = drawCommand.pixelImageView;
+                                        }
+
+                                        if (sampler == VK_NULL_HANDLE)
+                                        {
+                                            sampler = drawCommand.pixelSampler;
+                                        }
+                                    }
+
+                                    if (resourceBuffer && resourceBuffer->buffer != VK_NULL_HANDLE)
+                                    {
+                                        auto &resourceBufferInfo = bufferInfos[bufferInfoCount++];
+                                        resourceBufferInfo.buffer = resourceBuffer->buffer;
+                                        resourceBufferInfo.offset = 0;
+                                        resourceBufferInfo.range = resourceBuffer->size;
+
+                                        VkWriteDescriptorSet write{};
+                                        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                                        write.dstSet = descriptorSet;
+                                        write.dstBinding = DescriptorStorageBufferBase + resourceSlot;
+                                        write.descriptorCount = 1;
+                                        write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                                        write.pBufferInfo = &resourceBufferInfo;
+                                        writes.push_back(write);
+
+                                    }
+
+                                    if (imageView != VK_NULL_HANDLE)
+                                    {
+                                        auto &sampledImageInfo = sampledImageInfos[sampledImageInfoCount++];
+                                        sampledImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                                        sampledImageInfo.imageView = imageView;
+
+                                        VkWriteDescriptorSet write{};
+                                        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                                        write.dstSet = descriptorSet;
+                                        write.dstBinding = DescriptorSampledImageBase + resourceSlot;
+                                        write.descriptorCount = 1;
+                                        write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                                        write.pImageInfo = &sampledImageInfo;
+                                        writes.push_back(write);
+                                    }
+
+                                    if (sampler == VK_NULL_HANDLE)
+                                    {
+                                        sampler = drawCommand.pixelSampler;
+                                    }
+
+                                    if (sampler == VK_NULL_HANDLE)
+                                    {
+                                        sampler = drawCommand.pixelResourceSamplers[0];
+                                    }
+
+                                    if (sampler != VK_NULL_HANDLE)
+                                    {
+                                        auto &samplerInfo = samplerInfos[samplerInfoCount++];
+                                        samplerInfo.sampler = sampler;
+
+                                        VkWriteDescriptorSet write{};
+                                        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                                        write.dstSet = descriptorSet;
+                                        write.dstBinding = DescriptorSamplerBase + resourceSlot;
+                                        write.descriptorCount = 1;
+                                        write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+                                        write.pImageInfo = &samplerInfo;
+                                        writes.push_back(write);
+                                    }
+                                }
+
+                                for (uint32_t constantStage = 0; constantStage < PixelResourceSlotCount; ++constantStage)
+                                {
+                                    Buffer *pixelConstantBuffer = drawCommand.pixelConstantBuffers[constantStage];
+                                    if (pixelConstantBuffer && pixelConstantBuffer->buffer != VK_NULL_HANDLE)
+                                    {
+                                        auto &pixelConstantBufferInfo = bufferInfos[bufferInfoCount++];
+                                        pixelConstantBufferInfo.buffer = pixelConstantBuffer->buffer;
+                                        pixelConstantBufferInfo.offset = 0;
+                                        pixelConstantBufferInfo.range = pixelConstantBuffer->size;
+
+                                        VkWriteDescriptorSet write{};
+                                        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                                        write.dstSet = descriptorSet;
+                                        write.dstBinding = DescriptorPixelUniformBufferBase + constantStage;
+                                        write.descriptorCount = 1;
+                                        write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                                        write.pBufferInfo = &pixelConstantBufferInfo;
+                                        writes.push_back(write);
+                                    }
+
+                                    Buffer *vertexConstantBuffer = drawCommand.vertexConstantBuffers[constantStage];
+                                    if (!vertexConstantBuffer || vertexConstantBuffer->buffer == VK_NULL_HANDLE)
+                                    {
+                                        continue;
+                                    }
+
+                                    auto &vertexConstantBufferInfo = bufferInfos[bufferInfoCount++];
+                                    vertexConstantBufferInfo.buffer = vertexConstantBuffer->buffer;
+                                    vertexConstantBufferInfo.offset = 0;
+                                    vertexConstantBufferInfo.range = vertexConstantBuffer->size;
+
+                                    VkWriteDescriptorSet write{};
                                     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                                     write.dstSet = descriptorSet;
-                                    write.dstBinding = 0;
+                                    write.dstBinding = DescriptorVertexUniformBufferBase + constantStage;
                                     write.descriptorCount = 1;
                                     write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                                    write.pBufferInfo = &bufferInfo;
+                                    write.pBufferInfo = &vertexConstantBufferInfo;
+                                    writes.push_back(write);
                                 }
 
-                                if (sampledImageInfo.imageView != VK_NULL_HANDLE)
+                                if (!writes.empty())
                                 {
-                                    auto &write = writes[writeCount++];
-                                    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                                    write.dstSet = descriptorSet;
-                                    write.dstBinding = 1;
-                                    write.descriptorCount = 1;
-                                    write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                                    write.pImageInfo = &sampledImageInfo;
-                                }
-
-                                if (samplerInfo.sampler != VK_NULL_HANDLE)
-                                {
-                                    auto &write = writes[writeCount++];
-                                    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                                    write.dstSet = descriptorSet;
-                                    write.dstBinding = 2;
-                                    write.descriptorCount = 1;
-                                    write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-                                    write.pImageInfo = &samplerInfo;
-                                }
-
-                                if (writeCount > 0)
-                                {
-                                    vkUpdateDescriptorSets(device, writeCount, writes.data(), 0, nullptr);
+                                    vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
                                     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
                                 }
                             }
                             else
                             {
+                                if (!isUiDraw)
+                                {
+                                    ++sceneDescriptorSkips;
+                                }
                                 endRenderPassForCurrentTarget();
                                 continue;
                             }
@@ -4326,21 +6179,175 @@ namespace Gek
                         if (drawCommand.indexed)
                         {
                             vkCmdDrawIndexed(commandBuffer, drawCommand.indexCount, std::max(drawCommand.instanceCount, 1u), 0, drawCommand.firstVertex, drawCommand.firstInstance);
+                            if (!isUiDraw)
+                            {
+                                ++sceneDrawCallsIssued;
+                                if (drawToBackBuffer)
+                                {
+                                    ++sceneBackBufferDrawCalls;
+                                    bool hasPixelImage = (drawCommand.pixelImageView != VK_NULL_HANDLE);
+                                    if (!hasPixelImage)
+                                    {
+                                        hasPixelImage = std::any_of(
+                                            std::begin(drawCommand.pixelResourceImageViews),
+                                            std::end(drawCommand.pixelResourceImageViews),
+                                            [](VkImageView imageView) { return imageView != VK_NULL_HANDLE; });
+                                    }
+                                    if (!hasPixelImage)
+                                    {
+                                        ++sceneBackBufferMissingImageDrawCalls;
+                                    }
+                                }
+                                else
+                                {
+                                    ++sceneOffscreenDrawCalls;
+                                }
+                            }
                         }
                         else if (drawCommand.vertexCount > 0)
                         {
                             vkCmdDraw(commandBuffer, drawCommand.vertexCount, std::max(drawCommand.instanceCount, 1u), static_cast<uint32_t>(drawCommand.firstVertex), drawCommand.firstInstance);
+                            if (!isUiDraw)
+                            {
+                                ++sceneDrawCallsIssued;
+                                if (drawToBackBuffer)
+                                {
+                                    ++sceneBackBufferDrawCalls;
+                                    bool hasPixelImage = (drawCommand.pixelImageView != VK_NULL_HANDLE);
+                                    if (!hasPixelImage)
+                                    {
+                                        hasPixelImage = std::any_of(
+                                            std::begin(drawCommand.pixelResourceImageViews),
+                                            std::end(drawCommand.pixelResourceImageViews),
+                                            [](VkImageView imageView) { return imageView != VK_NULL_HANDLE; });
+                                    }
+                                    if (!hasPixelImage)
+                                    {
+                                        ++sceneBackBufferMissingImageDrawCalls;
+                                    }
+                                }
+                                else
+                                {
+                                    ++sceneOffscreenDrawCalls;
+                                }
+                            }
                         }
 
                         endRenderPassForCurrentTarget();
                     }
                 }
 
+                constexpr bool allowSceneFallbackCopy = false;
+                if (allowSceneFallbackCopy && hasDrawCommands && sceneOffscreenCopySourceImage != VK_NULL_HANDLE)
+                {
+                    auto sourceLayoutSearch = offscreenImageLayouts.find(sceneOffscreenCopySourceImage);
+                    VkImageLayout sourceLayout = (sourceLayoutSearch != std::end(offscreenImageLayouts))
+                        ? sourceLayoutSearch->second
+                        : VK_IMAGE_LAYOUT_UNDEFINED;
+
+                    if (sourceLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+                    {
+                        VkImageMemoryBarrier sourceToTransferSrc{};
+                        sourceToTransferSrc.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                        sourceToTransferSrc.oldLayout = sourceLayout;
+                        sourceToTransferSrc.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                        sourceToTransferSrc.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                        sourceToTransferSrc.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                        sourceToTransferSrc.image = sceneOffscreenCopySourceImage;
+                        sourceToTransferSrc.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                        sourceToTransferSrc.subresourceRange.baseMipLevel = 0;
+                        sourceToTransferSrc.subresourceRange.levelCount = 1;
+                        sourceToTransferSrc.subresourceRange.baseArrayLayer = 0;
+                        sourceToTransferSrc.subresourceRange.layerCount = 1;
+                        sourceToTransferSrc.srcAccessMask = (sourceLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+                            ? (VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT)
+                            : VK_ACCESS_SHADER_READ_BIT;
+                        sourceToTransferSrc.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+                        VkPipelineStageFlags sourceStage = (sourceLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+                            ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+                            : VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+                        vkCmdPipelineBarrier(
+                            commandBuffer,
+                            sourceStage,
+                            VK_PIPELINE_STAGE_TRANSFER_BIT,
+                            0,
+                            0, nullptr,
+                            0, nullptr,
+                            1, &sourceToTransferSrc);
+
+                        offscreenImageLayouts[sceneOffscreenCopySourceImage] = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                    }
+
+                    transitionSwapChainImage(imageIndex, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+                    VkImageBlit blitRegion{};
+                    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    blitRegion.srcSubresource.mipLevel = 0;
+                    blitRegion.srcSubresource.baseArrayLayer = 0;
+                    blitRegion.srcSubresource.layerCount = 1;
+                    blitRegion.srcOffsets[0] = { 0, 0, 0 };
+                    blitRegion.srcOffsets[1] = {
+                        static_cast<int32_t>(std::max(sceneOffscreenCopySourceExtent.width, 1u)),
+                        static_cast<int32_t>(std::max(sceneOffscreenCopySourceExtent.height, 1u)),
+                        1 };
+
+                    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    blitRegion.dstSubresource.mipLevel = 0;
+                    blitRegion.dstSubresource.baseArrayLayer = 0;
+                    blitRegion.dstSubresource.layerCount = 1;
+                    blitRegion.dstOffsets[0] = { 0, 0, 0 };
+                    blitRegion.dstOffsets[1] = {
+                        static_cast<int32_t>(std::max(swapChainExtent.width, 1u)),
+                        static_cast<int32_t>(std::max(swapChainExtent.height, 1u)),
+                        1 };
+
+                    vkCmdBlitImage(
+                        commandBuffer,
+                        sceneOffscreenCopySourceImage,
+                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                        swapChainImages[imageIndex],
+                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                        1,
+                        &blitRegion,
+                        VK_FILTER_NEAREST);
+
+                    VkImageMemoryBarrier sourceToShaderRead{};
+                    sourceToShaderRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                    sourceToShaderRead.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                    sourceToShaderRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    sourceToShaderRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    sourceToShaderRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    sourceToShaderRead.image = sceneOffscreenCopySourceImage;
+                    sourceToShaderRead.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    sourceToShaderRead.subresourceRange.baseMipLevel = 0;
+                    sourceToShaderRead.subresourceRange.levelCount = 1;
+                    sourceToShaderRead.subresourceRange.baseArrayLayer = 0;
+                    sourceToShaderRead.subresourceRange.layerCount = 1;
+                    sourceToShaderRead.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                    sourceToShaderRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+                    vkCmdPipelineBarrier(
+                        commandBuffer,
+                        VK_PIPELINE_STAGE_TRANSFER_BIT,
+                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                        0,
+                        0, nullptr,
+                        0, nullptr,
+                        1, &sourceToShaderRead);
+
+                    offscreenImageLayouts[sceneOffscreenCopySourceImage] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    sceneFallbackCopyPerformed = true;
+                }
+
                 transitionSwapChainImage(imageIndex, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 0, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
 
                 if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
                 {
-                    throw std::runtime_error("failed to record command buffer!");
+                    getContext()->log(Gek::Context::Error, "Vulkan failed to record command buffer");
+                    pendingDrawCommands.clear();
+                    return;
                 }
 
                 VkSemaphore waitSemaphores[] = { imageAvailableSemaphore };
@@ -4357,10 +6364,30 @@ namespace Gek
                 submitInfo.signalSemaphoreCount = 1;
                 submitInfo.pSignalSemaphores = signalSemaphores;
 
-                if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS)
+                vkResetFences(device, 1, &inFlightFence);
+                VkResult submitResult = VK_SUCCESS;
                 {
-                    throw std::runtime_error("failed to submit draw command buffer!");
+                    std::lock_guard<std::mutex> queueLock(getQueueSubmitMutex());
+                    submitResult = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence);
                 }
+                if (submitResult != VK_SUCCESS)
+                {
+                    if (submitResult == VK_ERROR_DEVICE_LOST)
+                    {
+                        handleDeviceLost(submitResult, "vkQueueSubmit");
+                        return;
+                    }
+
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan failed to submit draw command buffer: result={}",
+                        static_cast<int32_t>(submitResult));
+                    pendingDrawCommands.clear();
+                    recreateSwapChain();
+                    return;
+                }
+
+                inFlightFencePending = true;
 
                 VkPresentInfoKHR presentInfo{};
                 presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -4370,16 +6397,80 @@ namespace Gek
                 presentInfo.pSwapchains = &swapChain;
                 presentInfo.pImageIndices = &imageIndex;
 
-                VkResult presentResult = vkQueuePresentKHR(presentQueue, &presentInfo);
+                VkResult presentResult = VK_SUCCESS;
+                {
+                    std::lock_guard<std::mutex> queueLock(getQueueSubmitMutex());
+                    presentResult = vkQueuePresentKHR(presentQueue, &presentInfo);
+                }
                 if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR)
                 {
                     recreateSwapChain();
                 }
+                else if (presentResult == VK_ERROR_DEVICE_LOST)
+                {
+                    handleDeviceLost(presentResult, "vkQueuePresentKHR");
+                    return;
+                }
                 else if (presentResult != VK_SUCCESS)
                 {
-                    throw std::runtime_error("failed to present swap chain image!");
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan failed to present swap-chain image: result={}",
+                        static_cast<int32_t>(presentResult));
+                    pendingDrawCommands.clear();
+                    recreateSwapChain();
+                    return;
                 }
 
+                ++presentFrameIndex;
+                const uint32_t totalCommandCount = static_cast<uint32_t>(pendingDrawCommands.size());
+                const uint32_t uiCommandCount = (totalCommandCount >= sceneCommandCount) ? (totalCommandCount - sceneCommandCount) : 0u;
+                debugOverlayText = std::format(
+                    "VK f={} total={} ui={} scene={} draws={} off={} back={} descSkips={} pipeSkips={} offSkips={} devLost={}",
+                    presentFrameIndex,
+                    totalCommandCount,
+                    uiCommandCount,
+                    sceneCommandCount,
+                    sceneDrawCallsIssued,
+                    sceneOffscreenDrawCalls,
+                    sceneBackBufferDrawCalls,
+                    sceneDescriptorSkips,
+                    scenePipelineSkips,
+                    sceneOffscreenInvalidSkips,
+                    static_cast<uint32_t>(deviceLost));
+                if ((presentFrameIndex % 240u) == 0u)
+                {
+                    getContext()->log(
+                        Gek::Context::Info,
+                        "Vulkan scene stats frame={} totalCommands={} uiCommands={} sceneCommands={} sceneDraws={} sceneBackBufferDraws={} sceneOffscreenDraws={} sceneBackBufferMissingImageDraws={} sceneFallbackCopy={} offscreenSkips={} pipelineSkips={} descriptorSkips={} contextDrawAttempts={} skipMissingProgram={} skipMissingVB={} skipMissingIB={} skipZeroCount={} deferredFinishCalls={} deferredExecuteCalls={} deferredExecutedCommands={} deferredContextQueues={} deferredCommandLists={} pendingEnqueues={} deferredEnqueues={}",
+                        presentFrameIndex,
+                        totalCommandCount,
+                        uiCommandCount,
+                        sceneCommandCount,
+                        sceneDrawCallsIssued,
+                        sceneBackBufferDrawCalls,
+                        sceneOffscreenDrawCalls,
+                        sceneBackBufferMissingImageDrawCalls,
+                        static_cast<uint32_t>(sceneFallbackCopyPerformed),
+                        sceneOffscreenInvalidSkips,
+                        scenePipelineSkips,
+                        sceneDescriptorSkips,
+                        static_cast<uint32_t>(contextDrawCallAttempts),
+                        static_cast<uint32_t>(contextDrawSkipsMissingProgram),
+                        static_cast<uint32_t>(contextDrawSkipsMissingVertexBuffer),
+                        static_cast<uint32_t>(contextDrawSkipsMissingIndexBuffer),
+                        static_cast<uint32_t>(contextDrawSkipsZeroCount),
+                        static_cast<uint32_t>(deferredFinishCalls),
+                        static_cast<uint32_t>(deferredExecuteCalls),
+                        static_cast<uint32_t>(deferredExecutedCommandCount),
+                        static_cast<uint32_t>(deferredContextDrawCommands.size()),
+                        static_cast<uint32_t>(deferredCommandLists.size()),
+                        static_cast<uint32_t>(pendingCommandEnqueueCount),
+                        static_cast<uint32_t>(deferredCommandEnqueueCount));
+                }
+
+                transientFrameConstantBufferSnapshotsInFlight = std::move(transientFrameConstantBufferSnapshotsPending);
+                transientFrameConstantBufferSnapshotsPending.clear();
                 pendingDrawCommands.clear();
             }
         };

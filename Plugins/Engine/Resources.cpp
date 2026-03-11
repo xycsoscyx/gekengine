@@ -23,6 +23,8 @@
 #include "GEK/Engine/Visual.hpp"
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/concurrent_unordered_set.h>
+#include <atomic>
+#include <shared_mutex>
 #include <imgui_internal.h>
 
 class Float16Compressor
@@ -121,6 +123,7 @@ namespace Gek
             ThreadPool& loadPool;
             ResourceHandleMap resourceHandleMap;
             ResourceMap resourceMap;
+            mutable std::shared_mutex cacheMutex;
 
         public:
             ResourceCache(ThreadPool& loadPool)
@@ -132,6 +135,7 @@ namespace Gek
 
             void visit(std::function<void(HandleType, TypePtr)> onResource)
             {
+                std::shared_lock<std::shared_mutex> lock(cacheMutex);
                 for (auto& resourcePair : resourceMap)
                 {
                     onResource(resourcePair.first, resourcePair.second.load());
@@ -144,6 +148,7 @@ namespace Gek
 
             void clear(void)
             {
+                std::unique_lock<std::shared_mutex> lock(cacheMutex);
                 clearExtra();
                 validationIdentifier = nextIdentifier;
                 resourceHandleMap.clear();
@@ -152,8 +157,8 @@ namespace Gek
 
             bool setResource(HANDLE handle, TypePtr&& data, HANDLE *fallback = nullptr)
             {
-                TypePtr blankObject;
-                auto resourceSearch = resourceMap.insert(std::make_pair(handle, blankObject));
+                std::unique_lock<std::shared_mutex> lock(cacheMutex);
+                auto resourceSearch = resourceMap.emplace(handle, TypePtr{});
                 if (data.get())
                 {
                     resourceSearch.first->second.store(data);
@@ -161,11 +166,15 @@ namespace Gek
                 }
                 else if (fallback)
                 {
-                    auto fallbackResource = getResource(*fallback);
-                    if (fallbackResource)
+                    auto fallbackSearch = resourceMap.find(*fallback);
+                    if (fallbackSearch != std::end(resourceMap))
                     {
-                        std::atomic_store(&resourceSearch.first->second, TypePtr(fallbackResource));
-                        return true;
+                        auto fallbackResource = fallbackSearch->second.load();
+                        if (fallbackResource)
+                        {
+                            resourceSearch.first->second.store(std::move(fallbackResource));
+                            return true;
+                        }
                     }
                 }
 
@@ -182,6 +191,7 @@ namespace Gek
 
             virtual TYPE* const getResource(HANDLE handle) const
             {
+                std::shared_lock<std::shared_mutex> lock(cacheMutex);
                 if (handle.identifier >= validationIdentifier)
                 {
                     auto resourceSearch = resourceMap.find(handle);
@@ -343,7 +353,12 @@ namespace Gek
                     }
                 }
 
-                return std::make_pair(false, *fallback);
+                if (fallback)
+                {
+                    return std::make_pair(false, *fallback);
+                }
+
+                return std::make_pair(false, HANDLE());
             }
 
             HANDLE getHandle(std::size_t hash) const
@@ -379,8 +394,12 @@ namespace Gek
             {
                 HANDLE handle;
                 handle = ResourceCache<HANDLE, TYPE>::getNextHandle();
-                ResourceCache<HANDLE, TYPE>::scheduleResource(handle, std::move(load));
-                return handle;
+                if (ResourceCache<HANDLE, TYPE>::setResource(handle, load(handle)))
+                {
+                    return handle;
+                }
+
+                return HANDLE();
             }
         };
 
@@ -546,6 +565,12 @@ namespace Gek
             }
         };
 
+        static std::recursive_mutex &GetResourcesShaderMutex(void)
+        {
+            static auto *mutex = new std::recursive_mutex();
+            return *mutex;
+        }
+
         GEK_CONTEXT_USER(Resources, Engine::Core*)
             , public Engine::Resources
         {
@@ -555,7 +580,7 @@ namespace Gek
             Plugin::Visualizer* renderer = nullptr;
 
             ThreadPool loadPool;
-            std::recursive_mutex shaderMutex;
+            std::recursive_mutex& shaderMutex;
 
             StaticProgramResourceCache<ProgramHandle, Render::Program> staticProgramCache;
             ProgramResourceCache<ProgramHandle, Render::Program> programCache;
@@ -594,12 +619,25 @@ namespace Gek
 
             Validate drawPrimitiveValid;
             Validate dispatchValid;
+            uint64_t drawCallAttemptCount = 0;
+            uint64_t drawCallSubmittedCount = 0;
+            uint64_t drawCallSuppressedCount = 0;
+            bool loggedMissingMaterial = false;
+            bool loggedMissingMaterialData = false;
+            bool loggedMissingVisual = false;
+            bool loggedMissingProgram = false;
+            bool loggedMissingIndexBuffer = false;
+            bool loggedMissingVertexBufferList = false;
+            bool loggedInvalidRenderTargetList = false;
+            std::atomic<bool> shuttingDown = false;
 
         public:
             Resources(Context* context, Engine::Core* core)
                 : ContextRegistration(context)
                 , core(core)
                 , videoDevice(core->getRenderDevice())
+                , loadPool(5)
+                , shaderMutex(GetResourcesShaderMutex())
                 , staticProgramCache(loadPool)
                 , programCache(loadPool)
                 , visualCache(loadPool)
@@ -610,7 +648,6 @@ namespace Gek
                 , renderStateCache(loadPool)
                 , depthStateCache(loadPool)
                 , blendStateCache(loadPool)
-                , loadPool(5)
             {
                 assert(core);
                 assert(videoDevice);
@@ -619,6 +656,21 @@ namespace Gek
                 core->onChangedSettings.connect(this, &Resources::onReload);
                 core->onInitialized.connect(this, &Resources::onInitialized);
                 core->onShutdown.connect(this, &Resources::onShutdown);
+            }
+
+            ~Resources(void)
+            {
+                loadPool.drain();
+
+                if (core)
+                {
+                    core->onChangedDisplay.disconnect(this, &Resources::onReload);
+                    core->onChangedSettings.disconnect(this, &Resources::onReload);
+                    core->onInitialized.disconnect(this, &Resources::onInitialized);
+                    core->onShutdown.disconnect(this, &Resources::onShutdown);
+                }
+
+                renderer = nullptr;
             }
 
             Validate& getValid(Render::Device::Context::Pipeline* videoPipeline)
@@ -954,17 +1006,18 @@ namespace Gek
 
             void onShutdown(void)
             {
-                loadPool.drain();
+                shuttingDown.store(true, std::memory_order_release);
+                loadPool.drain(false);
                 if (renderer)
                 {
                     renderer->onShowUserInterface.disconnect(this, &Resources::onShowUserInterface);
+                    renderer = nullptr;
                 }
             }
 
             // Plugin::Core Slots
             void onReload(void)
             {
-                programCache.clear();
                 shaderCache.reload();
                 filterCache.reload();
             }
@@ -990,6 +1043,11 @@ namespace Gek
 
             ResourceHandle loadTexture(std::string_view textureName, uint32_t flags, ResourceHandle fallback)
             {
+                if (shuttingDown.load(std::memory_order_acquire))
+                {
+                    return fallback;
+                }
+
                 // iterate over formats in case the texture name has no extension
                 static constexpr std::string_view formatList[] =
                 {
@@ -1012,6 +1070,11 @@ namespace Gek
                     {
                         auto resource = dynamicCache.getHandle(hash, flags, [this, texturePath = texturePath, flags](ResourceHandle)->Render::TexturePtr
                         {
+                            if (shuttingDown.load(std::memory_order_acquire))
+                            {
+                                return nullptr;
+                            }
+
                             std::cout << "Loading texture: " << texturePath.getString() << std::endl;
                             return videoDevice->loadTexture(texturePath, flags);
                         }, 0, &fallback);
@@ -1159,6 +1222,11 @@ namespace Gek
                     flags |= Resources::Flags::Cached;
                 }
 
+                if (description.flags & (Render::Texture::Flags::RenderTarget | Render::Texture::Flags::DepthTarget))
+                {
+                    flags |= Resources::Flags::Immediate;
+                }
+
                 auto resource = dynamicCache.getHandle(GetHash(description.name), description.getHash(), [this, description](ResourceHandle)->Render::TexturePtr
                 {
                     return videoDevice->createTexture(description);
@@ -1229,6 +1297,14 @@ namespace Gek
                     {
                         videoContext->setIndexBuffer(dynamic_cast<Render::Buffer*>(resource), offset);
                     }
+                    else if (!loggedMissingIndexBuffer)
+                    {
+                        loggedMissingIndexBuffer = true;
+                        getContext()->log(
+                            Context::Warning,
+                            "Resources index buffer missing: handle={}",
+                            static_cast<uint64_t>(resourceHandle.identifier));
+                    }
                 }
             }
 
@@ -1240,6 +1316,15 @@ namespace Gek
                 if (drawPrimitiveValid && (drawPrimitiveValid = vertexBufferCache.set(resourceHandleList, dynamicCache)))
                 {
                     videoContext->setVertexBufferList(vertexBufferCache.get(), firstSlot, offsetList);
+                }
+                else if (!drawPrimitiveValid && !loggedMissingVertexBufferList)
+                {
+                    loggedMissingVertexBufferList = true;
+                    getContext()->log(
+                        Context::Warning,
+                        "Resources vertex buffer list invalid: firstSlot={} count={}",
+                        firstSlot,
+                        static_cast<uint32_t>(resourceHandleList.size()));
                 }
             }
 
@@ -1318,17 +1403,31 @@ namespace Gek
             {
                 assert(videoContext);
 
+                ++drawCallAttemptCount;
+
                 if (drawPrimitiveValid)
                 {
                     videoContext->drawPrimitive(vertexCount, firstVertex);
+                    ++drawCallSubmittedCount;
+                }
+                else
+                {
+                    ++drawCallSuppressedCount;
                 }
             }
 
             void drawInstancedPrimitive(Render::Device::Context* videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex)
             {
+                ++drawCallAttemptCount;
+
                 if (drawPrimitiveValid)
                 {
                     videoContext->drawInstancedPrimitive(instanceCount, firstInstance, vertexCount, firstVertex);
+                    ++drawCallSubmittedCount;
+                }
+                else
+                {
+                    ++drawCallSuppressedCount;
                 }
             }
 
@@ -1336,9 +1435,16 @@ namespace Gek
             {
                 assert(videoContext);
 
+                ++drawCallAttemptCount;
+
                 if (drawPrimitiveValid)
                 {
                     videoContext->drawIndexedPrimitive(indexCount, firstIndex, firstVertex);
+                    ++drawCallSubmittedCount;
+                }
+                else
+                {
+                    ++drawCallSuppressedCount;
                 }
             }
 
@@ -1346,9 +1452,16 @@ namespace Gek
             {
                 assert(videoContext);
 
+                ++drawCallAttemptCount;
+
                 if (drawPrimitiveValid)
                 {
                     videoContext->drawInstancedIndexedPrimitive(instanceCount, firstInstance, indexCount, firstIndex, firstVertex);
+                    ++drawCallSubmittedCount;
+                }
+                else
+                {
+                    ++drawCallSuppressedCount;
                 }
             }
 
@@ -1726,6 +1839,25 @@ namespace Gek
 
                             setResourceList(videoContext->pixelPipeline(), data->resourceList, pass->getFirstResourceStage());
                         }
+                        else if (!loggedMissingMaterialData)
+                        {
+                            loggedMissingMaterialData = true;
+                            getContext()->log(
+                                Context::Warning,
+                                "Resources material data missing: material='{}' passHash={} firstResourceStage={}",
+                                material->getName(),
+                                pass->getMaterialHash(),
+                                pass->getFirstResourceStage());
+                        }
+                    }
+                    else if (!loggedMissingMaterial)
+                    {
+                        loggedMissingMaterial = true;
+                        getContext()->log(
+                            Context::Warning,
+                            "Resources material missing: handle={} passHash={}",
+                            static_cast<uint64_t>(handle.identifier),
+                            pass->getMaterialHash());
                     }
                 }
             }
@@ -1740,6 +1872,14 @@ namespace Gek
                     if (drawPrimitiveValid = (visual != nullptr))
                     {
                         visual->enable(videoContext);
+                    }
+                    else if (!loggedMissingVisual)
+                    {
+                        loggedMissingVisual = true;
+                        getContext()->log(
+                            Context::Warning,
+                            "Resources visual missing: handle={}",
+                            static_cast<uint64_t>(handle.identifier));
                     }
                 }
             }
@@ -1798,6 +1938,15 @@ namespace Gek
                     {
                         videoPipeline->setProgram(program);
                     }
+                    else if (!loggedMissingProgram)
+                    {
+                        loggedMissingProgram = true;
+                        getContext()->log(
+                            Context::Warning,
+                            "Resources program missing: pipelineType={} handle={}",
+                            static_cast<uint32_t>(videoPipeline->getType()),
+                            static_cast<uint64_t>(programHandle.identifier));
+                    }
                 }
             }
 
@@ -1820,6 +1969,14 @@ namespace Gek
                     videoContext->setRenderTargetList(renderTargetList, (depthBuffer ? getResource(*depthBuffer) : nullptr));
                     videoContext->setViewportList(viewPortCache);
                 }
+                else if (!drawPrimitiveValid && !loggedInvalidRenderTargetList)
+                {
+                    loggedInvalidRenderTargetList = true;
+                    getContext()->log(
+                        Context::Warning,
+                        "Resources render target list invalid: count={}",
+                        static_cast<uint32_t>(renderTargetHandleList.size()));
+                }
             }
 
             void clearRenderTargetList(Render::Device::Context* videoContext, int32_t count, bool depthBuffer)
@@ -1833,6 +1990,18 @@ namespace Gek
             {
                 drawPrimitiveValid = true;
                 dispatchValid = true;
+
+                static uint64_t resourceBlockCounter = 0;
+                ++resourceBlockCounter;
+                if ((resourceBlockCounter % 480u) == 0u)
+                {
+                    getContext()->log(
+                        Context::Info,
+                        "Resources draw stats: attempts={} submitted={} suppressed={}",
+                        drawCallAttemptCount,
+                        drawCallSubmittedCount,
+                        drawCallSuppressedCount);
+                }
             }
         };
 

@@ -102,10 +102,21 @@ namespace Gek
                         if (coroutineQueue.try_pop(coroutine))
 						{
 							// Execute
-                            coroutine.resume();
-                        }
+                            try
+                            {
+                                coroutine.resume();
+                            }
+                            catch (const std::exception &exception)
+                            {
+                                std::cerr << "ThreadPool worker exception: " << exception.what() << std::endl;
+                            }
+                            catch (...)
+                            {
+                                std::cerr << "ThreadPool worker exception: unknown" << std::endl;
+                            }
 
-                        activeCount--;
+                            activeCount--;
+                        }
                     };
 
                     releaseWorker();
@@ -117,6 +128,7 @@ namespace Gek
         {
             if (stop.load())
             {
+                activeCount--;
                 return;
             }
 

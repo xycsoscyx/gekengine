@@ -19,6 +19,7 @@
 #include <fstream>
 #include <chrono>
 #include <ctime>
+#include <iomanip>
 #include <sstream>
 #include <memory>
 #include <ppl.h>
@@ -498,6 +499,99 @@ namespace Gek
         };
 
         static_assert(ARRAYSIZE(SemanticNameList) == static_cast<uint8_t>(Render::InputElement::Semantic::Count), "New input element semantic added without adding to all SemanticNameList.");
+
+        std::string getHRESULTString(HRESULT resultValue)
+        {
+            std::ostringstream stream;
+            stream << "0x" << std::uppercase << std::hex << std::setfill('0') << std::setw(8) << static_cast<uint32_t>(resultValue);
+            return stream.str();
+        }
+
+        void logD3D11Failure(ID3D11Device *d3dDevice, std::string_view operation, HRESULT resultValue)
+        {
+            std::cerr << "D3D11 " << operation << " failed (" << getHRESULTString(resultValue) << "): " << _com_error(resultValue).ErrorMessage();
+
+            if (resultValue == DXGI_ERROR_DEVICE_REMOVED ||
+                resultValue == DXGI_ERROR_DEVICE_HUNG ||
+                resultValue == DXGI_ERROR_DEVICE_RESET ||
+                resultValue == DXGI_ERROR_DRIVER_INTERNAL_ERROR)
+            {
+                HRESULT removedReason = (d3dDevice ? d3dDevice->GetDeviceRemovedReason() : E_FAIL);
+                std::cerr << " [GetDeviceRemovedReason=" << getHRESULTString(removedReason) << ": " << _com_error(removedReason).ErrorMessage() << "]";
+            }
+
+            std::cerr << std::endl;
+        }
+
+        bool validateTextureMetadataForD3D11(ID3D11Device *d3dDevice, ::DirectX::TexMetadata const &metadata)
+        {
+            if (!d3dDevice)
+            {
+                std::cerr << "D3D11 texture validation failed: device is null" << std::endl;
+                return false;
+            }
+
+            if (metadata.format == DXGI_FORMAT_UNKNOWN || metadata.width == 0 || metadata.height == 0)
+            {
+                std::cerr << "D3D11 texture validation failed: invalid metadata (format=" << static_cast<int>(metadata.format)
+                    << ", width=" << metadata.width << ", height=" << metadata.height << ", depth=" << metadata.depth << ")" << std::endl;
+                return false;
+            }
+
+            uint32_t formatSupport = 0;
+            const HRESULT formatSupportResult = d3dDevice->CheckFormatSupport(metadata.format, &formatSupport);
+            if (FAILED(formatSupportResult))
+            {
+                logD3D11Failure(d3dDevice, "CheckFormatSupport", formatSupportResult);
+                return false;
+            }
+
+            bool supportsTextureDimension = false;
+            switch (metadata.dimension)
+            {
+            case ::DirectX::TEX_DIMENSION_TEXTURE1D:
+                supportsTextureDimension = ((formatSupport & D3D11_FORMAT_SUPPORT_TEXTURE1D) != 0);
+                if (metadata.width > D3D11_REQ_TEXTURE1D_U_DIMENSION)
+                {
+                    std::cerr << "D3D11 texture validation failed: 1D width exceeds D3D11 limit" << std::endl;
+                    return false;
+                }
+                break;
+
+            case ::DirectX::TEX_DIMENSION_TEXTURE2D:
+                supportsTextureDimension = ((formatSupport & D3D11_FORMAT_SUPPORT_TEXTURE2D) != 0);
+                if (metadata.width > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION || metadata.height > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION)
+                {
+                    std::cerr << "D3D11 texture validation failed: 2D dimensions exceed D3D11 limit" << std::endl;
+                    return false;
+                }
+                break;
+
+            case ::DirectX::TEX_DIMENSION_TEXTURE3D:
+                supportsTextureDimension = ((formatSupport & D3D11_FORMAT_SUPPORT_TEXTURE3D) != 0);
+                if (metadata.width > D3D11_REQ_TEXTURE3D_U_V_OR_W_DIMENSION ||
+                    metadata.height > D3D11_REQ_TEXTURE3D_U_V_OR_W_DIMENSION ||
+                    metadata.depth > D3D11_REQ_TEXTURE3D_U_V_OR_W_DIMENSION)
+                {
+                    std::cerr << "D3D11 texture validation failed: 3D dimensions exceed D3D11 limit" << std::endl;
+                    return false;
+                }
+                break;
+
+            default:
+                std::cerr << "D3D11 texture validation failed: unsupported texture dimension " << static_cast<int>(metadata.dimension) << std::endl;
+                return false;
+            }
+
+            if (!supportsTextureDimension || (formatSupport & D3D11_FORMAT_SUPPORT_SHADER_SAMPLE) == 0)
+            {
+                std::cerr << "D3D11 texture validation failed: format " << static_cast<int>(metadata.format)
+                    << " is missing required texture/sample support flags" << std::endl;
+                return false;
+            }
+
+            return true;
+        }
 
         Render::Format GetFormat(DXGI_FORMAT format)
         {
@@ -1812,6 +1906,11 @@ namespace Gek
             void * getDevice(void)
             {
                 return d3dDevice.p;
+            }
+
+            std::string getDebugOverlayText(void) const
+            {
+                return "D3D11";
             }
 
             // Render::Device
@@ -3289,22 +3388,28 @@ namespace Gek
                 HRESULT resultValue = load(buffer, image);
                 if (FAILED(resultValue))
                 {
-                    std::cerr << "Unable to load image from texture file";
+                    logD3D11Failure(d3dDevice, "texture decode from file", resultValue);
+                    return nullptr;
+                }
+
+                const auto &metadata = image.GetMetadata();
+                if (!validateTextureMetadataForD3D11(d3dDevice, metadata))
+                {
                     return nullptr;
                 }
 
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
                 auto createFlags = (flags & Render::TextureLoadFlags::sRGB ? ::DirectX::CREATETEX_DEFAULT : ::DirectX::CREATETEX_IGNORE_SRGB);
-                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), image.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, createFlags, &d3dShaderResourceView);
+                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), metadata, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, createFlags, &d3dShaderResourceView);
                 if (FAILED(resultValue) || !d3dShaderResourceView)
                 {
-                    std::cerr << "Unable to create texture shader resource view";
+                    logD3D11Failure(d3dDevice, "CreateShaderResourceViewEx (file texture)", resultValue);
                     return nullptr;
                 }
 
                 CComPtr<ID3D11Resource> d3dResource;
                 d3dShaderResourceView->GetResource(&d3dResource);
-                if (FAILED(resultValue) || !d3dResource)
+                if (!d3dResource)
                 {
                     std::cerr << "Unable to get texture resource";
                     return nullptr;
@@ -3327,26 +3432,33 @@ namespace Gek
                 {
                     if (FAILED(resultValue = ::DirectX::LoadFromTGAMemory((const uint8_t *)buffer, size, nullptr, image)))
                     {
-                        if (FAILED(resultValue = ::DirectX::LoadFromWICMemory((const std::byte *)buffer, size, ::DirectX::WIC_FLAGS_NONE, nullptr, image)))
+                        auto wicLoadFlags = (flags & Render::TextureLoadFlags::sRGB ? ::DirectX::WIC_FLAGS_NONE : ::DirectX::WIC_FLAGS_IGNORE_SRGB);
+                        if (FAILED(resultValue = ::DirectX::LoadFromWICMemory((const std::byte *)buffer, size, wicLoadFlags, nullptr, image)))
                         {
-                            std::cerr << "Unable to load image from texture file";
+                            logD3D11Failure(d3dDevice, "texture decode from memory", resultValue);
                             return nullptr;
                         }
                     }
                 }
 
+                const auto &metadata = image.GetMetadata();
+                if (!validateTextureMetadataForD3D11(d3dDevice, metadata))
+                {
+                    return nullptr;
+                }
+
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
                 auto createFlags = (flags & Render::TextureLoadFlags::sRGB ? ::DirectX::CREATETEX_DEFAULT : ::DirectX::CREATETEX_IGNORE_SRGB);
-                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), image.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, createFlags, &d3dShaderResourceView);
+                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), metadata, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, createFlags, &d3dShaderResourceView);
                 if (FAILED(resultValue) || !d3dShaderResourceView)
                 {
-                    std::cerr << "Unable to create texture shader resource view";
+                    logD3D11Failure(d3dDevice, "CreateShaderResourceViewEx (memory texture)", resultValue);
                     return nullptr;
                 }
 
                 CComPtr<ID3D11Resource> d3dResource;
                 d3dShaderResourceView->GetResource(&d3dResource);
-                if (FAILED(resultValue) || !d3dResource)
+                if (!d3dResource)
                 {
                     std::cerr << "Unable to get texture resource";
                     return nullptr;

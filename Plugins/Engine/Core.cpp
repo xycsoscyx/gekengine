@@ -9,6 +9,7 @@
 #include "GEK/Engine/Resources.hpp"
 #include "GEK/Engine/Population.hpp"
 #include <imgui_internal.h>
+#include <atomic>
 #include <algorithm>
 #include <vector>
 #include <thread>
@@ -166,6 +167,8 @@ namespace Gek
 
             bool showModeChange = false;
             float modeChangeTimer = 0.0f;
+            bool shutdownIssued = false;
+            bool ignoredFirstCloseRequest = false;
 
             Timer timer;
             float mouseSensitivity = 0.5f;
@@ -176,6 +179,10 @@ namespace Gek
             Engine::ResourcesPtr resources;
             std::vector<Plugin::ProcessorPtr> processorList;
             Engine::PopulationPtr population;
+
+            std::atomic<int32_t> pendingMouseXMovement = 0;
+            std::atomic<int32_t> pendingMouseYMovement = 0;
+            std::atomic<bool> populationLoadCompleted = false;
 
             bool loadingPopulation = false;
 
@@ -221,6 +228,32 @@ namespace Gek
 
             ~Core(void)
             {
+                if (!shutdownIssued)
+                {
+                    shutdownIssued = true;
+                    onShutdown.emit();
+                }
+
+                if (population)
+                {
+                    population->onLoad.disconnect(this, &Core::onPopulationLoaded);
+                }
+
+                if (window)
+                {
+                    window->onCreated.disconnect(this, &Core::onWindowCreated);
+                    window->onCloseRequested.disconnect(this, &Core::onCloseRequested);
+                    window->onActivate.disconnect(this, &Core::onWindowActivate);
+                    window->onIdle.disconnect(this, &Core::onWindowIdle);
+                    window->onSizeChanged.disconnect(this, &Core::onWindowSizeChanged);
+                    window->onKeyPressed.disconnect(this, &Core::onKeyPressed);
+                    window->onCharacter.disconnect(this, &Core::onCharacter);
+                    window->onMouseClicked.disconnect(this, &Core::onMouseClicked);
+                    window->onMouseWheel.disconnect(this, &Core::onMouseWheel);
+                    window->onMousePosition.disconnect(this, &Core::onMousePosition);
+                    window->onMouseMovement.disconnect(this, &Core::onMouseMovement);
+                }
+
                 processorList.clear();
                 visualizer = nullptr;
                 resources = nullptr;
@@ -281,7 +314,13 @@ namespace Gek
 
             void forceClose(void)
             {
-                onShutdown.emit();
+                getContext()->log(Gek::Context::Warning, "Core::forceClose invoked");
+                if (!shutdownIssued)
+                {
+                    shutdownIssued = true;
+                    onShutdown.emit();
+                }
+
                 window->close();
             }
 
@@ -356,6 +395,7 @@ namespace Gek
                 }
 
                 population = getContext()->createClass<Engine::Population>("Engine::Population", (Engine::Core *)this);
+                population->onLoad.connect(this, &Core::onPopulationLoaded);
 
                 resources = getContext()->createClass<Engine::Resources>("Engine::Resources", (Engine::Core *)this);
 
@@ -393,6 +433,14 @@ namespace Gek
 
             void onCloseRequested(void)
             {
+                if (!ignoredFirstCloseRequest)
+                {
+                    ignoredFirstCloseRequest = true;
+                    getContext()->log(Gek::Context::Warning, "Core::onCloseRequested ignored (first close request) ");
+                    return;
+                }
+
+                getContext()->log(Gek::Context::Warning, "Core::onCloseRequested invoked");
                 forceClose();
             }
 
@@ -400,22 +448,40 @@ namespace Gek
             {
                 timer.update();
 
+                if (populationLoadCompleted.exchange(false, std::memory_order_acq_rel))
+                {
+                    loadingPopulation = false;
+                }
+
                 ImGuiIO& imGuiIo = ImGui::GetIO();
                 if (windowActive)
                 {
                     float frameTime = static_cast<float>(timer.getUpdateTime());
                     modeChangeTimer -= frameTime;
-                    if (enableInterfaceControl)
+
+                    const float updateFrameTime = (enableInterfaceControl || loadingPopulation) ? 0.0f : frameTime;
+                    if (population)
                     {
-                        population->update(0.0f);
+                        population->update(updateFrameTime);
                     }
-                    else
+
+                    if (!enableInterfaceControl && !loadingPopulation)
                     {
-                        population->update(frameTime);
                         auto rectangle = window->getScreenRectangle();
                         window->setCursorPosition(Math::Int2(
                             int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
                             int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
+                    }
+
+                    int32_t xMovement = pendingMouseXMovement.exchange(0, std::memory_order_acq_rel);
+                    int32_t yMovement = pendingMouseYMovement.exchange(0, std::memory_order_acq_rel);
+                    if (!enableInterfaceControl && !loadingPopulation && population)
+                    {
+                        if (xMovement || yMovement)
+                        {
+                            population->action(Plugin::Population::Action("turn", xMovement * mouseSensitivity));
+                            population->action(Plugin::Population::Action("tilt", yMovement * mouseSensitivity));
+                        }
                     }
                 }
             }
@@ -550,11 +616,13 @@ namespace Gek
 
             void onMouseMovement(int32_t xMovement, int32_t yMovement)
             {
-                if (population)
-                {
-                    population->action(Plugin::Population::Action("turn", xMovement * mouseSensitivity));
-                    population->action(Plugin::Population::Action("tilt", yMovement * mouseSensitivity));
-                }
+                pendingMouseXMovement.fetch_add(xMovement, std::memory_order_relaxed);
+                pendingMouseYMovement.fetch_add(yMovement, std::memory_order_relaxed);
+            }
+
+            void onPopulationLoaded(std::string const&)
+            {
+                populationLoadCompleted.store(true, std::memory_order_release);
             }
 
             // Renderer
@@ -1117,9 +1185,9 @@ namespace Gek
                     {
                         if (ImGui::Button("Load") || IsKeyDown(Window::Key::Return))
                         {
+                            loadingPopulation = true;
+                            populationLoadCompleted.store(false, std::memory_order_release);
                             population->load(scenes[currentSelectedScene]);
-                            enableInterfaceControl = ImGui::GetIO().MouseDrawCursor = false;
-                            window->setCursorVisibility(enableInterfaceControl);
                             showLoadMenu = false;
                         }
                     }

@@ -362,7 +362,21 @@ namespace Gek
                     RegisterRawInputDevices(&inputDevice, 1, sizeof(RAWINPUTDEVICE));
                 }
 
-                onCreated();
+                try
+                {
+                    onCreated();
+                }
+                catch (std::exception const &exception)
+                {
+                    std::cerr << "Win32Device onCreated exception: " << exception.what() << std::endl;
+                    stop.store(true);
+                }
+                catch (...)
+                {
+                    std::cerr << "Win32Device onCreated unknown exception" << std::endl;
+                    stop.store(true);
+                }
+
                 while (!stop.load())
                 {
                     MSG message = { 0 };
@@ -372,7 +386,20 @@ namespace Gek
                         DispatchMessage(&message);
                     };
 
-                    onIdle();
+                    try
+                    {
+                        onIdle();
+                    }
+                    catch (std::exception const &exception)
+                    {
+                        std::cerr << "Win32Device onIdle exception: " << exception.what() << std::endl;
+                        stop.store(true);
+                    }
+                    catch (...)
+                    {
+                        std::cerr << "Win32Device onIdle unknown exception" << std::endl;
+                        stop.store(true);
+                    }
                 };
             }
 
