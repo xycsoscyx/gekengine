@@ -341,6 +341,11 @@ namespace Gek
 
         VisualHandle visual;
         Render::BufferPtr instanceBuffer;
+        // Keep instance buffers alive for 3 frames to avoid freeing them while the GPU
+        // is still executing commands that reference them.
+        static constexpr size_t kInstanceBufferFrameSlots = 3;
+        std::array<std::vector<std::shared_ptr<Render::Buffer>>, kInstanceBufferFrameSlots> instanceBufferRetireSlots;
+        size_t instanceBufferRetireIndex = 0;
         ThreadPool loadPool;
 
         tbb::concurrent_unordered_map<std::size_t, std::shared_ptr<Group>> groupMap;
@@ -362,17 +367,18 @@ namespace Gek
         MaterialMeshMap renderList;
 
         bool shuttingDown = false;
+  
         std::mutex missingMaterialMutex;
         std::unordered_set<std::string> warnedMissingMaterials;
 
-    public:
+    public:  
         ModelProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
             , core(core)
             , videoDevice(core->getVisualizer()->getRenderDevice())
-            , population(core->getPopulation())
+            , population(core->getPopulation())  
             , resources(core->getResources())
-            , renderer(core->getVisualizer())
+            , renderer(core->getVisualizer())  
             , loadPool(5)
         {
             assert(core);
@@ -391,6 +397,12 @@ namespace Gek
             population->onComponentAdded.connect(this, &ModelProcessor::onComponentAdded);
             population->onComponentRemoved.connect(this, &ModelProcessor::onComponentRemoved);
             renderer->onQueueDrawCalls.connect(this, &ModelProcessor::onQueueDrawCalls);
+
+            // Catch entities that may already exist before this processor is fully wired.
+            population->listEntities([this](Plugin::Entity * const entity) -> void
+            {
+                addEntity(entity);
+            });
 
             visual = resources->loadVisual("model");
 
@@ -743,7 +755,10 @@ namespace Gek
 
         void onComponentRemoved(Plugin::Entity * const entity)
         {
-            removeEntity(entity);
+            if (!entity->hasComponents<Components::Model, Components::Transform>())
+            {
+                removeEntity(entity);
+            }
         }
 
         // Plugin::Visualizer Slots
@@ -752,6 +767,10 @@ namespace Gek
             assert(renderer);
             static uint64_t modelQueueFrameCounter = 0;
             ++modelQueueFrameCounter;
+
+            // Advance the retire ring: clear the slot from 3 frames ago (GPU is done by then).
+            instanceBufferRetireIndex = (instanceBufferRetireIndex + 1) % kInstanceBufferFrameSlots;
+            instanceBufferRetireSlots[instanceBufferRetireIndex].clear();
 
 			// Cull by entity/group
 			const auto entityCount = getEntityCount();
@@ -909,7 +928,6 @@ namespace Gek
 				}
 			});
 
-			std::atomic_size_t maximumInstanceCount = 0;
             std::atomic_size_t queuedBatchCount = 0;
             std::for_each(std::begin(renderList), std::end(renderList), [&](auto &materialPair) -> void
 			{
@@ -940,16 +958,35 @@ namespace Gek
 					}
 				}
 
-                updateMaximumValue(maximumInstanceCount, instanceList.size());
+                Render::Buffer::Description batchInstanceDescription;
+                batchInstanceDescription.name = std::format("model:instances:{}", queuedBatchCount.load());
+                batchInstanceDescription.stride = sizeof(Math::Float4x4);
+                batchInstanceDescription.count = static_cast<uint32_t>(instanceList.size());
+                batchInstanceDescription.type = Render::Buffer::Type::Vertex;
+                batchInstanceDescription.flags = Render::Buffer::Flags::Mappable;
+
+                auto batchInstanceBuffer = videoDevice->createBuffer(batchInstanceDescription);
+                Math::Float4x4 *instanceData = nullptr;
+                if (!batchInstanceBuffer || !videoDevice->mapBuffer(batchInstanceBuffer.get(), instanceData))
+                {
+                    getContext()->log(Context::Warning,
+                        "ModelProcessor skipped draw batch due to instance buffer mapping failure (instances={})",
+                        instanceList.size());
+                    return;
+                }
+
+                std::copy(std::begin(instanceList), std::end(instanceList), instanceData);
+                videoDevice->unmapBuffer(batchInstanceBuffer.get());
+
                 queuedBatchCount.fetch_add(1);
-				renderer->queueDrawCall(visual, material, std::move([this, drawDataList = move(drawDataList), instanceList = move(instanceList)](Render::Device::Context *videoContext) -> void
+                std::shared_ptr<Render::Buffer> sharedInstanceBuffer = std::move(batchInstanceBuffer);
+                // Keep buffer alive via retire ring (outlives the lambda by 2 extra frames).
+                instanceBufferRetireSlots[instanceBufferRetireIndex].push_back(sharedInstanceBuffer);
+				renderer->queueDrawCall(visual, material, [this, drawDataList = std::move(drawDataList), sharedInstanceBuffer](Render::Device::Context *videoContext) -> void
 				{
-					Math::Float4x4 *instanceData = nullptr;
-					if (videoDevice->mapBuffer(instanceBuffer.get(), instanceData))
+					if (sharedInstanceBuffer)
 					{
-						std::copy(std::begin(instanceList), std::end(instanceList), instanceData);
-						videoDevice->unmapBuffer(instanceBuffer.get());
-						videoContext->setVertexBufferList({ instanceBuffer.get() }, 4);
+						videoContext->setVertexBufferList({ sharedInstanceBuffer.get() }, 4);
 						for (auto const &drawData : drawDataList)
 						{
 							if (drawData.data)
@@ -958,30 +995,28 @@ namespace Gek
 								resources->setVertexBufferList(videoContext, level.vertexBufferList, 0);
                                 if (level.indexBuffer)
                                 {
+                                    if (level.indexCount == 0)
+                                    {
+                                        continue;
+                                    }
+
                                     resources->setIndexBuffer(videoContext, level.indexBuffer, 0);
                                     resources->drawInstancedIndexedPrimitive(videoContext, drawData.instanceCount, drawData.instanceStart, level.indexCount, 0, 0);
                                 }
                                 else
                                 {
+                                    if (level.vertexCount == 0)
+                                    {
+                                        continue;
+                                    }
+
                                     resources->drawInstancedPrimitive(videoContext, drawData.instanceCount, drawData.instanceStart, level.vertexCount, 0);
                                 }
 							}
 						}
 					}
-				}));
+				});
 			});
-
-			if (instanceBuffer->getDescription().count < maximumInstanceCount)
-			{
-				instanceBuffer = nullptr;
-				Render::Buffer::Description instanceDescription;
-                instanceDescription.name = "model:instances";
-				instanceDescription.stride = sizeof(Math::Float4x4);
-                instanceDescription.count = static_cast<uint32_t>(maximumInstanceCount.load());
-				instanceDescription.type = Render::Buffer::Type::Vertex;
-				instanceDescription.flags = Render::Buffer::Flags::Mappable;
-				instanceBuffer = videoDevice->createBuffer(instanceDescription);
-			}
 
             if ((modelQueueFrameCounter % 120) == 0)
             {
@@ -993,7 +1028,7 @@ namespace Gek
                     entityModelList.size(),
                     visibleModelCount,
                     queuedBatchCount.load(),
-                    maximumInstanceCount.load());
+                      0);
             }
 		}
 	};

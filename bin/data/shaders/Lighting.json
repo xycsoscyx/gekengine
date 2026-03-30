@@ -13,7 +13,10 @@
                 "ShowNormalDistribution",
                 "ShowGeometricShadow",
                 "ShowFresnel",
-                "ShowSpecular"
+                "ShowSpecular",
+                "ShowForceVisible",
+                "ShowTexCoord",
+                "ShowWorldNormal"
             ]
         },
         "NormalDistribution": {

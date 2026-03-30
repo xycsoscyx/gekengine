@@ -15,10 +15,14 @@ float getSpotFactor(float3 lightDataDirection, float3 lightDirection, float inne
 
 uint getClusterOffset(const float2 screenPosition, const float surfaceDepth)
 {
-    uint2 gridLocation = uint2(floor(screenPosition * Lights::ReciprocalTileSize.xy));
+    int2 gridLocation = int2(floor(screenPosition * Lights::ReciprocalTileSize.xy));
+    gridLocation = clamp(gridLocation, int2(0, 0), int2(Lights::gridSize.xy) - 1);
 
     float depth = ((surfaceDepth - Camera::NearClip) * Camera::ReciprocalClipDistance);
+    depth = saturate(depth);
+
     uint gridSlice = uint(floor(depth * Lights::gridSize.z));
+    gridSlice = min(gridSlice, Lights::gridSize.z - 1);
 
     return ((((gridSlice * Lights::gridSize.y) + gridLocation.y) * Lights::gridSize.x) + gridLocation.x);
 }
@@ -289,6 +293,12 @@ float3 getSurfaceIrradiance(const float2 screenCoord, const float3 surfacePositi
     uint indexOffset = clusterData.x;
     const uint pointLightEnd = ((clusterData.y & 0x0000FFFF) + indexOffset);
     const uint spotLightEnd = (((clusterData.y >> 16) & 0x0000FFFF) + pointLightEnd);
+
+    if ((Lights::directionalCount == 0) && (clusterData.y == 0))
+    {
+        // Fallback keeps scene visible if clustered light data has not populated yet.
+        return materialAlbedo * 0.65;
+    }
 
     uint2 gridLocation = uint2(floor(screenCoord * Lights::ReciprocalTileSize.xy));
     float depth = ((surfacePosition.z - Camera::NearClip) * Camera::ReciprocalClipDistance);

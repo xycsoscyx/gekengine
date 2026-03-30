@@ -13,6 +13,36 @@
 
 namespace Gek
 {
+    namespace
+    {
+        std::string normalizeMaterialName(std::string_view materialName)
+        {
+            FileSystem::Path normalizedPath(materialName);
+            if (String::GetLower(normalizedPath.getExtension()) == ".json")
+            {
+                normalizedPath = normalizedPath.withoutExtension();
+            }
+  
+            return normalizedPath.getString();  
+        }
+
+        JSON::Object buildImplicitMaterialNode(std::string_view materialName)
+        {
+            JSON::Object materialNode;
+            auto &shaderNode = materialNode["shader"];
+            auto &dataNode = shaderNode["data"];  
+            std::string textureBase(materialName);
+
+            shaderNode["default"] = "solid";
+            dataNode["albedo"]["file"] = textureBase + "_BaseColor";
+            dataNode["albedo"]["flags"] = "sRGB";
+            dataNode["normal"]["file"] = textureBase + "_Normal";
+            dataNode["roughness"]["file"] = textureBase + "_Roughness";
+            dataNode["metallic"]["file"] = textureBase + "_Metalness";
+            return materialNode;
+        }
+    }
+
     namespace Implementation
     {
         GEK_CONTEXT_USER(Material, Engine::Resources *, std::string, MaterialHandle)
@@ -29,11 +59,24 @@ namespace Gek
             Material(Context *context, Engine::Resources *resources, std::string materialName, MaterialHandle materialHandle)
                 : ContextRegistration(context)
                 , resources(resources)
-				, materialName(materialName)
+				, materialName(normalizeMaterialName(materialName))
             {
                 assert(resources);
 
-                JSON::Object materialNode = JSON::Load(getContext()->findDataPath(FileSystem::CreatePath("materials", materialName).withExtension(".json")));
+                auto materialPath = getContext()->findDataPath(FileSystem::CreatePath("materials", this->materialName).withExtension(".json"));
+                JSON::Object materialNode;
+                if (materialPath.isFile())
+                {
+                    materialNode = JSON::Load(materialPath);
+                }
+                else
+                {
+                    getContext()->log(Context::Warning,
+                        "Material definition '{}' missing, synthesizing PBR material from texture set",
+                        this->materialName);
+                    materialNode = buildImplicitMaterialNode(this->materialName);
+                }
+
                 auto &shaderNode = JSON::Find(materialNode, "shader");
                 auto shaderName = JSON::Value(shaderNode, "default", String::Empty);
                 ShaderHandle shaderHandle = resources->getShader(shaderName, materialHandle);

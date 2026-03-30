@@ -217,10 +217,10 @@ namespace Gek
                 registry.clear();
             }
 
-            Task scheduleReset(void)
+            void scheduleReset(void)
             {
-                co_await sceneWorkerPool.schedule();
                 fullReset();
+                return;
             }
 
             void reset(void)
@@ -228,14 +228,13 @@ namespace Gek
                 scheduleReset();
             }
 
-            Task scheduleLoad(std::string const& _populationName)
+            void scheduleLoad(std::string const& _populationName)
             {
                 std::string populationName(_populationName);
-                co_await sceneWorkerPool.schedule();
 
                 if (shuttingDown)
                 {
-                    co_return;
+                    return;
                 }
 
                 fullReset();
@@ -252,7 +251,7 @@ namespace Gek
                 {
                     if (shuttingDown)
                     {
-                        co_return;
+                        return;
                     }
 
                     uint32_t count = 1;
@@ -308,7 +307,7 @@ namespace Gek
                     {
                         if (shuttingDown)
                         {
-                            co_return;
+                            return;
                         }
 
                         auto populationEntity = new Entity();
@@ -317,7 +316,7 @@ namespace Gek
                             if (shuttingDown)
                             {
                                 delete populationEntity;
-                                co_return;
+                                return;
                             }
 
                             addComponent(populationEntity, componentDefinition);
@@ -327,17 +326,24 @@ namespace Gek
                         if (shuttingDown)
                         {
                             delete populationEntity;
-                            co_return;
+                            return;
                         }
 
                         loadEntityTask(entity);
                     };
                 }
 
+                if (shuttingDown)
+                {
+                    return;
+                }
+
                 if (!shuttingDown)
                 {
                     onLoad.emit(populationName);
                 }
+
+                return;
             }
 
             void load(std::string const& populationName)
@@ -398,25 +404,18 @@ namespace Gek
                 return entity;
             }
 
-            Task loadEntityTask(Plugin::Entity * const entity)
+            void loadEntityTask(Plugin::Entity * const entity)
             {
                 if (shuttingDown)
                 {
                     delete static_cast<Entity *>(entity);
-                    co_return;
-                }
-
-                co_await entityWorkerPool.schedule();
-
-                if (shuttingDown)
-                {
-                    delete static_cast<Entity *>(entity);
-                    co_return;
+                    return;
                 }
 
                 registry.push_back(Plugin::EntityPtr(entity));
                 onEntityCreated(entity);
                 std::cout << "Entity created" << std::endl;
+                return;
             }
 
             void killEntity(Plugin::Entity * const entity)
@@ -424,10 +423,8 @@ namespace Gek
                 killEntityTask(entity);
             }
 
-            Task killEntityTask(Plugin::Entity * const entity)
+            void killEntityTask(Plugin::Entity * const entity)
             {
-                co_await entityWorkerPool.schedule();
-
                 auto entitySearch = std::find_if(std::begin(registry), std::end(registry), [entity](auto const &entitySearch) -> bool
                 {
                     return (entitySearch.get() == entity);
@@ -438,6 +435,8 @@ namespace Gek
                     onEntityDestroyed(entity);
                     registry.erase(entitySearch);
                 }
+
+                return;
             }
 
             bool addComponentData(Entity *entity, ComponentDefinition const &definition)
@@ -495,10 +494,10 @@ namespace Gek
 
             void listEntities(std::function<void(Plugin::Entity *)> &&onEntity) const
             {
-                tbb::parallel_for_each(std::begin(registry), std::end(registry), [onEntity = std::move(onEntity)](auto &entity) -> void
+                for (auto const &entity : registry)
                 {
                     onEntity(entity.get());
-                });
+                }
             }
         };
 

@@ -18,6 +18,7 @@
 #include "GEK/Components/Name.hpp"
 #include "GEK/Model/Base.hpp"
 #include <set>
+#include <vector>
 
 namespace Gek
 {
@@ -161,13 +162,34 @@ namespace Gek
                 {
                     cameraSize = UI::GetWindowContentRegionSize();
 
-                    Render::Texture::Description description;
-                    description.name = "editorTarget";
-                    description.width = cameraSize.x;
-                    description.height = cameraSize.y;
-                    description.flags = Render::Texture::Flags::RenderTarget | Render::Texture::Flags::Resource;
-                    description.format = Render::Format::R11G11B10_FLOAT;
-                    cameraTarget = core->getResources()->createTexture(description, Plugin::Resources::Flags::Immediate);
+                    uint32_t targetWidth = std::max(1u, static_cast<uint32_t>(cameraSize.x));
+                    uint32_t targetHeight = std::max(1u, static_cast<uint32_t>(cameraSize.y));
+
+                    bool recreateCameraTarget = !cameraTarget;
+                    if (!recreateCameraTarget)
+                    {
+                        if (auto const *cameraDescription = resources->getTextureDescription(cameraTarget))
+                        {
+                            recreateCameraTarget =
+                                (cameraDescription->width != targetWidth) ||
+                                (cameraDescription->height != targetHeight);
+                        }
+                        else
+                        {
+                            recreateCameraTarget = true;
+                        }
+                    }
+
+                    if (recreateCameraTarget)
+                    {
+                        Render::Texture::Description description;
+                        description.name = "editorTarget";
+                        description.width = targetWidth;
+                        description.height = targetHeight;
+                        description.flags = Render::Texture::Flags::RenderTarget | Render::Texture::Flags::Resource;
+                        description.format = Render::Format::R11G11B10_FLOAT;
+                        cameraTarget = core->getResources()->createTexture(description, Plugin::Resources::Flags::Immediate);
+                    }
 
                     auto cameraBuffer = resources->getResource(cameraTarget);
                     auto cameraTexture = (cameraBuffer ? dynamic_cast<Render::Texture *>(cameraBuffer) : nullptr);
@@ -197,8 +219,15 @@ namespace Gek
 
                         //ImGuizmo::DrawGrid(viewMatrix.data, projectionMatrix.data, Math::Float4x4::Identity.data, 25.0f);
 
-                        auto& registry = population->getRegistry();
-                        for (auto& entity : registry)
+                        auto &registry = population->getRegistry();
+                        std::vector<Plugin::Entity *> registrySnapshot;
+                        registrySnapshot.reserve(registry.size());
+                        for (auto const &entry : registry)
+                        {
+                            registrySnapshot.push_back(entry.get());
+                        }
+
+                        for (auto *entity : registrySnapshot)
                         {
                             if (entity->hasComponent<Components::Transform>())
                             {
@@ -417,14 +446,20 @@ namespace Gek
                     ImGui::PopStyleVar();
 
                     std::set<Plugin::Entity*> deleteEntitySet;
-                    auto& registry = population->getRegistry();
-                    auto entityCount = registry.size();
+                    auto &registry = population->getRegistry();
+                    std::vector<Plugin::Entity *> registrySnapshot;
+                    registrySnapshot.reserve(registry.size());
+                    for (auto const &entry : registry)
+                    {
+                        registrySnapshot.push_back(entry.get());
+                    }
+                    auto entityCount = registrySnapshot.size();
 
                     if (ImGui::BeginListBox("##Population", ImVec2(-FLT_MIN, -FLT_MIN)))
                     {
-                        for (auto& entity : registry)
+                        for (auto *entity : registrySnapshot)
                         {
-                            Edit::Entity* editEntity = reinterpret_cast<Edit::Entity*>(entity.get());
+                            Edit::Entity* editEntity = reinterpret_cast<Edit::Entity*>(entity);
 
                             std::string name;
                             if (entity->hasComponent<Components::Name>())
@@ -438,7 +473,7 @@ namespace Gek
 
                             name = std::format("{}, {} components", name, editEntity->getComponents().size());
 
-                            ImGui::PushID(entity.get());
+                            ImGui::PushID(entity);
                             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.0f, 0.0f, 1.0f));
                             ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.0f, 0.0f, 1.0f));
                             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
@@ -456,7 +491,7 @@ namespace Gek
                                 if (ImGui::Button("Yes"))
                                 {
                                     sceneModified = true;
-                                    deleteEntitySet.insert(entity.get());
+                                    deleteEntitySet.insert(entity);
                                     ImGui::CloseCurrentPopup();
                                 }
 
@@ -471,10 +506,10 @@ namespace Gek
 
                             ImGui::PopStyleVar();
                             ImGui::SameLine();
-                            bool entitySelected = (selectedEntity == entity.get());
+                            bool entitySelected = (selectedEntity == entity);
                             if (ImGui::Selectable(name.data(), &entitySelected))
                             {
-                                selectedEntity = entity.get();
+                                selectedEntity = entity;
                             }
 
                             ImGui::PopID();
@@ -719,7 +754,7 @@ namespace Gek
                     return;
                 }
 
-                auto dockspaceID = ImGui::DockSpaceOverViewport();
+                auto dockspaceID = ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
 
                 ImGui::SetNextWindowDockID(dockspaceID, ImGuiCond_FirstUseEver);
                 showScene();
@@ -776,7 +811,7 @@ namespace Gek
             void onUpdate(float frameTime)
             {
                 bool editorActive = core->getOption("editor", "active", false);
-                if (editorActive)
+                if (editorActive && cameraTarget && cameraSize.x > 1.0f && cameraSize.y > 1.0f)
                 {
                     Math::Float4x4 viewMatrix(Math::Float4x4::MakePitchRotation(lookingAngle) * Math::Float4x4::MakeYawRotation(headingAngle));
                     position += (viewMatrix.r.z.xyz() * (((moveForward ? 1.0f : 0.0f) + (moveBackward ? -1.0f : 0.0f)) * 5.0f) * frameTime);

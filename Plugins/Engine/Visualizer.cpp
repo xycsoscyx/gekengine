@@ -33,6 +33,7 @@
 #include <execution>
 #include <ranges>
 #include <vector>
+#include <mutex>
 
 namespace Gek
 {
@@ -336,6 +337,12 @@ namespace Gek
 			};
 
 		private:
+			struct FullViewportVertex
+			{
+				Math::Float2 position;
+				Math::Float2 texCoord;
+			};
+
 			Engine::Core *core = nullptr;
 			Render::Device *renderDevice = nullptr;
 			Plugin::Population *population = nullptr;
@@ -355,6 +362,8 @@ namespace Gek
 
 			Render::Program *deferredVertexProgram = nullptr;
 			Render::Program *deferredPixelProgram = nullptr;
+			Render::ObjectPtr deferredInputLayout;
+			Render::BufferPtr deferredVertexBuffer;
 			Render::BlendStatePtr blendState;
 			Render::RenderStatePtr renderState;
 			Render::DepthStatePtr depthState;
@@ -363,6 +372,7 @@ namespace Gek
 			LightData<Components::DirectionalLight, DirectionalLightData> directionalLightData;
 			LightVisibilityData<Components::PointLight, PointLightData> pointLightData;
 			LightVisibilityData<Components::SpotLight, SpotLightData> spotLightData;
+			std::mutex lightDataMutex;
 
 			tbb::concurrent_vector<uint16_t> tilePointLightIndexList[GridSize];
 			tbb::concurrent_vector<uint16_t> tileSpotLightIndexList[GridSize];
@@ -460,14 +470,22 @@ namespace Gek
 
 				Render::BlendState::Description blendStateInformation;
 				blendStateInformation.name = "renderer:blendState";
+				blendStateInformation[0].enable = false;
 				blendState = renderDevice->createBlendState(blendStateInformation);
 
 				Render::RenderState::Description renderStateInformation;
 				renderStateInformation.name = "renderer:renderState";
+				renderStateInformation.fillMode = Render::RenderState::FillMode::Solid;
+				renderStateInformation.cullMode = Render::RenderState::CullMode::None;
+				renderStateInformation.scissorEnable = false;
+				renderStateInformation.depthClipEnable = true;
 				renderState = renderDevice->createRenderState(renderStateInformation);
 
 				Render::DepthState::Description depthStateInformation;
 				depthStateInformation.name = "renderer:depthState";
+				depthStateInformation.enable = false;
+				depthStateInformation.writeMask = Render::DepthState::Write::All;
+				depthStateInformation.comparisonFunction = Render::ComparisonFunction::Always;
 				depthState = renderDevice->createDepthState(depthStateInformation);
 
 				Render::Buffer::Description constantBufferDescription;
@@ -493,17 +511,17 @@ namespace Gek
 				static constexpr std::string_view vertexProgram = 
 R"(struct Output
 {
-    float4 screen : SV_POSITION;
-    float2 texCoord : TEXCOORD0;
+	float4 screen : SV_POSITION;
+	float2 texCoord : TEXCOORD0;
 };
 
 [shader("vertex")]
 Output mainVertexProgram(in uint vertexID : SV_VertexID)
 {
-    Output output;
-    output.texCoord = float2((vertexID << 1) & 2, vertexID & 2);
-    output.screen = float4(output.texCoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f);
-    return output;
+	Output output;
+	output.texCoord = float2((vertexID << 1) & 2, vertexID & 2);
+	output.screen = float4(output.texCoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f);
+	return output;
 }
 )";
 
@@ -521,13 +539,43 @@ float3 mainPixelProgram(in Input input) : SV_TARGET0
 {
     uint width, height, mipMapCount;
     inputBuffer.GetDimensions(0, width, height, mipMapCount);
-    return inputBuffer[uint2(input.texCoord * float2(width, height))];
+	const int2 maxCoord = int2(int(max(width, 1u)) - 1, int(max(height, 1u)) - 1);
+	const uint2 screenCoord = uint2(clamp(int2(input.texCoord * float2(width, height)), int2(0, 0), maxCoord));
+	return inputBuffer[screenCoord];
 }
 )";
 
-				deferredVertexProgram = resources->getProgram(Render::Program::Type::Vertex, "renderer:deferredVertexProgram", "mainVertexProgram", vertexProgram);
+				deferredVertexProgram = resources->getProgram(Render::Program::Type::Vertex, "renderer:deferredVertexProgram:v2", "mainVertexProgram", vertexProgram);
 
-				deferredPixelProgram = resources->getProgram(Render::Program::Type::Pixel, "renderer:deferredPixelProgram", "mainPixelProgram", pixelProgram);
+				deferredPixelProgram = resources->getProgram(Render::Program::Type::Pixel, "renderer:deferredPixelProgram:v2", "mainPixelProgram", pixelProgram);
+
+				std::vector<Render::InputElement> deferredElementList;
+				Render::InputElement deferredElement;
+				deferredElement.format = Render::Format::R32G32_FLOAT;
+				deferredElement.semantic = Render::InputElement::Semantic::Position;
+				deferredElementList.push_back(deferredElement);
+
+				deferredElement.format = Render::Format::R32G32_FLOAT;
+				deferredElement.semantic = Render::InputElement::Semantic::TexCoord;
+				deferredElementList.push_back(deferredElement);
+
+				deferredInputLayout = renderDevice->createInputLayout(deferredElementList, deferredVertexProgram->getInformation());
+
+				Render::Buffer::Description deferredVertexBufferDescription;
+				deferredVertexBufferDescription.name = "renderer:deferredFullscreenTriangle";
+				deferredVertexBufferDescription.stride = sizeof(FullViewportVertex);
+				deferredVertexBufferDescription.count = 3;
+				deferredVertexBufferDescription.type = Render::Buffer::Type::Vertex;
+				deferredVertexBufferDescription.flags = Render::Buffer::Flags::Mappable;
+				deferredVertexBuffer = renderDevice->createBuffer(deferredVertexBufferDescription);
+
+				const std::array<FullViewportVertex, 3> deferredTriangle =
+				{{
+					{ Math::Float2(-1.0f, 1.0f), Math::Float2(0.0f, 0.0f) },
+					{ Math::Float2(3.0f, 1.0f), Math::Float2(2.0f, 0.0f) },
+					{ Math::Float2(-1.0f, -3.0f), Math::Float2(0.0f, 2.0f) },
+				}};
+				renderDevice->updateResource(deferredVertexBuffer.get(), deferredTriangle.data());
 
 				Render::Buffer::Description lightBufferDescription;
 				lightBufferDescription.type = Render::Buffer::Type::Structured;
@@ -839,6 +887,11 @@ float4 main(PixelInput input) : SV_Target
 								const int32_t clipMaxX = std::clamp(static_cast<int32_t>(std::ceil(command->ClipRect.z)), clipMinX, static_cast<int32_t>(width));
 								const int32_t clipMaxY = std::clamp(static_cast<int32_t>(std::ceil(command->ClipRect.w)), clipMinY, static_cast<int32_t>(height));
 
+								if (clipMaxX <= clipMinX || clipMaxY <= clipMinY)
+								{
+									continue;
+								}
+
 								scissorBoxList[0].minimum.x = static_cast<uint32_t>(clipMinX);
 								scissorBoxList[0].minimum.y = static_cast<uint32_t>(clipMinY);
 								scissorBoxList[0].maximum.x = static_cast<uint32_t>(clipMaxX);
@@ -1061,6 +1114,7 @@ float4 main(PixelInput input) : SV_Target
 			// Plugin::Population Slots
 			void onReset(void)
 			{
+				std::lock_guard<std::mutex> lock(lightDataMutex);
 				directionalLightData.clearEntityData();
 				pointLightData.clearEntityData();
 				spotLightData.clearEntityData();
@@ -1071,21 +1125,25 @@ float4 main(PixelInput input) : SV_Target
 
 			void onEntityCreated(Plugin::Entity * const entity)
 			{
+				std::lock_guard<std::mutex> lock(lightDataMutex);
 				addEntity(entity);
 			}
 
 			void onEntityDestroyed(Plugin::Entity * const entity)
 			{
+				std::lock_guard<std::mutex> lock(lightDataMutex);
 				removeEntity(entity);
 			}
 
 			void onComponentAdded(Plugin::Entity * const entity)
 			{
+				std::lock_guard<std::mutex> lock(lightDataMutex);
 				addEntity(entity);
 			}
 
 			void onComponentRemoved(Plugin::Entity * const entity)
 			{
+				std::lock_guard<std::mutex> lock(lightDataMutex);
 				removeEntity(entity);
 			}
 
@@ -1150,6 +1208,7 @@ float4 main(PixelInput input) : SV_Target
 			Task scheduleDirectionalLights(void)
 			{
 				co_await workerPool.schedule();
+				std::lock_guard<std::mutex> lock(lightDataMutex);
 
 				directionalLightData.lightList.clear();
 				directionalLightData.lightList.reserve(directionalLightData.entityList.size());
@@ -1172,6 +1231,7 @@ float4 main(PixelInput input) : SV_Target
 			{
 				Math::SIMD::Frustum frustum = sceneFrustum;
 				co_await workerPool.schedule();
+				std::lock_guard<std::mutex> lock(lightDataMutex);
 
 				std::for_each(std::execution::par, std::begin(tilePointLightIndexList), std::end(tilePointLightIndexList), [&](auto& gridData) -> void
 				{
@@ -1197,6 +1257,7 @@ float4 main(PixelInput input) : SV_Target
 			{
 				Math::SIMD::Frustum frustum = sceneFrustum;
 				co_await workerPool.schedule();
+				std::lock_guard<std::mutex> lock(lightDataMutex);
 
 				std::for_each(std::execution::par, std::begin(tileSpotLightIndexList), std::end(tileSpotLightIndexList), [&](auto& gridData) -> void
 				{
@@ -1241,6 +1302,7 @@ float4 main(PixelInput input) : SV_Target
 				engineConstantData.invertedDepthBuffer = (core->getOption("render", "invertedDepthBuffer", true) ? 1 : 0);
 				renderDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
 				Render::Device::Context *videoContext = renderDevice->getDefaultContext();
+
 				while (cameraQueue.try_pop(currentCamera))
 				{
 					++processedCameras;
@@ -1328,7 +1390,8 @@ float4 main(PixelInput input) : SV_Target
 								!pointLightData.updateBuffer() ||
 								!spotLightData.updateBuffer())
 							{
-								return;
+								isLightingRequired = false;
+								continue;
 							}
 
 							TileOffsetCount *tileOffsetCountData = nullptr;
@@ -1339,7 +1402,8 @@ float4 main(PixelInput input) : SV_Target
 							}
 							else
 							{
-								return;
+								isLightingRequired = false;
+								continue;
 							}
 
 							if (!lightIndexList.empty())
@@ -1365,7 +1429,8 @@ float4 main(PixelInput input) : SV_Target
 								}
 								else
 								{
-									return;
+									isLightingRequired = false;
+									continue;
 								}
 							}
 
@@ -1458,22 +1523,33 @@ float4 main(PixelInput input) : SV_Target
 
 										case Engine::Shader::Pass::Mode::Deferred:
 											++deferredPassCount;
-											videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
-											videoContext->pixelPipeline()->setProgram(deferredPixelProgram);
-											resources->drawPrimitive(videoContext, 3, 0);
-											++deferredDrawDispatchCount;
-											break;
+											if (deferredInputLayout)
+											{
+												videoContext->setInputLayout(deferredInputLayout.get());
+											}
+											if (deferredVertexBuffer)
+											{
+												videoContext->setVertexBufferList({ deferredVertexBuffer.get() }, 0);
+											}
+										// Only set the vertex program here; pass->prepare() already set the
+										// correct pixel program (e.g. AccumulateLighting) via setProgram().
+										// Overriding the pixel pipeline with deferredPixelProgram (the blit
+										// shader) would replace the lighting shader and produce wrong output.
+										videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
+										resources->drawPrimitive(videoContext, 3, 0);
+										++deferredDrawDispatchCount;
+										break;
 
-										case Engine::Shader::Pass::Mode::Compute:
-											++computePassCount;
-											break;
-										};
+									case Engine::Shader::Pass::Mode::Compute:
+										++computePassCount;
+										break;
+									};
 
-										pass->clear();
-									}
+									pass->clear();
 								}
 							}
 						}
+					}
 
 						videoContext->geometryPipeline()->clearConstantBufferList(2, 0);
 						videoContext->vertexPipeline()->clearConstantBufferList(2, 0);
@@ -1515,7 +1591,6 @@ float4 main(PixelInput input) : SV_Target
 					videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
 
 					videoContext->setPrimitiveType(Render::PrimitiveType::TriangleList);
-
 					videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
 					videoContext->pixelPipeline()->setProgram(deferredPixelProgram);
 
@@ -1542,12 +1617,16 @@ float4 main(PixelInput input) : SV_Target
 					}
 					else
 					{
-						std::get<2>(*std::prev(std::end(filters))) = ResourceHandle();
+						ResourceHandle presentedHandle = finalHandle;
 						for (auto const& filterGroup : filters)
 						{
 							auto filter = std::get<0>(filterGroup);
 							auto currentBuffer = std::get<1>(filterGroup);
 							auto targetBuffer = std::get<2>(filterGroup);
+							if (targetBuffer)
+							{
+								presentedHandle = targetBuffer;
+							}
 							for (auto pass = filter->begin(videoContext, currentBuffer, targetBuffer); pass; pass = pass->next())
 							{
 								resources->startResourceBlock();
@@ -1557,6 +1636,14 @@ float4 main(PixelInput input) : SV_Target
 									switch (passMode)
 									{
 									case Engine::Filter::Pass::Mode::Deferred:
+										if (deferredInputLayout)
+										{
+											videoContext->setInputLayout(deferredInputLayout.get());
+										}
+										if (deferredVertexBuffer)
+										{
+											videoContext->setVertexBufferList({ deferredVertexBuffer.get() }, 0);
+										}
 										resources->drawPrimitive(videoContext, 3, 0);
 										break;
 
@@ -1568,6 +1655,8 @@ float4 main(PixelInput input) : SV_Target
 								}
 							}
 						}
+
+						renderOverlay(videoContext, presentedHandle, nullptr);
 					}
 
 					videoContext->geometryPipeline()->clearConstantBufferList(1, 0);
@@ -1591,31 +1680,9 @@ float4 main(PixelInput input) : SV_Target
 				uint32_t height = backBuffer->getDescription().height;
 				imGuiIo.DisplaySize = ImVec2(float(width), float(height));
 
-                ImGui::NewFrame();
-
-				if (auto *debugRenderDevice = dynamic_cast<Render::Debug::Device *>(renderDevice))
-				{
-					const std::string debugOverlayText = debugRenderDevice->getDebugOverlayText();
-					if (!debugOverlayText.empty())
-					{
-						ImGuiWindowFlags debugWindowFlags = ImGuiWindowFlags_NoDecoration
-							| ImGuiWindowFlags_AlwaysAutoResize
-							| ImGuiWindowFlags_NoMove
-							| ImGuiWindowFlags_NoSavedSettings
-							| ImGuiWindowFlags_NoFocusOnAppearing
-							| ImGuiWindowFlags_NoNav;
-						ImGui::SetNextWindowPos(ImVec2(8.0f, 8.0f), ImGuiCond_Always);
-						ImGui::SetNextWindowBgAlpha(0.35f);
-						if (ImGui::Begin("RendererDebugOverlay", nullptr, debugWindowFlags))
-						{
-							ImGui::TextUnformatted(debugOverlayText.c_str());
-						}
-						ImGui::End();
-					}
-				}
-
+				ImGui::NewFrame();
 				onShowUserInterface();
-                ImGui::Render();
+				ImGui::Render();
 
 				renderUI(ImGui::GetDrawData());
 
@@ -1648,12 +1715,19 @@ float4 main(PixelInput input) : SV_Target
 				videoContext->setBlendState(blendState.get(), Math::Float4::Black, 0xFFFFFFFF);
 				videoContext->setDepthState(depthState.get(), 0);
 				videoContext->setRenderState(renderState.get());
+				if (deferredInputLayout)
+				{
+					videoContext->setInputLayout(deferredInputLayout.get());
+				}
+				if (deferredVertexBuffer)
+				{
+					videoContext->setVertexBufferList({ deferredVertexBuffer.get() }, 0);
+				}
 
 				videoContext->setPrimitiveType(Render::PrimitiveType::TriangleList);
 
 				resources->startResourceBlock();
 				resources->setResourceList(videoContext->pixelPipeline(), { input }, 0);
-
 				videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
 				videoContext->pixelPipeline()->setProgram(deferredPixelProgram);
 				if (target)

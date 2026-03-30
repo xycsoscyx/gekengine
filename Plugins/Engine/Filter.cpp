@@ -261,7 +261,9 @@ namespace Gek
                             if (description != nullptr)
                             {
                                 auto structure = JSON::Value(bufferNode, "structure", String::Empty);
-                                resourceSemanticsMap[bufferName] += std::format("Buffer<{}>", structure.empty() ? getFormatSemantic(description->format) : structure);
+                                // Use structured buffers for filter-generated buffer resources so
+                                // Vulkan bindings map to storage buffers instead of texel buffers.
+                                resourceSemanticsMap[bufferName] += std::format("StructuredBuffer<{}>", structure.empty() ? getFormatSemantic(description->format) : structure);
                             }
                         }
                     }

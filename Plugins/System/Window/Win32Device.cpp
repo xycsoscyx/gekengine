@@ -1,6 +1,9 @@
 #include "GEK/System/WindowDevice.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include <atlbase.h>
+#include <chrono>
+#include <system_error>
+#include <thread>
 #include "resource.h"
 
 #ifndef HID_USAGE_PAGE_GENERIC
@@ -386,19 +389,40 @@ namespace Gek
                         DispatchMessage(&message);
                     };
 
+                    static uint32_t consecutiveIdleExceptions = 0;
+
                     try
                     {
                         onIdle();
+                        consecutiveIdleExceptions = 0;
                     }
                     catch (std::exception const &exception)
                     {
+                        const auto *systemError = dynamic_cast<std::system_error const *>(&exception);
+                        const bool transientBusy =
+                            (systemError != nullptr) &&
+                            (systemError->code() == std::make_error_code(std::errc::device_or_resource_busy));
+
+                        if (transientBusy)
+                        {
+                            std::cerr << "Win32Device onIdle transient exception (continuing): " << exception.what() << std::endl;
+                            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                            continue;
+                        }
+
                         std::cerr << "Win32Device onIdle exception: " << exception.what() << std::endl;
-                        stop.store(true);
+                        if (++consecutiveIdleExceptions >= 8)
+                        {
+                            stop.store(true);
+                        }
                     }
                     catch (...)
                     {
                         std::cerr << "Win32Device onIdle unknown exception" << std::endl;
-                        stop.store(true);
+                        if (++consecutiveIdleExceptions >= 8)
+                        {
+                            stop.store(true);
+                        }
                     }
                 };
             }

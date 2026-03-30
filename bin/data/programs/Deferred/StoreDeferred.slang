@@ -22,7 +22,6 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     // assume normals are stored as 3Dc format, so generate the Z value
     normal.xy = Resources::normal.Sample(Global::TextureSampler, inputPixel.texCoord).xy;
     normal.xy = ((normal.xy * 2.0) - 1.0);
-	normal.y *= -1.0; // grrr, inverted y axis, WHY?!?
     normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
     normal = mul(normal, viewBasis);
     normal = normalize((inputPixel.isFrontFacing != 0) ? normal : -normal);

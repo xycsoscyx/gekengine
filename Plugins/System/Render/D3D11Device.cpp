@@ -1217,11 +1217,13 @@ namespace Gek
                     : public Render::Device::Context::Pipeline
                 {
                 private:
+                    Context *context = nullptr;
                     ID3D11DeviceContext * d3dDeviceContext = nullptr;
 
                 public:
-                    VertexPipeline(ID3D11DeviceContext *d3dDeviceContext)
-                        : d3dDeviceContext(d3dDeviceContext)
+                    VertexPipeline(Context *context)
+                        : context(context)
+                        , d3dDeviceContext(context->d3dDeviceContext)
                     {
                         assert(d3dDeviceContext);
                     }
@@ -1235,6 +1237,15 @@ namespace Gek
                     void setProgram(Render::Program *program)
                     {
                         assert(d3dDeviceContext);
+
+                        if (auto *vertexProgram = dynamic_cast<Gek::Render::Implementation::VertexProgram *>(program))
+                        {
+                            context->currentVertexProgramName = std::string(vertexProgram->getInformation().name);
+                        }
+                        else
+                        {
+                            context->currentVertexProgramName.clear();
+                        }
 
                         d3dDeviceContext->VSSetShader(getObject<VertexProgram>(program), nullptr, 0);
                     }
@@ -1393,11 +1404,13 @@ namespace Gek
                     : public Render::Device::Context::Pipeline
                 {
                 private:
+                    Context *context = nullptr;
                     ID3D11DeviceContext * d3dDeviceContext = nullptr;
 
                 public:
-                    PixelPipeline(ID3D11DeviceContext *d3dDeviceContext)
-                        : d3dDeviceContext(d3dDeviceContext)
+                    PixelPipeline(Context *context)
+                        : context(context)
+                        , d3dDeviceContext(context->d3dDeviceContext)
                     {
                         assert(d3dDeviceContext);
                     }
@@ -1411,6 +1424,15 @@ namespace Gek
                     void setProgram(Render::Program *program)
                     {
                         assert(d3dDeviceContext);
+
+                        if (auto *pixelProgram = dynamic_cast<Gek::Render::Implementation::PixelProgram *>(program))
+                        {
+                            context->currentPixelProgramName = std::string(pixelProgram->getInformation().name);
+                        }
+                        else
+                        {
+                            context->currentPixelProgramName.clear();
+                        }
 
                         d3dDeviceContext->PSSetShader(getObject<PixelProgram>(program), nullptr, 0);
                     }
@@ -1485,19 +1507,30 @@ namespace Gek
                 };
 
             public:
+                Device *owner = nullptr;
                 CComPtr<ID3D11DeviceContext> d3dDeviceContext;
                 PipelinePtr computeSystemHandler;
                 PipelinePtr vertexSystemHandler;
                 PipelinePtr geomtrySystemHandler;
                 PipelinePtr pixelSystemHandler;
+                std::string currentVertexProgramName;
+                std::string currentPixelProgramName;
+                Render::RenderState::CullMode currentCullMode = Render::RenderState::CullMode::None;
+                bool currentFrontCounterClockwise = false;
+                bool hasCurrentRenderState = false;
+                bool currentDepthEnable = false;
+                bool currentDepthWrite = false;
+                Render::ComparisonFunction currentDepthCompare = Render::ComparisonFunction::Always;
+                bool hasCurrentDepthState = false;
 
             public:
-                Context(CComPtr<ID3D11DeviceContext> &d3dDeviceContext)
-                    : d3dDeviceContext(d3dDeviceContext)
+                Context(Device *owner, CComPtr<ID3D11DeviceContext> &d3dDeviceContext)
+                    : owner(owner)
+                    , d3dDeviceContext(d3dDeviceContext)
                     , computeSystemHandler(new ComputePipeline(d3dDeviceContext))
-                    , vertexSystemHandler(new VertexPipeline(d3dDeviceContext))
+                    , vertexSystemHandler(new VertexPipeline(this))
                     , geomtrySystemHandler(new GeometryPipeline(d3dDeviceContext))
-                    , pixelSystemHandler(new PixelPipeline(d3dDeviceContext))
+                    , pixelSystemHandler(new PixelPipeline(this))
                 {
                     assert(d3dDeviceContext);
                     assert(computeSystemHandler);
@@ -1695,6 +1728,18 @@ namespace Gek
                     assert(d3dDeviceContext);
                     assert(renderState);
 
+                    if (auto *d3dRenderState = dynamic_cast<Gek::Render::Implementation::RenderState *>(renderState))
+                    {
+                        const auto &description = d3dRenderState->getDescription();
+                        currentCullMode = description.cullMode;
+                        currentFrontCounterClockwise = description.frontCounterClockwise;
+                        hasCurrentRenderState = true;
+                    }
+                    else
+                    {
+                        hasCurrentRenderState = false;
+                    }
+
                     d3dDeviceContext->RSSetState(getObject<RenderState>(renderState));
                 }
 
@@ -1702,6 +1747,19 @@ namespace Gek
                 {
                     assert(d3dDeviceContext);
                     assert(depthState);
+
+                    if (auto *d3dDepthState = dynamic_cast<Gek::Render::Implementation::DepthState *>(depthState))
+                    {
+                        const auto &description = d3dDepthState->getDescription();
+                        currentDepthEnable = description.enable;
+                        currentDepthWrite = (description.writeMask != Render::DepthState::Write::Zero);
+                        currentDepthCompare = description.comparisonFunction;
+                        hasCurrentDepthState = true;
+                    }
+                    else
+                    {
+                        hasCurrentDepthState = false;
+                    }
 
                     d3dDeviceContext->OMSetDepthStencilState(getObject<DepthState>(depthState), stencilReference);
                 }
@@ -1775,12 +1833,138 @@ namespace Gek
                 {
                     assert(d3dDeviceContext);
 
+                    const auto isUiProgramName = [](std::string_view programName) -> bool
+                    {
+                        return (programName.find("core::uiVertexProgram") != std::string_view::npos) ||
+                            (programName.find("core:uiVertexProgram") != std::string_view::npos) ||
+                            (programName.find("uiVertexProgram") != std::string_view::npos) ||
+                            (programName.find("core::uiPixelProgram") != std::string_view::npos) ||
+                            (programName.find("core:uiPixelProgram") != std::string_view::npos) ||
+                            (programName.find("uiPixelProgram") != std::string_view::npos);
+                    };
+
+                    const std::string_view vertexProgramName = currentVertexProgramName.empty() ? std::string_view("<null>") : std::string_view(currentVertexProgramName);
+                    const std::string_view pixelProgramName = currentPixelProgramName.empty() ? std::string_view("<null>") : std::string_view(currentPixelProgramName);
+                    const bool isUiDraw = isUiProgramName(vertexProgramName) || isUiProgramName(pixelProgramName);
+
+                    if (owner && !owner->loggedFirstIndexedStateThisFrame)
+                    {
+                        const auto engineCullMode = hasCurrentRenderState ? currentCullMode : Render::RenderState::CullMode::None;
+                        const bool engineFrontCCW = hasCurrentRenderState ? currentFrontCounterClockwise : false;
+                        const bool engineDepthEnable = hasCurrentDepthState ? currentDepthEnable : false;
+                        const bool engineDepthWrite = hasCurrentDepthState ? currentDepthWrite : false;
+                        const auto engineDepthCompare = hasCurrentDepthState ? currentDepthCompare : Render::ComparisonFunction::Always;
+                        const auto mappedCullMode = Render::Implementation::CullModeList[static_cast<uint8_t>(engineCullMode)];
+                        const auto mappedDepthCompare = Render::Implementation::ComparisonFunctionList[static_cast<uint8_t>(engineDepthCompare)];
+
+                        owner->loggedFirstIndexedStateThisFrame = true;
+                        owner->getContext()->log(
+                            Gek::Context::Warning,
+                            "D3D11 state sample frame={} vp='{}' pp='{}' engineCull={} engineFrontCCW={} engineDepthEnable={} engineDepthWrite={} engineDepthCompare={} mappedCull={} mappedFrontCCW={} mappedDepthFunc={}",
+                            owner->sampleFrameIndex,
+                            vertexProgramName,
+                            pixelProgramName,
+                            static_cast<uint32_t>(engineCullMode),
+                            static_cast<uint32_t>(engineFrontCCW),
+                            static_cast<uint32_t>(engineDepthEnable),
+                            static_cast<uint32_t>(engineDepthWrite),
+                            static_cast<uint32_t>(engineDepthCompare),
+                            static_cast<uint32_t>(mappedCullMode),
+                            static_cast<uint32_t>(engineFrontCCW),
+                            static_cast<uint32_t>(mappedDepthCompare));
+
+                        {
+                            const auto samplePath = owner->getContext()->getCachePath("d3d11_state_samples.txt").getString();
+                            std::ofstream sampleLog(samplePath, std::ios::out | std::ios::app);
+                            if (sampleLog.is_open())
+                            {
+                                sampleLog << std::format(
+                                    "D3D11 state sample frame={} vp='{}' pp='{}' engineCull={} engineFrontCCW={} engineDepthEnable={} engineDepthWrite={} engineDepthCompare={} mappedCull={} mappedFrontCCW={} mappedDepthFunc={}",
+                                    owner->sampleFrameIndex,
+                                    vertexProgramName,
+                                    pixelProgramName,
+                                    static_cast<uint32_t>(engineCullMode),
+                                    static_cast<uint32_t>(engineFrontCCW),
+                                    static_cast<uint32_t>(engineDepthEnable),
+                                    static_cast<uint32_t>(engineDepthWrite),
+                                    static_cast<uint32_t>(engineDepthCompare),
+                                    static_cast<uint32_t>(mappedCullMode),
+                                    static_cast<uint32_t>(engineFrontCCW),
+                                    static_cast<uint32_t>(mappedDepthCompare)) << std::endl;
+                            }
+                        }
+                    }
+
                     d3dDeviceContext->DrawIndexed(indexCount, firstIndex, firstVertex);
                 }
 
                 void drawInstancedIndexedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
                 {
                     assert(d3dDeviceContext);
+
+                    const auto isUiProgramName = [](std::string_view programName) -> bool
+                    {
+                        return (programName.find("core::uiVertexProgram") != std::string_view::npos) ||
+                            (programName.find("core:uiVertexProgram") != std::string_view::npos) ||
+                            (programName.find("uiVertexProgram") != std::string_view::npos) ||
+                            (programName.find("core::uiPixelProgram") != std::string_view::npos) ||
+                            (programName.find("core:uiPixelProgram") != std::string_view::npos) ||
+                            (programName.find("uiPixelProgram") != std::string_view::npos);
+                    };
+
+                    const std::string_view vertexProgramName = currentVertexProgramName.empty() ? std::string_view("<null>") : std::string_view(currentVertexProgramName);
+                    const std::string_view pixelProgramName = currentPixelProgramName.empty() ? std::string_view("<null>") : std::string_view(currentPixelProgramName);
+                    const bool isUiDraw = isUiProgramName(vertexProgramName) || isUiProgramName(pixelProgramName);
+
+                    if (owner && !owner->loggedFirstIndexedStateThisFrame)
+                    {
+                        const auto engineCullMode = hasCurrentRenderState ? currentCullMode : Render::RenderState::CullMode::None;
+                        const bool engineFrontCCW = hasCurrentRenderState ? currentFrontCounterClockwise : false;
+                        const bool engineDepthEnable = hasCurrentDepthState ? currentDepthEnable : false;
+                        const bool engineDepthWrite = hasCurrentDepthState ? currentDepthWrite : false;
+                        const auto engineDepthCompare = hasCurrentDepthState ? currentDepthCompare : Render::ComparisonFunction::Always;
+                        const auto mappedCullMode = Render::Implementation::CullModeList[static_cast<uint8_t>(engineCullMode)];
+                        const auto mappedDepthCompare = Render::Implementation::ComparisonFunctionList[static_cast<uint8_t>(engineDepthCompare)];
+
+                        owner->loggedFirstIndexedStateThisFrame = true;
+                        owner->getContext()->log(
+                            Gek::Context::Warning,
+                            "D3D11 state sample frame={} vp='{}' pp='{}' engineCull={} engineFrontCCW={} engineDepthEnable={} engineDepthWrite={} engineDepthCompare={} mappedCull={} mappedFrontCCW={} mappedDepthFunc={} instances={}",
+                            owner->sampleFrameIndex,
+                            vertexProgramName,
+                            pixelProgramName,
+                            static_cast<uint32_t>(engineCullMode),
+                            static_cast<uint32_t>(engineFrontCCW),
+                            static_cast<uint32_t>(engineDepthEnable),
+                            static_cast<uint32_t>(engineDepthWrite),
+                            static_cast<uint32_t>(engineDepthCompare),
+                            static_cast<uint32_t>(mappedCullMode),
+                            static_cast<uint32_t>(engineFrontCCW),
+                            static_cast<uint32_t>(mappedDepthCompare),
+                            instanceCount);
+
+                        {
+                            const auto samplePath = owner->getContext()->getCachePath("d3d11_state_samples.txt").getString();
+                            std::ofstream sampleLog(samplePath, std::ios::out | std::ios::app);
+                            if (sampleLog.is_open())
+                            {
+                                sampleLog << std::format(
+                                    "D3D11 state sample frame={} vp='{}' pp='{}' engineCull={} engineFrontCCW={} engineDepthEnable={} engineDepthWrite={} engineDepthCompare={} mappedCull={} mappedFrontCCW={} mappedDepthFunc={} instances={}",
+                                    owner->sampleFrameIndex,
+                                    vertexProgramName,
+                                    pixelProgramName,
+                                    static_cast<uint32_t>(engineCullMode),
+                                    static_cast<uint32_t>(engineFrontCCW),
+                                    static_cast<uint32_t>(engineDepthEnable),
+                                    static_cast<uint32_t>(engineDepthWrite),
+                                    static_cast<uint32_t>(engineDepthCompare),
+                                    static_cast<uint32_t>(mappedCullMode),
+                                    static_cast<uint32_t>(engineFrontCCW),
+                                    static_cast<uint32_t>(mappedDepthCompare),
+                                    instanceCount) << std::endl;
+                            }
+                        }
+                    }
 
                     d3dDeviceContext->DrawIndexedInstanced(indexCount, instanceCount, firstIndex, firstVertex, firstInstance);
                 }
@@ -1818,6 +2002,8 @@ namespace Gek
 
             Render::Device::ContextPtr defaultContext;
             Render::TargetPtr backBuffer;
+            uint64_t sampleFrameIndex = 0;
+            bool loggedFirstIndexedStateThisFrame = false;
 
         public:
             Device(Gek::Context *context, Window::Device *window, Render::Device::Description deviceDescription)
@@ -1826,6 +2012,22 @@ namespace Gek
                 , isChildWindow(GetParent(reinterpret_cast<HWND>(window->getWindowData(0))) != nullptr)
             {
                 assert(window);
+
+                {
+                    const auto markerPath = getContext()->getCachePath("renderer_runtime_marker.txt").getString();
+                    std::ofstream runtimeMarker(markerPath, std::ios::out | std::ios::trunc);
+                    if (runtimeMarker.is_open())
+                    {
+                        runtimeMarker << "backend=d3d11" << std::endl;
+                    }
+
+                    const auto samplePath = getContext()->getCachePath("d3d11_state_samples.txt").getString();
+                    std::ofstream sampleLog(samplePath, std::ios::out | std::ios::trunc);
+                    if (sampleLog.is_open())
+                    {
+                        sampleLog << "backend=d3d11" << std::endl;
+                    }
+                }
 
                 UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #ifdef _DEBUG
@@ -1885,7 +2087,7 @@ namespace Gek
                 //d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
 #endif
 
-                defaultContext = std::make_unique<Context>(d3dDeviceContext);
+                defaultContext = std::make_unique<Context>(this, d3dDeviceContext);
 
             }
 
@@ -1906,11 +2108,6 @@ namespace Gek
             void * getDevice(void)
             {
                 return d3dDevice.p;
-            }
-
-            std::string getDebugOverlayText(void) const
-            {
-                return "D3D11";
             }
 
             // Render::Device
@@ -2099,7 +2296,7 @@ namespace Gek
                     return nullptr;
                 }
 
-                return std::make_unique<Context>(d3dDeferredDeviceContext);
+                return std::make_unique<Context>(this, d3dDeferredDeviceContext);
             }
 
             Render::QueryPtr createQuery(Render::Query::Type type)
@@ -3537,6 +3734,8 @@ namespace Gek
                 assert(dxgiSwapChain);
 
                 dxgiSwapChain->Present(waitForVerticalSync ? 1 : 0, 0);
+                ++sampleFrameIndex;
+                loggedFirstIndexedStateThisFrame = false;
             }
         };
 

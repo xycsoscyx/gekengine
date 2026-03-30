@@ -770,7 +770,6 @@ namespace Gek
                 virtual ~Device(void) = default;
 
                 virtual void *getDevice(void) = 0;
-                virtual std::string getDebugOverlayText(void) const = 0;
             };
         }; // namespace Debug
     }; // namespace Render

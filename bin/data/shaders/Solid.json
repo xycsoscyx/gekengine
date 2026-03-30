@@ -124,7 +124,7 @@
             "clear": {
                 "finalBuffer": {
                     "type": "target",
-                    "value": [ 1.0, 0.0, 1.0 ]
+                    "value": [ 0.1, 0.1, 0.15 ]
                 }
             }
         },

@@ -162,6 +162,8 @@ namespace Gek
             bool showLoadMenu = false;
             std::vector<std::string> scenes;
             uint32_t currentSelectedScene = 0;
+            bool pendingPopulationLoad = false;
+            std::string pendingPopulationName;
 
             bool showSettings = false;
 
@@ -183,6 +185,28 @@ namespace Gek
             std::atomic<int32_t> pendingMouseXMovement = 0;
             std::atomic<int32_t> pendingMouseYMovement = 0;
             std::atomic<bool> populationLoadCompleted = false;
+
+            static constexpr int32_t MaxMouseEventDelta = 4096;
+            static constexpr int32_t MaxPendingMouseDelta = 32768;
+            static constexpr int32_t MaxAppliedMouseDeltaPerFrame = 512;
+
+            void accumulateMouseMovement(std::atomic<int32_t> &pendingMovement, int32_t delta)
+            {
+                if (delta < -MaxMouseEventDelta || delta > MaxMouseEventDelta)
+                {
+                    delta = std::clamp(delta, -MaxMouseEventDelta, MaxMouseEventDelta);
+                }
+
+                int32_t current = pendingMovement.load(std::memory_order_relaxed);
+                while (true)
+                {
+                    int32_t next = std::clamp(current + delta, -MaxPendingMouseDelta, MaxPendingMouseDelta);
+                    if (pendingMovement.compare_exchange_weak(current, next, std::memory_order_relaxed, std::memory_order_relaxed))
+                    {
+                        break;
+                    }
+                }
+            }
 
             bool loadingPopulation = false;
 
@@ -340,7 +364,7 @@ namespace Gek
                 {
                     showSaveModified = true;
                     closeOnModified = true;
-                }
+                }  
                 else
                 {
                     forceClose();
@@ -419,6 +443,8 @@ namespace Gek
 
                 onInitialized.emit();
 
+                queueStartupSceneLoad();
+
                 ImGuiIO& imGuiIo = ImGui::GetIO();
                 imGuiIo.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
                 imGuiIo.MouseDrawCursor = enableInterfaceControl;
@@ -448,6 +474,12 @@ namespace Gek
             {
                 timer.update();
 
+                if (pendingPopulationLoad && population)
+                {
+                    pendingPopulationLoad = false;
+                    population->load(pendingPopulationName);
+                }
+
                 if (populationLoadCompleted.exchange(false, std::memory_order_acq_rel))
                 {
                     loadingPopulation = false;
@@ -475,6 +507,10 @@ namespace Gek
 
                     int32_t xMovement = pendingMouseXMovement.exchange(0, std::memory_order_acq_rel);
                     int32_t yMovement = pendingMouseYMovement.exchange(0, std::memory_order_acq_rel);
+
+                    xMovement = std::clamp(xMovement, -MaxAppliedMouseDeltaPerFrame, MaxAppliedMouseDeltaPerFrame);
+                    yMovement = std::clamp(yMovement, -MaxAppliedMouseDeltaPerFrame, MaxAppliedMouseDeltaPerFrame);
+
                     if (!enableInterfaceControl && !loadingPopulation && population)
                     {
                         if (xMovement || yMovement)
@@ -616,8 +652,8 @@ namespace Gek
 
             void onMouseMovement(int32_t xMovement, int32_t yMovement)
             {
-                pendingMouseXMovement.fetch_add(xMovement, std::memory_order_relaxed);
-                pendingMouseYMovement.fetch_add(yMovement, std::memory_order_relaxed);
+                accumulateMouseMovement(pendingMouseXMovement, xMovement);
+                accumulateMouseMovement(pendingMouseYMovement, yMovement);
             }
 
             void onPopulationLoaded(std::string const&)
@@ -1067,6 +1103,63 @@ namespace Gek
             bool showSaveModified = false;
             bool closeOnModified = false;
             bool loadOnModified = false;
+
+            void refreshSceneList(void)
+            {
+                scenes.clear();
+                currentSelectedScene = 0;
+                getContext()->findDataFiles("scenes"s, [&scenes = scenes](FileSystem::Path const& filePath) -> bool
+                {
+                    if (filePath.isFile())
+                    {
+                        scenes.push_back(filePath.withoutExtension().getFileName());
+                    }
+
+                    return true;
+                });
+            }
+
+            void queuePopulationLoad(std::string const &sceneName)
+            {
+                if (!population)
+                {
+                    return;
+                }
+
+                loadingPopulation = true;
+                populationLoadCompleted.store(false, std::memory_order_release);
+                pendingPopulationName = sceneName;
+                pendingPopulationLoad = true;
+            }
+
+            void queueStartupSceneLoad(void)
+            {
+                const bool autoLoadScene = JSON::Value(getOption("application", "autoLoadDemoScene"), false);
+                if (!autoLoadScene || pendingPopulationLoad || loadingPopulation)
+                {
+                    return;
+                }
+
+                refreshSceneList();
+                if (scenes.empty())
+                {
+                    getContext()->log(Context::Warning, "Startup scene auto-load requested but no scenes were found");
+                    return;
+                }
+
+                std::string startupScene = JSON::Value(getOption("application", "startupScene"), "demo"s);
+                auto sceneSearch = std::find(std::begin(scenes), std::end(scenes), startupScene);
+                if (sceneSearch == std::end(scenes))
+                {
+                    startupScene = scenes.front();
+                    sceneSearch = std::begin(scenes);
+                }
+
+                currentSelectedScene = static_cast<uint32_t>(std::distance(std::begin(scenes), sceneSearch));
+                queuePopulationLoad(startupScene);
+                getContext()->log(Context::Info, "Auto-loading startup scene '{}'", startupScene);
+            }
+
             void showModifiedPrompt(void)
             {
                 if (!showSaveModified)
@@ -1127,17 +1220,7 @@ namespace Gek
 
             void triggerLoadWindow(void)
             {
-                scenes.clear();
-                currentSelectedScene = 0;
-                getContext()->findDataFiles("scenes"s, [&scenes = scenes](FileSystem::Path const& filePath) -> bool
-                {
-                    if (filePath.isFile())
-                    {
-                        scenes.push_back(filePath.withoutExtension().getFileName());
-                    }
-
-                    return true;
-                });
+                refreshSceneList();
 
                 showLoadMenu = true;
             }
@@ -1185,9 +1268,7 @@ namespace Gek
                     {
                         if (ImGui::Button("Load") || IsKeyDown(Window::Key::Return))
                         {
-                            loadingPopulation = true;
-                            populationLoadCompleted.store(false, std::memory_order_release);
-                            population->load(scenes[currentSelectedScene]);
+                            queuePopulationLoad(scenes[currentSelectedScene]);
                             showLoadMenu = false;
                         }
                     }
@@ -1240,7 +1321,7 @@ namespace Gek
 
                 auto &io = ImGui::GetIO();
                 ImGui::SetNextWindowPos(io.DisplaySize * 0.5f, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-                if (ImGui::Begin("Loading", &loadingPopulation, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar))
+                if (ImGui::Begin("Loading", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar))
                 {
                     ImGui::TextUnformatted("Loading...");
                 }

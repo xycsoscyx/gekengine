@@ -100,6 +100,20 @@ public:
 
 namespace Gek
 {
+    namespace
+    {
+        std::string normalizeMaterialName(std::string_view materialName)
+        {
+            FileSystem::Path normalizedPath(materialName);
+            if (String::GetLower(normalizedPath.getExtension()) == ".json")
+            {
+                normalizedPath = normalizedPath.withoutExtension();
+            }
+
+            return normalizedPath.getString();
+        }
+    }
+
     namespace Implementation
     {
         static ShuntingYard shuntingYard;
@@ -1034,8 +1048,9 @@ namespace Gek
 
             MaterialHandle loadMaterial(std::string_view materialName)
             {
-                auto hash = GetHash(materialName);
-                return materialCache.getHandle(hash, [context = getContext(), videoDevice = videoDevice, resources = dynamic_cast<Engine::Resources*>(this), materialName = std::string(materialName)](MaterialHandle handle)->Engine::MaterialPtr
+                auto normalizedMaterialName = normalizeMaterialName(materialName);
+                auto hash = GetHash(normalizedMaterialName);
+                return materialCache.getHandle(hash, [context = getContext(), videoDevice = videoDevice, resources = dynamic_cast<Engine::Resources*>(this), materialName = std::move(normalizedMaterialName)](MaterialHandle handle)->Engine::MaterialPtr
                 {
                     return context->createClass<Engine::Material>("Engine::Material", resources, materialName, handle);
                 }).second;
@@ -1313,18 +1328,31 @@ namespace Gek
             {
                 assert(videoContext);
 
-                if (drawPrimitiveValid && (drawPrimitiveValid = vertexBufferCache.set(resourceHandleList, dynamicCache)))
+                if (!drawPrimitiveValid)
+                {
+                    return;
+                }
+
+                if (vertexBufferCache.set(resourceHandleList, dynamicCache))
                 {
                     videoContext->setVertexBufferList(vertexBufferCache.get(), firstSlot, offsetList);
                 }
-                else if (!drawPrimitiveValid && !loggedMissingVertexBufferList)
+                else
                 {
-                    loggedMissingVertexBufferList = true;
-                    getContext()->log(
-                        Context::Warning,
-                        "Resources vertex buffer list invalid: firstSlot={} count={}",
-                        firstSlot,
-                        static_cast<uint32_t>(resourceHandleList.size()));
+                    drawPrimitiveValid = false;
+
+                    // Keep the draw block alive even if VB resources are missing for this call.
+                    videoContext->clearVertexBufferList(static_cast<uint32_t>(resourceHandleList.size()), firstSlot);
+
+                    if (!loggedMissingVertexBufferList)
+                    {
+                        loggedMissingVertexBufferList = true;
+                        getContext()->log(
+                            Context::Warning,
+                            "Resources vertex buffer list invalid: firstSlot={} count={}",
+                            firstSlot,
+                            static_cast<uint32_t>(resourceHandleList.size()));
+                    }
                 }
             }
 
@@ -1824,33 +1852,17 @@ namespace Gek
                 assert(videoContext);
                 assert(pass);
 
-                if (drawPrimitiveValid)
+                if (!drawPrimitiveValid)
                 {
-                    auto material = materialCache.getResource(handle);
-                    if (drawPrimitiveValid = (material != nullptr))
-                    {
-                        auto data = material->getData(pass->getMaterialHash());
-                        if (drawPrimitiveValid = (data != nullptr))
-                        {
-                            if (!forceShader)
-                            {
-                                setRenderState(videoContext, material->getRenderState());
-                            }
+                    return;
+                }
 
-                            setResourceList(videoContext->pixelPipeline(), data->resourceList, pass->getFirstResourceStage());
-                        }
-                        else if (!loggedMissingMaterialData)
-                        {
-                            loggedMissingMaterialData = true;
-                            getContext()->log(
-                                Context::Warning,
-                                "Resources material data missing: material='{}' passHash={} firstResourceStage={}",
-                                material->getName(),
-                                pass->getMaterialHash(),
-                                pass->getFirstResourceStage());
-                        }
-                    }
-                    else if (!loggedMissingMaterial)
+                auto material = materialCache.getResource(handle);
+                if (!material)
+                {
+                    drawPrimitiveValid = false;
+
+                    if (!loggedMissingMaterial)
                     {
                         loggedMissingMaterial = true;
                         getContext()->log(
@@ -1859,7 +1871,35 @@ namespace Gek
                             static_cast<uint64_t>(handle.identifier),
                             pass->getMaterialHash());
                     }
+
+                    return;
                 }
+
+                auto data = material->getData(pass->getMaterialHash());
+                if (!data)
+                {
+                    drawPrimitiveValid = false;
+
+                    if (!loggedMissingMaterialData)
+                    {
+                        loggedMissingMaterialData = true;
+                        getContext()->log(
+                            Context::Warning,
+                            "Resources material data missing: material='{}' passHash={} firstResourceStage={}",
+                            material->getName(),
+                            pass->getMaterialHash(),
+                            pass->getFirstResourceStage());
+                    }
+
+                    return;
+                }
+
+                if (!forceShader)
+                {
+                    setRenderState(videoContext, material->getRenderState());
+                }
+
+                setResourceList(videoContext->pixelPipeline(), data->resourceList, pass->getFirstResourceStage());
             }
 
             void setVisual(Render::Device::Context* videoContext, VisualHandle handle)

@@ -41,7 +41,7 @@ float3 getExposedColor(float3 color, float averageLuminance, float threshold, ou
 // Logarithmic mapping
 float3 getToneMapLogarithmic(float3 color)
 {
-    const float pixelLuminance = GetLuminance(color);
+    const float pixelLuminance = max(GetLuminance(color), Math::Epsilon);
     const float toneMappedLuminance = (log10(1.0 + pixelLuminance) / log10(1.0 + Options::WhiteLevel));
     return toneMappedLuminance * pow((color / pixelLuminance), Options::LuminanceSaturation);
 }
@@ -49,7 +49,7 @@ float3 getToneMapLogarithmic(float3 color)
 // Drago's Logarithmic mapping
 float3 getToneMapDragoLogarithmic(float3 color)
 {
-    const float pixelLuminance = GetLuminance(color);
+    const float pixelLuminance = max(GetLuminance(color), Math::Epsilon);
     float toneMappedLuminance = log10(1.0 + pixelLuminance);
     //toneMappedLuminance /= log10(1.0 + Options::WhiteLevel);
     //toneMappedLuminance /= log10(2.0 + 8.0 * ((pixelLuminance / Options::WhiteLevel) * log10(Options::DragoBias) / log10(0.5f)));
@@ -61,7 +61,7 @@ float3 getToneMapDragoLogarithmic(float3 color)
 // Exponential mapping
 float3 getToneMapExponential(float3 color)
 {
-    const float pixelLuminance = GetLuminance(color);
+    const float pixelLuminance = max(GetLuminance(color), Math::Epsilon);
     float toneMappedLuminance = 1 - exp(-pixelLuminance / Options::WhiteLevel);
     return toneMappedLuminance * pow(color / pixelLuminance, Options::LuminanceSaturation);
 }
@@ -69,7 +69,7 @@ float3 getToneMapExponential(float3 color)
 // Applies Reinhard's basic tone mapping operator
 float3 getToneMapReinhard(float3 color)
 {
-    const float pixelLuminance = GetLuminance(color);
+    const float pixelLuminance = max(GetLuminance(color), Math::Epsilon);
     float toneMappedLuminance = pixelLuminance / (pixelLuminance + 1.0);
     return toneMappedLuminance * pow(color / pixelLuminance, Options::LuminanceSaturation);
 }
@@ -77,7 +77,7 @@ float3 getToneMapReinhard(float3 color)
 // Applies Reinhard's modified tone mapping operator
 float3 getToneMapReinhardModified(float3 color)
 {
-    const float pixelLuminance = GetLuminance(color);
+    const float pixelLuminance = max(GetLuminance(color), Math::Epsilon);
     float toneMappedLuminance = pixelLuminance * (1.0 + pixelLuminance / (Options::WhiteLevel * Options::WhiteLevel)) / (1.0 + pixelLuminance);
     return toneMappedLuminance * pow(color / pixelLuminance, Options::LuminanceSaturation);
 }
@@ -151,9 +151,14 @@ float3 getToneMappedColor(float3 color, float averageLuminance, float threshold,
 [shader("fragment")]
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    const uint2 screenCoord = uint2(inputPixel.screen.xy);
+    uint textureWidth = 0;
+    uint textureHeight = 0;
+    Resources::inputBuffer.GetDimensions(textureWidth, textureHeight);
+    const int2 maxCoord = int2(int(max(textureWidth, 1u)) - 1, int(max(textureHeight, 1u)) - 1);
+    const uint2 screenCoord = uint2(clamp(int2(inputPixel.screen.xy), int2(0, 0), maxCoord));
     const float3 baseColor = Resources::inputBuffer[screenCoord].xyz;
-    const float averageLuminance = Resources::averageLuminanceBuffer[0];
+    float averageLuminance = Resources::averageLuminanceBuffer[0];
+    averageLuminance = (isfinite(averageLuminance) ? max(averageLuminance, Math::Epsilon) : 1.0);
 
     float exposure = 1.0;
     return getToneMappedColor(baseColor, averageLuminance, 0.0, exposure);
