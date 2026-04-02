@@ -1,9 +1,10 @@
-#include "GEK/Utility/String.hpp"
+﻿#include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/System/RenderDevice.hpp"
 #include "GEK/System/WindowDevice.hpp"
 #include <algorithm>
+#include <bit>
 #include <execution>
 #include <exception>
 #include <cstdint>
@@ -18,6 +19,7 @@
 #include <array>
 #include <utility>
 #include <mutex>
+#include <atomic>
 
 #ifdef WIN32
     #define VK_USE_PLATFORM_WIN32_KHR
@@ -35,6 +37,8 @@ namespace Gek
 {
     namespace Render::Implementation
     {
+        static std::atomic_bool gVulkanDeviceShuttingDown{ false };
+
         Render::Format GetFormat(VkFormat format)
         {
             switch (format)
@@ -70,6 +74,11 @@ namespace Gek
             case VK_FORMAT_R32_SINT: return Render::Format::R32_INT;
             case VK_FORMAT_R16_SINT: return Render::Format::R16_INT;
             case VK_FORMAT_R8_SINT: return Render::Format::R8_INT;
+
+            case VK_FORMAT_D32_SFLOAT_S8_UINT: return Render::Format::D32_FLOAT_S8X24_UINT;
+            case VK_FORMAT_D24_UNORM_S8_UINT: return Render::Format::D24_UNORM_S8_UINT;
+            case VK_FORMAT_D32_SFLOAT: return Render::Format::D32_FLOAT;
+            case VK_FORMAT_D16_UNORM: return Render::Format::D16_UNORM;
 
             case VK_FORMAT_R16G16B16A16_UNORM: return Render::Format::R16G16B16A16_UNORM;
             //case VK_FORMAT_R10G10B10A2_UNORM: return Render::Format::R10G10B10A2_UNORM;
@@ -134,6 +143,10 @@ namespace Gek
 
             case Render::Format::R16_UINT: return VK_FORMAT_R16_UINT;
             case Render::Format::R32_UINT: return VK_FORMAT_R32_UINT;
+            case Render::Format::D32_FLOAT_S8X24_UINT: return VK_FORMAT_D32_SFLOAT_S8_UINT;
+            case Render::Format::D24_UNORM_S8_UINT: return VK_FORMAT_D24_UNORM_S8_UINT;
+            case Render::Format::D32_FLOAT: return VK_FORMAT_D32_SFLOAT;
+            case Render::Format::D16_UNORM: return VK_FORMAT_D16_UNORM;
             default:
                 return VK_FORMAT_UNDEFINED;
             }
@@ -363,6 +376,13 @@ namespace Gek
 
             virtual ~SamplerState(void)
             {
+                if (gVulkanDeviceShuttingDown.load(std::memory_order_relaxed))
+                {
+                    sampler = VK_NULL_HANDLE;
+                    device = VK_NULL_HANDLE;
+                    return;
+                }
+
                 if (sampler != VK_NULL_HANDLE)
                 {
                     vkDestroySampler(device, sampler, nullptr);
@@ -425,7 +445,7 @@ namespace Gek
         public:
             Buffer(VkDevice device, const Render::Buffer::Description &description)
                 : Resource()
-                , ShaderResourceView()
+                , ShaderResourceView()  
                 , UnorderedAccessView()
                 , description(description)
                 , device(device)
@@ -434,6 +454,15 @@ namespace Gek
 
             virtual ~Buffer(void)
             {
+                if (gVulkanDeviceShuttingDown.load(std::memory_order_relaxed))
+                {
+                    mappedData = nullptr;
+                    buffer = VK_NULL_HANDLE;
+                    memory = VK_NULL_HANDLE;
+                    device = VK_NULL_HANDLE;
+                    return;
+                }
+
                 if (mappedData)
                 {
                     vkUnmapMemory(device, memory);
@@ -682,6 +711,13 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
+            VkDevice device = VK_NULL_HANDLE;
+            VkImage image = VK_NULL_HANDLE;
+            VkDeviceMemory memory = VK_NULL_HANDLE;
+            VkImageView imageView = VK_NULL_HANDLE;
+            VkSampler sampler = VK_NULL_HANDLE;
+            VkFormat format = VK_FORMAT_UNDEFINED;
+            VkImageLayout currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
         public:
             DepthTexture(const Render::Texture::Description &description)
@@ -694,6 +730,29 @@ namespace Gek
 
             virtual ~DepthTexture(void)
             {
+                if (sampler != VK_NULL_HANDLE)
+                {
+                    vkDestroySampler(device, sampler, nullptr);
+                    sampler = VK_NULL_HANDLE;
+                }
+
+                if (imageView != VK_NULL_HANDLE)
+                {
+                    vkDestroyImageView(device, imageView, nullptr);
+                    imageView = VK_NULL_HANDLE;
+                }
+
+                if (image != VK_NULL_HANDLE)
+                {
+                    vkDestroyImage(device, image, nullptr);
+                    image = VK_NULL_HANDLE;
+                }
+
+                if (memory != VK_NULL_HANDLE)
+                {
+                    vkFreeMemory(device, memory, nullptr);
+                    memory = VK_NULL_HANDLE;
+                }
             }
         };
 
@@ -760,6 +819,12 @@ namespace Gek
         GEK_CONTEXT_USER(Device, Window::Device *, Render::Device::Description)
             , public Render::Debug::Device
         {
+            struct DrawCommand;
+            class Context;
+
+            void enqueueGenerateMipMapsCommand(Context *sourceContext, Render::Texture *texture);
+            void enqueueComputeDispatchCommand(Context *sourceContext, uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ);
+
             class Context
                 : public Render::Device::Context
             {
@@ -785,38 +850,201 @@ namespace Gek
 
                     void setProgram(Render::Program *program)
                     {
+                        context->currentComputeProgram = getObject<ComputeProgram>(program);
                     }
 
                     void setSamplerStateList(const std::vector<Render::Object *> &list, uint32_t firstStage)
                     {
+                        if (list.empty())
+                        {
+                            return;
+                        }
+
+                        for (uint32_t samplerIndex = 0; samplerIndex < list.size(); ++samplerIndex)
+                        {
+                            const uint32_t slot = firstStage + samplerIndex;
+                            if (slot >= context->currentComputeResourceSamplers.size())
+                            {
+                                continue;
+                            }
+
+                            auto samplerState = getObject<SamplerState>(list[samplerIndex]);
+                            context->currentComputeResourceSamplers[slot] = (samplerState ? samplerState->sampler : VK_NULL_HANDLE);
+                        }
                     }
 
                     void setConstantBufferList(const std::vector<Render::Buffer *> &list, uint32_t firstStage)
                     {
+                        if (list.empty())
+                        {
+                            return;
+                        }
+
+                        for (uint32_t bufferIndex = 0; bufferIndex < list.size(); ++bufferIndex)
+                        {
+                            const uint32_t slot = firstStage + bufferIndex;
+                            if (slot >= context->currentComputeConstantBuffers.size())
+                            {
+                                continue;
+                            }
+
+                            context->currentComputeConstantBuffers[slot] = getObject<Buffer>(list[bufferIndex]);
+                        }
                     }
 
                     void setResourceList(const std::vector<Render::Object *> &list, uint32_t firstStage)
                     {
+                        if (list.empty())
+                        {
+                            return;
+                        }
+
+                        for (uint32_t resourceIndex = 0; resourceIndex < list.size(); ++resourceIndex)
+                        {
+                            const uint32_t slot = firstStage + resourceIndex;
+                            if (slot >= context->currentComputeResourceImageViews.size())
+                            {
+                                continue;
+                            }
+
+                            auto *resource = list[resourceIndex];
+                            VkImageView imageView = VK_NULL_HANDLE;
+                            VkSampler imageSampler = VK_NULL_HANDLE;
+                            if (auto viewTexture = getObject<ViewTexture>(resource))
+                            {
+                                imageView = viewTexture->imageView;
+                                imageSampler = viewTexture->sampler;
+                                context->currentComputeResourceBuffers[slot] = nullptr;
+                            }
+                            else if (auto targetTexture = getObject<TargetTexture>(resource))
+                            {
+                                imageView = targetTexture->imageView;
+                                imageSampler = targetTexture->sampler;
+                                context->currentComputeResourceBuffers[slot] = nullptr;
+                            }
+                            else if (auto depthTexture = getObject<DepthTexture>(resource))
+                            {
+                                imageView = depthTexture->imageView;
+                                imageSampler = depthTexture->sampler;
+                                context->currentComputeResourceBuffers[slot] = nullptr;
+                            }
+                            else if (auto resourceBuffer = getObject<Buffer>(resource))
+                            {
+                                context->currentComputeResourceBuffers[slot] = resourceBuffer;
+                                imageView = VK_NULL_HANDLE;
+                                imageSampler = VK_NULL_HANDLE;
+                            }
+                            else
+                            {
+                                context->currentComputeResourceBuffers[slot] = nullptr;
+                            }
+
+                            context->currentComputeResources[slot] = resource;
+                            context->currentComputeResourceImageViews[slot] = imageView;
+                            context->currentComputeResourceSamplers[slot] = imageSampler;
+                        }
                     }
 
                     void setUnorderedAccessList(const std::vector<Render::Object *> &list, uint32_t firstStage, uint32_t *countList)
                     {
+                        if (list.empty())
+                        {
+                            return;
+                        }
+
+                        for (uint32_t resourceIndex = 0; resourceIndex < list.size(); ++resourceIndex)
+                        {
+                            const uint32_t slot = firstStage + resourceIndex;
+                            if (slot >= context->currentComputeUnorderedAccessImageViews.size())
+                            {
+                                continue;
+                            }
+
+                            auto *resource = list[resourceIndex];
+                            context->currentComputeUnorderedAccessResources[slot] = resource;
+
+                            if (auto targetTexture = getObject<TargetTexture>(resource))
+                            {
+                                context->currentComputeUnorderedAccessImageViews[slot] = targetTexture->imageView;
+                                context->currentComputeUnorderedAccessBuffers[slot] = nullptr;
+                            }
+                            else if (auto depthTexture = getObject<DepthTexture>(resource))
+                            {
+                                context->currentComputeUnorderedAccessImageViews[slot] = depthTexture->imageView;
+                                context->currentComputeUnorderedAccessBuffers[slot] = nullptr;
+                            }
+                            else if (auto resourceBuffer = getObject<Buffer>(resource))
+                            {
+                                context->currentComputeUnorderedAccessImageViews[slot] = VK_NULL_HANDLE;
+                                context->currentComputeUnorderedAccessBuffers[slot] = resourceBuffer;
+                            }
+                            else
+                            {
+                                context->currentComputeUnorderedAccessImageViews[slot] = VK_NULL_HANDLE;
+                                context->currentComputeUnorderedAccessBuffers[slot] = nullptr;
+                            }
+                        }
                     }
 
                     void clearSamplerStateList(uint32_t count, uint32_t firstStage)
                     {
+                        if (count == 0 || firstStage >= context->currentComputeResourceSamplers.size())
+                        {
+                            return;
+                        }
+
+                        const uint32_t endStage = std::min<uint32_t>(static_cast<uint32_t>(context->currentComputeResourceSamplers.size()), firstStage + count);
+                        for (uint32_t stage = firstStage; stage < endStage; ++stage)
+                        {
+                            context->currentComputeResourceSamplers[stage] = VK_NULL_HANDLE;
+                        }
                     }
 
                     void clearConstantBufferList(uint32_t count, uint32_t firstStage)
                     {
+                        if (count == 0 || firstStage >= context->currentComputeConstantBuffers.size())
+                        {
+                            return;
+                        }
+
+                        const uint32_t endStage = std::min<uint32_t>(static_cast<uint32_t>(context->currentComputeConstantBuffers.size()), firstStage + count);
+                        for (uint32_t stage = firstStage; stage < endStage; ++stage)
+                        {
+                            context->currentComputeConstantBuffers[stage] = nullptr;
+                        }
                     }
 
                     void clearResourceList(uint32_t count, uint32_t firstStage)
                     {
+                        if (count == 0 || firstStage >= context->currentComputeResourceImageViews.size())
+                        {
+                            return;
+                        }
+
+                        const uint32_t endStage = std::min<uint32_t>(static_cast<uint32_t>(context->currentComputeResourceImageViews.size()), firstStage + count);
+                        for (uint32_t stage = firstStage; stage < endStage; ++stage)
+                        {
+                            context->currentComputeResources[stage] = nullptr;
+                            context->currentComputeResourceImageViews[stage] = VK_NULL_HANDLE;
+                            context->currentComputeResourceSamplers[stage] = VK_NULL_HANDLE;
+                            context->currentComputeResourceBuffers[stage] = nullptr;
+                        }
                     }
 
                     void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
                     {
+                        if (count == 0 || firstStage >= context->currentComputeUnorderedAccessImageViews.size())
+                        {
+                            return;
+                        }
+
+                        const uint32_t endStage = std::min<uint32_t>(static_cast<uint32_t>(context->currentComputeUnorderedAccessImageViews.size()), firstStage + count);
+                        for (uint32_t stage = firstStage; stage < endStage; ++stage)
+                        {
+                            context->currentComputeUnorderedAccessResources[stage] = nullptr;
+                            context->currentComputeUnorderedAccessImageViews[stage] = VK_NULL_HANDLE;
+                            context->currentComputeUnorderedAccessBuffers[stage] = nullptr;
+                        }
                     }
                 };
 
@@ -1047,6 +1275,12 @@ namespace Gek
                                 imageSampler = targetTexture->sampler;
                                 context->currentPixelResourceBuffers[slot] = nullptr;
                             }
+                            else if (auto depthTexture = getObject<DepthTexture>(resource))
+                            {
+                                imageView = depthTexture->imageView;
+                                imageSampler = depthTexture->sampler;
+                                context->currentPixelResourceBuffers[slot] = nullptr;
+                            }
                             else if (auto resourceBuffer = getObject<Buffer>(resource))
                             {
                                 context->currentPixelResourceBuffers[slot] = resourceBuffer;
@@ -1138,21 +1372,32 @@ namespace Gek
                 TargetTexture *currentRenderTarget = nullptr;
                 std::array<TargetTexture *, 8> currentRenderTargetList{};
                 uint32_t currentRenderTargetCount = 0;
+                DepthTexture *currentDepthTarget = nullptr;
 
                 VertexProgram *currentVertexProgram = nullptr;
                 PixelProgram *currentPixelProgram = nullptr;
+                ComputeProgram *currentComputeProgram = nullptr;
                 Buffer *currentVertexConstantBuffer = nullptr;
                 Buffer *currentPixelConstantBuffer = nullptr;
                 std::array<Buffer *, ContextResourceSlotCount> currentVertexConstantBuffers{};
                 std::array<Buffer *, ContextResourceSlotCount> currentPixelConstantBuffers{};
+                std::array<Buffer *, ContextResourceSlotCount> currentComputeConstantBuffers{};
                 VkImageView currentPixelImageView = VK_NULL_HANDLE;
                 VkSampler currentPixelImageSampler = VK_NULL_HANDLE;
                 std::array<VkImageView, 16> currentPixelResourceImageViews{};
                 std::array<VkSampler, 16> currentPixelResourceSamplers{};
                 std::array<Buffer *, ContextResourceSlotCount> currentPixelResourceBuffers{};
+                std::array<Render::Object *, ContextResourceSlotCount> currentComputeResources{};
+                std::array<VkImageView, 16> currentComputeResourceImageViews{};
+                std::array<VkSampler, 16> currentComputeResourceSamplers{};
+                std::array<Buffer *, ContextResourceSlotCount> currentComputeResourceBuffers{};
+                std::array<Render::Object *, ContextResourceSlotCount> currentComputeUnorderedAccessResources{};
+                std::array<VkImageView, 16> currentComputeUnorderedAccessImageViews{};
+                std::array<Buffer *, ContextResourceSlotCount> currentComputeUnorderedAccessBuffers{};
                 SamplerState *currentPixelSamplerState = nullptr;
                 BlendState *currentBlendState = nullptr;
                 DepthState *currentDepthState = nullptr;
+                RenderState *currentRenderState = nullptr;
 
             public:
                 Context(Device *owner, bool isDeferredContext = false)
@@ -1213,6 +1458,12 @@ namespace Gek
 
                 void generateMipMaps(Render::Texture *texture)
                 {
+                    if (!owner || !texture)
+                    {
+                        return;
+                    }
+
+                    owner->enqueueGenerateMipMapsCommand(this, texture);
                 }
 
                 void resolveSamples(Render::Texture *destination, Render::Texture *source)
@@ -1230,17 +1481,27 @@ namespace Gek
                     currentRenderTarget = nullptr;
                     currentRenderTargetList.fill(nullptr);
                     currentRenderTargetCount = 0;
+                    currentDepthTarget = nullptr;
                     currentVertexProgram = nullptr;
                     currentPixelProgram = nullptr;
+                    currentComputeProgram = nullptr;
                     currentVertexConstantBuffer = nullptr;
                     currentPixelConstantBuffer = nullptr;
                     currentVertexConstantBuffers.fill(nullptr);
                     currentPixelConstantBuffers.fill(nullptr);
+                    currentComputeConstantBuffers.fill(nullptr);
                     currentPixelImageView = VK_NULL_HANDLE;
                     currentPixelImageSampler = VK_NULL_HANDLE;
                     currentPixelResourceImageViews.fill(VK_NULL_HANDLE);
                     currentPixelResourceSamplers.fill(VK_NULL_HANDLE);
                     currentPixelResourceBuffers.fill(nullptr);
+                    currentComputeResources.fill(nullptr);
+                    currentComputeResourceImageViews.fill(VK_NULL_HANDLE);
+                    currentComputeResourceSamplers.fill(VK_NULL_HANDLE);
+                    currentComputeResourceBuffers.fill(nullptr);
+                    currentComputeUnorderedAccessResources.fill(nullptr);
+                    currentComputeUnorderedAccessImageViews.fill(VK_NULL_HANDLE);
+                    currentComputeUnorderedAccessBuffers.fill(nullptr);
                     currentPixelSamplerState = nullptr;
                     currentBlendState = nullptr;
                     currentDepthState = nullptr;
@@ -1336,6 +1597,10 @@ namespace Gek
                     currentRenderTarget = nullptr;
                     currentRenderTargetList.fill(nullptr);
                     currentRenderTargetCount = 0;
+                    if (depthBuffer)
+                    {
+                        currentDepthTarget = nullptr;
+                    }
                 }
 
                 void setRenderTargetList(const std::vector<Render::Target *> &renderTargetList, Render::Object *depthBuffer)
@@ -1343,6 +1608,7 @@ namespace Gek
                     currentRenderTarget = nullptr;
                     currentRenderTargetList.fill(nullptr);
                     currentRenderTargetCount = 0;
+                    currentDepthTarget = getObject<DepthTexture>(depthBuffer);
                     if (!owner)
                     {
                         return;
@@ -1372,6 +1638,7 @@ namespace Gek
 
                 void setRenderState(Render::Object *renderState)
                 {
+                    currentRenderState = getObject<RenderState>(renderState);
                 }
 
                 void setDepthState(Render::Object *depthState, uint32_t stencilReference)
@@ -1491,10 +1758,12 @@ namespace Gek
                         command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
                     }
                     command.renderTarget = currentRenderTarget;
+                    command.depthTarget = currentDepthTarget;
                     command.hasOffscreenTarget = (currentRenderTargetCount > 0);
                     command.offscreenTargetCount = currentRenderTargetCount;
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
+                    command.renderState = currentRenderState;
                     if (command.pixelSampler == VK_NULL_HANDLE)
                     {
                         command.pixelSampler = currentPixelImageSampler;
@@ -1634,10 +1903,12 @@ namespace Gek
                         command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
                     }
                     command.renderTarget = currentRenderTarget;
+                    command.depthTarget = currentDepthTarget;
                     command.hasOffscreenTarget = (currentRenderTargetCount > 0);
                     command.offscreenTargetCount = currentRenderTargetCount;
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
+                    command.renderState = currentRenderState;
                     if (command.pixelSampler == VK_NULL_HANDLE)
                     {
                         command.pixelSampler = currentPixelImageSampler;
@@ -1801,10 +2072,12 @@ namespace Gek
                         command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
                     }
                     command.renderTarget = currentRenderTarget;
+                    command.depthTarget = currentDepthTarget;
                     command.hasOffscreenTarget = (currentRenderTargetCount > 0);
                     command.offscreenTargetCount = currentRenderTargetCount;
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
+                    command.renderState = currentRenderState;
                     if (command.pixelSampler == VK_NULL_HANDLE)
                     {
                         command.pixelSampler = currentPixelImageSampler;
@@ -1968,10 +2241,12 @@ namespace Gek
                         command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
                     }
                     command.renderTarget = currentRenderTarget;
+                    command.depthTarget = currentDepthTarget;
                     command.hasOffscreenTarget = (currentRenderTargetCount > 0);
                     command.offscreenTargetCount = currentRenderTargetCount;
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
+                    command.renderState = currentRenderState;
                     if (command.pixelSampler == VK_NULL_HANDLE)
                     {
                         command.pixelSampler = currentPixelImageSampler;
@@ -2048,6 +2323,24 @@ namespace Gek
 
                 void dispatch(uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ)
                 {
+                    if (!owner)
+                    {
+                        return;
+                    }
+
+                    if (!currentComputeProgram)
+                    {
+                        owner->getContext()->log(Gek::Context::Warning, "Vulkan compute dispatch skipped: no compute program bound");
+                        return;
+                    }
+
+                    if (threadGroupCountX == 0 || threadGroupCountY == 0 || threadGroupCountZ == 0)
+                    {
+                        owner->getContext()->log(Gek::Context::Warning, "Vulkan compute dispatch skipped: zero thread group dimension ({}, {}, {})", threadGroupCountX, threadGroupCountY, threadGroupCountZ);
+                        return;
+                    }
+
+                    owner->enqueueComputeDispatchCommand(this, threadGroupCountX, threadGroupCountY, threadGroupCountZ);
                 }
 
                 Render::ObjectPtr finishCommandList(void)
@@ -2104,6 +2397,10 @@ namespace Gek
             std::vector<VkImage> swapChainImages;
             std::vector<VkImageView> swapChainImageViews;
             std::vector<VkImageLayout> swapChainImageLayouts;
+            VkImage depthImage = VK_NULL_HANDLE;
+            VkDeviceMemory depthMemory = VK_NULL_HANDLE;
+            VkImageView depthImageView = VK_NULL_HANDLE;
+            VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
             VkCommandPool commandPool = VK_NULL_HANDLE;
             VkCommandPool uploadCommandPool = VK_NULL_HANDLE;
             VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
@@ -2113,7 +2410,7 @@ namespace Gek
             bool inFlightFencePending = false;
             VkRenderPass renderPass = VK_NULL_HANDLE;
             std::vector<VkFramebuffer> swapChainFramebuffers;
-            std::map<std::vector<VkFormat>, VkRenderPass> offscreenRenderPassCache;
+            std::map<std::pair<std::vector<VkFormat>, VkFormat>, VkRenderPass> offscreenRenderPassCache;
             std::vector<VkFramebuffer> transientFramebuffers;
 
             VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
@@ -2132,6 +2429,14 @@ namespace Gek
 
             struct DrawCommand
             {
+                enum class Type
+                {
+                    Draw,
+                    ComputeDispatch,
+                    GenerateMipMaps,
+                };
+
+                Type commandType = Type::Draw;
                 bool indexed = false;
                 uint32_t instanceCount = 1;
                 uint32_t firstInstance = 0;
@@ -2160,6 +2465,7 @@ namespace Gek
                 std::array<VkSampler, PixelResourceSlotCount> pixelResourceSamplers{};
                 std::array<Buffer *, PixelResourceSlotCount> pixelResourceBuffers{};
                 TargetTexture *renderTarget = nullptr;
+                DepthTexture *depthTarget = nullptr;
                 bool hasOffscreenTarget = false;
                 uint32_t offscreenTargetCount = 0;
                 std::array<VkImage, 8> offscreenImages{};
@@ -2168,6 +2474,23 @@ namespace Gek
                 std::array<VkExtent2D, 8> offscreenExtents{};
                 BlendState *blendState = nullptr;
                 DepthState *depthState = nullptr;
+                RenderState *renderState = nullptr;
+
+                ComputeProgram *computeProgram = nullptr;
+                uint32_t computeThreadGroupCountX = 0;
+                uint32_t computeThreadGroupCountY = 0;
+                uint32_t computeThreadGroupCountZ = 0;
+                std::array<Buffer *, PixelResourceSlotCount> computeConstantBuffers{};
+                std::array<Render::Object *, PixelResourceSlotCount> computeResources{};
+                std::array<VkImageView, PixelResourceSlotCount> computeResourceImageViews{};
+                std::array<VkSampler, PixelResourceSlotCount> computeResourceSamplers{};
+                std::array<Buffer *, PixelResourceSlotCount> computeResourceBuffers{};
+                std::array<Render::Object *, PixelResourceSlotCount> computeUnorderedAccessResources{};
+                std::array<VkImageView, PixelResourceSlotCount> computeUnorderedAccessImageViews{};
+                std::array<Buffer *, PixelResourceSlotCount> computeUnorderedAccessBuffers{};
+
+                Render::Texture *mipmapTexture = nullptr;
+                uint32_t mipmapLevels = 1;
             };
 
             std::vector<DrawCommand> pendingDrawCommands;
@@ -2208,6 +2531,9 @@ namespace Gek
                 bool blendEnabled = false;
                 bool depthEnabled = false;
                 bool depthWrite = false;
+                Render::ComparisonFunction depthCompareFunction = Render::ComparisonFunction::Always;
+                Render::RenderState::CullMode cullMode = Render::RenderState::CullMode::None;
+                bool frontCounterClockwise = false;
 
                 bool operator < (const PipelineKey &other) const
                 {
@@ -2218,12 +2544,17 @@ namespace Gek
                     if (primitiveType != other.primitiveType) return primitiveType < other.primitiveType;
                     if (blendEnabled != other.blendEnabled) return blendEnabled < other.blendEnabled;
                     if (depthEnabled != other.depthEnabled) return depthEnabled < other.depthEnabled;
-                    return depthWrite < other.depthWrite;
+                    if (depthWrite != other.depthWrite) return depthWrite < other.depthWrite;
+                    if (depthCompareFunction != other.depthCompareFunction) return depthCompareFunction < other.depthCompareFunction;
+                    if (cullMode != other.cullMode) return cullMode < other.cullMode;
+                    return frontCounterClockwise < other.frontCounterClockwise;
                 }
             };
 
             std::map<PipelineKey, VkPipeline> graphicsPipelineCache;
             std::set<PipelineKey> failedGraphicsPipelineKeys;
+            std::map<VkShaderModule, VkPipeline> computePipelineCache;
+            std::set<VkShaderModule> failedComputePipelineModules;
 
             VkClearColorValue pendingClearColor = {{ 0.1f, 0.1f, 0.15f, 1.0f }};
 
@@ -2834,17 +3165,115 @@ namespace Gek
                 graphicsPipelineCache.clear();
                 failedGraphicsPipelineKeys.clear();
 
+                for (auto pipelinePair : computePipelineCache)
+                {
+                    if (pipelinePair.second != VK_NULL_HANDLE)
+                    {
+                        vkDestroyPipeline(device, pipelinePair.second, nullptr);
+                    }
+                }
+                computePipelineCache.clear();
+                failedComputePipelineModules.clear();
+
                 for (auto framebuffer : swapChainFramebuffers)
                 {
                     vkDestroyFramebuffer(device, framebuffer, nullptr);
                 }
                 swapChainFramebuffers.clear();
 
+                if (depthImageView != VK_NULL_HANDLE)
+                {
+                    vkDestroyImageView(device, depthImageView, nullptr);
+                    depthImageView = VK_NULL_HANDLE;
+                }
+
+                if (depthImage != VK_NULL_HANDLE)
+                {
+                    vkDestroyImage(device, depthImage, nullptr);
+                    depthImage = VK_NULL_HANDLE;
+                }
+
+                if (depthMemory != VK_NULL_HANDLE)
+                {
+                    vkFreeMemory(device, depthMemory, nullptr);
+                    depthMemory = VK_NULL_HANDLE;
+                }
+
                 if (renderPass != VK_NULL_HANDLE)
                 {
                     vkDestroyRenderPass(device, renderPass, nullptr);
                     renderPass = VK_NULL_HANDLE;
                 }
+            }
+
+            void createDepthImage(void)
+            {
+                VkImageCreateInfo imageInfo{};
+                imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+                imageInfo.imageType = VK_IMAGE_TYPE_2D;
+                imageInfo.extent.width = swapChainExtent.width;
+                imageInfo.extent.height = swapChainExtent.height;
+                imageInfo.extent.depth = 1;
+                imageInfo.mipLevels = 1;
+                imageInfo.arrayLayers = 1;
+                imageInfo.format = depthFormat;
+                imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+                imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+                imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+                imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+                if (vkCreateImage(device, &imageInfo, nullptr, &depthImage) != VK_SUCCESS)
+                {
+                    throw std::runtime_error("failed to create depth image");
+                }
+
+                VkMemoryRequirements memRequirements;
+                vkGetImageMemoryRequirements(device, depthImage, &memRequirements);
+
+                VkPhysicalDeviceMemoryProperties memProperties;
+                vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+
+                uint32_t memType = 0;
+                for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i)
+                {
+                    if ((memRequirements.memoryTypeBits & (1 << i)) &&
+                        (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
+                    {
+                        memType = i;
+                        break;
+                    }
+                }
+
+                VkMemoryAllocateInfo allocInfo{};
+                allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+                allocInfo.allocationSize = memRequirements.size;
+                allocInfo.memoryTypeIndex = memType;
+
+                if (vkAllocateMemory(device, &allocInfo, nullptr, &depthMemory) != VK_SUCCESS)
+                {
+                    throw std::runtime_error("failed to allocate depth image memory");
+                }
+
+                vkBindImageMemory(device, depthImage, depthMemory, 0);
+
+                VkImageViewCreateInfo viewInfo{};
+                viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+                viewInfo.image = depthImage;
+                viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+                viewInfo.format = depthFormat;
+                viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                viewInfo.subresourceRange.baseMipLevel = 0;
+                viewInfo.subresourceRange.levelCount = 1;
+                viewInfo.subresourceRange.baseArrayLayer = 0;
+                viewInfo.subresourceRange.layerCount = 1;
+
+                if (vkCreateImageView(device, &viewInfo, nullptr, &depthImageView) != VK_SUCCESS)
+                {
+                    throw std::runtime_error("failed to create depth image view");
+                }
+
+                getContext()->log(Gek::Context::Info, "Vulkan depth image created");
             }
 
             void createRenderPassResources(void)
@@ -2859,27 +3288,44 @@ namespace Gek
                 colorAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                 colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+                VkAttachmentDescription depthAttachment{};
+                depthAttachment.format = depthFormat;
+                depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+                depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+                depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+                depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+                depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
                 VkAttachmentReference colorAttachmentRef{};
                 colorAttachmentRef.attachment = 0;
                 colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+                VkAttachmentReference depthAttachmentRef{};
+                depthAttachmentRef.attachment = 1;
+                depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+                VkAttachmentDescription attachments[2] = { colorAttachment, depthAttachment };
 
                 VkSubpassDescription subpass{};
                 subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
                 subpass.colorAttachmentCount = 1;
                 subpass.pColorAttachments = &colorAttachmentRef;
+                subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
                 VkSubpassDependency dependency{};
                 dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
                 dependency.dstSubpass = 0;
-                dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT;
-                dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT;
+                dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
                 dependency.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-                dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
                 VkRenderPassCreateInfo renderPassInfo{};
                 renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-                renderPassInfo.attachmentCount = 1;
-                renderPassInfo.pAttachments = &colorAttachment;
+                renderPassInfo.attachmentCount = 2;
+                renderPassInfo.pAttachments = attachments;
                 renderPassInfo.subpassCount = 1;
                 renderPassInfo.pSubpasses = &subpass;
                 renderPassInfo.dependencyCount = 1;
@@ -2892,12 +3338,12 @@ namespace Gek
                 swapChainFramebuffers.resize(swapChainImageViews.size());
                 for (size_t imageIndex = 0; imageIndex < swapChainImageViews.size(); ++imageIndex)
                 {
-                    VkImageView attachment = swapChainImageViews[imageIndex];
+                    VkImageView attachmentViews[2] = { swapChainImageViews[imageIndex], depthImageView };
                     VkFramebufferCreateInfo framebufferInfo{};
                     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
                     framebufferInfo.renderPass = renderPass;
-                    framebufferInfo.attachmentCount = 1;
-                    framebufferInfo.pAttachments = &attachment;
+                    framebufferInfo.attachmentCount = 2;
+                    framebufferInfo.pAttachments = attachmentViews;
                     framebufferInfo.width = swapChainExtent.width;
                     framebufferInfo.height = swapChainExtent.height;
                     framebufferInfo.layers = 1;
@@ -2909,14 +3355,16 @@ namespace Gek
                 }
             }
 
-            VkRenderPass getOrCreateOffscreenRenderPass(const std::vector<VkFormat> &formats)
+            VkRenderPass getOrCreateOffscreenRenderPass(const std::vector<VkFormat> &formats, VkFormat depthAttachmentFormat)
             {
                 if (formats.empty())
                 {
                     return VK_NULL_HANDLE;
                 }
 
-                auto renderPassSearch = offscreenRenderPassCache.find(formats);
+                const bool withDepth = (depthAttachmentFormat != VK_FORMAT_UNDEFINED);
+                auto cacheKey = std::make_pair(formats, depthAttachmentFormat);
+                auto renderPassSearch = offscreenRenderPassCache.find(cacheKey);
                 if (renderPassSearch != std::end(offscreenRenderPassCache))
                 {
                     return renderPassSearch->second;
@@ -2947,10 +3395,31 @@ namespace Gek
                     colorAttachmentRefs.push_back(colorAttachmentRef);
                 }
 
+                VkAttachmentDescription depthAttachment{};
+                VkAttachmentReference depthAttachmentRef{};
+                if (withDepth)
+                {
+                    depthAttachment.format = depthAttachmentFormat;
+                    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+                    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+                    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+                    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+                    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+                    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+                    depthAttachmentRef.attachment = static_cast<uint32_t>(colorAttachments.size());
+                    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                }
+
                 VkSubpassDescription subpass{};
                 subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
                 subpass.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentRefs.size());
                 subpass.pColorAttachments = colorAttachmentRefs.data();
+                if (withDepth)
+                {
+                    subpass.pDepthStencilAttachment = &depthAttachmentRef;
+                }
 
                 VkSubpassDependency dependency{};
                 dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -2959,11 +3428,23 @@ namespace Gek
                 dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
                 dependency.srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
                 dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                if (withDepth)
+                {
+                    dependency.srcStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+                    dependency.dstStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+                    dependency.dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                }
+
+                std::vector<VkAttachmentDescription> allAttachments = colorAttachments;
+                if (withDepth)
+                {
+                    allAttachments.push_back(depthAttachment);
+                }
 
                 VkRenderPassCreateInfo renderPassInfo{};
                 renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-                renderPassInfo.attachmentCount = static_cast<uint32_t>(colorAttachments.size());
-                renderPassInfo.pAttachments = colorAttachments.data();
+                renderPassInfo.attachmentCount = static_cast<uint32_t>(allAttachments.size());
+                renderPassInfo.pAttachments = allAttachments.data();
                 renderPassInfo.subpassCount = 1;
                 renderPassInfo.pSubpasses = &subpass;
                 renderPassInfo.dependencyCount = 1;
@@ -2975,7 +3456,7 @@ namespace Gek
                     return VK_NULL_HANDLE;
                 }
 
-                offscreenRenderPassCache[formats] = offscreenRenderPass;
+                offscreenRenderPassCache[cacheKey] = offscreenRenderPass;
                 return offscreenRenderPass;
             }
 
@@ -2990,21 +3471,21 @@ namespace Gek
                     sampledImageBinding.binding = DescriptorSampledImageBase + slot;
                     sampledImageBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                     sampledImageBinding.descriptorCount = 1;
-                    sampledImageBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+                    sampledImageBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
                     bindings.push_back(sampledImageBinding);
 
                     VkDescriptorSetLayoutBinding storageBufferBinding{};
                     storageBufferBinding.binding = DescriptorStorageBufferBase + slot;
                     storageBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
                     storageBufferBinding.descriptorCount = 1;
-                    storageBufferBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+                    storageBufferBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
                     bindings.push_back(storageBufferBinding);
 
                     VkDescriptorSetLayoutBinding vertexUniformBinding{};
                     vertexUniformBinding.binding = DescriptorVertexUniformBufferBase + slot;
                     vertexUniformBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
                     vertexUniformBinding.descriptorCount = 1;
-                    vertexUniformBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+                    vertexUniformBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
                     bindings.push_back(vertexUniformBinding);
 
                     VkDescriptorSetLayoutBinding pixelUniformBinding{};
@@ -3018,14 +3499,14 @@ namespace Gek
                     samplerBinding.binding = DescriptorSamplerBase + slot;
                     samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
                     samplerBinding.descriptorCount = 1;
-                    samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+                    samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
                     bindings.push_back(samplerBinding);
 
                     VkDescriptorSetLayoutBinding storageImageBinding{};
                     storageImageBinding.binding = DescriptorStorageImageBase + slot;
                     storageImageBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
                     storageImageBinding.descriptorCount = 1;
-                    storageImageBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+                    storageImageBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
                     bindings.push_back(storageImageBinding);
                 }
 
@@ -3153,6 +3634,9 @@ namespace Gek
                 key.blendEnabled = (command.blendState ? command.blendState->getDescription().targetStates[0].enable : false);
                 key.depthEnabled = (command.depthState ? command.depthState->getDescription().enable : false);
                 key.depthWrite = (command.depthState ? (command.depthState->getDescription().writeMask != Render::DepthState::Write::Zero) : false);
+                key.depthCompareFunction = (command.depthState ? command.depthState->getDescription().comparisonFunction : Render::ComparisonFunction::Always);
+                key.cullMode = (command.renderState ? command.renderState->getDescription().cullMode : Render::RenderState::CullMode::None);
+                key.frontCounterClockwise = (command.renderState ? command.renderState->getDescription().frontCounterClockwise : false);
 
                 auto pipelineSearch = graphicsPipelineCache.find(key);
                 if (pipelineSearch != std::end(graphicsPipelineCache))
@@ -3280,8 +3764,13 @@ namespace Gek
                 rasterizer.rasterizerDiscardEnable = VK_FALSE;
                 rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
                 rasterizer.lineWidth = 1.0f;
-                rasterizer.cullMode = VK_CULL_MODE_NONE;
-                rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+                static constexpr VkCullModeFlags vkCullModes[] = { VK_CULL_MODE_NONE, VK_CULL_MODE_FRONT_BIT, VK_CULL_MODE_BACK_BIT };
+                rasterizer.cullMode = vkCullModes[static_cast<uint8_t>(key.cullMode)];
+                if (!isUiProgram)
+                {
+                    rasterizer.cullMode = VK_CULL_MODE_NONE;
+                }
+                rasterizer.frontFace = key.frontCounterClockwise ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
                 rasterizer.depthBiasEnable = VK_FALSE;
 
                 VkPipelineMultisampleStateCreateInfo multisampling{};
@@ -3293,7 +3782,20 @@ namespace Gek
                 depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
                 depthStencil.depthTestEnable = key.depthEnabled ? VK_TRUE : VK_FALSE;
                 depthStencil.depthWriteEnable = key.depthWrite ? VK_TRUE : VK_FALSE;
-                depthStencil.depthCompareOp = key.depthEnabled ? VK_COMPARE_OP_LESS_OR_EQUAL : VK_COMPARE_OP_ALWAYS;
+                static constexpr VkCompareOp vkCompareOps[] =
+                {
+                    VK_COMPARE_OP_ALWAYS,
+                    VK_COMPARE_OP_NEVER,
+                    VK_COMPARE_OP_EQUAL,
+                    VK_COMPARE_OP_NOT_EQUAL,
+                    VK_COMPARE_OP_LESS,
+                    VK_COMPARE_OP_LESS_OR_EQUAL,
+                    VK_COMPARE_OP_GREATER,
+                    VK_COMPARE_OP_GREATER_OR_EQUAL,
+                };
+                depthStencil.depthCompareOp = key.depthEnabled
+                    ? vkCompareOps[static_cast<uint8_t>(key.depthCompareFunction)]
+                    : VK_COMPARE_OP_ALWAYS;
                 depthStencil.depthBoundsTestEnable = VK_FALSE;
                 depthStencil.stencilTestEnable = VK_FALSE;
 
@@ -3383,6 +3885,52 @@ namespace Gek
                 return pipeline;
             }
 
+            VkPipeline getOrCreateComputePipeline(ComputeProgram *program)
+            {
+                if (!program || program->shaderModule == VK_NULL_HANDLE || graphicsPipelineLayout == VK_NULL_HANDLE)
+                {
+                    return VK_NULL_HANDLE;
+                }
+
+                auto pipelineSearch = computePipelineCache.find(program->shaderModule);
+                if (pipelineSearch != std::end(computePipelineCache))
+                {
+                    return pipelineSearch->second;
+                }
+
+                VkPipelineShaderStageCreateInfo stageInfo{};
+                stageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+                stageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+                stageInfo.module = program->shaderModule;
+                stageInfo.pName = "main";
+
+                VkComputePipelineCreateInfo createInfo{};
+                createInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+                createInfo.stage = stageInfo;
+                createInfo.layout = graphicsPipelineLayout;
+
+                VkPipeline pipeline = VK_NULL_HANDLE;
+                const VkResult result = vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &createInfo, nullptr, &pipeline);
+                if (result != VK_SUCCESS)
+                {
+                    if (failedComputePipelineModules.find(program->shaderModule) == std::end(failedComputePipelineModules))
+                    {
+                        failedComputePipelineModules.insert(program->shaderModule);
+                        getContext()->log(
+                            Gek::Context::Error,
+                            "Failed Vulkan compute pipeline (result={}) program='{}' entry='{}'",
+                            static_cast<int32_t>(result),
+                            program->getInformation().name,
+                            program->getInformation().entryFunction);
+                    }
+
+                    return VK_NULL_HANDLE;
+                }
+
+                computePipelineCache[program->shaderModule] = pipeline;
+                return pipeline;
+            }
+
             void createCommandResources(void)
             {
                 QueueFamilyIndices indices = findQueueFamilies();
@@ -3464,6 +4012,7 @@ namespace Gek
                 destroySwapChainResources();
                 createSwapChain();
                 createImageViews();
+                createDepthImage();
                 createRenderPassResources();
 
                 VkSemaphoreCreateInfo semaphoreInfo{};
@@ -3522,6 +4071,7 @@ namespace Gek
                 createLogicalDevice();
                 createSwapChain();
                 createImageViews();
+                createDepthImage();
                 createRenderPassResources();
                 createCommandResources();
                 createDescriptorResources();
@@ -3559,6 +4109,7 @@ namespace Gek
             ~Device(void)
             {
                 setFullScreenState(false);
+                gVulkanDeviceShuttingDown.store(true, std::memory_order_relaxed);
 
                 if (device != VK_NULL_HANDLE)
                 {
@@ -3654,6 +4205,7 @@ namespace Gek
 
                 destroySwapChainResources();
                 vkDestroyDevice(device, nullptr);
+                device = VK_NULL_HANDLE;
 
                 if (enableValidationLayer)
                 {
@@ -3760,13 +4312,33 @@ namespace Gek
             {
                 auto samplerState = std::make_unique<SamplerState>(device, description);
 
+#if defined(VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE)
+                static constexpr VkSamplerAddressMode addressModeList[] =
+                {
+                    VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                    VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                    VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT,
+                    VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE,
+                    VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+                };
+#else
+                static constexpr VkSamplerAddressMode addressModeList[] =
+                {
+                    VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                    VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                    VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT,
+                    VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                    VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+                };
+#endif
+
                 VkSamplerCreateInfo samplerInfo{};
                 samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
                 samplerInfo.magFilter = VK_FILTER_LINEAR;
                 samplerInfo.minFilter = VK_FILTER_LINEAR;
-                samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.addressModeU = addressModeList[static_cast<uint8_t>(description.addressModeU)];
+                samplerInfo.addressModeV = addressModeList[static_cast<uint8_t>(description.addressModeV)];
+                samplerInfo.addressModeW = addressModeList[static_cast<uint8_t>(description.addressModeW)];
                 samplerInfo.anisotropyEnable = VK_FALSE;
                 samplerInfo.maxAnisotropy = 1.0f;
                 samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
@@ -4222,14 +4794,43 @@ namespace Gek
                             }
                             else if (extractRegisterIndex(line, 'u', registerIndex))
                             {
-                                prefix = std::format("[[vk::binding({}, 0)]] ", DescriptorStorageImageBase + registerIndex);
+                                const bool isStorageImageResource =
+                                    (line.find("RWTexture") != std::string_view::npos) ||
+                                    (line.find("Texture2D") != std::string_view::npos) ||
+                                    (line.find("Texture3D") != std::string_view::npos) ||
+                                    (line.find("TextureCube") != std::string_view::npos);
+                                const bool isStorageBufferResource =
+                                    (line.find("RWStructuredBuffer") != std::string_view::npos) ||
+                                    (line.find("RWByteAddressBuffer") != std::string_view::npos) ||
+                                    (line.find("RWBuffer") != std::string_view::npos) ||
+                                    (line.find("AppendStructuredBuffer") != std::string_view::npos) ||
+                                    (line.find("ConsumeStructuredBuffer") != std::string_view::npos);
+
+                                if (isStorageBufferResource && !isStorageImageResource)
+                                {
+                                    prefix = std::format("[[vk::binding({}, 0)]] ", DescriptorStorageBufferBase + registerIndex);
+                                }
+                                else
+                                {
+                                    prefix = std::format("[[vk::binding({}, 0)]] ", DescriptorStorageImageBase + registerIndex);
+                                }
                             }
                             else if (extractRegisterIndex(line, 't', registerIndex))
                             {
-                                if (line.find("StructuredBuffer") != std::string_view::npos ||
-                                    line.find("ByteAddressBuffer") != std::string_view::npos ||
-                                    line.find("RWStructuredBuffer") != std::string_view::npos ||
-                                    line.find("Buffer<") != std::string_view::npos)
+                                const bool isTextureResource =
+                                    (line.find("Texture") != std::string_view::npos) ||
+                                    (line.find("Sampler") != std::string_view::npos);
+                                const bool isBufferResource =
+                                    (line.find("StructuredBuffer") != std::string_view::npos) ||
+                                    (line.find("ByteAddressBuffer") != std::string_view::npos) ||
+                                    (line.find("RWStructuredBuffer") != std::string_view::npos) ||
+                                    (line.find("RWByteAddressBuffer") != std::string_view::npos) ||
+                                    (line.find("RWBuffer") != std::string_view::npos) ||
+                                    (line.find("Buffer<") != std::string_view::npos) ||
+                                    (line.find("Buffer ") != std::string_view::npos) ||
+                                    (line.find("Buffer\t") != std::string_view::npos);
+
+                                if (isBufferResource && !isTextureResource)
                                 {
                                     prefix = std::format("[[vk::binding({}, 0)]] ", DescriptorStorageBufferBase + registerIndex);
                                 }
@@ -4295,6 +4896,8 @@ namespace Gek
                 else
                 {
                 }
+
+                annotateVulkanBindings(resolvedProgram);
 
                 slang::TargetDesc targetDesc = {};
                 targetDesc.format = SLANG_SPIRV;
@@ -4429,7 +5032,12 @@ namespace Gek
                     imageInfo.extent.width = std::max(description.width, 1u);
                     imageInfo.extent.height = std::max(description.height, 1u);
                     imageInfo.extent.depth = 1;
-                    imageInfo.mipLevels = 1;
+                    const uint32_t maxMipLevels = (std::bit_width(std::max(imageInfo.extent.width, imageInfo.extent.height)));
+                    const uint32_t mipLevels = (description.mipMapCount == 0)
+                        ? std::max(maxMipLevels, 1u)
+                        : std::clamp(description.mipMapCount, 1u, std::max(maxMipLevels, 1u));
+                    imageInfo.mipLevels = mipLevels;
+                    texture->description.mipMapCount = mipLevels;
                     imageInfo.arrayLayers = 1;
                     imageInfo.format = imageFormat;
                     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -4496,7 +5104,7 @@ namespace Gek
                         toShaderRead.image = texture->image;
                         toShaderRead.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
                         toShaderRead.subresourceRange.baseMipLevel = 0;
-                        toShaderRead.subresourceRange.levelCount = 1;
+                        toShaderRead.subresourceRange.levelCount = mipLevels;
                         toShaderRead.subresourceRange.baseArrayLayer = 0;
                         toShaderRead.subresourceRange.layerCount = 1;
                         toShaderRead.srcAccessMask = 0;
@@ -4569,6 +5177,94 @@ namespace Gek
                     imageViewInfo.format = imageFormat;
                     imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
                     imageViewInfo.subresourceRange.baseMipLevel = 0;
+                    imageViewInfo.subresourceRange.levelCount = mipLevels;
+                    imageViewInfo.subresourceRange.baseArrayLayer = 0;
+                    imageViewInfo.subresourceRange.layerCount = 1;
+                    if (vkCreateImageView(device, &imageViewInfo, nullptr, &texture->imageView) != VK_SUCCESS)
+                    {
+                        return nullptr;
+                    }
+
+                    VkSamplerCreateInfo samplerInfo{};
+                    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+                    samplerInfo.magFilter = VK_FILTER_LINEAR;
+                    samplerInfo.minFilter = VK_FILTER_LINEAR;
+                    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+                    samplerInfo.minLod = 0.0f;
+                    samplerInfo.maxLod = static_cast<float>(std::max(mipLevels, 1u) - 1u);
+                    if (vkCreateSampler(device, &samplerInfo, nullptr, &texture->sampler) != VK_SUCCESS)
+                    {
+                        return nullptr;
+                    }
+
+                    return texture;
+                }
+                else if (description.flags & Render::Texture::Flags::DepthTarget)
+                {
+                    auto texture = std::make_unique<DepthTexture>(description);
+                    texture->device = device;
+
+                    const VkFormat imageFormat = GetVkFormat(description.format);
+                    if (imageFormat == VK_FORMAT_UNDEFINED)
+                    {
+                        getContext()->log(Gek::Context::Error,
+                            "Vulkan createTexture failed: unsupported depth Render::Format {} for '{}'.",
+                            static_cast<uint32_t>(description.format), description.name);
+                        return nullptr;
+                    }
+
+                    texture->format = imageFormat;
+
+                    VkImageCreateInfo imageInfo{};
+                    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+                    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+                    imageInfo.extent.width = std::max(description.width, 1u);
+                    imageInfo.extent.height = std::max(description.height, 1u);
+                    imageInfo.extent.depth = 1;
+                    imageInfo.mipLevels = 1;
+                    imageInfo.arrayLayers = 1;
+                    imageInfo.format = imageFormat;
+                    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+                    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                    imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+                    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+                    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+                    if (vkCreateImage(device, &imageInfo, nullptr, &texture->image) != VK_SUCCESS)
+                    {
+                        return nullptr;
+                    }
+
+                    VkMemoryRequirements imageMemoryRequirements{};
+                    vkGetImageMemoryRequirements(device, texture->image, &imageMemoryRequirements);
+
+                    VkMemoryAllocateInfo imageAllocInfo{};
+                    imageAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+                    imageAllocInfo.allocationSize = imageMemoryRequirements.size;
+                    imageAllocInfo.memoryTypeIndex = findMemoryType(imageMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                    if (imageAllocInfo.memoryTypeIndex == UINT32_MAX)
+                    {
+                        return nullptr;
+                    }
+                    if (vkAllocateMemory(device, &imageAllocInfo, nullptr, &texture->memory) != VK_SUCCESS)
+                    {
+                        return nullptr;
+                    }
+
+                    if (vkBindImageMemory(device, texture->image, texture->memory, 0) != VK_SUCCESS)
+                    {
+                        return nullptr;
+                    }
+
+                    VkImageViewCreateInfo imageViewInfo{};
+                    imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+                    imageViewInfo.image = texture->image;
+                    imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+                    imageViewInfo.format = imageFormat;
+                    imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                    imageViewInfo.subresourceRange.baseMipLevel = 0;
                     imageViewInfo.subresourceRange.levelCount = 1;
                     imageViewInfo.subresourceRange.baseArrayLayer = 0;
                     imageViewInfo.subresourceRange.layerCount = 1;
@@ -4592,11 +5288,8 @@ namespace Gek
                         return nullptr;
                     }
 
+                    texture->currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
                     return texture;
-                }
-                else if (description.flags & Render::Texture::Flags::DepthTarget)
-                {
-                    return std::make_unique<DepthTexture>(description);
                 }
                 else
                 {
@@ -5095,32 +5788,7 @@ namespace Gek
                     return nullptr;
                 }
 
-                constexpr uint32_t kMaxTextureDimension = 2048;
-                ::DirectX::ScratchImage resizedImage;
                 const ::DirectX::Image *uploadImage = image;
-                if (width > kMaxTextureDimension || height > kMaxTextureDimension)
-                {
-                    const uint32_t maxDimension = std::max(width, height);
-                    const uint32_t scaledWidth = std::max(1u, static_cast<uint32_t>((static_cast<uint64_t>(width) * kMaxTextureDimension) / maxDimension));
-                    const uint32_t scaledHeight = std::max(1u, static_cast<uint32_t>((static_cast<uint64_t>(height) * kMaxTextureDimension) / maxDimension));
-
-                    if (SUCCEEDED(::DirectX::Resize(*image, scaledWidth, scaledHeight, ::DirectX::TEX_FILTER_DEFAULT, resizedImage)))
-                    {
-                        const ::DirectX::Image *resizedLevel = resizedImage.GetImage(0, 0, 0);
-                        if (resizedLevel && resizedLevel->pixels)
-                        {
-                            uploadImage = resizedLevel;
-                            getContext()->log(
-                                Gek::Context::Warning,
-                                "Vulkan loadTexture downscaled '{}' from {}x{} to {}x{} to reduce GPU memory pressure",
-                                filePath.getString(),
-                                width,
-                                height,
-                                scaledWidth,
-                                scaledHeight);
-                        }
-                    }
-                }
 
                 const uint32_t uploadWidth = static_cast<uint32_t>(uploadImage->width);
                 const uint32_t uploadHeight = static_cast<uint32_t>(uploadImage->height);
@@ -5588,6 +6256,50 @@ namespace Gek
                 clearRange.layerCount = 1;
                 vkCmdClearColorImage(commandBuffer, swapChainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &pendingClearColor, 1, &clearRange);
 
+                // Clear depth image once per frame before any render passes use it
+                if (depthImage != VK_NULL_HANDLE)
+                {
+                    VkImageSubresourceRange depthRange{};
+                    depthRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                    depthRange.baseMipLevel = 0;
+                    depthRange.levelCount = 1;
+                    depthRange.baseArrayLayer = 0;
+                    depthRange.layerCount = 1;
+
+                    VkImageMemoryBarrier depthToClear{};
+                    depthToClear.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                    depthToClear.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                    depthToClear.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                    depthToClear.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    depthToClear.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    depthToClear.image = depthImage;
+                    depthToClear.subresourceRange = depthRange;
+                    depthToClear.srcAccessMask = 0;
+                    depthToClear.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                    vkCmdPipelineBarrier(commandBuffer,
+                        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                        VK_PIPELINE_STAGE_TRANSFER_BIT,
+                        0, 0, nullptr, 0, nullptr, 1, &depthToClear);
+
+                    VkClearDepthStencilValue clearDepthValue{ 1.0f, 0 };
+                    vkCmdClearDepthStencilImage(commandBuffer, depthImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clearDepthValue, 1, &depthRange);
+
+                    VkImageMemoryBarrier depthToAttachment{};
+                    depthToAttachment.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                    depthToAttachment.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                    depthToAttachment.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                    depthToAttachment.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    depthToAttachment.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    depthToAttachment.image = depthImage;
+                    depthToAttachment.subresourceRange = depthRange;
+                    depthToAttachment.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                    depthToAttachment.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                    vkCmdPipelineBarrier(commandBuffer,
+                        VK_PIPELINE_STAGE_TRANSFER_BIT,
+                        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                        0, 0, nullptr, 0, nullptr, 1, &depthToAttachment);
+                }
+
                 std::lock_guard<std::mutex> drawCommandLock(getDrawCommandMutex());
                 const bool hasDrawCommands = !pendingDrawCommands.empty();
                 std::vector<VkDescriptorSet> descriptorSets;
@@ -5603,12 +6315,660 @@ namespace Gek
                 VkImage sceneOffscreenCopySourceImage = VK_NULL_HANDLE;
                 VkExtent2D sceneOffscreenCopySourceExtent = { 0, 0 };
                 std::map<VkImageView, std::pair<VkImage, VkExtent2D>> frameOffscreenViewLookup;
+                constexpr bool allowSceneFallbackCopy = false;
+                auto performSceneFallbackCopy = [&](bool transitionBackToColorAttachment)
+                {
+                    if (!allowSceneFallbackCopy || sceneFallbackCopyPerformed || sceneOffscreenCopySourceImage == VK_NULL_HANDLE)
+                    {
+                        return;
+                    }
+
+                    auto sourceLayoutSearch = offscreenImageLayouts.find(sceneOffscreenCopySourceImage);
+                    VkImageLayout sourceLayout = (sourceLayoutSearch != std::end(offscreenImageLayouts))
+                        ? sourceLayoutSearch->second
+                        : VK_IMAGE_LAYOUT_UNDEFINED;
+
+                    if (sourceLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+                    {
+                        VkImageMemoryBarrier sourceToTransferSrc{};
+                        sourceToTransferSrc.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                        sourceToTransferSrc.oldLayout = sourceLayout;
+                        sourceToTransferSrc.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                        sourceToTransferSrc.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                        sourceToTransferSrc.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                        sourceToTransferSrc.image = sceneOffscreenCopySourceImage;
+                        sourceToTransferSrc.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                        sourceToTransferSrc.subresourceRange.baseMipLevel = 0;
+                        sourceToTransferSrc.subresourceRange.levelCount = 1;
+                        sourceToTransferSrc.subresourceRange.baseArrayLayer = 0;
+                        sourceToTransferSrc.subresourceRange.layerCount = 1;
+                        sourceToTransferSrc.srcAccessMask = (sourceLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+                            ? (VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT)
+                            : VK_ACCESS_SHADER_READ_BIT;
+                        sourceToTransferSrc.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+                        VkPipelineStageFlags sourceStage = (sourceLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+                            ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+                            : VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+                        vkCmdPipelineBarrier(
+                            commandBuffer,
+                            sourceStage,
+                            VK_PIPELINE_STAGE_TRANSFER_BIT,
+                            0,
+                            0, nullptr,
+                            0, nullptr,
+                            1, &sourceToTransferSrc);
+
+                        offscreenImageLayouts[sceneOffscreenCopySourceImage] = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                    }
+
+                    transitionSwapChainImage(imageIndex, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+                    VkImageBlit blitRegion{};
+                    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    blitRegion.srcSubresource.mipLevel = 0;
+                    blitRegion.srcSubresource.baseArrayLayer = 0;
+                    blitRegion.srcSubresource.layerCount = 1;
+                    blitRegion.srcOffsets[0] = { 0, 0, 0 };
+                    blitRegion.srcOffsets[1] = {
+                        static_cast<int32_t>(std::max(sceneOffscreenCopySourceExtent.width, 1u)),
+                        static_cast<int32_t>(std::max(sceneOffscreenCopySourceExtent.height, 1u)),
+                        1 };
+
+                    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    blitRegion.dstSubresource.mipLevel = 0;
+                    blitRegion.dstSubresource.baseArrayLayer = 0;
+                    blitRegion.dstSubresource.layerCount = 1;
+                    blitRegion.dstOffsets[0] = { 0, 0, 0 };
+                    blitRegion.dstOffsets[1] = {
+                        static_cast<int32_t>(std::max(swapChainExtent.width, 1u)),
+                        static_cast<int32_t>(std::max(swapChainExtent.height, 1u)),
+                        1 };
+
+                    vkCmdBlitImage(
+                        commandBuffer,
+                        sceneOffscreenCopySourceImage,
+                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                        swapChainImages[imageIndex],
+                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                        1,
+                        &blitRegion,
+                        VK_FILTER_NEAREST);
+
+                    VkImageMemoryBarrier sourceToShaderRead{};
+                    sourceToShaderRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                    sourceToShaderRead.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                    sourceToShaderRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    sourceToShaderRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    sourceToShaderRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    sourceToShaderRead.image = sceneOffscreenCopySourceImage;
+                    sourceToShaderRead.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    sourceToShaderRead.subresourceRange.baseMipLevel = 0;
+                    sourceToShaderRead.subresourceRange.levelCount = 1;
+                    sourceToShaderRead.subresourceRange.baseArrayLayer = 0;
+                    sourceToShaderRead.subresourceRange.layerCount = 1;
+                    sourceToShaderRead.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                    sourceToShaderRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+                    vkCmdPipelineBarrier(
+                        commandBuffer,
+                        VK_PIPELINE_STAGE_TRANSFER_BIT,
+                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                        0,
+                        0, nullptr,
+                        0, nullptr,
+                        1, &sourceToShaderRead);
+
+                    offscreenImageLayouts[sceneOffscreenCopySourceImage] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+                    if (transitionBackToColorAttachment)
+                    {
+                        transitionSwapChainImage(imageIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+                    }
+
+                    sceneFallbackCopyPerformed = true;
+                };
                 if (hasDrawCommands)
                 {
                     transitionSwapChainImage(imageIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
                     for (const auto &drawCommand : pendingDrawCommands)
                     {
+                        if (drawCommand.commandType == DrawCommand::Type::GenerateMipMaps)
+                        {
+                            ++sceneCommandCount;
+
+                            auto *targetTexture = getObject<TargetTexture>(drawCommand.mipmapTexture);
+                            auto *viewTexture = getObject<ViewTexture>(drawCommand.mipmapTexture);
+                            VkImage image = VK_NULL_HANDLE;
+                            if (targetTexture)
+                            {
+                                image = targetTexture->image;
+                            }
+                            else if (viewTexture)
+                            {
+                                image = viewTexture->image;
+                            }
+
+                            const uint32_t mipLevels = std::max(drawCommand.mipmapLevels, 1u);
+                            if (image == VK_NULL_HANDLE || mipLevels <= 1)
+                            {
+                                continue;
+                            }
+
+                            VkImageLayout sourceLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                            if (targetTexture)
+                            {
+                                auto layoutSearch = offscreenImageLayouts.find(image);
+                                if (layoutSearch != std::end(offscreenImageLayouts))
+                                {
+                                    sourceLayout = layoutSearch->second;
+                                }
+                                else
+                                {
+                                    sourceLayout = targetTexture->currentLayout;
+                                }
+                            }
+
+                            auto getLayoutTransition = [](VkImageLayout layout, VkPipelineStageFlags &stage, VkAccessFlags &access)
+                            {
+                                switch (layout)
+                                {
+                                case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+                                    stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                                    access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                                    break;
+
+                                case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+                                    stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                                    access = VK_ACCESS_TRANSFER_WRITE_BIT;
+                                    break;
+
+                                case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+                                    stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                                    access = VK_ACCESS_TRANSFER_READ_BIT;
+                                    break;
+
+                                case VK_IMAGE_LAYOUT_GENERAL:
+                                    stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+                                    access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+                                    break;
+
+                                case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+                                    stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+                                    access = VK_ACCESS_SHADER_READ_BIT;
+                                    break;
+
+                                case VK_IMAGE_LAYOUT_UNDEFINED:
+                                default:
+                                    stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                                    access = 0;
+                                    break;
+                                }
+                            };
+
+                            VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                            VkAccessFlags sourceAccess = 0;
+                            getLayoutTransition(sourceLayout, sourceStage, sourceAccess);
+
+                            VkImageMemoryBarrier levelZeroToTransferSrc{};
+                            levelZeroToTransferSrc.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                            levelZeroToTransferSrc.oldLayout = sourceLayout;
+                            levelZeroToTransferSrc.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                            levelZeroToTransferSrc.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                            levelZeroToTransferSrc.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                            levelZeroToTransferSrc.image = image;
+                            levelZeroToTransferSrc.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                            levelZeroToTransferSrc.subresourceRange.baseMipLevel = 0;
+                            levelZeroToTransferSrc.subresourceRange.levelCount = 1;
+                            levelZeroToTransferSrc.subresourceRange.baseArrayLayer = 0;
+                            levelZeroToTransferSrc.subresourceRange.layerCount = 1;
+                            levelZeroToTransferSrc.srcAccessMask = sourceAccess;
+                            levelZeroToTransferSrc.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+                            vkCmdPipelineBarrier(
+                                commandBuffer,
+                                sourceStage,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                0,
+                                0, nullptr,
+                                0, nullptr,
+                                1, &levelZeroToTransferSrc);
+
+                            VkImageMemoryBarrier remainingToTransferDst{};
+                            remainingToTransferDst.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                            remainingToTransferDst.oldLayout = sourceLayout;
+                            remainingToTransferDst.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                            remainingToTransferDst.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                            remainingToTransferDst.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                            remainingToTransferDst.image = image;
+                            remainingToTransferDst.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                            remainingToTransferDst.subresourceRange.baseMipLevel = 1;
+                            remainingToTransferDst.subresourceRange.levelCount = mipLevels - 1;
+                            remainingToTransferDst.subresourceRange.baseArrayLayer = 0;
+                            remainingToTransferDst.subresourceRange.layerCount = 1;
+                            remainingToTransferDst.srcAccessMask = sourceAccess;
+                            remainingToTransferDst.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+                            vkCmdPipelineBarrier(
+                                commandBuffer,
+                                sourceStage,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                0,
+                                0, nullptr,
+                                0, nullptr,
+                                1, &remainingToTransferDst);
+
+                            int32_t mipWidth = std::max<int32_t>(static_cast<int32_t>(drawCommand.mipmapTexture->getDescription().width), 1);
+                            int32_t mipHeight = std::max<int32_t>(static_cast<int32_t>(drawCommand.mipmapTexture->getDescription().height), 1);
+
+                            for (uint32_t mipLevel = 1; mipLevel < mipLevels; ++mipLevel)
+                            {
+                                VkImageBlit blitRegion{};
+                                blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                                blitRegion.srcSubresource.mipLevel = mipLevel - 1;
+                                blitRegion.srcSubresource.baseArrayLayer = 0;
+                                blitRegion.srcSubresource.layerCount = 1;
+                                blitRegion.srcOffsets[0] = { 0, 0, 0 };
+                                blitRegion.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+
+                                const int32_t nextMipWidth = std::max<int32_t>(mipWidth / 2, 1);
+                                const int32_t nextMipHeight = std::max<int32_t>(mipHeight / 2, 1);
+
+                                blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                                blitRegion.dstSubresource.mipLevel = mipLevel;
+                                blitRegion.dstSubresource.baseArrayLayer = 0;
+                                blitRegion.dstSubresource.layerCount = 1;
+                                blitRegion.dstOffsets[0] = { 0, 0, 0 };
+                                blitRegion.dstOffsets[1] = { nextMipWidth, nextMipHeight, 1 };
+
+                                vkCmdBlitImage(
+                                    commandBuffer,
+                                    image,
+                                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                    image,
+                                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                    1,
+                                    &blitRegion,
+                                    VK_FILTER_NEAREST);
+
+                                if (mipLevel + 1 < mipLevels)
+                                {
+                                    VkImageMemoryBarrier levelToTransferSrc{};
+                                    levelToTransferSrc.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                                    levelToTransferSrc.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                                    levelToTransferSrc.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                                    levelToTransferSrc.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                    levelToTransferSrc.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                    levelToTransferSrc.image = image;
+                                    levelToTransferSrc.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                                    levelToTransferSrc.subresourceRange.baseMipLevel = mipLevel;
+                                    levelToTransferSrc.subresourceRange.levelCount = 1;
+                                    levelToTransferSrc.subresourceRange.baseArrayLayer = 0;
+                                    levelToTransferSrc.subresourceRange.layerCount = 1;
+                                    levelToTransferSrc.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                                    levelToTransferSrc.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+                                    vkCmdPipelineBarrier(
+                                        commandBuffer,
+                                        VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                        VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                        0,
+                                        0, nullptr,
+                                        0, nullptr,
+                                        1, &levelToTransferSrc);
+                                }
+
+                                mipWidth = nextMipWidth;
+                                mipHeight = nextMipHeight;
+                            }
+
+                            std::vector<VkImageMemoryBarrier> toShaderReadBarriers;
+                            toShaderReadBarriers.reserve(mipLevels);
+
+                            for (uint32_t mipLevel = 0; mipLevel < mipLevels; ++mipLevel)
+                            {
+                                VkImageMemoryBarrier toShaderRead{};
+                                toShaderRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                                toShaderRead.oldLayout = (mipLevel == mipLevels - 1)
+                                    ? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+                                    : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                                toShaderRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                                toShaderRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                toShaderRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                toShaderRead.image = image;
+                                toShaderRead.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                                toShaderRead.subresourceRange.baseMipLevel = mipLevel;
+                                toShaderRead.subresourceRange.levelCount = 1;
+                                toShaderRead.subresourceRange.baseArrayLayer = 0;
+                                toShaderRead.subresourceRange.layerCount = 1;
+                                toShaderRead.srcAccessMask = (mipLevel == mipLevels - 1)
+                                    ? VK_ACCESS_TRANSFER_WRITE_BIT
+                                    : VK_ACCESS_TRANSFER_READ_BIT;
+                                toShaderRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                                toShaderReadBarriers.push_back(toShaderRead);
+                            }
+
+                            vkCmdPipelineBarrier(
+                                commandBuffer,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                0,
+                                0, nullptr,
+                                0, nullptr,
+                                static_cast<uint32_t>(toShaderReadBarriers.size()),
+                                toShaderReadBarriers.data());
+
+                            if (targetTexture)
+                            {
+                                targetTexture->currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                                offscreenImageLayouts[image] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                            }
+
+                            continue;
+                        }
+
+                        if (drawCommand.commandType == DrawCommand::Type::ComputeDispatch)
+                        {
+                            ++sceneCommandCount;
+
+                            if (!drawCommand.computeProgram)
+                            {
+                                ++scenePipelineSkips;
+                                continue;
+                            }
+
+                            VkPipeline computePipeline = getOrCreateComputePipeline(drawCommand.computeProgram);
+                            if (computePipeline == VK_NULL_HANDLE || descriptorSetLayout == VK_NULL_HANDLE || descriptorPool == VK_NULL_HANDLE || graphicsPipelineLayout == VK_NULL_HANDLE)
+                            {
+                                ++scenePipelineSkips;
+                                continue;
+                            }
+
+                            auto transitionComputeImageResource = [&](Render::Object *resource, bool unorderedAccess)
+                            {
+                                VkImage image = VK_NULL_HANDLE;
+                                VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                                VkImageLayout newLayout = unorderedAccess ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                                VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                                bool hasTrackedLayout = false;
+
+                                if (auto *targetTexture = getObject<TargetTexture>(resource))
+                                {
+                                    image = targetTexture->image;
+                                    auto layoutSearch = offscreenImageLayouts.find(image);
+                                    if (layoutSearch != std::end(offscreenImageLayouts))
+                                    {
+                                        oldLayout = layoutSearch->second;
+                                        hasTrackedLayout = true;
+                                    }
+                                    else
+                                    {
+                                        oldLayout = targetTexture->currentLayout;
+                                    }
+                                }
+                                else if (auto *depthTexture = getObject<DepthTexture>(resource))
+                                {
+                                    image = depthTexture->image;
+                                    oldLayout = depthTexture->currentLayout;
+                                    aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                                }
+                                else
+                                {
+                                    return;
+                                }
+
+                                if (image == VK_NULL_HANDLE)
+                                {
+                                    return;
+                                }
+
+                                if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+                                {
+                                    oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                                }
+
+                                if (oldLayout == newLayout)
+                                {
+                                    return;
+                                }
+
+                                VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                                VkAccessFlags sourceAccess = 0;
+                                switch (oldLayout)
+                                {
+                                case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+                                    sourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                                    sourceAccess = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                                    break;
+
+                                case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+                                    sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                                    sourceAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
+                                    break;
+
+                                case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+                                    sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                                    sourceAccess = VK_ACCESS_TRANSFER_READ_BIT;
+                                    break;
+
+                                case VK_IMAGE_LAYOUT_GENERAL:
+                                    sourceStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+                                    sourceAccess = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+                                    break;
+
+                                case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+                                    sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+                                    sourceAccess = VK_ACCESS_SHADER_READ_BIT;
+                                    break;
+
+                                case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+                                    sourceStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+                                    sourceAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                                    break;
+
+                                default:
+                                    sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                                    sourceAccess = 0;
+                                    break;
+                                }
+
+                                VkImageMemoryBarrier transition{};
+                                transition.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                                transition.oldLayout = oldLayout;
+                                transition.newLayout = newLayout;
+                                transition.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                transition.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                transition.image = image;
+                                transition.subresourceRange.aspectMask = aspectMask;
+                                transition.subresourceRange.baseMipLevel = 0;
+                                transition.subresourceRange.levelCount = 1;
+                                transition.subresourceRange.baseArrayLayer = 0;
+                                transition.subresourceRange.layerCount = 1;
+                                transition.srcAccessMask = sourceAccess;
+                                transition.dstAccessMask = unorderedAccess
+                                    ? (VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT)
+                                    : VK_ACCESS_SHADER_READ_BIT;
+
+                                vkCmdPipelineBarrier(
+                                    commandBuffer,
+                                    sourceStage,
+                                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                    0,
+                                    0, nullptr,
+                                    0, nullptr,
+                                    1, &transition);
+
+                                if (auto *targetTexture = getObject<TargetTexture>(resource))
+                                {
+                                    targetTexture->currentLayout = newLayout;
+                                    offscreenImageLayouts[image] = newLayout;
+                                }
+                                else if (auto *depthTexture = getObject<DepthTexture>(resource))
+                                {
+                                    depthTexture->currentLayout = newLayout;
+                                }
+                            };
+
+                            for (uint32_t resourceSlot = 0; resourceSlot < PixelResourceSlotCount; ++resourceSlot)
+                            {
+                                transitionComputeImageResource(drawCommand.computeResources[resourceSlot], false);
+                                transitionComputeImageResource(drawCommand.computeUnorderedAccessResources[resourceSlot], true);
+                            }
+
+                            VkDescriptorSetAllocateInfo descriptorAllocateInfo{};
+                            descriptorAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+                            descriptorAllocateInfo.descriptorPool = descriptorPool;
+                            descriptorAllocateInfo.descriptorSetCount = 1;
+                            descriptorAllocateInfo.pSetLayouts = &descriptorSetLayout;
+
+                            VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+                            if (vkAllocateDescriptorSets(device, &descriptorAllocateInfo, &descriptorSet) != VK_SUCCESS)
+                            {
+                                ++sceneDescriptorSkips;
+                                continue;
+                            }
+
+                            descriptorSets.push_back(descriptorSet);
+
+                            std::array<VkDescriptorImageInfo, PixelResourceSlotCount * 3> imageInfos{};
+                            uint32_t imageInfoCount = 0;
+                            std::array<VkDescriptorBufferInfo, PixelResourceSlotCount * 3> bufferInfos{};
+                            uint32_t bufferInfoCount = 0;
+                            std::vector<VkWriteDescriptorSet> writes;
+                            writes.reserve(PixelResourceSlotCount * 6);
+
+                            for (uint32_t resourceSlot = 0; resourceSlot < PixelResourceSlotCount; ++resourceSlot)
+                            {
+                                if (drawCommand.computeResourceBuffers[resourceSlot] && drawCommand.computeResourceBuffers[resourceSlot]->buffer != VK_NULL_HANDLE)
+                                {
+                                    auto &resourceBufferInfo = bufferInfos[bufferInfoCount++];
+                                    resourceBufferInfo.buffer = drawCommand.computeResourceBuffers[resourceSlot]->buffer;
+                                    resourceBufferInfo.offset = 0;
+                                    resourceBufferInfo.range = drawCommand.computeResourceBuffers[resourceSlot]->size;
+
+                                    VkWriteDescriptorSet write{};
+                                    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                                    write.dstSet = descriptorSet;
+                                    write.dstBinding = DescriptorStorageBufferBase + resourceSlot;
+                                    write.descriptorCount = 1;
+                                    write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                                    write.pBufferInfo = &resourceBufferInfo;
+                                    writes.push_back(write);
+                                }
+
+                                if (drawCommand.computeResourceImageViews[resourceSlot] != VK_NULL_HANDLE)
+                                {
+                                    auto &resourceImageInfo = imageInfos[imageInfoCount++];
+                                    resourceImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                                    resourceImageInfo.imageView = drawCommand.computeResourceImageViews[resourceSlot];
+
+                                    VkWriteDescriptorSet write{};
+                                    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                                    write.dstSet = descriptorSet;
+                                    write.dstBinding = DescriptorSampledImageBase + resourceSlot;
+                                    write.descriptorCount = 1;
+                                    write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                                    write.pImageInfo = &resourceImageInfo;
+                                    writes.push_back(write);
+                                }
+
+                                if (drawCommand.computeResourceSamplers[resourceSlot] != VK_NULL_HANDLE)
+                                {
+                                    auto &samplerInfo = imageInfos[imageInfoCount++];
+                                    samplerInfo.sampler = drawCommand.computeResourceSamplers[resourceSlot];
+
+                                    VkWriteDescriptorSet write{};
+                                    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                                    write.dstSet = descriptorSet;
+                                    write.dstBinding = DescriptorSamplerBase + resourceSlot;
+                                    write.descriptorCount = 1;
+                                    write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+                                    write.pImageInfo = &samplerInfo;
+                                    writes.push_back(write);
+                                }
+
+                                if (drawCommand.computeUnorderedAccessBuffers[resourceSlot] && drawCommand.computeUnorderedAccessBuffers[resourceSlot]->buffer != VK_NULL_HANDLE)
+                                {
+                                    auto &unorderedBufferInfo = bufferInfos[bufferInfoCount++];
+                                    unorderedBufferInfo.buffer = drawCommand.computeUnorderedAccessBuffers[resourceSlot]->buffer;
+                                    unorderedBufferInfo.offset = 0;
+                                    unorderedBufferInfo.range = drawCommand.computeUnorderedAccessBuffers[resourceSlot]->size;
+
+                                    VkWriteDescriptorSet write{};
+                                    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                                    write.dstSet = descriptorSet;
+                                    write.dstBinding = DescriptorStorageBufferBase + resourceSlot;
+                                    write.descriptorCount = 1;
+                                    write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                                    write.pBufferInfo = &unorderedBufferInfo;
+                                    writes.push_back(write);
+                                }
+
+                                if (drawCommand.computeUnorderedAccessImageViews[resourceSlot] != VK_NULL_HANDLE)
+                                {
+                                    auto &unorderedImageInfo = imageInfos[imageInfoCount++];
+                                    unorderedImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                                    unorderedImageInfo.imageView = drawCommand.computeUnorderedAccessImageViews[resourceSlot];
+
+                                    VkWriteDescriptorSet write{};
+                                    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                                    write.dstSet = descriptorSet;
+                                    write.dstBinding = DescriptorStorageImageBase + resourceSlot;
+                                    write.descriptorCount = 1;
+                                    write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+                                    write.pImageInfo = &unorderedImageInfo;
+                                    writes.push_back(write);
+                                }
+
+                                if (drawCommand.computeConstantBuffers[resourceSlot] && drawCommand.computeConstantBuffers[resourceSlot]->buffer != VK_NULL_HANDLE)
+                                {
+                                    auto &constantBufferInfo = bufferInfos[bufferInfoCount++];
+                                    constantBufferInfo.buffer = drawCommand.computeConstantBuffers[resourceSlot]->buffer;
+                                    constantBufferInfo.offset = 0;
+                                    constantBufferInfo.range = drawCommand.computeConstantBuffers[resourceSlot]->size;
+
+                                    VkWriteDescriptorSet write{};
+                                    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                                    write.dstSet = descriptorSet;
+                                    write.dstBinding = DescriptorVertexUniformBufferBase + resourceSlot;
+                                    write.descriptorCount = 1;
+                                    write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                                    write.pBufferInfo = &constantBufferInfo;
+                                    writes.push_back(write);
+                                }
+                            }
+
+                            if (!writes.empty())
+                            {
+                                vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+                            }
+
+                            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
+                            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, graphicsPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+                            vkCmdDispatch(commandBuffer,
+                                drawCommand.computeThreadGroupCountX,
+                                drawCommand.computeThreadGroupCountY,
+                                drawCommand.computeThreadGroupCountZ);
+
+                            VkMemoryBarrier memoryBarrier{};
+                            memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+                            memoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+                            memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+
+                            vkCmdPipelineBarrier(
+                                commandBuffer,
+                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                0,
+                                1, &memoryBarrier,
+                                0, nullptr,
+                                0, nullptr);
+
+                            continue;
+                        }
+
                         const bool isUiDraw =
                             ((drawCommand.pixelProgram &&
                                 (
@@ -5626,11 +6986,20 @@ namespace Gek
                         {
                             ++sceneCommandCount;
                         }
+
+                        if (isUiDraw)
+                        {
+                            performSceneFallbackCopy(true);
+                        }
+
                         const bool drawToBackBuffer = !drawCommand.hasOffscreenTarget;
 
                         VkRenderPass activeRenderPass = renderPass;
                         VkFramebuffer activeFramebuffer = swapChainFramebuffers[imageIndex];
                         VkExtent2D activeExtent = swapChainExtent;
+                        bool activeRenderPassHasDepth = true;
+                        VkImageView activeDepthImageView = depthImageView;
+                        DepthTexture *activeDepthTexture = nullptr;
                         uint32_t offscreenTargetCount = drawCommand.offscreenTargetCount;
                         if (offscreenTargetCount > 8)
                         {
@@ -5675,7 +7044,39 @@ namespace Gek
                                 continue;
                             }
 
-                            activeRenderPass = getOrCreateOffscreenRenderPass(targetFormats);
+                            activeExtent = drawCommand.offscreenExtents[0];
+                            if (activeExtent.width == 0 || activeExtent.height == 0)
+                            {
+                                activeExtent = swapChainExtent;
+                            }
+
+                            const bool commandRequestsDepth =
+                                (drawCommand.depthState != nullptr) &&
+                                drawCommand.depthState->getDescription().enable;
+                            VkFormat offscreenDepthFormat = VK_FORMAT_UNDEFINED;
+                            if (commandRequestsDepth)
+                            {
+                                if (drawCommand.depthTarget && drawCommand.depthTarget->imageView != VK_NULL_HANDLE)
+                                {
+                                    activeDepthTexture = drawCommand.depthTarget;
+                                    activeDepthImageView = activeDepthTexture->imageView;
+                                    offscreenDepthFormat = activeDepthTexture->format;
+                                }
+                                else if ((depthImageView != VK_NULL_HANDLE) &&
+                                    (activeExtent.width == swapChainExtent.width) &&
+                                    (activeExtent.height == swapChainExtent.height))
+                                {
+                                    activeDepthImageView = depthImageView;
+                                    offscreenDepthFormat = depthFormat;
+                                }
+                            }
+
+                            const bool needsDepth =
+                                commandRequestsDepth &&
+                                (activeDepthImageView != VK_NULL_HANDLE) &&
+                                (offscreenDepthFormat != VK_FORMAT_UNDEFINED);
+                            activeRenderPassHasDepth = needsDepth;
+                            activeRenderPass = getOrCreateOffscreenRenderPass(targetFormats, needsDepth ? offscreenDepthFormat : VK_FORMAT_UNDEFINED);
                             if (activeRenderPass == VK_NULL_HANDLE)
                             {
                                 if (!isUiDraw)
@@ -5685,7 +7086,6 @@ namespace Gek
                                 continue;
                             }
 
-                            activeExtent = drawCommand.offscreenExtents[0];
                             if (!isUiDraw && offscreenTargetCount > 0)
                             {
                                 sceneOffscreenCopySourceImage = offscreenImages[0];
@@ -5764,11 +7164,50 @@ namespace Gek
                                 transitionedToColorAttachment[targetIndex] = 1;
                             }
 
+                            if (needsDepth && activeDepthTexture)
+                            {
+                                VkImageMemoryBarrier depthToAttachment{};
+                                depthToAttachment.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                                depthToAttachment.oldLayout = activeDepthTexture->currentLayout;
+                                depthToAttachment.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                                depthToAttachment.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                depthToAttachment.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                depthToAttachment.image = activeDepthTexture->image;
+                                depthToAttachment.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                                depthToAttachment.subresourceRange.baseMipLevel = 0;
+                                depthToAttachment.subresourceRange.levelCount = 1;
+                                depthToAttachment.subresourceRange.baseArrayLayer = 0;
+                                depthToAttachment.subresourceRange.layerCount = 1;
+                                depthToAttachment.srcAccessMask = (activeDepthTexture->currentLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                                    ? VK_ACCESS_SHADER_READ_BIT
+                                    : 0;
+                                depthToAttachment.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+                                vkCmdPipelineBarrier(
+                                    commandBuffer,
+                                    (activeDepthTexture->currentLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                                        ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+                                        : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                                    0,
+                                    0, nullptr,
+                                    0, nullptr,
+                                    1, &depthToAttachment);
+
+                                activeDepthTexture->currentLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                            }
+
+                            std::vector<VkImageView> framebufferAttachmentViews(offscreenImageViews.begin(), offscreenImageViews.begin() + offscreenTargetCount);
+                            if (needsDepth && activeDepthImageView != VK_NULL_HANDLE)
+                            {
+                                framebufferAttachmentViews.push_back(activeDepthImageView);
+                            }
+
                             VkFramebufferCreateInfo framebufferInfo{};
                             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
                             framebufferInfo.renderPass = activeRenderPass;
-                            framebufferInfo.attachmentCount = offscreenTargetCount;
-                            framebufferInfo.pAttachments = offscreenImageViews.data();
+                            framebufferInfo.attachmentCount = static_cast<uint32_t>(framebufferAttachmentViews.size());
+                            framebufferInfo.pAttachments = framebufferAttachmentViews.data();
                             framebufferInfo.width = activeExtent.width;
                             framebufferInfo.height = activeExtent.height;
                             framebufferInfo.layers = 1;
@@ -5789,6 +7228,30 @@ namespace Gek
                         renderPassBeginInfo.framebuffer = activeFramebuffer;
                         renderPassBeginInfo.renderArea.offset = { 0, 0 };
                         renderPassBeginInfo.renderArea.extent = activeExtent;
+
+                        std::array<VkClearValue, 9> clearValues{};
+                        uint32_t clearValueCount = 0;
+                        if (drawToBackBuffer)
+                        {
+                            clearValues[clearValueCount++].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+                            clearValues[clearValueCount++].depthStencil = { 1.0f, 0 };
+                        }
+                        else
+                        {
+                            for (uint32_t targetIndex = 0; targetIndex < offscreenTargetCount; ++targetIndex)
+                            {
+                                clearValues[clearValueCount++].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+                            }
+
+                            if (activeRenderPassHasDepth)
+                            {
+                                clearValues[clearValueCount++].depthStencil = { 1.0f, 0 };
+                            }
+                        }
+
+                        renderPassBeginInfo.clearValueCount = clearValueCount;
+                        renderPassBeginInfo.pClearValues = clearValues.data();
+
                         vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
                         auto endRenderPassForCurrentTarget = [&]()
@@ -5830,10 +7293,49 @@ namespace Gek
 
                                     offscreenImageLayouts[offscreenImages[targetIndex]] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                                 }
+
+                                if (activeDepthTexture)
+                                {
+                                    VkImageMemoryBarrier depthToShaderRead{};
+                                    depthToShaderRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                                    depthToShaderRead.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                                    depthToShaderRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                                    depthToShaderRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                    depthToShaderRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                    depthToShaderRead.image = activeDepthTexture->image;
+                                    depthToShaderRead.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                                    depthToShaderRead.subresourceRange.baseMipLevel = 0;
+                                    depthToShaderRead.subresourceRange.levelCount = 1;
+                                    depthToShaderRead.subresourceRange.baseArrayLayer = 0;
+                                    depthToShaderRead.subresourceRange.layerCount = 1;
+                                    depthToShaderRead.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                                    depthToShaderRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+                                    vkCmdPipelineBarrier(
+                                        commandBuffer,
+                                        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                        0,
+                                        0, nullptr,
+                                        0, nullptr,
+                                        1, &depthToShaderRead);
+
+                                    activeDepthTexture->currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                                }
                             }
                         };
 
-                        VkPipeline pipeline = getOrCreateGraphicsPipeline(drawCommand, activeRenderPass);
+                        const DrawCommand *pipelineCommand = &drawCommand;
+                        DrawCommand backBufferCompositionCommand{};
+                        if (!isUiDraw && drawToBackBuffer)
+                        {
+                            backBufferCompositionCommand = drawCommand;
+                            backBufferCompositionCommand.depthState = nullptr;
+                            backBufferCompositionCommand.renderState = nullptr;
+                            pipelineCommand = &backBufferCompositionCommand;
+                        }
+
+                        VkPipeline pipeline = getOrCreateGraphicsPipeline(*pipelineCommand, activeRenderPass);
                         if (pipeline == VK_NULL_HANDLE)
                         {
                             if (!isUiDraw)
@@ -6039,6 +7541,26 @@ namespace Gek
                                 std::vector<VkWriteDescriptorSet> writes;
                                 writes.reserve((PixelResourceSlotCount * 4) + PixelResourceSlotCount);
 
+                                VkImageView fallbackImageView = drawCommand.pixelImageView;
+                                VkSampler fallbackSampler = drawCommand.pixelSampler;
+                                for (uint32_t resourceSlot = 0; resourceSlot < PixelResourceSlotCount; ++resourceSlot)
+                                {
+                                    if (fallbackImageView == VK_NULL_HANDLE && drawCommand.pixelResourceImageViews[resourceSlot] != VK_NULL_HANDLE)
+                                    {
+                                        fallbackImageView = drawCommand.pixelResourceImageViews[resourceSlot];
+                                    }
+
+                                    if (fallbackSampler == VK_NULL_HANDLE && drawCommand.pixelResourceSamplers[resourceSlot] != VK_NULL_HANDLE)
+                                    {
+                                        fallbackSampler = drawCommand.pixelResourceSamplers[resourceSlot];
+                                    }
+
+                                    if (fallbackImageView != VK_NULL_HANDLE && fallbackSampler != VK_NULL_HANDLE)
+                                    {
+                                        break;
+                                    }
+                                }
+
                                 for (uint32_t resourceSlot = 0; resourceSlot < PixelResourceSlotCount; ++resourceSlot)
                                 {
                                     VkImageView imageView = drawCommand.pixelResourceImageViews[resourceSlot];
@@ -6056,6 +7578,11 @@ namespace Gek
                                         {
                                             sampler = drawCommand.pixelSampler;
                                         }
+                                    }
+
+                                    if (imageView == VK_NULL_HANDLE)
+                                    {
+                                        imageView = fallbackImageView;
                                     }
 
                                     if (resourceBuffer && resourceBuffer->buffer != VK_NULL_HANDLE)
@@ -6100,6 +7627,11 @@ namespace Gek
                                     if (sampler == VK_NULL_HANDLE)
                                     {
                                         sampler = drawCommand.pixelResourceSamplers[0];
+                                    }
+
+                                    if (sampler == VK_NULL_HANDLE)
+                                    {
+                                        sampler = fallbackSampler;
                                     }
 
                                     if (sampler != VK_NULL_HANDLE)
@@ -6216,7 +7748,7 @@ namespace Gek
                                     bool hasPixelImage = (drawCommand.pixelImageView != VK_NULL_HANDLE);
                                     if (!hasPixelImage)
                                     {
-                                        hasPixelImage = std::any_of(
+                                        hasPixelImage   = std::any_of(
                                             std::begin(drawCommand.pixelResourceImageViews),
                                             std::end(drawCommand.pixelResourceImageViews),
                                             [](VkImageView imageView) { return imageView != VK_NULL_HANDLE; });
@@ -6237,108 +7769,9 @@ namespace Gek
                     }
                 }
 
-                constexpr bool allowSceneFallbackCopy = false;
-                if (allowSceneFallbackCopy && hasDrawCommands && sceneOffscreenCopySourceImage != VK_NULL_HANDLE)
+                if (hasDrawCommands)
                 {
-                    auto sourceLayoutSearch = offscreenImageLayouts.find(sceneOffscreenCopySourceImage);
-                    VkImageLayout sourceLayout = (sourceLayoutSearch != std::end(offscreenImageLayouts))
-                        ? sourceLayoutSearch->second
-                        : VK_IMAGE_LAYOUT_UNDEFINED;
-
-                    if (sourceLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-                    {
-                        VkImageMemoryBarrier sourceToTransferSrc{};
-                        sourceToTransferSrc.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                        sourceToTransferSrc.oldLayout = sourceLayout;
-                        sourceToTransferSrc.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                        sourceToTransferSrc.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                        sourceToTransferSrc.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                        sourceToTransferSrc.image = sceneOffscreenCopySourceImage;
-                        sourceToTransferSrc.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                        sourceToTransferSrc.subresourceRange.baseMipLevel = 0;
-                        sourceToTransferSrc.subresourceRange.levelCount = 1;
-                        sourceToTransferSrc.subresourceRange.baseArrayLayer = 0;
-                        sourceToTransferSrc.subresourceRange.layerCount = 1;
-                        sourceToTransferSrc.srcAccessMask = (sourceLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-                            ? (VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT)
-                            : VK_ACCESS_SHADER_READ_BIT;
-                        sourceToTransferSrc.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-
-                        VkPipelineStageFlags sourceStage = (sourceLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-                            ? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-                            : VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-
-                        vkCmdPipelineBarrier(
-                            commandBuffer,
-                            sourceStage,
-                            VK_PIPELINE_STAGE_TRANSFER_BIT,
-                            0,
-                            0, nullptr,
-                            0, nullptr,
-                            1, &sourceToTransferSrc);
-
-                        offscreenImageLayouts[sceneOffscreenCopySourceImage] = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                    }
-
-                    transitionSwapChainImage(imageIndex, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-                    VkImageBlit blitRegion{};
-                    blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    blitRegion.srcSubresource.mipLevel = 0;
-                    blitRegion.srcSubresource.baseArrayLayer = 0;
-                    blitRegion.srcSubresource.layerCount = 1;
-                    blitRegion.srcOffsets[0] = { 0, 0, 0 };
-                    blitRegion.srcOffsets[1] = {
-                        static_cast<int32_t>(std::max(sceneOffscreenCopySourceExtent.width, 1u)),
-                        static_cast<int32_t>(std::max(sceneOffscreenCopySourceExtent.height, 1u)),
-                        1 };
-
-                    blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    blitRegion.dstSubresource.mipLevel = 0;
-                    blitRegion.dstSubresource.baseArrayLayer = 0;
-                    blitRegion.dstSubresource.layerCount = 1;
-                    blitRegion.dstOffsets[0] = { 0, 0, 0 };
-                    blitRegion.dstOffsets[1] = {
-                        static_cast<int32_t>(std::max(swapChainExtent.width, 1u)),
-                        static_cast<int32_t>(std::max(swapChainExtent.height, 1u)),
-                        1 };
-
-                    vkCmdBlitImage(
-                        commandBuffer,
-                        sceneOffscreenCopySourceImage,
-                        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                        swapChainImages[imageIndex],
-                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                        1,
-                        &blitRegion,
-                        VK_FILTER_NEAREST);
-
-                    VkImageMemoryBarrier sourceToShaderRead{};
-                    sourceToShaderRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                    sourceToShaderRead.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                    sourceToShaderRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                    sourceToShaderRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                    sourceToShaderRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                    sourceToShaderRead.image = sceneOffscreenCopySourceImage;
-                    sourceToShaderRead.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    sourceToShaderRead.subresourceRange.baseMipLevel = 0;
-                    sourceToShaderRead.subresourceRange.levelCount = 1;
-                    sourceToShaderRead.subresourceRange.baseArrayLayer = 0;
-                    sourceToShaderRead.subresourceRange.layerCount = 1;
-                    sourceToShaderRead.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                    sourceToShaderRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-                    vkCmdPipelineBarrier(
-                        commandBuffer,
-                        VK_PIPELINE_STAGE_TRANSFER_BIT,
-                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                        0,
-                        0, nullptr,
-                        0, nullptr,
-                        1, &sourceToShaderRead);
-
-                    offscreenImageLayouts[sceneOffscreenCopySourceImage] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                    sceneFallbackCopyPerformed = true;
+                    performSceneFallbackCopy(false);
                 }
 
                 transitionSwapChainImage(imageIndex, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 0, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
@@ -6475,127 +7908,89 @@ namespace Gek
             }
         };
 
-        GEK_REGISTER_CONTEXT_USER(Device);
-    }; // Render::Implementation
-}; // namespace Gek
-tInfo.waitSemaphoreCount = 1;
-                submitInfo.pWaitSemaphores = waitSemaphores;
-                submitInfo.pWaitDstStageMask = waitStages;
-                submitInfo.commandBufferCount = 1;
-                submitInfo.pCommandBuffers = &commandBuffer;
-                submitInfo.signalSemaphoreCount = 1;
-                submitInfo.pSignalSemaphores = signalSemaphores;
-
-                vkResetFences(device, 1, &inFlightFence);
-                VkResult submitResult = VK_SUCCESS;
-                {
-                    std::lock_guard<std::mutex> queueLock(getQueueSubmitMutex());
-                    submitResult = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence);
-                }
-                if (submitResult != VK_SUCCESS)
-                {
-                    if (submitResult == VK_ERROR_DEVICE_LOST)
-                    {
-                        handleDeviceLost(submitResult, "vkQueueSubmit");
-                        return;
-                    }
-
-                    getContext()->log(
-                        Gek::Context::Error,
-                        "Vulkan failed to submit draw command buffer: result={}",
-                        static_cast<int32_t>(submitResult));
-                    pendingDrawCommands.clear();
-                    recreateSwapChain();
-                    return;
-                }
-
-                inFlightFencePending = true;
-
-                VkPresentInfoKHR presentInfo{};
-                presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-                presentInfo.waitSemaphoreCount = 1;
-                presentInfo.pWaitSemaphores = signalSemaphores;
-                presentInfo.swapchainCount = 1;
-                presentInfo.pSwapchains = &swapChain;
-                presentInfo.pImageIndices = &imageIndex;
-
-                VkResult presentResult = VK_SUCCESS;
-                {
-                    std::lock_guard<std::mutex> queueLock(getQueueSubmitMutex());
-                    presentResult = vkQueuePresentKHR(presentQueue, &presentInfo);
-                }
-                if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR)
-                {
-                    recreateSwapChain();
-                }
-                else if (presentResult == VK_ERROR_DEVICE_LOST)
-                {
-                    handleDeviceLost(presentResult, "vkQueuePresentKHR");
-                    return;
-                }
-                else if (presentResult != VK_SUCCESS)
-                {
-                    getContext()->log(
-                        Gek::Context::Error,
-                        "Vulkan failed to present swap-chain image: result={}",
-                        static_cast<int32_t>(presentResult));
-                    pendingDrawCommands.clear();
-                    recreateSwapChain();
-                    return;
-                }
-
-                ++presentFrameIndex;
-                const uint32_t totalCommandCount = static_cast<uint32_t>(pendingDrawCommands.size());
-                const uint32_t uiCommandCount = (totalCommandCount >= sceneCommandCount) ? (totalCommandCount - sceneCommandCount) : 0u;
-                debugOverlayText = std::format(
-                    "VK f={} total={} ui={} scene={} draws={} off={} back={} descSkips={} pipeSkips={} offSkips={} devLost={}",
-                    presentFrameIndex,
-                    totalCommandCount,
-                    uiCommandCount,
-                    sceneCommandCount,
-                    sceneDrawCallsIssued,
-                    sceneOffscreenDrawCalls,
-                    sceneBackBufferDrawCalls,
-                    sceneDescriptorSkips,
-                    scenePipelineSkips,
-                    sceneOffscreenInvalidSkips,
-                    static_cast<uint32_t>(deviceLost));
-                if ((presentFrameIndex % 240u) == 0u)
-                {
-                    getContext()->log(
-                        Gek::Context::Info,
-                        "Vulkan scene stats frame={} totalCommands={} uiCommands={} sceneCommands={} sceneDraws={} sceneBackBufferDraws={} sceneOffscreenDraws={} sceneBackBufferMissingImageDraws={} sceneFallbackCopy={} offscreenSkips={} pipelineSkips={} descriptorSkips={} contextDrawAttempts={} skipMissingProgram={} skipMissingVB={} skipMissingIB={} skipZeroCount={} deferredFinishCalls={} deferredExecuteCalls={} deferredExecutedCommands={} deferredContextQueues={} deferredCommandLists={} pendingEnqueues={} deferredEnqueues={}",
-                        presentFrameIndex,
-                        totalCommandCount,
-                        uiCommandCount,
-                        sceneCommandCount,
-                        sceneDrawCallsIssued,
-                        sceneBackBufferDrawCalls,
-                        sceneOffscreenDrawCalls,
-                        sceneBackBufferMissingImageDrawCalls,
-                        static_cast<uint32_t>(sceneFallbackCopyPerformed),
-                        sceneOffscreenInvalidSkips,
-                        scenePipelineSkips,
-                        sceneDescriptorSkips,
-                        static_cast<uint32_t>(contextDrawCallAttempts),
-                        static_cast<uint32_t>(contextDrawSkipsMissingProgram),
-                        static_cast<uint32_t>(contextDrawSkipsMissingVertexBuffer),
-                        static_cast<uint32_t>(contextDrawSkipsMissingIndexBuffer),
-                        static_cast<uint32_t>(contextDrawSkipsZeroCount),
-                        static_cast<uint32_t>(deferredFinishCalls),
-                        static_cast<uint32_t>(deferredExecuteCalls),
-                        static_cast<uint32_t>(deferredExecutedCommandCount),
-                        static_cast<uint32_t>(deferredContextDrawCommands.size()),
-                        static_cast<uint32_t>(deferredCommandLists.size()),
-                        static_cast<uint32_t>(pendingCommandEnqueueCount),
-                        static_cast<uint32_t>(deferredCommandEnqueueCount));
-                }
-
-                transientFrameConstantBufferSnapshotsInFlight = std::move(transientFrameConstantBufferSnapshotsPending);
-                transientFrameConstantBufferSnapshotsPending.clear();
-                pendingDrawCommands.clear();
+        void Device::enqueueGenerateMipMapsCommand(Context *sourceContext, Render::Texture *texture)
+        {
+            if (!sourceContext || !texture)
+            {
+                return;
             }
-        };
+
+            DrawCommand command;
+            command.commandType = DrawCommand::Type::GenerateMipMaps;
+            command.mipmapTexture = texture;
+            command.mipmapLevels = std::max(texture->getDescription().mipMapCount, 1u);
+
+            std::lock_guard<std::mutex> lock(getDrawCommandMutex());
+            if (sourceContext->isDeferredContext)
+            {
+                deferredContextDrawCommands[sourceContext].push_back(command);
+                ++deferredCommandEnqueueCount;
+            }
+            else
+            {
+                pendingDrawCommands.push_back(command);
+                ++pendingCommandEnqueueCount;
+            }
+        }
+
+        void Device::enqueueComputeDispatchCommand(Context *sourceContext, uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ)
+        {
+            if (!sourceContext)
+            {
+                return;
+            }
+
+            DrawCommand command;
+            command.commandType = DrawCommand::Type::ComputeDispatch;
+            command.computeProgram = sourceContext->currentComputeProgram;
+            command.computeThreadGroupCountX = threadGroupCountX;
+            command.computeThreadGroupCountY = threadGroupCountY;
+            command.computeThreadGroupCountZ = threadGroupCountZ;
+            command.computeConstantBuffers = sourceContext->currentComputeConstantBuffers;
+            command.computeResources = sourceContext->currentComputeResources;
+            command.computeResourceImageViews = sourceContext->currentComputeResourceImageViews;
+            command.computeResourceSamplers = sourceContext->currentComputeResourceSamplers;
+            command.computeResourceBuffers = sourceContext->currentComputeResourceBuffers;
+            command.computeUnorderedAccessResources = sourceContext->currentComputeUnorderedAccessResources;
+            command.computeUnorderedAccessImageViews = sourceContext->currentComputeUnorderedAccessImageViews;
+            command.computeUnorderedAccessBuffers = sourceContext->currentComputeUnorderedAccessBuffers;
+
+            std::lock_guard<std::mutex> lock(getDrawCommandMutex());
+            std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
+            auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
+            {
+                if (!buffer)
+                {
+                    return nullptr;
+                }
+
+                auto snapshotSearch = constantBufferSnapshotMap.find(buffer);
+                if (snapshotSearch != std::end(constantBufferSnapshotMap))
+                {
+                    return snapshotSearch->second;
+                }
+
+                Buffer *snapshotBuffer = createConstantBufferSnapshot(buffer);
+                constantBufferSnapshotMap[buffer] = snapshotBuffer;
+                return snapshotBuffer;
+            };
+
+            for (uint32_t slot = 0; slot < command.computeConstantBuffers.size(); ++slot)
+            {
+                command.computeConstantBuffers[slot] = snapshotConstantBuffer(command.computeConstantBuffers[slot]);
+            }
+
+            if (sourceContext->isDeferredContext)
+            {
+                deferredContextDrawCommands[sourceContext].push_back(command);
+                ++deferredCommandEnqueueCount;
+            }
+            else
+            {
+                pendingDrawCommands.push_back(command);
+                ++pendingCommandEnqueueCount;
+            }
+        }
 
         GEK_REGISTER_CONTEXT_USER(Device);
     }; // Render::Implementation
