@@ -1627,6 +1627,33 @@ namespace Gek
                     d3dDeviceContext->ResolveSubresource(getObject<Resource>(destination), 0, getObject<Resource>(source), 0, Render::Implementation::TextureFormatList[static_cast<uint8_t>(destination->getDescription().format)]);
                 }
 
+                void copyResource(Render::Object *destination, Render::Object *source)
+                {
+                    assert(d3dDeviceContext);
+                    assert(destination);
+                    assert(source);
+
+                    auto destinationTexture = dynamic_cast<BaseTexture *>(destination);
+                    auto sourceTexture = dynamic_cast<BaseTexture *>(source);
+                    if (destinationTexture && sourceTexture)
+                    {
+                        if (destinationTexture->description.width != sourceTexture->description.width ||
+                            destinationTexture->description.height != sourceTexture->description.height ||
+                            destinationTexture->description.depth != sourceTexture->description.depth)
+                        {
+                            return;
+                        }
+
+                        if (destinationTexture->description.mipMapCount > 0 || sourceTexture->description.mipMapCount > 0)
+                        {
+                            d3dDeviceContext->CopySubresourceRegion(getObject<Resource>(destination), 0, 0, 0, 0, getObject<Resource>(source), 0, nullptr);
+                            return;
+                        }
+                    }
+
+                    d3dDeviceContext->CopyResource(getObject<Resource>(destination), getObject<Resource>(source));
+                }
+
                 void clearState(void)
                 {
                     assert(d3dDeviceContext);

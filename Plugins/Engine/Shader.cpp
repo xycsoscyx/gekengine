@@ -981,7 +981,7 @@ R"(namespace UnorderedAccess
 
                 for (auto const &copyResource : pass.copyResourceMap)
                 {
-                    resources->copyResource(copyResource.first, copyResource.second);
+                    resources->copyResource(videoContext, copyResource.first, copyResource.second);
                 }
 
                 for (auto const &resource : pass.generateMipMapsList)

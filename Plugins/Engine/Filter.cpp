@@ -737,7 +737,7 @@ R"(namespace UnorderedAccess {{
 
                 for (auto const &copyResource : pass.copyResourceMap)
                 {
-                    resources->copyResource(copyResource.first, copyResource.second);
+                    resources->copyResource(videoContext, copyResource.first, copyResource.second);
                 }
 
                 Render::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());

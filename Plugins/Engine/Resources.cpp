@@ -1793,13 +1793,15 @@ namespace Gek
                 }
             }
 
-            void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle)
+            void copyResource(Render::Device::Context* videoContext, ResourceHandle destinationHandle, ResourceHandle sourceHandle)
             {
+                assert(videoContext);
+
                 auto source = getResource(sourceHandle);
                 auto destination = getResource(destinationHandle);
                 if (source && destination)
                 {
-                    videoDevice->copyResource(destination, source);
+                    videoContext->copyResource(destination, source);
                 }
             }
 
@@ -2032,8 +2034,12 @@ namespace Gek
                 dispatchValid = true;
 
                 static uint64_t resourceBlockCounter = 0;
+                static uint64_t lastLoggedSuppressedCount = 0;
                 ++resourceBlockCounter;
-                if ((resourceBlockCounter % 480u) == 0u)
+
+                const bool periodicLog = ((resourceBlockCounter % 4800u) == 0u);
+                const bool suppressionSpike = (drawCallSuppressedCount >= (lastLoggedSuppressedCount + 100000u));
+                if (periodicLog || suppressionSpike)
                 {
                     getContext()->log(
                         Context::Info,
@@ -2041,6 +2047,7 @@ namespace Gek
                         drawCallAttemptCount,
                         drawCallSubmittedCount,
                         drawCallSuppressedCount);
+                    lastLoggedSuppressedCount = drawCallSuppressedCount;
                 }
             }
         };

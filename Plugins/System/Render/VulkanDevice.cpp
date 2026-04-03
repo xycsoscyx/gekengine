@@ -638,6 +638,7 @@ namespace Gek
             VkImageView imageView = VK_NULL_HANDLE;
             VkSampler sampler = VK_NULL_HANDLE;
             VkImageLayout currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            bool supportsMipBlit = false;
 
             TargetTexture(const Render::Texture::Description &description)
                 : Target(description)
@@ -824,6 +825,8 @@ namespace Gek
 
             void enqueueGenerateMipMapsCommand(Context *sourceContext, Render::Texture *texture);
             void enqueueComputeDispatchCommand(Context *sourceContext, uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ);
+            void enqueueClearRenderTargetCommand(Context *sourceContext, Render::Target *renderTarget, Math::Float4 const &clearColor);
+            void enqueueCopyResourceCommand(Context *sourceContext, Render::Object *destination, Render::Object *source);
 
             class Context
                 : public Render::Device::Context
@@ -1217,10 +1220,26 @@ namespace Gek
 
                     void setSamplerStateList(const std::vector<Render::Object *> &list, uint32_t firstStage)
                     {
-                        if (!list.empty() && firstStage == 0)
+                        if (list.empty())
                         {
-                            auto samplerState = getObject<SamplerState>(list[0]);
-                            context->currentPixelSamplerState = samplerState;
+                            return;
+                        }
+
+                        for (uint32_t samplerIndex = 0; samplerIndex < list.size(); ++samplerIndex)
+                        {
+                            const uint32_t slot = firstStage + samplerIndex;
+                            if (slot >= context->currentPixelSamplerStates.size())
+                            {
+                                continue;
+                            }
+
+                            auto samplerState = getObject<SamplerState>(list[samplerIndex]);
+                            context->currentPixelSamplerStates[slot] = (samplerState ? samplerState->sampler : VK_NULL_HANDLE);
+                        }
+
+                        if (firstStage == 0)
+                        {
+                            context->currentPixelSamplerState = getObject<SamplerState>(list[0]);
                         }
                     }
 
@@ -1309,6 +1328,21 @@ namespace Gek
 
                     void clearSamplerStateList(uint32_t count, uint32_t firstStage)
                     {
+                        if (count == 0 || firstStage >= context->currentPixelSamplerStates.size())
+                        {
+                            return;
+                        }
+
+                        const uint32_t endStage = std::min<uint32_t>(static_cast<uint32_t>(context->currentPixelSamplerStates.size()), firstStage + count);
+                        for (uint32_t stage = firstStage; stage < endStage; ++stage)
+                        {
+                            context->currentPixelSamplerStates[stage] = VK_NULL_HANDLE;
+                        }
+
+                        if (firstStage == 0)
+                        {
+                            context->currentPixelSamplerState = nullptr;
+                        }
                     }
 
                     void clearConstantBufferList(uint32_t count, uint32_t firstStage)
@@ -1386,6 +1420,7 @@ namespace Gek
                 VkSampler currentPixelImageSampler = VK_NULL_HANDLE;
                 std::array<VkImageView, 16> currentPixelResourceImageViews{};
                 std::array<VkSampler, 16> currentPixelResourceSamplers{};
+                std::array<VkSampler, 16> currentPixelSamplerStates{};
                 std::array<Buffer *, ContextResourceSlotCount> currentPixelResourceBuffers{};
                 std::array<Render::Object *, ContextResourceSlotCount> currentComputeResources{};
                 std::array<VkImageView, 16> currentComputeResourceImageViews{};
@@ -1470,6 +1505,16 @@ namespace Gek
                 {
                 }
 
+                void copyResource(Render::Object *destination, Render::Object *source)
+                {
+                    if (!owner || !destination || !source)
+                    {
+                        return;
+                    }
+
+                    owner->enqueueCopyResourceCommand(this, destination, source);
+                }
+
                 void clearState(void)
                 {
                     currentInputLayout = nullptr;
@@ -1494,6 +1539,7 @@ namespace Gek
                     currentPixelImageSampler = VK_NULL_HANDLE;
                     currentPixelResourceImageViews.fill(VK_NULL_HANDLE);
                     currentPixelResourceSamplers.fill(VK_NULL_HANDLE);
+                    currentPixelSamplerStates.fill(VK_NULL_HANDLE);
                     currentPixelResourceBuffers.fill(nullptr);
                     currentComputeResources.fill(nullptr);
                     currentComputeResourceImageViews.fill(VK_NULL_HANDLE);
@@ -1561,7 +1607,10 @@ namespace Gek
                             clearColor.b,
                             clearColor.a,
                         };
+                        return;
                     }
+
+                    owner->enqueueClearRenderTargetCommand(this, renderTarget, clearColor);
                 }
 
                 void clearDepthStencilTarget(Render::Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
@@ -1750,13 +1799,10 @@ namespace Gek
                     command.pixelConstantBuffers = currentPixelConstantBuffers;
                     command.pixelResourceImageViews = currentPixelResourceImageViews;
                     command.pixelResourceSamplers = currentPixelResourceSamplers;
+                    command.pixelSamplerStates = currentPixelSamplerStates;
                     command.pixelResourceBuffers = currentPixelResourceBuffers;
-                    command.pixelImageView = command.pixelResourceImageViews[0];
-                    command.pixelSampler = command.pixelResourceSamplers[0];
-                    if (command.pixelSampler == VK_NULL_HANDLE)
-                    {
-                        command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
-                    }
+                    command.pixelImageView = currentPixelImageView;
+                    command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
                     command.renderTarget = currentRenderTarget;
                     command.depthTarget = currentDepthTarget;
                     command.hasOffscreenTarget = (currentRenderTargetCount > 0);
@@ -1768,17 +1814,9 @@ namespace Gek
                     {
                         command.pixelSampler = currentPixelImageSampler;
                     }
-                    if (command.pixelSampler != VK_NULL_HANDLE && command.pixelResourceSamplers[0] == VK_NULL_HANDLE)
-                    {
-                        command.pixelResourceSamplers[0] = command.pixelSampler;
-                    }
                     if (command.pixelImageView == VK_NULL_HANDLE)
                     {
                         command.pixelImageView = currentPixelImageView;
-                        if (command.pixelResourceImageViews[0] == VK_NULL_HANDLE)
-                        {
-                            command.pixelResourceImageViews[0] = command.pixelImageView;
-                        }
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
@@ -1895,13 +1933,10 @@ namespace Gek
                     command.pixelConstantBuffers = currentPixelConstantBuffers;
                     command.pixelResourceImageViews = currentPixelResourceImageViews;
                     command.pixelResourceSamplers = currentPixelResourceSamplers;
+                    command.pixelSamplerStates = currentPixelSamplerStates;
                     command.pixelResourceBuffers = currentPixelResourceBuffers;
-                    command.pixelImageView = command.pixelResourceImageViews[0];
-                    command.pixelSampler = command.pixelResourceSamplers[0];
-                    if (command.pixelSampler == VK_NULL_HANDLE)
-                    {
-                        command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
-                    }
+                    command.pixelImageView = currentPixelImageView;
+                    command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
                     command.renderTarget = currentRenderTarget;
                     command.depthTarget = currentDepthTarget;
                     command.hasOffscreenTarget = (currentRenderTargetCount > 0);
@@ -1913,17 +1948,9 @@ namespace Gek
                     {
                         command.pixelSampler = currentPixelImageSampler;
                     }
-                    if (command.pixelSampler != VK_NULL_HANDLE && command.pixelResourceSamplers[0] == VK_NULL_HANDLE)
-                    {
-                        command.pixelResourceSamplers[0] = command.pixelSampler;
-                    }
                     if (command.pixelImageView == VK_NULL_HANDLE)
                     {
                         command.pixelImageView = currentPixelImageView;
-                        if (command.pixelResourceImageViews[0] == VK_NULL_HANDLE)
-                        {
-                            command.pixelResourceImageViews[0] = command.pixelImageView;
-                        }
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
@@ -2064,13 +2091,10 @@ namespace Gek
                     command.pixelConstantBuffers = currentPixelConstantBuffers;
                     command.pixelResourceImageViews = currentPixelResourceImageViews;
                     command.pixelResourceSamplers = currentPixelResourceSamplers;
+                    command.pixelSamplerStates = currentPixelSamplerStates;
                     command.pixelResourceBuffers = currentPixelResourceBuffers;
-                    command.pixelImageView = command.pixelResourceImageViews[0];
-                    command.pixelSampler = command.pixelResourceSamplers[0];
-                    if (command.pixelSampler == VK_NULL_HANDLE)
-                    {
-                        command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
-                    }
+                    command.pixelImageView = currentPixelImageView;
+                    command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
                     command.renderTarget = currentRenderTarget;
                     command.depthTarget = currentDepthTarget;
                     command.hasOffscreenTarget = (currentRenderTargetCount > 0);
@@ -2082,17 +2106,9 @@ namespace Gek
                     {
                         command.pixelSampler = currentPixelImageSampler;
                     }
-                    if (command.pixelSampler != VK_NULL_HANDLE && command.pixelResourceSamplers[0] == VK_NULL_HANDLE)
-                    {
-                        command.pixelResourceSamplers[0] = command.pixelSampler;
-                    }
                     if (command.pixelImageView == VK_NULL_HANDLE)
                     {
                         command.pixelImageView = currentPixelImageView;
-                        if (command.pixelResourceImageViews[0] == VK_NULL_HANDLE)
-                        {
-                            command.pixelResourceImageViews[0] = command.pixelImageView;
-                        }
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
@@ -2233,13 +2249,10 @@ namespace Gek
                     command.pixelConstantBuffers = currentPixelConstantBuffers;
                     command.pixelResourceImageViews = currentPixelResourceImageViews;
                     command.pixelResourceSamplers = currentPixelResourceSamplers;
+                    command.pixelSamplerStates = currentPixelSamplerStates;
                     command.pixelResourceBuffers = currentPixelResourceBuffers;
-                    command.pixelImageView = command.pixelResourceImageViews[0];
-                    command.pixelSampler = command.pixelResourceSamplers[0];
-                    if (command.pixelSampler == VK_NULL_HANDLE)
-                    {
-                        command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
-                    }
+                    command.pixelImageView = currentPixelImageView;
+                    command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
                     command.renderTarget = currentRenderTarget;
                     command.depthTarget = currentDepthTarget;
                     command.hasOffscreenTarget = (currentRenderTargetCount > 0);
@@ -2251,17 +2264,9 @@ namespace Gek
                     {
                         command.pixelSampler = currentPixelImageSampler;
                     }
-                    if (command.pixelSampler != VK_NULL_HANDLE && command.pixelResourceSamplers[0] == VK_NULL_HANDLE)
-                    {
-                        command.pixelResourceSamplers[0] = command.pixelSampler;
-                    }
                     if (command.pixelImageView == VK_NULL_HANDLE)
                     {
                         command.pixelImageView = currentPixelImageView;
-                        if (command.pixelResourceImageViews[0] == VK_NULL_HANDLE)
-                        {
-                            command.pixelResourceImageViews[0] = command.pixelImageView;
-                        }
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
@@ -2434,6 +2439,8 @@ namespace Gek
                     Draw,
                     ComputeDispatch,
                     GenerateMipMaps,
+                    ClearRenderTarget,
+                    CopyResource,
                 };
 
                 Type commandType = Type::Draw;
@@ -2463,6 +2470,7 @@ namespace Gek
                 VkSampler pixelSampler = VK_NULL_HANDLE;
                 std::array<VkImageView, PixelResourceSlotCount> pixelResourceImageViews{};
                 std::array<VkSampler, PixelResourceSlotCount> pixelResourceSamplers{};
+                std::array<VkSampler, PixelResourceSlotCount> pixelSamplerStates{};
                 std::array<Buffer *, PixelResourceSlotCount> pixelResourceBuffers{};
                 TargetTexture *renderTarget = nullptr;
                 DepthTexture *depthTarget = nullptr;
@@ -2491,6 +2499,12 @@ namespace Gek
 
                 Render::Texture *mipmapTexture = nullptr;
                 uint32_t mipmapLevels = 1;
+
+                Render::Object *copyDestination = nullptr;
+                Render::Object *copySource = nullptr;
+
+                TargetTexture *clearRenderTarget = nullptr;
+                VkClearColorValue clearRenderTargetColor = {{ 0.0f, 0.0f, 0.0f, 1.0f }};
             };
 
             std::vector<DrawCommand> pendingDrawCommands;
@@ -2520,6 +2534,8 @@ namespace Gek
             bool deviceLost = false;
             bool loggedDeviceLost = false;
             std::string debugOverlayText = "VK: init";
+            bool samplerAnisotropySupported = false;
+            float maxSamplerAnisotropy = 1.0f;
 
             struct PipelineKey
             {
@@ -2551,10 +2567,28 @@ namespace Gek
                 }
             };
 
+            struct FramebufferKey
+            {
+                VkRenderPass renderPass = VK_NULL_HANDLE;
+                VkExtent2D extent = { 0, 0 };
+                uint32_t attachmentCount = 0;
+                std::array<VkImageView, 9> attachments{};
+
+                bool operator < (const FramebufferKey &other) const
+                {
+                    if (renderPass != other.renderPass) return renderPass < other.renderPass;
+                    if (extent.width != other.extent.width) return extent.width < other.extent.width;
+                    if (extent.height != other.extent.height) return extent.height < other.extent.height;
+                    if (attachmentCount != other.attachmentCount) return attachmentCount < other.attachmentCount;
+                    return attachments < other.attachments;
+                }
+            };
+
             std::map<PipelineKey, VkPipeline> graphicsPipelineCache;
             std::set<PipelineKey> failedGraphicsPipelineKeys;
             std::map<VkShaderModule, VkPipeline> computePipelineCache;
             std::set<VkShaderModule> failedComputePipelineModules;
+            std::map<FramebufferKey, VkFramebuffer> offscreenFramebufferCache;
 
             VkClearColorValue pendingClearColor = {{ 0.1f, 0.1f, 0.15f, 1.0f }};
 
@@ -2901,6 +2935,11 @@ namespace Gek
                 VkPhysicalDeviceFeatures availableDeviceFeatures{};
                 vkGetPhysicalDeviceFeatures(physicalDevice, &availableDeviceFeatures);
 
+                VkPhysicalDeviceProperties deviceProperties{};
+                vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+                maxSamplerAnisotropy = std::max(1.0f, deviceProperties.limits.maxSamplerAnisotropy);
+                samplerAnisotropySupported = (availableDeviceFeatures.samplerAnisotropy == VK_TRUE);
+
                 if (!availableDeviceFeatures.shaderStorageImageReadWithoutFormat || !availableDeviceFeatures.shaderStorageImageWriteWithoutFormat)
                 {
                     throw std::runtime_error("Vulkan device missing required formatless storage image read/write features");
@@ -2908,6 +2947,10 @@ namespace Gek
 
                 deviceFeatures.shaderStorageImageReadWithoutFormat = VK_TRUE;
                 deviceFeatures.shaderStorageImageWriteWithoutFormat = VK_TRUE;
+                if (samplerAnisotropySupported)
+                {
+                    deviceFeatures.samplerAnisotropy = VK_TRUE;
+                }
 
                 VkPhysicalDeviceVulkan11Features availableVulkan11Features{};
                 availableVulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
@@ -3180,6 +3223,15 @@ namespace Gek
                     vkDestroyFramebuffer(device, framebuffer, nullptr);
                 }
                 swapChainFramebuffers.clear();
+
+                for (auto &framebufferPair : offscreenFramebufferCache)
+                {
+                    if (framebufferPair.second != VK_NULL_HANDLE)
+                    {
+                        vkDestroyFramebuffer(device, framebufferPair.second, nullptr);
+                    }
+                }
+                offscreenFramebufferCache.clear();
 
                 if (depthImageView != VK_NULL_HANDLE)
                 {
@@ -3931,6 +3983,47 @@ namespace Gek
                 return pipeline;
             }
 
+            VkFramebuffer getOrCreateOffscreenFramebuffer(VkRenderPass activeRenderPass, const std::vector<VkImageView> &attachments, VkExtent2D extent)
+            {
+                if (activeRenderPass == VK_NULL_HANDLE || attachments.empty() || extent.width == 0 || extent.height == 0)
+                {
+                    return VK_NULL_HANDLE;
+                }
+
+                FramebufferKey key;
+                key.renderPass = activeRenderPass;
+                key.extent = extent;
+                key.attachmentCount = std::min<uint32_t>(static_cast<uint32_t>(attachments.size()), static_cast<uint32_t>(key.attachments.size()));
+                for (uint32_t attachmentIndex = 0; attachmentIndex < key.attachmentCount; ++attachmentIndex)
+                {
+                    key.attachments[attachmentIndex] = attachments[attachmentIndex];
+                }
+
+                auto framebufferSearch = offscreenFramebufferCache.find(key);
+                if (framebufferSearch != std::end(offscreenFramebufferCache))
+                {
+                    return framebufferSearch->second;
+                }
+
+                VkFramebufferCreateInfo framebufferInfo{};
+                framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+                framebufferInfo.renderPass = activeRenderPass;
+                framebufferInfo.attachmentCount = key.attachmentCount;
+                framebufferInfo.pAttachments = key.attachments.data();
+                framebufferInfo.width = extent.width;
+                framebufferInfo.height = extent.height;
+                framebufferInfo.layers = 1;
+
+                VkFramebuffer framebuffer = VK_NULL_HANDLE;
+                if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &framebuffer) != VK_SUCCESS)
+                {
+                    return VK_NULL_HANDLE;
+                }
+
+                offscreenFramebufferCache[key] = framebuffer;
+                return framebuffer;
+            }
+
             void createCommandResources(void)
             {
                 QueueFamilyIndices indices = findQueueFamilies();
@@ -4334,23 +4427,103 @@ namespace Gek
 
                 VkSamplerCreateInfo samplerInfo{};
                 samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-                samplerInfo.magFilter = VK_FILTER_LINEAR;
-                samplerInfo.minFilter = VK_FILTER_LINEAR;
+
+                const uint8_t filterModeValue = static_cast<uint8_t>(description.filterMode);
+                const uint8_t filterGroup = (filterModeValue / 9);
+                const uint8_t filterBase = (filterModeValue % 9);
+                const bool useAnisotropicFilter = (filterBase == 8);
+
+                switch (filterBase)
+                {
+                case 0:
+                    samplerInfo.minFilter = VK_FILTER_NEAREST;
+                    samplerInfo.magFilter = VK_FILTER_NEAREST;
+                    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+                    break;
+
+                case 1:
+                    samplerInfo.minFilter = VK_FILTER_NEAREST;
+                    samplerInfo.magFilter = VK_FILTER_NEAREST;
+                    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+                    break;
+
+                case 2:
+                    samplerInfo.minFilter = VK_FILTER_NEAREST;
+                    samplerInfo.magFilter = VK_FILTER_LINEAR;
+                    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+                    break;
+
+                case 3:
+                    samplerInfo.minFilter = VK_FILTER_NEAREST;
+                    samplerInfo.magFilter = VK_FILTER_LINEAR;
+                    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+                    break;
+
+                case 4:
+                    samplerInfo.minFilter = VK_FILTER_LINEAR;
+                    samplerInfo.magFilter = VK_FILTER_NEAREST;
+                    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+                    break;
+
+                case 5:
+                    samplerInfo.minFilter = VK_FILTER_LINEAR;
+                    samplerInfo.magFilter = VK_FILTER_NEAREST;
+                    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+                    break;
+
+                case 6:
+                    samplerInfo.minFilter = VK_FILTER_LINEAR;
+                    samplerInfo.magFilter = VK_FILTER_LINEAR;
+                    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+                    break;
+
+                case 7:
+                case 8:
+                default:
+                    samplerInfo.minFilter = VK_FILTER_LINEAR;
+                    samplerInfo.magFilter = VK_FILTER_LINEAR;
+                    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+                    break;
+                }
+
                 samplerInfo.addressModeU = addressModeList[static_cast<uint8_t>(description.addressModeU)];
                 samplerInfo.addressModeV = addressModeList[static_cast<uint8_t>(description.addressModeV)];
                 samplerInfo.addressModeW = addressModeList[static_cast<uint8_t>(description.addressModeW)];
-                samplerInfo.anisotropyEnable = VK_FALSE;
-                samplerInfo.maxAnisotropy = 1.0f;
+                samplerInfo.anisotropyEnable = (useAnisotropicFilter && samplerAnisotropySupported)
+                    ? VK_TRUE
+                    : VK_FALSE;
+                samplerInfo.maxAnisotropy = samplerInfo.anisotropyEnable
+                    ? std::min(maxSamplerAnisotropy, static_cast<float>(std::max(description.maximumAnisotropy, 1u)))
+                    : 1.0f;
                 samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
                 samplerInfo.unnormalizedCoordinates = VK_FALSE;
-                samplerInfo.compareEnable = VK_FALSE;
-                samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-                samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-                samplerInfo.minLod = 0.0f;
-                samplerInfo.maxLod = 0.0f;
-                samplerInfo.mipLodBias = 0.0f;
+                samplerInfo.compareEnable = (filterGroup == 1) ? VK_TRUE : VK_FALSE;
+                static constexpr VkCompareOp compareOpList[] =
+                {
+                    VK_COMPARE_OP_ALWAYS,
+                    VK_COMPARE_OP_NEVER,
+                    VK_COMPARE_OP_EQUAL,
+                    VK_COMPARE_OP_NOT_EQUAL,
+                    VK_COMPARE_OP_LESS,
+                    VK_COMPARE_OP_LESS_OR_EQUAL,
+                    VK_COMPARE_OP_GREATER,
+                    VK_COMPARE_OP_GREATER_OR_EQUAL,
+                };
+                samplerInfo.compareOp = compareOpList[static_cast<uint8_t>(description.comparisonFunction)];
+                samplerInfo.minLod = description.minimumMipLevel;
+                samplerInfo.maxLod = std::isfinite(description.maximumMipLevel)
+                    ? std::max(description.maximumMipLevel, description.minimumMipLevel)
+                    : VK_LOD_CLAMP_NONE;
+                samplerInfo.mipLodBias = description.mipLevelBias;
                 if (vkCreateSampler(device, &samplerInfo, nullptr, &samplerState->sampler) != VK_SUCCESS)
                 {
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan createSamplerState failed: name='{}' minLod={} maxLod={} bias={}",
+                        description.name,
+                        description.minimumMipLevel,
+                        description.maximumMipLevel,
+                        description.mipLevelBias);
                     return nullptr;
                 }
 
@@ -4512,6 +4685,12 @@ namespace Gek
 
             void copyResource(Render::Object *destination, Render::Object *source)
             {
+                if (!destination || !source)
+                {
+                    return;
+                }
+
+                enqueueCopyResourceCommand(nullptr, destination, source);
             }
 
             std::string_view const getSemanticMoniker(Render::InputElement::Semantic semantic)
@@ -5038,6 +5217,12 @@ namespace Gek
                         : std::clamp(description.mipMapCount, 1u, std::max(maxMipLevels, 1u));
                     imageInfo.mipLevels = mipLevels;
                     texture->description.mipMapCount = mipLevels;
+
+                    VkFormatProperties formatProperties{};
+                    vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
+                    const bool supportsBlitSource = (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT) != 0;
+                    const bool supportsBlitDestination = (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT) != 0;
+                    texture->supportsMipBlit = (mipLevels > 1) && supportsBlitSource && supportsBlitDestination;
                     imageInfo.arrayLayers = 1;
                     imageInfo.format = imageFormat;
                     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -5194,7 +5379,9 @@ namespace Gek
                     samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
                     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
                     samplerInfo.minLod = 0.0f;
-                    samplerInfo.maxLod = static_cast<float>(std::max(mipLevels, 1u) - 1u);
+                    samplerInfo.maxLod = texture->supportsMipBlit
+                        ? static_cast<float>(std::max(mipLevels, 1u) - 1u)
+                        : 0.0f;
                     if (vkCreateSampler(device, &samplerInfo, nullptr, &texture->sampler) != VK_SUCCESS)
                     {
                         return nullptr;
@@ -5788,42 +5975,117 @@ namespace Gek
                     return nullptr;
                 }
 
-                const ::DirectX::Image *uploadImage = image;
-
-                const uint32_t uploadWidth = static_cast<uint32_t>(uploadImage->width);
-                const uint32_t uploadHeight = static_cast<uint32_t>(uploadImage->height);
-
-                const size_t requiredRowPitch = static_cast<size_t>(uploadWidth) * 4u;
-                if (uploadImage->rowPitch < requiredRowPitch)
+                constexpr uint32_t kMaxTextureDimension = 2048;
+                uint32_t targetWidth = width;
+                uint32_t targetHeight = height;
+                const uint32_t maxDimension = std::max(width, height);
+                if (maxDimension > kMaxTextureDimension)
                 {
+                    targetWidth = std::max(1u, static_cast<uint32_t>((static_cast<uint64_t>(width) * kMaxTextureDimension) / maxDimension));
+                    targetHeight = std::max(1u, static_cast<uint32_t>((static_cast<uint64_t>(height) * kMaxTextureDimension) / maxDimension));
+                }
+
+                for (;;)
+                {
+                    const ::DirectX::Image *uploadImage = image;
+                    ::DirectX::ScratchImage resizedImage;
+                    if (targetWidth != width || targetHeight != height)
+                    {
+                        if (FAILED(::DirectX::Resize(*image, targetWidth, targetHeight, ::DirectX::TEX_FILTER_DEFAULT, resizedImage)))
+                        {
+                            getContext()->log(
+                                Gek::Context::Error,
+                                "Vulkan loadTexture failed: resize error for '{}' to {}x{}",
+                                filePath.getString(),
+                                targetWidth,
+                                targetHeight);
+                            return nullptr;
+                        }
+
+                        const ::DirectX::Image *resizedLevel = resizedImage.GetImage(0, 0, 0);
+                        if (!resizedLevel || !resizedLevel->pixels)
+                        {
+                            getContext()->log(
+                                Gek::Context::Error,
+                                "Vulkan loadTexture failed: resized image missing pixels for '{}'",
+                                filePath.getString());
+                            return nullptr;
+                        }
+
+                        uploadImage = resizedLevel;
+                    }
+
+                    const uint32_t uploadWidth = static_cast<uint32_t>(uploadImage->width);
+                    const uint32_t uploadHeight = static_cast<uint32_t>(uploadImage->height);
+                    const size_t requiredRowPitch = static_cast<size_t>(uploadWidth) * 4u;
+                    if (uploadImage->rowPitch < requiredRowPitch)
+                    {
+                        getContext()->log(
+                            Gek::Context::Error,
+                            "Vulkan loadTexture failed: converted row pitch too small for '{}' (rowPitch={} required={})",
+                            filePath.getString(),
+                            static_cast<uint64_t>(uploadImage->rowPitch),
+                            static_cast<uint64_t>(requiredRowPitch));
+                        return nullptr;
+                    }
+
+                    std::vector<uint8_t> uploadData(static_cast<size_t>(uploadWidth) * static_cast<size_t>(uploadHeight) * 4u);
+                    for (uint32_t row = 0; row < uploadHeight; ++row)
+                    {
+                        const uint8_t *sourceRow = uploadImage->pixels + (static_cast<size_t>(row) * uploadImage->rowPitch);
+                        uint8_t *destRow = uploadData.data() + (static_cast<size_t>(row) * requiredRowPitch);
+                        std::memcpy(destRow, sourceRow, requiredRowPitch);
+                    }
+
+                    Render::Texture::Description description;
+                    description.name = filePath.getString();
+                    description.format = (flags & Render::TextureLoadFlags::sRGB)
+                        ? Render::Format::R8G8B8A8_UNORM_SRGB
+                        : Render::Format::R8G8B8A8_UNORM;
+                    description.width = uploadWidth;
+                    description.height = uploadHeight;
+                    description.depth = 1;
+                    description.mipMapCount = 1;
+                    description.flags = Render::Texture::Flags::Resource;
+
+                    if (auto texture = createTexture(description, uploadData.data()))
+                    {
+                        if (uploadWidth != width || uploadHeight != height)
+                        {
+                            getContext()->log(
+                                Gek::Context::Warning,
+                                "Vulkan loadTexture scaled '{}' from {}x{} to {}x{} to reduce memory pressure",
+                                filePath.getString(),
+                                width,
+                                height,
+                                uploadWidth,
+                                uploadHeight);
+                        }
+
+                        return texture;
+                    }
+
+                    if (targetWidth == 1 && targetHeight == 1)
+                    {
+                        break;
+                    }
+
+                    const uint32_t nextWidth = std::max(1u, targetWidth / 2u);
+                    const uint32_t nextHeight = std::max(1u, targetHeight / 2u);
                     getContext()->log(
-                        Gek::Context::Error,
-                        "Vulkan loadTexture failed: converted row pitch too small for '{}' (rowPitch={} required={})",
+                        Gek::Context::Warning,
+                        "Vulkan loadTexture retrying '{}' at lower resolution {}x{} (previous {}x{})",
                         filePath.getString(),
-                        static_cast<uint64_t>(uploadImage->rowPitch),
-                        static_cast<uint64_t>(requiredRowPitch));
-                    return nullptr;
+                        nextWidth,
+                        nextHeight,
+                        targetWidth,
+                        targetHeight);
+                    targetWidth = nextWidth;
+                    targetHeight = nextHeight;
                 }
 
-                std::vector<uint8_t> uploadData(static_cast<size_t>(uploadWidth) * static_cast<size_t>(uploadHeight) * 4u);
-                for (uint32_t row = 0; row < uploadHeight; ++row)
-                {
-                    const uint8_t *sourceRow = uploadImage->pixels + (static_cast<size_t>(row) * uploadImage->rowPitch);
-                    uint8_t *destRow = uploadData.data() + (static_cast<size_t>(row) * requiredRowPitch);
-                    std::memcpy(destRow, sourceRow, requiredRowPitch);
-                }
-
-                Render::Texture::Description description;
-                description.name = filePath.getString();
-                description.format = (flags & Render::TextureLoadFlags::sRGB)
-                    ? Render::Format::R8G8B8A8_UNORM_SRGB
-                    : Render::Format::R8G8B8A8_UNORM;
-                description.width = uploadWidth;
-                description.height = uploadHeight;
-                description.depth = 1;
-                description.mipMapCount = 1;
-                description.flags = Render::Texture::Flags::Resource;
-                return createTexture(description, uploadData.data());
+                getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed after retries for '{}'", filePath.getString());
+                return nullptr;
             }
 
             Render::TexturePtr loadTexture(void const *buffer, size_t size, uint32_t flags)
@@ -5919,57 +6181,92 @@ namespace Gek
                 }
 
                 constexpr uint32_t kMaxTextureDimension = 2048;
-                ::DirectX::ScratchImage resizedImage;
-                const ::DirectX::Image *uploadImage = image;
-                if (width > kMaxTextureDimension || height > kMaxTextureDimension)
+                uint32_t targetWidth = width;
+                uint32_t targetHeight = height;
+                const uint32_t maxDimension = std::max(width, height);
+                if (maxDimension > kMaxTextureDimension)
                 {
-                    const uint32_t maxDimension = std::max(width, height);
-                    const uint32_t scaledWidth = std::max(1u, static_cast<uint32_t>((static_cast<uint64_t>(width) * kMaxTextureDimension) / maxDimension));
-                    const uint32_t scaledHeight = std::max(1u, static_cast<uint32_t>((static_cast<uint64_t>(height) * kMaxTextureDimension) / maxDimension));
+                    targetWidth = std::max(1u, static_cast<uint32_t>((static_cast<uint64_t>(width) * kMaxTextureDimension) / maxDimension));
+                    targetHeight = std::max(1u, static_cast<uint32_t>((static_cast<uint64_t>(height) * kMaxTextureDimension) / maxDimension));
+                }
 
-                    if (SUCCEEDED(::DirectX::Resize(*image, scaledWidth, scaledHeight, ::DirectX::TEX_FILTER_DEFAULT, resizedImage)))
+                for (;;)
+                {
+                    const ::DirectX::Image *uploadImage = image;
+                    ::DirectX::ScratchImage resizedImage;
+                    if (targetWidth != width || targetHeight != height)
                     {
-                        const ::DirectX::Image *resizedLevel = resizedImage.GetImage(0, 0, 0);
-                        if (resizedLevel && resizedLevel->pixels)
+                        if (FAILED(::DirectX::Resize(*image, targetWidth, targetHeight, ::DirectX::TEX_FILTER_DEFAULT, resizedImage)))
                         {
-                            uploadImage = resizedLevel;
+                            getContext()->log(
+                                Gek::Context::Error,
+                                "Vulkan loadTexture(memory) failed: resize error to {}x{}",
+                                targetWidth,
+                                targetHeight);
+                            return nullptr;
                         }
+
+                        const ::DirectX::Image *resizedLevel = resizedImage.GetImage(0, 0, 0);
+                        if (!resizedLevel || !resizedLevel->pixels)
+                        {
+                            getContext()->log(Gek::Context::Error, "Vulkan loadTexture(memory) failed: resized image missing pixels");
+                            return nullptr;
+                        }
+
+                        uploadImage = resizedLevel;
                     }
+
+                    const uint32_t uploadWidth = static_cast<uint32_t>(uploadImage->width);
+                    const uint32_t uploadHeight = static_cast<uint32_t>(uploadImage->height);
+
+                    const size_t requiredRowPitch = static_cast<size_t>(uploadWidth) * 4u;
+                    if (uploadImage->rowPitch < requiredRowPitch)
+                    {
+                        getContext()->log(
+                            Gek::Context::Error,
+                            "Vulkan loadTexture(memory) failed: converted row pitch too small (rowPitch={} required={})",
+                            static_cast<uint64_t>(uploadImage->rowPitch),
+                            static_cast<uint64_t>(requiredRowPitch));
+                        return nullptr;
+                    }
+
+                    std::vector<uint8_t> uploadData(static_cast<size_t>(uploadWidth) * static_cast<size_t>(uploadHeight) * 4u);
+                    for (uint32_t row = 0; row < uploadHeight; ++row)
+                    {
+                        const uint8_t *sourceRow = uploadImage->pixels + (static_cast<size_t>(row) * uploadImage->rowPitch);
+                        uint8_t *destRow = uploadData.data() + (static_cast<size_t>(row) * requiredRowPitch);
+                        std::memcpy(destRow, sourceRow, requiredRowPitch);
+                    }
+
+                    Render::Texture::Description description;
+                    description.name = "memory_texture";
+                    description.format = (flags & Render::TextureLoadFlags::sRGB)
+                        ? Render::Format::R8G8B8A8_UNORM_SRGB
+                        : Render::Format::R8G8B8A8_UNORM;
+                    description.width = uploadWidth;
+                    description.height = uploadHeight;
+                    description.depth = 1;
+                    description.mipMapCount = 1;
+                    description.flags = Render::Texture::Flags::Resource;
+
+                    if (auto texture = createTexture(description, uploadData.data()))
+                    {
+                        return texture;
+                    }
+
+                    if (targetWidth == 1 && targetHeight == 1)
+                    {
+                        break;
+                    }
+
+                    const uint32_t nextWidth = std::max(1u, targetWidth / 2u);
+                    const uint32_t nextHeight = std::max(1u, targetHeight / 2u);
+                    targetWidth = nextWidth;
+                    targetHeight = nextHeight;
                 }
 
-                const uint32_t uploadWidth = static_cast<uint32_t>(uploadImage->width);
-                const uint32_t uploadHeight = static_cast<uint32_t>(uploadImage->height);
-
-                const size_t requiredRowPitch = static_cast<size_t>(uploadWidth) * 4u;
-                if (uploadImage->rowPitch < requiredRowPitch)
-                {
-                    getContext()->log(
-                        Gek::Context::Error,
-                        "Vulkan loadTexture(memory) failed: converted row pitch too small (rowPitch={} required={})",
-                        static_cast<uint64_t>(uploadImage->rowPitch),
-                        static_cast<uint64_t>(requiredRowPitch));
-                    return nullptr;
-                }
-
-                std::vector<uint8_t> uploadData(static_cast<size_t>(uploadWidth) * static_cast<size_t>(uploadHeight) * 4u);
-                for (uint32_t row = 0; row < uploadHeight; ++row)
-                {
-                    const uint8_t *sourceRow = uploadImage->pixels + (static_cast<size_t>(row) * uploadImage->rowPitch);
-                    uint8_t *destRow = uploadData.data() + (static_cast<size_t>(row) * requiredRowPitch);
-                    std::memcpy(destRow, sourceRow, requiredRowPitch);
-                }
-
-                Render::Texture::Description description;
-                description.name = "memory_texture";
-                description.format = (flags & Render::TextureLoadFlags::sRGB)
-                    ? Render::Format::R8G8B8A8_UNORM_SRGB
-                    : Render::Format::R8G8B8A8_UNORM;
-                description.width = uploadWidth;
-                description.height = uploadHeight;
-                description.depth = 1;
-                description.mipMapCount = 1;
-                description.flags = Render::Texture::Flags::Resource;
-                return createTexture(description, uploadData.data());
+                getContext()->log(Gek::Context::Error, "Vulkan loadTexture(memory) failed after retries");
+                return nullptr;
             }
 
             Texture::Description loadTextureDescription(FileSystem::Path const &filePath)
@@ -6312,9 +6609,76 @@ namespace Gek
                 uint32_t sceneOffscreenInvalidSkips = 0;
                 uint32_t scenePipelineSkips = 0;
                 uint32_t sceneDescriptorSkips = 0;
+                uint32_t glassDrawCommandCount = 0;
+                uint32_t solidToGlassCopyCommandCount = 0;
+                bool sawSolidToGlassCopyCommand = false;
+                bool loggedGlassDrawBeforeCopy = false;
+                uint32_t glassDrawMissingResourceCount = 0;
+                uint32_t glassSamplerSlot1MissingCount = 0;
+                uint32_t glassSamplerSlot01SameCount = 0;
+                uint32_t glassDrawFirstResourceSlotMin = PixelResourceSlotCount;
+                uint32_t glassDrawFirstResourceSlotMax = 0;
+                uint32_t drawCommandIndex = 0;
+                uint32_t firstSolidToGlassCopyCommandIndex = std::numeric_limits<uint32_t>::max();
+                uint32_t firstGlassDrawCommandIndex = std::numeric_limits<uint32_t>::max();
+                uint32_t solidSourceDrawBeforeCopyCount = 0;
+                uint32_t solidSourceDrawAfterCopyCount = 0;
+                VkImage copiedSolidSourceImage = VK_NULL_HANDLE;
+                VkImage copiedGlassImage = VK_NULL_HANDLE;
+                VkImageView copiedGlassImageView = VK_NULL_HANDLE;
+                struct GraphicsDescriptorSignature
+                {
+                    std::array<VkImageView, PixelResourceSlotCount> pixelResourceImageViews{};
+                    std::array<VkSampler, PixelResourceSlotCount> pixelSamplerStates{};
+                    std::array<Buffer *, PixelResourceSlotCount> pixelResourceBuffers{};
+                    std::array<Buffer *, PixelResourceSlotCount> pixelConstantBuffers{};
+                    std::array<Buffer *, PixelResourceSlotCount> vertexConstantBuffers{};
+
+                    bool operator == (const GraphicsDescriptorSignature &other) const
+                    {
+                        return
+                            (pixelResourceImageViews == other.pixelResourceImageViews) &&
+                            (pixelSamplerStates == other.pixelSamplerStates) &&
+                            (pixelResourceBuffers == other.pixelResourceBuffers) &&
+                            (pixelConstantBuffers == other.pixelConstantBuffers) &&
+                            (vertexConstantBuffers == other.vertexConstantBuffers);
+                    }
+                };
+                GraphicsDescriptorSignature lastGraphicsDescriptorSignature{};
+                bool hasLastGraphicsDescriptorSignature = false;
+                VkDescriptorSet lastGraphicsDescriptorSet = VK_NULL_HANDLE;
                 VkImage sceneOffscreenCopySourceImage = VK_NULL_HANDLE;
                 VkExtent2D sceneOffscreenCopySourceExtent = { 0, 0 };
                 std::map<VkImageView, std::pair<VkImage, VkExtent2D>> frameOffscreenViewLookup;
+                std::map<std::string, std::pair<VkImage, VkExtent2D>> namedRenderTargetImagesInFrame;
+                auto getSampledImageLayoutForView = [&](VkImageView imageView) -> VkImageLayout
+                {
+                    if (imageView == VK_NULL_HANDLE)
+                    {
+                        return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    }
+
+                    auto sourceViewSearch = frameOffscreenViewLookup.find(imageView);
+                    if (sourceViewSearch == std::end(frameOffscreenViewLookup))
+                    {
+                        return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    }
+
+                    auto layoutSearch = offscreenImageLayouts.find(sourceViewSearch->second.first);
+                    if (layoutSearch == std::end(offscreenImageLayouts))
+                    {
+                        return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    }
+
+                    const VkImageLayout trackedLayout = layoutSearch->second;
+                    if (trackedLayout == VK_IMAGE_LAYOUT_GENERAL)
+                    {
+                        return VK_IMAGE_LAYOUT_GENERAL;
+                    }
+
+                    // Sampled-image descriptors should use shader-readable layouts.
+                    return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                };
                 constexpr bool allowSceneFallbackCopy = false;
                 auto performSceneFallbackCopy = [&](bool transitionBackToColorAttachment)
                 {
@@ -6394,7 +6758,7 @@ namespace Gek
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                         1,
                         &blitRegion,
-                        VK_FILTER_NEAREST);
+                        VK_FILTER_LINEAR);
 
                     VkImageMemoryBarrier sourceToShaderRead{};
                     sourceToShaderRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -6435,6 +6799,510 @@ namespace Gek
 
                     for (const auto &drawCommand : pendingDrawCommands)
                     {
+                        ++drawCommandIndex;
+
+                        if (drawCommand.commandType == DrawCommand::Type::ClearRenderTarget)
+                        {
+                            ++sceneCommandCount;
+
+                            auto *targetTexture = drawCommand.clearRenderTarget;
+                            if (!targetTexture || targetTexture->image == VK_NULL_HANDLE)
+                            {
+                                continue;
+                            }
+
+                            VkImage image = targetTexture->image;
+                            VkImageLayout oldLayout = targetTexture->currentLayout;
+                            auto oldLayoutSearch = offscreenImageLayouts.find(image);
+                            if (oldLayoutSearch != std::end(offscreenImageLayouts))
+                            {
+                                oldLayout = oldLayoutSearch->second;
+                            }
+
+                            if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+                            {
+                                oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                            }
+
+                            VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                            VkAccessFlags sourceAccess = 0;
+                            switch (oldLayout)
+                            {
+                            case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+                                sourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                                sourceAccess = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                                break;
+                            case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+                                sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                                sourceAccess = VK_ACCESS_TRANSFER_READ_BIT;
+                                break;
+                            case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+                                sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                                sourceAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
+                                break;
+                            case VK_IMAGE_LAYOUT_GENERAL:
+                                sourceStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+                                sourceAccess = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+                                break;
+                            case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+                                sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+                                sourceAccess = VK_ACCESS_SHADER_READ_BIT;
+                                break;
+                            default:
+                                sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                                sourceAccess = 0;
+                                break;
+                            }
+
+                            if (oldLayout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+                            {
+                                VkImageMemoryBarrier toTransferDst{};
+                                toTransferDst.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                                toTransferDst.oldLayout = oldLayout;
+                                toTransferDst.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                                toTransferDst.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                toTransferDst.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                toTransferDst.image = image;
+                                toTransferDst.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                                toTransferDst.subresourceRange.baseMipLevel = 0;
+                                toTransferDst.subresourceRange.levelCount = 1;
+                                toTransferDst.subresourceRange.baseArrayLayer = 0;
+                                toTransferDst.subresourceRange.layerCount = 1;
+                                toTransferDst.srcAccessMask = sourceAccess;
+                                toTransferDst.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+                                vkCmdPipelineBarrier(
+                                    commandBuffer,
+                                    sourceStage,
+                                    VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                    0,
+                                    0, nullptr,
+                                    0, nullptr,
+                                    1, &toTransferDst);
+                            }
+
+                            VkImageSubresourceRange clearRange{};
+                            clearRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                            clearRange.baseMipLevel = 0;
+                            clearRange.levelCount = 1;
+                            clearRange.baseArrayLayer = 0;
+                            clearRange.layerCount = 1;
+                            vkCmdClearColorImage(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &drawCommand.clearRenderTargetColor, 1, &clearRange);
+
+                            targetTexture->currentLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                            offscreenImageLayouts[image] = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                            continue;
+                        }
+
+                        if (drawCommand.commandType == DrawCommand::Type::CopyResource)
+                        {
+                            ++sceneCommandCount;
+
+                            bool isSolidToGlassCopyCommand = false;
+                            if (drawCommand.copyDestination && drawCommand.copySource)
+                            {
+                                const std::string_view destinationName = drawCommand.copyDestination->getName();
+                                const std::string_view sourceName = drawCommand.copySource->getName();
+                                if (destinationName.find("glassBuffer") != std::string_view::npos && sourceName.find("finalBuffer") != std::string_view::npos)
+                                {
+                                    sawSolidToGlassCopyCommand = true;
+                                    ++solidToGlassCopyCommandCount;
+                                    isSolidToGlassCopyCommand = true;
+                                    if (firstSolidToGlassCopyCommandIndex == std::numeric_limits<uint32_t>::max())
+                                    {
+                                        firstSolidToGlassCopyCommandIndex = drawCommandIndex;
+                                    }
+                                }
+                            }
+
+                            auto *destinationBuffer = getObject<Buffer>(drawCommand.copyDestination);
+                            auto *sourceBuffer = getObject<Buffer>(drawCommand.copySource);
+                            if (destinationBuffer && sourceBuffer)
+                            {
+                                const VkDeviceSize copySize = std::min(destinationBuffer->size, sourceBuffer->size);
+                                if (copySize > 0 && destinationBuffer->buffer != VK_NULL_HANDLE && sourceBuffer->buffer != VK_NULL_HANDLE)
+                                {
+                                    VkBufferCopy bufferCopy{};
+                                    bufferCopy.srcOffset = 0;
+                                    bufferCopy.dstOffset = 0;
+                                    bufferCopy.size = copySize;
+                                    vkCmdCopyBuffer(commandBuffer, sourceBuffer->buffer, destinationBuffer->buffer, 1, &bufferCopy);
+
+                                    VkMemoryBarrier bufferCopyBarrier{};
+                                    bufferCopyBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+                                    bufferCopyBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                                    bufferCopyBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+                                    vkCmdPipelineBarrier(
+                                        commandBuffer,
+                                        VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                        0,
+                                        1, &bufferCopyBarrier,
+                                        0, nullptr,
+                                        0, nullptr);
+                                }
+
+                                continue;
+                            }
+
+                            auto *destinationTargetTexture = getObject<TargetTexture>(drawCommand.copyDestination);
+                            auto *sourceTargetTexture = getObject<TargetTexture>(drawCommand.copySource);
+                            auto *destinationViewTexture = getObject<ViewTexture>(drawCommand.copyDestination);
+                            auto *sourceViewTexture = getObject<ViewTexture>(drawCommand.copySource);
+                            auto *destinationDepthTexture = getObject<DepthTexture>(drawCommand.copyDestination);
+                            auto *sourceDepthTexture = getObject<DepthTexture>(drawCommand.copySource);
+
+                            VkImage destinationImage = VK_NULL_HANDLE;
+                            VkImage sourceImage = VK_NULL_HANDLE;
+                            VkImageLayout destinationLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                            VkImageLayout sourceLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                            VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                            uint32_t destinationWidth = 1;
+                            uint32_t destinationHeight = 1;
+                            uint32_t sourceWidth = 1;
+                            uint32_t sourceHeight = 1;
+
+                            if (destinationTargetTexture)
+                            {
+                                destinationImage = destinationTargetTexture->image;
+                                destinationLayout = destinationTargetTexture->currentLayout;
+                                destinationWidth = std::max(destinationTargetTexture->getDescription().width, 1u);
+                                destinationHeight = std::max(destinationTargetTexture->getDescription().height, 1u);
+                                auto destinationLayoutSearch = offscreenImageLayouts.find(destinationImage);
+                                if (destinationLayoutSearch != std::end(offscreenImageLayouts))
+                                {
+                                    destinationLayout = destinationLayoutSearch->second;
+                                }
+                            }
+                            else if (destinationViewTexture)
+                            {
+                                destinationImage = destinationViewTexture->image;
+                                destinationWidth = std::max(destinationViewTexture->getDescription().width, 1u);
+                                destinationHeight = std::max(destinationViewTexture->getDescription().height, 1u);
+                            }
+                            else if (destinationDepthTexture)
+                            {
+                                destinationImage = destinationDepthTexture->image;
+                                destinationLayout = destinationDepthTexture->currentLayout;
+                                destinationWidth = std::max(destinationDepthTexture->getDescription().width, 1u);
+                                destinationHeight = std::max(destinationDepthTexture->getDescription().height, 1u);
+                                aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                            }
+
+                            if (sourceTargetTexture)
+                            {
+                                sourceImage = sourceTargetTexture->image;
+                                sourceLayout = sourceTargetTexture->currentLayout;
+                                sourceWidth = std::max(sourceTargetTexture->getDescription().width, 1u);
+                                sourceHeight = std::max(sourceTargetTexture->getDescription().height, 1u);
+                                auto sourceLayoutSearch = offscreenImageLayouts.find(sourceImage);
+                                if (sourceLayoutSearch != std::end(offscreenImageLayouts))
+                                {
+                                    sourceLayout = sourceLayoutSearch->second;
+                                }
+                            }
+                            else if (sourceViewTexture)
+                            {
+                                sourceImage = sourceViewTexture->image;
+                                sourceWidth = std::max(sourceViewTexture->getDescription().width, 1u);
+                                sourceHeight = std::max(sourceViewTexture->getDescription().height, 1u);
+                            }
+                            else if (sourceDepthTexture)
+                            {
+                                sourceImage = sourceDepthTexture->image;
+                                sourceLayout = sourceDepthTexture->currentLayout;
+                                sourceWidth = std::max(sourceDepthTexture->getDescription().width, 1u);
+                                sourceHeight = std::max(sourceDepthTexture->getDescription().height, 1u);
+                                aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                            }
+
+                            if (destinationImage == VK_NULL_HANDLE || sourceImage == VK_NULL_HANDLE)
+                            {
+                                continue;
+                            }
+
+                            // Resolve named copy resources against the latest in-frame draw targets to avoid
+                            // stale texture instance mismatches (e.g. finalBuffer/glassBuffer aliases).
+                            if (destinationTargetTexture)
+                            {
+                                const auto destinationName = destinationTargetTexture->getDescription().name;
+                                if (!destinationName.empty())
+                                {
+                                    auto namedDestinationSearch = namedRenderTargetImagesInFrame.find(destinationName);
+                                    if (namedDestinationSearch != std::end(namedRenderTargetImagesInFrame) &&
+                                        namedDestinationSearch->second.first != VK_NULL_HANDLE)
+                                    {
+                                        destinationImage = namedDestinationSearch->second.first;
+                                        destinationWidth = std::max(namedDestinationSearch->second.second.width, 1u);
+                                        destinationHeight = std::max(namedDestinationSearch->second.second.height, 1u);
+
+                                        auto destinationLayoutSearch = offscreenImageLayouts.find(destinationImage);
+                                        if (destinationLayoutSearch != std::end(offscreenImageLayouts))
+                                        {
+                                            destinationLayout = destinationLayoutSearch->second;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (sourceTargetTexture)
+                            {
+                                const auto sourceName = sourceTargetTexture->getDescription().name;
+                                if (!sourceName.empty())
+                                {
+                                    auto namedSourceSearch = namedRenderTargetImagesInFrame.find(sourceName);
+                                    if (namedSourceSearch != std::end(namedRenderTargetImagesInFrame) &&
+                                        namedSourceSearch->second.first != VK_NULL_HANDLE)
+                                    {
+                                        sourceImage = namedSourceSearch->second.first;
+                                        sourceWidth = std::max(namedSourceSearch->second.second.width, 1u);
+                                        sourceHeight = std::max(namedSourceSearch->second.second.height, 1u);
+
+                                        auto sourceLayoutSearch = offscreenImageLayouts.find(sourceImage);
+                                        if (sourceLayoutSearch != std::end(offscreenImageLayouts))
+                                        {
+                                            sourceLayout = sourceLayoutSearch->second;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (destinationImage == VK_NULL_HANDLE || sourceImage == VK_NULL_HANDLE)
+                            {
+                                continue;
+                            }
+
+                            if (isSolidToGlassCopyCommand)
+                            {
+                                copiedSolidSourceImage = sourceImage;
+                                copiedGlassImage = destinationImage;
+                                if (destinationTargetTexture)
+                                {
+                                    copiedGlassImageView = destinationTargetTexture->imageView;
+                                }
+                                else if (destinationViewTexture)
+                                {
+                                    copiedGlassImageView = destinationViewTexture->imageView;
+                                }
+                            }
+
+                            if (destinationImage == sourceImage)
+                            {
+                                continue;
+                            }
+
+                            auto getTransitionState = [](VkImageLayout layout, VkPipelineStageFlags &stage, VkAccessFlags &access)
+                            {
+                                switch (layout)
+                                {
+                                case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+                                    stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                                    access = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                                    break;
+                                case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+                                    stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                                    access = VK_ACCESS_TRANSFER_WRITE_BIT;
+                                    break;
+                                case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+                                    stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                                    access = VK_ACCESS_TRANSFER_READ_BIT;
+                                    break;
+                                case VK_IMAGE_LAYOUT_GENERAL:
+                                    stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+                                    access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+                                    break;
+                                case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+                                    stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+                                    access = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                                    break;
+                                case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+                                    stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+                                    access = VK_ACCESS_SHADER_READ_BIT;
+                                    break;
+                                case VK_IMAGE_LAYOUT_UNDEFINED:
+                                default:
+                                    stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                                    access = 0;
+                                    break;
+                                }
+                            };
+
+                            VkPipelineStageFlags sourceSourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                            VkAccessFlags sourceSourceAccess = 0;
+                            getTransitionState(sourceLayout, sourceSourceStage, sourceSourceAccess);
+
+                            VkPipelineStageFlags destinationSourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                            VkAccessFlags destinationSourceAccess = 0;
+                            getTransitionState(destinationLayout, destinationSourceStage, destinationSourceAccess);
+
+                            const uint32_t destinationMipLevels = std::max<uint32_t>(
+                                (destinationTargetTexture ? destinationTargetTexture->getDescription().mipMapCount :
+                                    (destinationViewTexture ? destinationViewTexture->getDescription().mipMapCount :
+                                        (destinationDepthTexture ? destinationDepthTexture->getDescription().mipMapCount : 1u))),
+                                1u);
+                            const uint32_t sourceMipLevels = std::max<uint32_t>(
+                                (sourceTargetTexture ? sourceTargetTexture->getDescription().mipMapCount :
+                                    (sourceViewTexture ? sourceViewTexture->getDescription().mipMapCount :
+                                        (sourceDepthTexture ? sourceDepthTexture->getDescription().mipMapCount : 1u))),
+                                1u);
+
+                            std::array<VkImageMemoryBarrier, 2> toTransferBarriers{};
+                            uint32_t toTransferBarrierCount = 0;
+
+                            if (sourceLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+                            {
+                                auto &sourceToTransfer = toTransferBarriers[toTransferBarrierCount++];
+                                sourceToTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                                sourceToTransfer.oldLayout = sourceLayout;
+                                sourceToTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                                sourceToTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                sourceToTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                sourceToTransfer.image = sourceImage;
+                                sourceToTransfer.subresourceRange.aspectMask = aspectMask;
+                                sourceToTransfer.subresourceRange.baseMipLevel = 0;
+                                sourceToTransfer.subresourceRange.levelCount = sourceMipLevels;
+                                sourceToTransfer.subresourceRange.baseArrayLayer = 0;
+                                sourceToTransfer.subresourceRange.layerCount = 1;
+                                sourceToTransfer.srcAccessMask = sourceSourceAccess;
+                                sourceToTransfer.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                            }
+
+                            if (destinationLayout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+                            {
+                                auto &destinationToTransfer = toTransferBarriers[toTransferBarrierCount++];
+                                destinationToTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                                destinationToTransfer.oldLayout = destinationLayout;
+                                destinationToTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                                destinationToTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                destinationToTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                destinationToTransfer.image = destinationImage;
+                                destinationToTransfer.subresourceRange.aspectMask = aspectMask;
+                                destinationToTransfer.subresourceRange.baseMipLevel = 0;
+                                destinationToTransfer.subresourceRange.levelCount = destinationMipLevels;
+                                destinationToTransfer.subresourceRange.baseArrayLayer = 0;
+                                destinationToTransfer.subresourceRange.layerCount = 1;
+                                destinationToTransfer.srcAccessMask = destinationSourceAccess;
+                                destinationToTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                            }
+
+                            if (toTransferBarrierCount > 0)
+                            {
+                                vkCmdPipelineBarrier(
+                                    commandBuffer,
+                                    sourceSourceStage | destinationSourceStage,
+                                    VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                    0,
+                                    0, nullptr,
+                                    0, nullptr,
+                                    toTransferBarrierCount,
+                                    toTransferBarriers.data());
+                            }
+
+                            VkImageCopy imageCopy{};
+                            imageCopy.srcSubresource.aspectMask = aspectMask;
+                            imageCopy.srcSubresource.mipLevel = 0;
+                            imageCopy.srcSubresource.baseArrayLayer = 0;
+                            imageCopy.srcSubresource.layerCount = 1;
+                            imageCopy.srcOffset = { 0, 0, 0 };
+                            imageCopy.dstSubresource.aspectMask = aspectMask;
+                            imageCopy.dstSubresource.mipLevel = 0;
+                            imageCopy.dstSubresource.baseArrayLayer = 0;
+                            imageCopy.dstSubresource.layerCount = 1;
+                            imageCopy.dstOffset = { 0, 0, 0 };
+                            imageCopy.extent.width = std::min(sourceWidth, destinationWidth);
+                            imageCopy.extent.height = std::min(sourceHeight, destinationHeight);
+                            imageCopy.extent.depth = 1;
+
+                            vkCmdCopyImage(
+                                commandBuffer,
+                                sourceImage,
+                                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                destinationImage,
+                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                1,
+                                &imageCopy);
+
+                            std::array<VkImageMemoryBarrier, 2> fromTransferBarriers{};
+                            uint32_t fromTransferBarrierCount = 0;
+
+                            const VkImageLayout finalSourceLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                            const VkImageLayout finalDestinationLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+                            if (finalSourceLayout != VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+                            {
+                                auto &sourceFromTransfer = fromTransferBarriers[fromTransferBarrierCount++];
+                                sourceFromTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                                sourceFromTransfer.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                                sourceFromTransfer.newLayout = finalSourceLayout;
+                                sourceFromTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                sourceFromTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                sourceFromTransfer.image = sourceImage;
+                                sourceFromTransfer.subresourceRange.aspectMask = aspectMask;
+                                sourceFromTransfer.subresourceRange.baseMipLevel = 0;  
+                                sourceFromTransfer.subresourceRange.levelCount = sourceMipLevels;
+                                sourceFromTransfer.subresourceRange.baseArrayLayer = 0;
+                                sourceFromTransfer.subresourceRange.layerCount = 1;
+                                sourceFromTransfer.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                                sourceFromTransfer.dstAccessMask = (finalSourceLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                                    ? VK_ACCESS_SHADER_READ_BIT
+                                    : VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+                            }
+
+                            if (finalDestinationLayout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+                            {
+                                auto &destinationFromTransfer = fromTransferBarriers[fromTransferBarrierCount++];
+                                destinationFromTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                                destinationFromTransfer.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                                destinationFromTransfer.newLayout = finalDestinationLayout;
+                                destinationFromTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                destinationFromTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                destinationFromTransfer.image = destinationImage;
+                                destinationFromTransfer.subresourceRange.aspectMask = aspectMask;
+                                destinationFromTransfer.subresourceRange.baseMipLevel = 0;
+                                destinationFromTransfer.subresourceRange.levelCount = destinationMipLevels;
+                                destinationFromTransfer.subresourceRange.baseArrayLayer = 0;
+                                destinationFromTransfer.subresourceRange.layerCount = 1;
+                                destinationFromTransfer.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                                destinationFromTransfer.dstAccessMask = (finalDestinationLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+                                    ? VK_ACCESS_SHADER_READ_BIT
+                                    : VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+                            }
+
+                            if (fromTransferBarrierCount > 0)
+                            {
+                                vkCmdPipelineBarrier(
+                                    commandBuffer,
+                                    VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                    0,
+                                    0, nullptr,
+                                    0, nullptr,
+                                    fromTransferBarrierCount,
+                                    fromTransferBarriers.data());
+                            }
+
+                            if (destinationTargetTexture)
+                            {
+                                destinationTargetTexture->currentLayout = finalDestinationLayout;
+                                offscreenImageLayouts[destinationImage] = finalDestinationLayout;
+                            }
+                            if (sourceTargetTexture)
+                            {
+                                sourceTargetTexture->currentLayout = finalSourceLayout;
+                                offscreenImageLayouts[sourceImage] = finalSourceLayout;
+                            }
+                            if (destinationDepthTexture)
+                            {
+                                destinationDepthTexture->currentLayout = finalDestinationLayout;
+                            }
+                            if (sourceDepthTexture)
+                            {
+                                sourceDepthTexture->currentLayout = finalSourceLayout;
+                            }
+
+                            continue;
+                        }
+
                         if (drawCommand.commandType == DrawCommand::Type::GenerateMipMaps)
                         {
                             ++sceneCommandCount;
@@ -6591,7 +7459,7 @@ namespace Gek
                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                     1,
                                     &blitRegion,
-                                    VK_FILTER_NEAREST);
+                                    VK_FILTER_LINEAR);
 
                                 if (mipLevel + 1 < mipLevels)
                                 {
@@ -6861,7 +7729,7 @@ namespace Gek
                                 if (drawCommand.computeResourceImageViews[resourceSlot] != VK_NULL_HANDLE)
                                 {
                                     auto &resourceImageInfo = imageInfos[imageInfoCount++];
-                                    resourceImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                                    resourceImageInfo.imageLayout = getSampledImageLayoutForView(drawCommand.computeResourceImageViews[resourceSlot]);
                                     resourceImageInfo.imageView = drawCommand.computeResourceImageViews[resourceSlot];
 
                                     VkWriteDescriptorSet write{};
@@ -6982,6 +7850,65 @@ namespace Gek
                                     drawCommand.vertexProgram->getInformation().name.find("core:uiVertexProgram") != std::string::npos ||
                                     drawCommand.vertexProgram->getInformation().name.find("uiVertexProgram") != std::string::npos
                                 )));
+
+                        uint32_t firstGlassResourceSlot = PixelResourceSlotCount;
+                        if (!isUiDraw)
+                        {
+                            for (uint32_t resourceSlot = 0; resourceSlot < PixelResourceSlotCount; ++resourceSlot)
+                            {
+                                VkImageView imageView = drawCommand.pixelResourceImageViews[resourceSlot];
+                                if (imageView == VK_NULL_HANDLE)
+                                {
+                                    continue;
+                                }
+
+                                if (copiedGlassImageView != VK_NULL_HANDLE && imageView == copiedGlassImageView)
+                                {
+                                    firstGlassResourceSlot = resourceSlot;
+                                    break;
+                                }
+                            }
+                        }
+
+                        const bool isGlassDraw =
+                            (!isUiDraw) &&
+                            (firstGlassResourceSlot != PixelResourceSlotCount);
+                        if (isGlassDraw)
+                        {
+                            ++glassDrawCommandCount;
+                            if (firstGlassDrawCommandIndex == std::numeric_limits<uint32_t>::max())
+                            {
+                                firstGlassDrawCommandIndex = drawCommandIndex;
+                            }
+                            glassDrawFirstResourceSlotMin = std::min(glassDrawFirstResourceSlotMin, firstGlassResourceSlot);
+                            glassDrawFirstResourceSlotMax = std::max(glassDrawFirstResourceSlotMax, firstGlassResourceSlot);
+
+                            if (copiedGlassImage == VK_NULL_HANDLE || copiedGlassImageView == VK_NULL_HANDLE)
+                            {
+                                ++glassDrawMissingResourceCount;
+                            }
+
+                            const VkSampler glassSamplerSlot0 = drawCommand.pixelSamplerStates[0];
+                            const VkSampler glassSamplerSlot1 = drawCommand.pixelSamplerStates[1];
+                            if (glassSamplerSlot1 == VK_NULL_HANDLE)
+                            {
+                                ++glassSamplerSlot1MissingCount;
+                            }
+                            else if (glassSamplerSlot0 != VK_NULL_HANDLE && glassSamplerSlot0 == glassSamplerSlot1)
+                            {
+                                ++glassSamplerSlot01SameCount;
+                            }
+
+                            if (!sawSolidToGlassCopyCommand && !loggedGlassDrawBeforeCopy)
+                            {
+                                loggedGlassDrawBeforeCopy = true;
+                                getContext()->log(
+                                    Gek::Context::Warning,
+                                    "Vulkan glass ordering: encountered glass draw before solid->glass copy command in frame {}",
+                                    presentFrameIndex);
+                            }
+                        }
+
                         if (!isUiDraw)
                         {
                             ++sceneCommandCount;
@@ -6993,6 +7920,48 @@ namespace Gek
                         }
 
                         const bool drawToBackBuffer = !drawCommand.hasOffscreenTarget;
+
+                        if (!drawToBackBuffer && drawCommand.renderTarget)
+                        {
+                            const auto &targetDescription = drawCommand.renderTarget->getDescription();
+                            if (!targetDescription.name.empty())
+                            {
+                                namedRenderTargetImagesInFrame[targetDescription.name] =
+                                {
+                                    drawCommand.renderTarget->image,
+                                    {
+                                        std::max(targetDescription.width, 1u),
+                                        std::max(targetDescription.height, 1u),
+                                    },
+                                };
+                            }
+                        }
+
+                        if (copiedSolidSourceImage != VK_NULL_HANDLE && !drawToBackBuffer)
+                        {
+                            bool writesCopySourceImage = false;
+                            const uint32_t offscreenCount = std::min<uint32_t>(drawCommand.offscreenTargetCount, 8u);
+                            for (uint32_t targetIndex = 0; targetIndex < offscreenCount; ++targetIndex)
+                            {
+                                if (drawCommand.offscreenImages[targetIndex] == copiedSolidSourceImage)
+                                {
+                                    writesCopySourceImage = true;
+                                    break;
+                                }
+                            }
+
+                            if (writesCopySourceImage)
+                            {
+                                if (drawCommandIndex < firstSolidToGlassCopyCommandIndex)
+                                {
+                                    ++solidSourceDrawBeforeCopyCount;
+                                }
+                                else
+                                {
+                                    ++solidSourceDrawAfterCopyCount;
+                                }
+                            }
+                        }
 
                         VkRenderPass activeRenderPass = renderPass;
                         VkFramebuffer activeFramebuffer = swapChainFramebuffers[imageIndex];
@@ -7203,15 +8172,8 @@ namespace Gek
                                 framebufferAttachmentViews.push_back(activeDepthImageView);
                             }
 
-                            VkFramebufferCreateInfo framebufferInfo{};
-                            framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-                            framebufferInfo.renderPass = activeRenderPass;
-                            framebufferInfo.attachmentCount = static_cast<uint32_t>(framebufferAttachmentViews.size());
-                            framebufferInfo.pAttachments = framebufferAttachmentViews.data();
-                            framebufferInfo.width = activeExtent.width;
-                            framebufferInfo.height = activeExtent.height;
-                            framebufferInfo.layers = 1;
-                            if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &activeFramebuffer) != VK_SUCCESS)
+                            activeFramebuffer = getOrCreateOffscreenFramebuffer(activeRenderPass, framebufferAttachmentViews, activeExtent);
+                            if (activeFramebuffer == VK_NULL_HANDLE)
                             {
                                 if (!isUiDraw)
                                 {
@@ -7219,7 +8181,6 @@ namespace Gek
                                 }
                                 continue;
                             }
-                            transientFramebuffers.push_back(activeFramebuffer);
                         }
 
                         VkRenderPassBeginInfo renderPassBeginInfo{};
@@ -7458,7 +8419,7 @@ namespace Gek
                                     bufferInfo.range = drawCommand.vertexConstantBuffer ? drawCommand.vertexConstantBuffer->size : 0;
 
                                     VkDescriptorImageInfo sampledImageInfo{};
-                                    sampledImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                                    sampledImageInfo.imageLayout = getSampledImageLayoutForView(drawCommand.pixelImageView);
                                     sampledImageInfo.imageView = drawCommand.pixelImageView;
 
                                     VkDescriptorImageInfo samplerInfo{};
@@ -7519,192 +8480,163 @@ namespace Gek
                         }
                         else if (descriptorSetLayout != VK_NULL_HANDLE && descriptorPool != VK_NULL_HANDLE && graphicsPipelineLayout != VK_NULL_HANDLE)
                         {
-                            VkDescriptorSetAllocateInfo descriptorAllocateInfo{};
-                            descriptorAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                            descriptorAllocateInfo.descriptorPool = descriptorPool;
-                            descriptorAllocateInfo.descriptorSetCount = 1;
-                            descriptorAllocateInfo.pSetLayouts = &descriptorSetLayout;
+                            GraphicsDescriptorSignature descriptorSignature{};
+                            descriptorSignature.pixelResourceImageViews = drawCommand.pixelResourceImageViews;
+                            descriptorSignature.pixelSamplerStates = drawCommand.pixelSamplerStates;
+                            descriptorSignature.pixelResourceBuffers = drawCommand.pixelResourceBuffers;
+                            descriptorSignature.pixelConstantBuffers = drawCommand.pixelConstantBuffers;
+                            descriptorSignature.vertexConstantBuffers = drawCommand.vertexConstantBuffers;
 
-                            VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
-                            if (vkAllocateDescriptorSets(device, &descriptorAllocateInfo, &descriptorSet) == VK_SUCCESS)
+                            if (false && hasLastGraphicsDescriptorSignature &&
+                                lastGraphicsDescriptorSet != VK_NULL_HANDLE &&
+                                (descriptorSignature == lastGraphicsDescriptorSignature))
                             {
-                                descriptorSets.push_back(descriptorSet);
-                                std::array<VkDescriptorImageInfo, PixelResourceSlotCount> sampledImageInfos{};
-                                uint32_t sampledImageInfoCount = 0;
+                                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelineLayout, 0, 1, &lastGraphicsDescriptorSet, 0, nullptr);
+                            }
+                            else
+                            {
+                                VkDescriptorSetAllocateInfo descriptorAllocateInfo{};
+                                descriptorAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+                                descriptorAllocateInfo.descriptorPool = descriptorPool;
+                                descriptorAllocateInfo.descriptorSetCount = 1;
+                                descriptorAllocateInfo.pSetLayouts = &descriptorSetLayout;
 
-                                std::array<VkDescriptorImageInfo, PixelResourceSlotCount> samplerInfos{};
-                                uint32_t samplerInfoCount = 0;
-
-                                std::array<VkDescriptorBufferInfo, PixelResourceSlotCount * 3> bufferInfos{};
-                                uint32_t bufferInfoCount = 0;
-
-                                std::vector<VkWriteDescriptorSet> writes;
-                                writes.reserve((PixelResourceSlotCount * 4) + PixelResourceSlotCount);
-
-                                VkImageView fallbackImageView = drawCommand.pixelImageView;
-                                VkSampler fallbackSampler = drawCommand.pixelSampler;
-                                for (uint32_t resourceSlot = 0; resourceSlot < PixelResourceSlotCount; ++resourceSlot)
+                                VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+                                if (vkAllocateDescriptorSets(device, &descriptorAllocateInfo, &descriptorSet) == VK_SUCCESS)
                                 {
-                                    if (fallbackImageView == VK_NULL_HANDLE && drawCommand.pixelResourceImageViews[resourceSlot] != VK_NULL_HANDLE)
-                                    {
-                                        fallbackImageView = drawCommand.pixelResourceImageViews[resourceSlot];
-                                    }
+                                    descriptorSets.push_back(descriptorSet);
+                                    std::array<VkDescriptorImageInfo, PixelResourceSlotCount> sampledImageInfos{};
+                                    uint32_t sampledImageInfoCount = 0;
 
-                                    if (fallbackSampler == VK_NULL_HANDLE && drawCommand.pixelResourceSamplers[resourceSlot] != VK_NULL_HANDLE)
-                                    {
-                                        fallbackSampler = drawCommand.pixelResourceSamplers[resourceSlot];
-                                    }
+                                    std::array<VkDescriptorImageInfo, PixelResourceSlotCount> samplerInfos{};
+                                    uint32_t samplerInfoCount = 0;
 
-                                    if (fallbackImageView != VK_NULL_HANDLE && fallbackSampler != VK_NULL_HANDLE)
-                                    {
-                                        break;
-                                    }
-                                }
+                                    std::array<VkDescriptorBufferInfo, PixelResourceSlotCount * 3> bufferInfos{};
+                                    uint32_t bufferInfoCount = 0;
 
-                                for (uint32_t resourceSlot = 0; resourceSlot < PixelResourceSlotCount; ++resourceSlot)
-                                {
-                                    VkImageView imageView = drawCommand.pixelResourceImageViews[resourceSlot];
-                                    VkSampler sampler = drawCommand.pixelResourceSamplers[resourceSlot];
-                                    Buffer *resourceBuffer = drawCommand.pixelResourceBuffers[resourceSlot];
+                                    std::vector<VkWriteDescriptorSet> writes;
+                                    writes.reserve((PixelResourceSlotCount * 4) + PixelResourceSlotCount);
 
-                                    if (resourceSlot == 0)
+                                    for (uint32_t resourceSlot = 0; resourceSlot < PixelResourceSlotCount; ++resourceSlot)
                                     {
-                                        if (imageView == VK_NULL_HANDLE)
+                                        VkImageView imageView = drawCommand.pixelResourceImageViews[resourceSlot];
+                                        VkSampler sampler = drawCommand.pixelSamplerStates[resourceSlot];
+                                        Buffer *resourceBuffer = drawCommand.pixelResourceBuffers[resourceSlot];
+
+                                        if (resourceBuffer && resourceBuffer->buffer != VK_NULL_HANDLE)
                                         {
-                                            imageView = drawCommand.pixelImageView;
+                                            auto &resourceBufferInfo = bufferInfos[bufferInfoCount++];
+                                            resourceBufferInfo.buffer = resourceBuffer->buffer;
+                                            resourceBufferInfo.offset = 0;
+                                            resourceBufferInfo.range = resourceBuffer->size;
+
+                                            VkWriteDescriptorSet write{};
+                                            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                                            write.dstSet = descriptorSet;
+                                            write.dstBinding = DescriptorStorageBufferBase + resourceSlot;
+                                            write.descriptorCount = 1;
+                                            write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                                            write.pBufferInfo = &resourceBufferInfo;
+                                            writes.push_back(write);
+
+                                        }
+
+                                        if (imageView != VK_NULL_HANDLE)
+                                        {
+                                            auto &sampledImageInfo = sampledImageInfos[sampledImageInfoCount++];
+                                            sampledImageInfo.imageLayout = getSampledImageLayoutForView(imageView);
+                                            sampledImageInfo.imageView = imageView;
+
+                                            VkWriteDescriptorSet write{};
+                                            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                                            write.dstSet = descriptorSet;
+                                            write.dstBinding = DescriptorSampledImageBase + resourceSlot;
+                                            write.descriptorCount = 1;
+                                            write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                                            write.pImageInfo = &sampledImageInfo;
+                                            writes.push_back(write);
                                         }
 
                                         if (sampler == VK_NULL_HANDLE)
                                         {
-                                            sampler = drawCommand.pixelSampler;
+                                            sampler = drawCommand.pixelResourceSamplers[resourceSlot];
+                                        }
+
+                                        if (sampler != VK_NULL_HANDLE)
+                                        {
+                                            auto &samplerInfo = samplerInfos[samplerInfoCount++];
+                                            samplerInfo.sampler = sampler;
+
+                                            VkWriteDescriptorSet write{};
+                                            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                                            write.dstSet = descriptorSet;
+                                            write.dstBinding = DescriptorSamplerBase + resourceSlot;
+                                            write.descriptorCount = 1;
+                                            write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+                                            write.pImageInfo = &samplerInfo;
+                                            writes.push_back(write);
                                         }
                                     }
 
-                                    if (imageView == VK_NULL_HANDLE)
+                                    for (uint32_t constantStage = 0; constantStage < PixelResourceSlotCount; ++constantStage)
                                     {
-                                        imageView = fallbackImageView;
-                                    }
+                                        Buffer *pixelConstantBuffer = drawCommand.pixelConstantBuffers[constantStage];
+                                        if (pixelConstantBuffer && pixelConstantBuffer->buffer != VK_NULL_HANDLE)
+                                        {
+                                            auto &pixelConstantBufferInfo = bufferInfos[bufferInfoCount++];
+                                            pixelConstantBufferInfo.buffer = pixelConstantBuffer->buffer;
+                                            pixelConstantBufferInfo.offset = 0;
+                                            pixelConstantBufferInfo.range = pixelConstantBuffer->size;
 
-                                    if (resourceBuffer && resourceBuffer->buffer != VK_NULL_HANDLE)
-                                    {
-                                        auto &resourceBufferInfo = bufferInfos[bufferInfoCount++];
-                                        resourceBufferInfo.buffer = resourceBuffer->buffer;
-                                        resourceBufferInfo.offset = 0;
-                                        resourceBufferInfo.range = resourceBuffer->size;
+                                            VkWriteDescriptorSet write{};
+                                            write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                                            write.dstSet = descriptorSet;
+                                            write.dstBinding = DescriptorPixelUniformBufferBase + constantStage;
+                                            write.descriptorCount = 1;
+                                            write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                                            write.pBufferInfo = &pixelConstantBufferInfo;
+                                            writes.push_back(write);
+                                        }
+
+                                        Buffer *vertexConstantBuffer = drawCommand.vertexConstantBuffers[constantStage];
+                                        if (!vertexConstantBuffer || vertexConstantBuffer->buffer == VK_NULL_HANDLE)
+                                        {
+                                            continue;
+                                        }
+
+                                        auto &vertexConstantBufferInfo = bufferInfos[bufferInfoCount++];
+                                        vertexConstantBufferInfo.buffer = vertexConstantBuffer->buffer;
+                                        vertexConstantBufferInfo.offset = 0;
+                                        vertexConstantBufferInfo.range = vertexConstantBuffer->size;
 
                                         VkWriteDescriptorSet write{};
                                         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                                         write.dstSet = descriptorSet;
-                                        write.dstBinding = DescriptorStorageBufferBase + resourceSlot;
-                                        write.descriptorCount = 1;
-                                        write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                                        write.pBufferInfo = &resourceBufferInfo;
-                                        writes.push_back(write);
-
-                                    }
-
-                                    if (imageView != VK_NULL_HANDLE)
-                                    {
-                                        auto &sampledImageInfo = sampledImageInfos[sampledImageInfoCount++];
-                                        sampledImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                                        sampledImageInfo.imageView = imageView;
-
-                                        VkWriteDescriptorSet write{};
-                                        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                                        write.dstSet = descriptorSet;
-                                        write.dstBinding = DescriptorSampledImageBase + resourceSlot;
-                                        write.descriptorCount = 1;
-                                        write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                                        write.pImageInfo = &sampledImageInfo;
-                                        writes.push_back(write);
-                                    }
-
-                                    if (sampler == VK_NULL_HANDLE)
-                                    {
-                                        sampler = drawCommand.pixelSampler;
-                                    }
-
-                                    if (sampler == VK_NULL_HANDLE)
-                                    {
-                                        sampler = drawCommand.pixelResourceSamplers[0];
-                                    }
-
-                                    if (sampler == VK_NULL_HANDLE)
-                                    {
-                                        sampler = fallbackSampler;
-                                    }
-
-                                    if (sampler != VK_NULL_HANDLE)
-                                    {
-                                        auto &samplerInfo = samplerInfos[samplerInfoCount++];
-                                        samplerInfo.sampler = sampler;
-
-                                        VkWriteDescriptorSet write{};
-                                        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                                        write.dstSet = descriptorSet;
-                                        write.dstBinding = DescriptorSamplerBase + resourceSlot;
-                                        write.descriptorCount = 1;
-                                        write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-                                        write.pImageInfo = &samplerInfo;
-                                        writes.push_back(write);
-                                    }
-                                }
-
-                                for (uint32_t constantStage = 0; constantStage < PixelResourceSlotCount; ++constantStage)
-                                {
-                                    Buffer *pixelConstantBuffer = drawCommand.pixelConstantBuffers[constantStage];
-                                    if (pixelConstantBuffer && pixelConstantBuffer->buffer != VK_NULL_HANDLE)
-                                    {
-                                        auto &pixelConstantBufferInfo = bufferInfos[bufferInfoCount++];
-                                        pixelConstantBufferInfo.buffer = pixelConstantBuffer->buffer;
-                                        pixelConstantBufferInfo.offset = 0;
-                                        pixelConstantBufferInfo.range = pixelConstantBuffer->size;
-
-                                        VkWriteDescriptorSet write{};
-                                        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                                        write.dstSet = descriptorSet;
-                                        write.dstBinding = DescriptorPixelUniformBufferBase + constantStage;
+                                        write.dstBinding = DescriptorVertexUniformBufferBase + constantStage;
                                         write.descriptorCount = 1;
                                         write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                                        write.pBufferInfo = &pixelConstantBufferInfo;
+                                        write.pBufferInfo = &vertexConstantBufferInfo;
                                         writes.push_back(write);
                                     }
 
-                                    Buffer *vertexConstantBuffer = drawCommand.vertexConstantBuffers[constantStage];
-                                    if (!vertexConstantBuffer || vertexConstantBuffer->buffer == VK_NULL_HANDLE)
+                                    if (!writes.empty())
                                     {
-                                        continue;
+                                        vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
+                                        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+                                        lastGraphicsDescriptorSignature = descriptorSignature;
+                                        hasLastGraphicsDescriptorSignature = true;
+                                        lastGraphicsDescriptorSet = descriptorSet;
                                     }
-
-                                    auto &vertexConstantBufferInfo = bufferInfos[bufferInfoCount++];
-                                    vertexConstantBufferInfo.buffer = vertexConstantBuffer->buffer;
-                                    vertexConstantBufferInfo.offset = 0;
-                                    vertexConstantBufferInfo.range = vertexConstantBuffer->size;
-
-                                    VkWriteDescriptorSet write{};
-                                    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                                    write.dstSet = descriptorSet;
-                                    write.dstBinding = DescriptorVertexUniformBufferBase + constantStage;
-                                    write.descriptorCount = 1;
-                                    write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                                    write.pBufferInfo = &vertexConstantBufferInfo;
-                                    writes.push_back(write);
                                 }
-
-                                if (!writes.empty())
+                                else
                                 {
-                                    vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
-                                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+                                    if (!isUiDraw)
+                                    {
+                                        ++sceneDescriptorSkips;
+                                    }
+                                    endRenderPassForCurrentTarget();
+                                    continue;
                                 }
-                            }
-                            else
-                            {
-                                if (!isUiDraw)
-                                {
-                                    ++sceneDescriptorSkips;
-                                }
-                                endRenderPassForCurrentTarget();
-                                continue;
                             }
                         }
 
@@ -7859,7 +8791,7 @@ namespace Gek
                 const uint32_t totalCommandCount = static_cast<uint32_t>(pendingDrawCommands.size());
                 const uint32_t uiCommandCount = (totalCommandCount >= sceneCommandCount) ? (totalCommandCount - sceneCommandCount) : 0u;
                 debugOverlayText = std::format(
-                    "VK f={} total={} ui={} scene={} draws={} off={} back={} descSkips={} pipeSkips={} offSkips={} devLost={}",
+                    "VK f={} total={} ui={} scene={} draws={} off={} back={} descSkips={} pipeSkips={} offSkips={} glassDraw={} glassCopy={} glassNoRes={} glassS1Miss={} glassS01Eq={} glassFirstSlot={}..{} devLost={}",
                     presentFrameIndex,
                     totalCommandCount,
                     uiCommandCount,
@@ -7870,8 +8802,19 @@ namespace Gek
                     sceneDescriptorSkips,
                     scenePipelineSkips,
                     sceneOffscreenInvalidSkips,
+                    glassDrawCommandCount,
+                    solidToGlassCopyCommandCount,
+                    glassDrawMissingResourceCount,
+                    glassSamplerSlot1MissingCount,
+                    glassSamplerSlot01SameCount,
+                    (glassDrawFirstResourceSlotMin == PixelResourceSlotCount ? 999u : glassDrawFirstResourceSlotMin),
+                    (glassDrawFirstResourceSlotMin == PixelResourceSlotCount ? 999u : glassDrawFirstResourceSlotMax),
                     static_cast<uint32_t>(deviceLost));
-                if ((presentFrameIndex % 240u) == 0u)
+                const bool shouldLogPeriodicStats = ((presentFrameIndex % 120u) == 0u);
+                const bool shouldLogGlassIssue =
+                    (glassDrawCommandCount > 0u) &&
+                    ((!sawSolidToGlassCopyCommand) || (glassDrawMissingResourceCount > 0u) || (glassSamplerSlot1MissingCount > 0u) || loggedGlassDrawBeforeCopy);
+                if (shouldLogPeriodicStats || shouldLogGlassIssue)
                 {
                     getContext()->log(
                         Gek::Context::Info,
@@ -7900,6 +8843,30 @@ namespace Gek
                         static_cast<uint32_t>(deferredCommandLists.size()),
                         static_cast<uint32_t>(pendingCommandEnqueueCount),
                         static_cast<uint32_t>(deferredCommandEnqueueCount));
+
+                    getContext()->log(
+                        shouldLogGlassIssue ? Gek::Context::Warning : Gek::Context::Info,
+                        "Vulkan glass stats frame={} glassDrawCommands={} solidToGlassCopyCommands={} sawSolidToGlassCopy={} glassBeforeCopy={} glassNoRes={} glassS1Miss={} glassS01Eq={} glassFirstSlot={}..{} copyCmdIndex={} glassCmdIndex={}",
+                        presentFrameIndex,
+                        glassDrawCommandCount,
+                        solidToGlassCopyCommandCount,
+                        static_cast<uint32_t>(sawSolidToGlassCopyCommand),
+                        static_cast<uint32_t>(loggedGlassDrawBeforeCopy),
+                        glassDrawMissingResourceCount,
+                        glassSamplerSlot1MissingCount,
+                        glassSamplerSlot01SameCount,
+                        (glassDrawFirstResourceSlotMin == PixelResourceSlotCount ? 999u : glassDrawFirstResourceSlotMin),
+                        (glassDrawFirstResourceSlotMin == PixelResourceSlotCount ? 999u : glassDrawFirstResourceSlotMax),
+                        (firstSolidToGlassCopyCommandIndex == std::numeric_limits<uint32_t>::max() ? 999999u : firstSolidToGlassCopyCommandIndex),
+                        (firstGlassDrawCommandIndex == std::numeric_limits<uint32_t>::max() ? 999999u : firstGlassDrawCommandIndex));
+
+                    getContext()->log(
+                        shouldLogGlassIssue ? Gek::Context::Warning : Gek::Context::Info,
+                        "Vulkan glass source stats frame={} sourceDrawsBeforeCopy={} sourceDrawsAfterCopy={} sourceImageValid={}",
+                        presentFrameIndex,
+                        solidSourceDrawBeforeCopyCount,
+                        solidSourceDrawAfterCopyCount,
+                        static_cast<uint32_t>(copiedSolidSourceImage != VK_NULL_HANDLE));
                 }
 
                 transientFrameConstantBufferSnapshotsInFlight = std::move(transientFrameConstantBufferSnapshotsPending);
@@ -7915,10 +8882,19 @@ namespace Gek
                 return;
             }
 
-            DrawCommand command;
-            command.commandType = DrawCommand::Type::GenerateMipMaps;
+            Device::DrawCommand command;
+            command.commandType = Device::DrawCommand::Type::GenerateMipMaps;
             command.mipmapTexture = texture;
-            command.mipmapLevels = std::max(texture->getDescription().mipMapCount, 1u);
+            if (auto *targetTexture = getObject<TargetTexture>(texture))
+            {
+                command.mipmapLevels = targetTexture->supportsMipBlit
+                    ? std::max(texture->getDescription().mipMapCount, 1u)
+                    : 1u;
+            }
+            else
+            {
+                command.mipmapLevels = std::max(texture->getDescription().mipMapCount, 1u);
+            }
 
             std::lock_guard<std::mutex> lock(getDrawCommandMutex());
             if (sourceContext->isDeferredContext)
@@ -7940,8 +8916,8 @@ namespace Gek
                 return;
             }
 
-            DrawCommand command;
-            command.commandType = DrawCommand::Type::ComputeDispatch;
+            Device::DrawCommand command;
+            command.commandType = Device::DrawCommand::Type::ComputeDispatch;
             command.computeProgram = sourceContext->currentComputeProgram;
             command.computeThreadGroupCountX = threadGroupCountX;
             command.computeThreadGroupCountY = threadGroupCountY;
@@ -7981,6 +8957,65 @@ namespace Gek
             }
 
             if (sourceContext->isDeferredContext)
+            {
+                deferredContextDrawCommands[sourceContext].push_back(command);
+                ++deferredCommandEnqueueCount;
+            }
+            else
+            {
+                pendingDrawCommands.push_back(command);
+                ++pendingCommandEnqueueCount;
+            }
+        }
+
+        void Device::enqueueCopyResourceCommand(Context *sourceContext, Render::Object *destination, Render::Object *source)
+        {
+            if (!destination || !source)
+            {
+                return;
+            }
+
+            Device::DrawCommand command;
+            command.commandType = Device::DrawCommand::Type::CopyResource;
+            command.copyDestination = destination;
+            command.copySource = source;
+
+            std::lock_guard<std::mutex> lock(getDrawCommandMutex());
+            if (sourceContext && sourceContext->isDeferredContext)
+            {
+                deferredContextDrawCommands[sourceContext].push_back(command);
+                ++deferredCommandEnqueueCount;
+            }
+            else
+            {
+                pendingDrawCommands.push_back(command);
+                ++pendingCommandEnqueueCount;
+            }
+        }
+
+        void Device::enqueueClearRenderTargetCommand(Context *sourceContext, Render::Target *renderTarget, Math::Float4 const &clearColor)
+        {
+            if (!renderTarget)
+            {
+                return;
+            }
+
+            auto *targetTexture = getObject<TargetTexture>(renderTarget);
+            if (!targetTexture || targetTexture->image == VK_NULL_HANDLE)
+            {
+                return;
+            }
+
+            Device::DrawCommand command;
+            command.commandType = Device::DrawCommand::Type::ClearRenderTarget;
+            command.clearRenderTarget = targetTexture;
+            command.clearRenderTargetColor.float32[0] = clearColor.r;
+            command.clearRenderTargetColor.float32[1] = clearColor.g;
+            command.clearRenderTargetColor.float32[2] = clearColor.b;
+            command.clearRenderTargetColor.float32[3] = clearColor.a;
+
+            std::lock_guard<std::mutex> lock(getDrawCommandMutex());
+            if (sourceContext && sourceContext->isDeferredContext)
             {
                 deferredContextDrawCommands[sourceContext].push_back(command);
                 ++deferredCommandEnqueueCount;

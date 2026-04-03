@@ -19,12 +19,16 @@ float4 GetCubicFactors(float v)
 // https://stackoverflow.com/questions/13501081/efficient-bicubic-filtering-code-in-glsl
 float3 GetBiCubicSample(in float2 screenCoord, float glassLevel)
 {
-    float mipMapLevel = floor(glassLevel * 5.0);
+    uint width, height, mipMapCount;
+    Resources::glassBuffer.GetDimensions(0, width, height, mipMapCount);
+
+    // Clamp explicit LOD to valid levels to avoid undefined sampling when runtime
+    // mip count differs from the authored expectation.
+    float maxMipMapLevel = ((mipMapCount > 0) ? float(mipMapCount - 1) : 0.0);
+    float mipMapLevel = floor(glassLevel * maxMipMapLevel);
     float mipMapScale = pow(2.0, mipMapLevel);
     screenCoord *= (1.0 / mipMapScale);
 
-    uint width, height, mipMapCount;
-    Resources::glassBuffer.GetDimensions(0, width, height, mipMapCount);
     float2 pixelSize = (1.0f / float2(width, height));
 
     float fx = frac(screenCoord.x);

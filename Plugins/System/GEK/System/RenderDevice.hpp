@@ -681,6 +681,7 @@ namespace Gek
 
                 virtual void generateMipMaps(Texture *texture) = 0;
                 virtual void resolveSamples(Texture *destination, Texture *source) = 0;
+                virtual void copyResource(Object *destination, Object *source) = 0;
 
                 virtual void clearState(void) = 0;
                 virtual void clearUnorderedAccess(Object *object, Math::Float4 const &value) = 0;

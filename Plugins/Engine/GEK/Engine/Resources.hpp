@@ -49,7 +49,7 @@ namespace Gek
 
             virtual void generateMipMaps(Render::Device::Context *videoContext, ResourceHandle resourceHandle) = 0;
             virtual void resolveSamples(Render::Device::Context *videoContext, ResourceHandle destinationHandle, ResourceHandle sourceHandle) = 0;
-            virtual void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle) = 0;
+            virtual void copyResource(Render::Device::Context *videoContext, ResourceHandle destinationHandle, ResourceHandle sourceHandle) = 0;
 
             virtual void clearUnorderedAccess(Render::Device::Context *videoContext, ResourceHandle resourceHandle, Math::Float4 const &value) = 0;
             virtual void clearUnorderedAccess(Render::Device::Context *videoContext, ResourceHandle resourceHandle, Math::UInt4 const &value) = 0;
