@@ -76,11 +76,6 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         glassPixelCoord *= float2(glassWidth, glassHeight);
     }
 
-    if (Options::DebugForceGlassBase)
-    {
-        return GetBiCubicSample(glassPixelCoord, 0.75f);
-    }
-
     // final images will be sRGB format and converted to linear automatically
     const float4 albedo = Resources::albedo.Sample(Global::TextureSampler, inputPixel.texCoord.xy);
 

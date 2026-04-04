@@ -8249,10 +8249,6 @@ namespace Gek
                             if (!sawSolidToGlassCopyCommand && !loggedGlassDrawBeforeCopy)
                             {
                                 loggedGlassDrawBeforeCopy = true;
-                                getContext()->log(
-                                    Gek::Context::Warning,
-                                    "Vulkan glass ordering: encountered glass draw before solid->glass copy command in frame {}",
-                                    presentFrameIndex);
                             }
 
                             if (!capturedGlassDrawBindingDetails)
@@ -9196,10 +9192,7 @@ namespace Gek
                     (glassDrawFirstResourceSlotMin == PixelResourceSlotCount ? 999u : glassDrawFirstResourceSlotMax),
                     static_cast<uint32_t>(deviceLost));
                 const bool shouldLogPeriodicStats = ((presentFrameIndex % 120u) == 0u);
-                const bool shouldLogGlassIssue =
-                    (glassDrawCommandCount > 0u) &&
-                    ((!sawSolidToGlassCopyCommand) || (glassDrawMissingResourceCount > 0u) || (glassSamplerSlot1MissingCount > 0u) || loggedGlassDrawBeforeCopy);
-                if (shouldLogPeriodicStats || shouldLogGlassIssue)
+                if (shouldLogPeriodicStats)
                 {
                     getContext()->log(
                         Gek::Context::Info,
@@ -9228,82 +9221,6 @@ namespace Gek
                         static_cast<uint32_t>(deferredCommandLists.size()),
                         static_cast<uint32_t>(pendingCommandEnqueueCount),
                         static_cast<uint32_t>(deferredCommandEnqueueCount));
-
-                    getContext()->log(
-                        shouldLogGlassIssue ? Gek::Context::Warning : Gek::Context::Info,
-                        "Vulkan glass stats frame={} glassDrawCommands={} solidToGlassCopyCommands={} sawSolidToGlassCopy={} glassBeforeCopy={} glassNoRes={} glassS1Miss={} glassS01Eq={} glassFirstSlot={}..{} copyCmdIndex={} glassCmdIndex={}",
-                        presentFrameIndex,
-                        glassDrawCommandCount,
-                        solidToGlassCopyCommandCount,
-                        static_cast<uint32_t>(sawSolidToGlassCopyCommand),
-                        static_cast<uint32_t>(loggedGlassDrawBeforeCopy),
-                        glassDrawMissingResourceCount,
-                        glassSamplerSlot1MissingCount,
-                        glassSamplerSlot01SameCount,
-                        (glassDrawFirstResourceSlotMin == PixelResourceSlotCount ? 999u : glassDrawFirstResourceSlotMin),
-                        (glassDrawFirstResourceSlotMin == PixelResourceSlotCount ? 999u : glassDrawFirstResourceSlotMax),
-                        (firstSolidToGlassCopyCommandIndex == std::numeric_limits<uint32_t>::max() ? 999999u : firstSolidToGlassCopyCommandIndex),
-                        (firstGlassDrawCommandIndex == std::numeric_limits<uint32_t>::max() ? 999999u : firstGlassDrawCommandIndex));
-
-                    if (solidToGlassCopySameImageSkipCount > 0)
-                    {
-                        getContext()->log(
-                            Gek::Context::Warning,
-                            "Vulkan glass copy warning frame={} solidToGlassSameImageSkips={}",
-                            presentFrameIndex,
-                            solidToGlassCopySameImageSkipCount);
-                    }
-
-                    getContext()->log(
-                        shouldLogGlassIssue ? Gek::Context::Warning : Gek::Context::Info,
-                        "Vulkan glass source stats frame={} sourceDrawsBeforeCopy={} sourceDrawsAfterCopy={} sourceImageValid={}",
-                        presentFrameIndex,
-                        solidSourceDrawBeforeCopyCount,
-                        solidSourceDrawAfterCopyCount,
-                        static_cast<uint32_t>(copiedSolidSourceImage != VK_NULL_HANDLE));
-
-                    if (capturedSolidToGlassCopyDetails)
-                    {
-                        getContext()->log(
-                            shouldLogGlassIssue ? Gek::Context::Warning : Gek::Context::Info,
-                            "Vulkan glass copy detail frame={} srcImage={} dstImage={} srcLayout={} dstLayout={} src={}x{} dst={}x{} extent={}x{} namedSrc={} namedDst={}",
-                            presentFrameIndex,
-                            reinterpret_cast<uint64_t>(solidToGlassCopySourceImage),
-                            reinterpret_cast<uint64_t>(solidToGlassCopyDestinationImage),
-                            static_cast<uint32_t>(solidToGlassCopySourceLayout),
-                            static_cast<uint32_t>(solidToGlassCopyDestinationLayout),
-                            solidToGlassCopySourceWidth,
-                            solidToGlassCopySourceHeight,
-                            solidToGlassCopyDestinationWidth,
-                            solidToGlassCopyDestinationHeight,
-                            solidToGlassCopyExtentWidth,
-                            solidToGlassCopyExtentHeight,
-                            static_cast<uint32_t>(solidToGlassCopyUsedNamedSource),
-                            static_cast<uint32_t>(solidToGlassCopyUsedNamedDestination));
-                    }
-
-                    getContext()->log(
-                        shouldLogGlassIssue ? Gek::Context::Warning : Gek::Context::Info,
-                        "Vulkan glass mip stats frame={} mipCommands={} mipLevels={} mipImage={}",
-                        presentFrameIndex,
-                        glassGenerateMipCommandCount,
-                        glassGenerateMipLevels,
-                        reinterpret_cast<uint64_t>(glassGenerateMipImage));
-
-                    if (capturedGlassDrawBindingDetails)
-                    {
-                        getContext()->log(
-                            shouldLogGlassIssue ? Gek::Context::Warning : Gek::Context::Info,
-                            "Vulkan glass draw detail frame={} slot={} imageView={} image={} descriptorLayout={} trackedLayout={} samplerS0={} samplerS1={}",
-                            presentFrameIndex,
-                            firstGlassDescriptorSlot,
-                            reinterpret_cast<uint64_t>(firstGlassDescriptorImageView),
-                            reinterpret_cast<uint64_t>(firstGlassDescriptorImage),
-                            static_cast<uint32_t>(firstGlassDescriptorLayout),
-                            static_cast<uint32_t>(firstGlassTrackedLayout),
-                            reinterpret_cast<uint64_t>(firstGlassSamplerSlot0),
-                            reinterpret_cast<uint64_t>(firstGlassSamplerSlot1));
-                    }
                 }
 
                 transientFrameConstantBufferSnapshotsInFlight = std::move(transientFrameConstantBufferSnapshotsPending);
