@@ -93,7 +93,8 @@
     },
     "options": {
         "#import":  "Lighting.json",
-        "UseChromaticAbberation": false
+        "UseChromaticAbberation": false,
+        "DebugForceGlassBase": false
     },
     "passes": [
         {

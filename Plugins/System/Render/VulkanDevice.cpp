@@ -826,6 +826,7 @@ namespace Gek
             void enqueueGenerateMipMapsCommand(Context *sourceContext, Render::Texture *texture);
             void enqueueComputeDispatchCommand(Context *sourceContext, uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ);
             void enqueueClearRenderTargetCommand(Context *sourceContext, Render::Target *renderTarget, Math::Float4 const &clearColor);
+            void enqueueClearDepthStencilCommand(Context *sourceContext, Render::Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil);
             void enqueueCopyResourceCommand(Context *sourceContext, Render::Object *destination, Render::Object *source);
 
             class Context
@@ -1615,6 +1616,12 @@ namespace Gek
 
                 void clearDepthStencilTarget(Render::Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
                 {
+                    if (!owner || !depthBuffer || flags == 0)
+                    {
+                        return;
+                    }
+
+                    owner->enqueueClearDepthStencilCommand(this, depthBuffer, flags, clearDepth, clearStencil);
                 }
 
                 void clearIndexBuffer(void)
@@ -2440,6 +2447,7 @@ namespace Gek
                     ComputeDispatch,
                     GenerateMipMaps,
                     ClearRenderTarget,
+                    ClearDepthStencil,
                     CopyResource,
                 };
 
@@ -2505,6 +2513,11 @@ namespace Gek
 
                 TargetTexture *clearRenderTarget = nullptr;
                 VkClearColorValue clearRenderTargetColor = {{ 0.0f, 0.0f, 0.0f, 1.0f }};
+
+                DepthTexture *clearDepthTarget = nullptr;
+                uint32_t clearDepthStencilFlags = 0;
+                float clearDepthValue = 1.0f;
+                uint32_t clearStencilValue = 0;
             };
 
             std::vector<DrawCommand> pendingDrawCommands;
@@ -2519,6 +2532,8 @@ namespace Gek
             uint64_t pendingCommandEnqueueCount = 0;
             uint64_t deferredCommandEnqueueCount = 0;
             std::map<VkImage, VkImageLayout> offscreenImageLayouts;
+            std::map<VkImageView, std::pair<VkImage, VkExtent2D>> persistentImageViewLookup;
+            std::mutex persistentImageViewLookupMutex;
             uint64_t presentFrameIndex = 0;
             bool loggedMrtFallback = false;
             VkViewport currentViewport = { 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f };
@@ -5212,17 +5227,22 @@ namespace Gek
                     imageInfo.extent.height = std::max(description.height, 1u);
                     imageInfo.extent.depth = 1;
                     const uint32_t maxMipLevels = (std::bit_width(std::max(imageInfo.extent.width, imageInfo.extent.height)));
-                    const uint32_t mipLevels = (description.mipMapCount == 0)
+                    uint32_t mipLevels = (description.mipMapCount == 0)
                         ? std::max(maxMipLevels, 1u)
                         : std::clamp(description.mipMapCount, 1u, std::max(maxMipLevels, 1u));
-                    imageInfo.mipLevels = mipLevels;
-                    texture->description.mipMapCount = mipLevels;
 
                     VkFormatProperties formatProperties{};
                     vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
                     const bool supportsBlitSource = (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT) != 0;
                     const bool supportsBlitDestination = (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT) != 0;
                     texture->supportsMipBlit = (mipLevels > 1) && supportsBlitSource && supportsBlitDestination;
+                    if (mipLevels > 1 && !texture->supportsMipBlit)
+                    {
+                        mipLevels = 1;
+                    }
+
+                    imageInfo.mipLevels = mipLevels;
+                    texture->description.mipMapCount = mipLevels;
                     imageInfo.arrayLayers = 1;
                     imageInfo.format = imageFormat;
                     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
@@ -5370,6 +5390,13 @@ namespace Gek
                         return nullptr;
                     }
 
+                    {
+                        std::lock_guard<std::mutex> lookupLock(persistentImageViewLookupMutex);
+                        persistentImageViewLookup[texture->imageView] = std::make_pair(
+                            texture->image,
+                            VkExtent2D{ std::max(description.width, 1u), std::max(description.height, 1u) });
+                    }
+
                     VkSamplerCreateInfo samplerInfo{};
                     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
                     samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -5458,6 +5485,13 @@ namespace Gek
                     if (vkCreateImageView(device, &imageViewInfo, nullptr, &texture->imageView) != VK_SUCCESS)
                     {
                         return nullptr;
+                    }
+
+                    {
+                        std::lock_guard<std::mutex> lookupLock(persistentImageViewLookupMutex);
+                        persistentImageViewLookup[texture->imageView] = std::make_pair(
+                            texture->image,
+                            VkExtent2D{ std::max(description.width, 1u), std::max(description.height, 1u) });
                     }
 
                     VkSamplerCreateInfo samplerInfo{};
@@ -5856,6 +5890,13 @@ namespace Gek
                     if (vkCreateImageView(device, &imageViewInfo, nullptr, &texture->imageView) != VK_SUCCESS)
                     {
                         return nullptr;
+                    }
+
+                    {
+                        std::lock_guard<std::mutex> lookupLock(persistentImageViewLookupMutex);
+                        persistentImageViewLookup[texture->imageView] = std::make_pair(
+                            texture->image,
+                            VkExtent2D{ std::max(description.width, 1u), std::max(description.height, 1u) });
                     }
 
                     VkSamplerCreateInfo samplerInfo{};
@@ -6623,9 +6664,34 @@ namespace Gek
                 uint32_t firstGlassDrawCommandIndex = std::numeric_limits<uint32_t>::max();
                 uint32_t solidSourceDrawBeforeCopyCount = 0;
                 uint32_t solidSourceDrawAfterCopyCount = 0;
+                uint32_t solidToGlassCopySameImageSkipCount = 0;
                 VkImage copiedSolidSourceImage = VK_NULL_HANDLE;
                 VkImage copiedGlassImage = VK_NULL_HANDLE;
                 VkImageView copiedGlassImageView = VK_NULL_HANDLE;
+                bool capturedSolidToGlassCopyDetails = false;
+                bool solidToGlassCopyUsedNamedSource = false;
+                bool solidToGlassCopyUsedNamedDestination = false;
+                VkImage solidToGlassCopySourceImage = VK_NULL_HANDLE;
+                VkImage solidToGlassCopyDestinationImage = VK_NULL_HANDLE;
+                VkImageLayout solidToGlassCopySourceLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                VkImageLayout solidToGlassCopyDestinationLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                uint32_t solidToGlassCopySourceWidth = 0;
+                uint32_t solidToGlassCopySourceHeight = 0;
+                uint32_t solidToGlassCopyDestinationWidth = 0;
+                uint32_t solidToGlassCopyDestinationHeight = 0;
+                uint32_t solidToGlassCopyExtentWidth = 0;
+                uint32_t solidToGlassCopyExtentHeight = 0;
+                uint32_t glassGenerateMipCommandCount = 0;
+                uint32_t glassGenerateMipLevels = 0;
+                VkImage glassGenerateMipImage = VK_NULL_HANDLE;
+                bool capturedGlassDrawBindingDetails = false;
+                uint32_t firstGlassDescriptorSlot = PixelResourceSlotCount;
+                VkImageView firstGlassDescriptorImageView = VK_NULL_HANDLE;
+                VkImage firstGlassDescriptorImage = VK_NULL_HANDLE;
+                VkImageLayout firstGlassDescriptorLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                VkImageLayout firstGlassTrackedLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                VkSampler firstGlassSamplerSlot0 = VK_NULL_HANDLE;
+                VkSampler firstGlassSamplerSlot1 = VK_NULL_HANDLE;
                 struct GraphicsDescriptorSignature
                 {
                     std::array<VkImageView, PixelResourceSlotCount> pixelResourceImageViews{};
@@ -6651,6 +6717,11 @@ namespace Gek
                 VkExtent2D sceneOffscreenCopySourceExtent = { 0, 0 };
                 std::map<VkImageView, std::pair<VkImage, VkExtent2D>> frameOffscreenViewLookup;
                 std::map<std::string, std::pair<VkImage, VkExtent2D>> namedRenderTargetImagesInFrame;
+                std::map<VkImageView, std::pair<VkImage, VkExtent2D>> persistentImageViewLookupSnapshot;
+                {
+                    std::lock_guard<std::mutex> lookupLock(persistentImageViewLookupMutex);
+                    persistentImageViewLookupSnapshot = persistentImageViewLookup;
+                }
                 auto getSampledImageLayoutForView = [&](VkImageView imageView) -> VkImageLayout
                 {
                     if (imageView == VK_NULL_HANDLE)
@@ -6661,7 +6732,11 @@ namespace Gek
                     auto sourceViewSearch = frameOffscreenViewLookup.find(imageView);
                     if (sourceViewSearch == std::end(frameOffscreenViewLookup))
                     {
-                        return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                        sourceViewSearch = persistentImageViewLookupSnapshot.find(imageView);
+                        if (sourceViewSearch == std::end(persistentImageViewLookupSnapshot))
+                        {
+                            return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                        }
                     }
 
                     auto layoutSearch = offscreenImageLayouts.find(sourceViewSearch->second.first);
@@ -6894,11 +6969,150 @@ namespace Gek
                             continue;
                         }
 
+                        if (drawCommand.commandType == DrawCommand::Type::ClearDepthStencil)
+                        {
+                            ++sceneCommandCount;
+
+                            auto *depthTexture = drawCommand.clearDepthTarget;
+                            if (!depthTexture || depthTexture->image == VK_NULL_HANDLE)
+                            {
+                                continue;
+                            }
+
+                            VkImageAspectFlags imageAspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                            const bool hasStencilAspect =
+                                (depthTexture->format == VK_FORMAT_D32_SFLOAT_S8_UINT) ||
+                                (depthTexture->format == VK_FORMAT_D24_UNORM_S8_UINT);
+                            if (hasStencilAspect)
+                            {
+                                imageAspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+                            }
+
+                            VkImageAspectFlags clearAspectMask = 0;
+                            if ((drawCommand.clearDepthStencilFlags & Render::ClearFlags::Depth) != 0)
+                            {
+                                clearAspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
+                            }
+                            if (hasStencilAspect && ((drawCommand.clearDepthStencilFlags & Render::ClearFlags::Stencil) != 0))
+                            {
+                                clearAspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+                            }
+
+                            if (clearAspectMask == 0)
+                            {
+                                continue;
+                            }
+
+                            VkImageLayout oldLayout = depthTexture->currentLayout;
+                            if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED)
+                            {
+                                oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                            }
+
+                            VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                            VkAccessFlags sourceAccess = 0;
+                            switch (oldLayout)
+                            {
+                            case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+                                sourceStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+                                sourceAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                                break;
+                            case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+                                sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                                sourceAccess = VK_ACCESS_TRANSFER_READ_BIT;
+                                break;
+                            case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+                                sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                                sourceAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
+                                break;
+                            case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+                                sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+                                sourceAccess = VK_ACCESS_SHADER_READ_BIT;
+                                break;
+                            case VK_IMAGE_LAYOUT_GENERAL:
+                                sourceStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+                                sourceAccess = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+                                break;
+                            default:
+                                sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                                sourceAccess = 0;
+                                break;
+                            }
+
+                            if (oldLayout != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+                            {
+                                VkImageMemoryBarrier toTransferDst{};
+                                toTransferDst.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                                toTransferDst.oldLayout = oldLayout;
+                                toTransferDst.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                                toTransferDst.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                toTransferDst.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                                toTransferDst.image = depthTexture->image;
+                                toTransferDst.subresourceRange.aspectMask = imageAspectMask;
+                                toTransferDst.subresourceRange.baseMipLevel = 0;
+                                toTransferDst.subresourceRange.levelCount = 1;
+                                toTransferDst.subresourceRange.baseArrayLayer = 0;
+                                toTransferDst.subresourceRange.layerCount = 1;
+                                toTransferDst.srcAccessMask = sourceAccess;
+                                toTransferDst.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+                                vkCmdPipelineBarrier(
+                                    commandBuffer,
+                                    sourceStage,
+                                    VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                    0,
+                                    0, nullptr,
+                                    0, nullptr,
+                                    1, &toTransferDst);
+                            }
+
+                            VkImageSubresourceRange clearRange{};
+                            clearRange.aspectMask = clearAspectMask;
+                            clearRange.baseMipLevel = 0;
+                            clearRange.levelCount = 1;
+                            clearRange.baseArrayLayer = 0;
+                            clearRange.layerCount = 1;
+
+                            VkClearDepthStencilValue clearValue{};
+                            clearValue.depth = drawCommand.clearDepthValue;
+                            clearValue.stencil = drawCommand.clearStencilValue;
+                            vkCmdClearDepthStencilImage(commandBuffer, depthTexture->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clearValue, 1, &clearRange);
+
+                            VkImageMemoryBarrier toDepthAttachment{};
+                            toDepthAttachment.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                            toDepthAttachment.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                            toDepthAttachment.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                            toDepthAttachment.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                            toDepthAttachment.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                            toDepthAttachment.image = depthTexture->image;
+                            toDepthAttachment.subresourceRange.aspectMask = imageAspectMask;
+                            toDepthAttachment.subresourceRange.baseMipLevel = 0;
+                            toDepthAttachment.subresourceRange.levelCount = 1;
+                            toDepthAttachment.subresourceRange.baseArrayLayer = 0;
+                            toDepthAttachment.subresourceRange.layerCount = 1;
+                            toDepthAttachment.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                            toDepthAttachment.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+                            vkCmdPipelineBarrier(
+                                commandBuffer,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                                0,
+                                0, nullptr,
+                                0, nullptr,
+                                1, &toDepthAttachment);
+
+                            depthTexture->currentLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                            continue;
+                        }
+
                         if (drawCommand.commandType == DrawCommand::Type::CopyResource)
                         {
                             ++sceneCommandCount;
 
                             bool isSolidToGlassCopyCommand = false;
+                            bool usedNamedSourceForCopy = false;
+                            bool usedNamedDestinationForCopy = false;
                             if (drawCommand.copyDestination && drawCommand.copySource)
                             {
                                 const std::string_view destinationName = drawCommand.copyDestination->getName();
@@ -7021,6 +7235,26 @@ namespace Gek
                                 continue;
                             }
 
+                            if (destinationTargetTexture && destinationTargetTexture->imageView != VK_NULL_HANDLE)
+                            {
+                                frameOffscreenViewLookup[destinationTargetTexture->imageView] =
+                                    std::make_pair(destinationImage, VkExtent2D{ std::max(destinationWidth, 1u), std::max(destinationHeight, 1u) });
+                            }
+                            if (sourceTargetTexture && sourceTargetTexture->imageView != VK_NULL_HANDLE)
+                            {
+                                frameOffscreenViewLookup[sourceTargetTexture->imageView] =
+                                    std::make_pair(sourceImage, VkExtent2D{ std::max(sourceWidth, 1u), std::max(sourceHeight, 1u) });
+                            }
+
+                            const VkImage originalDestinationImage = destinationImage;
+                            const VkImage originalSourceImage = sourceImage;
+                            const VkImageLayout originalDestinationLayout = destinationLayout;
+                            const VkImageLayout originalSourceLayout = sourceLayout;
+                            const uint32_t originalDestinationWidth = destinationWidth;
+                            const uint32_t originalDestinationHeight = destinationHeight;
+                            const uint32_t originalSourceWidth = sourceWidth;
+                            const uint32_t originalSourceHeight = sourceHeight;
+
                             // Resolve named copy resources against the latest in-frame draw targets to avoid
                             // stale texture instance mismatches (e.g. finalBuffer/glassBuffer aliases).
                             if (destinationTargetTexture)
@@ -7032,6 +7266,7 @@ namespace Gek
                                     if (namedDestinationSearch != std::end(namedRenderTargetImagesInFrame) &&
                                         namedDestinationSearch->second.first != VK_NULL_HANDLE)
                                     {
+                                        usedNamedDestinationForCopy = true;
                                         destinationImage = namedDestinationSearch->second.first;
                                         destinationWidth = std::max(namedDestinationSearch->second.second.width, 1u);
                                         destinationHeight = std::max(namedDestinationSearch->second.second.height, 1u);
@@ -7054,6 +7289,7 @@ namespace Gek
                                     if (namedSourceSearch != std::end(namedRenderTargetImagesInFrame) &&
                                         namedSourceSearch->second.first != VK_NULL_HANDLE)
                                     {
+                                        usedNamedSourceForCopy = true;
                                         sourceImage = namedSourceSearch->second.first;
                                         sourceWidth = std::max(namedSourceSearch->second.second.width, 1u);
                                         sourceHeight = std::max(namedSourceSearch->second.second.height, 1u);
@@ -7072,6 +7308,25 @@ namespace Gek
                                 continue;
                             }
 
+                            if (destinationImage == sourceImage)
+                            {
+                                if (originalDestinationImage != VK_NULL_HANDLE &&
+                                    originalSourceImage != VK_NULL_HANDLE &&
+                                    originalDestinationImage != originalSourceImage)
+                                {
+                                    destinationImage = originalDestinationImage;
+                                    sourceImage = originalSourceImage;
+                                    destinationLayout = originalDestinationLayout;
+                                    sourceLayout = originalSourceLayout;
+                                    destinationWidth = originalDestinationWidth;
+                                    destinationHeight = originalDestinationHeight;
+                                    sourceWidth = originalSourceWidth;
+                                    sourceHeight = originalSourceHeight;
+                                    usedNamedDestinationForCopy = false;
+                                    usedNamedSourceForCopy = false;
+                                }
+                            }
+
                             if (isSolidToGlassCopyCommand)
                             {
                                 copiedSolidSourceImage = sourceImage;
@@ -7088,6 +7343,10 @@ namespace Gek
 
                             if (destinationImage == sourceImage)
                             {
+                                if (isSolidToGlassCopyCommand)
+                                {
+                                    ++solidToGlassCopySameImageSkipCount;
+                                }
                                 continue;
                             }
 
@@ -7213,6 +7472,23 @@ namespace Gek
                             imageCopy.extent.height = std::min(sourceHeight, destinationHeight);
                             imageCopy.extent.depth = 1;
 
+                            if (isSolidToGlassCopyCommand && !capturedSolidToGlassCopyDetails)
+                            {
+                                capturedSolidToGlassCopyDetails = true;
+                                solidToGlassCopyUsedNamedSource = usedNamedSourceForCopy;
+                                solidToGlassCopyUsedNamedDestination = usedNamedDestinationForCopy;
+                                solidToGlassCopySourceImage = sourceImage;
+                                solidToGlassCopyDestinationImage = destinationImage;
+                                solidToGlassCopySourceLayout = sourceLayout;
+                                solidToGlassCopyDestinationLayout = destinationLayout;
+                                solidToGlassCopySourceWidth = sourceWidth;
+                                solidToGlassCopySourceHeight = sourceHeight;
+                                solidToGlassCopyDestinationWidth = destinationWidth;
+                                solidToGlassCopyDestinationHeight = destinationHeight;
+                                solidToGlassCopyExtentWidth = imageCopy.extent.width;
+                                solidToGlassCopyExtentHeight = imageCopy.extent.height;
+                            }
+
                             vkCmdCopyImage(
                                 commandBuffer,
                                 sourceImage,
@@ -7309,20 +7585,91 @@ namespace Gek
 
                             auto *targetTexture = getObject<TargetTexture>(drawCommand.mipmapTexture);
                             auto *viewTexture = getObject<ViewTexture>(drawCommand.mipmapTexture);
+                            bool isGlassGenerateMipCommand = false;
                             VkImage image = VK_NULL_HANDLE;
                             if (targetTexture)
                             {
                                 image = targetTexture->image;
+                                const auto &description = targetTexture->getDescription();
+                                isGlassGenerateMipCommand = (description.name.find("glassBuffer") != std::string::npos);
                             }
                             else if (viewTexture)
                             {
                                 image = viewTexture->image;
+                                const auto &description = viewTexture->getDescription();
+                                isGlassGenerateMipCommand = (description.name.find("glassBuffer") != std::string::npos);
                             }
 
-                            const uint32_t mipLevels = std::max(drawCommand.mipmapLevels, 1u);
+                            if (targetTexture)
+                            {
+                                const auto &targetDescription = targetTexture->getDescription();
+                                if (!targetDescription.name.empty())
+                                {
+                                    auto namedSearch = namedRenderTargetImagesInFrame.find(targetDescription.name);
+                                    if (namedSearch != std::end(namedRenderTargetImagesInFrame) && namedSearch->second.first != VK_NULL_HANDLE)
+                                    {
+                                        image = namedSearch->second.first;
+                                    }
+                                }
+                            }
+                            else if (viewTexture)
+                            {
+                                const auto &viewDescription = viewTexture->getDescription();
+                                if (!viewDescription.name.empty())
+                                {
+                                    auto namedSearch = namedRenderTargetImagesInFrame.find(viewDescription.name);
+                                    if (namedSearch != std::end(namedRenderTargetImagesInFrame) && namedSearch->second.first != VK_NULL_HANDLE)
+                                    {
+                                        image = namedSearch->second.first;
+                                    }
+                                }
+                            }
+
+                            uint32_t textureWidth = 1;
+                            uint32_t textureHeight = 1;
+                            uint32_t textureMipCount = 0;
+                            if (targetTexture)
+                            {
+                                const auto &description = targetTexture->getDescription();
+                                textureWidth = std::max(description.width, 1u);
+                                textureHeight = std::max(description.height, 1u);
+                                textureMipCount = description.mipMapCount;
+                            }
+                            else if (viewTexture)
+                            {
+                                const auto &description = viewTexture->getDescription();
+                                textureWidth = std::max(description.width, 1u);
+                                textureHeight = std::max(description.height, 1u);
+                                textureMipCount = description.mipMapCount;
+                            }
+
+                            uint32_t mipLevels = drawCommand.mipmapLevels;
+                            if (mipLevels == 0)
+                            {
+                                mipLevels = textureMipCount;
+                            }
+                            if (mipLevels == 0)
+                            {
+                                const uint32_t maxDimension = std::max(textureWidth, textureHeight);
+                                mipLevels = 1;
+                                uint32_t currentDimension = maxDimension;
+                                while (currentDimension > 1)
+                                {
+                                    currentDimension = std::max(currentDimension / 2, 1u);
+                                    ++mipLevels;
+                                }
+                            }
+
                             if (image == VK_NULL_HANDLE || mipLevels <= 1)
                             {
                                 continue;
+                            }
+
+                            if (isGlassGenerateMipCommand)
+                            {
+                                ++glassGenerateMipCommandCount;
+                                glassGenerateMipLevels = mipLevels;
+                                glassGenerateMipImage = image;
                             }
 
                             VkImageLayout sourceLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -7428,8 +7775,8 @@ namespace Gek
                                 0, nullptr,
                                 1, &remainingToTransferDst);
 
-                            int32_t mipWidth = std::max<int32_t>(static_cast<int32_t>(drawCommand.mipmapTexture->getDescription().width), 1);
-                            int32_t mipHeight = std::max<int32_t>(static_cast<int32_t>(drawCommand.mipmapTexture->getDescription().height), 1);
+                            int32_t mipWidth = std::max<int32_t>(static_cast<int32_t>(textureWidth), 1);
+                            int32_t mipHeight = std::max<int32_t>(static_cast<int32_t>(textureHeight), 1);
 
                             for (uint32_t mipLevel = 1; mipLevel < mipLevels; ++mipLevel)
                             {
@@ -7907,6 +8254,27 @@ namespace Gek
                                     "Vulkan glass ordering: encountered glass draw before solid->glass copy command in frame {}",
                                     presentFrameIndex);
                             }
+
+                            if (!capturedGlassDrawBindingDetails)
+                            {
+                                capturedGlassDrawBindingDetails = true;
+                                firstGlassDescriptorSlot = firstGlassResourceSlot;
+                                firstGlassDescriptorImageView = drawCommand.pixelResourceImageViews[firstGlassResourceSlot];
+                                firstGlassDescriptorLayout = getSampledImageLayoutForView(firstGlassDescriptorImageView);
+                                firstGlassSamplerSlot0 = drawCommand.pixelSamplerStates[0];
+                                firstGlassSamplerSlot1 = drawCommand.pixelSamplerStates[1];
+
+                                auto glassViewSearch = frameOffscreenViewLookup.find(firstGlassDescriptorImageView);
+                                if (glassViewSearch != std::end(frameOffscreenViewLookup))
+                                {
+                                    firstGlassDescriptorImage = glassViewSearch->second.first;
+                                    auto glassLayoutSearch = offscreenImageLayouts.find(firstGlassDescriptorImage);
+                                    if (glassLayoutSearch != std::end(offscreenImageLayouts))
+                                    {
+                                        firstGlassTrackedLayout = glassLayoutSearch->second;
+                                    }
+                                }
+                            }
                         }
 
                         if (!isUiDraw)
@@ -7926,13 +8294,30 @@ namespace Gek
                             const auto &targetDescription = drawCommand.renderTarget->getDescription();
                             if (!targetDescription.name.empty())
                             {
+                                VkImage namedTargetImage = drawCommand.renderTarget->image;
+                                VkExtent2D namedTargetExtent =
+                                {
+                                    std::max(targetDescription.width, 1u),
+                                    std::max(targetDescription.height, 1u),
+                                };
+
+                                if (drawCommand.offscreenTargetCount > 0)
+                                {
+                                    if (drawCommand.offscreenImages[0] != VK_NULL_HANDLE)
+                                    {
+                                        namedTargetImage = drawCommand.offscreenImages[0];
+                                    }
+
+                                    if (drawCommand.offscreenExtents[0].width > 0 && drawCommand.offscreenExtents[0].height > 0)
+                                    {
+                                        namedTargetExtent = drawCommand.offscreenExtents[0];
+                                    }
+                                }
+
                                 namedRenderTargetImagesInFrame[targetDescription.name] =
                                 {
-                                    drawCommand.renderTarget->image,
-                                    {
-                                        std::max(targetDescription.width, 1u),
-                                        std::max(targetDescription.height, 1u),
-                                    },
+                                    namedTargetImage,
+                                    namedTargetExtent,
                                 };
                             }
                         }
@@ -8860,6 +9245,15 @@ namespace Gek
                         (firstSolidToGlassCopyCommandIndex == std::numeric_limits<uint32_t>::max() ? 999999u : firstSolidToGlassCopyCommandIndex),
                         (firstGlassDrawCommandIndex == std::numeric_limits<uint32_t>::max() ? 999999u : firstGlassDrawCommandIndex));
 
+                    if (solidToGlassCopySameImageSkipCount > 0)
+                    {
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan glass copy warning frame={} solidToGlassSameImageSkips={}",
+                            presentFrameIndex,
+                            solidToGlassCopySameImageSkipCount);
+                    }
+
                     getContext()->log(
                         shouldLogGlassIssue ? Gek::Context::Warning : Gek::Context::Info,
                         "Vulkan glass source stats frame={} sourceDrawsBeforeCopy={} sourceDrawsAfterCopy={} sourceImageValid={}",
@@ -8867,6 +9261,49 @@ namespace Gek
                         solidSourceDrawBeforeCopyCount,
                         solidSourceDrawAfterCopyCount,
                         static_cast<uint32_t>(copiedSolidSourceImage != VK_NULL_HANDLE));
+
+                    if (capturedSolidToGlassCopyDetails)
+                    {
+                        getContext()->log(
+                            shouldLogGlassIssue ? Gek::Context::Warning : Gek::Context::Info,
+                            "Vulkan glass copy detail frame={} srcImage={} dstImage={} srcLayout={} dstLayout={} src={}x{} dst={}x{} extent={}x{} namedSrc={} namedDst={}",
+                            presentFrameIndex,
+                            reinterpret_cast<uint64_t>(solidToGlassCopySourceImage),
+                            reinterpret_cast<uint64_t>(solidToGlassCopyDestinationImage),
+                            static_cast<uint32_t>(solidToGlassCopySourceLayout),
+                            static_cast<uint32_t>(solidToGlassCopyDestinationLayout),
+                            solidToGlassCopySourceWidth,
+                            solidToGlassCopySourceHeight,
+                            solidToGlassCopyDestinationWidth,
+                            solidToGlassCopyDestinationHeight,
+                            solidToGlassCopyExtentWidth,
+                            solidToGlassCopyExtentHeight,
+                            static_cast<uint32_t>(solidToGlassCopyUsedNamedSource),
+                            static_cast<uint32_t>(solidToGlassCopyUsedNamedDestination));
+                    }
+
+                    getContext()->log(
+                        shouldLogGlassIssue ? Gek::Context::Warning : Gek::Context::Info,
+                        "Vulkan glass mip stats frame={} mipCommands={} mipLevels={} mipImage={}",
+                        presentFrameIndex,
+                        glassGenerateMipCommandCount,
+                        glassGenerateMipLevels,
+                        reinterpret_cast<uint64_t>(glassGenerateMipImage));
+
+                    if (capturedGlassDrawBindingDetails)
+                    {
+                        getContext()->log(
+                            shouldLogGlassIssue ? Gek::Context::Warning : Gek::Context::Info,
+                            "Vulkan glass draw detail frame={} slot={} imageView={} image={} descriptorLayout={} trackedLayout={} samplerS0={} samplerS1={}",
+                            presentFrameIndex,
+                            firstGlassDescriptorSlot,
+                            reinterpret_cast<uint64_t>(firstGlassDescriptorImageView),
+                            reinterpret_cast<uint64_t>(firstGlassDescriptorImage),
+                            static_cast<uint32_t>(firstGlassDescriptorLayout),
+                            static_cast<uint32_t>(firstGlassTrackedLayout),
+                            reinterpret_cast<uint64_t>(firstGlassSamplerSlot0),
+                            reinterpret_cast<uint64_t>(firstGlassSamplerSlot1));
+                    }
                 }
 
                 transientFrameConstantBufferSnapshotsInFlight = std::move(transientFrameConstantBufferSnapshotsPending);
@@ -8979,6 +9416,39 @@ namespace Gek
             command.commandType = Device::DrawCommand::Type::CopyResource;
             command.copyDestination = destination;
             command.copySource = source;
+
+            std::lock_guard<std::mutex> lock(getDrawCommandMutex());
+            if (sourceContext && sourceContext->isDeferredContext)
+            {
+                deferredContextDrawCommands[sourceContext].push_back(command);
+                ++deferredCommandEnqueueCount;
+            }
+            else
+            {
+                pendingDrawCommands.push_back(command);
+                ++pendingCommandEnqueueCount;
+            }
+        }
+
+        void Device::enqueueClearDepthStencilCommand(Context *sourceContext, Render::Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
+        {
+            if (!depthBuffer || flags == 0)
+            {
+                return;
+            }
+
+            auto *depthTexture = getObject<DepthTexture>(depthBuffer);
+            if (!depthTexture || depthTexture->image == VK_NULL_HANDLE)
+            {
+                return;
+            }
+
+            Device::DrawCommand command;
+            command.commandType = Device::DrawCommand::Type::ClearDepthStencil;
+            command.clearDepthTarget = depthTexture;
+            command.clearDepthStencilFlags = flags;
+            command.clearDepthValue = clearDepth;
+            command.clearStencilValue = clearStencil;
 
             std::lock_guard<std::mutex> lock(getDrawCommandMutex());
             if (sourceContext && sourceContext->isDeferredContext)
