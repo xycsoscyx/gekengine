@@ -162,7 +162,7 @@ namespace Gek
                 {
                     if (resourceMap.contains(textureName))
                     {
-                        std::cerr << "Texture name same as already listed resource: " << textureName;
+                        getContext()->log(Context::Warning, "Texture name same as already listed resource: {}", textureName);
                         continue;
                     }
 
@@ -228,7 +228,7 @@ namespace Gek
                 {
                     if (resourceMap.count(bufferName) > 0)
                     {
-                        std::cerr << "Texture name same as already listed resource: " << bufferName;
+                        getContext()->log(Context::Warning, "Texture name same as already listed resource: {}", bufferName);
                         continue;
                     }
 
@@ -496,7 +496,7 @@ R"(struct InputPixel
                                     auto resourceSearch = resourceMap.find(renderTarget.first);
                                     if (resourceSearch == std::end(resourceMap))
                                     {
-                                        std::cerr << "Unable to find render target for pass: " << renderTarget.first;
+                                        getContext()->log(Context::Error, "Unable to find render target for pass: {}", renderTarget.first);
                                     }
                                     else
                                     {
@@ -508,7 +508,7 @@ R"(struct InputPixel
                                         }
                                         else
                                         {
-                                            std::cerr << "Unable to get description for render target: " << renderTarget.first;
+                                            getContext()->log(Context::Error, "Unable to get description for render target: {}", renderTarget.first);
                                         }
                                     }
                                 }
@@ -544,7 +544,7 @@ R"(struct OutputPixel
                         }
                         else
                         {
-                            std::cerr << "Missing clear target encountered: " << resourceName;
+                            getContext()->log(Context::Error, "Missing clear target encountered: {}", resourceName);
                         }
                     }
 
@@ -559,7 +559,7 @@ R"(struct OutputPixel
                         }
                         else
                         {
-                            std::cerr << "Missing mipmap generation target encountered: " << resourceName;
+                            getContext()->log(Context::Error, "Missing mipmap generation target encountered: {}", resourceName);
                         }
                     }
 
@@ -576,12 +576,12 @@ R"(struct OutputPixel
                             }
                             else
                             {
-                                std::cerr << "Missing copy source encountered: " << sourceResourceName;
+                                getContext()->log(Context::Error, "Missing copy source encountered: {}", sourceResourceName);
                             }
                         }
                         else
                         {
-                            std::cerr << "Missing copy target encountered: " << targetResourceName;
+                            getContext()->log(Context::Error, "Missing copy target encountered: {}", targetResourceName);
                         }
                     }
 
@@ -598,12 +598,12 @@ R"(struct OutputPixel
                             }
                             else
                             {
-                                std::cerr << "Missing resolve source encountered: " << sourceResourceName;
+                                getContext()->log(Context::Error, "Missing resolve source encountered: {}", sourceResourceName);
                             }
                         }
                         else
                         {
-                            std::cerr << "Missing resolve target encountered: " << targetResourceName;
+                            getContext()->log(Context::Error, "Missing resolve target encountered: {}", targetResourceName);
                         }
                     }
 

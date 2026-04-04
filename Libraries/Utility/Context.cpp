@@ -2,8 +2,10 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Utility/ThreadPool.hpp"
 #include <unordered_map>
 #include <set>
+#include <mutex>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -63,15 +65,20 @@ namespace Gek
         std::unordered_map<std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<Hash> &)>> classMap;
         std::unordered_multimap<std::string_view, std::string_view> typeMap;
         std::set<std::string> dataPathList;
+        mutable std::mutex logMutex;
+        mutable std::mutex runtimeMetricsMutex;
+        std::unordered_map<std::string, double> runtimeMetricMap;
 		FileSystem::Path cachePath;
 
 	public:
         ContextImplementation(void)
         {
+            SetThreadPoolLogContext(this);
         }
 
         ContextImplementation(std::vector<FileSystem::Path> const &pluginSearchList)
         {
+            SetThreadPoolLogContext(this);
 			for (auto const &searchPath : pluginSearchList)
             {
                 log(Info, "Looking Plugins: {}", searchPath.getString());
@@ -115,7 +122,7 @@ namespace Gek
 						{
                             DWORD errorCode = GetLastError();
                             std::string errorMessage = getWindowsLastErrorMessage(errorCode);
-                            std::cerr << "Unable to load plugin: " << filePath.getString() << " (error " << errorCode << ": " << errorMessage << ")\n";
+                            log(Error, "Unable to load plugin: {} (error {}: {})", filePath.getString(), errorCode, errorMessage);
 						}
 					}
 
@@ -126,6 +133,11 @@ namespace Gek
 
         ~ContextImplementation(void)
         {
+            if (GetThreadPoolLogContext() == this)
+            {
+                SetThreadPoolLogContext(nullptr);
+            }
+
             typeMap.clear();
             classMap.clear();
             for (auto const &library : libraryList)
@@ -137,6 +149,7 @@ namespace Gek
         // Context
         void vlog(LogLevel level, const LocationMessage& message, std::format_args args) const
         {
+            std::lock_guard<std::mutex> lock(logMutex);
             const auto& location = message.location;
             auto fileName = FileSystem::Path(location.file_name()).getFileName();
             auto formattedMessage = std::format("{}:{}: {}", fileName, location.line(), std::vformat(message.format, args));
@@ -174,6 +187,31 @@ namespace Gek
                 std::cout << formattedMessage << std::endl;
                 break;
             };
+        }
+
+        void setRuntimeMetric(std::string_view name, double value)
+        {
+            std::lock_guard<std::mutex> lock(runtimeMetricsMutex);
+            runtimeMetricMap[std::string(name)] = value;
+        }
+
+        bool getRuntimeMetric(std::string_view name, double &value) const
+        {
+            std::lock_guard<std::mutex> lock(runtimeMetricsMutex);
+            auto search = runtimeMetricMap.find(std::string(name));
+            if (search == std::end(runtimeMetricMap))
+            {
+                return false;
+            }
+
+            value = search->second;
+            return true;
+        }
+
+        std::unordered_map<std::string, double> getRuntimeMetricSnapshot(void) const
+        {
+            std::lock_guard<std::mutex> lock(runtimeMetricsMutex);
+            return runtimeMetricMap;
         }
 
         void setCachePath(FileSystem::Path const &path)
@@ -240,7 +278,7 @@ namespace Gek
             auto classSearch = classMap.find(className);
             if (classSearch == std::end(classMap))
             {
-                std::cerr << "Requested class doesn't exist: " << className;
+                log(Error, "Requested class doesn't exist: {}", className);
                 return nullptr;
             }
 
@@ -250,22 +288,22 @@ namespace Gek
             }
             catch (std::runtime_error const &exception)
             {
-                std::cerr << "Runtime Error raised trying to create " << exception.what() << ": " << className;
+                log(Error, "Runtime Error raised trying to create {}: {}", exception.what(), className);
                 return nullptr;
             }
             catch (std::exception const &exception)
             {
-                std::cerr << "Exception raised trying to create " << exception.what() << ": " << className;
+                log(Error, "Exception raised trying to create {}: {}", exception.what(), className);
                 return nullptr;
             }
             catch (std::string_view error)
             {
-                std::cerr << "Error raised trying to create " << error << ": " << className;
+                log(Error, "Error raised trying to create {}: {}", error, className);
                 return nullptr;
             }
             catch (...)
             {
-                std::cerr << "Unknown exception occurred trying to create " << className;
+                log(Error, "Unknown exception occurred trying to create {}", className);
                 return nullptr;
             };
         }

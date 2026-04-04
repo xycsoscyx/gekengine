@@ -507,9 +507,9 @@ namespace Gek
             return stream.str();
         }
 
-        void logD3D11Failure(ID3D11Device *d3dDevice, std::string_view operation, HRESULT resultValue)
+        void logD3D11Failure(Gek::Context *context, ID3D11Device *d3dDevice, std::string_view operation, HRESULT resultValue)
         {
-            std::cerr << "D3D11 " << operation << " failed (" << getHRESULTString(resultValue) << "): " << _com_error(resultValue).ErrorMessage();
+            std::string message = std::format("D3D11 {} failed ({}): {}", operation, getHRESULTString(resultValue), _com_error(resultValue).ErrorMessage());
 
             if (resultValue == DXGI_ERROR_DEVICE_REMOVED ||
                 resultValue == DXGI_ERROR_DEVICE_HUNG ||
@@ -517,24 +517,38 @@ namespace Gek
                 resultValue == DXGI_ERROR_DRIVER_INTERNAL_ERROR)
             {
                 HRESULT removedReason = (d3dDevice ? d3dDevice->GetDeviceRemovedReason() : E_FAIL);
-                std::cerr << " [GetDeviceRemovedReason=" << getHRESULTString(removedReason) << ": " << _com_error(removedReason).ErrorMessage() << "]";
+                message += std::format(" [GetDeviceRemovedReason={}: {}]", getHRESULTString(removedReason), _com_error(removedReason).ErrorMessage());
             }
 
-            std::cerr << std::endl;
+            if (context)
+            {
+                context->log(Gek::Context::Error, "{}", message);
+            }
         }
 
-        bool validateTextureMetadataForD3D11(ID3D11Device *d3dDevice, ::DirectX::TexMetadata const &metadata)
+        bool validateTextureMetadataForD3D11(Gek::Context *context, ID3D11Device *d3dDevice, ::DirectX::TexMetadata const &metadata)
         {
             if (!d3dDevice)
             {
-                std::cerr << "D3D11 texture validation failed: device is null" << std::endl;
+                if (context)
+                {
+                    context->log(Gek::Context::Error, "D3D11 texture validation failed: device is null");
+                }
                 return false;
             }
 
             if (metadata.format == DXGI_FORMAT_UNKNOWN || metadata.width == 0 || metadata.height == 0)
             {
-                std::cerr << "D3D11 texture validation failed: invalid metadata (format=" << static_cast<int>(metadata.format)
-                    << ", width=" << metadata.width << ", height=" << metadata.height << ", depth=" << metadata.depth << ")" << std::endl;
+                if (context)
+                {
+                    context->log(
+                        Gek::Context::Error,
+                        "D3D11 texture validation failed: invalid metadata (format={}, width={}, height={}, depth={})",
+                        static_cast<int>(metadata.format),
+                        metadata.width,
+                        metadata.height,
+                        metadata.depth);
+                }
                 return false;
             }
 
@@ -542,7 +556,7 @@ namespace Gek
             const HRESULT formatSupportResult = d3dDevice->CheckFormatSupport(metadata.format, &formatSupport);
             if (FAILED(formatSupportResult))
             {
-                logD3D11Failure(d3dDevice, "CheckFormatSupport", formatSupportResult);
+                logD3D11Failure(context, d3dDevice, "CheckFormatSupport", formatSupportResult);
                 return false;
             }
 
@@ -553,7 +567,10 @@ namespace Gek
                 supportsTextureDimension = ((formatSupport & D3D11_FORMAT_SUPPORT_TEXTURE1D) != 0);
                 if (metadata.width > D3D11_REQ_TEXTURE1D_U_DIMENSION)
                 {
-                    std::cerr << "D3D11 texture validation failed: 1D width exceeds D3D11 limit" << std::endl;
+                    if (context)
+                    {
+                        context->log(Gek::Context::Error, "D3D11 texture validation failed: 1D width exceeds D3D11 limit");
+                    }
                     return false;
                 }
                 break;
@@ -562,7 +579,10 @@ namespace Gek
                 supportsTextureDimension = ((formatSupport & D3D11_FORMAT_SUPPORT_TEXTURE2D) != 0);
                 if (metadata.width > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION || metadata.height > D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION)
                 {
-                    std::cerr << "D3D11 texture validation failed: 2D dimensions exceed D3D11 limit" << std::endl;
+                    if (context)
+                    {
+                        context->log(Gek::Context::Error, "D3D11 texture validation failed: 2D dimensions exceed D3D11 limit");
+                    }
                     return false;
                 }
                 break;
@@ -573,20 +593,31 @@ namespace Gek
                     metadata.height > D3D11_REQ_TEXTURE3D_U_V_OR_W_DIMENSION ||
                     metadata.depth > D3D11_REQ_TEXTURE3D_U_V_OR_W_DIMENSION)
                 {
-                    std::cerr << "D3D11 texture validation failed: 3D dimensions exceed D3D11 limit" << std::endl;
+                    if (context)
+                    {
+                        context->log(Gek::Context::Error, "D3D11 texture validation failed: 3D dimensions exceed D3D11 limit");
+                    }
                     return false;
                 }
                 break;
 
             default:
-                std::cerr << "D3D11 texture validation failed: unsupported texture dimension " << static_cast<int>(metadata.dimension) << std::endl;
+                if (context)
+                {
+                    context->log(Gek::Context::Error, "D3D11 texture validation failed: unsupported texture dimension {}", static_cast<int>(metadata.dimension));
+                }
                 return false;
             }
 
             if (!supportsTextureDimension || (formatSupport & D3D11_FORMAT_SUPPORT_SHADER_SAMPLE) == 0)
             {
-                std::cerr << "D3D11 texture validation failed: format " << static_cast<int>(metadata.format)
-                    << " is missing required texture/sample support flags" << std::endl;
+                if (context)
+                {
+                    context->log(
+                        Gek::Context::Error,
+                        "D3D11 texture validation failed: format {} is missing required texture/sample support flags",
+                        static_cast<int>(metadata.format));
+                }
                 return false;
             }
 
@@ -1885,41 +1916,15 @@ namespace Gek
                         const auto mappedDepthCompare = Render::Implementation::ComparisonFunctionList[static_cast<uint8_t>(engineDepthCompare)];
 
                         owner->loggedFirstIndexedStateThisFrame = true;
-                        owner->getContext()->log(
-                            Gek::Context::Warning,
-                            "D3D11 state sample frame={} vp='{}' pp='{}' engineCull={} engineFrontCCW={} engineDepthEnable={} engineDepthWrite={} engineDepthCompare={} mappedCull={} mappedFrontCCW={} mappedDepthFunc={}",
-                            owner->sampleFrameIndex,
-                            vertexProgramName,
-                            pixelProgramName,
-                            static_cast<uint32_t>(engineCullMode),
-                            static_cast<uint32_t>(engineFrontCCW),
-                            static_cast<uint32_t>(engineDepthEnable),
-                            static_cast<uint32_t>(engineDepthWrite),
-                            static_cast<uint32_t>(engineDepthCompare),
-                            static_cast<uint32_t>(mappedCullMode),
-                            static_cast<uint32_t>(engineFrontCCW),
-                            static_cast<uint32_t>(mappedDepthCompare));
-
-                        {
-                            const auto samplePath = owner->getContext()->getCachePath("d3d11_state_samples.txt").getString();
-                            std::ofstream sampleLog(samplePath, std::ios::out | std::ios::app);
-                            if (sampleLog.is_open())
-                            {
-                                sampleLog << std::format(
-                                    "D3D11 state sample frame={} vp='{}' pp='{}' engineCull={} engineFrontCCW={} engineDepthEnable={} engineDepthWrite={} engineDepthCompare={} mappedCull={} mappedFrontCCW={} mappedDepthFunc={}",
-                                    owner->sampleFrameIndex,
-                                    vertexProgramName,
-                                    pixelProgramName,
-                                    static_cast<uint32_t>(engineCullMode),
-                                    static_cast<uint32_t>(engineFrontCCW),
-                                    static_cast<uint32_t>(engineDepthEnable),
-                                    static_cast<uint32_t>(engineDepthWrite),
-                                    static_cast<uint32_t>(engineDepthCompare),
-                                    static_cast<uint32_t>(mappedCullMode),
-                                    static_cast<uint32_t>(engineFrontCCW),
-                                    static_cast<uint32_t>(mappedDepthCompare)) << std::endl;
-                            }
-                        }
+                        owner->getContext()->setRuntimeMetric("d3d11.frame", static_cast<double>(owner->sampleFrameIndex));
+                        owner->getContext()->setRuntimeMetric("d3d11.firstIndexedIsUi", static_cast<double>(isUiDraw ? 1u : 0u));
+                        owner->getContext()->setRuntimeMetric("d3d11.engineCull", static_cast<double>(engineCullMode));
+                        owner->getContext()->setRuntimeMetric("d3d11.engineFrontCCW", static_cast<double>(engineFrontCCW ? 1u : 0u));
+                        owner->getContext()->setRuntimeMetric("d3d11.engineDepthEnable", static_cast<double>(engineDepthEnable ? 1u : 0u));
+                        owner->getContext()->setRuntimeMetric("d3d11.engineDepthWrite", static_cast<double>(engineDepthWrite ? 1u : 0u));
+                        owner->getContext()->setRuntimeMetric("d3d11.engineDepthCompare", static_cast<double>(engineDepthCompare));
+                        owner->getContext()->setRuntimeMetric("d3d11.mappedCull", static_cast<double>(mappedCullMode));
+                        owner->getContext()->setRuntimeMetric("d3d11.mappedDepthFunc", static_cast<double>(mappedDepthCompare));
                     }
 
                     d3dDeviceContext->DrawIndexed(indexCount, firstIndex, firstVertex);
@@ -1954,43 +1959,16 @@ namespace Gek
                         const auto mappedDepthCompare = Render::Implementation::ComparisonFunctionList[static_cast<uint8_t>(engineDepthCompare)];
 
                         owner->loggedFirstIndexedStateThisFrame = true;
-                        owner->getContext()->log(
-                            Gek::Context::Warning,
-                            "D3D11 state sample frame={} vp='{}' pp='{}' engineCull={} engineFrontCCW={} engineDepthEnable={} engineDepthWrite={} engineDepthCompare={} mappedCull={} mappedFrontCCW={} mappedDepthFunc={} instances={}",
-                            owner->sampleFrameIndex,
-                            vertexProgramName,
-                            pixelProgramName,
-                            static_cast<uint32_t>(engineCullMode),
-                            static_cast<uint32_t>(engineFrontCCW),
-                            static_cast<uint32_t>(engineDepthEnable),
-                            static_cast<uint32_t>(engineDepthWrite),
-                            static_cast<uint32_t>(engineDepthCompare),
-                            static_cast<uint32_t>(mappedCullMode),
-                            static_cast<uint32_t>(engineFrontCCW),
-                            static_cast<uint32_t>(mappedDepthCompare),
-                            instanceCount);
-
-                        {
-                            const auto samplePath = owner->getContext()->getCachePath("d3d11_state_samples.txt").getString();
-                            std::ofstream sampleLog(samplePath, std::ios::out | std::ios::app);
-                            if (sampleLog.is_open())
-                            {
-                                sampleLog << std::format(
-                                    "D3D11 state sample frame={} vp='{}' pp='{}' engineCull={} engineFrontCCW={} engineDepthEnable={} engineDepthWrite={} engineDepthCompare={} mappedCull={} mappedFrontCCW={} mappedDepthFunc={} instances={}",
-                                    owner->sampleFrameIndex,
-                                    vertexProgramName,
-                                    pixelProgramName,
-                                    static_cast<uint32_t>(engineCullMode),
-                                    static_cast<uint32_t>(engineFrontCCW),
-                                    static_cast<uint32_t>(engineDepthEnable),
-                                    static_cast<uint32_t>(engineDepthWrite),
-                                    static_cast<uint32_t>(engineDepthCompare),
-                                    static_cast<uint32_t>(mappedCullMode),
-                                    static_cast<uint32_t>(engineFrontCCW),
-                                    static_cast<uint32_t>(mappedDepthCompare),
-                                    instanceCount) << std::endl;
-                            }
-                        }
+                        owner->getContext()->setRuntimeMetric("d3d11.frame", static_cast<double>(owner->sampleFrameIndex));
+                        owner->getContext()->setRuntimeMetric("d3d11.firstIndexedIsUi", static_cast<double>(isUiDraw ? 1u : 0u));
+                        owner->getContext()->setRuntimeMetric("d3d11.engineCull", static_cast<double>(engineCullMode));
+                        owner->getContext()->setRuntimeMetric("d3d11.engineFrontCCW", static_cast<double>(engineFrontCCW ? 1u : 0u));
+                        owner->getContext()->setRuntimeMetric("d3d11.engineDepthEnable", static_cast<double>(engineDepthEnable ? 1u : 0u));
+                        owner->getContext()->setRuntimeMetric("d3d11.engineDepthWrite", static_cast<double>(engineDepthWrite ? 1u : 0u));
+                        owner->getContext()->setRuntimeMetric("d3d11.engineDepthCompare", static_cast<double>(engineDepthCompare));
+                        owner->getContext()->setRuntimeMetric("d3d11.mappedCull", static_cast<double>(mappedCullMode));
+                        owner->getContext()->setRuntimeMetric("d3d11.mappedDepthFunc", static_cast<double>(mappedDepthCompare));
+                        owner->getContext()->setRuntimeMetric("d3d11.firstIndexedInstanceCount", static_cast<double>(instanceCount));
                     }
 
                     d3dDeviceContext->DrawIndexedInstanced(indexCount, instanceCount, firstIndex, firstVertex, firstInstance);
@@ -2011,7 +1989,7 @@ namespace Gek
                     HRESULT resultValue = d3dDeviceContext->FinishCommandList(FALSE, &d3dCommandList);
                     if (FAILED(resultValue) || !d3dCommandList)
                     {
-                        std::cerr << "Unable to finish command list compilation";
+                        owner->getContext()->log(Gek::Context::Error, "Unable to finish command list compilation");
                         return nullptr;
                     }
 
@@ -2046,13 +2024,6 @@ namespace Gek
                     if (runtimeMarker.is_open())
                     {
                         runtimeMarker << "backend=d3d11" << std::endl;
-                    }
-
-                    const auto samplePath = getContext()->getCachePath("d3d11_state_samples.txt").getString();
-                    std::ofstream sampleLog(samplePath, std::ios::out | std::ios::trunc);
-                    if (sampleLog.is_open())
-                    {
-                        sampleLog << "backend=d3d11" << std::endl;
                     }
                 }
 
@@ -2319,7 +2290,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeferredDeviceContext);
                 if (FAILED(resultValue) || !d3dDeferredDeviceContext)
                 {
-                    std::cerr << "Unable to create deferred context";
+                    getContext()->log(Gek::Context::Error, "Unable to create deferred context");
                     return nullptr;
                 }
 
@@ -2338,7 +2309,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateQuery(&description, &d3dQuery);
                 if (FAILED(resultValue) || !d3dQuery)
                 {
-                    std::cerr << "Unable to create event";
+                    getContext()->log(Gek::Context::Error, "Unable to create event");
                     return nullptr;
                 }
 
@@ -2365,7 +2336,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateRasterizerState(&rasterizerDescription, &d3dStates);
                 if (FAILED(resultValue) || !d3dStates)
                 {
-                    std::cerr << "Unable to create rasterizer state";
+                    getContext()->log(Gek::Context::Error, "Unable to create rasterizer state");
                     return nullptr;
                 }
 
@@ -2396,7 +2367,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateDepthStencilState(&depthStencilDescription, &d3dStates);
                 if (FAILED(resultValue) || !d3dStates)
                 {
-                    std::cerr << "Unable to create depth stencil state";
+                    getContext()->log(Gek::Context::Error, "Unable to create depth stencil state");
                     return nullptr;
                 }
 
@@ -2445,7 +2416,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateBlendState(&blendDescription, &d3dStates);
                 if (FAILED(resultValue) || !d3dStates)
                 {
-                    std::cerr << "Unable to create independent blend state";
+                    getContext()->log(Gek::Context::Error, "Unable to create independent blend state");
                     return nullptr;
                 }
 
@@ -2475,7 +2446,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateSamplerState(&samplerDescription, &d3dStates);
                 if (FAILED(resultValue) || !d3dStates)
                 {
-                    std::cerr << "Unable to create sampler state";
+                    getContext()->log(Gek::Context::Error, "Unable to create sampler state");
                     return nullptr;
                 }
 
@@ -2496,7 +2467,7 @@ namespace Gek
                 {
                     if (description.stride > 0)
                     {
-                        std::cerr << "Buffer requires only a format or an element stride";
+                        getContext()->log(Gek::Context::Error, "Buffer requires only a format or an element stride");
                         return nullptr;
                     }
 
@@ -2504,7 +2475,7 @@ namespace Gek
                 }
                 else if (description.stride == 0)
                 {
-                    std::cerr << "Buffer requires either a format or an element stride";
+                    getContext()->log(Gek::Context::Error, "Buffer requires either a format or an element stride");
                     return nullptr;
                 }
 
@@ -2578,7 +2549,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateBuffer(&bufferDescription, nullptr, &d3dBuffer);
                     if (FAILED(resultValue) || !d3dBuffer)
                     {
-                        std::cerr << "Unable to dynamic buffer";
+                        getContext()->log(Gek::Context::Error, "Unable to dynamic buffer");
                         return nullptr;
                     }
                 }
@@ -2591,7 +2562,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateBuffer(&bufferDescription, &resourceData, &d3dBuffer);
                     if (FAILED(resultValue) || !d3dBuffer)
                     {
-                        std::cerr << "Unable to create static buffer";
+                        getContext()->log(Gek::Context::Error, "Unable to create static buffer");
                         return nullptr;
                     }
                 }
@@ -2607,7 +2578,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dBuffer, &viewDescription, &d3dShaderResourceView);
                     if (FAILED(resultValue) || !d3dShaderResourceView)
                     {
-                        std::cerr << "Unable to create buffer shader resource view";
+                        getContext()->log(Gek::Context::Error, "Unable to create buffer shader resource view");
                         return nullptr;
                     }
                 }
@@ -2625,7 +2596,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView);
                     if (FAILED(resultValue) || !d3dUnorderedAccessView)
                     {
-                        std::cerr << "Unable to create buffer unordered access view";
+                        getContext()->log(Gek::Context::Error, "Unable to create buffer unordered access view");
                         return nullptr;
                     }
                 }
@@ -2718,7 +2689,7 @@ namespace Gek
                 {
                     if (element.sourceIndex >= D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT)
                     {
-                        std::cerr << "Input layout creation failed: sourceIndex " << element.sourceIndex << " exceeds D3D11 slot limit." << std::endl;
+                        getContext()->log(Gek::Context::Error, "Input layout creation failed: sourceIndex {} exceeds D3D11 slot limit.", element.sourceIndex);
                         return nullptr;
                     }
 
@@ -2757,19 +2728,22 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateInputLayout(d3dElementList.data(), UINT(d3dElementList.size()), information.compiledData.data(), information.compiledData.size(), &d3dInputLayout);
                 if (FAILED(resultValue) || !d3dInputLayout)
                 {
-                    std::cerr << "Unable to create input vertex layout for program '" << information.name << "' (HRESULT=0x" << std::hex << uint32_t(resultValue) << std::dec << ")" << std::endl;
+                    getContext()->log(Gek::Context::Error, "Unable to create input vertex layout for program '{}' (HRESULT={})", information.name, getHRESULTString(resultValue));
 
                     for (size_t elementIndex = 0; elementIndex < d3dElementList.size(); ++elementIndex)
                     {
                         auto const &element = d3dElementList[elementIndex];
-                        std::cerr
-                            << "  Layout[" << elementIndex << "]: semantic=" << element.SemanticName << element.SemanticIndex
-                            << ", format=" << uint32_t(element.Format)
-                            << ", slot=" << element.InputSlot
-                            << ", offset=" << element.AlignedByteOffset
-                            << ", class=" << (element.InputSlotClass == D3D11_INPUT_PER_INSTANCE_DATA ? "instance" : "vertex")
-                            << ", step=" << element.InstanceDataStepRate
-                            << std::endl;
+                        getContext()->log(
+                            Gek::Context::Debug,
+                            "Layout[{}]: semantic={}{} format={} slot={} offset={} class={} step={}",
+                            elementIndex,
+                            element.SemanticName,
+                            element.SemanticIndex,
+                            uint32_t(element.Format),
+                            element.InputSlot,
+                            element.AlignedByteOffset,
+                            (element.InputSlotClass == D3D11_INPUT_PER_INSTANCE_DATA ? "instance" : "vertex"),
+                            element.InstanceDataStepRate);
                     }
 
                     CComPtr<ID3D11ShaderReflection> shaderReflection;
@@ -2784,7 +2758,7 @@ namespace Gek
                         D3D11_SHADER_DESC shaderDescription = {};
                         if (SUCCEEDED(shaderReflection->GetDesc(&shaderDescription)))
                         {
-                            std::cerr << "  Shader input parameter count: " << shaderDescription.InputParameters << std::endl;
+                            getContext()->log(Gek::Context::Debug, "Shader input parameter count: {}", shaderDescription.InputParameters);
 
                             std::vector<bool> usedElement(d3dElementList.size(), false);
                             std::vector<D3D11_INPUT_ELEMENT_DESC> reflectedElementList;
@@ -2818,12 +2792,15 @@ namespace Gek
                                     continue;
                                 }
 
-                                std::cerr
-                                    << "  Reflect[" << parameterIndex << "]: semantic=" << parameterDescription.SemanticName << parameterDescription.SemanticIndex
-                                    << ", mask=0x" << std::hex << uint32_t(parameterDescription.Mask)
-                                    << ", componentType=" << std::dec << uint32_t(parameterDescription.ComponentType)
-                                    << ", stream=" << parameterDescription.Stream
-                                    << std::endl;
+                                getContext()->log(
+                                    Gek::Context::Debug,
+                                    "Reflect[{}]: semantic={}{} mask=0x{:X} componentType={} stream={}",
+                                    parameterIndex,
+                                    parameterDescription.SemanticName,
+                                    parameterDescription.SemanticIndex,
+                                    uint32_t(parameterDescription.Mask),
+                                    uint32_t(parameterDescription.ComponentType),
+                                    parameterDescription.Stream);
 
                                 size_t matchedIndex = d3dElementList.size();
 
@@ -2860,7 +2837,7 @@ namespace Gek
                                 }
                                 else
                                 {
-                                    std::cerr << "Input layout reflection mismatch: missing semantic '" << parameterDescription.SemanticName << parameterDescription.SemanticIndex << "'" << std::endl;
+                                    getContext()->log(Gek::Context::Warning, "Input layout reflection mismatch: missing semantic '{}{}'", parameterDescription.SemanticName, parameterDescription.SemanticIndex);
                                 }
                             }
 
@@ -2876,12 +2853,12 @@ namespace Gek
 
                                 if (SUCCEEDED(reflectedCreateResult) && reflectedInputLayout)
                                 {
-                                    std::cerr << "Recovered input layout creation for program '" << information.name << "' using shader-reflection signature mapping." << std::endl;
+                                    getContext()->log(Gek::Context::Warning, "Recovered input layout creation for program '{}' using shader-reflection signature mapping.", information.name);
                                     return std::make_unique<InputLayout>(reflectedInputLayout);
                                 }
                                 else
                                 {
-                                    std::cerr << "Reflected input layout creation still failed for program '" << information.name << "' (HRESULT=0x" << std::hex << uint32_t(reflectedCreateResult) << std::dec << ")" << std::endl;
+                                    getContext()->log(Gek::Context::Error, "Reflected input layout creation still failed for program '{}' (HRESULT={})", information.name, getHRESULTString(reflectedCreateResult));
                                 }
                             }
                         }
@@ -3153,13 +3130,13 @@ namespace Gek
                         profile = slangGlobalSession->findProfile(mappedProfile.c_str());
                         if (!profile || profile == SLANG_PROFILE_UNKNOWN)
                         {
-                            std::cerr << "Requested Slang profile '" << mappedProfile << "' not available while compiling '" << name << "'; continuing without explicit Slang profile." << std::endl;
+                            getContext()->log(Gek::Context::Warning, "Requested Slang profile '{}' not available while compiling '{}'; continuing without explicit Slang profile.", mappedProfile, name);
                             profile = SLANG_PROFILE_UNKNOWN;
                         }
 
                         targetDesc.profile = profile;
 
-                        std::cout << "Using Slang profile ('" << mappedProfile << "') while compiling '" << name << "'." << std::endl;
+                        getContext()->log(Gek::Context::Debug, "Using Slang profile ('{}') while compiling '{}'.", mappedProfile, name);
 
                         slang::SessionDesc sessionDesc = {};
                         sessionDesc.targets = &targetDesc;
@@ -3168,7 +3145,7 @@ namespace Gek
                         Slang::ComPtr<slang::ISession> session;
                         if (SLANG_SUCCEEDED(slangGlobalSession->createSession(sessionDesc, session.writeRef())) && session)
                         {
-                            std::cerr << "Loading Slang module for '" << name << "' with entry point '" << entryFunction << "'" << std::endl;
+                            getContext()->log(Gek::Context::Debug, "Loading Slang module for '{}' with entry point '{}'.", name, entryFunction);
                             
                             slang::IBlob* outDiagnosticsRaw = nullptr;
                             slang::IModule* slangModule = session->loadModuleFromSourceString(name.data(), debugPath.getFileName().data(), resolvedProgram.c_str(), &outDiagnosticsRaw);
@@ -3177,18 +3154,18 @@ namespace Gek
                             if (outDiagnostics)
                             {
                                 const char *diagnosticMessage = reinterpret_cast<const char *>(outDiagnostics->getBufferPointer());
-                                std::cerr << "Slang module load diagnostics: " << diagnosticMessage << std::endl;
+                                getContext()->log(Gek::Context::Debug, "Slang module load diagnostics: {}", diagnosticMessage);
                             }
                             
                             if (slangModule)
                             {
-                                std::cerr << "Module loaded successfully, searching for entry point '" << entryFunction << "'" << std::endl;
+                                getContext()->log(Gek::Context::Debug, "Module loaded successfully, searching for entry point '{}'.", entryFunction);
                                 
                                 Slang::ComPtr<slang::IEntryPoint> entryPoint;
                                 slangModule->findEntryPointByName(entryFunction.data(), entryPoint.writeRef());
                                 if (entryPoint)
                                 {
-                                    std::cout << "Entry point found! Composing program..." << std::endl;
+                                    getContext()->log(Gek::Context::Debug, "Entry point found; composing program.");
                                     
                                     // Include both module and entry point in composite
                                     std::vector<slang::IComponentType*> componentTypes;
@@ -3254,35 +3231,35 @@ namespace Gek
                                                 {
                                                     const uint8_t *data = reinterpret_cast<const uint8_t *>(compiledShader->GetBufferPointer());
                                                     information.compiledData.assign(data, data + compiledShader->GetBufferSize());
-                                                    std::cerr << "Slang->HLSL->D3DCompile succeeded for '" << name << "' entry '" << entryFunction << "' (" << information.compiledData.size() << " bytes)" << std::endl;
+                                                    getContext()->log(Gek::Context::Info, "Slang->HLSL->D3DCompile succeeded for '{}' entry '{}' ({} bytes)", name, entryFunction, information.compiledData.size());
                                                     return information;
                                                 }
 
                                                 const char *compileErrorText = compileErrors ? reinterpret_cast<const char *>(compileErrors->GetBufferPointer()) : "Unknown D3DCompile error";
-                                                std::cerr << "D3DCompile failed for Slang-generated HLSL in '" << name << "': " << compileErrorText << std::endl;
+                                                getContext()->log(Gek::Context::Error, "D3DCompile failed for Slang-generated HLSL in '{}': {}", name, compileErrorText);
                                             }
                                         }
                                         else
                                         {
-                                            std::cerr << "Slang HLSL generation failed for '" << name << "': getEntryPointCode returned error code " << codeResult << std::endl;
+                                            getContext()->log(Gek::Context::Error, "Slang HLSL generation failed for '{}': getEntryPointCode returned error code {}", name, static_cast<int32_t>(codeResult));
                                         }
                                     }
                                     else
                                     {
                                         const char *diagnosticMessage = compositeDiagnostics ? reinterpret_cast<const char *>(compositeDiagnostics->getBufferPointer()) : "Unknown Slang composite error";
-                                        std::cerr << "Slang composite program failed for '" << name << "': " << diagnosticMessage << std::endl;
+                                        getContext()->log(Gek::Context::Error, "Slang composite program failed for '{}': {}", name, diagnosticMessage);
                                     }
                                 }
                                 else
                                 {
                                     const char *diagnosticMessage = outDiagnostics ? reinterpret_cast<const char *>(outDiagnostics->getBufferPointer()) : "Unknown Slang entry point error";
-                                    std::cerr << "Slang entry point '" << entryFunction << "' not found in module '" << name << "': " << diagnosticMessage << std::endl;
+                                    getContext()->log(Gek::Context::Error, "Slang entry point '{}' not found in module '{}': {}", entryFunction, name, diagnosticMessage);
                                 }
                             }
                             else
                             {
                                 const char *diagnosticMessage = outDiagnostics ? reinterpret_cast<const char *>(outDiagnostics->getBufferPointer()) : "Unknown Slang loadModule error";
-                                std::cerr << "Failed to load Slang module for '" << name << "': " << diagnosticMessage << std::endl;
+                                getContext()->log(Gek::Context::Error, "Failed to load Slang module for '{}': {}", name, diagnosticMessage);
                             }
                         }
                     }
@@ -3308,7 +3285,7 @@ namespace Gek
                     return nullptr;
                 }
 
-                std::cerr << "D3D shader created successfully: " << information.compiledData.size() << " bytes" << std::endl;
+                getContext()->log(Gek::Context::Debug, "D3D shader created successfully: {} bytes", information.compiledData.size());
 
                 return std::make_unique<TYPE>(d3dShader, information);
             }
@@ -3330,7 +3307,7 @@ namespace Gek
                     return createProgram<ID3D11PixelShader, PixelProgram>(information, &ID3D11Device::CreatePixelShader);
                 };
 
-                std::cerr << "Unknown program pipline encountered";
+                getContext()->log(Gek::Context::Error, "Unknown program pipeline encountered");
                 return nullptr;
             }
 
@@ -3353,7 +3330,7 @@ namespace Gek
                 {
                     if (description.flags & Render::Texture::Flags::DepthTarget)
                     {
-                        std::cerr << "Cannot create render target when depth target flag also specified";
+                        getContext()->log(Gek::Context::Error, "Cannot create render target when depth target flag also specified");
                         return nullptr;
                     }
 
@@ -3364,7 +3341,7 @@ namespace Gek
                 {
                     if (description.depth > 1)
                     {
-                        std::cerr << "Depth target must have depth of one";
+                        getContext()->log(Gek::Context::Error, "Depth target must have depth of one");
                         return nullptr;
                     }
 
@@ -3413,7 +3390,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateTexture2D(&textureDescription, (data ? &resourceData : nullptr), &texture2D);
                     if (FAILED(resultValue) || !texture2D)
                     {
-                        std::cerr << "Unable to create 2D texture";
+                        getContext()->log(Gek::Context::Error, "Unable to create 2D texture");
                         return nullptr;
                     }
 
@@ -3445,7 +3422,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateTexture3D(&textureDescription, (data ? &resourceData : nullptr), &texture3D);
                     if (FAILED(resultValue) || !texture3D)
                     {
-                        std::cerr << "Unable to create 3D texture";
+                        getContext()->log(Gek::Context::Error, "Unable to create 3D texture");
                         return nullptr;
                     }
 
@@ -3456,7 +3433,7 @@ namespace Gek
 
                 if (!d3dResource)
                 {
-                    std::cerr << "Unable to get texture resource";
+                    getContext()->log(Gek::Context::Error, "Unable to get texture resource");
                     return nullptr;
                 }
 
@@ -3481,7 +3458,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dResource, &viewDescription, &d3dShaderResourceView);
                     if (FAILED(resultValue) || !d3dShaderResourceView)
                     {
-                        std::cerr << "Unable to create texture shader resource view";
+                        getContext()->log(Gek::Context::Error, "Unable to create texture shader resource view");
                         return nullptr;
                     }
                 }
@@ -3507,7 +3484,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dResource, &viewDescription, &d3dUnorderedAccessView);
                     if (FAILED(resultValue) || !d3dUnorderedAccessView)
                     {
-                        std::cerr << "Unable to create texture unordered access view";
+                        getContext()->log(Gek::Context::Error, "Unable to create texture unordered access view");
                         return nullptr;
                     }
                 }
@@ -3533,7 +3510,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateRenderTargetView(d3dResource, &renderViewDescription, &d3dRenderTargetView);
                     if (FAILED(resultValue) || !d3dRenderTargetView)
                     {
-                        std::cerr << "Unable to create render target view";
+                        getContext()->log(Gek::Context::Error, "Unable to create render target view");
                         return nullptr;
                     }
 
@@ -3551,7 +3528,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateDepthStencilView(d3dResource, &depthStencilDescription, &d3dDepthStencilView);
                     if (FAILED(resultValue) || !d3dDepthStencilView)
                     {
-                        std::cerr << "Unable to create depth stencil view";
+                        getContext()->log(Gek::Context::Error, "Unable to create depth stencil view");
                         return nullptr;
                     }
 
@@ -3597,14 +3574,14 @@ namespace Gek
 
                 if (!load)
                 {
-                    std::cerr << "Unknown texture extension encountered";
+                    getContext()->log(Gek::Context::Error, "Unknown texture extension encountered");
                     return nullptr;
                 }
 
                 std::vector<uint8_t> buffer(FileSystem::Load(filePath));
                 if (buffer.empty())
                 {
-                    std::cerr << "Unable to load data from texture file";
+                    getContext()->log(Gek::Context::Error, "Unable to load data from texture file: {}", filePath.getString());
                     return nullptr;
                 }
 
@@ -3612,12 +3589,12 @@ namespace Gek
                 HRESULT resultValue = load(buffer, image);
                 if (FAILED(resultValue))
                 {
-                    logD3D11Failure(d3dDevice, "texture decode from file", resultValue);
+                    logD3D11Failure(getContext(), d3dDevice, "texture decode from file", resultValue);
                     return nullptr;
                 }
 
                 const auto &metadata = image.GetMetadata();
-                if (!validateTextureMetadataForD3D11(d3dDevice, metadata))
+                if (!validateTextureMetadataForD3D11(getContext(), d3dDevice, metadata))
                 {
                     return nullptr;
                 }
@@ -3627,7 +3604,7 @@ namespace Gek
                 resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), metadata, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, createFlags, &d3dShaderResourceView);
                 if (FAILED(resultValue) || !d3dShaderResourceView)
                 {
-                    logD3D11Failure(d3dDevice, "CreateShaderResourceViewEx (file texture)", resultValue);
+                    logD3D11Failure(getContext(), d3dDevice, "CreateShaderResourceViewEx (file texture)", resultValue);
                     return nullptr;
                 }
 
@@ -3635,7 +3612,7 @@ namespace Gek
                 d3dShaderResourceView->GetResource(&d3dResource);
                 if (!d3dResource)
                 {
-                    std::cerr << "Unable to get texture resource";
+                    getContext()->log(Gek::Context::Error, "Unable to get texture resource");
                     return nullptr;
                 }
 
@@ -3659,14 +3636,14 @@ namespace Gek
                         auto wicLoadFlags = (flags & Render::TextureLoadFlags::sRGB ? ::DirectX::WIC_FLAGS_NONE : ::DirectX::WIC_FLAGS_IGNORE_SRGB);
                         if (FAILED(resultValue = ::DirectX::LoadFromWICMemory((const std::byte *)buffer, size, wicLoadFlags, nullptr, image)))
                         {
-                            logD3D11Failure(d3dDevice, "texture decode from memory", resultValue);
+                            logD3D11Failure(getContext(), d3dDevice, "texture decode from memory", resultValue);
                             return nullptr;
                         }
                     }
                 }
 
                 const auto &metadata = image.GetMetadata();
-                if (!validateTextureMetadataForD3D11(d3dDevice, metadata))
+                if (!validateTextureMetadataForD3D11(getContext(), d3dDevice, metadata))
                 {
                     return nullptr;
                 }
@@ -3676,7 +3653,7 @@ namespace Gek
                 resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), metadata, D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, createFlags, &d3dShaderResourceView);
                 if (FAILED(resultValue) || !d3dShaderResourceView)
                 {
-                    logD3D11Failure(d3dDevice, "CreateShaderResourceViewEx (memory texture)", resultValue);
+                    logD3D11Failure(getContext(), d3dDevice, "CreateShaderResourceViewEx (memory texture)", resultValue);
                     return nullptr;
                 }
 
@@ -3684,7 +3661,7 @@ namespace Gek
                 d3dShaderResourceView->GetResource(&d3dResource);
                 if (!d3dResource)
                 {
-                    std::cerr << "Unable to get texture resource";
+                    getContext()->log(Gek::Context::Error, "Unable to get texture resource");
                     return nullptr;
                 }
 
@@ -3719,14 +3696,14 @@ namespace Gek
                 static const Texture::Description EmptyDescription;
                 if (!getMetadata)
                 {
-                    std::cerr << "Unknown texture extension encountered";
+                    getContext()->log(Gek::Context::Error, "Unknown texture extension encountered");
                     return EmptyDescription;
                 }
 
                 std::vector<uint8_t> buffer(FileSystem::Load(filePath, 1024 * 4));
                 if (buffer.empty())
                 {
-                    std::cerr << "Unable to load data from texture file";
+                    getContext()->log(Gek::Context::Error, "Unable to load data from texture file: {}", filePath.getString());
                     return EmptyDescription;
                 }
 
@@ -3734,7 +3711,7 @@ namespace Gek
                 HRESULT resultValue = getMetadata(buffer, metadata);
                 if (FAILED(resultValue))
                 {
-                    std::cerr << "Unable to get metadata from file";
+                    getContext()->log(Gek::Context::Error, "Unable to get metadata from file: {}", filePath.getString());
                     return EmptyDescription;
                 }
 
@@ -3762,6 +3739,7 @@ namespace Gek
 
                 dxgiSwapChain->Present(waitForVerticalSync ? 1 : 0, 0);
                 ++sampleFrameIndex;
+                getContext()->setRuntimeMetric("d3d11.frame", static_cast<double>(sampleFrameIndex));
                 loggedFirstIndexedStateThisFrame = false;
             }
         };

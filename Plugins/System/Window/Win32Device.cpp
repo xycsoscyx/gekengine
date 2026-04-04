@@ -371,12 +371,12 @@ namespace Gek
                 }
                 catch (std::exception const &exception)
                 {
-                    std::cerr << "Win32Device onCreated exception: " << exception.what() << std::endl;
+                    getContext()->log(Context::Error, "Win32Device onCreated exception: {}", exception.what());
                     stop.store(true);
                 }
                 catch (...)
                 {
-                    std::cerr << "Win32Device onCreated unknown exception" << std::endl;
+                    getContext()->log(Context::Error, "Win32Device onCreated unknown exception");
                     stop.store(true);
                 }
 
@@ -405,12 +405,12 @@ namespace Gek
 
                         if (transientBusy)
                         {
-                            std::cerr << "Win32Device onIdle transient exception (continuing): " << exception.what() << std::endl;
+                            getContext()->log(Context::Warning, "Win32Device onIdle transient exception (continuing): {}", exception.what());
                             std::this_thread::sleep_for(std::chrono::milliseconds(10));
                             continue;
                         }
 
-                        std::cerr << "Win32Device onIdle exception: " << exception.what() << std::endl;
+                        getContext()->log(Context::Error, "Win32Device onIdle exception: {}", exception.what());
                         if (++consecutiveIdleExceptions >= 8)
                         {
                             stop.store(true);
@@ -418,7 +418,7 @@ namespace Gek
                     }
                     catch (...)
                     {
-                        std::cerr << "Win32Device onIdle unknown exception" << std::endl;
+                        getContext()->log(Context::Error, "Win32Device onIdle unknown exception");
                         if (++consecutiveIdleExceptions >= 8)
                         {
                             stop.store(true);

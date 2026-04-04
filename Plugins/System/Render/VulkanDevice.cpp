@@ -6016,6 +6016,7 @@ namespace Gek
                     return nullptr;
                 }
 
+#ifdef _MAX_IMAGE_RESACLE
                 constexpr uint32_t kMaxTextureDimension = 2048;
                 uint32_t targetWidth = width;
                 uint32_t targetHeight = height;
@@ -6124,7 +6125,30 @@ namespace Gek
                     targetWidth = nextWidth;
                     targetHeight = nextHeight;
                 }
+#else
+                Render::Texture::Description description;
+                description.name = filePath.getString();
+                description.format = (flags & Render::TextureLoadFlags::sRGB)
+                    ? Render::Format::R8G8B8A8_UNORM_SRGB
+                    : Render::Format::R8G8B8A8_UNORM;
+                description.width = width;
+                description.height = height;
+                description.depth = 1;
+                description.mipMapCount = 1;
+                description.flags = Render::Texture::Flags::Resource;
 
+                if (auto texture = createTexture(description, image->pixels))
+                {
+                    return texture;
+                }
+
+                getContext()->log(
+                    Gek::Context::Warning,
+                    "Vulkan loadTexture failed without resize fallback for '{}' at {}x{} (enable _MAX_IMAGE_RESACLE to retry at lower resolutions)",
+                    filePath.getString(),
+                    width,
+                    height);
+#endif
                 getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed after retries for '{}'", filePath.getString());
                 return nullptr;
             }
@@ -9191,37 +9215,30 @@ namespace Gek
                     (glassDrawFirstResourceSlotMin == PixelResourceSlotCount ? 999u : glassDrawFirstResourceSlotMin),
                     (glassDrawFirstResourceSlotMin == PixelResourceSlotCount ? 999u : glassDrawFirstResourceSlotMax),
                     static_cast<uint32_t>(deviceLost));
-                const bool shouldLogPeriodicStats = ((presentFrameIndex % 120u) == 0u);
-                if (shouldLogPeriodicStats)
-                {
-                    getContext()->log(
-                        Gek::Context::Info,
-                        "Vulkan scene stats frame={} totalCommands={} uiCommands={} sceneCommands={} sceneDraws={} sceneBackBufferDraws={} sceneOffscreenDraws={} sceneBackBufferMissingImageDraws={} sceneFallbackCopy={} offscreenSkips={} pipelineSkips={} descriptorSkips={} contextDrawAttempts={} skipMissingProgram={} skipMissingVB={} skipMissingIB={} skipZeroCount={} deferredFinishCalls={} deferredExecuteCalls={} deferredExecutedCommands={} deferredContextQueues={} deferredCommandLists={} pendingEnqueues={} deferredEnqueues={}",
-                        presentFrameIndex,
-                        totalCommandCount,
-                        uiCommandCount,
-                        sceneCommandCount,
-                        sceneDrawCallsIssued,
-                        sceneBackBufferDrawCalls,
-                        sceneOffscreenDrawCalls,
-                        sceneBackBufferMissingImageDrawCalls,
-                        static_cast<uint32_t>(sceneFallbackCopyPerformed),
-                        sceneOffscreenInvalidSkips,
-                        scenePipelineSkips,
-                        sceneDescriptorSkips,
-                        static_cast<uint32_t>(contextDrawCallAttempts),
-                        static_cast<uint32_t>(contextDrawSkipsMissingProgram),
-                        static_cast<uint32_t>(contextDrawSkipsMissingVertexBuffer),
-                        static_cast<uint32_t>(contextDrawSkipsMissingIndexBuffer),
-                        static_cast<uint32_t>(contextDrawSkipsZeroCount),
-                        static_cast<uint32_t>(deferredFinishCalls),
-                        static_cast<uint32_t>(deferredExecuteCalls),
-                        static_cast<uint32_t>(deferredExecutedCommandCount),
-                        static_cast<uint32_t>(deferredContextDrawCommands.size()),
-                        static_cast<uint32_t>(deferredCommandLists.size()),
-                        static_cast<uint32_t>(pendingCommandEnqueueCount),
-                        static_cast<uint32_t>(deferredCommandEnqueueCount));
-                }
+                getContext()->setRuntimeMetric("vulkan.frame", static_cast<double>(presentFrameIndex));
+                getContext()->setRuntimeMetric("vulkan.totalCommands", static_cast<double>(totalCommandCount));
+                getContext()->setRuntimeMetric("vulkan.uiCommands", static_cast<double>(uiCommandCount));
+                getContext()->setRuntimeMetric("vulkan.sceneCommands", static_cast<double>(sceneCommandCount));
+                getContext()->setRuntimeMetric("vulkan.sceneDraws", static_cast<double>(sceneDrawCallsIssued));
+                getContext()->setRuntimeMetric("vulkan.sceneBackBufferDraws", static_cast<double>(sceneBackBufferDrawCalls));
+                getContext()->setRuntimeMetric("vulkan.sceneOffscreenDraws", static_cast<double>(sceneOffscreenDrawCalls));
+                getContext()->setRuntimeMetric("vulkan.sceneBackBufferMissingImageDraws", static_cast<double>(sceneBackBufferMissingImageDrawCalls));
+                getContext()->setRuntimeMetric("vulkan.sceneFallbackCopy", static_cast<double>(sceneFallbackCopyPerformed ? 1u : 0u));
+                getContext()->setRuntimeMetric("vulkan.offscreenSkips", static_cast<double>(sceneOffscreenInvalidSkips));
+                getContext()->setRuntimeMetric("vulkan.pipelineSkips", static_cast<double>(scenePipelineSkips));
+                getContext()->setRuntimeMetric("vulkan.descriptorSkips", static_cast<double>(sceneDescriptorSkips));
+                getContext()->setRuntimeMetric("vulkan.contextDrawAttempts", static_cast<double>(contextDrawCallAttempts));
+                getContext()->setRuntimeMetric("vulkan.skipMissingProgram", static_cast<double>(contextDrawSkipsMissingProgram));
+                getContext()->setRuntimeMetric("vulkan.skipMissingVB", static_cast<double>(contextDrawSkipsMissingVertexBuffer));
+                getContext()->setRuntimeMetric("vulkan.skipMissingIB", static_cast<double>(contextDrawSkipsMissingIndexBuffer));
+                getContext()->setRuntimeMetric("vulkan.skipZeroCount", static_cast<double>(contextDrawSkipsZeroCount));
+                getContext()->setRuntimeMetric("vulkan.deferredFinishCalls", static_cast<double>(deferredFinishCalls));
+                getContext()->setRuntimeMetric("vulkan.deferredExecuteCalls", static_cast<double>(deferredExecuteCalls));
+                getContext()->setRuntimeMetric("vulkan.deferredExecutedCommands", static_cast<double>(deferredExecutedCommandCount));
+                getContext()->setRuntimeMetric("vulkan.deferredContextQueues", static_cast<double>(deferredContextDrawCommands.size()));
+                getContext()->setRuntimeMetric("vulkan.deferredCommandLists", static_cast<double>(deferredCommandLists.size()));
+                getContext()->setRuntimeMetric("vulkan.pendingEnqueues", static_cast<double>(pendingCommandEnqueueCount));
+                getContext()->setRuntimeMetric("vulkan.deferredEnqueues", static_cast<double>(deferredCommandEnqueueCount));
 
                 transientFrameConstantBufferSnapshotsInFlight = std::move(transientFrameConstantBufferSnapshotsPending);
                 transientFrameConstantBufferSnapshotsPending.clear();

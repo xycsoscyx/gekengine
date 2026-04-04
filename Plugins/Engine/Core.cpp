@@ -11,6 +11,10 @@
 #include <imgui_internal.h>
 #include <atomic>
 #include <algorithm>
+#include <array>
+#include <limits>
+#include <numeric>
+#include <unordered_map>
 #include <vector>
 #include <thread>
 
@@ -166,6 +170,30 @@ namespace Gek
             std::string pendingPopulationName;
 
             bool showSettings = false;
+            bool showRuntimeDiagnostics = false;
+
+            struct RuntimeMetricPlot
+            {
+                const char *key = nullptr;
+                const char *label = nullptr;
+                std::array<float, 240> samples = {};
+                size_t sampleCount = 0;
+            };
+
+            std::array<RuntimeMetricPlot, 10> runtimeMetricPlots =
+            {{
+                { "visualizer.queuedDrawCalls", "Queued Draw Calls" },
+                { "visualizer.shaderGroups", "Shader Groups" },
+                { "visualizer.preparedPasses", "Prepared Passes" },
+                { "model.visibleModels", "Visible Models" },
+                { "model.queuedBatches", "Model Batches" },
+                { "resources.drawSuppressed", "Suppressed Draws" },
+                { "vulkan.sceneDraws", "Vulkan Scene Draws" },
+                { "vulkan.totalCommands", "Vulkan Total Commands" },
+                { "d3d11.mappedDepthFunc", "D3D11 Depth Func" },
+                { "d3d11.firstIndexedInstanceCount", "D3D11 First Instance Count" },
+            }};
+            uint64_t runtimeMetricsLastFrame = 0;
 
             bool showModeChange = false;
             float modeChangeTimer = 0.0f;
@@ -221,7 +249,7 @@ namespace Gek
                 HRESULT resultValue = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
                 if (FAILED(resultValue))
                 {
-                    std::cerr << "Call to CoInitialize failed: " << resultValue;
+                    getContext()->log(Context::Error, "Call to CoInitialize failed: {}", static_cast<uint32_t>(resultValue));
                     return;
                 }
 #endif
@@ -665,6 +693,33 @@ namespace Gek
             void onShowUserInterface(void)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
+                auto runtimeMetrics = getContext()->getRuntimeMetricSnapshot();
+                auto runtimeFrameSearch = runtimeMetrics.find("visualizer.frame");
+                uint64_t runtimeFrame = (runtimeFrameSearch != std::end(runtimeMetrics) ? static_cast<uint64_t>(runtimeFrameSearch->second) : (runtimeMetricsLastFrame + 1));
+                if (runtimeFrame > runtimeMetricsLastFrame)
+                {
+                    runtimeMetricsLastFrame = runtimeFrame;
+                    for (auto &plot : runtimeMetricPlots)
+                    {
+                        float value = 0.0f;
+                        auto metricSearch = runtimeMetrics.find(plot.key);
+                        if (metricSearch != std::end(runtimeMetrics))
+                        {
+                            value = static_cast<float>(metricSearch->second);
+                        }
+
+                        if (plot.sampleCount < plot.samples.size())
+                        {
+                            plot.samples[plot.sampleCount++] = value;
+                        }
+                        else
+                        {
+                            std::move(std::begin(plot.samples) + 1, std::end(plot.samples), std::begin(plot.samples));
+                            plot.samples.back() = value;
+                        }
+                    }
+                }
+
                 if (enableInterfaceControl)
                 {
                     ImGui::BeginMainMenuBar();
@@ -724,6 +779,12 @@ namespace Gek
                         ImGui::EndMenu();
                     }
 
+                    if (ImGui::BeginMenu("View"))
+                    {
+                        ImGui::MenuItem("Runtime Diagnostics", nullptr, &showRuntimeDiagnostics);
+                        ImGui::EndMenu();
+                    }
+
                     ImGui::PopStyleVar(2);
                     ImGui::EndMainMenuBar();
 
@@ -732,9 +793,53 @@ namespace Gek
                     showModifiedPrompt();
                     showLoadWindow();
                     showReset();
+                    showRuntimeDiagnosticsWindow(runtimeMetrics);
                 }
 
                 showLoading();
+            }
+
+            void showRuntimeDiagnosticsWindow(std::unordered_map<std::string, double> const &runtimeMetrics)
+            {
+                if (!showRuntimeDiagnostics)
+                {
+                    return;
+                }
+
+                ImGui::SetNextWindowSize(ImVec2(680.0f, 520.0f), ImGuiCond_Once);
+                if (ImGui::Begin("Runtime Diagnostics", &showRuntimeDiagnostics))
+                {
+                    for (auto const &plot : runtimeMetricPlots)
+                    {
+                        if (plot.sampleCount == 0)
+                        {
+                            continue;
+                        }
+
+                        auto samplesBegin = std::begin(plot.samples);
+                        auto samplesEnd = samplesBegin + plot.sampleCount;
+                        auto [minSearch, maxSearch] = std::minmax_element(samplesBegin, samplesEnd);
+                        float maxValue = std::max(*maxSearch, 1.0f);
+                        float average = (std::accumulate(samplesBegin, samplesEnd, 0.0f) / static_cast<float>(plot.sampleCount));
+                        float current = *(samplesEnd - 1);
+
+                        ImGui::PushID(plot.key);
+                        ImGui::Text("%s | current=%.1f min=%.1f max=%.1f avg=%.1f", plot.label, current, *minSearch, *maxSearch, average);
+                        ImGui::PlotHistogram("##history", plot.samples.data(), static_cast<int>(plot.sampleCount), 0, nullptr, 0.0f, maxValue * 1.1f, ImVec2(-1.0f, 72.0f));
+                        ImGui::PopID();
+                    }
+
+                    auto fallbackEntitySearch = runtimeMetrics.find("model.entityCullingFallback");
+                    auto fallbackModelSearch = runtimeMetrics.find("model.modelCullingFallback");
+                    if ((fallbackEntitySearch != std::end(runtimeMetrics) && fallbackEntitySearch->second > 0.0) ||
+                        (fallbackModelSearch != std::end(runtimeMetrics) && fallbackModelSearch->second > 0.0))
+                    {
+                        ImGui::Separator();
+                        ImGui::TextUnformatted("Model culling fallback triggered this frame.");
+                    }
+                }
+
+                ImGui::End();
             }
 
             void showDisplay(void)

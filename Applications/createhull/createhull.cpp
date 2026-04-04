@@ -5,6 +5,7 @@
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/String.hpp"
 #include <algorithm>
+#include <sstream>
 #include <vector>
 
 #include <argparse/argparse.hpp>
@@ -117,6 +118,8 @@ void serializeCollision(void* const serializeHandle, const void* const buffer, i
 
 int main(int argumentCount, char const * const argumentList[])
 {
+    ContextPtr context(Context::Create(nullptr));
+
     argparse::ArgumentParser program("GEK Convex Hull Converter", "1.0");
 
     program.add_argument("-i", "--input")
@@ -147,8 +150,13 @@ int main(int argumentCount, char const * const argumentList[])
     }
     catch (const std::runtime_error& err)
     {
-        std::cerr << err.what() << std::endl;
-        std::cerr << program;
+        if (context)
+        {
+            std::ostringstream usageStream;
+            usageStream << program;
+            context->log(Context::Error, "{}", err.what());
+            context->log(Context::Error, "{}", usageStream.str());
+        }
         return 1;
     }
 
@@ -165,7 +173,6 @@ int main(int argumentCount, char const * const argumentList[])
     std::vector<FileSystem::Path> searchPathList;
     searchPathList.push_back(pluginPath);
 
-    ContextPtr context(Context::Create(nullptr));
     if (context)
     {
         context->log(Context::Info, "GEK Convex Hull Converter");

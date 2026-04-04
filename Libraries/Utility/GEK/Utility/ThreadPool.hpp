@@ -8,14 +8,33 @@
 #pragma once
 
 #include "GEK/Utility/String.hpp"
+#include "GEK/Utility/Context.hpp"
 #include <tbb/concurrent_queue.h>
 #include <coroutine>
 #include <execution>
-#include <iostream>
 #include <future>
 
 namespace Gek
 {
+    inline Context *&GetThreadPoolLogContext(void)
+    {
+        static Context *threadPoolLogContext = nullptr;
+        return threadPoolLogContext;
+    }
+
+    inline void SetThreadPoolLogContext(Context *context)
+    {
+        GetThreadPoolLogContext() = context;
+    }
+
+    inline void LogThreadPoolError(std::string_view message)
+    {
+        if (auto *context = GetThreadPoolLogContext())
+        {
+            context->log(Context::Error, "{}", message);
+        }
+    }
+
     struct TaskPromise;
 
     class Task
@@ -44,7 +63,7 @@ namespace Gek
 
             void unhandled_exception() noexcept
             {
-                std::cerr << "Unhandled Exception Occurred";
+                LogThreadPoolError("Unhandled Exception Occurred");
             }
         };
     };
@@ -108,11 +127,11 @@ namespace Gek
                             }
                             catch (const std::exception &exception)
                             {
-                                std::cerr << "ThreadPool worker exception: " << exception.what() << std::endl;
+                                LogThreadPoolError(std::string("ThreadPool worker exception: ") + exception.what());
                             }
                             catch (...)
                             {
-                                std::cerr << "ThreadPool worker exception: unknown" << std::endl;
+                                LogThreadPoolError("ThreadPool worker exception: unknown");
                             }
 
                             activeCount--;

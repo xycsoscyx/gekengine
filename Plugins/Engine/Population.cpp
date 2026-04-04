@@ -121,13 +121,13 @@ namespace Gek
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className, static_cast<Plugin::Population *>(this)));
                     if (availableComponents.count(component->getIdentifier()) > 0)
                     {
-                        std::cerr << "Duplicate component identifier found: Class(" << className << "), Identifier(" << component->getIdentifier() << ")";
+                        getContext()->log(Context::Error, "Duplicate component identifier found: Class({}), Identifier({})", className, component->getIdentifier());
                         return;
                     }
 
                     if (componentNameTypeMap.count(component->getIdentifier()) > 0)
                     {
-                        std::cerr << "Duplicate component name found: Class(" << className << "), Name(" << component->getName() << ")";
+                        getContext()->log(Context::Error, "Duplicate component name found: Class({}), Name({})", className, component->getName());
                         return;
                     }
 
@@ -363,14 +363,14 @@ namespace Gek
                         auto componentName = componentNameTypeMap.find(type);
                         if (componentName == std::end(componentNameTypeMap))
                         {
-                            std::cerr << "Unknown component identifier found when trying to save population: " << type;
+                            getContext()->log(Context::Error, "Unknown component identifier found when trying to save population: {}", type);
                         }
                         else
                         {
                             auto component = availableComponents.find(type);
                             if (component == std::end(availableComponents))
                             {
-								std::cerr << "Unknown component type found when trying to save population: " << componentName->second << ", " << type;
+								getContext()->log(Context::Error, "Unknown component type found when trying to save population: {}, {}", componentName->second, type);
                             }
                             else
                             {
@@ -414,7 +414,7 @@ namespace Gek
 
                 registry.push_back(Plugin::EntityPtr(entity));
                 onEntityCreated(entity);
-                std::cout << "Entity created" << std::endl;
+                getContext()->log(Context::Debug, "Entity created");
                 return;
             }
 
@@ -462,12 +462,12 @@ namespace Gek
                     }
                     else
                     {
-                        std::cerr << "Entity contains unknown component identifier: " << definition.first << ", " << componentNameSearch->second;
+                        getContext()->log(Context::Error, "Entity contains unknown component identifier: {}, {}", definition.first, componentNameSearch->second);
                     }
                 }
                 else
                 {
-                    std::cerr << "Entity contains unknown component: " << definition.first;
+                    getContext()->log(Context::Error, "Entity contains unknown component: {}", definition.first);
                 }
 
                 return false;

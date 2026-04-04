@@ -1686,22 +1686,16 @@ float4 main(PixelInput input) : SV_Target
 
 				renderUI(ImGui::GetDrawData());
 
-				if ((renderFrameCounter % 240u) == 0u)
-				{
-					getContext()->log(
-						Context::Info,
-						"Visualizer frame {}: processedCameras={} queuedDrawCalls={} shaderGroups={} preparedPasses={} forwardPasses={} deferredPasses={} computePasses={} forwardDrawDispatches={} deferredDrawDispatches={}",
-						renderFrameCounter,
-						processedCameras,
-						queuedDrawCalls,
-						shaderGroupCount,
-						preparedPassCount,
-						forwardPassCount,
-						deferredPassCount,
-						computePassCount,
-						forwardDrawDispatchCount,
-						deferredDrawDispatchCount);
-				}
+				getContext()->setRuntimeMetric("visualizer.frame", static_cast<double>(renderFrameCounter));
+				getContext()->setRuntimeMetric("visualizer.processedCameras", static_cast<double>(processedCameras));
+				getContext()->setRuntimeMetric("visualizer.queuedDrawCalls", static_cast<double>(queuedDrawCalls));
+				getContext()->setRuntimeMetric("visualizer.shaderGroups", static_cast<double>(shaderGroupCount));
+				getContext()->setRuntimeMetric("visualizer.preparedPasses", static_cast<double>(preparedPassCount));
+				getContext()->setRuntimeMetric("visualizer.forwardPasses", static_cast<double>(forwardPassCount));
+				getContext()->setRuntimeMetric("visualizer.deferredPasses", static_cast<double>(deferredPassCount));
+				getContext()->setRuntimeMetric("visualizer.computePasses", static_cast<double>(computePassCount));
+				getContext()->setRuntimeMetric("visualizer.forwardDrawDispatches", static_cast<double>(forwardDrawDispatchCount));
+				getContext()->setRuntimeMetric("visualizer.deferredDrawDispatches", static_cast<double>(deferredDrawDispatchCount));
 
 				renderDevice->present(true);
 				if (reloadRequired)

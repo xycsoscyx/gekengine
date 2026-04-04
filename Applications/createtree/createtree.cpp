@@ -11,6 +11,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <sstream>
 
 #include <argparse/argparse.hpp>
 #include <assimp/config.h>
@@ -191,6 +192,8 @@ bool GetModels(Context *context, Parameters const& parameters, aiScene const* in
 
 int main(int argumentCount, char const * const argumentList[], char const * const environmentVariableList)
 {
+    ContextPtr context(Context::Create(nullptr));
+
     argparse::ArgumentParser program("GEK Tree Converter", "1.0");
 
     program.add_argument("-i", "--input")
@@ -221,8 +224,13 @@ int main(int argumentCount, char const * const argumentList[], char const * cons
     }
     catch (const std::runtime_error& err)
     {
-        std::cerr << err.what() << std::endl;
-        std::cerr << program;
+        if (context)
+        {
+            std::ostringstream usageStream;
+            usageStream << program;
+            context->log(Context::Error, "{}", err.what());
+            context->log(Context::Error, "{}", usageStream.str());
+        }
         return 1;
     }
 
@@ -239,7 +247,6 @@ int main(int argumentCount, char const * const argumentList[], char const * cons
     std::vector<FileSystem::Path> searchPathList;
     searchPathList.push_back(pluginPath);
 
-    ContextPtr context(Context::Create(nullptr));
     if (context)
     {
         context->log(Context::Info, "GEK Tree Converter");

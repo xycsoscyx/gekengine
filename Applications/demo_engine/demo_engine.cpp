@@ -61,6 +61,5 @@ int main(int argumentCount, char const * const argumentList[])
         Plugin::CorePtr core = context->createClass<Plugin::Core>("Engine::Core");
     }
 
-    std::cout << "Exiting Application" << std::endl;
     return 0;
 }

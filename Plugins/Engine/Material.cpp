@@ -119,7 +119,7 @@ namespace Gek
                 }
                 else
                 {
-                    std::cerr << "Shader " << shaderName << " missing for material " << materialName;
+                    getContext()->log(Context::Error, "Shader {} missing for material {}", shaderName, materialName);
                 }
             }
 

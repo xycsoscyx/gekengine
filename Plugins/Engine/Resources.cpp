@@ -698,6 +698,10 @@ namespace Gek
             bool showResources = false;
             void onShowUserInterface(void)
             {
+                getContext()->setRuntimeMetric("resources.drawAttempts", static_cast<double>(drawCallAttemptCount));
+                getContext()->setRuntimeMetric("resources.drawSubmitted", static_cast<double>(drawCallSubmittedCount));
+                getContext()->setRuntimeMetric("resources.drawSuppressed", static_cast<double>(drawCallSuppressedCount));
+
                 ImGuiIO& imGuiIo = ImGui::GetIO();
                 auto mainMenu = ImGui::FindWindowByName("##MainMenuBar");
                 auto mainMenuShowing = (mainMenu ? mainMenu->Active : false);
@@ -1090,7 +1094,7 @@ namespace Gek
                                 return nullptr;
                             }
 
-                            std::cout << "Loading texture: " << texturePath.getString() << std::endl;
+                            getContext()->log(Context::Info, "Loading texture: {}", texturePath.getString());
                             return videoDevice->loadTexture(texturePath, flags);
                         }, 0, &fallback);
 
@@ -2032,23 +2036,6 @@ namespace Gek
             {
                 drawPrimitiveValid = true;
                 dispatchValid = true;
-
-                static uint64_t resourceBlockCounter = 0;
-                static uint64_t lastLoggedSuppressedCount = 0;
-                ++resourceBlockCounter;
-
-                const bool periodicLog = ((resourceBlockCounter % 4800u) == 0u);
-                const bool suppressionSpike = (drawCallSuppressedCount >= (lastLoggedSuppressedCount + 100000u));
-                if (periodicLog || suppressionSpike)
-                {
-                    getContext()->log(
-                        Context::Info,
-                        "Resources draw stats: attempts={} submitted={} suppressed={}",
-                        drawCallAttemptCount,
-                        drawCallSubmittedCount,
-                        drawCallSuppressedCount);
-                    lastLoggedSuppressedCount = drawCallSuppressedCount;
-                }
             }
         };
 

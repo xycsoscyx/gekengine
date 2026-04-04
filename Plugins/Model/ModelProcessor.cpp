@@ -767,6 +767,8 @@ namespace Gek
             assert(renderer);
             static uint64_t modelQueueFrameCounter = 0;
             ++modelQueueFrameCounter;
+            uint32_t entityCullingFallbackCount = 0;
+            uint32_t modelCullingFallbackCount = 0;
 
             // Advance the retire ring: clear the slot from 3 frames ago (GPU is done by then).
             instanceBufferRetireIndex = (instanceBufferRetireIndex + 1) % kInstanceBufferFrameSlots;
@@ -824,10 +826,7 @@ namespace Gek
                     visibilityList[std::get<2>(entitySearch)] = true;
                 }
 
-                if ((modelQueueFrameCounter % 240) == 0)
-                {
-                    getContext()->log(Context::Warning, "ModelProcessor culling fallback: forcing entity visibility (entities={})", entityDataList.size());
-                }
+                entityCullingFallbackCount = 1;
             }
 
 			// Cull by model inside group
@@ -903,10 +902,7 @@ namespace Gek
                     visibilityList[std::get<2>(entitySearch)] = true;
                 }
 
-                if ((modelQueueFrameCounter % 240) == 0)
-                {
-                    getContext()->log(Context::Warning, "ModelProcessor culling fallback: forcing model visibility (models={})", entityModelList.size());
-                }
+                modelCullingFallbackCount = 1;
             }
 
             std::for_each(std::execution::par, std::begin(entityModelList), std::end(entityModelList), [&](auto &entitySearch) -> void
@@ -1018,18 +1014,14 @@ namespace Gek
 				});
 			});
 
-            if ((modelQueueFrameCounter % 120) == 0)
-            {
-                getContext()->log(Context::Info,
-                    "ModelProcessor frame {}: entities={}, visibleEntities={}, models={}, visibleModels={}, queuedBatches={}, maxInstances={}",
-                    modelQueueFrameCounter,
-                    entityDataList.size(),
-                    visibleEntityCount,
-                    entityModelList.size(),
-                    visibleModelCount,
-                    queuedBatchCount.load(),
-                      0);
-            }
+            getContext()->setRuntimeMetric("model.frame", static_cast<double>(modelQueueFrameCounter));
+            getContext()->setRuntimeMetric("model.entities", static_cast<double>(entityDataList.size()));
+            getContext()->setRuntimeMetric("model.visibleEntities", static_cast<double>(visibleEntityCount));
+            getContext()->setRuntimeMetric("model.models", static_cast<double>(entityModelList.size()));
+            getContext()->setRuntimeMetric("model.visibleModels", static_cast<double>(visibleModelCount));
+            getContext()->setRuntimeMetric("model.queuedBatches", static_cast<double>(queuedBatchCount.load()));
+            getContext()->setRuntimeMetric("model.entityCullingFallback", static_cast<double>(entityCullingFallbackCount));
+            getContext()->setRuntimeMetric("model.modelCullingFallback", static_cast<double>(modelCullingFallbackCount));
 		}
 	};
 

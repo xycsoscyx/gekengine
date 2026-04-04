@@ -14,6 +14,7 @@
 #include <functional>
 #include <typeindex>
 #include <iostream>
+#include <unordered_map>
 #include <memory>
 #include <vector>
 
@@ -63,6 +64,10 @@ namespace Gek
         }
 
         virtual void vlog(LogLevel level, const LocationMessage& message, std::format_args args) const = 0;
+
+        virtual void setRuntimeMetric(std::string_view name, double value) = 0;
+        virtual bool getRuntimeMetric(std::string_view name, double &value) const = 0;
+        virtual std::unordered_map<std::string, double> getRuntimeMetricSnapshot(void) const = 0;
 
 		virtual void setCachePath(FileSystem::Path const &path) = 0;
 		virtual FileSystem::Path getCachePath(FileSystem::Path const &path) = 0;
