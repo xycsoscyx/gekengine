@@ -1917,6 +1917,8 @@ namespace Gek
 
                         owner->loggedFirstIndexedStateThisFrame = true;
                         owner->getContext()->setRuntimeMetric("d3d11.frame", static_cast<double>(owner->sampleFrameIndex));
+                        owner->getContext()->setRuntimeMetric("render.frame", static_cast<double>(owner->sampleFrameIndex));
+                        owner->getContext()->setRuntimeMetric("render.backend", 1.0);
                         owner->getContext()->setRuntimeMetric("d3d11.firstIndexedIsUi", static_cast<double>(isUiDraw ? 1u : 0u));
                         owner->getContext()->setRuntimeMetric("d3d11.engineCull", static_cast<double>(engineCullMode));
                         owner->getContext()->setRuntimeMetric("d3d11.engineFrontCCW", static_cast<double>(engineFrontCCW ? 1u : 0u));
@@ -1925,6 +1927,7 @@ namespace Gek
                         owner->getContext()->setRuntimeMetric("d3d11.engineDepthCompare", static_cast<double>(engineDepthCompare));
                         owner->getContext()->setRuntimeMetric("d3d11.mappedCull", static_cast<double>(mappedCullMode));
                         owner->getContext()->setRuntimeMetric("d3d11.mappedDepthFunc", static_cast<double>(mappedDepthCompare));
+                        owner->getContext()->setRuntimeMetric("render.mappedDepthFunc", static_cast<double>(mappedDepthCompare));
                     }
 
                     d3dDeviceContext->DrawIndexed(indexCount, firstIndex, firstVertex);
@@ -1960,6 +1963,8 @@ namespace Gek
 
                         owner->loggedFirstIndexedStateThisFrame = true;
                         owner->getContext()->setRuntimeMetric("d3d11.frame", static_cast<double>(owner->sampleFrameIndex));
+                        owner->getContext()->setRuntimeMetric("render.frame", static_cast<double>(owner->sampleFrameIndex));
+                        owner->getContext()->setRuntimeMetric("render.backend", 1.0);
                         owner->getContext()->setRuntimeMetric("d3d11.firstIndexedIsUi", static_cast<double>(isUiDraw ? 1u : 0u));
                         owner->getContext()->setRuntimeMetric("d3d11.engineCull", static_cast<double>(engineCullMode));
                         owner->getContext()->setRuntimeMetric("d3d11.engineFrontCCW", static_cast<double>(engineFrontCCW ? 1u : 0u));
@@ -1969,6 +1974,8 @@ namespace Gek
                         owner->getContext()->setRuntimeMetric("d3d11.mappedCull", static_cast<double>(mappedCullMode));
                         owner->getContext()->setRuntimeMetric("d3d11.mappedDepthFunc", static_cast<double>(mappedDepthCompare));
                         owner->getContext()->setRuntimeMetric("d3d11.firstIndexedInstanceCount", static_cast<double>(instanceCount));
+                        owner->getContext()->setRuntimeMetric("render.mappedDepthFunc", static_cast<double>(mappedDepthCompare));
+                        owner->getContext()->setRuntimeMetric("render.firstIndexedInstanceCount", static_cast<double>(instanceCount));
                     }
 
                     d3dDeviceContext->DrawIndexedInstanced(indexCount, instanceCount, firstIndex, firstVertex, firstInstance);
@@ -3740,6 +3747,8 @@ namespace Gek
                 dxgiSwapChain->Present(waitForVerticalSync ? 1 : 0, 0);
                 ++sampleFrameIndex;
                 getContext()->setRuntimeMetric("d3d11.frame", static_cast<double>(sampleFrameIndex));
+                getContext()->setRuntimeMetric("render.frame", static_cast<double>(sampleFrameIndex));
+                getContext()->setRuntimeMetric("render.backend", 1.0);
                 loggedFirstIndexedStateThisFrame = false;
             }
         };

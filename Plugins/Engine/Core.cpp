@@ -12,6 +12,10 @@
 #include <atomic>
 #include <algorithm>
 #include <array>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <limits>
 #include <numeric>
 #include <unordered_map>
@@ -176,24 +180,29 @@ namespace Gek
             {
                 const char *key = nullptr;
                 const char *label = nullptr;
+                ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
                 std::array<float, 240> samples = {};
                 size_t sampleCount = 0;
             };
 
             std::array<RuntimeMetricPlot, 10> runtimeMetricPlots =
             {{
-                { "visualizer.queuedDrawCalls", "Queued Draw Calls" },
-                { "visualizer.shaderGroups", "Shader Groups" },
-                { "visualizer.preparedPasses", "Prepared Passes" },
-                { "model.visibleModels", "Visible Models" },
-                { "model.queuedBatches", "Model Batches" },
-                { "resources.drawSuppressed", "Suppressed Draws" },
-                { "vulkan.sceneDraws", "Vulkan Scene Draws" },
-                { "vulkan.totalCommands", "Vulkan Total Commands" },
-                { "d3d11.mappedDepthFunc", "D3D11 Depth Func" },
-                { "d3d11.firstIndexedInstanceCount", "D3D11 First Instance Count" },
+                { "visualizer.queuedDrawCalls", "Queued Draw Calls", ImVec4(0.95f, 0.30f, 0.30f, 1.0f) },
+                { "visualizer.shaderGroups", "Shader Groups", ImVec4(0.95f, 0.55f, 0.20f, 1.0f) },
+                { "visualizer.preparedPasses", "Prepared Passes", ImVec4(0.93f, 0.82f, 0.26f, 1.0f) },
+                { "model.visibleModels", "Visible Models", ImVec4(0.40f, 0.78f, 0.33f, 1.0f) },
+                { "model.queuedBatches", "Model Batches", ImVec4(0.22f, 0.80f, 0.63f, 1.0f) },
+                { "resources.drawSuppressed", "Suppressed Draws", ImVec4(0.25f, 0.70f, 0.95f, 1.0f) },
+                { "render.sceneDraws", "Render Scene Draws", ImVec4(0.35f, 0.50f, 0.95f, 1.0f) },
+                { "render.totalCommands", "Render Total Commands", ImVec4(0.55f, 0.42f, 0.92f, 1.0f) },
+                { "render.mappedDepthFunc", "Render Depth Func", ImVec4(0.85f, 0.35f, 0.78f, 1.0f) },
+                { "render.firstIndexedInstanceCount", "Render First Instance Count", ImVec4(0.80f, 0.80f, 0.80f, 1.0f) },
             }};
+            std::array<bool, 10> runtimeMetricVisible = {{ true, true, true, true, true, true, true, true, true, true }};
+            bool runtimeMetricViewAll = true;
             uint64_t runtimeMetricsLastFrame = 0;
+            std::array<char, 260> runtimeLogFilePath = {};
+            bool runtimeLogFileAppend = true;
 
             bool showModeChange = false;
             float modeChangeTimer = 0.0f;
@@ -242,9 +251,36 @@ namespace Gek
             Core(Context *context)
                 : ContextRegistration(context)
             {
+            if (auto environmentLogFile = std::getenv("gek_log_file"); environmentLogFile && environmentLogFile[0])
+            {
+                std::snprintf(runtimeLogFilePath.data(), runtimeLogFilePath.size(), "%s", environmentLogFile);
+            }
+            else
+            {
+                std::snprintf(runtimeLogFilePath.data(), runtimeLogFilePath.size(), "%s", "gek.log");
+            }
+
 				getContext()->log(Context::Info, "Starting GEK Engine");
 
                 configuration = JSON::Load(getContext()->findDataPath("config.json"s));
+
+                const uint32_t defaultSinkMask = static_cast<uint32_t>(getContext()->getLogSinkMask());
+                uint32_t configuredSinkMask = JSON::Value(getOption("logging", "sinkMask"), defaultSinkMask);
+                configuredSinkMask &= static_cast<uint32_t>(Context::LogSink_Console | Context::LogSink_Debugger | Context::LogSink_File);
+                getContext()->setLogSinkMask(static_cast<uint8_t>(configuredSinkMask));
+
+                runtimeLogFileAppend = JSON::Value(getOption("logging", "appendFile"), true);
+                std::string configuredLogFilePath = JSON::Value(getOption("logging", "filePath"), std::string(runtimeLogFilePath.data()));
+                if (!configuredLogFilePath.empty())
+                {
+                    std::snprintf(runtimeLogFilePath.data(), runtimeLogFilePath.size(), "%s", configuredLogFilePath.c_str());
+                }
+
+                if ((configuredSinkMask & Context::LogSink_File) != 0 && runtimeLogFilePath[0] != '\0')
+                {
+                    getContext()->setLogFilePath(FileSystem::Path(runtimeLogFilePath.data()), runtimeLogFileAppend);
+                }
+
 #ifdef _WIN32
                 HRESULT resultValue = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
                 if (FAILED(resultValue))
@@ -695,27 +731,30 @@ namespace Gek
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 auto runtimeMetrics = getContext()->getRuntimeMetricSnapshot();
                 auto runtimeFrameSearch = runtimeMetrics.find("visualizer.frame");
-                uint64_t runtimeFrame = (runtimeFrameSearch != std::end(runtimeMetrics) ? static_cast<uint64_t>(runtimeFrameSearch->second) : (runtimeMetricsLastFrame + 1));
-                if (runtimeFrame > runtimeMetricsLastFrame)
+                if (runtimeFrameSearch != std::end(runtimeMetrics))
                 {
-                    runtimeMetricsLastFrame = runtimeFrame;
-                    for (auto &plot : runtimeMetricPlots)
+                    uint64_t runtimeFrame = static_cast<uint64_t>(runtimeFrameSearch->second);
+                    if (runtimeFrame > runtimeMetricsLastFrame)
                     {
-                        float value = 0.0f;
-                        auto metricSearch = runtimeMetrics.find(plot.key);
-                        if (metricSearch != std::end(runtimeMetrics))
+                        runtimeMetricsLastFrame = runtimeFrame;
+                        for (auto &plot : runtimeMetricPlots)
                         {
-                            value = static_cast<float>(metricSearch->second);
-                        }
+                            float value = 0.0f;
+                            auto metricSearch = runtimeMetrics.find(plot.key);
+                            if (metricSearch != std::end(runtimeMetrics))
+                            {
+                                value = static_cast<float>(metricSearch->second);
+                            }
 
-                        if (plot.sampleCount < plot.samples.size())
-                        {
-                            plot.samples[plot.sampleCount++] = value;
-                        }
-                        else
-                        {
-                            std::move(std::begin(plot.samples) + 1, std::end(plot.samples), std::begin(plot.samples));
-                            plot.samples.back() = value;
+                            if (plot.sampleCount < plot.samples.size())
+                            {
+                                plot.samples[plot.sampleCount++] = value;
+                            }
+                            else
+                            {
+                                std::move(std::begin(plot.samples) + 1, std::end(plot.samples), std::begin(plot.samples));
+                                plot.samples.back() = value;
+                            }
                         }
                     }
                 }
@@ -809,24 +848,347 @@ namespace Gek
                 ImGui::SetNextWindowSize(ImVec2(680.0f, 520.0f), ImGuiCond_Once);
                 if (ImGui::Begin("Runtime Diagnostics", &showRuntimeDiagnostics))
                 {
-                    for (auto const &plot : runtimeMetricPlots)
+                    auto applyMetricFilter = [&](std::function<bool(std::string_view)> const &predicate) -> void
                     {
+                        for (size_t plotIndex = 0; plotIndex < runtimeMetricPlots.size(); ++plotIndex)
+                        {
+                            auto key = runtimeMetricPlots[plotIndex].key;
+                            runtimeMetricVisible[plotIndex] = (key ? predicate(key) : false);
+                        }
+
+                        runtimeMetricViewAll = std::all_of(std::begin(runtimeMetricVisible), std::end(runtimeMetricVisible), [](bool value) -> bool { return value; });
+                    };
+
+                    bool viewAllChanged = ImGui::Checkbox("View all metrics", &runtimeMetricViewAll);
+                    if (viewAllChanged && runtimeMetricViewAll)
+                    {
+                        for (size_t plotIndex = 0; plotIndex < runtimeMetricVisible.size(); ++plotIndex)
+                        {
+                            runtimeMetricVisible[plotIndex] = true;
+                        }
+                    }
+
+                    if (ImGui::Button("All"))
+                    {
+                        applyMetricFilter([](std::string_view) -> bool { return true; });
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("None"))
+                    {
+                        applyMetricFilter([](std::string_view) -> bool { return false; });
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("Visualizer"))
+                    {
+                        applyMetricFilter([](std::string_view key) -> bool { return key.starts_with("visualizer."); });
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("Model"))
+                    {
+                        applyMetricFilter([](std::string_view key) -> bool { return key.starts_with("model."); });
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("Resources"))
+                    {
+                        applyMetricFilter([](std::string_view key) -> bool { return key.starts_with("resources."); });
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("Render"))
+                    {
+                        applyMetricFilter([](std::string_view key) -> bool { return key.starts_with("render."); });
+                    }
+
+                    for (size_t plotIndex = 0; plotIndex < runtimeMetricPlots.size(); ++plotIndex)
+                    {
+                        auto const &plot = runtimeMetricPlots[plotIndex];
+                        ImGui::PushID(static_cast<int>(plotIndex));
+                        ImGui::ColorButton("##legendColor", plot.color, ImGuiColorEditFlags_NoTooltip, ImVec2(12.0f, 12.0f));
+                        ImGui::SameLine();
+                        if (ImGui::Checkbox(plot.label, &runtimeMetricVisible[plotIndex]))
+                        {
+                            runtimeMetricViewAll = std::all_of(std::begin(runtimeMetricVisible), std::end(runtimeMetricVisible), [](bool value) -> bool { return value; });
+                        }
+
+                        ImGui::PopID();
+                    }
+
+                    ImGui::BeginChild("##RuntimeChartRegion", ImVec2(0.0f, 240.0f), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+                    ImVec2 canvasSize = ImGui::GetContentRegionAvail();
+                    ImDrawList *drawList = ImGui::GetWindowDrawList();
+                    if (canvasSize.x < 8.0f || canvasSize.y < 8.0f)
+                    {
+                        ImGui::TextDisabled("Chart region too small to render.");
+                        ImGui::EndChild();
+                        ImGui::Separator();
+                        ImGui::TextUnformatted("Log Sinks");
+                        showLoggingSinkControls("runtime_diagnostics");
+                        ImGui::End();
+                        return;
+                    }
+
+                    bool useVulkanCompatibilityChart = true;
+                    auto renderBackendSearch = runtimeMetrics.find("render.backend");
+                    if (renderBackendSearch != std::end(runtimeMetrics))
+                    {
+                        useVulkanCompatibilityChart = (renderBackendSearch->second < 0.5);
+                    }
+
+                    ImVec2 canvasPosition = ImGui::GetCursorScreenPos();
+
+                    bool hasVisibleSeries = false;
+                    size_t maxSampleCount = 0;
+                    for (size_t plotIndex = 0; plotIndex < runtimeMetricPlots.size(); ++plotIndex)
+                    {
+                        if (runtimeMetricVisible[plotIndex])
+                        {
+                            hasVisibleSeries = true;
+                            maxSampleCount = std::max(maxSampleCount, runtimeMetricPlots[plotIndex].sampleCount);
+                        }
+                    }
+
+                    bool drewAnySeries = false;
+
+                    if (useVulkanCompatibilityChart)
+                    {
+                        ImGui::TextDisabled("Vulkan compatibility chart mode");
+                        const ImVec2 clipMin = ImGui::GetCursorScreenPos();
+                        const ImVec2 clipMax = ImVec2(clipMin.x + canvasSize.x, clipMin.y + canvasSize.y);
+                        drawList->PushClipRect(clipMin, clipMax, true);
+                        constexpr size_t VulkanPlotSeriesLimit = 6;
+                        constexpr size_t VulkanPlotSampleLimit = 64;
+                        size_t plottedSeriesCount = 0;
+                        for (size_t plotIndex = 0; plotIndex < runtimeMetricPlots.size(); ++plotIndex)
+                        {
+                            if (!runtimeMetricVisible[plotIndex])
+                            {
+                                continue;
+                            }
+
+                            auto const &plot = runtimeMetricPlots[plotIndex];
+                            if (plot.sampleCount == 0)
+                            {
+                                continue;
+                            }
+
+                            if (plottedSeriesCount >= VulkanPlotSeriesLimit)
+                            {
+                                break;
+                            }
+
+                            const size_t displayedSampleCount = std::min(plot.sampleCount, VulkanPlotSampleLimit);
+                            const size_t sampleStride = std::max<size_t>(1, plot.sampleCount / displayedSampleCount);
+
+                            std::array<float, VulkanPlotSampleLimit> sanitizedSamples = {};
+                            size_t outputSampleIndex = 0;
+                            for (size_t sampleIndex = 0; sampleIndex < plot.sampleCount && outputSampleIndex < displayedSampleCount; sampleIndex += sampleStride)
+                            {
+                                float value = plot.samples[sampleIndex];
+                                if (!std::isfinite(value))
+                                {
+                                    value = (outputSampleIndex > 0 ? sanitizedSamples[outputSampleIndex - 1] : 0.0f);
+                                }
+
+                                sanitizedSamples[outputSampleIndex++] = std::clamp(value, -1000000.0f, 1000000.0f);
+                            }
+
+                            if (outputSampleIndex == 0)
+                            {
+                                continue;
+                            }
+
+                            ImGui::PushID(static_cast<int>(plotIndex));
+                            ImGui::PushStyleColor(ImGuiCol_PlotLines, plot.color);
+                            ImGui::PlotLines("##RuntimePlotLine", sanitizedSamples.data(), static_cast<int>(outputSampleIndex), 0, nullptr, FLT_MAX, FLT_MAX, ImVec2(-1.0f, 28.0f));
+                            ImGui::PopStyleColor();
+                            ImGui::PopID();
+                            drewAnySeries = true;
+                            ++plottedSeriesCount;
+                        }
+
+                        drawList->PopClipRect();
+
+                        if (plottedSeriesCount == VulkanPlotSeriesLimit)
+                        {
+                            ImGui::TextDisabled("Showing first 6 selected metrics for stability.");
+                        }
+                    }
+                    else
+                    {
+                        ImGui::InvisibleButton("##RuntimeLineChartCanvas", canvasSize);
+                        const ImVec2 chartMin = canvasPosition;
+                        const ImVec2 chartMax = ImVec2(canvasPosition.x + canvasSize.x, canvasPosition.y + canvasSize.y);
+                        drawList->AddRectFilled(chartMin, chartMax, IM_COL32(24, 24, 24, 255), 4.0f);
+                        drawList->AddRect(chartMin, chartMax, IM_COL32(90, 90, 90, 255), 4.0f);
+                        drawList->PushClipRect(chartMin, chartMax, true);
+
+                        bool hasAnyFiniteSample = false;
+                        float valueMin = 0.0f;
+                        float valueMax = 1.0f;
+                        if (hasVisibleSeries)
+                        {
+                            for (size_t plotIndex = 0; plotIndex < runtimeMetricPlots.size(); ++plotIndex)
+                            {
+                                if (!runtimeMetricVisible[plotIndex])
+                                {
+                                    continue;
+                                }
+
+                                auto const &plot = runtimeMetricPlots[plotIndex];
+                                if (plot.sampleCount == 0)
+                                {
+                                    continue;
+                                }
+
+                                for (size_t sampleIndex = 0; sampleIndex < plot.sampleCount; ++sampleIndex)
+                                {
+                                    float value = plot.samples[sampleIndex];
+                                    if (!std::isfinite(value))
+                                    {
+                                        continue;
+                                    }
+
+                                    value = std::clamp(value, -1000000.0f, 1000000.0f);
+                                    if (!hasAnyFiniteSample)
+                                    {
+                                        valueMin = value;
+                                        valueMax = value;
+                                    }
+                                    else
+                                    {
+                                        valueMin = std::min(valueMin, value);
+                                        valueMax = std::max(valueMax, value);
+                                    }
+
+                                    hasAnyFiniteSample = true;
+                                }
+                            }
+
+                            if (hasAnyFiniteSample && maxSampleCount > 1)
+                            {
+                                const float valueRange = std::max(valueMax - valueMin, 0.001f);
+                                for (size_t plotIndex = 0; plotIndex < runtimeMetricPlots.size(); ++plotIndex)
+                                {
+                                    if (!runtimeMetricVisible[plotIndex])
+                                    {
+                                        continue;
+                                    }
+
+                                    auto const &plot = runtimeMetricPlots[plotIndex];
+                                    if (plot.sampleCount < 2)
+                                    {
+                                        continue;
+                                    }
+
+                                    const size_t startOffset = (maxSampleCount - plot.sampleCount);
+                                    for (size_t sampleIndex = 1; sampleIndex < plot.sampleCount; ++sampleIndex)
+                                    {
+                                        float previousValue = plot.samples[sampleIndex - 1];
+                                        float currentValue = plot.samples[sampleIndex];
+                                        if (!std::isfinite(previousValue) || !std::isfinite(currentValue))
+                                        {
+                                            continue;
+                                        }
+
+                                        previousValue = std::clamp(previousValue, -1000000.0f, 1000000.0f);
+                                        currentValue = std::clamp(currentValue, -1000000.0f, 1000000.0f);
+
+                                        const size_t globalPrevious = startOffset + sampleIndex - 1;
+                                        const size_t globalCurrent = startOffset + sampleIndex;
+                                        const float previousX = chartMin.x + (static_cast<float>(globalPrevious) / static_cast<float>(maxSampleCount - 1)) * canvasSize.x;
+                                        const float currentX = chartMin.x + (static_cast<float>(globalCurrent) / static_cast<float>(maxSampleCount - 1)) * canvasSize.x;
+
+                                        const float previousNormalized = (previousValue - valueMin) / valueRange;
+                                        const float currentNormalized = (currentValue - valueMin) / valueRange;
+                                        const float previousY = chartMax.y - (previousNormalized * canvasSize.y);
+                                        const float currentY = chartMax.y - (currentNormalized * canvasSize.y);
+
+                                        drawList->AddLine(
+                                            ImVec2(std::clamp(previousX, chartMin.x, chartMax.x), std::clamp(previousY, chartMin.y, chartMax.y)),
+                                            ImVec2(std::clamp(currentX, chartMin.x, chartMax.x), std::clamp(currentY, chartMin.y, chartMax.y)),
+                                            ImGui::ColorConvertFloat4ToU32(plot.color),
+                                            1.5f);
+                                        drewAnySeries = true;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!drewAnySeries)
+                        {
+                            const char *emptyMessage = hasVisibleSeries ? "Waiting for runtime metrics..." : "No metrics selected.";
+                            ImVec2 textSize = ImGui::CalcTextSize(emptyMessage);
+                            ImVec2 textPosition(
+                                chartMin.x + (canvasSize.x - textSize.x) * 0.5f,
+                                chartMin.y + (canvasSize.y - textSize.y) * 0.5f);
+                            drawList->AddText(textPosition, IM_COL32(180, 180, 180, 255), emptyMessage);
+                        }
+
+                        drawList->PopClipRect();
+                    }
+
+                    if (useVulkanCompatibilityChart && !drewAnySeries)
+                    {
+                        ImGui::TextDisabled(hasVisibleSeries ? "Waiting for runtime metrics..." : "No metrics selected.");
+                    }
+                    ImGui::EndChild();
+
+                    for (size_t plotIndex = 0; plotIndex < runtimeMetricPlots.size(); ++plotIndex)
+                    {
+                        if (!runtimeMetricVisible[plotIndex])
+                        {
+                            continue;
+                        }
+
+                        auto const &plot = runtimeMetricPlots[plotIndex];
                         if (plot.sampleCount == 0)
                         {
                             continue;
                         }
 
-                        auto samplesBegin = std::begin(plot.samples);
-                        auto samplesEnd = samplesBegin + plot.sampleCount;
-                        auto [minSearch, maxSearch] = std::minmax_element(samplesBegin, samplesEnd);
-                        float maxValue = std::max(*maxSearch, 1.0f);
-                        float average = (std::accumulate(samplesBegin, samplesEnd, 0.0f) / static_cast<float>(plot.sampleCount));
-                        float current = *(samplesEnd - 1);
+                        float minimum = 0.0f;
+                        float maximum = 0.0f;
+                        float total = 0.0f;
+                        float current = 0.0f;
+                        size_t validCount = 0;
+                        for (size_t sampleIndex = 0; sampleIndex < plot.sampleCount; ++sampleIndex)
+                        {
+                            float value = plot.samples[sampleIndex];
+                            if (!std::isfinite(value))
+                            {
+                                continue;
+                            }
 
-                        ImGui::PushID(plot.key);
-                        ImGui::Text("%s | current=%.1f min=%.1f max=%.1f avg=%.1f", plot.label, current, *minSearch, *maxSearch, average);
-                        ImGui::PlotHistogram("##history", plot.samples.data(), static_cast<int>(plot.sampleCount), 0, nullptr, 0.0f, maxValue * 1.1f, ImVec2(-1.0f, 72.0f));
-                        ImGui::PopID();
+                            value = std::clamp(value, -1000000.0f, 1000000.0f);
+                            if (validCount == 0)
+                            {
+                                minimum = value;
+                                maximum = value;
+                            }
+                            else
+                            {
+                                minimum = std::min(minimum, value);
+                                maximum = std::max(maximum, value);
+                            }
+
+                            total += value;
+                            current = value;
+                            ++validCount;
+                        }
+
+                        if (validCount > 0)
+                        {
+                            float average = (total / static_cast<float>(validCount));
+                            ImGui::Text("%s | current=%.1f min=%.1f max=%.1f avg=%.1f", plot.label, current, minimum, maximum, average);
+                        }
+                        else
+                        {
+                            ImGui::Text("%s | no valid samples", plot.label);
+                        }
                     }
 
                     auto fallbackEntitySearch = runtimeMetrics.find("model.entityCullingFallback");
@@ -837,9 +1199,106 @@ namespace Gek
                         ImGui::Separator();
                         ImGui::TextUnformatted("Model culling fallback triggered this frame.");
                     }
+
+                    ImGui::Separator();
+                    ImGui::TextUnformatted("Log Sinks");
+                    showLoggingSinkControls("runtime_diagnostics");
                 }
 
                 ImGui::End();
+            }
+
+            void showLoggingSinkControls(const char *scope)
+            {
+                ImGui::PushID(scope);
+
+                const uint8_t sinkMask = getContext()->getLogSinkMask();
+                bool sinkConsole = ((sinkMask & Context::LogSink_Console) != 0);
+                bool sinkDebugger = ((sinkMask & Context::LogSink_Debugger) != 0);
+                bool sinkFile = ((sinkMask & Context::LogSink_File) != 0);
+
+                bool sinkSettingsChanged = false;
+                sinkSettingsChanged |= ImGui::Checkbox("Console", &sinkConsole);
+                ImGui::SameLine();
+                sinkSettingsChanged |= ImGui::Checkbox("Debugger", &sinkDebugger);
+                ImGui::SameLine();
+                sinkSettingsChanged |= ImGui::Checkbox("File", &sinkFile);
+
+                if (sinkSettingsChanged)
+                {
+                    uint8_t updatedSinkMask = Context::LogSink_None;
+                    if (sinkConsole)
+                    {
+                        updatedSinkMask |= Context::LogSink_Console;
+                    }
+
+                    if (sinkDebugger)
+                    {
+                        updatedSinkMask |= Context::LogSink_Debugger;
+                    }
+
+                    if (sinkFile)
+                    {
+                        updatedSinkMask |= Context::LogSink_File;
+                    }
+
+                    getContext()->setLogSinkMask(updatedSinkMask);
+                    setOption("logging"s, "sinkMask"s, static_cast<uint32_t>(updatedSinkMask));
+                    if (sinkFile && runtimeLogFilePath[0] != '\0')
+                    {
+                        getContext()->setLogFilePath(FileSystem::Path(runtimeLogFilePath.data()), runtimeLogFileAppend);
+                        setOption("logging"s, "filePath"s, std::string(runtimeLogFilePath.data()));
+                    }
+                }
+
+                if (ImGui::Checkbox("Append File", &runtimeLogFileAppend))
+                {
+                    setOption("logging"s, "appendFile"s, runtimeLogFileAppend);
+                    if (sinkFile && runtimeLogFilePath[0] != '\0')
+                    {
+                        getContext()->setLogFilePath(FileSystem::Path(runtimeLogFilePath.data()), runtimeLogFileAppend);
+                    }
+                }
+
+                bool applyPath = ImGui::InputText("Log File Path", runtimeLogFilePath.data(), runtimeLogFilePath.size(), ImGuiInputTextFlags_EnterReturnsTrue);
+                ImGui::SameLine();
+                applyPath |= ImGui::Button("Apply");
+                if (applyPath && runtimeLogFilePath[0] != '\0')
+                {
+                    getContext()->setLogFilePath(FileSystem::Path(runtimeLogFilePath.data()), runtimeLogFileAppend);
+                    setOption("logging"s, "filePath"s, std::string(runtimeLogFilePath.data()));
+                }
+
+                const uint8_t activeSinkMask = getContext()->getLogSinkMask();
+                std::string sinkSummary = "Active sinks: ";
+                bool hasSink = false;
+                if ((activeSinkMask & Context::LogSink_Console) != 0)
+                {
+                    sinkSummary += "Console";
+                    hasSink = true;
+                }
+
+                if ((activeSinkMask & Context::LogSink_Debugger) != 0)
+                {
+                    sinkSummary += (hasSink ? " + Debugger" : "Debugger");
+                    hasSink = true;
+                }
+
+                if ((activeSinkMask & Context::LogSink_File) != 0)
+                {
+                    sinkSummary += (hasSink ? " + File" : "File");
+                    sinkSummary += (runtimeLogFileAppend ? " (append)" : " (overwrite)");
+                    hasSink = true;
+                }
+
+                if (!hasSink)
+                {
+                    sinkSummary += "None";
+                }
+
+                ImGui::TextUnformatted(sinkSummary.c_str());
+
+                ImGui::PopID();
             }
 
             void showDisplay(void)
@@ -1103,6 +1562,12 @@ namespace Gek
                     if (ImGui::TreeNodeEx("Filters", ImGuiTreeNodeFlags_Framed))
                     {
                         showSetting(filtersSettings);
+                        ImGui::TreePop();
+                    }
+
+                    if (ImGui::TreeNodeEx("Logging", ImGuiTreeNodeFlags_Framed))
+                    {
+                        showLoggingSinkControls("settings_dialog");
                         ImGui::TreePop();
                     }
 

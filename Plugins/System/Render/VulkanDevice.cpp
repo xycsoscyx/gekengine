@@ -8732,12 +8732,7 @@ namespace Gek
                         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
                         VkRect2D scissor = drawCommand.scissor;
-                        if (isUiDraw)
-                        {
-                            scissor.offset = { 0, 0 };
-                            scissor.extent = activeExtent;
-                        }
-                        else if (scissor.extent.width == 0 || scissor.extent.height == 0)
+                        if (scissor.extent.width == 0 || scissor.extent.height == 0)
                         {
                             scissor.offset = { 0, 0 };
                             scissor.extent = activeExtent;
@@ -9220,6 +9215,12 @@ namespace Gek
                 getContext()->setRuntimeMetric("vulkan.uiCommands", static_cast<double>(uiCommandCount));
                 getContext()->setRuntimeMetric("vulkan.sceneCommands", static_cast<double>(sceneCommandCount));
                 getContext()->setRuntimeMetric("vulkan.sceneDraws", static_cast<double>(sceneDrawCallsIssued));
+                getContext()->setRuntimeMetric("render.frame", static_cast<double>(presentFrameIndex));
+                getContext()->setRuntimeMetric("render.backend", 0.0);
+                getContext()->setRuntimeMetric("render.totalCommands", static_cast<double>(totalCommandCount));
+                getContext()->setRuntimeMetric("render.sceneDraws", static_cast<double>(sceneDrawCallsIssued));
+                getContext()->setRuntimeMetric("render.mappedDepthFunc", 0.0);
+                getContext()->setRuntimeMetric("render.firstIndexedInstanceCount", 0.0);
                 getContext()->setRuntimeMetric("vulkan.sceneBackBufferDraws", static_cast<double>(sceneBackBufferDrawCalls));
                 getContext()->setRuntimeMetric("vulkan.sceneOffscreenDraws", static_cast<double>(sceneOffscreenDrawCalls));
                 getContext()->setRuntimeMetric("vulkan.sceneBackBufferMissingImageDraws", static_cast<double>(sceneBackBufferMissingImageDrawCalls));

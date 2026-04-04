@@ -35,6 +35,14 @@ namespace Gek
             Info,
         };
 
+        enum LogSink : uint8_t
+        {
+            LogSink_None = 0,
+            LogSink_Console = 1 << 0,
+            LogSink_Debugger = 1 << 1,
+            LogSink_File = 1 << 2,
+        };
+
         struct LocationMessage
         {
             std::string_view format;
@@ -64,6 +72,10 @@ namespace Gek
         }
 
         virtual void vlog(LogLevel level, const LocationMessage& message, std::format_args args) const = 0;
+
+        virtual void setLogSinkMask(uint8_t sinkMask) = 0;
+        virtual uint8_t getLogSinkMask(void) const = 0;
+        virtual void setLogFilePath(FileSystem::Path const &path, bool append = true) = 0;
 
         virtual void setRuntimeMetric(std::string_view name, double value) = 0;
         virtual bool getRuntimeMetric(std::string_view name, double &value) const = 0;

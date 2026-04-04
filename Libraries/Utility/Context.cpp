@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <set>
 #include <mutex>
+#include <fstream>
+#include <cstdlib>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -57,6 +59,71 @@ static const char *moduleExtension = ".so";
 
 namespace Gek
 {
+    static uint8_t parseLogSinkMaskFromEnvironment(const char *value)
+    {
+        if (!value)
+        {
+            return static_cast<uint8_t>(Context::LogSink_Console | Context::LogSink_Debugger);
+        }
+
+        uint8_t mask = 0;
+        std::string normalized = String::GetLower(value);
+        std::string token;
+        for (char c : normalized)
+        {
+            if (c == ',' || c == ';' || c == '|' || c == ' ' || c == '\t')
+            {
+                if (!token.empty())
+                {
+                    if (token == "none")
+                    {
+                        mask = 0;
+                    }
+                    else if (token == "console")
+                    {
+                        mask |= Context::LogSink_Console;
+                    }
+                    else if (token == "debugger")
+                    {
+                        mask |= Context::LogSink_Debugger;
+                    }
+                    else if (token == "file")
+                    {
+                        mask |= Context::LogSink_File;
+                    }
+
+                    token.clear();
+                }
+
+                continue;
+            }
+
+            token.push_back(c);
+        }
+
+        if (!token.empty())
+        {
+            if (token == "none")
+            {
+                mask = 0;
+            }
+            else if (token == "console")
+            {
+                mask |= Context::LogSink_Console;
+            }
+            else if (token == "debugger")
+            {
+                mask |= Context::LogSink_Debugger;
+            }
+            else if (token == "file")
+            {
+                mask |= Context::LogSink_File;
+            }
+        }
+
+        return mask;
+    }
+
     class ContextImplementation
         : public Context
     {
@@ -68,17 +135,36 @@ namespace Gek
         mutable std::mutex logMutex;
         mutable std::mutex runtimeMetricsMutex;
         std::unordered_map<std::string, double> runtimeMetricMap;
+        uint8_t logSinkMask = static_cast<uint8_t>(LogSink_Console | LogSink_Debugger);
+        FileSystem::Path logFilePath;
+        mutable std::ofstream logFileStream;
 		FileSystem::Path cachePath;
+
+        void configureLogSinkFromEnvironment(void)
+        {
+            logSinkMask = parseLogSinkMaskFromEnvironment(std::getenv("gek_log_sinks"));
+            auto environmentLogFilePath = std::getenv("gek_log_file");
+            if (environmentLogFilePath && std::strlen(environmentLogFilePath) > 0)
+            {
+                setLogFilePath(FileSystem::Path(environmentLogFilePath), true);
+            }
+            else if (logSinkMask & LogSink_File)
+            {
+                setLogFilePath(FileSystem::Path("gek.log"), true);
+            }
+        }
 
 	public:
         ContextImplementation(void)
         {
             SetThreadPoolLogContext(this);
+            configureLogSinkFromEnvironment();
         }
 
         ContextImplementation(std::vector<FileSystem::Path> const &pluginSearchList)
         {
             SetThreadPoolLogContext(this);
+            configureLogSinkFromEnvironment();
 			for (auto const &searchPath : pluginSearchList)
             {
                 log(Info, "Looking Plugins: {}", searchPath.getString());
@@ -153,40 +239,105 @@ namespace Gek
             const auto& location = message.location;
             auto fileName = FileSystem::Path(location.file_name()).getFileName();
             auto formattedMessage = std::format("{}:{}: {}", fileName, location.line(), std::vformat(message.format, args));
+
+            if (logSinkMask & LogSink_File)
+            {
+                if (logFileStream.is_open())
+                {
+                    logFileStream << formattedMessage << std::endl;
+                }
+            }
+
+            const bool outputDebugger = ((logSinkMask & LogSink_Debugger) != 0);
+            const bool outputConsole = ((logSinkMask & LogSink_Console) != 0);
+            if (!outputDebugger && !outputConsole)
+            {
+                return;
+            }
+
             switch (level)
             {
             case LogLevel::Error:
 #ifdef _WIN32
-                OutputDebugStringA(formattedMessage.data());
-                OutputDebugStringA("\r\n");
+                if (outputDebugger)
+                {
+                    OutputDebugStringA(formattedMessage.data());
+                    OutputDebugStringA("\r\n");
+                }
 #endif
-                std::cerr << formattedMessage << std::endl;
+                if (outputConsole)
+                {
+                    std::cerr << formattedMessage << std::endl;
+                }
                 break;
 
             case LogLevel::Warning:
 #ifdef _WIN32
-                OutputDebugStringA(formattedMessage.data());
-                OutputDebugStringA("\r\n");
+                if (outputDebugger)
+                {
+                    OutputDebugStringA(formattedMessage.data());
+                    OutputDebugStringA("\r\n");
+                }
 #endif
-                std::cerr << formattedMessage << std::endl;
+                if (outputConsole)
+                {
+                    std::cerr << formattedMessage << std::endl;
+                }
                 break;
 
             case LogLevel::Debug:
 #ifdef _WIN32
-                OutputDebugStringA(formattedMessage.data());
-                OutputDebugStringA("\r\n");
+                if (outputDebugger)
+                {
+                    OutputDebugStringA(formattedMessage.data());
+                    OutputDebugStringA("\r\n");
+                }
 #endif
-                std::cout << formattedMessage << std::endl;
+                if (outputConsole)
+                {
+                    std::cout << formattedMessage << std::endl;
+                }
                 break;
 
             case LogLevel::Info:
 #ifdef _WIN32
-                OutputDebugStringA(formattedMessage.data());
-                OutputDebugStringA("\r\n");
+                if (outputDebugger)
+                {
+                    OutputDebugStringA(formattedMessage.data());
+                    OutputDebugStringA("\r\n");
+                }
 #endif
-                std::cout << formattedMessage << std::endl;
+                if (outputConsole)
+                {
+                    std::cout << formattedMessage << std::endl;
+                }
                 break;
             };
+        }
+
+        void setLogSinkMask(uint8_t sinkMask)
+        {
+            std::lock_guard<std::mutex> lock(logMutex);
+            logSinkMask = sinkMask;
+        }
+
+        uint8_t getLogSinkMask(void) const
+        {
+            std::lock_guard<std::mutex> lock(logMutex);
+            return logSinkMask;
+        }
+
+        void setLogFilePath(FileSystem::Path const &path, bool append)
+        {
+            std::lock_guard<std::mutex> lock(logMutex);
+            logFilePath = path;
+            logFileStream.close();
+            if (!path.getString().empty())
+            {
+                std::ios::openmode mode = std::ios::out;
+                mode |= (append ? std::ios::app : std::ios::trunc);
+                logFileStream.open(path.getString(), mode);
+            }
         }
 
         void setRuntimeMetric(std::string_view name, double value)
