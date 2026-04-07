@@ -5,6 +5,7 @@
 #include "GEK/System/WindowDevice.hpp"
 #include <algorithm>
 #include <bit>
+#include <chrono>
 #include <execution>
 #include <exception>
 #include <cstdint>
@@ -1827,6 +1828,20 @@ namespace Gek
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
+                        const bool shouldSnapshotConstants =
+                            ((command.pixelProgram &&
+                                (
+                                    command.pixelProgram->getInformation().name.find("core::uiPixelProgram") != std::string::npos ||
+                                    command.pixelProgram->getInformation().name.find("core:uiPixelProgram") != std::string::npos ||
+                                    command.pixelProgram->getInformation().name.find("uiPixelProgram") != std::string::npos
+                                )) ||
+                            (command.vertexProgram &&
+                                (
+                                    command.vertexProgram->getInformation().name.find("core::uiVertexProgram") != std::string::npos ||
+                                    command.vertexProgram->getInformation().name.find("core:uiVertexProgram") != std::string::npos ||
+                                    command.vertexProgram->getInformation().name.find("uiVertexProgram") != std::string::npos
+                                )));
+
                         std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
                         auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
                         {
@@ -1841,7 +1856,7 @@ namespace Gek
                                 return snapshotSearch->second;
                             }
 
-                            Buffer *snapshotBuffer = owner->createConstantBufferSnapshot(buffer);
+                            Buffer *snapshotBuffer = shouldSnapshotConstants ? owner->createConstantBufferSnapshot(buffer) : buffer;
                             constantBufferSnapshotMap[buffer] = snapshotBuffer;
                             return snapshotBuffer;
                         };
@@ -1852,6 +1867,16 @@ namespace Gek
                         {
                             command.vertexConstantBuffers[slot] = snapshotConstantBuffer(command.vertexConstantBuffers[slot]);
                             command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
+                        }
+
+                        if (shouldSnapshotConstants)
+                        {
+                            command.vertexBuffer = snapshotConstantBuffer(command.vertexBuffer);
+                            command.indexBuffer = snapshotConstantBuffer(command.indexBuffer);
+                            for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
+                            {
+                                command.vertexBuffers[slot] = snapshotConstantBuffer(command.vertexBuffers[slot]);
+                            }
                         }
 
                         for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
@@ -1961,6 +1986,20 @@ namespace Gek
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
+                        const bool shouldSnapshotConstants =
+                            ((command.pixelProgram &&
+                                (
+                                    command.pixelProgram->getInformation().name.find("core::uiPixelProgram") != std::string::npos ||
+                                    command.pixelProgram->getInformation().name.find("core:uiPixelProgram") != std::string::npos ||
+                                    command.pixelProgram->getInformation().name.find("uiPixelProgram") != std::string::npos
+                                )) ||
+                            (command.vertexProgram &&
+                                (
+                                    command.vertexProgram->getInformation().name.find("core::uiVertexProgram") != std::string::npos ||
+                                    command.vertexProgram->getInformation().name.find("core:uiVertexProgram") != std::string::npos ||
+                                    command.vertexProgram->getInformation().name.find("uiVertexProgram") != std::string::npos
+                                )));
+
                         std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
                         auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
                         {
@@ -1975,7 +2014,7 @@ namespace Gek
                                 return snapshotSearch->second;
                             }
 
-                            Buffer *snapshotBuffer = owner->createConstantBufferSnapshot(buffer);
+                            Buffer *snapshotBuffer = shouldSnapshotConstants ? owner->createConstantBufferSnapshot(buffer) : buffer;
                             constantBufferSnapshotMap[buffer] = snapshotBuffer;
                             return snapshotBuffer;
                         };
@@ -1986,6 +2025,16 @@ namespace Gek
                         {
                             command.vertexConstantBuffers[slot] = snapshotConstantBuffer(command.vertexConstantBuffers[slot]);
                             command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
+                        }
+
+                        if (shouldSnapshotConstants)
+                        {
+                            command.vertexBuffer = snapshotConstantBuffer(command.vertexBuffer);
+                            command.indexBuffer = snapshotConstantBuffer(command.indexBuffer);
+                            for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
+                            {
+                                command.vertexBuffers[slot] = snapshotConstantBuffer(command.vertexBuffers[slot]);
+                            }
                         }
 
                         for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
@@ -2119,6 +2168,20 @@ namespace Gek
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
+                        const bool shouldSnapshotConstants =
+                            ((command.pixelProgram &&
+                                (
+                                    command.pixelProgram->getInformation().name.find("core::uiPixelProgram") != std::string::npos ||
+                                    command.pixelProgram->getInformation().name.find("core:uiPixelProgram") != std::string::npos ||
+                                    command.pixelProgram->getInformation().name.find("uiPixelProgram") != std::string::npos
+                                )) ||
+                            (command.vertexProgram &&
+                                (
+                                    command.vertexProgram->getInformation().name.find("core::uiVertexProgram") != std::string::npos ||
+                                    command.vertexProgram->getInformation().name.find("core:uiVertexProgram") != std::string::npos ||
+                                    command.vertexProgram->getInformation().name.find("uiVertexProgram") != std::string::npos
+                                )));
+
                         std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
                         auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
                         {
@@ -2133,7 +2196,7 @@ namespace Gek
                                 return snapshotSearch->second;
                             }
 
-                            Buffer *snapshotBuffer = owner->createConstantBufferSnapshot(buffer);
+                            Buffer *snapshotBuffer = shouldSnapshotConstants ? owner->createConstantBufferSnapshot(buffer) : buffer;
                             constantBufferSnapshotMap[buffer] = snapshotBuffer;
                             return snapshotBuffer;
                         };
@@ -2144,6 +2207,16 @@ namespace Gek
                         {
                             command.vertexConstantBuffers[slot] = snapshotConstantBuffer(command.vertexConstantBuffers[slot]);
                             command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
+                        }
+
+                        if (shouldSnapshotConstants)
+                        {
+                            command.vertexBuffer = snapshotConstantBuffer(command.vertexBuffer);
+                            command.indexBuffer = snapshotConstantBuffer(command.indexBuffer);
+                            for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
+                            {
+                                command.vertexBuffers[slot] = snapshotConstantBuffer(command.vertexBuffers[slot]);
+                            }
                         }
 
                         for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
@@ -2277,6 +2350,20 @@ namespace Gek
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
+                        const bool shouldSnapshotConstants =
+                            ((command.pixelProgram &&
+                                (
+                                    command.pixelProgram->getInformation().name.find("core::uiPixelProgram") != std::string::npos ||
+                                    command.pixelProgram->getInformation().name.find("core:uiPixelProgram") != std::string::npos ||
+                                    command.pixelProgram->getInformation().name.find("uiPixelProgram") != std::string::npos
+                                )) ||
+                            (command.vertexProgram &&
+                                (
+                                    command.vertexProgram->getInformation().name.find("core::uiVertexProgram") != std::string::npos ||
+                                    command.vertexProgram->getInformation().name.find("core:uiVertexProgram") != std::string::npos ||
+                                    command.vertexProgram->getInformation().name.find("uiVertexProgram") != std::string::npos
+                                )));
+
                         std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
                         auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
                         {
@@ -2291,7 +2378,7 @@ namespace Gek
                                 return snapshotSearch->second;
                             }
 
-                            Buffer *snapshotBuffer = owner->createConstantBufferSnapshot(buffer);
+                            Buffer *snapshotBuffer = shouldSnapshotConstants ? owner->createConstantBufferSnapshot(buffer) : buffer;
                             constantBufferSnapshotMap[buffer] = snapshotBuffer;
                             return snapshotBuffer;
                         };
@@ -2302,6 +2389,16 @@ namespace Gek
                         {
                             command.vertexConstantBuffers[slot] = snapshotConstantBuffer(command.vertexConstantBuffers[slot]);
                             command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
+                        }
+
+                        if (shouldSnapshotConstants)
+                        {
+                            command.vertexBuffer = snapshotConstantBuffer(command.vertexBuffer);
+                            command.indexBuffer = snapshotConstantBuffer(command.indexBuffer);
+                            for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
+                            {
+                                command.vertexBuffers[slot] = snapshotConstantBuffer(command.vertexBuffers[slot]);
+                            }
                         }
 
                         for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
@@ -2656,11 +2753,6 @@ namespace Gek
                 if (!sourceBuffer || sourceBuffer->buffer == VK_NULL_HANDLE)
                 {
                     return nullptr;
-                }
-
-                if (sourceBuffer->getDescription().type != Render::Buffer::Type::Constant)
-                {
-                    return sourceBuffer;
                 }
 
                 Render::BufferPtr snapshotResource = createBuffer(sourceBuffer->getDescription(), nullptr);
@@ -3590,7 +3682,7 @@ namespace Gek
                 {
                     VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 32768 },
                     VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 32768 },
-                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 32768 },
+                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 32768 }, 
                     VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 32768 },
                     VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 8192 },
                 };
@@ -3653,7 +3745,7 @@ namespace Gek
                 {
                     VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1024 },
                     VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1024 },
-                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 1024 },
+                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 1024 },  
                 };
 
                 VkDescriptorPoolCreateInfo uiPoolInfo{};
@@ -6424,6 +6516,15 @@ namespace Gek
 
             void present(bool waitForVerticalSync)
             {
+                const auto frameCpuStartTime = std::chrono::high_resolution_clock::now();
+                double waitFenceCpuMs = 0.0;
+                double acquireCpuMs = 0.0;
+                double recordCpuMs = 0.0;
+                double cleanupCpuMs = 0.0;
+                double cleanupFramebufferCpuMs = 0.0;
+                double cleanupDescriptorCpuMs = 0.0;
+                double drawCommandLockCpuMs = 0.0;
+
                 if (device == VK_NULL_HANDLE || swapChain == VK_NULL_HANDLE)
                 {
                     return;
@@ -6463,7 +6564,10 @@ namespace Gek
 
                 if (inFlightFencePending)
                 {
+                    const auto waitFenceStartTime = std::chrono::high_resolution_clock::now();
                     const VkResult frameWaitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+                    const auto waitFenceEndTime = std::chrono::high_resolution_clock::now();
+                    waitFenceCpuMs = std::chrono::duration<double, std::milli>(waitFenceEndTime - waitFenceStartTime).count();
                     if (frameWaitResult != VK_SUCCESS)
                     {
                         handleDeviceLost(frameWaitResult, "vkWaitForFences(inFlightFence)");
@@ -6473,28 +6577,46 @@ namespace Gek
                     inFlightFencePending = false;
                 }
 
-                for (auto framebuffer : transientFramebuffers)
                 {
-                    if (framebuffer != VK_NULL_HANDLE)
+                    const auto cleanupStartTime = std::chrono::high_resolution_clock::now();
+
+                    const auto cleanupFramebufferStartTime = std::chrono::high_resolution_clock::now();
+                    for (auto framebuffer : transientFramebuffers)
                     {
-                        vkDestroyFramebuffer(device, framebuffer, nullptr);
+                        if (framebuffer != VK_NULL_HANDLE)
+                        {
+                            vkDestroyFramebuffer(device, framebuffer, nullptr);
+                        }
                     }
-                }
-                transientFramebuffers.clear();
-                transientFrameConstantBufferSnapshotsInFlight.clear();
+                    transientFramebuffers.clear();
 
-                if (descriptorPool != VK_NULL_HANDLE)
-                {
-                    vkResetDescriptorPool(device, descriptorPool, 0);
-                }
+                    transientFrameConstantBufferSnapshotsInFlight.clear();
 
-                if (uiDescriptorPool != VK_NULL_HANDLE)
-                {
-                    vkResetDescriptorPool(device, uiDescriptorPool, 0);
+                    const auto cleanupFramebufferEndTime = std::chrono::high_resolution_clock::now();
+                    cleanupFramebufferCpuMs = std::chrono::duration<double, std::milli>(cleanupFramebufferEndTime - cleanupFramebufferStartTime).count();
+
+                    const auto cleanupDescriptorStartTime = std::chrono::high_resolution_clock::now();
+                    if (descriptorPool != VK_NULL_HANDLE)
+                    {
+                        vkResetDescriptorPool(device, descriptorPool, 0);
+                    }
+
+                    if (uiDescriptorPool != VK_NULL_HANDLE)
+                    {
+                        vkResetDescriptorPool(device, uiDescriptorPool, 0);
+                    }
+                    const auto cleanupDescriptorEndTime = std::chrono::high_resolution_clock::now();
+                    cleanupDescriptorCpuMs = std::chrono::duration<double, std::milli>(cleanupDescriptorEndTime - cleanupDescriptorStartTime).count();
+
+                    const auto cleanupEndTime = std::chrono::high_resolution_clock::now();
+                    cleanupCpuMs = std::chrono::duration<double, std::milli>(cleanupEndTime - cleanupStartTime).count();
                 }
 
                 uint32_t imageIndex = 0;
+                const auto acquireStartTime = std::chrono::high_resolution_clock::now();
                 VkResult acquireResult = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+                const auto acquireEndTime = std::chrono::high_resolution_clock::now();
+                acquireCpuMs = std::chrono::duration<double, std::milli>(acquireEndTime - acquireStartTime).count();
                 if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR)
                 {
                     clearQueuedDrawCommands();
@@ -6598,6 +6720,7 @@ namespace Gek
                     swapChainImageLayouts[trackedImageIndex] = newLayout;
                 };
 
+                const auto recordStartTime = std::chrono::high_resolution_clock::now();
                 vkResetCommandBuffer(commandBuffer, 0);
 
                 VkCommandBufferBeginInfo beginInfo{};
@@ -6662,9 +6785,13 @@ namespace Gek
                         0, 0, nullptr, 0, nullptr, 1, &depthToAttachment);
                 }
 
+                const auto drawCommandLockStartTime = std::chrono::high_resolution_clock::now();
                 std::lock_guard<std::mutex> drawCommandLock(getDrawCommandMutex());
+                const auto drawCommandLockEndTime = std::chrono::high_resolution_clock::now();
+                drawCommandLockCpuMs = std::chrono::duration<double, std::milli>(drawCommandLockEndTime - drawCommandLockStartTime).count();
                 const bool hasDrawCommands = !pendingDrawCommands.empty();
                 std::vector<VkDescriptorSet> descriptorSets;
+                descriptorSets.reserve(pendingDrawCommands.size());
                 uint32_t sceneCommandCount = 0;
                 uint32_t sceneDrawCallsIssued = 0;
                 uint32_t sceneBackBufferDrawCalls = 0;
@@ -6778,10 +6905,46 @@ namespace Gek
                     // Sampled-image descriptors should use shader-readable layouts.
                     return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 };
-                constexpr bool allowSceneFallbackCopy = false;
+
+                auto updateSceneFallbackSourceFromNamedTarget = [&](const char *name) -> bool
+                {
+                    auto namedSearch = namedRenderTargetImagesInFrame.find(name);
+                    if (namedSearch == std::end(namedRenderTargetImagesInFrame))
+                    {
+                        return false;
+                    }
+
+                    if (namedSearch->second.first == VK_NULL_HANDLE || namedSearch->second.second.width == 0 || namedSearch->second.second.height == 0)
+                    {
+                        return false;
+                    }
+
+                    sceneOffscreenCopySourceImage = namedSearch->second.first;
+                    sceneOffscreenCopySourceExtent = namedSearch->second.second;
+                    return true;
+                };
+
+                auto choosePreferredSceneFallbackSource = [&]()
+                {
+                    if (updateSceneFallbackSourceFromNamedTarget("alternateBuffer"))
+                    {
+                        return;
+                    }
+
+                    if (updateSceneFallbackSourceFromNamedTarget("finalBuffer"))
+                    {
+                        return;
+                    }
+                };
+
+                constexpr bool allowSceneFallbackCopy = true;
                 auto performSceneFallbackCopy = [&](bool transitionBackToColorAttachment)
                 {
-                    if (!allowSceneFallbackCopy || sceneFallbackCopyPerformed || sceneOffscreenCopySourceImage == VK_NULL_HANDLE)
+                    if (!allowSceneFallbackCopy ||
+                        sceneFallbackCopyPerformed ||
+                        sceneOffscreenCopySourceImage == VK_NULL_HANDLE ||
+                        sceneOffscreenDrawCalls == 0 ||
+                        sceneBackBufferDrawCalls > 0)
                     {
                         return;
                     }
@@ -8302,11 +8465,6 @@ namespace Gek
                             ++sceneCommandCount;
                         }
 
-                        if (isUiDraw)
-                        {
-                            performSceneFallbackCopy(true);
-                        }
-
                         const bool drawToBackBuffer = !drawCommand.hasOffscreenTarget;
 
                         if (!drawToBackBuffer && drawCommand.renderTarget)
@@ -8887,7 +9045,7 @@ namespace Gek
                             descriptorSignature.pixelConstantBuffers = drawCommand.pixelConstantBuffers;
                             descriptorSignature.vertexConstantBuffers = drawCommand.vertexConstantBuffers;
 
-                            if (false && hasLastGraphicsDescriptorSignature &&
+                            if (false && hasLastGraphicsDescriptorSignature && 
                                 lastGraphicsDescriptorSet != VK_NULL_HANDLE &&
                                 (descriptorSignature == lastGraphicsDescriptorSignature))
                             {
@@ -9103,6 +9261,7 @@ namespace Gek
 
                 if (hasDrawCommands)
                 {
+                    choosePreferredSceneFallbackSource();
                     performSceneFallbackCopy(false);
                 }
 
@@ -9114,9 +9273,11 @@ namespace Gek
                     pendingDrawCommands.clear();
                     return;
                 }
+                const auto recordEndTime = std::chrono::high_resolution_clock::now();
+                recordCpuMs = std::chrono::duration<double, std::milli>(recordEndTime - recordStartTime).count();
 
                 VkSemaphore waitSemaphores[] = { imageAvailableSemaphore };
-                VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_TRANSFER_BIT };
+                VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT };
                 VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[imageIndex] };
 
                 VkSubmitInfo submitInfo{};
@@ -9131,9 +9292,13 @@ namespace Gek
 
                 vkResetFences(device, 1, &inFlightFence);
                 VkResult submitResult = VK_SUCCESS;
+                double submitCpuMs = 0.0;
                 {
+                    const auto submitStartTime = std::chrono::high_resolution_clock::now();
                     std::lock_guard<std::mutex> queueLock(getQueueSubmitMutex());
                     submitResult = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence);
+                    const auto submitEndTime = std::chrono::high_resolution_clock::now();
+                    submitCpuMs = std::chrono::duration<double, std::milli>(submitEndTime - submitStartTime).count();
                 }
                 if (submitResult != VK_SUCCESS)
                 {
@@ -9163,9 +9328,13 @@ namespace Gek
                 presentInfo.pImageIndices = &imageIndex;
 
                 VkResult presentResult = VK_SUCCESS;
+                double presentCpuMs = 0.0;
                 {
+                    const auto presentStartTime = std::chrono::high_resolution_clock::now();
                     std::lock_guard<std::mutex> queueLock(getQueueSubmitMutex());
                     presentResult = vkQueuePresentKHR(presentQueue, &presentInfo);
+                    const auto presentEndTime = std::chrono::high_resolution_clock::now();
+                    presentCpuMs = std::chrono::duration<double, std::milli>(presentEndTime - presentStartTime).count();
                 }
                 if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR)
                 {
@@ -9221,6 +9390,22 @@ namespace Gek
                 getContext()->setRuntimeMetric("render.sceneDraws", static_cast<double>(sceneDrawCallsIssued));
                 getContext()->setRuntimeMetric("render.mappedDepthFunc", 0.0);
                 getContext()->setRuntimeMetric("render.firstIndexedInstanceCount", 0.0);
+                getContext()->setRuntimeMetric("vulkan.submitCpuMs", submitCpuMs);
+                getContext()->setRuntimeMetric("vulkan.presentCpuMs", presentCpuMs);
+                getContext()->setRuntimeMetric("render.presentCpuMs", (submitCpuMs + presentCpuMs));
+                const double frameCpuMs = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - frameCpuStartTime).count();
+                const double knownFrameCpuMs = waitFenceCpuMs + acquireCpuMs + recordCpuMs + submitCpuMs + presentCpuMs + cleanupCpuMs + drawCommandLockCpuMs;
+                const double untrackedFrameCpuMs = std::max(0.0, frameCpuMs - knownFrameCpuMs);
+
+                getContext()->setRuntimeMetric("vulkan.waitFenceCpuMs", waitFenceCpuMs);
+                getContext()->setRuntimeMetric("vulkan.acquireCpuMs", acquireCpuMs);
+                getContext()->setRuntimeMetric("vulkan.recordCpuMs", recordCpuMs);
+                getContext()->setRuntimeMetric("vulkan.cleanupCpuMs", cleanupCpuMs);
+                getContext()->setRuntimeMetric("vulkan.cleanupFramebufferCpuMs", cleanupFramebufferCpuMs);
+                getContext()->setRuntimeMetric("vulkan.cleanupDescriptorCpuMs", cleanupDescriptorCpuMs);
+                getContext()->setRuntimeMetric("vulkan.drawCommandLockCpuMs", drawCommandLockCpuMs);
+                getContext()->setRuntimeMetric("vulkan.untrackedFrameCpuMs", untrackedFrameCpuMs);
+                getContext()->setRuntimeMetric("vulkan.frameCpuMs", frameCpuMs);
                 getContext()->setRuntimeMetric("vulkan.sceneBackBufferDraws", static_cast<double>(sceneBackBufferDrawCalls));
                 getContext()->setRuntimeMetric("vulkan.sceneOffscreenDraws", static_cast<double>(sceneOffscreenDrawCalls));
                 getContext()->setRuntimeMetric("vulkan.sceneBackBufferMissingImageDraws", static_cast<double>(sceneBackBufferMissingImageDrawCalls));
@@ -9318,7 +9503,7 @@ namespace Gek
                     return snapshotSearch->second;
                 }
 
-                Buffer *snapshotBuffer = createConstantBufferSnapshot(buffer);
+                Buffer *snapshotBuffer = buffer;
                 constantBufferSnapshotMap[buffer] = snapshotBuffer;
                 return snapshotBuffer;
             };

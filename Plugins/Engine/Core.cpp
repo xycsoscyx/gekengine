@@ -185,24 +185,35 @@ namespace Gek
                 size_t sampleCount = 0;
             };
 
-            std::array<RuntimeMetricPlot, 10> runtimeMetricPlots =
+            std::array<RuntimeMetricPlot, 18> runtimeMetricPlots =
             {{
-                { "visualizer.queuedDrawCalls", "Queued Draw Calls", ImVec4(0.95f, 0.30f, 0.30f, 1.0f) },
-                { "visualizer.shaderGroups", "Shader Groups", ImVec4(0.95f, 0.55f, 0.20f, 1.0f) },
-                { "visualizer.preparedPasses", "Prepared Passes", ImVec4(0.93f, 0.82f, 0.26f, 1.0f) },
-                { "model.visibleModels", "Visible Models", ImVec4(0.40f, 0.78f, 0.33f, 1.0f) },
-                { "model.queuedBatches", "Model Batches", ImVec4(0.22f, 0.80f, 0.63f, 1.0f) },
-                { "resources.drawSuppressed", "Suppressed Draws", ImVec4(0.25f, 0.70f, 0.95f, 1.0f) },
-                { "render.sceneDraws", "Render Scene Draws", ImVec4(0.35f, 0.50f, 0.95f, 1.0f) },
+                { "render.fpsInstant", "FPS (Instant)", ImVec4(0.95f, 0.82f, 0.26f, 1.0f) },
+                { "render.fpsSmoothed", "FPS (Smoothed)", ImVec4(0.95f, 0.62f, 0.20f, 1.0f) },
+                { "render.frameTimeMs", "Frame CPU (ms)", ImVec4(0.88f, 0.88f, 0.30f, 1.0f) },
+                { "render.presentCpuMs", "Present CPU (ms)", ImVec4(0.75f, 0.60f, 0.95f, 1.0f) },
+                { "vulkan.waitFenceCpuMs", "Vulkan Wait Fence (ms)", ImVec4(0.95f, 0.28f, 0.28f, 1.0f) },
+                { "vulkan.recordCpuMs", "Vulkan Record (ms)", ImVec4(0.95f, 0.45f, 0.22f, 1.0f) },
+                { "vulkan.acquireCpuMs", "Vulkan Acquire (ms)", ImVec4(0.95f, 0.58f, 0.24f, 1.0f) },
+                { "vulkan.frameCpuMs", "Vulkan Frame CPU (ms)", ImVec4(0.95f, 0.72f, 0.30f, 1.0f) },
+                { "vulkan.cleanupCpuMs", "Vulkan Cleanup (ms)", ImVec4(0.95f, 0.40f, 0.56f, 1.0f) },
+                { "vulkan.cleanupDescriptorCpuMs", "Vulkan Cleanup Descriptor (ms)", ImVec4(0.95f, 0.50f, 0.62f, 1.0f) },
+                { "vulkan.cleanupFramebufferCpuMs", "Vulkan Cleanup Framebuffer (ms)", ImVec4(0.95f, 0.62f, 0.72f, 1.0f) },
+                { "vulkan.drawCommandLockCpuMs", "Vulkan Draw Lock (ms)", ImVec4(0.92f, 0.52f, 0.72f, 1.0f) },
+                { "vulkan.untrackedFrameCpuMs", "Vulkan Untracked (ms)", ImVec4(0.82f, 0.62f, 0.90f, 1.0f) },
+                { "d3d11.presentCpuMs", "D3D11 Present (ms)", ImVec4(0.58f, 0.78f, 0.95f, 1.0f) },
                 { "render.totalCommands", "Render Total Commands", ImVec4(0.55f, 0.42f, 0.92f, 1.0f) },
-                { "render.mappedDepthFunc", "Render Depth Func", ImVec4(0.85f, 0.35f, 0.78f, 1.0f) },
-                { "render.firstIndexedInstanceCount", "Render First Instance Count", ImVec4(0.80f, 0.80f, 0.80f, 1.0f) },
+                { "render.sceneDraws", "Render Scene Draws", ImVec4(0.35f, 0.50f, 0.95f, 1.0f) },
+                { "visualizer.queuedDrawCalls", "Queued Draw Calls", ImVec4(0.95f, 0.30f, 0.30f, 1.0f) },
+                { "model.visibleModels", "Visible Models", ImVec4(0.40f, 0.78f, 0.33f, 1.0f) },
             }};
-            std::array<bool, 10> runtimeMetricVisible = {{ true, true, true, true, true, true, true, true, true, true }};
+            std::array<bool, 18> runtimeMetricVisible = {{ true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true }};
             bool runtimeMetricViewAll = true;
             uint64_t runtimeMetricsLastFrame = 0;
             std::array<char, 260> runtimeLogFilePath = {};
             bool runtimeLogFileAppend = true;
+            double runtimeFpsSmoothed = 0.0;
+            bool runtimeFpsSmoothedInitialized = false;
+            bool runtimeEnableVulkanCharts = false;
 
             bool showModeChange = false;
             float modeChangeTimer = 0.0f;
@@ -553,6 +564,26 @@ namespace Gek
                 if (windowActive)
                 {
                     float frameTime = static_cast<float>(timer.getUpdateTime());
+                    if (std::isfinite(frameTime) && frameTime > 0.0f)
+                    {
+                        const double frameTimeMs = static_cast<double>(frameTime) * 1000.0;
+                        const double fpsInstant = std::clamp(1.0 / static_cast<double>(frameTime), 0.0, 10000.0);
+                        constexpr double FpsSmoothingAlpha = 0.1;
+                        if (!runtimeFpsSmoothedInitialized)
+                        {
+                            runtimeFpsSmoothed = fpsInstant;
+                            runtimeFpsSmoothedInitialized = true;
+                        }
+                        else
+                        {
+                            runtimeFpsSmoothed += ((fpsInstant - runtimeFpsSmoothed) * FpsSmoothingAlpha);
+                        }
+
+                        getContext()->setRuntimeMetric("render.frameTimeMs", frameTimeMs);
+                        getContext()->setRuntimeMetric("render.fpsInstant", fpsInstant);
+                        getContext()->setRuntimeMetric("render.fpsSmoothed", runtimeFpsSmoothed);
+                    }
+
                     modeChangeTimer -= frameTime;
 
                     const float updateFrameTime = (enableInterfaceControl || loadingPopulation) ? 0.0f : frameTime;
@@ -848,6 +879,19 @@ namespace Gek
                 ImGui::SetNextWindowSize(ImVec2(680.0f, 520.0f), ImGuiCond_Once);
                 if (ImGui::Begin("Runtime Diagnostics", &showRuntimeDiagnostics))
                 {
+                    auto readMetricValue = [&](char const *key, double fallbackValue = 0.0) -> double
+                    {
+                        auto search = runtimeMetrics.find(key);
+                        return (search != std::end(runtimeMetrics) ? search->second : fallbackValue);
+                    };
+
+                    bool isVulkanBackend = true;
+                    auto renderBackendSearch = runtimeMetrics.find("render.backend");
+                    if (renderBackendSearch != std::end(runtimeMetrics))
+                    {
+                        isVulkanBackend = (renderBackendSearch->second < 0.5);
+                    }
+
                     auto applyMetricFilter = [&](std::function<bool(std::string_view)> const &predicate) -> void
                     {
                         for (size_t plotIndex = 0; plotIndex < runtimeMetricPlots.size(); ++plotIndex)
@@ -903,6 +947,62 @@ namespace Gek
                         applyMetricFilter([](std::string_view key) -> bool { return key.starts_with("render."); });
                     }
 
+                    ImGui::SameLine();
+                    if (ImGui::Button("Backend"))
+                    {
+                        applyMetricFilter([](std::string_view key) -> bool
+                        {
+                            return key.starts_with("render.") || key.starts_with("vulkan.") || key.starts_with("d3d11.");
+                        });
+                    }
+
+                    ImGui::Separator();
+                    ImGui::Text(
+                        "Backend: %s | FPS: %.1f (smooth %.1f) | Frame: %.2f ms | Present CPU: %.3f ms",
+                        isVulkanBackend ? "Vulkan" : "D3D11",
+                        readMetricValue("render.fpsInstant"),
+                        readMetricValue("render.fpsSmoothed"),
+                        readMetricValue("render.frameTimeMs"),
+                        readMetricValue("render.presentCpuMs"));
+                    if (isVulkanBackend)
+                    {
+                        ImGui::Text(
+                            "Vulkan submit: %.3f ms | Vulkan present: %.3f ms",
+                            readMetricValue("vulkan.submitCpuMs"),
+                            readMetricValue("vulkan.presentCpuMs"));
+                        ImGui::Text(
+                            "Vulkan waitFence: %.3f ms | acquire: %.3f ms | record: %.3f ms | frameCPU: %.3f ms",
+                            readMetricValue("vulkan.waitFenceCpuMs"),
+                            readMetricValue("vulkan.acquireCpuMs"),
+                            readMetricValue("vulkan.recordCpuMs"),
+                            readMetricValue("vulkan.frameCpuMs"));
+                        ImGui::Text(
+                            "Vulkan cleanup: %.3f ms | lock: %.3f ms | untracked: %.3f ms",
+                            readMetricValue("vulkan.cleanupCpuMs"),
+                            readMetricValue("vulkan.drawCommandLockCpuMs"),
+                            readMetricValue("vulkan.untrackedFrameCpuMs"));
+                        ImGui::Text(
+                            "Vulkan cleanup split -> descriptor: %.3f ms | framebuffer: %.3f ms",
+                            readMetricValue("vulkan.cleanupDescriptorCpuMs"),
+                            readMetricValue("vulkan.cleanupFramebufferCpuMs"));
+
+                        const double fpsSmoothed = readMetricValue("render.fpsSmoothed");
+                        const double presentCpuMs = readMetricValue("render.presentCpuMs");
+                        const double waitFenceCpuMs = readMetricValue("vulkan.waitFenceCpuMs");
+                        const double recordCpuMs = readMetricValue("vulkan.recordCpuMs");
+                        if (fpsSmoothed <= 6.0 && presentCpuMs <= 1.0)
+                        {
+                            const char *dominantCost = (waitFenceCpuMs >= recordCpuMs)
+                                ? "GPU sync stall (waitFence)"
+                                : "CPU command recording";
+                            ImGui::TextColored(ImVec4(1.0f, 0.70f, 0.30f, 1.0f), "Likely bottleneck: %s", dominantCost);
+                        }
+                    }
+                    else
+                    {
+                        ImGui::Text("D3D11 present: %.3f ms", readMetricValue("d3d11.presentCpuMs"));
+                    }
+
                     for (size_t plotIndex = 0; plotIndex < runtimeMetricPlots.size(); ++plotIndex)
                     {
                         auto const &plot = runtimeMetricPlots[plotIndex];
@@ -932,10 +1032,11 @@ namespace Gek
                     }
 
                     bool useVulkanCompatibilityChart = true;
-                    auto renderBackendSearch = runtimeMetrics.find("render.backend");
-                    if (renderBackendSearch != std::end(runtimeMetrics))
+                    useVulkanCompatibilityChart = isVulkanBackend;
+
+                    if (isVulkanBackend)
                     {
-                        useVulkanCompatibilityChart = (renderBackendSearch->second < 0.5);
+                        ImGui::Checkbox("Enable Vulkan charts (experimental)", &runtimeEnableVulkanCharts);
                     }
 
                     ImVec2 canvasPosition = ImGui::GetCursorScreenPos();
@@ -955,66 +1056,74 @@ namespace Gek
 
                     if (useVulkanCompatibilityChart)
                     {
-                        ImGui::TextDisabled("Vulkan compatibility chart mode");
-                        const ImVec2 clipMin = ImGui::GetCursorScreenPos();
-                        const ImVec2 clipMax = ImVec2(clipMin.x + canvasSize.x, clipMin.y + canvasSize.y);
-                        drawList->PushClipRect(clipMin, clipMax, true);
-                        constexpr size_t VulkanPlotSeriesLimit = 6;
-                        constexpr size_t VulkanPlotSampleLimit = 64;
-                        size_t plottedSeriesCount = 0;
-                        for (size_t plotIndex = 0; plotIndex < runtimeMetricPlots.size(); ++plotIndex)
+                        if (!runtimeEnableVulkanCharts)
                         {
-                            if (!runtimeMetricVisible[plotIndex])
+                            ImGui::TextDisabled("Vulkan chart rendering is disabled by default for stability.");
+                            ImGui::TextDisabled("Enable the experimental toggle above only for short profiling checks.");
+                        }
+                        else
+                        {
+                            ImGui::TextDisabled("Vulkan compatibility chart mode");
+                            const ImVec2 clipMin = ImGui::GetCursorScreenPos();
+                            const ImVec2 clipMax = ImVec2(clipMin.x + canvasSize.x, clipMin.y + canvasSize.y);
+                            drawList->PushClipRect(clipMin, clipMax, true);
+                            constexpr size_t VulkanPlotSeriesLimit = 6;
+                            constexpr size_t VulkanPlotSampleLimit = 64;
+                            size_t plottedSeriesCount = 0;
+                            for (size_t plotIndex = 0; plotIndex < runtimeMetricPlots.size(); ++plotIndex)
                             {
-                                continue;
-                            }
-
-                            auto const &plot = runtimeMetricPlots[plotIndex];
-                            if (plot.sampleCount == 0)
-                            {
-                                continue;
-                            }
-
-                            if (plottedSeriesCount >= VulkanPlotSeriesLimit)
-                            {
-                                break;
-                            }
-
-                            const size_t displayedSampleCount = std::min(plot.sampleCount, VulkanPlotSampleLimit);
-                            const size_t sampleStride = std::max<size_t>(1, plot.sampleCount / displayedSampleCount);
-
-                            std::array<float, VulkanPlotSampleLimit> sanitizedSamples = {};
-                            size_t outputSampleIndex = 0;
-                            for (size_t sampleIndex = 0; sampleIndex < plot.sampleCount && outputSampleIndex < displayedSampleCount; sampleIndex += sampleStride)
-                            {
-                                float value = plot.samples[sampleIndex];
-                                if (!std::isfinite(value))
+                                if (!runtimeMetricVisible[plotIndex])
                                 {
-                                    value = (outputSampleIndex > 0 ? sanitizedSamples[outputSampleIndex - 1] : 0.0f);
+                                    continue;
                                 }
 
-                                sanitizedSamples[outputSampleIndex++] = std::clamp(value, -1000000.0f, 1000000.0f);
+                                auto const &plot = runtimeMetricPlots[plotIndex];
+                                if (plot.sampleCount == 0)
+                                {
+                                    continue;
+                                }
+
+                                if (plottedSeriesCount >= VulkanPlotSeriesLimit)
+                                {
+                                    break;
+                                }
+
+                                const size_t displayedSampleCount = std::min(plot.sampleCount, VulkanPlotSampleLimit);
+                                const size_t sampleStride = std::max<size_t>(1, plot.sampleCount / displayedSampleCount);
+
+                                std::array<float, VulkanPlotSampleLimit> sanitizedSamples = {};
+                                size_t outputSampleIndex = 0;
+                                for (size_t sampleIndex = 0; sampleIndex < plot.sampleCount && outputSampleIndex < displayedSampleCount; sampleIndex += sampleStride)
+                                {
+                                    float value = plot.samples[sampleIndex];
+                                    if (!std::isfinite(value))
+                                    {
+                                        value = (outputSampleIndex > 0 ? sanitizedSamples[outputSampleIndex - 1] : 0.0f);
+                                    }
+
+                                    sanitizedSamples[outputSampleIndex++] = std::clamp(value, -1000000.0f, 1000000.0f);
+                                }
+
+                                if (outputSampleIndex == 0)
+                                {
+                                    continue;
+                                }
+
+                                ImGui::PushID(static_cast<int>(plotIndex));
+                                ImGui::PushStyleColor(ImGuiCol_PlotLines, plot.color);
+                                ImGui::PlotLines("##RuntimePlotLine", sanitizedSamples.data(), static_cast<int>(outputSampleIndex), 0, nullptr, FLT_MAX, FLT_MAX, ImVec2(-1.0f, 28.0f));
+                                ImGui::PopStyleColor();
+                                ImGui::PopID();
+                                drewAnySeries = true;
+                                ++plottedSeriesCount;
                             }
 
-                            if (outputSampleIndex == 0)
+                            drawList->PopClipRect();
+
+                            if (plottedSeriesCount == VulkanPlotSeriesLimit)
                             {
-                                continue;
+                                ImGui::TextDisabled("Showing first 6 selected metrics for stability.");
                             }
-
-                            ImGui::PushID(static_cast<int>(plotIndex));
-                            ImGui::PushStyleColor(ImGuiCol_PlotLines, plot.color);
-                            ImGui::PlotLines("##RuntimePlotLine", sanitizedSamples.data(), static_cast<int>(outputSampleIndex), 0, nullptr, FLT_MAX, FLT_MAX, ImVec2(-1.0f, 28.0f));
-                            ImGui::PopStyleColor();
-                            ImGui::PopID();
-                            drewAnySeries = true;
-                            ++plottedSeriesCount;
-                        }
-
-                        drawList->PopClipRect();
-
-                        if (plottedSeriesCount == VulkanPlotSeriesLimit)
-                        {
-                            ImGui::TextDisabled("Showing first 6 selected metrics for stability.");
                         }
                     }
                     else

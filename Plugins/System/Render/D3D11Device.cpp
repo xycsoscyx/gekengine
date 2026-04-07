@@ -3744,11 +3744,17 @@ namespace Gek
             {
                 assert(dxgiSwapChain);
 
+                const auto presentStartTime = std::chrono::high_resolution_clock::now();
                 dxgiSwapChain->Present(waitForVerticalSync ? 1 : 0, 0);
+                const auto presentEndTime = std::chrono::high_resolution_clock::now();
+                const double presentCpuMs = std::chrono::duration<double, std::milli>(presentEndTime - presentStartTime).count();
+
                 ++sampleFrameIndex;
                 getContext()->setRuntimeMetric("d3d11.frame", static_cast<double>(sampleFrameIndex));
                 getContext()->setRuntimeMetric("render.frame", static_cast<double>(sampleFrameIndex));
                 getContext()->setRuntimeMetric("render.backend", 1.0);
+                getContext()->setRuntimeMetric("d3d11.presentCpuMs", presentCpuMs);
+                getContext()->setRuntimeMetric("render.presentCpuMs", presentCpuMs);
                 loggedFirstIndexedStateThisFrame = false;
             }
         };
