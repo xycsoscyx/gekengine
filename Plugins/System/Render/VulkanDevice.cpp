@@ -1828,7 +1828,7 @@ namespace Gek
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        const bool shouldSnapshotConstants =
+                        const bool isUiDraw =
                             ((command.pixelProgram &&
                                 (
                                     command.pixelProgram->getInformation().name.find("core::uiPixelProgram") != std::string::npos ||
@@ -1841,6 +1841,8 @@ namespace Gek
                                     command.vertexProgram->getInformation().name.find("core:uiVertexProgram") != std::string::npos ||
                                     command.vertexProgram->getInformation().name.find("uiVertexProgram") != std::string::npos
                                 )));
+                        const bool shouldSnapshotConstants = isUiDraw;
+                        const bool shouldSnapshotGeometry = isUiDraw;
 
                         std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
                         auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
@@ -1850,13 +1852,24 @@ namespace Gek
                                 return nullptr;
                             }
 
+                            const bool bufferIsMappable = ((buffer->getDescription().flags & Render::Buffer::Flags::Mappable) != 0);
+                            if (!shouldSnapshotConstants && !bufferIsMappable)
+                            {
+                                return buffer;
+                            }
+
                             auto snapshotSearch = constantBufferSnapshotMap.find(buffer);
                             if (snapshotSearch != std::end(constantBufferSnapshotMap))
                             {
                                 return snapshotSearch->second;
                             }
 
-                            Buffer *snapshotBuffer = shouldSnapshotConstants ? owner->createConstantBufferSnapshot(buffer) : buffer;
+                            Buffer *snapshotBuffer = owner->createBufferSnapshot(buffer);
+                            if (snapshotBuffer && snapshotBuffer != buffer)
+                            {
+                                ++owner->uiSnapshotCreatedThisFrame;
+                                owner->uiSnapshotBytesThisFrame += static_cast<uint64_t>(buffer->size);
+                            }
                             constantBufferSnapshotMap[buffer] = snapshotBuffer;
                             return snapshotBuffer;
                         };
@@ -1869,7 +1882,7 @@ namespace Gek
                             command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
                         }
 
-                        if (shouldSnapshotConstants)
+                        if (shouldSnapshotGeometry)
                         {
                             command.vertexBuffer = snapshotConstantBuffer(command.vertexBuffer);
                             command.indexBuffer = snapshotConstantBuffer(command.indexBuffer);
@@ -1895,10 +1908,15 @@ namespace Gek
                             owner->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
                         }
 
-                        if (isDeferredContext)
+                        if (isDeferredContext && !isUiDraw)
                         {
                             owner->deferredContextDrawCommands[this].push_back(command);
                             ++owner->deferredCommandEnqueueCount;
+                        }
+                        else if (isUiDraw)
+                        {
+                            owner->pendingUiDrawCommands.push_back(command);
+                            ++owner->pendingCommandEnqueueCount;
                         }
                         else
                         {
@@ -1986,7 +2004,7 @@ namespace Gek
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        const bool shouldSnapshotConstants =
+                        const bool isUiDraw =
                             ((command.pixelProgram &&
                                 (
                                     command.pixelProgram->getInformation().name.find("core::uiPixelProgram") != std::string::npos ||
@@ -1999,6 +2017,8 @@ namespace Gek
                                     command.vertexProgram->getInformation().name.find("core:uiVertexProgram") != std::string::npos ||
                                     command.vertexProgram->getInformation().name.find("uiVertexProgram") != std::string::npos
                                 )));
+                        const bool shouldSnapshotConstants = isUiDraw;
+                        const bool shouldSnapshotGeometry = isUiDraw;
 
                         std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
                         auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
@@ -2008,13 +2028,24 @@ namespace Gek
                                 return nullptr;
                             }
 
+                            const bool bufferIsMappable = ((buffer->getDescription().flags & Render::Buffer::Flags::Mappable) != 0);
+                            if (!shouldSnapshotConstants && !bufferIsMappable)
+                            {
+                                return buffer;
+                            }
+
                             auto snapshotSearch = constantBufferSnapshotMap.find(buffer);
                             if (snapshotSearch != std::end(constantBufferSnapshotMap))
                             {
                                 return snapshotSearch->second;
                             }
 
-                            Buffer *snapshotBuffer = shouldSnapshotConstants ? owner->createConstantBufferSnapshot(buffer) : buffer;
+                            Buffer *snapshotBuffer = owner->createBufferSnapshot(buffer);
+                            if (snapshotBuffer && snapshotBuffer != buffer)
+                            {
+                                ++owner->uiSnapshotCreatedThisFrame;
+                                owner->uiSnapshotBytesThisFrame += static_cast<uint64_t>(buffer->size);
+                            }
                             constantBufferSnapshotMap[buffer] = snapshotBuffer;
                             return snapshotBuffer;
                         };
@@ -2027,7 +2058,7 @@ namespace Gek
                             command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
                         }
 
-                        if (shouldSnapshotConstants)
+                        if (shouldSnapshotGeometry)
                         {
                             command.vertexBuffer = snapshotConstantBuffer(command.vertexBuffer);
                             command.indexBuffer = snapshotConstantBuffer(command.indexBuffer);
@@ -2053,10 +2084,15 @@ namespace Gek
                             owner->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
                         }
 
-                        if (isDeferredContext)
+                        if (isDeferredContext && !isUiDraw)
                         {
                             owner->deferredContextDrawCommands[this].push_back(command);
                             ++owner->deferredCommandEnqueueCount;
+                        }
+                        else if (isUiDraw)
+                        {
+                            owner->pendingUiDrawCommands.push_back(command);
+                            ++owner->pendingCommandEnqueueCount;
                         }
                         else
                         {
@@ -2168,7 +2204,7 @@ namespace Gek
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        const bool shouldSnapshotConstants =
+                        const bool isUiDraw =
                             ((command.pixelProgram &&
                                 (
                                     command.pixelProgram->getInformation().name.find("core::uiPixelProgram") != std::string::npos ||
@@ -2181,6 +2217,8 @@ namespace Gek
                                     command.vertexProgram->getInformation().name.find("core:uiVertexProgram") != std::string::npos ||
                                     command.vertexProgram->getInformation().name.find("uiVertexProgram") != std::string::npos
                                 )));
+                        const bool shouldSnapshotConstants = isUiDraw;
+                        const bool shouldSnapshotGeometry = isUiDraw;
 
                         std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
                         auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
@@ -2190,13 +2228,24 @@ namespace Gek
                                 return nullptr;
                             }
 
+                            const bool bufferIsMappable = ((buffer->getDescription().flags & Render::Buffer::Flags::Mappable) != 0);
+                            if (!shouldSnapshotConstants && !bufferIsMappable)
+                            {
+                                return buffer;
+                            }
+
                             auto snapshotSearch = constantBufferSnapshotMap.find(buffer);
                             if (snapshotSearch != std::end(constantBufferSnapshotMap))
                             {
                                 return snapshotSearch->second;
                             }
 
-                            Buffer *snapshotBuffer = shouldSnapshotConstants ? owner->createConstantBufferSnapshot(buffer) : buffer;
+                            Buffer *snapshotBuffer = owner->createBufferSnapshot(buffer);
+                            if (snapshotBuffer && snapshotBuffer != buffer)
+                            {
+                                ++owner->uiSnapshotCreatedThisFrame;
+                                owner->uiSnapshotBytesThisFrame += static_cast<uint64_t>(buffer->size);
+                            }
                             constantBufferSnapshotMap[buffer] = snapshotBuffer;
                             return snapshotBuffer;
                         };
@@ -2209,7 +2258,7 @@ namespace Gek
                             command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
                         }
 
-                        if (shouldSnapshotConstants)
+                        if (shouldSnapshotGeometry)
                         {
                             command.vertexBuffer = snapshotConstantBuffer(command.vertexBuffer);
                             command.indexBuffer = snapshotConstantBuffer(command.indexBuffer);
@@ -2235,10 +2284,15 @@ namespace Gek
                             owner->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
                         }
 
-                        if (isDeferredContext)
+                        if (isDeferredContext && !isUiDraw)
                         {
                             owner->deferredContextDrawCommands[this].push_back(command);
                             ++owner->deferredCommandEnqueueCount;
+                        }
+                        else if (isUiDraw)
+                        {
+                            owner->pendingUiDrawCommands.push_back(command);
+                            ++owner->pendingCommandEnqueueCount;
                         }
                         else
                         {
@@ -2350,7 +2404,7 @@ namespace Gek
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        const bool shouldSnapshotConstants =
+                        const bool isUiDraw =
                             ((command.pixelProgram &&
                                 (
                                     command.pixelProgram->getInformation().name.find("core::uiPixelProgram") != std::string::npos ||
@@ -2363,6 +2417,8 @@ namespace Gek
                                     command.vertexProgram->getInformation().name.find("core:uiVertexProgram") != std::string::npos ||
                                     command.vertexProgram->getInformation().name.find("uiVertexProgram") != std::string::npos
                                 )));
+                        const bool shouldSnapshotConstants = isUiDraw;
+                        const bool shouldSnapshotGeometry = isUiDraw;
 
                         std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
                         auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
@@ -2372,13 +2428,24 @@ namespace Gek
                                 return nullptr;
                             }
 
+                            const bool bufferIsMappable = ((buffer->getDescription().flags & Render::Buffer::Flags::Mappable) != 0);
+                            if (!shouldSnapshotConstants && !bufferIsMappable)
+                            {
+                                return buffer;
+                            }
+
                             auto snapshotSearch = constantBufferSnapshotMap.find(buffer);
                             if (snapshotSearch != std::end(constantBufferSnapshotMap))
                             {
                                 return snapshotSearch->second;
                             }
 
-                            Buffer *snapshotBuffer = shouldSnapshotConstants ? owner->createConstantBufferSnapshot(buffer) : buffer;
+                            Buffer *snapshotBuffer = owner->createBufferSnapshot(buffer);
+                            if (snapshotBuffer && snapshotBuffer != buffer)
+                            {
+                                ++owner->uiSnapshotCreatedThisFrame;
+                                owner->uiSnapshotBytesThisFrame += static_cast<uint64_t>(buffer->size);
+                            }
                             constantBufferSnapshotMap[buffer] = snapshotBuffer;
                             return snapshotBuffer;
                         };
@@ -2391,7 +2458,7 @@ namespace Gek
                             command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
                         }
 
-                        if (shouldSnapshotConstants)
+                        if (shouldSnapshotGeometry)
                         {
                             command.vertexBuffer = snapshotConstantBuffer(command.vertexBuffer);
                             command.indexBuffer = snapshotConstantBuffer(command.indexBuffer);
@@ -2417,10 +2484,15 @@ namespace Gek
                             owner->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
                         }
 
-                        if (isDeferredContext)
+                        if (isDeferredContext && !isUiDraw)
                         {
                             owner->deferredContextDrawCommands[this].push_back(command);
                             ++owner->deferredCommandEnqueueCount;
+                        }
+                        else if (isUiDraw)
+                        {
+                            owner->pendingUiDrawCommands.push_back(command);
+                            ++owner->pendingCommandEnqueueCount;
                         }
                         else
                         {
@@ -2618,10 +2690,15 @@ namespace Gek
             };
 
             std::vector<DrawCommand> pendingDrawCommands;
+            std::vector<DrawCommand> pendingUiDrawCommands;
             std::map<Context *, std::vector<DrawCommand>> deferredContextDrawCommands;
             std::map<uint64_t, std::vector<DrawCommand>> deferredCommandLists;
             std::vector<Render::BufferPtr> transientFrameConstantBufferSnapshotsPending;
             std::vector<Render::BufferPtr> transientFrameConstantBufferSnapshotsInFlight;
+            std::map<Buffer *, Buffer *> uiFrameSnapshotBufferMap;
+            uint64_t uiSnapshotCreatedThisFrame = 0;
+            uint64_t uiSnapshotReusedThisFrame = 0;
+            uint64_t uiSnapshotBytesThisFrame = 0;
             uint64_t nextCommandListIdentifier = 1;
             uint64_t deferredFinishCalls = 0;
             uint64_t deferredExecuteCalls = 0;
@@ -2748,7 +2825,7 @@ namespace Gek
                 return UINT32_MAX;
             }
 
-            Buffer *createConstantBufferSnapshot(Buffer *sourceBuffer)
+            Buffer *createBufferSnapshot(Buffer *sourceBuffer)
             {
                 if (!sourceBuffer || sourceBuffer->buffer == VK_NULL_HANDLE)
                 {
@@ -2806,6 +2883,21 @@ namespace Gek
 
                 transientFrameConstantBufferSnapshotsPending.push_back(std::move(snapshotResource));
                 return snapshotBuffer;
+            }
+
+            Buffer *createConstantBufferSnapshot(Buffer *sourceBuffer)
+            {
+                if (!sourceBuffer)
+                {
+                    return nullptr;
+                }
+
+                if (sourceBuffer->getDescription().type != Render::Buffer::Type::Constant)
+                {
+                    return sourceBuffer;
+                }
+
+                return createBufferSnapshot(sourceBuffer);
             }
 
             bool checkInstanceExtensionSupport(std::vector<const char*> &instanceExtensions)
@@ -4746,6 +4838,8 @@ namespace Gek
                     return false;
                 }
 
+                std::lock_guard<std::mutex> lock(getDrawCommandMutex());
+
                 if (!vulkanBuffer->mappedData)
                 {
                     if (vkMapMemory(device, vulkanBuffer->memory, 0, vulkanBuffer->size, 0, &vulkanBuffer->mappedData) != VK_SUCCESS)
@@ -4763,6 +4857,7 @@ namespace Gek
                 auto vulkanBuffer = getObject<Buffer>(buffer);
                 if (vulkanBuffer && !(vulkanBuffer->getDescription().flags & Render::Buffer::Flags::Mappable) && vulkanBuffer->mappedData)
                 {
+                    std::lock_guard<std::mutex> lock(getDrawCommandMutex());
                     vkUnmapMemory(device, vulkanBuffer->memory);
                     vulkanBuffer->mappedData = nullptr;
                 }
@@ -4773,6 +4868,8 @@ namespace Gek
                 auto vulkanBuffer = getObject<Buffer>(object);
                 if (vulkanBuffer && data)
                 {
+                    std::lock_guard<std::mutex> lock(getDrawCommandMutex());
+
                     void *mapData = vulkanBuffer->mappedData;
                     if (!mapData)
                     {
@@ -5484,6 +5581,10 @@ namespace Gek
 
                     {
                         std::lock_guard<std::mutex> lookupLock(persistentImageViewLookupMutex);
+                        if (persistentImageViewLookup.size() > 32768)
+                        {
+                            persistentImageViewLookup.clear();
+                        }
                         persistentImageViewLookup[texture->imageView] = std::make_pair(
                             texture->image,
                             VkExtent2D{ std::max(description.width, 1u), std::max(description.height, 1u) });
@@ -5581,6 +5682,10 @@ namespace Gek
 
                     {
                         std::lock_guard<std::mutex> lookupLock(persistentImageViewLookupMutex);
+                        if (persistentImageViewLookup.size() > 32768)
+                        {
+                            persistentImageViewLookup.clear();
+                        }
                         persistentImageViewLookup[texture->imageView] = std::make_pair(
                             texture->image,
                             VkExtent2D{ std::max(description.width, 1u), std::max(description.height, 1u) });
@@ -5986,6 +6091,10 @@ namespace Gek
 
                     {
                         std::lock_guard<std::mutex> lookupLock(persistentImageViewLookupMutex);
+                        if (persistentImageViewLookup.size() > 32768)
+                        {
+                            persistentImageViewLookup.clear();
+                        }
                         persistentImageViewLookup[texture->imageView] = std::make_pair(
                             texture->image,
                             VkExtent2D{ std::max(description.width, 1u), std::max(description.height, 1u) });
@@ -6534,6 +6643,7 @@ namespace Gek
                 {
                     std::lock_guard<std::mutex> lock(getDrawCommandMutex());
                     pendingDrawCommands.clear();
+                    pendingUiDrawCommands.clear();
                     debugOverlayText = "VK: deviceLost=1";
                     return;
                 }
@@ -6542,7 +6652,12 @@ namespace Gek
                 {
                     std::lock_guard<std::mutex> lock(getDrawCommandMutex());
                     pendingDrawCommands.clear();
+                    pendingUiDrawCommands.clear();
                     transientFrameConstantBufferSnapshotsPending.clear();
+                    uiFrameSnapshotBufferMap.clear();
+                    uiSnapshotCreatedThisFrame = 0;
+                    uiSnapshotReusedThisFrame = 0;
+                    uiSnapshotBytesThisFrame = 0;
                 };
 
                 auto handleDeviceLost = [&](VkResult errorCode, std::string_view operation)
@@ -6591,6 +6706,10 @@ namespace Gek
                     transientFramebuffers.clear();
 
                     transientFrameConstantBufferSnapshotsInFlight.clear();
+                    uiFrameSnapshotBufferMap.clear();
+                    uiSnapshotCreatedThisFrame = 0;
+                    uiSnapshotReusedThisFrame = 0;
+                    uiSnapshotBytesThisFrame = 0;
 
                     const auto cleanupFramebufferEndTime = std::chrono::high_resolution_clock::now();
                     cleanupFramebufferCpuMs = std::chrono::duration<double, std::milli>(cleanupFramebufferEndTime - cleanupFramebufferStartTime).count();
@@ -6789,12 +6908,24 @@ namespace Gek
                 std::lock_guard<std::mutex> drawCommandLock(getDrawCommandMutex());
                 const auto drawCommandLockEndTime = std::chrono::high_resolution_clock::now();
                 drawCommandLockCpuMs = std::chrono::duration<double, std::milli>(drawCommandLockEndTime - drawCommandLockStartTime).count();
+                if (!pendingUiDrawCommands.empty())
+                {
+                    pendingDrawCommands.insert(pendingDrawCommands.end(), pendingUiDrawCommands.begin(), pendingUiDrawCommands.end());
+                    pendingUiDrawCommands.clear();
+                }
+
+                if (offscreenImageLayouts.size() > 32768)
+                {
+                    offscreenImageLayouts.clear();
+                }
+
                 const bool hasDrawCommands = !pendingDrawCommands.empty();
                 std::vector<VkDescriptorSet> descriptorSets;
                 descriptorSets.reserve(pendingDrawCommands.size());
                 uint32_t sceneCommandCount = 0;
                 uint32_t sceneDrawCallsIssued = 0;
                 uint32_t sceneBackBufferDrawCalls = 0;
+                uint32_t totalBackBufferDrawCalls = 0;
                 uint32_t sceneOffscreenDrawCalls = 0;
                 uint32_t sceneBackBufferMissingImageDrawCalls = 0;
                 bool sceneFallbackCopyPerformed = false;
@@ -6868,11 +6999,6 @@ namespace Gek
                 VkExtent2D sceneOffscreenCopySourceExtent = { 0, 0 };
                 std::map<VkImageView, std::pair<VkImage, VkExtent2D>> frameOffscreenViewLookup;
                 std::map<std::string, std::pair<VkImage, VkExtent2D>> namedRenderTargetImagesInFrame;
-                std::map<VkImageView, std::pair<VkImage, VkExtent2D>> persistentImageViewLookupSnapshot;
-                {
-                    std::lock_guard<std::mutex> lookupLock(persistentImageViewLookupMutex);
-                    persistentImageViewLookupSnapshot = persistentImageViewLookup;
-                }
                 auto getSampledImageLayoutForView = [&](VkImageView imageView) -> VkImageLayout
                 {
                     if (imageView == VK_NULL_HANDLE)
@@ -6883,11 +7009,7 @@ namespace Gek
                     auto sourceViewSearch = frameOffscreenViewLookup.find(imageView);
                     if (sourceViewSearch == std::end(frameOffscreenViewLookup))
                     {
-                        sourceViewSearch = persistentImageViewLookupSnapshot.find(imageView);
-                        if (sourceViewSearch == std::end(persistentImageViewLookupSnapshot))
-                        {
-                            return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                        }
+                        return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                     }
 
                     auto layoutSearch = offscreenImageLayouts.find(sourceViewSearch->second.first);
@@ -6937,14 +7059,14 @@ namespace Gek
                     }
                 };
 
-                constexpr bool allowSceneFallbackCopy = true;
+                constexpr bool allowSceneFallbackCopy = false;
                 auto performSceneFallbackCopy = [&](bool transitionBackToColorAttachment)
                 {
                     if (!allowSceneFallbackCopy ||
                         sceneFallbackCopyPerformed ||
                         sceneOffscreenCopySourceImage == VK_NULL_HANDLE ||
                         sceneOffscreenDrawCalls == 0 ||
-                        sceneBackBufferDrawCalls > 0)
+                        totalBackBufferDrawCalls > 0)
                     {
                         return;
                     }
@@ -8357,12 +8479,20 @@ namespace Gek
                             VkMemoryBarrier memoryBarrier{};
                             memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
                             memoryBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-                            memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+                            memoryBarrier.dstAccessMask =
+                                VK_ACCESS_SHADER_READ_BIT |
+                                VK_ACCESS_SHADER_WRITE_BIT |
+                                VK_ACCESS_UNIFORM_READ_BIT |
+                                VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+                                VK_ACCESS_INDEX_READ_BIT;
 
                             vkCmdPipelineBarrier(
                                 commandBuffer,
                                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                                    VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                                    VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
                                 0,
                                 1, &memoryBarrier,
                                 0, nullptr,
@@ -9201,6 +9331,10 @@ namespace Gek
                         if (drawCommand.indexed)
                         {
                             vkCmdDrawIndexed(commandBuffer, drawCommand.indexCount, std::max(drawCommand.instanceCount, 1u), 0, drawCommand.firstVertex, drawCommand.firstInstance);
+                            if (drawToBackBuffer)
+                            {
+                                ++totalBackBufferDrawCalls;
+                            }
                             if (!isUiDraw)
                             {
                                 ++sceneDrawCallsIssued;
@@ -9229,6 +9363,10 @@ namespace Gek
                         else if (drawCommand.vertexCount > 0)
                         {
                             vkCmdDraw(commandBuffer, drawCommand.vertexCount, std::max(drawCommand.instanceCount, 1u), static_cast<uint32_t>(drawCommand.firstVertex), drawCommand.firstInstance);
+                            if (drawToBackBuffer)
+                            {
+                                ++totalBackBufferDrawCalls;
+                            }
                             if (!isUiDraw)
                             {
                                 ++sceneDrawCallsIssued;
@@ -9271,6 +9409,7 @@ namespace Gek
                 {
                     getContext()->log(Gek::Context::Error, "Vulkan failed to record command buffer");
                     pendingDrawCommands.clear();
+                    pendingUiDrawCommands.clear();
                     return;
                 }
                 const auto recordEndTime = std::chrono::high_resolution_clock::now();
@@ -9313,6 +9452,7 @@ namespace Gek
                         "Vulkan failed to submit draw command buffer: result={}",
                         static_cast<int32_t>(submitResult));
                     pendingDrawCommands.clear();
+                    pendingUiDrawCommands.clear();
                     recreateSwapChain();
                     return;
                 }
@@ -9352,6 +9492,7 @@ namespace Gek
                         "Vulkan failed to present swap-chain image: result={}",
                         static_cast<int32_t>(presentResult));
                     pendingDrawCommands.clear();
+                    pendingUiDrawCommands.clear();
                     recreateSwapChain();
                     return;
                 }
@@ -9425,10 +9566,16 @@ namespace Gek
                 getContext()->setRuntimeMetric("vulkan.deferredCommandLists", static_cast<double>(deferredCommandLists.size()));
                 getContext()->setRuntimeMetric("vulkan.pendingEnqueues", static_cast<double>(pendingCommandEnqueueCount));
                 getContext()->setRuntimeMetric("vulkan.deferredEnqueues", static_cast<double>(deferredCommandEnqueueCount));
+                getContext()->setRuntimeMetric("vulkan.uiSnapshotCreated", static_cast<double>(uiSnapshotCreatedThisFrame));
+                getContext()->setRuntimeMetric("vulkan.uiSnapshotReused", static_cast<double>(uiSnapshotReusedThisFrame));
+                getContext()->setRuntimeMetric("vulkan.uiSnapshotBytes", static_cast<double>(uiSnapshotBytesThisFrame));
+                getContext()->setRuntimeMetric("vulkan.uiSnapshotPending", static_cast<double>(transientFrameConstantBufferSnapshotsPending.size()));
+                getContext()->setRuntimeMetric("vulkan.uiSnapshotInFlight", static_cast<double>(transientFrameConstantBufferSnapshotsInFlight.size()));
 
                 transientFrameConstantBufferSnapshotsInFlight = std::move(transientFrameConstantBufferSnapshotsPending);
                 transientFrameConstantBufferSnapshotsPending.clear();
                 pendingDrawCommands.clear();
+                pendingUiDrawCommands.clear();
             }
         };
 
@@ -9502,8 +9649,7 @@ namespace Gek
                 {
                     return snapshotSearch->second;
                 }
-
-                Buffer *snapshotBuffer = buffer;
+                Buffer *snapshotBuffer = createConstantBufferSnapshot(buffer);
                 constantBufferSnapshotMap[buffer] = snapshotBuffer;
                 return snapshotBuffer;
             };

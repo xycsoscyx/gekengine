@@ -185,7 +185,7 @@ namespace Gek
                 size_t sampleCount = 0;
             };
 
-            std::array<RuntimeMetricPlot, 18> runtimeMetricPlots =
+            std::array<RuntimeMetricPlot, 23> runtimeMetricPlots =
             {{
                 { "render.fpsInstant", "FPS (Instant)", ImVec4(0.95f, 0.82f, 0.26f, 1.0f) },
                 { "render.fpsSmoothed", "FPS (Smoothed)", ImVec4(0.95f, 0.62f, 0.20f, 1.0f) },
@@ -200,13 +200,18 @@ namespace Gek
                 { "vulkan.cleanupFramebufferCpuMs", "Vulkan Cleanup Framebuffer (ms)", ImVec4(0.95f, 0.62f, 0.72f, 1.0f) },
                 { "vulkan.drawCommandLockCpuMs", "Vulkan Draw Lock (ms)", ImVec4(0.92f, 0.52f, 0.72f, 1.0f) },
                 { "vulkan.untrackedFrameCpuMs", "Vulkan Untracked (ms)", ImVec4(0.82f, 0.62f, 0.90f, 1.0f) },
+                { "vulkan.uiSnapshotCreated", "Vulkan Snapshots Created", ImVec4(0.96f, 0.70f, 0.24f, 1.0f) },
+                { "vulkan.uiSnapshotReused", "Vulkan Snapshots Reused", ImVec4(0.88f, 0.78f, 0.22f, 1.0f) },
+                { "vulkan.uiSnapshotBytes", "Vulkan Snapshot Bytes", ImVec4(0.96f, 0.52f, 0.22f, 1.0f) },
+                { "vulkan.uiSnapshotPending", "Vulkan Snapshot Pending", ImVec4(0.92f, 0.62f, 0.30f, 1.0f) },
+                { "vulkan.uiSnapshotInFlight", "Vulkan Snapshot In-Flight", ImVec4(0.88f, 0.72f, 0.38f, 1.0f) },
                 { "d3d11.presentCpuMs", "D3D11 Present (ms)", ImVec4(0.58f, 0.78f, 0.95f, 1.0f) },
                 { "render.totalCommands", "Render Total Commands", ImVec4(0.55f, 0.42f, 0.92f, 1.0f) },
                 { "render.sceneDraws", "Render Scene Draws", ImVec4(0.35f, 0.50f, 0.95f, 1.0f) },
                 { "visualizer.queuedDrawCalls", "Queued Draw Calls", ImVec4(0.95f, 0.30f, 0.30f, 1.0f) },
                 { "model.visibleModels", "Visible Models", ImVec4(0.40f, 0.78f, 0.33f, 1.0f) },
             }};
-            std::array<bool, 18> runtimeMetricVisible = {{ true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true }};
+            std::array<bool, 23> runtimeMetricVisible = {{ true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true }};
             bool runtimeMetricViewAll = true;
             uint64_t runtimeMetricsLastFrame = 0;
             std::array<char, 260> runtimeLogFilePath = {};
@@ -985,6 +990,12 @@ namespace Gek
                             "Vulkan cleanup split -> descriptor: %.3f ms | framebuffer: %.3f ms",
                             readMetricValue("vulkan.cleanupDescriptorCpuMs"),
                             readMetricValue("vulkan.cleanupFramebufferCpuMs"));
+                        ImGui::Text(
+                            "Vulkan snapshots -> created: %.0f | reused: %.0f | pending: %.0f | inFlight: %.0f",
+                            readMetricValue("vulkan.uiSnapshotCreated"),
+                            readMetricValue("vulkan.uiSnapshotReused"),
+                            readMetricValue("vulkan.uiSnapshotPending"),
+                            readMetricValue("vulkan.uiSnapshotInFlight"));
 
                         const double fpsSmoothed = readMetricValue("render.fpsSmoothed");
                         const double presentCpuMs = readMetricValue("render.presentCpuMs");
