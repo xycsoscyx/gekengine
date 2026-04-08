@@ -22,6 +22,7 @@
 #include <iomanip>
 #include <sstream>
 #include <memory>
+#include <mutex>
 #include <ppl.h>
 
 #pragma comment(lib, "d3d11.lib")
@@ -32,6 +33,32 @@ namespace Gek
 {
     namespace Render::Implementation
     {
+        static uint64_t computeDeterministicProgramId(Render::Program::Type type, std::string_view entryFunction, std::string_view normalizedSource)
+        {
+            constexpr uint64_t fnvOffsetBasis = 1469598103934665603ull;
+            constexpr uint64_t fnvPrime = 1099511628211ull;
+
+            auto hashBytes = [](uint64_t seed, const void *data, size_t size) -> uint64_t
+            {
+                const uint8_t *bytes = static_cast<const uint8_t *>(data);
+                uint64_t value = seed;
+                for (size_t index = 0; index < size; ++index)
+                {
+                    value ^= static_cast<uint64_t>(bytes[index]);
+                    value *= fnvPrime;
+                }
+
+                return value;
+            };
+
+            uint64_t programId = fnvOffsetBasis;
+            const uint8_t typeValue = static_cast<uint8_t>(type);
+            programId = hashBytes(programId, &typeValue, sizeof(typeValue));
+            programId = hashBytes(programId, entryFunction.data(), entryFunction.size());
+            programId = hashBytes(programId, normalizedSource.data(), normalizedSource.size());
+            return programId;
+        }
+
         // All these lists must match, since the same GEK Format can be used for either textures or buffers
         // The size list must also match
         static constexpr DXGI_FORMAT TextureFormatList[] =
@@ -1891,20 +1918,6 @@ namespace Gek
                 {
                     assert(d3dDeviceContext);
 
-                    const auto isUiProgramName = [](std::string_view programName) -> bool
-                    {
-                        return (programName.find("core::uiVertexProgram") != std::string_view::npos) ||
-                            (programName.find("core:uiVertexProgram") != std::string_view::npos) ||
-                            (programName.find("uiVertexProgram") != std::string_view::npos) ||
-                            (programName.find("core::uiPixelProgram") != std::string_view::npos) ||
-                            (programName.find("core:uiPixelProgram") != std::string_view::npos) ||
-                            (programName.find("uiPixelProgram") != std::string_view::npos);
-                    };
-
-                    const std::string_view vertexProgramName = currentVertexProgramName.empty() ? std::string_view("<null>") : std::string_view(currentVertexProgramName);
-                    const std::string_view pixelProgramName = currentPixelProgramName.empty() ? std::string_view("<null>") : std::string_view(currentPixelProgramName);
-                    const bool isUiDraw = isUiProgramName(vertexProgramName) || isUiProgramName(pixelProgramName);
-
                     if (owner && !owner->loggedFirstIndexedStateThisFrame)
                     {
                         const auto engineCullMode = hasCurrentRenderState ? currentCullMode : Render::RenderState::CullMode::None;
@@ -1919,7 +1932,6 @@ namespace Gek
                         owner->getContext()->setRuntimeMetric("d3d11.frame", static_cast<double>(owner->sampleFrameIndex));
                         owner->getContext()->setRuntimeMetric("render.frame", static_cast<double>(owner->sampleFrameIndex));
                         owner->getContext()->setRuntimeMetric("render.backend", 1.0);
-                        owner->getContext()->setRuntimeMetric("d3d11.firstIndexedIsUi", static_cast<double>(isUiDraw ? 1u : 0u));
                         owner->getContext()->setRuntimeMetric("d3d11.engineCull", static_cast<double>(engineCullMode));
                         owner->getContext()->setRuntimeMetric("d3d11.engineFrontCCW", static_cast<double>(engineFrontCCW ? 1u : 0u));
                         owner->getContext()->setRuntimeMetric("d3d11.engineDepthEnable", static_cast<double>(engineDepthEnable ? 1u : 0u));
@@ -1937,20 +1949,6 @@ namespace Gek
                 {
                     assert(d3dDeviceContext);
 
-                    const auto isUiProgramName = [](std::string_view programName) -> bool
-                    {
-                        return (programName.find("core::uiVertexProgram") != std::string_view::npos) ||
-                            (programName.find("core:uiVertexProgram") != std::string_view::npos) ||
-                            (programName.find("uiVertexProgram") != std::string_view::npos) ||
-                            (programName.find("core::uiPixelProgram") != std::string_view::npos) ||
-                            (programName.find("core:uiPixelProgram") != std::string_view::npos) ||
-                            (programName.find("uiPixelProgram") != std::string_view::npos);
-                    };
-
-                    const std::string_view vertexProgramName = currentVertexProgramName.empty() ? std::string_view("<null>") : std::string_view(currentVertexProgramName);
-                    const std::string_view pixelProgramName = currentPixelProgramName.empty() ? std::string_view("<null>") : std::string_view(currentPixelProgramName);
-                    const bool isUiDraw = isUiProgramName(vertexProgramName) || isUiProgramName(pixelProgramName);
-
                     if (owner && !owner->loggedFirstIndexedStateThisFrame)
                     {
                         const auto engineCullMode = hasCurrentRenderState ? currentCullMode : Render::RenderState::CullMode::None;
@@ -1965,7 +1963,6 @@ namespace Gek
                         owner->getContext()->setRuntimeMetric("d3d11.frame", static_cast<double>(owner->sampleFrameIndex));
                         owner->getContext()->setRuntimeMetric("render.frame", static_cast<double>(owner->sampleFrameIndex));
                         owner->getContext()->setRuntimeMetric("render.backend", 1.0);
-                        owner->getContext()->setRuntimeMetric("d3d11.firstIndexedIsUi", static_cast<double>(isUiDraw ? 1u : 0u));
                         owner->getContext()->setRuntimeMetric("d3d11.engineCull", static_cast<double>(engineCullMode));
                         owner->getContext()->setRuntimeMetric("d3d11.engineFrontCCW", static_cast<double>(engineFrontCCW ? 1u : 0u));
                         owner->getContext()->setRuntimeMetric("d3d11.engineDepthEnable", static_cast<double>(engineDepthEnable ? 1u : 0u));
@@ -3111,12 +3108,12 @@ namespace Gek
                 std::string resolvedProgram = resolveIncludes(uncompiledProgram, 0);
 
                 information.type = type;
+                information.programId = computeDeterministicProgramId(type, entryFunction, resolvedProgram);
                 information.name = std::format("{}:{}", name, entryFunction);
                 information.debugPath = debugPath;
                 information.entryFunction = entryFunction;
                 information.uncompiledData = resolvedProgram;
                 information.compiledData = EmptyBuffer;
-
                 auto typeSearch = D3DTypeMap.find(type);
                 if (typeSearch != std::end(D3DTypeMap))
                 {

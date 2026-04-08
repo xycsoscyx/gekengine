@@ -112,6 +112,7 @@ namespace Gek
 
             return normalizedPath.getString();
         }
+
     }
 
     namespace Implementation

@@ -622,6 +622,7 @@ namespace Gek
 			struct Information
 			{
 				Type type;
+                uint64_t programId = 0;
                 std::string name;
                 FileSystem::Path debugPath;
                 std::string entryFunction;

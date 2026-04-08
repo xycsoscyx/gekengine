@@ -969,6 +969,7 @@ namespace Gek
                         readMetricValue("render.fpsSmoothed"),
                         readMetricValue("render.frameTimeMs"),
                         readMetricValue("render.presentCpuMs"));
+
                     if (isVulkanBackend)
                     {
                         ImGui::Text(

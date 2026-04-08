@@ -40,6 +40,32 @@ namespace Gek
     {
         static std::atomic_bool gVulkanDeviceShuttingDown{ false };
 
+        static uint64_t computeDeterministicProgramId(Render::Program::Type type, std::string_view entryFunction, std::string_view normalizedSource)
+        {
+            constexpr uint64_t fnvOffsetBasis = 1469598103934665603ull;
+            constexpr uint64_t fnvPrime = 1099511628211ull;
+
+            auto hashBytes = [](uint64_t seed, const void *data, size_t size) -> uint64_t
+            {
+                const uint8_t *bytes = static_cast<const uint8_t *>(data);
+                uint64_t value = seed;
+                for (size_t index = 0; index < size; ++index)
+                {
+                    value ^= static_cast<uint64_t>(bytes[index]);
+                    value *= fnvPrime;
+                }
+
+                return value;
+            };
+
+            uint64_t programId = fnvOffsetBasis;
+            const uint8_t typeValue = static_cast<uint8_t>(type);
+            programId = hashBytes(programId, &typeValue, sizeof(typeValue));
+            programId = hashBytes(programId, entryFunction.data(), entryFunction.size());
+            programId = hashBytes(programId, normalizedSource.data(), normalizedSource.size());
+            return programId;
+        }
+
         Render::Format GetFormat(VkFormat format)
         {
             switch (format)
@@ -5072,6 +5098,7 @@ namespace Gek
                 };
 
                 std::string resolvedProgram = resolveIncludes(uncompiledProgram, 0);
+                const std::string programIdSource = resolvedProgram;
 
                 auto normalizeBufferResources = [](std::string &source)
                 {
@@ -5358,6 +5385,7 @@ namespace Gek
 
                 Render::Program::Information information;
                 information.type = type;
+                information.programId = computeDeterministicProgramId(type, entryFunction, programIdSource);
                 information.name = name;
                 information.debugPath = debugPath;
                 information.entryFunction = entryFunction;
