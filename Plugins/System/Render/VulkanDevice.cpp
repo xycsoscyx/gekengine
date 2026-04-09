@@ -1896,54 +1896,30 @@ namespace Gek
                         const bool shouldSnapshotGeometry = isUiDraw;
 
                         std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
-                        auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
+                        auto snapshotCapturedBuffer = [&](Buffer *buffer, bool shouldSnapshot) -> Buffer *
                         {
-                            if (!buffer)
-                            {
-                                return nullptr;
-                            }
-
-                            const bool bufferIsMappable = ((buffer->getDescription().flags & Render::Buffer::Flags::Mappable) != 0);
-                            if (!shouldSnapshotConstants && !bufferIsMappable)
-                            {
-                                return buffer;
-                            }
-
-                            auto snapshotSearch = constantBufferSnapshotMap.find(buffer);
-                            if (snapshotSearch != std::end(constantBufferSnapshotMap))
-                            {
-                                return snapshotSearch->second;
-                            }
-
-                            Buffer *snapshotBuffer = owner->createBufferSnapshot(buffer);
-                            if (snapshotBuffer && snapshotBuffer != buffer)
-                            {
-                                ++owner->uiSnapshotCreatedThisFrame;
-                                owner->uiSnapshotBytesThisFrame += static_cast<uint64_t>(buffer->size);
-                            }
-                            constantBufferSnapshotMap[buffer] = snapshotBuffer;
-                            return snapshotBuffer;
+                            return owner->captureBufferSnapshot(buffer, shouldSnapshot, constantBufferSnapshotMap);
                         };
 
-                        command.vertexConstantBuffer = snapshotConstantBuffer(command.vertexConstantBuffer);
-                        command.pixelConstantBuffer = snapshotConstantBuffer(command.pixelConstantBuffer);
+                        command.vertexConstantBuffer = snapshotCapturedBuffer(command.vertexConstantBuffer, shouldSnapshotConstants);
+                        command.pixelConstantBuffer = snapshotCapturedBuffer(command.pixelConstantBuffer, shouldSnapshotConstants);
                         command.vertexConstantBufferVersion = owner->captureConstantBufferVersion(command.vertexConstantBuffer);
                         command.pixelConstantBufferVersion = owner->captureConstantBufferVersion(command.pixelConstantBuffer);
                         for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                         {
-                            command.vertexConstantBuffers[slot] = snapshotConstantBuffer(command.vertexConstantBuffers[slot]);
-                            command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
+                            command.vertexConstantBuffers[slot] = snapshotCapturedBuffer(command.vertexConstantBuffers[slot], shouldSnapshotConstants);
+                            command.pixelConstantBuffers[slot] = snapshotCapturedBuffer(command.pixelConstantBuffers[slot], shouldSnapshotConstants);
                             command.vertexConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.vertexConstantBuffers[slot]);
                             command.pixelConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.pixelConstantBuffers[slot]);
                         }
 
                         if (shouldSnapshotGeometry)
                         {
-                            command.vertexBuffer = snapshotConstantBuffer(command.vertexBuffer);
-                            command.indexBuffer = snapshotConstantBuffer(command.indexBuffer);
+                            command.vertexBuffer = snapshotCapturedBuffer(command.vertexBuffer, shouldSnapshotGeometry);
+                            command.indexBuffer = snapshotCapturedBuffer(command.indexBuffer, shouldSnapshotGeometry);
                             for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
                             {
-                                command.vertexBuffers[slot] = snapshotConstantBuffer(command.vertexBuffers[slot]);
+                                command.vertexBuffers[slot] = snapshotCapturedBuffer(command.vertexBuffers[slot], shouldSnapshotGeometry);
                             }
                         }
 
@@ -2064,54 +2040,30 @@ namespace Gek
                         const bool shouldSnapshotGeometry = isUiDraw;
 
                         std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
-                        auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
+                        auto snapshotCapturedBuffer = [&](Buffer *buffer, bool shouldSnapshot) -> Buffer *
                         {
-                            if (!buffer)
-                            {
-                                return nullptr;
-                            }
-
-                            const bool bufferIsMappable = ((buffer->getDescription().flags & Render::Buffer::Flags::Mappable) != 0);
-                            if (!shouldSnapshotConstants && !bufferIsMappable)
-                            {
-                                return buffer;
-                            }
-
-                            auto snapshotSearch = constantBufferSnapshotMap.find(buffer);
-                            if (snapshotSearch != std::end(constantBufferSnapshotMap))
-                            {
-                                return snapshotSearch->second;
-                            }
-
-                            Buffer *snapshotBuffer = owner->createBufferSnapshot(buffer);
-                            if (snapshotBuffer && snapshotBuffer != buffer)
-                            {
-                                ++owner->uiSnapshotCreatedThisFrame;
-                                owner->uiSnapshotBytesThisFrame += static_cast<uint64_t>(buffer->size);
-                            }
-                            constantBufferSnapshotMap[buffer] = snapshotBuffer;
-                            return snapshotBuffer;
+                            return owner->captureBufferSnapshot(buffer, shouldSnapshot, constantBufferSnapshotMap);
                         };
 
-                        command.vertexConstantBuffer = snapshotConstantBuffer(command.vertexConstantBuffer);
-                        command.pixelConstantBuffer = snapshotConstantBuffer(command.pixelConstantBuffer);
+                        command.vertexConstantBuffer = snapshotCapturedBuffer(command.vertexConstantBuffer, shouldSnapshotConstants);
+                        command.pixelConstantBuffer = snapshotCapturedBuffer(command.pixelConstantBuffer, shouldSnapshotConstants);
                         command.vertexConstantBufferVersion = owner->captureConstantBufferVersion(command.vertexConstantBuffer);
                         command.pixelConstantBufferVersion = owner->captureConstantBufferVersion(command.pixelConstantBuffer);
                         for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                         {
-                            command.vertexConstantBuffers[slot] = snapshotConstantBuffer(command.vertexConstantBuffers[slot]);
-                            command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
+                            command.vertexConstantBuffers[slot] = snapshotCapturedBuffer(command.vertexConstantBuffers[slot], shouldSnapshotConstants);
+                            command.pixelConstantBuffers[slot] = snapshotCapturedBuffer(command.pixelConstantBuffers[slot], shouldSnapshotConstants);
                             command.vertexConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.vertexConstantBuffers[slot]);
                             command.pixelConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.pixelConstantBuffers[slot]);
                         }
 
                         if (shouldSnapshotGeometry)
                         {
-                            command.vertexBuffer = snapshotConstantBuffer(command.vertexBuffer);
-                            command.indexBuffer = snapshotConstantBuffer(command.indexBuffer);
+                            command.vertexBuffer = snapshotCapturedBuffer(command.vertexBuffer, shouldSnapshotGeometry);
+                            command.indexBuffer = snapshotCapturedBuffer(command.indexBuffer, shouldSnapshotGeometry);
                             for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
                             {
-                                command.vertexBuffers[slot] = snapshotConstantBuffer(command.vertexBuffers[slot]);
+                                command.vertexBuffers[slot] = snapshotCapturedBuffer(command.vertexBuffers[slot], shouldSnapshotGeometry);
                             }
                         }
 
@@ -2256,54 +2208,30 @@ namespace Gek
                         const bool shouldSnapshotGeometry = isUiDraw;
 
                         std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
-                        auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
+                        auto snapshotCapturedBuffer = [&](Buffer *buffer, bool shouldSnapshot) -> Buffer *
                         {
-                            if (!buffer)
-                            {
-                                return nullptr;
-                            }
-
-                            const bool bufferIsMappable = ((buffer->getDescription().flags & Render::Buffer::Flags::Mappable) != 0);
-                            if (!shouldSnapshotConstants && !bufferIsMappable)
-                            {
-                                return buffer;
-                            }
-
-                            auto snapshotSearch = constantBufferSnapshotMap.find(buffer);
-                            if (snapshotSearch != std::end(constantBufferSnapshotMap))
-                            {
-                                return snapshotSearch->second;
-                            }
-
-                            Buffer *snapshotBuffer = owner->createBufferSnapshot(buffer);
-                            if (snapshotBuffer && snapshotBuffer != buffer)
-                            {
-                                ++owner->uiSnapshotCreatedThisFrame;
-                                owner->uiSnapshotBytesThisFrame += static_cast<uint64_t>(buffer->size);
-                            }
-                            constantBufferSnapshotMap[buffer] = snapshotBuffer;
-                            return snapshotBuffer;
+                            return owner->captureBufferSnapshot(buffer, shouldSnapshot, constantBufferSnapshotMap);
                         };
 
-                        command.vertexConstantBuffer = snapshotConstantBuffer(command.vertexConstantBuffer);
-                        command.pixelConstantBuffer = snapshotConstantBuffer(command.pixelConstantBuffer);
+                        command.vertexConstantBuffer = snapshotCapturedBuffer(command.vertexConstantBuffer, shouldSnapshotConstants);
+                        command.pixelConstantBuffer = snapshotCapturedBuffer(command.pixelConstantBuffer, shouldSnapshotConstants);
                         command.vertexConstantBufferVersion = owner->captureConstantBufferVersion(command.vertexConstantBuffer);
                         command.pixelConstantBufferVersion = owner->captureConstantBufferVersion(command.pixelConstantBuffer);
                         for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                         {
-                            command.vertexConstantBuffers[slot] = snapshotConstantBuffer(command.vertexConstantBuffers[slot]);
-                            command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
+                            command.vertexConstantBuffers[slot] = snapshotCapturedBuffer(command.vertexConstantBuffers[slot], shouldSnapshotConstants);
+                            command.pixelConstantBuffers[slot] = snapshotCapturedBuffer(command.pixelConstantBuffers[slot], shouldSnapshotConstants);
                             command.vertexConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.vertexConstantBuffers[slot]);
                             command.pixelConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.pixelConstantBuffers[slot]);
                         }
 
                         if (shouldSnapshotGeometry)
                         {
-                            command.vertexBuffer = snapshotConstantBuffer(command.vertexBuffer);
-                            command.indexBuffer = snapshotConstantBuffer(command.indexBuffer);
+                            command.vertexBuffer = snapshotCapturedBuffer(command.vertexBuffer, shouldSnapshotGeometry);
+                            command.indexBuffer = snapshotCapturedBuffer(command.indexBuffer, shouldSnapshotGeometry);
                             for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
                             {
-                                command.vertexBuffers[slot] = snapshotConstantBuffer(command.vertexBuffers[slot]);
+                                command.vertexBuffers[slot] = snapshotCapturedBuffer(command.vertexBuffers[slot], shouldSnapshotGeometry);
                             }
                         }
 
@@ -2448,54 +2376,30 @@ namespace Gek
                         const bool shouldSnapshotGeometry = isUiDraw;
 
                         std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
-                        auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
+                        auto snapshotCapturedBuffer = [&](Buffer *buffer, bool shouldSnapshot) -> Buffer *
                         {
-                            if (!buffer)
-                            {
-                                return nullptr;
-                            }
-
-                            const bool bufferIsMappable = ((buffer->getDescription().flags & Render::Buffer::Flags::Mappable) != 0);
-                            if (!shouldSnapshotConstants && !bufferIsMappable)
-                            {
-                                return buffer;
-                            }
-
-                            auto snapshotSearch = constantBufferSnapshotMap.find(buffer);
-                            if (snapshotSearch != std::end(constantBufferSnapshotMap))
-                            {
-                                return snapshotSearch->second;
-                            }
-
-                            Buffer *snapshotBuffer = owner->createBufferSnapshot(buffer);
-                            if (snapshotBuffer && snapshotBuffer != buffer)
-                            {
-                                ++owner->uiSnapshotCreatedThisFrame;
-                                owner->uiSnapshotBytesThisFrame += static_cast<uint64_t>(buffer->size);
-                            }
-                            constantBufferSnapshotMap[buffer] = snapshotBuffer;
-                            return snapshotBuffer;
+                            return owner->captureBufferSnapshot(buffer, shouldSnapshot, constantBufferSnapshotMap);
                         };
 
-                        command.vertexConstantBuffer = snapshotConstantBuffer(command.vertexConstantBuffer);
-                        command.pixelConstantBuffer = snapshotConstantBuffer(command.pixelConstantBuffer);
+                        command.vertexConstantBuffer = snapshotCapturedBuffer(command.vertexConstantBuffer, shouldSnapshotConstants);
+                        command.pixelConstantBuffer = snapshotCapturedBuffer(command.pixelConstantBuffer, shouldSnapshotConstants);
                         command.vertexConstantBufferVersion = owner->captureConstantBufferVersion(command.vertexConstantBuffer);
                         command.pixelConstantBufferVersion = owner->captureConstantBufferVersion(command.pixelConstantBuffer);
                         for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                         {
-                            command.vertexConstantBuffers[slot] = snapshotConstantBuffer(command.vertexConstantBuffers[slot]);
-                            command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
+                            command.vertexConstantBuffers[slot] = snapshotCapturedBuffer(command.vertexConstantBuffers[slot], shouldSnapshotConstants);
+                            command.pixelConstantBuffers[slot] = snapshotCapturedBuffer(command.pixelConstantBuffers[slot], shouldSnapshotConstants);
                             command.vertexConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.vertexConstantBuffers[slot]);
                             command.pixelConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.pixelConstantBuffers[slot]);
                         }
 
                         if (shouldSnapshotGeometry)
                         {
-                            command.vertexBuffer = snapshotConstantBuffer(command.vertexBuffer);
-                            command.indexBuffer = snapshotConstantBuffer(command.indexBuffer);
+                            command.vertexBuffer = snapshotCapturedBuffer(command.vertexBuffer, shouldSnapshotGeometry);
+                            command.indexBuffer = snapshotCapturedBuffer(command.indexBuffer, shouldSnapshotGeometry);
                             for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
                             {
-                                command.vertexBuffers[slot] = snapshotConstantBuffer(command.vertexBuffers[slot]);
+                                command.vertexBuffers[slot] = snapshotCapturedBuffer(command.vertexBuffers[slot], shouldSnapshotGeometry);
                             }
                         }
 
@@ -3037,19 +2941,34 @@ namespace Gek
                 return snapshotBuffer;
             }
 
-            Buffer *createConstantBufferSnapshot(Buffer *sourceBuffer)
+            Buffer *captureBufferSnapshot(Buffer *buffer, bool shouldSnapshot, std::map<Buffer *, Buffer *> &snapshotMap)
             {
-                if (!sourceBuffer)
+                if (!buffer)
                 {
                     return nullptr;
                 }
 
-                if (sourceBuffer->getDescription().type != Render::Buffer::Type::Constant)
+                const bool bufferIsMappable = ((buffer->getDescription().flags & Render::Buffer::Flags::Mappable) != 0);
+                if (!shouldSnapshot && !bufferIsMappable)
                 {
-                    return sourceBuffer;
+                    return buffer;
                 }
 
-                return createBufferSnapshot(sourceBuffer);
+                auto snapshotSearch = snapshotMap.find(buffer);
+                if (snapshotSearch != std::end(snapshotMap))
+                {
+                    return snapshotSearch->second;
+                }
+
+                Buffer *snapshotBuffer = createBufferSnapshot(buffer);
+                if (snapshotBuffer && snapshotBuffer != buffer)
+                {
+                    ++uiSnapshotCreatedThisFrame;
+                    uiSnapshotBytesThisFrame += static_cast<uint64_t>(buffer->size);
+                }
+
+                snapshotMap[buffer] = snapshotBuffer;
+                return snapshotBuffer;
             }
 
             bool checkInstanceExtensionSupport(std::vector<const char*> &instanceExtensions)
@@ -9798,7 +9717,7 @@ namespace Gek
                 const uint32_t totalCommandCount = static_cast<uint32_t>(pendingDrawCommands.size());
                 const uint32_t uiCommandCount = (totalCommandCount >= sceneCommandCount) ? (totalCommandCount - sceneCommandCount) : 0u;
                 debugOverlayText = std::format(
-                    "VK f={} total={} ui={} scene={} draws={} off={} back={} descSkips={} pipeSkips={} offSkips={} glassDraw={} glassCopy={} glassNoRes={} glassS1Miss={} glassS01Eq={} glassFirstSlot={}..{} devLost={}",
+                    "VK f={} total={} ui={} scene={} draws={} off={} back={} descSkips={} pipeSkips={} offSkips={} glassDraw={} glassCopy={} glassNoRes={} glassS1Miss={} glassS01Eq={} glassFirstSlot={}..{} cbRot={} cbExh={} cbRec={} devLost={}",
                     presentFrameIndex,
                     totalCommandCount,
                     uiCommandCount,
@@ -9816,6 +9735,9 @@ namespace Gek
                     glassSamplerSlot01SameCount,
                     (glassDrawFirstResourceSlotMin == PixelResourceSlotCount ? 999u : glassDrawFirstResourceSlotMin),
                     (glassDrawFirstResourceSlotMin == PixelResourceSlotCount ? 999u : glassDrawFirstResourceSlotMax),
+                    constantBufferVersionRotationsThisFrame,
+                    constantBufferVersionExhaustionThisFrame,
+                    constantBufferVersionWaitRecoveriesThisFrame,
                     static_cast<uint32_t>(deviceLost));
                 getContext()->setRuntimeMetric("vulkan.frame", static_cast<double>(presentFrameIndex));
                 getContext()->setRuntimeMetric("vulkan.totalCommands", static_cast<double>(totalCommandCount));
@@ -9939,19 +9861,7 @@ namespace Gek
             std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
             auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
             {
-                if (!buffer)
-                {
-                    return nullptr;
-                }
-
-                auto snapshotSearch = constantBufferSnapshotMap.find(buffer);
-                if (snapshotSearch != std::end(constantBufferSnapshotMap))
-                {
-                    return snapshotSearch->second;
-                }
-                Buffer *snapshotBuffer = createConstantBufferSnapshot(buffer);
-                constantBufferSnapshotMap[buffer] = snapshotBuffer;
-                return snapshotBuffer;
+                return captureBufferSnapshot(buffer, true, constantBufferSnapshotMap);
             };
 
             for (uint32_t slot = 0; slot < command.computeConstantBuffers.size(); ++slot)
