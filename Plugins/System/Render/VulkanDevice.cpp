@@ -462,12 +462,20 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
+            static constexpr uint32_t VersionSlotCount = 3;
+
             Render::Buffer::Description description;
             VkDevice device = VK_NULL_HANDLE;
             VkBuffer buffer = VK_NULL_HANDLE;
             VkDeviceMemory memory = VK_NULL_HANDLE;
             void *mappedData = nullptr;
             VkDeviceSize size = 0;
+            bool usesVersionedConstantBacking = false;
+            uint32_t activeVersionIndex = 0;
+            std::array<VkBuffer, VersionSlotCount> versionBufferList{};
+            std::array<VkDeviceMemory, VersionSlotCount> versionMemoryList{};
+            std::array<void *, VersionSlotCount> versionMappedDataList{};
+            std::array<bool, VersionSlotCount> versionInUseList{};
 
         public:
             Buffer(VkDevice device, const Render::Buffer::Description &description)
@@ -487,6 +495,35 @@ namespace Gek
                     buffer = VK_NULL_HANDLE;
                     memory = VK_NULL_HANDLE;
                     device = VK_NULL_HANDLE;
+                    return;
+                }
+
+                if (usesVersionedConstantBacking)
+                {
+                    for (uint32_t slot = 0; slot < VersionSlotCount; ++slot)
+                    {
+                        if (versionMappedDataList[slot])
+                        {
+                            vkUnmapMemory(device, versionMemoryList[slot]);
+                            versionMappedDataList[slot] = nullptr;
+                        }
+
+                        if (versionBufferList[slot] != VK_NULL_HANDLE)
+                        {
+                            vkDestroyBuffer(device, versionBufferList[slot], nullptr);
+                            versionBufferList[slot] = VK_NULL_HANDLE;
+                        }
+
+                        if (versionMemoryList[slot] != VK_NULL_HANDLE)
+                        {
+                            vkFreeMemory(device, versionMemoryList[slot], nullptr);
+                            versionMemoryList[slot] = VK_NULL_HANDLE;
+                        }
+                    }
+
+                    mappedData = nullptr;
+                    buffer = VK_NULL_HANDLE;
+                    memory = VK_NULL_HANDLE;
                     return;
                 }
 
@@ -1854,19 +1891,7 @@ namespace Gek
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        const bool isUiDraw =
-                            ((command.pixelProgram &&
-                                (
-                                    command.pixelProgram->getInformation().name.find("core::uiPixelProgram") != std::string::npos ||
-                                    command.pixelProgram->getInformation().name.find("core:uiPixelProgram") != std::string::npos ||
-                                    command.pixelProgram->getInformation().name.find("uiPixelProgram") != std::string::npos
-                                )) ||
-                            (command.vertexProgram &&
-                                (
-                                    command.vertexProgram->getInformation().name.find("core::uiVertexProgram") != std::string::npos ||
-                                    command.vertexProgram->getInformation().name.find("core:uiVertexProgram") != std::string::npos ||
-                                    command.vertexProgram->getInformation().name.find("uiVertexProgram") != std::string::npos
-                                )));
+                        const bool isUiDraw = owner->isUiDrawCommand(command);
                         const bool shouldSnapshotConstants = isUiDraw;
                         const bool shouldSnapshotGeometry = isUiDraw;
 
@@ -1902,10 +1927,14 @@ namespace Gek
 
                         command.vertexConstantBuffer = snapshotConstantBuffer(command.vertexConstantBuffer);
                         command.pixelConstantBuffer = snapshotConstantBuffer(command.pixelConstantBuffer);
+                        command.vertexConstantBufferVersion = owner->captureConstantBufferVersion(command.vertexConstantBuffer);
+                        command.pixelConstantBufferVersion = owner->captureConstantBufferVersion(command.pixelConstantBuffer);
                         for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                         {
                             command.vertexConstantBuffers[slot] = snapshotConstantBuffer(command.vertexConstantBuffers[slot]);
                             command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
+                            command.vertexConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.vertexConstantBuffers[slot]);
+                            command.pixelConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.pixelConstantBuffers[slot]);
                         }
 
                         if (shouldSnapshotGeometry)
@@ -2030,19 +2059,7 @@ namespace Gek
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        const bool isUiDraw =
-                            ((command.pixelProgram &&
-                                (
-                                    command.pixelProgram->getInformation().name.find("core::uiPixelProgram") != std::string::npos ||
-                                    command.pixelProgram->getInformation().name.find("core:uiPixelProgram") != std::string::npos ||
-                                    command.pixelProgram->getInformation().name.find("uiPixelProgram") != std::string::npos
-                                )) ||
-                            (command.vertexProgram &&
-                                (
-                                    command.vertexProgram->getInformation().name.find("core::uiVertexProgram") != std::string::npos ||
-                                    command.vertexProgram->getInformation().name.find("core:uiVertexProgram") != std::string::npos ||
-                                    command.vertexProgram->getInformation().name.find("uiVertexProgram") != std::string::npos
-                                )));
+                        const bool isUiDraw = owner->isUiDrawCommand(command);
                         const bool shouldSnapshotConstants = isUiDraw;
                         const bool shouldSnapshotGeometry = isUiDraw;
 
@@ -2078,10 +2095,14 @@ namespace Gek
 
                         command.vertexConstantBuffer = snapshotConstantBuffer(command.vertexConstantBuffer);
                         command.pixelConstantBuffer = snapshotConstantBuffer(command.pixelConstantBuffer);
+                        command.vertexConstantBufferVersion = owner->captureConstantBufferVersion(command.vertexConstantBuffer);
+                        command.pixelConstantBufferVersion = owner->captureConstantBufferVersion(command.pixelConstantBuffer);
                         for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                         {
                             command.vertexConstantBuffers[slot] = snapshotConstantBuffer(command.vertexConstantBuffers[slot]);
                             command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
+                            command.vertexConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.vertexConstantBuffers[slot]);
+                            command.pixelConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.pixelConstantBuffers[slot]);
                         }
 
                         if (shouldSnapshotGeometry)
@@ -2230,19 +2251,7 @@ namespace Gek
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        const bool isUiDraw =
-                            ((command.pixelProgram &&
-                                (
-                                    command.pixelProgram->getInformation().name.find("core::uiPixelProgram") != std::string::npos ||
-                                    command.pixelProgram->getInformation().name.find("core:uiPixelProgram") != std::string::npos ||
-                                    command.pixelProgram->getInformation().name.find("uiPixelProgram") != std::string::npos
-                                )) ||
-                            (command.vertexProgram &&
-                                (
-                                    command.vertexProgram->getInformation().name.find("core::uiVertexProgram") != std::string::npos ||
-                                    command.vertexProgram->getInformation().name.find("core:uiVertexProgram") != std::string::npos ||
-                                    command.vertexProgram->getInformation().name.find("uiVertexProgram") != std::string::npos
-                                )));
+                        const bool isUiDraw = owner->isUiDrawCommand(command);
                         const bool shouldSnapshotConstants = isUiDraw;
                         const bool shouldSnapshotGeometry = isUiDraw;
 
@@ -2278,10 +2287,14 @@ namespace Gek
 
                         command.vertexConstantBuffer = snapshotConstantBuffer(command.vertexConstantBuffer);
                         command.pixelConstantBuffer = snapshotConstantBuffer(command.pixelConstantBuffer);
+                        command.vertexConstantBufferVersion = owner->captureConstantBufferVersion(command.vertexConstantBuffer);
+                        command.pixelConstantBufferVersion = owner->captureConstantBufferVersion(command.pixelConstantBuffer);
                         for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                         {
                             command.vertexConstantBuffers[slot] = snapshotConstantBuffer(command.vertexConstantBuffers[slot]);
                             command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
+                            command.vertexConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.vertexConstantBuffers[slot]);
+                            command.pixelConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.pixelConstantBuffers[slot]);
                         }
 
                         if (shouldSnapshotGeometry)
@@ -2430,19 +2443,7 @@ namespace Gek
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        const bool isUiDraw =
-                            ((command.pixelProgram &&
-                                (
-                                    command.pixelProgram->getInformation().name.find("core::uiPixelProgram") != std::string::npos ||
-                                    command.pixelProgram->getInformation().name.find("core:uiPixelProgram") != std::string::npos ||
-                                    command.pixelProgram->getInformation().name.find("uiPixelProgram") != std::string::npos
-                                )) ||
-                            (command.vertexProgram &&
-                                (
-                                    command.vertexProgram->getInformation().name.find("core::uiVertexProgram") != std::string::npos ||
-                                    command.vertexProgram->getInformation().name.find("core:uiVertexProgram") != std::string::npos ||
-                                    command.vertexProgram->getInformation().name.find("uiVertexProgram") != std::string::npos
-                                )));
+                        const bool isUiDraw = owner->isUiDrawCommand(command);
                         const bool shouldSnapshotConstants = isUiDraw;
                         const bool shouldSnapshotGeometry = isUiDraw;
 
@@ -2478,10 +2479,14 @@ namespace Gek
 
                         command.vertexConstantBuffer = snapshotConstantBuffer(command.vertexConstantBuffer);
                         command.pixelConstantBuffer = snapshotConstantBuffer(command.pixelConstantBuffer);
+                        command.vertexConstantBufferVersion = owner->captureConstantBufferVersion(command.vertexConstantBuffer);
+                        command.pixelConstantBufferVersion = owner->captureConstantBufferVersion(command.pixelConstantBuffer);
                         for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                         {
                             command.vertexConstantBuffers[slot] = snapshotConstantBuffer(command.vertexConstantBuffers[slot]);
                             command.pixelConstantBuffers[slot] = snapshotConstantBuffer(command.pixelConstantBuffers[slot]);
+                            command.vertexConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.vertexConstantBuffers[slot]);
+                            command.pixelConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.pixelConstantBuffers[slot]);
                         }
 
                         if (shouldSnapshotGeometry)
@@ -2667,8 +2672,12 @@ namespace Gek
                 PixelProgram *pixelProgram = nullptr;
                 Buffer *vertexConstantBuffer = nullptr;
                 Buffer *pixelConstantBuffer = nullptr;
+                uint8_t vertexConstantBufferVersion = 0;
+                uint8_t pixelConstantBufferVersion = 0;
                 std::array<Buffer *, PixelResourceSlotCount> vertexConstantBuffers{};
                 std::array<Buffer *, PixelResourceSlotCount> pixelConstantBuffers{};
+                std::array<uint8_t, PixelResourceSlotCount> vertexConstantBufferVersions{};
+                std::array<uint8_t, PixelResourceSlotCount> pixelConstantBufferVersions{};
                 VkImageView pixelImageView = VK_NULL_HANDLE;
                 VkSampler pixelSampler = VK_NULL_HANDLE;
                 std::array<VkImageView, PixelResourceSlotCount> pixelResourceImageViews{};
@@ -2692,6 +2701,7 @@ namespace Gek
                 uint32_t computeThreadGroupCountY = 0;
                 uint32_t computeThreadGroupCountZ = 0;
                 std::array<Buffer *, PixelResourceSlotCount> computeConstantBuffers{};
+                std::array<uint8_t, PixelResourceSlotCount> computeConstantBufferVersions{};
                 std::array<Render::Object *, PixelResourceSlotCount> computeResources{};
                 std::array<VkImageView, PixelResourceSlotCount> computeResourceImageViews{};
                 std::array<VkSampler, PixelResourceSlotCount> computeResourceSamplers{};
@@ -2725,12 +2735,17 @@ namespace Gek
             uint64_t uiSnapshotCreatedThisFrame = 0;
             uint64_t uiSnapshotReusedThisFrame = 0;
             uint64_t uiSnapshotBytesThisFrame = 0;
+            uint64_t constantBufferVersionRotationsThisFrame = 0;
+            uint64_t constantBufferVersionExhaustionThisFrame = 0;
+            uint64_t constantBufferVersionWaitRecoveriesThisFrame = 0;
+            Render::BufferVersioningPolicy constantBufferVersioningPolicy = { Render::BufferVersioningMode::FixedRing, static_cast<uint8_t>(Buffer::VersionSlotCount) };
             uint64_t nextCommandListIdentifier = 1;
             uint64_t deferredFinishCalls = 0;
             uint64_t deferredExecuteCalls = 0;
             uint64_t deferredExecutedCommandCount = 0;
             uint64_t pendingCommandEnqueueCount = 0;
             uint64_t deferredCommandEnqueueCount = 0;
+            std::set<Buffer *> versionedConstantBuffersInFlight;
             std::map<VkImage, VkImageLayout> offscreenImageLayouts;
             std::map<VkImageView, std::pair<VkImage, VkExtent2D>> persistentImageViewLookup;
             std::mutex persistentImageViewLookupMutex;
@@ -2748,6 +2763,9 @@ namespace Gek
             bool loggedZeroCountSkip = false;
             bool deviceLost = false;
             bool loggedDeviceLost = false;
+            uint64_t uiVertexProgramId = 0;
+            uint64_t uiPixelProgramId = 0;
+            mutable std::mutex uiProgramIdMutex;
             std::string debugOverlayText = "VK: init";
             bool samplerAnisotropySupported = false;
             float maxSamplerAnisotropy = 1.0f;
@@ -2828,10 +2846,113 @@ namespace Gek
                 return *mutex;
             }
 
+            static bool isUiVertexProgramName(std::string_view programName)
+            {
+                return (programName == "core::uiVertexProgram") || (programName == "core:uiVertexProgram");
+            }
+
+            static bool isUiPixelProgramName(std::string_view programName)
+            {
+                return (programName == "core::uiPixelProgram") || (programName == "core:uiPixelProgram");
+            }
+
+            void trackUiProgramId(std::string_view programName, uint64_t programId)
+            {
+                if (programId == 0)
+                {
+                    return;
+                }
+
+                std::lock_guard<std::mutex> lock(uiProgramIdMutex);
+                if (isUiVertexProgramName(programName))
+                {
+                    uiVertexProgramId = programId;
+                }
+
+                if (isUiPixelProgramName(programName))
+                {
+                    uiPixelProgramId = programId;
+                }
+            }
+
+            bool isUiProgramId(uint64_t programId) const
+            {
+                if (programId == 0)
+                {
+                    return false;
+                }
+
+                std::lock_guard<std::mutex> lock(uiProgramIdMutex);
+                return (programId == uiVertexProgramId) || (programId == uiPixelProgramId);
+            }
+
+            bool isUiDrawCommand(const DrawCommand &command) const
+            {
+                const uint64_t vertexProgramId = (command.vertexProgram ? command.vertexProgram->getInformation().programId : 0ull);
+                const uint64_t pixelProgramId = (command.pixelProgram ? command.pixelProgram->getInformation().programId : 0ull);
+                return isUiProgramId(vertexProgramId) || isUiProgramId(pixelProgramId);
+            }
+
             static std::mutex &getTextureDecodeMutex(void)
             {
                 static std::mutex *mutex = new std::mutex();
                 return *mutex;
+            }
+
+            bool shouldUseVersionedConstantBuffer(Render::Buffer::Description const &description) const
+            {
+                  return (constantBufferVersioningPolicy.mode == Render::BufferVersioningMode::FixedRing) &&
+                      (constantBufferVersioningPolicy.ringSize >= 2) &&
+                      (description.type == Render::Buffer::Type::Constant) &&
+                       ((description.flags & Render::Buffer::Flags::Mappable) != 0);
+            }
+
+            void releaseVersionedConstantBufferSlots(void)
+            {
+                for (auto *buffer : versionedConstantBuffersInFlight)
+                {
+                    if (!buffer || !buffer->usesVersionedConstantBacking)
+                    {
+                        continue;
+                    }
+
+                    buffer->versionInUseList.fill(false);
+                }
+
+                versionedConstantBuffersInFlight.clear();
+            }
+
+            uint8_t captureConstantBufferVersion(Buffer *buffer)
+            {
+                if (!buffer || !buffer->usesVersionedConstantBacking)
+                {
+                    return 0;
+                }
+
+                const uint8_t versionIndex = static_cast<uint8_t>(std::min<uint32_t>(buffer->activeVersionIndex, Buffer::VersionSlotCount - 1));
+                buffer->versionInUseList[versionIndex] = true;
+                versionedConstantBuffersInFlight.insert(buffer);
+                return versionIndex;
+            }
+
+            VkBuffer getCapturedConstantVkBuffer(Buffer const *buffer, uint8_t versionIndex) const
+            {
+                if (!buffer)
+                {
+                    return VK_NULL_HANDLE;
+                }
+
+                if (!buffer->usesVersionedConstantBacking)
+                {
+                    return buffer->buffer;
+                }
+
+                if (versionIndex >= Buffer::VersionSlotCount)
+                {
+                    return VK_NULL_HANDLE;
+                }
+
+                return buffer->versionBufferList[versionIndex];
             }
 
             uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const
@@ -2856,6 +2977,11 @@ namespace Gek
                 if (!sourceBuffer || sourceBuffer->buffer == VK_NULL_HANDLE)
                 {
                     return nullptr;
+                }
+
+                if (sourceBuffer->usesVersionedConstantBacking)
+                {
+                    return sourceBuffer;
                 }
 
                 Render::BufferPtr snapshotResource = createBuffer(sourceBuffer->getDescription(), nullptr);
@@ -3894,13 +4020,7 @@ namespace Gek
                     return VK_NULL_HANDLE;
                 }
 
-                const bool isUiProgram =
-                    (command.pixelProgram &&
-                    (
-                        command.pixelProgram->getInformation().name.find("core::uiPixelProgram") != std::string::npos ||
-                        command.pixelProgram->getInformation().name.find("core:uiPixelProgram") != std::string::npos ||
-                        command.pixelProgram->getInformation().name.find("uiPixelProgram") != std::string::npos
-                    ));
+                const bool isUiProgram = isUiDrawCommand(command);
 
                 PipelineKey key;
                 key.vertexModule = command.vertexProgram->shaderModule;
@@ -4797,41 +4917,96 @@ namespace Gek
                 bufferInfo.size = buffer->size;
                 bufferInfo.usage = usage;
                 bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer->buffer) != VK_SUCCESS)
+                const bool useVersionedConstantBacking = shouldUseVersionedConstantBuffer(description);
+                if (useVersionedConstantBacking)
                 {
-                    return nullptr;
-                }
+                    buffer->usesVersionedConstantBacking = true;
 
-                VkMemoryRequirements memoryRequirements{};
-                vkGetBufferMemoryRequirements(device, buffer->buffer, &memoryRequirements);
+                    for (uint32_t slot = 0; slot < Buffer::VersionSlotCount; ++slot)
+                    {
+                        if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer->versionBufferList[slot]) != VK_SUCCESS)
+                        {
+                            return nullptr;
+                        }
 
-                VkMemoryAllocateInfo allocateInfo{};
-                allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-                allocateInfo.allocationSize = memoryRequirements.size;
-                allocateInfo.memoryTypeIndex = findMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-                if (allocateInfo.memoryTypeIndex == UINT32_MAX)
-                {
-                    getContext()->log(Gek::Context::Error,
-                        "No compatible Vulkan memory type found for buffer '{}' (typeBits={}, flags={}).",
-                        description.name, memoryRequirements.memoryTypeBits,
-                        static_cast<uint32_t>(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
-                    return nullptr;
-                }
-                if (vkAllocateMemory(device, &allocateInfo, nullptr, &buffer->memory) != VK_SUCCESS)
-                {
-                    return nullptr;
-                }
+                        VkMemoryRequirements memoryRequirements{};
+                        vkGetBufferMemoryRequirements(device, buffer->versionBufferList[slot], &memoryRequirements);
 
-                if (vkBindBufferMemory(device, buffer->buffer, buffer->memory, 0) != VK_SUCCESS)
-                {
-                    return nullptr;
-                }
+                        VkMemoryAllocateInfo allocateInfo{};
+                        allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+                        allocateInfo.allocationSize = memoryRequirements.size;
+                        allocateInfo.memoryTypeIndex = findMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                        if (allocateInfo.memoryTypeIndex == UINT32_MAX)
+                        {
+                            getContext()->log(Gek::Context::Error,
+                                "No compatible Vulkan memory type found for constant buffer '{}' (typeBits={}, flags={}).",
+                                description.name, memoryRequirements.memoryTypeBits,
+                                static_cast<uint32_t>(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+                            return nullptr;
+                        }
 
-                if (description.flags & Render::Buffer::Flags::Mappable)
+                        if (vkAllocateMemory(device, &allocateInfo, nullptr, &buffer->versionMemoryList[slot]) != VK_SUCCESS)
+                        {
+                            return nullptr;
+                        }
+
+                        if (vkBindBufferMemory(device, buffer->versionBufferList[slot], buffer->versionMemoryList[slot], 0) != VK_SUCCESS)
+                        {
+                            return nullptr;
+                        }
+
+                        if ((description.flags & Render::Buffer::Flags::Mappable) != 0)
+                        {
+                            if (vkMapMemory(device, buffer->versionMemoryList[slot], 0, buffer->size, 0, &buffer->versionMappedDataList[slot]) != VK_SUCCESS)
+                            {
+                                return nullptr;
+                            }
+                        }
+                    }
+
+                    buffer->activeVersionIndex = 0;
+                    buffer->buffer = buffer->versionBufferList[0];
+                    buffer->memory = buffer->versionMemoryList[0];
+                    buffer->mappedData = buffer->versionMappedDataList[0];
+                }
+                else
                 {
-                    if (vkMapMemory(device, buffer->memory, 0, buffer->size, 0, &buffer->mappedData) != VK_SUCCESS)
+                    if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer->buffer) != VK_SUCCESS)
                     {
                         return nullptr;
+                    }
+
+                    VkMemoryRequirements memoryRequirements{};
+                    vkGetBufferMemoryRequirements(device, buffer->buffer, &memoryRequirements);
+
+                    VkMemoryAllocateInfo allocateInfo{};
+                    allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+                    allocateInfo.allocationSize = memoryRequirements.size;
+                    allocateInfo.memoryTypeIndex = findMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                    if (allocateInfo.memoryTypeIndex == UINT32_MAX)
+                    {
+                        getContext()->log(Gek::Context::Error,
+                            "No compatible Vulkan memory type found for buffer '{}' (typeBits={}, flags={}).",
+                            description.name, memoryRequirements.memoryTypeBits,
+                            static_cast<uint32_t>(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+                        return nullptr;
+                    }
+                    if (vkAllocateMemory(device, &allocateInfo, nullptr, &buffer->memory) != VK_SUCCESS)
+                    {
+                        return nullptr;
+                    }
+
+                    if (vkBindBufferMemory(device, buffer->buffer, buffer->memory, 0) != VK_SUCCESS)
+                    {
+                        return nullptr;
+                    }
+
+                    if (description.flags & Render::Buffer::Flags::Mappable)
+                    {
+                        if (vkMapMemory(device, buffer->memory, 0, buffer->size, 0, &buffer->mappedData) != VK_SUCCESS)
+                        {
+                            return nullptr;
+                        }
                     }
                 }
 
@@ -4864,7 +5039,66 @@ namespace Gek
                     return false;
                 }
 
-                std::lock_guard<std::mutex> lock(getDrawCommandMutex());
+                std::unique_lock<std::mutex> lock(getDrawCommandMutex());
+
+                if (vulkanBuffer->usesVersionedConstantBacking)
+                {
+                    const uint32_t ringSize = std::max<uint32_t>(2, std::min<uint32_t>(constantBufferVersioningPolicy.ringSize, Buffer::VersionSlotCount));
+
+                    auto selectFreeVersion = [&]() -> std::optional<uint32_t>
+                    {
+                        for (uint32_t step = 1; step <= ringSize; ++step)
+                        {
+                            const uint32_t candidateVersion = (vulkanBuffer->activeVersionIndex + step) % ringSize;
+                            if (!vulkanBuffer->versionInUseList[candidateVersion])
+                            {
+                                return candidateVersion;
+                            }
+                        }
+
+                        return std::nullopt;
+                    };
+
+                    if (mapping == Render::Map::WriteDiscard)
+                    {
+                        auto selectedVersion = selectFreeVersion();
+                        if (!selectedVersion)
+                        {
+                            ++constantBufferVersionExhaustionThisFrame;
+
+                            if (inFlightFencePending)
+                            {
+                                lock.unlock();
+                                const VkResult waitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+                                lock.lock();
+
+                                if (waitResult == VK_SUCCESS)
+                                {
+                                    inFlightFencePending = false;
+                                    releaseVersionedConstantBufferSlots();
+                                    selectedVersion = selectFreeVersion();
+                                    if (selectedVersion)
+                                    {
+                                        ++constantBufferVersionWaitRecoveriesThisFrame;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (selectedVersion)
+                        {
+                            if (*selectedVersion != vulkanBuffer->activeVersionIndex)
+                            {
+                                ++constantBufferVersionRotationsThisFrame;
+                            }
+                            vulkanBuffer->activeVersionIndex = *selectedVersion;
+                        }
+                    }
+
+                    vulkanBuffer->buffer = vulkanBuffer->versionBufferList[vulkanBuffer->activeVersionIndex];
+                    vulkanBuffer->memory = vulkanBuffer->versionMemoryList[vulkanBuffer->activeVersionIndex];
+                    vulkanBuffer->mappedData = vulkanBuffer->versionMappedDataList[vulkanBuffer->activeVersionIndex];
+                }
 
                 if (!vulkanBuffer->mappedData)
                 {
@@ -4895,6 +5129,38 @@ namespace Gek
                 if (vulkanBuffer && data)
                 {
                     std::lock_guard<std::mutex> lock(getDrawCommandMutex());
+
+                    if (vulkanBuffer->usesVersionedConstantBacking)
+                    {
+                        const uint32_t ringSize = std::max<uint32_t>(2, std::min<uint32_t>(constantBufferVersioningPolicy.ringSize, Buffer::VersionSlotCount));
+                        std::optional<uint32_t> selectedVersion;
+                        for (uint32_t step = 1; step <= ringSize; ++step)
+                        {
+                            const uint32_t candidateVersion = (vulkanBuffer->activeVersionIndex + step) % ringSize;
+                            if (!vulkanBuffer->versionInUseList[candidateVersion])
+                            {
+                                selectedVersion = candidateVersion;
+                                break;
+                            }
+                        }
+
+                        if (selectedVersion)
+                        {
+                            if (*selectedVersion != vulkanBuffer->activeVersionIndex)
+                            {
+                                ++constantBufferVersionRotationsThisFrame;
+                            }
+                            vulkanBuffer->activeVersionIndex = *selectedVersion;
+                        }
+                        else
+                        {
+                            ++constantBufferVersionExhaustionThisFrame;
+                        }
+
+                        vulkanBuffer->buffer = vulkanBuffer->versionBufferList[vulkanBuffer->activeVersionIndex];
+                        vulkanBuffer->memory = vulkanBuffer->versionMemoryList[vulkanBuffer->activeVersionIndex];
+                        vulkanBuffer->mappedData = vulkanBuffer->versionMappedDataList[vulkanBuffer->activeVersionIndex];
+                    }
 
                     void *mapData = vulkanBuffer->mappedData;
                     if (!mapData)
@@ -5099,6 +5365,8 @@ namespace Gek
 
                 std::string resolvedProgram = resolveIncludes(uncompiledProgram, 0);
                 const std::string programIdSource = resolvedProgram;
+                const uint64_t currentProgramId = computeDeterministicProgramId(type, entryFunction, programIdSource);
+                trackUiProgramId(name, currentProgramId);
 
                 auto normalizeBufferResources = [](std::string &source)
                 {
@@ -5264,8 +5532,8 @@ namespace Gek
                     source = std::move(annotated);
                 };
 
-                const bool isUiVertexProgram = (name == "core::uiVertexProgram") || (name == "core:uiVertexProgram");
-                const bool isUiPixelProgram = (name == "core::uiPixelProgram") || (name == "core:uiPixelProgram");
+                const bool isUiVertexProgram = (type == Render::Program::Type::Vertex) && isUiProgramId(currentProgramId);
+                const bool isUiPixelProgram = (type == Render::Program::Type::Pixel) && isUiProgramId(currentProgramId);
 
                 if (isUiVertexProgram)
                 {
@@ -5385,7 +5653,7 @@ namespace Gek
 
                 Render::Program::Information information;
                 information.type = type;
-                information.programId = computeDeterministicProgramId(type, entryFunction, programIdSource);
+                information.programId = currentProgramId;
                 information.name = name;
                 information.debugPath = debugPath;
                 information.entryFunction = entryFunction;
@@ -6718,6 +6986,11 @@ namespace Gek
                     }
 
                     inFlightFencePending = false;
+
+                    {
+                        std::lock_guard<std::mutex> drawLock(getDrawCommandMutex());
+                        releaseVersionedConstantBufferSlots();
+                    }
                 }
 
                 {
@@ -6738,6 +7011,9 @@ namespace Gek
                     uiSnapshotCreatedThisFrame = 0;
                     uiSnapshotReusedThisFrame = 0;
                     uiSnapshotBytesThisFrame = 0;
+                    constantBufferVersionRotationsThisFrame = 0;
+                    constantBufferVersionExhaustionThisFrame = 0;
+                    constantBufferVersionWaitRecoveriesThisFrame = 0;
 
                     const auto cleanupFramebufferEndTime = std::chrono::high_resolution_clock::now();
                     cleanupFramebufferCpuMs = std::chrono::duration<double, std::milli>(cleanupFramebufferEndTime - cleanupFramebufferStartTime).count();
@@ -8474,12 +8750,14 @@ namespace Gek
                                     writes.push_back(write);
                                 }
 
-                                if (drawCommand.computeConstantBuffers[resourceSlot] && drawCommand.computeConstantBuffers[resourceSlot]->buffer != VK_NULL_HANDLE)
+                                Buffer *computeConstantBuffer = drawCommand.computeConstantBuffers[resourceSlot];
+                                const VkBuffer computeConstantVkBuffer = getCapturedConstantVkBuffer(computeConstantBuffer, drawCommand.computeConstantBufferVersions[resourceSlot]);
+                                if (computeConstantBuffer && computeConstantVkBuffer != VK_NULL_HANDLE)
                                 {
                                     auto &constantBufferInfo = bufferInfos[bufferInfoCount++];
-                                    constantBufferInfo.buffer = drawCommand.computeConstantBuffers[resourceSlot]->buffer;
+                                    constantBufferInfo.buffer = computeConstantVkBuffer;
                                     constantBufferInfo.offset = 0;
-                                    constantBufferInfo.range = drawCommand.computeConstantBuffers[resourceSlot]->size;
+                                    constantBufferInfo.range = computeConstantBuffer->size;
 
                                     VkWriteDescriptorSet write{};
                                     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -8529,19 +8807,7 @@ namespace Gek
                             continue;
                         }
 
-                        const bool isUiDraw =
-                            ((drawCommand.pixelProgram &&
-                                (
-                                    drawCommand.pixelProgram->getInformation().name.find("core::uiPixelProgram") != std::string::npos ||
-                                    drawCommand.pixelProgram->getInformation().name.find("core:uiPixelProgram") != std::string::npos ||
-                                    drawCommand.pixelProgram->getInformation().name.find("uiPixelProgram") != std::string::npos
-                                )) ||
-                            (drawCommand.vertexProgram &&
-                                (
-                                    drawCommand.vertexProgram->getInformation().name.find("core::uiVertexProgram") != std::string::npos ||
-                                    drawCommand.vertexProgram->getInformation().name.find("core:uiVertexProgram") != std::string::npos ||
-                                    drawCommand.vertexProgram->getInformation().name.find("uiVertexProgram") != std::string::npos
-                                )));
+                        const bool isUiDraw = isUiDrawCommand(drawCommand);
 
                         uint32_t firstGlassResourceSlot = PixelResourceSlotCount;
                         if (!isUiDraw)
@@ -9130,7 +9396,8 @@ namespace Gek
                                 if (vkAllocateDescriptorSets(device, &descriptorAllocateInfo, &descriptorSet) == VK_SUCCESS)
                                 {
                                     VkDescriptorBufferInfo bufferInfo{};
-                                    bufferInfo.buffer = drawCommand.vertexConstantBuffer ? drawCommand.vertexConstantBuffer->buffer : VK_NULL_HANDLE;
+                                    const VkBuffer uiVertexConstantVkBuffer = getCapturedConstantVkBuffer(drawCommand.vertexConstantBuffer, drawCommand.vertexConstantBufferVersion);
+                                    bufferInfo.buffer = uiVertexConstantVkBuffer;
                                     bufferInfo.offset = 0;
                                     bufferInfo.range = drawCommand.vertexConstantBuffer ? drawCommand.vertexConstantBuffer->size : 0;
 
@@ -9297,10 +9564,11 @@ namespace Gek
                                     for (uint32_t constantStage = 0; constantStage < PixelResourceSlotCount; ++constantStage)
                                     {
                                         Buffer *pixelConstantBuffer = drawCommand.pixelConstantBuffers[constantStage];
-                                        if (pixelConstantBuffer && pixelConstantBuffer->buffer != VK_NULL_HANDLE)
+                                        const VkBuffer pixelConstantVkBuffer = getCapturedConstantVkBuffer(pixelConstantBuffer, drawCommand.pixelConstantBufferVersions[constantStage]);
+                                        if (pixelConstantBuffer && pixelConstantVkBuffer != VK_NULL_HANDLE)
                                         {
                                             auto &pixelConstantBufferInfo = bufferInfos[bufferInfoCount++];
-                                            pixelConstantBufferInfo.buffer = pixelConstantBuffer->buffer;
+                                            pixelConstantBufferInfo.buffer = pixelConstantVkBuffer;
                                             pixelConstantBufferInfo.offset = 0;
                                             pixelConstantBufferInfo.range = pixelConstantBuffer->size;
 
@@ -9315,13 +9583,14 @@ namespace Gek
                                         }
 
                                         Buffer *vertexConstantBuffer = drawCommand.vertexConstantBuffers[constantStage];
-                                        if (!vertexConstantBuffer || vertexConstantBuffer->buffer == VK_NULL_HANDLE)
+                                        const VkBuffer vertexConstantVkBuffer = getCapturedConstantVkBuffer(vertexConstantBuffer, drawCommand.vertexConstantBufferVersions[constantStage]);
+                                        if (!vertexConstantBuffer || vertexConstantVkBuffer == VK_NULL_HANDLE)
                                         {
                                             continue;
                                         }
 
                                         auto &vertexConstantBufferInfo = bufferInfos[bufferInfoCount++];
-                                        vertexConstantBufferInfo.buffer = vertexConstantBuffer->buffer;
+                                        vertexConstantBufferInfo.buffer = vertexConstantVkBuffer;
                                         vertexConstantBufferInfo.offset = 0;
                                         vertexConstantBufferInfo.range = vertexConstantBuffer->size;
 
@@ -9599,6 +9868,9 @@ namespace Gek
                 getContext()->setRuntimeMetric("vulkan.uiSnapshotBytes", static_cast<double>(uiSnapshotBytesThisFrame));
                 getContext()->setRuntimeMetric("vulkan.uiSnapshotPending", static_cast<double>(transientFrameConstantBufferSnapshotsPending.size()));
                 getContext()->setRuntimeMetric("vulkan.uiSnapshotInFlight", static_cast<double>(transientFrameConstantBufferSnapshotsInFlight.size()));
+                getContext()->setRuntimeMetric("vulkan.constantVersionRotations", static_cast<double>(constantBufferVersionRotationsThisFrame));
+                getContext()->setRuntimeMetric("vulkan.constantVersionExhaustions", static_cast<double>(constantBufferVersionExhaustionThisFrame));
+                getContext()->setRuntimeMetric("vulkan.constantVersionWaitRecoveries", static_cast<double>(constantBufferVersionWaitRecoveriesThisFrame));
 
                 transientFrameConstantBufferSnapshotsInFlight = std::move(transientFrameConstantBufferSnapshotsPending);
                 transientFrameConstantBufferSnapshotsPending.clear();
@@ -9685,6 +9957,7 @@ namespace Gek
             for (uint32_t slot = 0; slot < command.computeConstantBuffers.size(); ++slot)
             {
                 command.computeConstantBuffers[slot] = snapshotConstantBuffer(command.computeConstantBuffers[slot]);
+                command.computeConstantBufferVersions[slot] = captureConstantBufferVersion(command.computeConstantBuffers[slot]);
             }
 
             if (sourceContext->isDeferredContext)

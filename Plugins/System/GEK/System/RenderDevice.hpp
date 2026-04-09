@@ -144,8 +144,23 @@ namespace Gek
             Read = 0,
             Write,
             ReadWrite,
+            // WriteDiscard should provide a fresh writable backing whenever possible
+            // to avoid overwriting GPU-visible data from in-flight work.
             WriteDiscard,
+            // WriteNoOverwrite should preserve data already consumed by the GPU.
             WriteNoOverwrite,
+        };
+
+        enum class BufferVersioningMode : uint8_t
+        {
+            Disabled = 0,
+            FixedRing,
+        };
+
+        struct BufferVersioningPolicy
+        {
+            BufferVersioningMode mode = BufferVersioningMode::Disabled;
+            uint8_t ringSize = 0;
         };
 
         namespace TextureLoadFlags
