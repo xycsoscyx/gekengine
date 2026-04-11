@@ -15,6 +15,20 @@ namespace Gek
 {
     namespace
     {
+        bool isDataTexture(std::string_view textureSlotName)
+        {
+            const std::string lowered = String::GetLower(textureSlotName);
+            return
+                (lowered.find("normal") != std::string::npos) ||
+                (lowered.find("roughness") != std::string::npos) ||
+                (lowered.find("metal") != std::string::npos) ||
+                (lowered.find("ao") != std::string::npos) ||
+                (lowered.find("occlusion") != std::string::npos) ||
+                (lowered.find("height") != std::string::npos) ||
+                (lowered.find("clarity") != std::string::npos) ||
+                (lowered.find("thickness") != std::string::npos);
+        }
+
         std::string normalizeMaterialName(std::string_view materialName)
         {
             FileSystem::Path normalizedPath(materialName);
@@ -101,6 +115,13 @@ namespace Gek
                             {
                                 auto fileName = JSON::Value(resourceNode, "file", String::Empty);
                                 uint32_t flags = getTextureLoadFlags(JSON::Value(resourceNode, "flags", String::Empty));
+
+                                // Data textures must remain linear; sRGB sampling biases decoded values.
+                                if (isDataTexture(initializer.name))
+                                {
+                                    flags &= ~Render::TextureLoadFlags::sRGB;
+                                }
+
                                 resourceHandle = resources->loadTexture(fileName, flags, initializer.fallback);
                             }
                             else if (resourceNode.contains("source"))

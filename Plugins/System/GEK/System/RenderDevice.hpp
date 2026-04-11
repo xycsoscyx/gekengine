@@ -654,11 +654,16 @@ namespace Gek
         {
             struct Description
             {
+                static constexpr uint8_t DefaultVersioningRingSize = 3;
+
                 std::string name;
                 std::string device;
                 Format displayFormat = Format::R8G8B8A8_UNORM_SRGB;
                 uint32_t sampleCount = 1;
                 uint32_t sampleQuality = 0;
+                BufferVersioningPolicy constantBufferVersioningPolicy = { BufferVersioningMode::FixedRing, DefaultVersioningRingSize };
+                BufferVersioningPolicy vertexBufferVersioningPolicy = { BufferVersioningMode::FixedRing, DefaultVersioningRingSize };
+                BufferVersioningPolicy indexBufferVersioningPolicy = { BufferVersioningMode::FixedRing, DefaultVersioningRingSize };
             };
 
             GEK_INTERFACE(Context)

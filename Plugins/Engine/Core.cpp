@@ -185,7 +185,7 @@ namespace Gek
                 size_t sampleCount = 0;
             };
 
-            std::array<RuntimeMetricPlot, 23> runtimeMetricPlots =
+            std::array<RuntimeMetricPlot, 71> runtimeMetricPlots =
             {{
                 { "render.fpsInstant", "FPS (Instant)", ImVec4(0.95f, 0.82f, 0.26f, 1.0f) },
                 { "render.fpsSmoothed", "FPS (Smoothed)", ImVec4(0.95f, 0.62f, 0.20f, 1.0f) },
@@ -205,13 +205,66 @@ namespace Gek
                 { "vulkan.uiSnapshotBytes", "Vulkan Snapshot Bytes", ImVec4(0.96f, 0.52f, 0.22f, 1.0f) },
                 { "vulkan.uiSnapshotPending", "Vulkan Snapshot Pending", ImVec4(0.92f, 0.62f, 0.30f, 1.0f) },
                 { "vulkan.uiSnapshotInFlight", "Vulkan Snapshot In-Flight", ImVec4(0.88f, 0.72f, 0.38f, 1.0f) },
+                { "vulkan.constantBufferVersioningEnabled", "Vulkan CB Versioning Enabled", ImVec4(0.92f, 0.83f, 0.26f, 1.0f) },
+                { "vulkan.vertexBufferVersioningEnabled", "Vulkan VB Versioning Enabled", ImVec4(0.84f, 0.83f, 0.28f, 1.0f) },
+                { "vulkan.indexBufferVersioningEnabled", "Vulkan IB Versioning Enabled", ImVec4(0.76f, 0.83f, 0.30f, 1.0f) },
+                { "vulkan.constantBufferRingSize", "Vulkan CB Ring Size", ImVec4(0.92f, 0.66f, 0.30f, 1.0f) },
+                { "vulkan.vertexBufferRingSize", "Vulkan VB Ring Size", ImVec4(0.84f, 0.66f, 0.34f, 1.0f) },
+                { "vulkan.indexBufferRingSize", "Vulkan IB Ring Size", ImVec4(0.76f, 0.66f, 0.38f, 1.0f) },
+                { "vulkan.constantVersionRotations", "Vulkan CB Rotations", ImVec4(0.95f, 0.40f, 0.26f, 1.0f) },
+                { "vulkan.constantVersionExhaustions", "Vulkan CB Exhaustions", ImVec4(0.95f, 0.28f, 0.28f, 1.0f) },
+                { "vulkan.constantVersionWaitRecoveries", "Vulkan CB Wait Recoveries", ImVec4(0.95f, 0.22f, 0.22f, 1.0f) },
+                { "vulkan.constantVersionWriteAttempts", "Vulkan CB Write Attempts", ImVec4(0.95f, 0.56f, 0.30f, 1.0f) },
+                { "vulkan.constantVersionExhaustionsNoFence", "Vulkan CB Exhaustions (No Fence)", ImVec4(0.95f, 0.44f, 0.44f, 1.0f) },
+                { "vulkan.constantVersionWaitAttempts", "Vulkan CB Wait Attempts", ImVec4(0.95f, 0.50f, 0.38f, 1.0f) },
+                { "vulkan.constantVersionPostWaitExhaustions", "Vulkan CB Post-Wait Exhaustions", ImVec4(0.95f, 0.38f, 0.48f, 1.0f) },
+                { "vulkan.vertexVersionRotations", "Vulkan VB Rotations", ImVec4(0.62f, 0.48f, 0.95f, 1.0f) },
+                { "vulkan.vertexVersionExhaustions", "Vulkan VB Exhaustions", ImVec4(0.54f, 0.38f, 0.95f, 1.0f) },
+                { "vulkan.vertexVersionWaitRecoveries", "Vulkan VB Wait Recoveries", ImVec4(0.46f, 0.30f, 0.95f, 1.0f) },
+                { "vulkan.vertexVersionWriteAttempts", "Vulkan VB Write Attempts", ImVec4(0.70f, 0.56f, 0.95f, 1.0f) },
+                { "vulkan.vertexVersionExhaustionsNoFence", "Vulkan VB Exhaustions (No Fence)", ImVec4(0.66f, 0.50f, 0.95f, 1.0f) },
+                { "vulkan.vertexVersionWaitAttempts", "Vulkan VB Wait Attempts", ImVec4(0.74f, 0.58f, 0.95f, 1.0f) },
+                { "vulkan.vertexVersionPostWaitExhaustions", "Vulkan VB Post-Wait Exhaustions", ImVec4(0.62f, 0.52f, 0.95f, 1.0f) },
+                { "vulkan.indexVersionRotations", "Vulkan IB Rotations", ImVec4(0.36f, 0.76f, 0.62f, 1.0f) },
+                { "vulkan.indexVersionExhaustions", "Vulkan IB Exhaustions", ImVec4(0.30f, 0.70f, 0.56f, 1.0f) },
+                { "vulkan.indexVersionWaitRecoveries", "Vulkan IB Wait Recoveries", ImVec4(0.24f, 0.64f, 0.50f, 1.0f) },
+                { "vulkan.indexVersionWriteAttempts", "Vulkan IB Write Attempts", ImVec4(0.44f, 0.84f, 0.66f, 1.0f) },
+                { "vulkan.indexVersionExhaustionsNoFence", "Vulkan IB Exhaustions (No Fence)", ImVec4(0.52f, 0.90f, 0.74f, 1.0f) },
+                { "vulkan.indexVersionWaitAttempts", "Vulkan IB Wait Attempts", ImVec4(0.60f, 0.92f, 0.78f, 1.0f) },
+                { "vulkan.indexVersionPostWaitExhaustions", "Vulkan IB Post-Wait Exhaustions", ImVec4(0.48f, 0.86f, 0.70f, 1.0f) },
+                { "vulkan.constantVersionRotationsTotal", "Vulkan CB Rotations (Total)", ImVec4(0.95f, 0.46f, 0.34f, 1.0f) },
+                { "vulkan.constantVersionExhaustionsTotal", "Vulkan CB Exhaustions (Total)", ImVec4(0.95f, 0.36f, 0.36f, 1.0f) },
+                { "vulkan.constantVersionWaitRecoveriesTotal", "Vulkan CB Wait Recoveries (Total)", ImVec4(0.95f, 0.30f, 0.30f, 1.0f) },
+                { "vulkan.constantVersionWriteAttemptsTotal", "Vulkan CB Write Attempts (Total)", ImVec4(0.95f, 0.62f, 0.40f, 1.0f) },
+                { "vulkan.constantVersionExhaustionsNoFenceTotal", "Vulkan CB Exhaustions (No Fence, Total)", ImVec4(0.95f, 0.52f, 0.52f, 1.0f) },
+                { "vulkan.constantVersionWaitAttemptsTotal", "Vulkan CB Wait Attempts (Total)", ImVec4(0.95f, 0.58f, 0.48f, 1.0f) },
+                { "vulkan.constantVersionPostWaitExhaustionsTotal", "Vulkan CB Post-Wait Exhaustions (Total)", ImVec4(0.95f, 0.46f, 0.58f, 1.0f) },
+                { "vulkan.vertexVersionRotationsTotal", "Vulkan VB Rotations (Total)", ImVec4(0.70f, 0.56f, 0.95f, 1.0f) },
+                { "vulkan.vertexVersionExhaustionsTotal", "Vulkan VB Exhaustions (Total)", ImVec4(0.62f, 0.46f, 0.95f, 1.0f) },
+                { "vulkan.vertexVersionWaitRecoveriesTotal", "Vulkan VB Wait Recoveries (Total)", ImVec4(0.54f, 0.38f, 0.95f, 1.0f) },
+                { "vulkan.vertexVersionWriteAttemptsTotal", "Vulkan VB Write Attempts (Total)", ImVec4(0.78f, 0.64f, 0.95f, 1.0f) },
+                { "vulkan.vertexVersionExhaustionsNoFenceTotal", "Vulkan VB Exhaustions (No Fence, Total)", ImVec4(0.74f, 0.60f, 0.95f, 1.0f) },
+                { "vulkan.vertexVersionWaitAttemptsTotal", "Vulkan VB Wait Attempts (Total)", ImVec4(0.82f, 0.68f, 0.95f, 1.0f) },
+                { "vulkan.vertexVersionPostWaitExhaustionsTotal", "Vulkan VB Post-Wait Exhaustions (Total)", ImVec4(0.70f, 0.64f, 0.95f, 1.0f) },
+                { "vulkan.indexVersionRotationsTotal", "Vulkan IB Rotations (Total)", ImVec4(0.46f, 0.84f, 0.70f, 1.0f) },
+                { "vulkan.indexVersionExhaustionsTotal", "Vulkan IB Exhaustions (Total)", ImVec4(0.38f, 0.78f, 0.62f, 1.0f) },
+                { "vulkan.indexVersionWaitRecoveriesTotal", "Vulkan IB Wait Recoveries (Total)", ImVec4(0.32f, 0.72f, 0.56f, 1.0f) },
+                { "vulkan.indexVersionWriteAttemptsTotal", "Vulkan IB Write Attempts (Total)", ImVec4(0.54f, 0.88f, 0.74f, 1.0f) },
+                { "vulkan.indexVersionExhaustionsNoFenceTotal", "Vulkan IB Exhaustions (No Fence, Total)", ImVec4(0.62f, 0.94f, 0.82f, 1.0f) },
+                { "vulkan.indexVersionWaitAttemptsTotal", "Vulkan IB Wait Attempts (Total)", ImVec4(0.70f, 0.96f, 0.86f, 1.0f) },
+                { "vulkan.indexVersionPostWaitExhaustionsTotal", "Vulkan IB Post-Wait Exhaustions (Total)", ImVec4(0.58f, 0.90f, 0.78f, 1.0f) },
                 { "d3d11.presentCpuMs", "D3D11 Present (ms)", ImVec4(0.58f, 0.78f, 0.95f, 1.0f) },
                 { "render.totalCommands", "Render Total Commands", ImVec4(0.55f, 0.42f, 0.92f, 1.0f) },
                 { "render.sceneDraws", "Render Scene Draws", ImVec4(0.35f, 0.50f, 0.95f, 1.0f) },
                 { "visualizer.queuedDrawCalls", "Queued Draw Calls", ImVec4(0.95f, 0.30f, 0.30f, 1.0f) },
                 { "model.visibleModels", "Visible Models", ImVec4(0.40f, 0.78f, 0.33f, 1.0f) },
             }};
-            std::array<bool, 23> runtimeMetricVisible = {{ true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true }};
+            std::array<bool, 71> runtimeMetricVisible = []() -> std::array<bool, 71>
+            {
+                std::array<bool, 71> initialVisibility{};
+                initialVisibility.fill(true);
+                return initialVisibility;
+            }();
             bool runtimeMetricViewAll = true;
             uint64_t runtimeMetricsLastFrame = 0;
             std::array<char, 260> runtimeLogFilePath = {};
@@ -219,6 +272,8 @@ namespace Gek
             double runtimeFpsSmoothed = 0.0;
             bool runtimeFpsSmoothedInitialized = false;
             bool runtimeEnableVulkanCharts = false;
+            bool runtimeDumpMetricsOnExit = true;
+            bool runtimeDumpMetricsCsvFormat = true;
 
             bool showModeChange = false;
             float modeChangeTimer = 0.0f;
@@ -261,6 +316,71 @@ namespace Gek
                 }
             }
 
+            void logRuntimeMetricSnapshot(std::unordered_map<std::string, double> const &runtimeMetrics, bool visibleOnly, char const *reason)
+            {
+                std::vector<std::pair<std::string, double>> metricsToLog;
+                metricsToLog.reserve(visibleOnly ? runtimeMetricPlots.size() : runtimeMetrics.size());
+
+                if (visibleOnly)
+                {
+                    for (size_t plotIndex = 0; plotIndex < runtimeMetricPlots.size(); ++plotIndex)
+                    {
+                        if (!runtimeMetricVisible[plotIndex])
+                        {
+                            continue;
+                        }
+
+                        auto const &plot = runtimeMetricPlots[plotIndex];
+                        if (!plot.key)
+                        {
+                            continue;
+                        }
+
+                        auto metricSearch = runtimeMetrics.find(plot.key);
+                        if (metricSearch != std::end(runtimeMetrics))
+                        {
+                            metricsToLog.emplace_back(metricSearch->first, metricSearch->second);
+                        }
+                    }
+                }
+                else
+                {
+                    for (auto const &[metricKey, metricValue] : runtimeMetrics)
+                    {
+                        metricsToLog.emplace_back(metricKey, metricValue);
+                    }
+                }
+
+                std::sort(std::begin(metricsToLog), std::end(metricsToLog), [](auto const &left, auto const &right) -> bool
+                {
+                    return left.first < right.first;
+                });
+
+                getContext()->log(
+                    Context::Info,
+                    "Runtime metric snapshot [{}] - {} metrics",
+                    (reason ? reason : "unspecified"),
+                    metricsToLog.size());
+
+                for (auto const &[metricKey, metricValue] : metricsToLog)
+                {
+                    if (runtimeDumpMetricsCsvFormat)
+                    {
+                        getContext()->log(Context::Info, "RUNTIME_METRIC_CSV,{},{},{:.6f}", (reason ? reason : "unspecified"), metricKey, metricValue);
+                    }
+                    else
+                    {
+                        getContext()->log(Context::Info, "RUNTIME_METRIC {}={:.6f}", metricKey, metricValue);
+                    }
+                }
+            }
+
+            void logRuntimeMetricSnapshot(bool visibleOnly, char const *reason)
+            {
+                auto runtimeMetrics = getContext()->getRuntimeMetricSnapshot();
+                logRuntimeMetricSnapshot(runtimeMetrics, visibleOnly, reason);
+            }
+
             bool loadingPopulation = false;
 
         public:
@@ -286,6 +406,8 @@ namespace Gek
                 getContext()->setLogSinkMask(static_cast<uint8_t>(configuredSinkMask));
 
                 runtimeLogFileAppend = JSON::Value(getOption("logging", "appendFile"), true);
+                runtimeDumpMetricsOnExit = JSON::Value(getOption("logging", "dumpRuntimeMetricsOnExit"), true);
+                runtimeDumpMetricsCsvFormat = JSON::Value(getOption("logging", "dumpRuntimeMetricsCsvFormat"), true);
                 std::string configuredLogFilePath = JSON::Value(getOption("logging", "filePath"), std::string(runtimeLogFilePath.data()));
                 if (!configuredLogFilePath.empty())
                 {
@@ -341,6 +463,11 @@ namespace Gek
                 if (population)
                 {
                     population->onLoad.disconnect(this, &Core::onPopulationLoaded);
+                }
+
+                if (runtimeDumpMetricsOnExit)
+                {
+                    logRuntimeMetricSnapshot(false, "shutdown-final");
                 }
 
                 if (window)
@@ -457,6 +584,28 @@ namespace Gek
                 getContext()->log(Gek::Context::Info, "Window Created, Finishing Core Initialization");
 
                 Render::Device::Description deviceDescription;
+                auto clampVersionRingSize = [](int32_t requestedRingSize) -> uint8_t
+                {
+                    return static_cast<uint8_t>(std::clamp(
+                        requestedRingSize,
+                        0,
+                        static_cast<int32_t>(Render::Device::Description::DefaultVersioningRingSize)));
+                };
+
+                deviceDescription.constantBufferVersioningPolicy.ringSize = clampVersionRingSize(
+                    Plugin::Core::getOption("render", "vulkanConstantBufferRing", static_cast<int32_t>(deviceDescription.constantBufferVersioningPolicy.ringSize)));
+                deviceDescription.vertexBufferVersioningPolicy.ringSize = clampVersionRingSize(
+                    Plugin::Core::getOption("render", "vulkanVertexBufferRing", static_cast<int32_t>(deviceDescription.vertexBufferVersioningPolicy.ringSize)));
+                deviceDescription.indexBufferVersioningPolicy.ringSize = clampVersionRingSize(
+                    Plugin::Core::getOption("render", "vulkanIndexBufferRing", static_cast<int32_t>(deviceDescription.indexBufferVersioningPolicy.ringSize)));
+
+                deviceDescription.constantBufferVersioningPolicy.mode =
+                    (deviceDescription.constantBufferVersioningPolicy.ringSize >= 2) ? Render::BufferVersioningMode::FixedRing : Render::BufferVersioningMode::Disabled;
+                deviceDescription.vertexBufferVersioningPolicy.mode =
+                    (deviceDescription.vertexBufferVersioningPolicy.ringSize >= 2) ? Render::BufferVersioningMode::FixedRing : Render::BufferVersioningMode::Disabled;
+                deviceDescription.indexBufferVersioningPolicy.mode =
+                    (deviceDescription.indexBufferVersioningPolicy.ringSize >= 2) ? Render::BufferVersioningMode::FixedRing : Render::BufferVersioningMode::Disabled;
+
                 renderDevice = getContext()->createClass<Render::Device>("Default::Device::Video", window.get(), deviceDescription);
 
                 uint32_t preferredDisplayMode = 0;
@@ -671,6 +820,10 @@ namespace Gek
                         }
 
                         break;
+
+                    case Window::Key::F10:
+                        showRuntimeDiagnostics = !showRuntimeDiagnostics;
+                        break;
                     };
                 }
 
@@ -868,8 +1021,9 @@ namespace Gek
                     showModifiedPrompt();
                     showLoadWindow();
                     showReset();
-                    showRuntimeDiagnosticsWindow(runtimeMetrics);
                 }
+
+                showRuntimeDiagnosticsWindow(runtimeMetrics);
 
                 showLoading();
             }
@@ -1015,18 +1169,30 @@ namespace Gek
                         ImGui::Text("D3D11 present: %.3f ms", readMetricValue("d3d11.presentCpuMs"));
                     }
 
-                    for (size_t plotIndex = 0; plotIndex < runtimeMetricPlots.size(); ++plotIndex)
+                    if (ImGui::CollapsingHeader("Metric Visibility", ImGuiTreeNodeFlags_DefaultOpen))
                     {
-                        auto const &plot = runtimeMetricPlots[plotIndex];
-                        ImGui::PushID(static_cast<int>(plotIndex));
-                        ImGui::ColorButton("##legendColor", plot.color, ImGuiColorEditFlags_NoTooltip, ImVec2(12.0f, 12.0f));
-                        ImGui::SameLine();
-                        if (ImGui::Checkbox(plot.label, &runtimeMetricVisible[plotIndex]))
+                        ImGui::BeginChild("##RuntimeMetricList", ImVec2(0.0f, 190.0f), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+                        ImGuiListClipper clipper;
+                        clipper.Begin(static_cast<int>(runtimeMetricPlots.size()));
+                        while (clipper.Step())
                         {
-                            runtimeMetricViewAll = std::all_of(std::begin(runtimeMetricVisible), std::end(runtimeMetricVisible), [](bool value) -> bool { return value; });
+                            for (int clippedIndex = clipper.DisplayStart; clippedIndex < clipper.DisplayEnd; ++clippedIndex)
+                            {
+                                const size_t plotIndex = static_cast<size_t>(clippedIndex);
+                                auto const &plot = runtimeMetricPlots[plotIndex];
+                                ImGui::PushID(clippedIndex);
+                                ImGui::ColorButton("##legendColor", plot.color, ImGuiColorEditFlags_NoTooltip, ImVec2(12.0f, 12.0f));
+                                ImGui::SameLine();
+                                if (ImGui::Checkbox(plot.label, &runtimeMetricVisible[plotIndex]))
+                                {
+                                    runtimeMetricViewAll = std::all_of(std::begin(runtimeMetricVisible), std::end(runtimeMetricVisible), [](bool value) -> bool { return value; });
+                                }
+
+                                ImGui::PopID();
+                            }
                         }
 
-                        ImGui::PopID();
+                        ImGui::EndChild();
                     }
 
                     ImGui::BeginChild("##RuntimeChartRegion", ImVec2(0.0f, 240.0f), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
@@ -1258,58 +1424,85 @@ namespace Gek
                     }
                     ImGui::EndChild();
 
-                    for (size_t plotIndex = 0; plotIndex < runtimeMetricPlots.size(); ++plotIndex)
+                    if (ImGui::CollapsingHeader("Metric Summaries (Advanced)", ImGuiTreeNodeFlags_None))
                     {
-                        if (!runtimeMetricVisible[plotIndex])
+                        std::vector<size_t> summaryPlotIndices;
+                        summaryPlotIndices.reserve(runtimeMetricPlots.size());
+                        for (size_t plotIndex = 0; plotIndex < runtimeMetricPlots.size(); ++plotIndex)
                         {
-                            continue;
-                        }
-
-                        auto const &plot = runtimeMetricPlots[plotIndex];
-                        if (plot.sampleCount == 0)
-                        {
-                            continue;
-                        }
-
-                        float minimum = 0.0f;
-                        float maximum = 0.0f;
-                        float total = 0.0f;
-                        float current = 0.0f;
-                        size_t validCount = 0;
-                        for (size_t sampleIndex = 0; sampleIndex < plot.sampleCount; ++sampleIndex)
-                        {
-                            float value = plot.samples[sampleIndex];
-                            if (!std::isfinite(value))
+                            if (!runtimeMetricVisible[plotIndex])
                             {
                                 continue;
                             }
 
-                            value = std::clamp(value, -1000000.0f, 1000000.0f);
-                            if (validCount == 0)
+                            if (runtimeMetricPlots[plotIndex].sampleCount == 0)
                             {
-                                minimum = value;
-                                maximum = value;
-                            }
-                            else
-                            {
-                                minimum = std::min(minimum, value);
-                                maximum = std::max(maximum, value);
+                                continue;
                             }
 
-                            total += value;
-                            current = value;
-                            ++validCount;
+                            summaryPlotIndices.push_back(plotIndex);
                         }
 
-                        if (validCount > 0)
+                        ImGui::BeginChild("##RuntimeMetricSummaryList", ImVec2(0.0f, 180.0f), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+                        if (summaryPlotIndices.empty())
                         {
-                            float average = (total / static_cast<float>(validCount));
-                            ImGui::Text("%s | current=%.1f min=%.1f max=%.1f avg=%.1f", plot.label, current, minimum, maximum, average);
+                            ImGui::TextDisabled("No visible metrics with samples.");
                         }
                         else
                         {
-                            ImGui::Text("%s | no valid samples", plot.label);
+                            ImGuiListClipper clipper;
+                            clipper.Begin(static_cast<int>(summaryPlotIndices.size()));
+                            while (clipper.Step())
+                            {
+                                for (int clippedIndex = clipper.DisplayStart; clippedIndex < clipper.DisplayEnd; ++clippedIndex)
+                                {
+                                    const size_t plotIndex = summaryPlotIndices[clippedIndex];
+                                    auto const &plot = runtimeMetricPlots[plotIndex];
+
+                                    float minimum = 0.0f;
+                                    float maximum = 0.0f;
+                                    float total = 0.0f;
+                                    float current = 0.0f;
+                                    size_t validCount = 0;
+                                    for (size_t sampleIndex = 0; sampleIndex < plot.sampleCount; ++sampleIndex)
+                                    {
+                                        float value = plot.samples[sampleIndex];
+                                        if (!std::isfinite(value))
+                                        {
+                                            continue;
+                                        }
+
+                                        value = std::clamp(value, -1000000.0f, 1000000.0f);
+                                        if (validCount == 0)
+                                        {
+                                            minimum = value;
+                                            maximum = value;
+                                        }
+                                        else
+                                        {
+                                            minimum = std::min(minimum, value);
+                                            maximum = std::max(maximum, value);
+                                        }
+
+                                        total += value;
+                                        current = value;
+                                        ++validCount;
+                                    }
+
+                                    if (validCount > 0)
+                                    {
+                                        float average = (total / static_cast<float>(validCount));
+                                        ImGui::Text("%s | current=%.1f min=%.1f max=%.1f avg=%.1f", plot.label, current, minimum, maximum, average);
+                                    }
+                                    else
+                                    {
+                                        ImGui::Text("%s | no valid samples", plot.label);
+                                    }
+                                }
+                            }
                         }
+
+                        ImGui::EndChild();
                     }
 
                     auto fallbackEntitySearch = runtimeMetrics.find("model.entityCullingFallback");
@@ -1319,6 +1512,18 @@ namespace Gek
                     {
                         ImGui::Separator();
                         ImGui::TextUnformatted("Model culling fallback triggered this frame.");
+                    }
+
+                    ImGui::Separator();
+                    if (ImGui::Button("Dump visible metrics to log"))
+                    {
+                        logRuntimeMetricSnapshot(runtimeMetrics, true, "runtime-window-visible");
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("Dump all metrics to log"))
+                    {
+                        logRuntimeMetricSnapshot(runtimeMetrics, false, "runtime-window-all");
                     }
 
                     ImGui::Separator();
@@ -1379,6 +1584,16 @@ namespace Gek
                     {
                         getContext()->setLogFilePath(FileSystem::Path(runtimeLogFilePath.data()), runtimeLogFileAppend);
                     }
+                }
+
+                if (ImGui::Checkbox("Dump metrics on exit", &runtimeDumpMetricsOnExit))
+                {
+                    setOption("logging"s, "dumpRuntimeMetricsOnExit"s, runtimeDumpMetricsOnExit);
+                }
+
+                if (ImGui::Checkbox("CSV metric dump format", &runtimeDumpMetricsCsvFormat))
+                {
+                    setOption("logging"s, "dumpRuntimeMetricsCsvFormat"s, runtimeDumpMetricsCsvFormat);
                 }
 
                 bool applyPath = ImGui::InputText("Log File Path", runtimeLogFilePath.data(), runtimeLogFilePath.size(), ImGuiInputTextFlags_EnterReturnsTrue);
@@ -1689,6 +1904,49 @@ namespace Gek
                     if (ImGui::TreeNodeEx("Logging", ImGuiTreeNodeFlags_Framed))
                     {
                         showLoggingSinkControls("settings_dialog");
+                        ImGui::TreePop();
+                    }
+
+                    if (ImGui::TreeNodeEx("Vulkan Buffer Versioning", ImGuiTreeNodeFlags_Framed))
+                    {
+                        auto clampVersionRingSize = [](int32_t requestedRingSize) -> int32_t
+                        {
+                            return std::clamp(
+                                requestedRingSize,
+                                0,
+                                static_cast<int32_t>(Render::Device::Description::DefaultVersioningRingSize));
+                        };
+
+                        int32_t constantRing = clampVersionRingSize(Plugin::Core::getOption(
+                            "render",
+                            "vulkanConstantBufferRing",
+                            static_cast<int32_t>(Render::Device::Description::DefaultVersioningRingSize)));
+                        int32_t vertexRing = clampVersionRingSize(Plugin::Core::getOption(
+                            "render",
+                            "vulkanVertexBufferRing",
+                            static_cast<int32_t>(Render::Device::Description::DefaultVersioningRingSize)));
+                        int32_t indexRing = clampVersionRingSize(Plugin::Core::getOption(
+                            "render",
+                            "vulkanIndexBufferRing",
+                            static_cast<int32_t>(Render::Device::Description::DefaultVersioningRingSize)));
+
+                        if (ImGui::SliderInt("Constant Ring Size", &constantRing, 0, static_cast<int32_t>(Render::Device::Description::DefaultVersioningRingSize)))
+                        {
+                            setOption("render", "vulkanConstantBufferRing", clampVersionRingSize(constantRing));
+                        }
+
+                        if (ImGui::SliderInt("Vertex Ring Size", &vertexRing, 0, static_cast<int32_t>(Render::Device::Description::DefaultVersioningRingSize)))
+                        {
+                            setOption("render", "vulkanVertexBufferRing", clampVersionRingSize(vertexRing));
+                        }
+
+                        if (ImGui::SliderInt("Index Ring Size", &indexRing, 0, static_cast<int32_t>(Render::Device::Description::DefaultVersioningRingSize)))
+                        {
+                            setOption("render", "vulkanIndexBufferRing", clampVersionRingSize(indexRing));
+                        }
+
+                        ImGui::TextDisabled("0-1 disables discard renaming, 2-3 enables fixed-ring versioning.");
+                        ImGui::TextDisabled("Changes apply when the render device is recreated (restart).");
                         ImGui::TreePop();
                     }
 

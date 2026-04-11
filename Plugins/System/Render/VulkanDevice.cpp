@@ -179,6 +179,120 @@ namespace Gek
             }
         }
 
+        DXGI_FORMAT ResolveDxgiFormatForSrgbPreference(DXGI_FORMAT format, bool preferSrgb)
+        {
+            if (preferSrgb)
+            {
+                switch (format)
+                {
+                case DXGI_FORMAT_BC1_UNORM: return DXGI_FORMAT_BC1_UNORM_SRGB;
+                case DXGI_FORMAT_BC2_UNORM: return DXGI_FORMAT_BC2_UNORM_SRGB;
+                case DXGI_FORMAT_BC3_UNORM: return DXGI_FORMAT_BC3_UNORM_SRGB;
+                case DXGI_FORMAT_BC7_UNORM: return DXGI_FORMAT_BC7_UNORM_SRGB;
+                case DXGI_FORMAT_R8G8B8A8_UNORM: return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+                default:
+                    break;
+                }
+            }
+            else
+            {
+                switch (format)
+                {
+                case DXGI_FORMAT_BC1_UNORM_SRGB: return DXGI_FORMAT_BC1_UNORM;
+                case DXGI_FORMAT_BC2_UNORM_SRGB: return DXGI_FORMAT_BC2_UNORM;
+                case DXGI_FORMAT_BC3_UNORM_SRGB: return DXGI_FORMAT_BC3_UNORM;
+                case DXGI_FORMAT_BC7_UNORM_SRGB: return DXGI_FORMAT_BC7_UNORM;
+                case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: return DXGI_FORMAT_R8G8B8A8_UNORM;
+                default:
+                    break;
+                }
+            }
+
+            return format;
+        }
+
+        VkFormat GetVkFormat(DXGI_FORMAT format)
+        {
+            switch (format)
+            {
+            case DXGI_FORMAT_R8G8B8A8_UNORM: return VK_FORMAT_R8G8B8A8_UNORM;
+            case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: return VK_FORMAT_R8G8B8A8_SRGB;
+            case DXGI_FORMAT_BC1_UNORM: return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+            case DXGI_FORMAT_BC1_UNORM_SRGB: return VK_FORMAT_BC1_RGBA_SRGB_BLOCK;
+            case DXGI_FORMAT_BC2_UNORM: return VK_FORMAT_BC2_UNORM_BLOCK;
+            case DXGI_FORMAT_BC2_UNORM_SRGB: return VK_FORMAT_BC2_SRGB_BLOCK;
+            case DXGI_FORMAT_BC3_UNORM: return VK_FORMAT_BC3_UNORM_BLOCK;
+            case DXGI_FORMAT_BC3_UNORM_SRGB: return VK_FORMAT_BC3_SRGB_BLOCK;
+            case DXGI_FORMAT_BC4_UNORM: return VK_FORMAT_BC4_UNORM_BLOCK;
+            case DXGI_FORMAT_BC4_SNORM: return VK_FORMAT_BC4_SNORM_BLOCK;
+            case DXGI_FORMAT_BC5_UNORM: return VK_FORMAT_BC5_UNORM_BLOCK;
+            case DXGI_FORMAT_BC5_SNORM: return VK_FORMAT_BC5_SNORM_BLOCK;
+            case DXGI_FORMAT_BC7_UNORM: return VK_FORMAT_BC7_UNORM_BLOCK;
+            case DXGI_FORMAT_BC7_UNORM_SRGB: return VK_FORMAT_BC7_SRGB_BLOCK;
+            default:
+                return VK_FORMAT_UNDEFINED;
+            }
+        }
+
+        std::pair<size_t, size_t> GetBlockCount(DXGI_FORMAT format, uint32_t width, uint32_t height)
+        {
+            switch (format)
+            {
+            case DXGI_FORMAT_BC1_UNORM:
+            case DXGI_FORMAT_BC1_UNORM_SRGB:
+            case DXGI_FORMAT_BC2_UNORM:
+            case DXGI_FORMAT_BC2_UNORM_SRGB:
+            case DXGI_FORMAT_BC3_UNORM:
+            case DXGI_FORMAT_BC3_UNORM_SRGB:
+            case DXGI_FORMAT_BC4_UNORM:
+            case DXGI_FORMAT_BC4_SNORM:
+            case DXGI_FORMAT_BC5_UNORM:
+            case DXGI_FORMAT_BC5_SNORM:
+            case DXGI_FORMAT_BC7_UNORM:
+            case DXGI_FORMAT_BC7_UNORM_SRGB:
+                return { std::max<size_t>(1, (width + 3u) / 4u), std::max<size_t>(1, (height + 3u) / 4u) };
+            default:
+                return { static_cast<size_t>(std::max(width, 1u)), static_cast<size_t>(std::max(height, 1u)) };
+            }
+        }
+
+        size_t GetRowPitch(DXGI_FORMAT format, size_t blocksWide)
+        {
+            switch (format)
+            {
+            case DXGI_FORMAT_BC1_UNORM:
+            case DXGI_FORMAT_BC1_UNORM_SRGB:
+            case DXGI_FORMAT_BC4_UNORM:
+            case DXGI_FORMAT_BC4_SNORM:
+                return blocksWide * 8;
+            case DXGI_FORMAT_BC2_UNORM:
+            case DXGI_FORMAT_BC2_UNORM_SRGB:
+            case DXGI_FORMAT_BC3_UNORM:
+            case DXGI_FORMAT_BC3_UNORM_SRGB:
+            case DXGI_FORMAT_BC5_UNORM:
+            case DXGI_FORMAT_BC5_SNORM:
+            case DXGI_FORMAT_BC7_UNORM:
+            case DXGI_FORMAT_BC7_UNORM_SRGB:
+                return blocksWide * 16;
+            case DXGI_FORMAT_R8G8B8A8_UNORM:
+            case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+                return blocksWide * 4;
+            default:
+                return 0;
+            }
+        }
+
+        size_t GetSlicePitch(DXGI_FORMAT format, size_t blocksWide, size_t blocksHigh)
+        {
+            const size_t rowPitch = GetRowPitch(format, blocksWide);
+            if (rowPitch == 0)
+            {
+                return 0;
+            }
+
+            return rowPitch * blocksHigh;
+        }
+
         uint32_t GetFormatStride(Render::Format format)
         {
             switch (format)
@@ -239,7 +353,7 @@ namespace Gek
                 return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
             }
         }
-  
+
         const std::vector<const char*> validationLayers =
         {
             "VK_LAYER_KHRONOS_validation",
@@ -1903,14 +2017,21 @@ namespace Gek
 
                         command.vertexConstantBuffer = snapshotCapturedBuffer(command.vertexConstantBuffer, shouldSnapshotConstants);
                         command.pixelConstantBuffer = snapshotCapturedBuffer(command.pixelConstantBuffer, shouldSnapshotConstants);
-                        command.vertexConstantBufferVersion = owner->captureConstantBufferVersion(command.vertexConstantBuffer);
-                        command.pixelConstantBufferVersion = owner->captureConstantBufferVersion(command.pixelConstantBuffer);
+                        command.vertexConstantBufferVersion = owner->captureVersionedBufferSlot(command.vertexConstantBuffer);
+                        command.pixelConstantBufferVersion = owner->captureVersionedBufferSlot(command.pixelConstantBuffer);
                         for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                         {
                             command.vertexConstantBuffers[slot] = snapshotCapturedBuffer(command.vertexConstantBuffers[slot], shouldSnapshotConstants);
                             command.pixelConstantBuffers[slot] = snapshotCapturedBuffer(command.pixelConstantBuffers[slot], shouldSnapshotConstants);
-                            command.vertexConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.vertexConstantBuffers[slot]);
-                            command.pixelConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.pixelConstantBuffers[slot]);
+                            command.vertexConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
+                            command.pixelConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
+                        }
+
+                        command.vertexBufferVersion = owner->captureVersionedBufferSlot(command.vertexBuffer);
+                        command.indexBufferVersion = owner->captureVersionedBufferSlot(command.indexBuffer);
+                        for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
+                        {
+                            command.vertexBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexBuffers[slot]);
                         }
 
                         if (shouldSnapshotGeometry)
@@ -2047,14 +2168,21 @@ namespace Gek
 
                         command.vertexConstantBuffer = snapshotCapturedBuffer(command.vertexConstantBuffer, shouldSnapshotConstants);
                         command.pixelConstantBuffer = snapshotCapturedBuffer(command.pixelConstantBuffer, shouldSnapshotConstants);
-                        command.vertexConstantBufferVersion = owner->captureConstantBufferVersion(command.vertexConstantBuffer);
-                        command.pixelConstantBufferVersion = owner->captureConstantBufferVersion(command.pixelConstantBuffer);
+                        command.vertexConstantBufferVersion = owner->captureVersionedBufferSlot(command.vertexConstantBuffer);
+                        command.pixelConstantBufferVersion = owner->captureVersionedBufferSlot(command.pixelConstantBuffer);
                         for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                         {
                             command.vertexConstantBuffers[slot] = snapshotCapturedBuffer(command.vertexConstantBuffers[slot], shouldSnapshotConstants);
                             command.pixelConstantBuffers[slot] = snapshotCapturedBuffer(command.pixelConstantBuffers[slot], shouldSnapshotConstants);
-                            command.vertexConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.vertexConstantBuffers[slot]);
-                            command.pixelConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.pixelConstantBuffers[slot]);
+                            command.vertexConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
+                            command.pixelConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
+                        }
+
+                        command.vertexBufferVersion = owner->captureVersionedBufferSlot(command.vertexBuffer);
+                        command.indexBufferVersion = owner->captureVersionedBufferSlot(command.indexBuffer);
+                        for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
+                        {
+                            command.vertexBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexBuffers[slot]);
                         }
 
                         if (shouldSnapshotGeometry)
@@ -2215,14 +2343,21 @@ namespace Gek
 
                         command.vertexConstantBuffer = snapshotCapturedBuffer(command.vertexConstantBuffer, shouldSnapshotConstants);
                         command.pixelConstantBuffer = snapshotCapturedBuffer(command.pixelConstantBuffer, shouldSnapshotConstants);
-                        command.vertexConstantBufferVersion = owner->captureConstantBufferVersion(command.vertexConstantBuffer);
-                        command.pixelConstantBufferVersion = owner->captureConstantBufferVersion(command.pixelConstantBuffer);
+                        command.vertexConstantBufferVersion = owner->captureVersionedBufferSlot(command.vertexConstantBuffer);
+                        command.pixelConstantBufferVersion = owner->captureVersionedBufferSlot(command.pixelConstantBuffer);
                         for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                         {
                             command.vertexConstantBuffers[slot] = snapshotCapturedBuffer(command.vertexConstantBuffers[slot], shouldSnapshotConstants);
                             command.pixelConstantBuffers[slot] = snapshotCapturedBuffer(command.pixelConstantBuffers[slot], shouldSnapshotConstants);
-                            command.vertexConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.vertexConstantBuffers[slot]);
-                            command.pixelConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.pixelConstantBuffers[slot]);
+                            command.vertexConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
+                            command.pixelConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
+                        }
+
+                        command.vertexBufferVersion = owner->captureVersionedBufferSlot(command.vertexBuffer);
+                        command.indexBufferVersion = owner->captureVersionedBufferSlot(command.indexBuffer);
+                        for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
+                        {
+                            command.vertexBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexBuffers[slot]);
                         }
 
                         if (shouldSnapshotGeometry)
@@ -2383,14 +2518,21 @@ namespace Gek
 
                         command.vertexConstantBuffer = snapshotCapturedBuffer(command.vertexConstantBuffer, shouldSnapshotConstants);
                         command.pixelConstantBuffer = snapshotCapturedBuffer(command.pixelConstantBuffer, shouldSnapshotConstants);
-                        command.vertexConstantBufferVersion = owner->captureConstantBufferVersion(command.vertexConstantBuffer);
-                        command.pixelConstantBufferVersion = owner->captureConstantBufferVersion(command.pixelConstantBuffer);
+                        command.vertexConstantBufferVersion = owner->captureVersionedBufferSlot(command.vertexConstantBuffer);
+                        command.pixelConstantBufferVersion = owner->captureVersionedBufferSlot(command.pixelConstantBuffer);
                         for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                         {
                             command.vertexConstantBuffers[slot] = snapshotCapturedBuffer(command.vertexConstantBuffers[slot], shouldSnapshotConstants);
                             command.pixelConstantBuffers[slot] = snapshotCapturedBuffer(command.pixelConstantBuffers[slot], shouldSnapshotConstants);
-                            command.vertexConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.vertexConstantBuffers[slot]);
-                            command.pixelConstantBufferVersions[slot] = owner->captureConstantBufferVersion(command.pixelConstantBuffers[slot]);
+                            command.vertexConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
+                            command.pixelConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
+                        }
+
+                        command.vertexBufferVersion = owner->captureVersionedBufferSlot(command.vertexBuffer);
+                        command.indexBufferVersion = owner->captureVersionedBufferSlot(command.indexBuffer);
+                        for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
+                        {
+                            command.vertexBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexBuffers[slot]);
                         }
 
                         if (shouldSnapshotGeometry)
@@ -2560,11 +2702,14 @@ namespace Gek
                 uint32_t instanceCount = 1;
                 uint32_t firstInstance = 0;
                 Buffer *vertexBuffer = nullptr;
+                uint8_t vertexBufferVersion = 0;
                 uint32_t vertexOffset = 0;
                 std::array<Buffer *, 8> vertexBuffers{};
+                std::array<uint8_t, 8> vertexBufferVersions{};
                 std::array<uint32_t, 8> vertexOffsets{};
                 uint32_t vertexCount = 0;
                 Buffer *indexBuffer = nullptr;
+                uint8_t indexBufferVersion = 0;
                 uint32_t indexOffset = 0;
                 uint32_t indexCount = 0;
                 int32_t firstVertex = 0;
@@ -2642,7 +2787,48 @@ namespace Gek
             uint64_t constantBufferVersionRotationsThisFrame = 0;
             uint64_t constantBufferVersionExhaustionThisFrame = 0;
             uint64_t constantBufferVersionWaitRecoveriesThisFrame = 0;
+            uint64_t constantBufferVersionWriteAttemptsThisFrame = 0;
+            uint64_t constantBufferVersionExhaustionNoFenceThisFrame = 0;
+            uint64_t constantBufferVersionWaitAttemptsThisFrame = 0;
+            uint64_t constantBufferVersionPostWaitExhaustionThisFrame = 0;
+            uint64_t constantBufferVersionRotationsTotal = 0;
+            uint64_t constantBufferVersionExhaustionTotal = 0;
+            uint64_t constantBufferVersionWaitRecoveriesTotal = 0;
+            uint64_t constantBufferVersionWriteAttemptsTotal = 0;
+            uint64_t constantBufferVersionExhaustionNoFenceTotal = 0;
+            uint64_t constantBufferVersionWaitAttemptsTotal = 0;
+            uint64_t constantBufferVersionPostWaitExhaustionTotal = 0;
+            uint64_t vertexBufferVersionRotationsThisFrame = 0;
+            uint64_t vertexBufferVersionExhaustionThisFrame = 0;
+            uint64_t vertexBufferVersionWaitRecoveriesThisFrame = 0;
+            uint64_t vertexBufferVersionWriteAttemptsThisFrame = 0;
+            uint64_t vertexBufferVersionExhaustionNoFenceThisFrame = 0;
+            uint64_t vertexBufferVersionWaitAttemptsThisFrame = 0;
+            uint64_t vertexBufferVersionPostWaitExhaustionThisFrame = 0;
+            uint64_t vertexBufferVersionRotationsTotal = 0;
+            uint64_t vertexBufferVersionExhaustionTotal = 0;
+            uint64_t vertexBufferVersionWaitRecoveriesTotal = 0;
+            uint64_t vertexBufferVersionWriteAttemptsTotal = 0;
+            uint64_t vertexBufferVersionExhaustionNoFenceTotal = 0;
+            uint64_t vertexBufferVersionWaitAttemptsTotal = 0;
+            uint64_t vertexBufferVersionPostWaitExhaustionTotal = 0;
+            uint64_t indexBufferVersionRotationsThisFrame = 0;
+            uint64_t indexBufferVersionExhaustionThisFrame = 0;
+            uint64_t indexBufferVersionWaitRecoveriesThisFrame = 0;
+            uint64_t indexBufferVersionWriteAttemptsThisFrame = 0;
+            uint64_t indexBufferVersionExhaustionNoFenceThisFrame = 0;
+            uint64_t indexBufferVersionWaitAttemptsThisFrame = 0;
+            uint64_t indexBufferVersionPostWaitExhaustionThisFrame = 0;
+            uint64_t indexBufferVersionRotationsTotal = 0;
+            uint64_t indexBufferVersionExhaustionTotal = 0;
+            uint64_t indexBufferVersionWaitRecoveriesTotal = 0;
+            uint64_t indexBufferVersionWriteAttemptsTotal = 0;
+            uint64_t indexBufferVersionExhaustionNoFenceTotal = 0;
+            uint64_t indexBufferVersionWaitAttemptsTotal = 0;
+            uint64_t indexBufferVersionPostWaitExhaustionTotal = 0;
             Render::BufferVersioningPolicy constantBufferVersioningPolicy = { Render::BufferVersioningMode::FixedRing, static_cast<uint8_t>(Buffer::VersionSlotCount) };
+            Render::BufferVersioningPolicy vertexBufferVersioningPolicy = { Render::BufferVersioningMode::FixedRing, static_cast<uint8_t>(Buffer::VersionSlotCount) };
+            Render::BufferVersioningPolicy indexBufferVersioningPolicy = { Render::BufferVersioningMode::FixedRing, static_cast<uint8_t>(Buffer::VersionSlotCount) };
             uint64_t nextCommandListIdentifier = 1;
             uint64_t deferredFinishCalls = 0;
             uint64_t deferredExecuteCalls = 0;
@@ -2803,12 +2989,235 @@ namespace Gek
                 return *mutex;
             }
 
-            bool shouldUseVersionedConstantBuffer(Render::Buffer::Description const &description) const
+            Render::BufferVersioningPolicy normalizeBufferVersioningPolicy(Render::BufferVersioningPolicy policy) const
             {
-                  return (constantBufferVersioningPolicy.mode == Render::BufferVersioningMode::FixedRing) &&
-                      (constantBufferVersioningPolicy.ringSize >= 2) &&
-                      (description.type == Render::Buffer::Type::Constant) &&
-                       ((description.flags & Render::Buffer::Flags::Mappable) != 0);
+                const uint32_t clampedRingSize = std::min<uint32_t>(policy.ringSize, Buffer::VersionSlotCount);
+                policy.ringSize = static_cast<uint8_t>(clampedRingSize);
+                if ((policy.mode != Render::BufferVersioningMode::FixedRing) || (clampedRingSize < 2))
+                {
+                    policy.mode = Render::BufferVersioningMode::Disabled;
+                }
+
+                return policy;
+            }
+
+            void applyBufferVersioningPolicyOverrides(Render::Device::Description const &description)
+            {
+                constantBufferVersioningPolicy = normalizeBufferVersioningPolicy(description.constantBufferVersioningPolicy);
+                vertexBufferVersioningPolicy = normalizeBufferVersioningPolicy(description.vertexBufferVersioningPolicy);
+                indexBufferVersioningPolicy = normalizeBufferVersioningPolicy(description.indexBufferVersioningPolicy);
+
+                getContext()->log(
+                    Gek::Context::Info,
+                    "Vulkan buffer versioning policy: cb={}({}), vb={}({}), ib={}({})",
+                    static_cast<uint32_t>(constantBufferVersioningPolicy.ringSize),
+                    (constantBufferVersioningPolicy.mode == Render::BufferVersioningMode::FixedRing) ? "FixedRing" : "Disabled",
+                    static_cast<uint32_t>(vertexBufferVersioningPolicy.ringSize),
+                    (vertexBufferVersioningPolicy.mode == Render::BufferVersioningMode::FixedRing) ? "FixedRing" : "Disabled",
+                    static_cast<uint32_t>(indexBufferVersioningPolicy.ringSize),
+                    (indexBufferVersioningPolicy.mode == Render::BufferVersioningMode::FixedRing) ? "FixedRing" : "Disabled");
+            }
+
+            bool shouldUseVersionedWriteDiscardBuffer(Render::Buffer::Description const &description) const
+            {
+                if ((description.flags & Render::Buffer::Flags::Mappable) == 0)
+                {
+                    return false;
+                }
+
+                if (description.type == Render::Buffer::Type::Constant)
+                {
+                    return (constantBufferVersioningPolicy.mode == Render::BufferVersioningMode::FixedRing) &&
+                           (constantBufferVersioningPolicy.ringSize >= 2);
+                }
+
+                if (description.type == Render::Buffer::Type::Vertex || description.type == Render::Buffer::Type::Index)
+                {
+                      if (description.type == Render::Buffer::Type::Vertex)
+                      {
+                       return (vertexBufferVersioningPolicy.mode == Render::BufferVersioningMode::FixedRing) &&
+                           (vertexBufferVersioningPolicy.ringSize >= 2);
+                      }
+
+                      return (indexBufferVersioningPolicy.mode == Render::BufferVersioningMode::FixedRing) &&
+                          (indexBufferVersioningPolicy.ringSize >= 2);
+                }
+
+                return false;
+            }
+
+            uint32_t getVersionedRingSize(Render::Buffer::Description const &description) const
+            {
+                if (description.type == Render::Buffer::Type::Constant)
+                {
+                    return std::max<uint32_t>(2, std::min<uint32_t>(constantBufferVersioningPolicy.ringSize, Buffer::VersionSlotCount));
+                }
+
+                if (description.type == Render::Buffer::Type::Vertex)
+                {
+                    return std::max<uint32_t>(2, std::min<uint32_t>(vertexBufferVersioningPolicy.ringSize, Buffer::VersionSlotCount));
+                }
+
+                if (description.type == Render::Buffer::Type::Index)
+                {
+                    return std::max<uint32_t>(2, std::min<uint32_t>(indexBufferVersioningPolicy.ringSize, Buffer::VersionSlotCount));
+                }
+
+                return Buffer::VersionSlotCount;
+            }
+
+            void incrementVersionRotation(Render::Buffer::Description const &description)
+            {
+                switch (description.type)
+                {
+                case Render::Buffer::Type::Vertex:
+                    ++vertexBufferVersionRotationsThisFrame;
+                    ++vertexBufferVersionRotationsTotal;
+                    break;
+
+                case Render::Buffer::Type::Index:
+                    ++indexBufferVersionRotationsThisFrame;
+                    ++indexBufferVersionRotationsTotal;
+                    break;
+
+                case Render::Buffer::Type::Constant:
+                default:
+                    ++constantBufferVersionRotationsThisFrame;
+                    ++constantBufferVersionRotationsTotal;
+                    break;
+                }
+            }
+
+            void incrementVersionExhaustion(Render::Buffer::Description const &description)
+            {
+                switch (description.type)
+                {
+                case Render::Buffer::Type::Vertex:
+                    ++vertexBufferVersionExhaustionThisFrame;
+                    ++vertexBufferVersionExhaustionTotal;
+                    break;
+
+                case Render::Buffer::Type::Index:
+                    ++indexBufferVersionExhaustionThisFrame;
+                    ++indexBufferVersionExhaustionTotal;
+                    break;
+
+                case Render::Buffer::Type::Constant:
+                default:
+                    ++constantBufferVersionExhaustionThisFrame;
+                    ++constantBufferVersionExhaustionTotal;
+                    break;
+                }
+            }
+
+            void incrementVersionWaitRecovery(Render::Buffer::Description const &description)
+            {
+                switch (description.type)
+                {
+                case Render::Buffer::Type::Vertex:
+                    ++vertexBufferVersionWaitRecoveriesThisFrame;
+                    ++vertexBufferVersionWaitRecoveriesTotal;
+                    break;
+
+                case Render::Buffer::Type::Index:
+                    ++indexBufferVersionWaitRecoveriesThisFrame;
+                    ++indexBufferVersionWaitRecoveriesTotal;
+                    break;
+
+                case Render::Buffer::Type::Constant:
+                default:
+                    ++constantBufferVersionWaitRecoveriesThisFrame;
+                    ++constantBufferVersionWaitRecoveriesTotal;
+                    break;
+                }
+            }
+
+            void incrementVersionWriteAttempt(Render::Buffer::Description const &description)
+            {
+                switch (description.type)
+                {
+                case Render::Buffer::Type::Vertex:
+                    ++vertexBufferVersionWriteAttemptsThisFrame;
+                    ++vertexBufferVersionWriteAttemptsTotal;
+                    break;
+
+                case Render::Buffer::Type::Index:
+                    ++indexBufferVersionWriteAttemptsThisFrame;
+                    ++indexBufferVersionWriteAttemptsTotal;
+                    break;
+
+                case Render::Buffer::Type::Constant:
+                default:
+                    ++constantBufferVersionWriteAttemptsThisFrame;
+                    ++constantBufferVersionWriteAttemptsTotal;
+                    break;
+                }
+            }
+
+            void incrementVersionExhaustionNoFence(Render::Buffer::Description const &description)
+            {
+                switch (description.type)
+                {
+                case Render::Buffer::Type::Vertex:
+                    ++vertexBufferVersionExhaustionNoFenceThisFrame;
+                    ++vertexBufferVersionExhaustionNoFenceTotal;
+                    break;
+
+                case Render::Buffer::Type::Index:
+                    ++indexBufferVersionExhaustionNoFenceThisFrame;
+                    ++indexBufferVersionExhaustionNoFenceTotal;
+                    break;
+
+                case Render::Buffer::Type::Constant:
+                default:
+                    ++constantBufferVersionExhaustionNoFenceThisFrame;
+                    ++constantBufferVersionExhaustionNoFenceTotal;
+                    break;
+                }
+            }
+
+            void incrementVersionWaitAttempt(Render::Buffer::Description const &description)
+            {
+                switch (description.type)
+                {
+                case Render::Buffer::Type::Vertex:
+                    ++vertexBufferVersionWaitAttemptsThisFrame;
+                    ++vertexBufferVersionWaitAttemptsTotal;
+                    break;
+
+                case Render::Buffer::Type::Index:
+                    ++indexBufferVersionWaitAttemptsThisFrame;
+                    ++indexBufferVersionWaitAttemptsTotal;
+                    break;
+
+                case Render::Buffer::Type::Constant:
+                default:
+                    ++constantBufferVersionWaitAttemptsThisFrame;
+                    ++constantBufferVersionWaitAttemptsTotal;
+                    break;
+                }
+            }
+
+            void incrementVersionPostWaitExhaustion(Render::Buffer::Description const &description)
+            {
+                switch (description.type)
+                {
+                case Render::Buffer::Type::Vertex:
+                    ++vertexBufferVersionPostWaitExhaustionThisFrame;
+                    ++vertexBufferVersionPostWaitExhaustionTotal;
+                    break;
+
+                case Render::Buffer::Type::Index:
+                    ++indexBufferVersionPostWaitExhaustionThisFrame;
+                    ++indexBufferVersionPostWaitExhaustionTotal;
+                    break;
+
+                case Render::Buffer::Type::Constant:
+                default:
+                    ++constantBufferVersionPostWaitExhaustionThisFrame;
+                    ++constantBufferVersionPostWaitExhaustionTotal;
+                    break;
+                }
             }
 
             void releaseVersionedConstantBufferSlots(void)
@@ -2839,6 +3248,11 @@ namespace Gek
                 return versionIndex;
             }
 
+            uint8_t captureVersionedBufferSlot(Buffer *buffer)
+            {
+                return captureConstantBufferVersion(buffer);
+            }
+
             VkBuffer getCapturedConstantVkBuffer(Buffer const *buffer, uint8_t versionIndex) const
             {
                 if (!buffer)
@@ -2857,6 +3271,11 @@ namespace Gek
                 }
 
                 return buffer->versionBufferList[versionIndex];
+            }
+
+            VkBuffer getCapturedVkBuffer(Buffer const *buffer, uint8_t versionIndex) const
+            {
+                return getCapturedConstantVkBuffer(buffer, versionIndex);
             }
 
             uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const
@@ -4416,6 +4835,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(window)
             {
+                applyBufferVersioningPolicyOverrides(deviceDescription);
                 enableValidationLayer = checkValidationLayerSupport();
                 createInstance();
                 if (enableValidationLayer)
@@ -4836,7 +5256,7 @@ namespace Gek
                 bufferInfo.size = buffer->size;
                 bufferInfo.usage = usage;
                 bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                const bool useVersionedConstantBacking = shouldUseVersionedConstantBuffer(description);
+                const bool useVersionedConstantBacking = shouldUseVersionedWriteDiscardBuffer(description);
                 if (useVersionedConstantBacking)
                 {
                     buffer->usesVersionedConstantBacking = true;
@@ -4962,7 +5382,7 @@ namespace Gek
 
                 if (vulkanBuffer->usesVersionedConstantBacking)
                 {
-                    const uint32_t ringSize = std::max<uint32_t>(2, std::min<uint32_t>(constantBufferVersioningPolicy.ringSize, Buffer::VersionSlotCount));
+                    const uint32_t ringSize = getVersionedRingSize(vulkanBuffer->getDescription());
 
                     auto selectFreeVersion = [&]() -> std::optional<uint32_t>
                     {
@@ -4980,13 +5400,15 @@ namespace Gek
 
                     if (mapping == Render::Map::WriteDiscard)
                     {
+                        incrementVersionWriteAttempt(vulkanBuffer->getDescription());
                         auto selectedVersion = selectFreeVersion();
                         if (!selectedVersion)
                         {
-                            ++constantBufferVersionExhaustionThisFrame;
+                            incrementVersionExhaustion(vulkanBuffer->getDescription());
 
                             if (inFlightFencePending)
                             {
+                                incrementVersionWaitAttempt(vulkanBuffer->getDescription());
                                 lock.unlock();
                                 const VkResult waitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
                                 lock.lock();
@@ -4998,9 +5420,17 @@ namespace Gek
                                     selectedVersion = selectFreeVersion();
                                     if (selectedVersion)
                                     {
-                                        ++constantBufferVersionWaitRecoveriesThisFrame;
+                                        incrementVersionWaitRecovery(vulkanBuffer->getDescription());
+                                    }
+                                    else
+                                    {
+                                        incrementVersionPostWaitExhaustion(vulkanBuffer->getDescription());
                                     }
                                 }
+                            }
+                            else
+                            {
+                                incrementVersionExhaustionNoFence(vulkanBuffer->getDescription());
                             }
                         }
 
@@ -5008,7 +5438,7 @@ namespace Gek
                         {
                             if (*selectedVersion != vulkanBuffer->activeVersionIndex)
                             {
-                                ++constantBufferVersionRotationsThisFrame;
+                                incrementVersionRotation(vulkanBuffer->getDescription());
                             }
                             vulkanBuffer->activeVersionIndex = *selectedVersion;
                         }
@@ -5047,11 +5477,12 @@ namespace Gek
                 auto vulkanBuffer = getObject<Buffer>(object);
                 if (vulkanBuffer && data)
                 {
-                    std::lock_guard<std::mutex> lock(getDrawCommandMutex());
+                    std::unique_lock<std::mutex> lock(getDrawCommandMutex());
 
                     if (vulkanBuffer->usesVersionedConstantBacking)
                     {
-                        const uint32_t ringSize = std::max<uint32_t>(2, std::min<uint32_t>(constantBufferVersioningPolicy.ringSize, Buffer::VersionSlotCount));
+                        incrementVersionWriteAttempt(vulkanBuffer->getDescription());
+                        const uint32_t ringSize = getVersionedRingSize(vulkanBuffer->getDescription());
                         std::optional<uint32_t> selectedVersion;
                         for (uint32_t step = 1; step <= ringSize; ++step)
                         {
@@ -5067,13 +5498,55 @@ namespace Gek
                         {
                             if (*selectedVersion != vulkanBuffer->activeVersionIndex)
                             {
-                                ++constantBufferVersionRotationsThisFrame;
+                                incrementVersionRotation(vulkanBuffer->getDescription());
                             }
                             vulkanBuffer->activeVersionIndex = *selectedVersion;
                         }
                         else
                         {
-                            ++constantBufferVersionExhaustionThisFrame;
+                            incrementVersionExhaustion(vulkanBuffer->getDescription());
+
+                            if (inFlightFencePending)
+                            {
+                                incrementVersionWaitAttempt(vulkanBuffer->getDescription());
+                                lock.unlock();
+                                const VkResult waitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+                                lock.lock();
+
+                                if (waitResult == VK_SUCCESS)
+                                {
+                                    inFlightFencePending = false;
+                                    releaseVersionedConstantBufferSlots();
+
+                                    for (uint32_t step = 1; step <= ringSize; ++step)
+                                    {
+                                        const uint32_t candidateVersion = (vulkanBuffer->activeVersionIndex + step) % ringSize;
+                                        if (!vulkanBuffer->versionInUseList[candidateVersion])
+                                        {
+                                            selectedVersion = candidateVersion;
+                                            break;
+                                        }
+                                    }
+
+                                    if (selectedVersion)
+                                    {
+                                        if (*selectedVersion != vulkanBuffer->activeVersionIndex)
+                                        {
+                                            incrementVersionRotation(vulkanBuffer->getDescription());
+                                        }
+                                        vulkanBuffer->activeVersionIndex = *selectedVersion;
+                                        incrementVersionWaitRecovery(vulkanBuffer->getDescription());
+                                    }
+                                    else
+                                    {
+                                        incrementVersionPostWaitExhaustion(vulkanBuffer->getDescription());
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                incrementVersionExhaustionNoFence(vulkanBuffer->getDescription());
+                            }
                         }
 
                         vulkanBuffer->buffer = vulkanBuffer->versionBufferList[vulkanBuffer->activeVersionIndex];
@@ -5608,735 +6081,1068 @@ namespace Gek
                 return nullptr;
             }
 
+            Render::TexturePtr createNativeSampledTexture2D(
+                Render::Texture::Description const &description,
+                VkFormat imageFormat,
+                uint32_t mipLevelCount,
+                std::vector<VkBufferImageCopy> const &copyRegions,
+                void const *uploadData,
+                VkDeviceSize uploadSize)
+            {
+                if (imageFormat == VK_FORMAT_UNDEFINED || !uploadData || uploadSize == 0 || copyRegions.empty())
+                {
+                    return nullptr;
+                }
+
+                VkFormatProperties nativeFormatProperties{};
+                vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &nativeFormatProperties);
+                const VkFormatFeatureFlags requiredFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+                if ((nativeFormatProperties.optimalTilingFeatures & requiredFeatures) != requiredFeatures)
+                {
+                    return nullptr;
+                }
+
+                auto texture = std::make_unique<ViewTexture>(description);
+                texture->device = device;
+
+                VkImageCreateInfo imageInfo{};
+                imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+                imageInfo.imageType = VK_IMAGE_TYPE_2D;
+                imageInfo.extent.width = std::max(description.width, 1u);
+                imageInfo.extent.height = std::max(description.height, 1u);
+                imageInfo.extent.depth = 1;
+                imageInfo.mipLevels = std::max(mipLevelCount, 1u);
+                imageInfo.arrayLayers = 1;
+                imageInfo.format = imageFormat;
+                imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+                imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+                imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+                imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+                if (vkCreateImage(device, &imageInfo, nullptr, &texture->image) != VK_SUCCESS)
+                {
+                    return nullptr;
+                }
+
+                VkMemoryRequirements imageMemoryRequirements{};
+                vkGetImageMemoryRequirements(device, texture->image, &imageMemoryRequirements);
+
+                VkMemoryAllocateInfo imageAllocInfo{};
+                imageAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+                imageAllocInfo.allocationSize = imageMemoryRequirements.size;
+                imageAllocInfo.memoryTypeIndex = findMemoryType(imageMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                if (imageAllocInfo.memoryTypeIndex == UINT32_MAX)
+                {
+                    return nullptr;
+                }
+
+                if (vkAllocateMemory(device, &imageAllocInfo, nullptr, &texture->memory) != VK_SUCCESS)
+                {
+                    return nullptr;
+                }
+
+                if (vkBindImageMemory(device, texture->image, texture->memory, 0) != VK_SUCCESS)
+                {
+                    return nullptr;
+                }
+
+                VkBuffer stagingBuffer = VK_NULL_HANDLE;
+                VkDeviceMemory stagingMemory = VK_NULL_HANDLE;
+
+                VkBufferCreateInfo stagingBufferInfo{};
+                stagingBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+                stagingBufferInfo.size = uploadSize;
+                stagingBufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+                stagingBufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+                if (vkCreateBuffer(device, &stagingBufferInfo, nullptr, &stagingBuffer) != VK_SUCCESS)
+                {
+                    return nullptr;
+                }
+
+                VkMemoryRequirements stagingMemoryRequirements{};
+                vkGetBufferMemoryRequirements(device, stagingBuffer, &stagingMemoryRequirements);
+
+                VkMemoryAllocateInfo stagingAllocInfo{};
+                stagingAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+                stagingAllocInfo.allocationSize = stagingMemoryRequirements.size;
+                stagingAllocInfo.memoryTypeIndex = findMemoryType(stagingMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                if (stagingAllocInfo.memoryTypeIndex == UINT32_MAX)
+                {
+                    vkDestroyBuffer(device, stagingBuffer, nullptr);
+                    return nullptr;
+                }
+
+                if (vkAllocateMemory(device, &stagingAllocInfo, nullptr, &stagingMemory) != VK_SUCCESS)
+                {
+                    vkDestroyBuffer(device, stagingBuffer, nullptr);
+                    return nullptr;
+                }
+
+                if (vkBindBufferMemory(device, stagingBuffer, stagingMemory, 0) != VK_SUCCESS)
+                {
+                    vkDestroyBuffer(device, stagingBuffer, nullptr);
+                    vkFreeMemory(device, stagingMemory, nullptr);
+                    return nullptr;
+                }
+
+                void *stagingData = nullptr;
+                if (vkMapMemory(device, stagingMemory, 0, uploadSize, 0, &stagingData) != VK_SUCCESS)
+                {
+                    vkDestroyBuffer(device, stagingBuffer, nullptr);
+                    vkFreeMemory(device, stagingMemory, nullptr);
+                    return nullptr;
+                }
+
+                std::memcpy(stagingData, uploadData, static_cast<size_t>(uploadSize));
+                vkUnmapMemory(device, stagingMemory);
+
+                std::lock_guard<std::mutex> uploadLock(getUploadCommandPoolMutex());
+
+                VkCommandBufferAllocateInfo commandAllocInfo{};
+                commandAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+                commandAllocInfo.commandPool = uploadCommandPool;
+                commandAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+                commandAllocInfo.commandBufferCount = 1;
+
+                VkCommandBuffer uploadCommandBuffer = VK_NULL_HANDLE;
+                if (vkAllocateCommandBuffers(device, &commandAllocInfo, &uploadCommandBuffer) != VK_SUCCESS)
+                {
+                    vkDestroyBuffer(device, stagingBuffer, nullptr);
+                    vkFreeMemory(device, stagingMemory, nullptr);
+                    return nullptr;
+                }
+
+                VkCommandBufferBeginInfo beginInfo{};
+                beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+                beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+                if (vkBeginCommandBuffer(uploadCommandBuffer, &beginInfo) != VK_SUCCESS)
+                {
+                    vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                    vkDestroyBuffer(device, stagingBuffer, nullptr);
+                    vkFreeMemory(device, stagingMemory, nullptr);
+                    return nullptr;
+                }
+
+                VkImageMemoryBarrier toTransfer{};
+                toTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                toTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                toTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                toTransfer.image = texture->image;
+                toTransfer.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                toTransfer.subresourceRange.baseMipLevel = 0;
+                toTransfer.subresourceRange.levelCount = std::max(mipLevelCount, 1u);
+                toTransfer.subresourceRange.baseArrayLayer = 0;
+                toTransfer.subresourceRange.layerCount = 1;
+                toTransfer.srcAccessMask = 0;
+                toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+                vkCmdPipelineBarrier(
+                    uploadCommandBuffer,
+                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT,
+                    0,
+                    0, nullptr,
+                    0, nullptr,
+                    1, &toTransfer);
+
+                vkCmdCopyBufferToImage(
+                    uploadCommandBuffer,
+                    stagingBuffer,
+                    texture->image,
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                    static_cast<uint32_t>(copyRegions.size()),
+                    copyRegions.data());
+
+                VkImageMemoryBarrier toShaderRead{};
+                toShaderRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                toShaderRead.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                toShaderRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                toShaderRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                toShaderRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                toShaderRead.image = texture->image;
+                toShaderRead.subresourceRange = toTransfer.subresourceRange;
+                toShaderRead.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                toShaderRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+                vkCmdPipelineBarrier(
+                    uploadCommandBuffer,
+                    VK_PIPELINE_STAGE_TRANSFER_BIT,
+                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                    0,
+                    0, nullptr,
+                    0, nullptr,
+                    1, &toShaderRead);
+
+                if (vkEndCommandBuffer(uploadCommandBuffer) != VK_SUCCESS)
+                {
+                    vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                    vkDestroyBuffer(device, stagingBuffer, nullptr);
+                    vkFreeMemory(device, stagingMemory, nullptr);
+                    return nullptr;
+                }
+
+                VkFence uploadFence = VK_NULL_HANDLE;
+                VkFenceCreateInfo uploadFenceInfo{};
+                uploadFenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+                if (vkCreateFence(device, &uploadFenceInfo, nullptr, &uploadFence) != VK_SUCCESS)
+                {
+                    vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                    vkDestroyBuffer(device, stagingBuffer, nullptr);
+                    vkFreeMemory(device, stagingMemory, nullptr);
+                    return nullptr;
+                }
+
+                VkSubmitInfo submitInfo{};
+                submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                submitInfo.commandBufferCount = 1;
+                submitInfo.pCommandBuffers = &uploadCommandBuffer;
+                VkResult submitResult = VK_ERROR_UNKNOWN;
+                {
+                    std::lock_guard<std::mutex> queueLock(getQueueSubmitMutex());
+                    submitResult = vkQueueSubmit(graphicsQueue, 1, &submitInfo, uploadFence);
+                }
+
+                if (submitResult != VK_SUCCESS)
+                {
+                    vkDestroyFence(device, uploadFence, nullptr);
+                    vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                    vkDestroyBuffer(device, stagingBuffer, nullptr);
+                    vkFreeMemory(device, stagingMemory, nullptr);
+                    return nullptr;
+                }
+
+                constexpr uint64_t kUploadFenceTimeoutNs = 5ull * 1000ull * 1000ull * 1000ull;
+                const VkResult waitResult = vkWaitForFences(device, 1, &uploadFence, VK_TRUE, kUploadFenceTimeoutNs);
+                vkDestroyFence(device, uploadFence, nullptr);
+                if (waitResult != VK_SUCCESS)
+                {
+                    vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                    vkDestroyBuffer(device, stagingBuffer, nullptr);
+                    vkFreeMemory(device, stagingMemory, nullptr);
+                    return nullptr;
+                }
+
+                vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                vkDestroyBuffer(device, stagingBuffer, nullptr);
+                vkFreeMemory(device, stagingMemory, nullptr);
+
+                VkImageViewCreateInfo imageViewInfo{};
+                imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+                imageViewInfo.image = texture->image;
+                imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+                imageViewInfo.format = imageFormat;
+                imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                imageViewInfo.subresourceRange.baseMipLevel = 0;
+                imageViewInfo.subresourceRange.levelCount = std::max(mipLevelCount, 1u);
+                imageViewInfo.subresourceRange.baseArrayLayer = 0;
+                imageViewInfo.subresourceRange.layerCount = 1;
+                if (vkCreateImageView(device, &imageViewInfo, nullptr, &texture->imageView) != VK_SUCCESS)
+                {
+                    return nullptr;
+                }
+
+                VkSamplerCreateInfo samplerInfo{};
+                samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+                samplerInfo.magFilter = VK_FILTER_LINEAR;
+                samplerInfo.minFilter = VK_FILTER_LINEAR;
+                samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+                samplerInfo.minLod = 0.0f;
+                samplerInfo.maxLod = static_cast<float>(std::max(mipLevelCount, 1u) - 1u);
+                if (vkCreateSampler(device, &samplerInfo, nullptr, &texture->sampler) != VK_SUCCESS)
+                {
+                    return nullptr;
+                }
+
+                return texture;
+            }
+
+            Render::TexturePtr createRenderTargetTexture(Render::Texture::Description const &description)
+            {
+                auto texture = std::make_unique<UnorderedTargetViewTexture>(description);
+                texture->device = device;
+
+                const VkFormat imageFormat = GetVkFormat(description.format);
+                if (imageFormat == VK_FORMAT_UNDEFINED)
+                {
+                    getContext()->log(Gek::Context::Error,
+                        "Vulkan createTexture failed: unsupported Render::Format {} for render target '{}'.",
+                        static_cast<uint32_t>(description.format), description.name);
+                    return nullptr;
+                }
+
+                VkImageCreateInfo imageInfo{};
+                imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+                imageInfo.imageType = VK_IMAGE_TYPE_2D;
+                imageInfo.extent.width = std::max(description.width, 1u);
+                imageInfo.extent.height = std::max(description.height, 1u);
+                imageInfo.extent.depth = 1;
+                const uint32_t maxMipLevels = (std::bit_width(std::max(imageInfo.extent.width, imageInfo.extent.height)));
+                uint32_t mipLevels = (description.mipMapCount == 0)
+                    ? std::max(maxMipLevels, 1u)
+                    : std::clamp(description.mipMapCount, 1u, std::max(maxMipLevels, 1u));
+
+                VkFormatProperties formatProperties{};
+                vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
+                const bool supportsBlitSource = (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT) != 0;
+                const bool supportsBlitDestination = (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT) != 0;
+                texture->supportsMipBlit = (mipLevels > 1) && supportsBlitSource && supportsBlitDestination;
+                if (mipLevels > 1 && !texture->supportsMipBlit)
+                {
+                    mipLevels = 1;
+                }
+
+                imageInfo.mipLevels = mipLevels;
+                texture->description.mipMapCount = mipLevels;
+                imageInfo.arrayLayers = 1;
+                imageInfo.format = imageFormat;
+                imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+                imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+                imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+                imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+                if (vkCreateImage(device, &imageInfo, nullptr, &texture->image) != VK_SUCCESS)
+                {
+                    return nullptr;
+                }
+
+                VkMemoryRequirements imageMemoryRequirements{};
+                vkGetImageMemoryRequirements(device, texture->image, &imageMemoryRequirements);
+
+                VkMemoryAllocateInfo imageAllocInfo{};
+                imageAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+                imageAllocInfo.allocationSize = imageMemoryRequirements.size;
+                imageAllocInfo.memoryTypeIndex = findMemoryType(imageMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                if (imageAllocInfo.memoryTypeIndex == UINT32_MAX)
+                {
+                    return nullptr;
+                }
+                if (vkAllocateMemory(device, &imageAllocInfo, nullptr, &texture->memory) != VK_SUCCESS)
+                {
+                    return nullptr;
+                }
+
+                if (vkBindImageMemory(device, texture->image, texture->memory, 0) != VK_SUCCESS)
+                {
+                    return nullptr;
+                }
+
+                {
+                    std::lock_guard<std::mutex> uploadLock(getUploadCommandPoolMutex());
+
+                    VkCommandBufferAllocateInfo commandAllocInfo{};
+                    commandAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+                    commandAllocInfo.commandPool = uploadCommandPool;
+                    commandAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+                    commandAllocInfo.commandBufferCount = 1;
+
+                    VkCommandBuffer uploadCommandBuffer = VK_NULL_HANDLE;
+                    if (vkAllocateCommandBuffers(device, &commandAllocInfo, &uploadCommandBuffer) != VK_SUCCESS)
+                    {
+                        return nullptr;
+                    }
+
+                    VkCommandBufferBeginInfo beginInfo{};
+                    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+                    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+                    if (vkBeginCommandBuffer(uploadCommandBuffer, &beginInfo) != VK_SUCCESS)
+                    {
+                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                        return nullptr;
+                    }
+
+                    VkImageMemoryBarrier toShaderRead{};
+                    toShaderRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                    toShaderRead.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                    toShaderRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    toShaderRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    toShaderRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    toShaderRead.image = texture->image;
+                    toShaderRead.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    toShaderRead.subresourceRange.baseMipLevel = 0;
+                    toShaderRead.subresourceRange.levelCount = mipLevels;
+                    toShaderRead.subresourceRange.baseArrayLayer = 0;
+                    toShaderRead.subresourceRange.layerCount = 1;
+                    toShaderRead.srcAccessMask = 0;
+                    toShaderRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+                    vkCmdPipelineBarrier(
+                        uploadCommandBuffer,
+                        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                        0,
+                        0, nullptr,
+                        0, nullptr,
+                        1, &toShaderRead);
+
+                    if (vkEndCommandBuffer(uploadCommandBuffer) != VK_SUCCESS)
+                    {
+                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                        return nullptr;
+                    }
+
+                    VkFence uploadFence = VK_NULL_HANDLE;
+                    VkFenceCreateInfo uploadFenceInfo{};
+                    uploadFenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+                    if (vkCreateFence(device, &uploadFenceInfo, nullptr, &uploadFence) != VK_SUCCESS)
+                    {
+                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                        return nullptr;
+                    }
+
+                    VkSubmitInfo submitInfo{};
+                    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                    submitInfo.commandBufferCount = 1;
+                    submitInfo.pCommandBuffers = &uploadCommandBuffer;
+                    {
+                        std::lock_guard<std::mutex> queueLock(getQueueSubmitMutex());
+                        const VkResult uploadSubmitResult = vkQueueSubmit(graphicsQueue, 1, &submitInfo, uploadFence);
+                        if (uploadSubmitResult != VK_SUCCESS)
+                        {
+                            vkDestroyFence(device, uploadFence, nullptr);
+                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                            return nullptr;
+                        }
+                    }
+
+                    constexpr uint64_t kUploadFenceTimeoutNs = 5ull * 1000ull * 1000ull * 1000ull;
+                    const VkResult uploadWaitResult = vkWaitForFences(device, 1, &uploadFence, VK_TRUE, kUploadFenceTimeoutNs);
+                    vkDestroyFence(device, uploadFence, nullptr);
+                    if (uploadWaitResult == VK_TIMEOUT)
+                    {
+                        getContext()->log(Gek::Context::Error, "Vulkan texture upload wait timed out (staging upload path)");
+                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                        return nullptr;
+                    }
+
+                    if (uploadWaitResult != VK_SUCCESS)
+                    {
+                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                        return nullptr;
+                    }
+
+                    vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                }
+
+                texture->currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+                VkImageViewCreateInfo imageViewInfo{};
+                imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+                imageViewInfo.image = texture->image;
+                imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+                imageViewInfo.format = imageFormat;
+                imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                imageViewInfo.subresourceRange.baseMipLevel = 0;
+                imageViewInfo.subresourceRange.levelCount = mipLevels;
+                imageViewInfo.subresourceRange.baseArrayLayer = 0;
+                imageViewInfo.subresourceRange.layerCount = 1;
+                if (vkCreateImageView(device, &imageViewInfo, nullptr, &texture->imageView) != VK_SUCCESS)
+                {
+                    return nullptr;
+                }
+
+                {
+                    std::lock_guard<std::mutex> lookupLock(persistentImageViewLookupMutex);
+                    if (persistentImageViewLookup.size() > 32768)
+                    {
+                        persistentImageViewLookup.clear();
+                    }
+                    persistentImageViewLookup[texture->imageView] = std::make_pair(
+                        texture->image,
+                        VkExtent2D{ std::max(description.width, 1u), std::max(description.height, 1u) });
+                }
+
+                VkSamplerCreateInfo samplerInfo{};
+                samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+                samplerInfo.magFilter = VK_FILTER_LINEAR;
+                samplerInfo.minFilter = VK_FILTER_LINEAR;
+                samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+                samplerInfo.minLod = 0.0f;
+                samplerInfo.maxLod = texture->supportsMipBlit
+                    ? static_cast<float>(std::max(mipLevels, 1u) - 1u)
+                    : 0.0f;
+                if (vkCreateSampler(device, &samplerInfo, nullptr, &texture->sampler) != VK_SUCCESS)
+                {
+                    return nullptr;
+                }
+
+                return texture;
+            }
+
+            Render::TexturePtr createDepthTargetTexture(Render::Texture::Description const &description)
+            {
+                auto texture = std::make_unique<DepthTexture>(description);
+                texture->device = device;
+
+                const VkFormat imageFormat = GetVkFormat(description.format);
+                if (imageFormat == VK_FORMAT_UNDEFINED)
+                {
+                    getContext()->log(Gek::Context::Error,
+                        "Vulkan createTexture failed: unsupported depth Render::Format {} for '{}'.",
+                        static_cast<uint32_t>(description.format), description.name);
+                    return nullptr;
+                }
+
+                texture->format = imageFormat;
+
+                VkImageCreateInfo imageInfo{};
+                imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+                imageInfo.imageType = VK_IMAGE_TYPE_2D;
+                imageInfo.extent.width = std::max(description.width, 1u);
+                imageInfo.extent.height = std::max(description.height, 1u);
+                imageInfo.extent.depth = 1;
+                imageInfo.mipLevels = 1;
+                imageInfo.arrayLayers = 1;
+                imageInfo.format = imageFormat;
+                imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+                imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+                imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+                imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+                if (vkCreateImage(device, &imageInfo, nullptr, &texture->image) != VK_SUCCESS)
+                {
+                    return nullptr;
+                }
+
+                VkMemoryRequirements imageMemoryRequirements{};
+                vkGetImageMemoryRequirements(device, texture->image, &imageMemoryRequirements);
+
+                VkMemoryAllocateInfo imageAllocInfo{};
+                imageAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+                imageAllocInfo.allocationSize = imageMemoryRequirements.size;
+                imageAllocInfo.memoryTypeIndex = findMemoryType(imageMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                if (imageAllocInfo.memoryTypeIndex == UINT32_MAX)
+                {
+                    return nullptr;
+                }
+                if (vkAllocateMemory(device, &imageAllocInfo, nullptr, &texture->memory) != VK_SUCCESS)
+                {
+                    return nullptr;
+                }
+
+                if (vkBindImageMemory(device, texture->image, texture->memory, 0) != VK_SUCCESS)
+                {
+                    return nullptr;
+                }
+
+                VkImageViewCreateInfo imageViewInfo{};
+                imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+                imageViewInfo.image = texture->image;
+                imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+                imageViewInfo.format = imageFormat;
+                imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                imageViewInfo.subresourceRange.baseMipLevel = 0;
+                imageViewInfo.subresourceRange.levelCount = 1;
+                imageViewInfo.subresourceRange.baseArrayLayer = 0;
+                imageViewInfo.subresourceRange.layerCount = 1;
+                if (vkCreateImageView(device, &imageViewInfo, nullptr, &texture->imageView) != VK_SUCCESS)
+                {
+                    return nullptr;
+                }
+
+                {
+                    std::lock_guard<std::mutex> lookupLock(persistentImageViewLookupMutex);
+                    if (persistentImageViewLookup.size() > 32768)
+                    {
+                        persistentImageViewLookup.clear();
+                    }
+                    persistentImageViewLookup[texture->imageView] = std::make_pair(
+                        texture->image,
+                        VkExtent2D{ std::max(description.width, 1u), std::max(description.height, 1u) });
+                }
+
+                VkSamplerCreateInfo samplerInfo{};
+                samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+                samplerInfo.magFilter = VK_FILTER_LINEAR;
+                samplerInfo.minFilter = VK_FILTER_LINEAR;
+                samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+                samplerInfo.minLod = 0.0f;
+                samplerInfo.maxLod = 0.0f;
+                if (vkCreateSampler(device, &samplerInfo, nullptr, &texture->sampler) != VK_SUCCESS)
+                {
+                    return nullptr;
+                }
+
+                texture->currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                return texture;
+            }
+
+            Render::TexturePtr createSampledTexture(Render::Texture::Description const &description, const void *data)
+            {
+                auto texture = std::make_unique<ViewTexture>(description);
+                texture->device = device;
+
+                const VkFormat imageFormat = GetVkFormat(description.format);
+                if (imageFormat == VK_FORMAT_UNDEFINED)
+                {
+                    getContext()->log(Gek::Context::Error,
+                        "Vulkan createTexture failed: unsupported Render::Format {} for '{}'.",
+                        static_cast<uint32_t>(description.format), description.name);
+                    return nullptr;
+                }
+
+                VkFormatProperties formatProperties{};
+                vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
+                const VkFormatFeatureFlags requiredFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+                if ((formatProperties.optimalTilingFeatures & requiredFeatures) != requiredFeatures)
+                {
+                    getContext()->log(Gek::Context::Error,
+                        "Vulkan createTexture failed: format {} missing sampled/transfer-dst optimal tiling features for '{}' ({}x{}).",
+                        static_cast<uint32_t>(imageFormat), description.name, description.width, description.height);
+                    return nullptr;
+                }
+
+                VkImageCreateInfo imageInfo{};
+                imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+                imageInfo.imageType = VK_IMAGE_TYPE_2D;
+                imageInfo.extent.width = std::max(description.width, 1u);
+                imageInfo.extent.height = std::max(description.height, 1u);
+                imageInfo.extent.depth = 1;
+                imageInfo.mipLevels = 1;
+                imageInfo.arrayLayers = 1;
+                imageInfo.format = imageFormat;
+                imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+                imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+                imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+                imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+                const VkResult createImageResult = vkCreateImage(device, &imageInfo, nullptr, &texture->image);
+                if (createImageResult != VK_SUCCESS)
+                {
+                    getContext()->log(Gek::Context::Error,
+                        "vkCreateImage failed ({}) for '{}' format={} size={}x{} flags={}",
+                        static_cast<int32_t>(createImageResult), description.name,
+                        static_cast<uint32_t>(imageFormat), imageInfo.extent.width,
+                        imageInfo.extent.height, description.flags);
+                    return nullptr;
+                }
+
+                VkMemoryRequirements imageMemoryRequirements{};
+                vkGetImageMemoryRequirements(device, texture->image, &imageMemoryRequirements);
+
+                VkMemoryAllocateInfo imageAllocInfo{};
+                imageAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+                imageAllocInfo.allocationSize = imageMemoryRequirements.size;
+                imageAllocInfo.memoryTypeIndex = findMemoryType(imageMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+                if (imageAllocInfo.memoryTypeIndex == UINT32_MAX)
+                {
+                    getContext()->log(Gek::Context::Error,
+                        "No compatible Vulkan memory type found for image '{}' (typeBits={}, flags={}).",
+                        description.name, imageMemoryRequirements.memoryTypeBits,
+                        static_cast<uint32_t>(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
+                    return nullptr;
+                }
+                const VkResult imageAllocResult = vkAllocateMemory(device, &imageAllocInfo, nullptr, &texture->memory);
+                if (imageAllocResult != VK_SUCCESS)
+                {
+                    getContext()->log(Gek::Context::Error,
+                        "vkAllocateMemory for image failed ({}) for '{}' size={} memoryTypeBits={}",
+                        static_cast<int32_t>(imageAllocResult), description.name,
+                        static_cast<uint64_t>(imageAllocInfo.allocationSize), imageMemoryRequirements.memoryTypeBits);
+                    return nullptr;
+                }
+
+                const VkResult bindImageResult = vkBindImageMemory(device, texture->image, texture->memory, 0);
+                if (bindImageResult != VK_SUCCESS)
+                {
+                    getContext()->log(Gek::Context::Error,
+                        "vkBindImageMemory failed ({}) for '{}'", static_cast<int32_t>(bindImageResult), description.name);
+                    return nullptr;
+                }
+
+                if (data)
+                {
+                    std::lock_guard<std::mutex> uploadLock(getUploadCommandPoolMutex());
+
+                    const VkDeviceSize uploadSize = static_cast<VkDeviceSize>(std::max(description.width, 1u)) * static_cast<VkDeviceSize>(std::max(description.height, 1u)) * 4u;
+
+                    VkBuffer stagingBuffer = VK_NULL_HANDLE;
+                    VkDeviceMemory stagingMemory = VK_NULL_HANDLE;
+
+                    VkBufferCreateInfo stagingBufferInfo{};
+                    stagingBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+                    stagingBufferInfo.size = uploadSize;
+                    stagingBufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+                    stagingBufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+                    if (vkCreateBuffer(device, &stagingBufferInfo, nullptr, &stagingBuffer) != VK_SUCCESS)
+                    {
+                        return nullptr;
+                    }
+
+                    VkMemoryRequirements stagingMemoryRequirements{};
+                    vkGetBufferMemoryRequirements(device, stagingBuffer, &stagingMemoryRequirements);
+
+                    VkMemoryAllocateInfo stagingAllocInfo{};
+                    stagingAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+                    stagingAllocInfo.allocationSize = stagingMemoryRequirements.size;
+                    stagingAllocInfo.memoryTypeIndex = findMemoryType(stagingMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                    if (stagingAllocInfo.memoryTypeIndex == UINT32_MAX)
+                    {
+                        getContext()->log(Gek::Context::Error,
+                            "No compatible Vulkan memory type found for staging buffer '{}' (typeBits={}, flags={}).",
+                            description.name, stagingMemoryRequirements.memoryTypeBits,
+                            static_cast<uint32_t>(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
+                        vkDestroyBuffer(device, stagingBuffer, nullptr);
+                        return nullptr;
+                    }
+                    if (vkAllocateMemory(device, &stagingAllocInfo, nullptr, &stagingMemory) != VK_SUCCESS)
+                    {
+                        vkDestroyBuffer(device, stagingBuffer, nullptr);
+                        return nullptr;
+                    }
+
+                    vkBindBufferMemory(device, stagingBuffer, stagingMemory, 0);
+
+                    void *stagingData = nullptr;
+                    vkMapMemory(device, stagingMemory, 0, uploadSize, 0, &stagingData);
+                    std::memcpy(stagingData, data, static_cast<size_t>(uploadSize));
+                    vkUnmapMemory(device, stagingMemory);
+
+                    VkCommandBufferAllocateInfo commandAllocInfo{};
+                    commandAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+                    commandAllocInfo.commandPool = uploadCommandPool;
+                    commandAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+                    commandAllocInfo.commandBufferCount = 1;
+
+                    VkCommandBuffer uploadCommandBuffer = VK_NULL_HANDLE;
+                    if (vkAllocateCommandBuffers(device, &commandAllocInfo, &uploadCommandBuffer) != VK_SUCCESS)
+                    {
+                        vkDestroyBuffer(device, stagingBuffer, nullptr);
+                        vkFreeMemory(device, stagingMemory, nullptr);
+                        return nullptr;
+                    }
+
+                    VkCommandBufferBeginInfo beginInfo{};
+                    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+                    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+                    vkBeginCommandBuffer(uploadCommandBuffer, &beginInfo);
+
+                    VkImageMemoryBarrier toTransfer{};
+                    toTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                    toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                    toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                    toTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    toTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    toTransfer.image = texture->image;
+                    toTransfer.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    toTransfer.subresourceRange.baseMipLevel = 0;
+                    toTransfer.subresourceRange.levelCount = 1;
+                    toTransfer.subresourceRange.baseArrayLayer = 0;
+                    toTransfer.subresourceRange.layerCount = 1;
+                    toTransfer.srcAccessMask = 0;
+                    toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+                    vkCmdPipelineBarrier(
+                        uploadCommandBuffer,
+                        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                        VK_PIPELINE_STAGE_TRANSFER_BIT,
+                        0,
+                        0, nullptr,
+                        0, nullptr,
+                        1, &toTransfer);
+
+                    VkBufferImageCopy region{};
+                    region.bufferOffset = 0;
+                    region.bufferRowLength = 0;
+                    region.bufferImageHeight = 0;
+                    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    region.imageSubresource.mipLevel = 0;
+                    region.imageSubresource.baseArrayLayer = 0;
+                    region.imageSubresource.layerCount = 1;
+                    region.imageOffset = { 0, 0, 0 };
+                    region.imageExtent = { std::max(description.width, 1u), std::max(description.height, 1u), 1 };
+                    vkCmdCopyBufferToImage(uploadCommandBuffer, stagingBuffer, texture->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+                    VkImageMemoryBarrier toShaderRead{};
+                    toShaderRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                    toShaderRead.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                    toShaderRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    toShaderRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    toShaderRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    toShaderRead.image = texture->image;
+                    toShaderRead.subresourceRange = toTransfer.subresourceRange;
+                    toShaderRead.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                    toShaderRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+                    vkCmdPipelineBarrier(
+                        uploadCommandBuffer,
+                        VK_PIPELINE_STAGE_TRANSFER_BIT,
+                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                        0,
+                        0, nullptr,
+                        0, nullptr,
+                        1, &toShaderRead);
+
+                    if (vkEndCommandBuffer(uploadCommandBuffer) != VK_SUCCESS)
+                    {
+                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                        vkDestroyBuffer(device, stagingBuffer, nullptr);
+                        vkFreeMemory(device, stagingMemory, nullptr);
+                        return nullptr;
+                    }
+
+                    VkFence uploadFence = VK_NULL_HANDLE;
+                    VkFenceCreateInfo uploadFenceInfo{};
+                    uploadFenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+                    if (vkCreateFence(device, &uploadFenceInfo, nullptr, &uploadFence) != VK_SUCCESS)
+                    {
+                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                        vkDestroyBuffer(device, stagingBuffer, nullptr);
+                        vkFreeMemory(device, stagingMemory, nullptr);
+                        return nullptr;
+                    }
+
+                    VkSubmitInfo submitInfo{};
+                    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                    submitInfo.commandBufferCount = 1;
+                    submitInfo.pCommandBuffers = &uploadCommandBuffer;
+                    {
+                        std::lock_guard<std::mutex> queueLock(getQueueSubmitMutex());
+                        const VkResult uploadSubmitResult = vkQueueSubmit(graphicsQueue, 1, &submitInfo, uploadFence);
+                        if (uploadSubmitResult != VK_SUCCESS)
+                        {
+                            vkDestroyFence(device, uploadFence, nullptr);
+                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                            vkDestroyBuffer(device, stagingBuffer, nullptr);
+                            vkFreeMemory(device, stagingMemory, nullptr);
+                            return nullptr;
+                        }
+                    }
+
+                    constexpr uint64_t kUploadFenceTimeoutNs = 5ull * 1000ull * 1000ull * 1000ull;
+                    const VkResult uploadWaitResult = vkWaitForFences(device, 1, &uploadFence, VK_TRUE, kUploadFenceTimeoutNs);
+                    vkDestroyFence(device, uploadFence, nullptr);
+                    if (uploadWaitResult == VK_TIMEOUT)
+                    {
+                        getContext()->log(Gek::Context::Error, "Vulkan texture upload wait timed out (copy-to-image path)");
+                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                        vkDestroyBuffer(device, stagingBuffer, nullptr);
+                        vkFreeMemory(device, stagingMemory, nullptr);
+                        return nullptr;
+                    }
+
+                    if (uploadWaitResult != VK_SUCCESS)
+                    {
+                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                        vkDestroyBuffer(device, stagingBuffer, nullptr);
+                        vkFreeMemory(device, stagingMemory, nullptr);
+                        return nullptr;
+                    }
+
+                    vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                    vkDestroyBuffer(device, stagingBuffer, nullptr);
+                    vkFreeMemory(device, stagingMemory, nullptr);
+                }
+                else
+                {
+                    std::lock_guard<std::mutex> uploadLock(getUploadCommandPoolMutex());
+
+                    VkCommandBufferAllocateInfo commandAllocInfo{};
+                    commandAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+                    commandAllocInfo.commandPool = uploadCommandPool;
+                    commandAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+                    commandAllocInfo.commandBufferCount = 1;
+
+                    VkCommandBuffer uploadCommandBuffer = VK_NULL_HANDLE;
+                    if (vkAllocateCommandBuffers(device, &commandAllocInfo, &uploadCommandBuffer) != VK_SUCCESS)
+                    {
+                        return nullptr;
+                    }
+
+                    VkCommandBufferBeginInfo beginInfo{};
+                    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+                    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+                    if (vkBeginCommandBuffer(uploadCommandBuffer, &beginInfo) != VK_SUCCESS)
+                    {
+                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                        return nullptr;
+                    }
+
+                    VkImageMemoryBarrier toShaderRead{};
+                    toShaderRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                    toShaderRead.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                    toShaderRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    toShaderRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    toShaderRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    toShaderRead.image = texture->image;
+                    toShaderRead.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                    toShaderRead.subresourceRange.baseMipLevel = 0;
+                    toShaderRead.subresourceRange.levelCount = 1;
+                    toShaderRead.subresourceRange.baseArrayLayer = 0;
+                    toShaderRead.subresourceRange.layerCount = 1;
+                    toShaderRead.srcAccessMask = 0;
+                    toShaderRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+                    vkCmdPipelineBarrier(
+                        uploadCommandBuffer,
+                        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                        0,
+                        0, nullptr,
+                        0, nullptr,
+                        1, &toShaderRead);
+
+                    if (vkEndCommandBuffer(uploadCommandBuffer) != VK_SUCCESS)
+                    {
+                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                        return nullptr;
+                    }
+
+                    VkFence uploadFence = VK_NULL_HANDLE;
+                    VkFenceCreateInfo uploadFenceInfo{};
+                    uploadFenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+                    if (vkCreateFence(device, &uploadFenceInfo, nullptr, &uploadFence) != VK_SUCCESS)
+                    {
+                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                        return nullptr;
+                    }
+
+                    VkSubmitInfo submitInfo{};
+                    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                    submitInfo.commandBufferCount = 1;
+                    submitInfo.pCommandBuffers = &uploadCommandBuffer;
+                    {
+                        std::lock_guard<std::mutex> queueLock(getQueueSubmitMutex());
+                        const VkResult uploadSubmitResult = vkQueueSubmit(graphicsQueue, 1, &submitInfo, uploadFence);
+                        if (uploadSubmitResult != VK_SUCCESS)
+                        {
+                            vkDestroyFence(device, uploadFence, nullptr);
+                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                            return nullptr;
+                        }
+                    }
+
+                    constexpr uint64_t kUploadFenceTimeoutNs = 5ull * 1000ull * 1000ull * 1000ull;
+                    const VkResult uploadWaitResult = vkWaitForFences(device, 1, &uploadFence, VK_TRUE, kUploadFenceTimeoutNs);
+                    vkDestroyFence(device, uploadFence, nullptr);
+                    if (uploadWaitResult == VK_TIMEOUT)
+                    {
+                        getContext()->log(Gek::Context::Error, "Vulkan texture upload wait timed out (render-target init path)");
+                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                        return nullptr;
+                    }
+
+                    if (uploadWaitResult != VK_SUCCESS)
+                    {
+                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                        return nullptr;
+                    }
+
+                    vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
+                }
+
+                VkImageViewCreateInfo imageViewInfo{};
+                imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+                imageViewInfo.image = texture->image;
+                imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+                imageViewInfo.format = imageFormat;
+                imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                imageViewInfo.subresourceRange.baseMipLevel = 0;
+                imageViewInfo.subresourceRange.levelCount = 1;
+                imageViewInfo.subresourceRange.baseArrayLayer = 0;
+                imageViewInfo.subresourceRange.layerCount = 1;
+                if (vkCreateImageView(device, &imageViewInfo, nullptr, &texture->imageView) != VK_SUCCESS)
+                {
+                    return nullptr;
+                }
+
+                {
+                    std::lock_guard<std::mutex> lookupLock(persistentImageViewLookupMutex);
+                    if (persistentImageViewLookup.size() > 32768)
+                    {
+                        persistentImageViewLookup.clear();
+                    }
+                    persistentImageViewLookup[texture->imageView] = std::make_pair(
+                        texture->image,
+                        VkExtent2D{ std::max(description.width, 1u), std::max(description.height, 1u) });
+                }
+
+                VkSamplerCreateInfo samplerInfo{};
+                samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+                samplerInfo.magFilter = VK_FILTER_LINEAR;
+                samplerInfo.minFilter = VK_FILTER_LINEAR;
+                samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+                samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+                samplerInfo.minLod = 0.0f;
+                samplerInfo.maxLod = 0.0f;
+                if (vkCreateSampler(device, &samplerInfo, nullptr, &texture->sampler) != VK_SUCCESS)
+                {
+                    return nullptr;
+                }
+
+                return texture;
+            }
+
             Render::TexturePtr createTexture(const Render::Texture::Description &description, const void *data)
             {
                 if (description.flags & Render::Texture::Flags::RenderTarget)
                 {
-                    auto texture = std::make_unique<UnorderedTargetViewTexture>(description);
-                    texture->device = device;
-
-                    const VkFormat imageFormat = GetVkFormat(description.format);
-                    if (imageFormat == VK_FORMAT_UNDEFINED)
-                    {
-                        getContext()->log(Gek::Context::Error,
-                            "Vulkan createTexture failed: unsupported Render::Format {} for render target '{}'.",
-                            static_cast<uint32_t>(description.format), description.name);
-                        return nullptr;
-                    }
-
-                    VkImageCreateInfo imageInfo{};
-                    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-                    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-                    imageInfo.extent.width = std::max(description.width, 1u);
-                    imageInfo.extent.height = std::max(description.height, 1u);
-                    imageInfo.extent.depth = 1;
-                    const uint32_t maxMipLevels = (std::bit_width(std::max(imageInfo.extent.width, imageInfo.extent.height)));
-                    uint32_t mipLevels = (description.mipMapCount == 0)
-                        ? std::max(maxMipLevels, 1u)
-                        : std::clamp(description.mipMapCount, 1u, std::max(maxMipLevels, 1u));
-
-                    VkFormatProperties formatProperties{};
-                    vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
-                    const bool supportsBlitSource = (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_SRC_BIT) != 0;
-                    const bool supportsBlitDestination = (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_BLIT_DST_BIT) != 0;
-                    texture->supportsMipBlit = (mipLevels > 1) && supportsBlitSource && supportsBlitDestination;
-                    if (mipLevels > 1 && !texture->supportsMipBlit)
-                    {
-                        mipLevels = 1;
-                    }
-
-                    imageInfo.mipLevels = mipLevels;
-                    texture->description.mipMapCount = mipLevels;
-                    imageInfo.arrayLayers = 1;
-                    imageInfo.format = imageFormat;
-                    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-                    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                    imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-                    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-                    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                    if (vkCreateImage(device, &imageInfo, nullptr, &texture->image) != VK_SUCCESS)
-                    {
-                        return nullptr;
-                    }
-
-                    VkMemoryRequirements imageMemoryRequirements{};
-                    vkGetImageMemoryRequirements(device, texture->image, &imageMemoryRequirements);
-
-                    VkMemoryAllocateInfo imageAllocInfo{};
-                    imageAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-                    imageAllocInfo.allocationSize = imageMemoryRequirements.size;
-                    imageAllocInfo.memoryTypeIndex = findMemoryType(imageMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-                    if (imageAllocInfo.memoryTypeIndex == UINT32_MAX)
-                    {
-                        return nullptr;
-                    }
-                    if (vkAllocateMemory(device, &imageAllocInfo, nullptr, &texture->memory) != VK_SUCCESS)
-                    {
-                        return nullptr;
-                    }
-
-                    if (vkBindImageMemory(device, texture->image, texture->memory, 0) != VK_SUCCESS)
-                    {
-                        return nullptr;
-                    }
-
-                    {
-                        std::lock_guard<std::mutex> uploadLock(getUploadCommandPoolMutex());
-
-                        VkCommandBufferAllocateInfo commandAllocInfo{};
-                        commandAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-                        commandAllocInfo.commandPool = uploadCommandPool;
-                        commandAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-                        commandAllocInfo.commandBufferCount = 1;
-
-                        VkCommandBuffer uploadCommandBuffer = VK_NULL_HANDLE;
-                        if (vkAllocateCommandBuffers(device, &commandAllocInfo, &uploadCommandBuffer) != VK_SUCCESS)
-                        {
-                            return nullptr;
-                        }
-
-                        VkCommandBufferBeginInfo beginInfo{};
-                        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-                        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-                        if (vkBeginCommandBuffer(uploadCommandBuffer, &beginInfo) != VK_SUCCESS)
-                        {
-                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                            return nullptr;
-                        }
-
-                        VkImageMemoryBarrier toShaderRead{};
-                        toShaderRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                        toShaderRead.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                        toShaderRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                        toShaderRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                        toShaderRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                        toShaderRead.image = texture->image;
-                        toShaderRead.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                        toShaderRead.subresourceRange.baseMipLevel = 0;
-                        toShaderRead.subresourceRange.levelCount = mipLevels;
-                        toShaderRead.subresourceRange.baseArrayLayer = 0;
-                        toShaderRead.subresourceRange.layerCount = 1;
-                        toShaderRead.srcAccessMask = 0;
-                        toShaderRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-                        vkCmdPipelineBarrier(
-                            uploadCommandBuffer,
-                            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                            0,
-                            0, nullptr,
-                            0, nullptr,
-                            1, &toShaderRead);
-
-                        if (vkEndCommandBuffer(uploadCommandBuffer) != VK_SUCCESS)
-                        {
-                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                            return nullptr;
-                        }
-
-                        VkFence uploadFence = VK_NULL_HANDLE;
-                        VkFenceCreateInfo uploadFenceInfo{};
-                        uploadFenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-                        if (vkCreateFence(device, &uploadFenceInfo, nullptr, &uploadFence) != VK_SUCCESS)
-                        {
-                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                            return nullptr;
-                        }
-
-                        VkSubmitInfo submitInfo{};
-                        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-                        submitInfo.commandBufferCount = 1;
-                        submitInfo.pCommandBuffers = &uploadCommandBuffer;
-                        {
-                            std::lock_guard<std::mutex> queueLock(getQueueSubmitMutex());
-                            const VkResult uploadSubmitResult = vkQueueSubmit(graphicsQueue, 1, &submitInfo, uploadFence);
-                            if (uploadSubmitResult != VK_SUCCESS)
-                            {
-                                vkDestroyFence(device, uploadFence, nullptr);
-                                vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                                return nullptr;
-                            }
-                        }
-
-                        constexpr uint64_t kUploadFenceTimeoutNs = 5ull * 1000ull * 1000ull * 1000ull;
-                        const VkResult uploadWaitResult = vkWaitForFences(device, 1, &uploadFence, VK_TRUE, kUploadFenceTimeoutNs);
-                        vkDestroyFence(device, uploadFence, nullptr);
-                        if (uploadWaitResult == VK_TIMEOUT)
-                        {
-                            getContext()->log(Gek::Context::Error, "Vulkan texture upload wait timed out (staging upload path)");
-                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                            return nullptr;
-                        }
-
-                        if (uploadWaitResult != VK_SUCCESS)
-                        {
-                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                            return nullptr;
-                        }
-
-                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                    }
-
-                    texture->currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-                    VkImageViewCreateInfo imageViewInfo{};
-                    imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-                    imageViewInfo.image = texture->image;
-                    imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-                    imageViewInfo.format = imageFormat;
-                    imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    imageViewInfo.subresourceRange.baseMipLevel = 0;
-                    imageViewInfo.subresourceRange.levelCount = mipLevels;
-                    imageViewInfo.subresourceRange.baseArrayLayer = 0;
-                    imageViewInfo.subresourceRange.layerCount = 1;
-                    if (vkCreateImageView(device, &imageViewInfo, nullptr, &texture->imageView) != VK_SUCCESS)
-                    {
-                        return nullptr;
-                    }
-
-                    {
-                        std::lock_guard<std::mutex> lookupLock(persistentImageViewLookupMutex);
-                        if (persistentImageViewLookup.size() > 32768)
-                        {
-                            persistentImageViewLookup.clear();
-                        }
-                        persistentImageViewLookup[texture->imageView] = std::make_pair(
-                            texture->image,
-                            VkExtent2D{ std::max(description.width, 1u), std::max(description.height, 1u) });
-                    }
-
-                    VkSamplerCreateInfo samplerInfo{};
-                    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-                    samplerInfo.magFilter = VK_FILTER_LINEAR;
-                    samplerInfo.minFilter = VK_FILTER_LINEAR;
-                    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-                    samplerInfo.minLod = 0.0f;
-                    samplerInfo.maxLod = texture->supportsMipBlit
-                        ? static_cast<float>(std::max(mipLevels, 1u) - 1u)
-                        : 0.0f;
-                    if (vkCreateSampler(device, &samplerInfo, nullptr, &texture->sampler) != VK_SUCCESS)
-                    {
-                        return nullptr;
-                    }
-
-                    return texture;
+                    return createRenderTargetTexture(description);
                 }
-                else if (description.flags & Render::Texture::Flags::DepthTarget)
+
+                if (description.flags & Render::Texture::Flags::DepthTarget)
                 {
-                    auto texture = std::make_unique<DepthTexture>(description);
-                    texture->device = device;
-
-                    const VkFormat imageFormat = GetVkFormat(description.format);
-                    if (imageFormat == VK_FORMAT_UNDEFINED)
-                    {
-                        getContext()->log(Gek::Context::Error,
-                            "Vulkan createTexture failed: unsupported depth Render::Format {} for '{}'.",
-                            static_cast<uint32_t>(description.format), description.name);
-                        return nullptr;
-                    }
-
-                    texture->format = imageFormat;
-
-                    VkImageCreateInfo imageInfo{};
-                    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-                    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-                    imageInfo.extent.width = std::max(description.width, 1u);
-                    imageInfo.extent.height = std::max(description.height, 1u);
-                    imageInfo.extent.depth = 1;
-                    imageInfo.mipLevels = 1;
-                    imageInfo.arrayLayers = 1;
-                    imageInfo.format = imageFormat;
-                    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-                    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                    imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-                    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-                    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                    if (vkCreateImage(device, &imageInfo, nullptr, &texture->image) != VK_SUCCESS)
-                    {
-                        return nullptr;
-                    }
-
-                    VkMemoryRequirements imageMemoryRequirements{};
-                    vkGetImageMemoryRequirements(device, texture->image, &imageMemoryRequirements);
-
-                    VkMemoryAllocateInfo imageAllocInfo{};
-                    imageAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-                    imageAllocInfo.allocationSize = imageMemoryRequirements.size;
-                    imageAllocInfo.memoryTypeIndex = findMemoryType(imageMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-                    if (imageAllocInfo.memoryTypeIndex == UINT32_MAX)
-                    {
-                        return nullptr;
-                    }
-                    if (vkAllocateMemory(device, &imageAllocInfo, nullptr, &texture->memory) != VK_SUCCESS)
-                    {
-                        return nullptr;
-                    }
-
-                    if (vkBindImageMemory(device, texture->image, texture->memory, 0) != VK_SUCCESS)
-                    {
-                        return nullptr;
-                    }
-
-                    VkImageViewCreateInfo imageViewInfo{};
-                    imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-                    imageViewInfo.image = texture->image;
-                    imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-                    imageViewInfo.format = imageFormat;
-                    imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                    imageViewInfo.subresourceRange.baseMipLevel = 0;
-                    imageViewInfo.subresourceRange.levelCount = 1;
-                    imageViewInfo.subresourceRange.baseArrayLayer = 0;
-                    imageViewInfo.subresourceRange.layerCount = 1;
-                    if (vkCreateImageView(device, &imageViewInfo, nullptr, &texture->imageView) != VK_SUCCESS)
-                    {
-                        return nullptr;
-                    }
-
-                    {
-                        std::lock_guard<std::mutex> lookupLock(persistentImageViewLookupMutex);
-                        if (persistentImageViewLookup.size() > 32768)
-                        {
-                            persistentImageViewLookup.clear();
-                        }
-                        persistentImageViewLookup[texture->imageView] = std::make_pair(
-                            texture->image,
-                            VkExtent2D{ std::max(description.width, 1u), std::max(description.height, 1u) });
-                    }
-
-                    VkSamplerCreateInfo samplerInfo{};
-                    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-                    samplerInfo.magFilter = VK_FILTER_LINEAR;
-                    samplerInfo.minFilter = VK_FILTER_LINEAR;
-                    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-                    samplerInfo.minLod = 0.0f;
-                    samplerInfo.maxLod = 0.0f;
-                    if (vkCreateSampler(device, &samplerInfo, nullptr, &texture->sampler) != VK_SUCCESS)
-                    {
-                        return nullptr;
-                    }
-
-                    texture->currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                    return texture;
+                    return createDepthTargetTexture(description);
                 }
-                else
-                {
-                    auto texture = std::make_unique<ViewTexture>(description);
-                    texture->device = device;
 
-                    const VkFormat imageFormat = GetVkFormat(description.format);
-                    if (imageFormat == VK_FORMAT_UNDEFINED)
-                    {
-                        getContext()->log(Gek::Context::Error,
-                            "Vulkan createTexture failed: unsupported Render::Format {} for '{}'.",
-                            static_cast<uint32_t>(description.format), description.name);
-                        return nullptr;
-                    }
-
-                    VkFormatProperties formatProperties{};
-                    vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
-                    const VkFormatFeatureFlags requiredFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-                    if ((formatProperties.optimalTilingFeatures & requiredFeatures) != requiredFeatures)
-                    {
-                        getContext()->log(Gek::Context::Error,
-                            "Vulkan createTexture failed: format {} missing sampled/transfer-dst optimal tiling features for '{}' ({}x{}).",
-                            static_cast<uint32_t>(imageFormat), description.name, description.width, description.height);
-                        return nullptr;
-                    }
-
-                    VkImageCreateInfo imageInfo{};
-                    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-                    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-                    imageInfo.extent.width = std::max(description.width, 1u);
-                    imageInfo.extent.height = std::max(description.height, 1u);
-                    imageInfo.extent.depth = 1;
-                    imageInfo.mipLevels = 1;
-                    imageInfo.arrayLayers = 1;
-                    imageInfo.format = imageFormat;
-                    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-                    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                    imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-                    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-                    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-                    const VkResult createImageResult = vkCreateImage(device, &imageInfo, nullptr, &texture->image);
-                    if (createImageResult != VK_SUCCESS)
-                    {
-                        getContext()->log(Gek::Context::Error,
-                            "vkCreateImage failed ({}) for '{}' format={} size={}x{} flags={}",
-                            static_cast<int32_t>(createImageResult), description.name,
-                            static_cast<uint32_t>(imageFormat), imageInfo.extent.width,
-                            imageInfo.extent.height, description.flags);
-                        return nullptr;
-                    }
-
-                    VkMemoryRequirements imageMemoryRequirements{};
-                    vkGetImageMemoryRequirements(device, texture->image, &imageMemoryRequirements);
-
-                    VkMemoryAllocateInfo imageAllocInfo{};
-                    imageAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-                    imageAllocInfo.allocationSize = imageMemoryRequirements.size;
-                    imageAllocInfo.memoryTypeIndex = findMemoryType(imageMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-                    if (imageAllocInfo.memoryTypeIndex == UINT32_MAX)
-                    {
-                        getContext()->log(Gek::Context::Error,
-                            "No compatible Vulkan memory type found for image '{}' (typeBits={}, flags={}).",
-                            description.name, imageMemoryRequirements.memoryTypeBits,
-                            static_cast<uint32_t>(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
-                        return nullptr;
-                    }
-                    const VkResult imageAllocResult = vkAllocateMemory(device, &imageAllocInfo, nullptr, &texture->memory);
-                    if (imageAllocResult != VK_SUCCESS)
-                    {
-                        getContext()->log(Gek::Context::Error,
-                            "vkAllocateMemory for image failed ({}) for '{}' size={} memoryTypeBits={}",
-                            static_cast<int32_t>(imageAllocResult), description.name,
-                            static_cast<uint64_t>(imageAllocInfo.allocationSize), imageMemoryRequirements.memoryTypeBits);
-                        return nullptr;
-                    }
-
-                    const VkResult bindImageResult = vkBindImageMemory(device, texture->image, texture->memory, 0);
-                    if (bindImageResult != VK_SUCCESS)
-                    {
-                        getContext()->log(Gek::Context::Error,
-                            "vkBindImageMemory failed ({}) for '{}'", static_cast<int32_t>(bindImageResult), description.name);
-                        return nullptr;
-                    }
-
-                    if (data)
-                    {
-                        std::lock_guard<std::mutex> uploadLock(getUploadCommandPoolMutex());
-
-                        const VkDeviceSize uploadSize = static_cast<VkDeviceSize>(std::max(description.width, 1u)) * static_cast<VkDeviceSize>(std::max(description.height, 1u)) * 4u;
-
-                        VkBuffer stagingBuffer = VK_NULL_HANDLE;
-                        VkDeviceMemory stagingMemory = VK_NULL_HANDLE;
-
-                        VkBufferCreateInfo stagingBufferInfo{};
-                        stagingBufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-                        stagingBufferInfo.size = uploadSize;
-                        stagingBufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-                        stagingBufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                        if (vkCreateBuffer(device, &stagingBufferInfo, nullptr, &stagingBuffer) != VK_SUCCESS)
-                        {
-                            return nullptr;
-                        }
-
-                        VkMemoryRequirements stagingMemoryRequirements{};
-                        vkGetBufferMemoryRequirements(device, stagingBuffer, &stagingMemoryRequirements);
-
-                        VkMemoryAllocateInfo stagingAllocInfo{};
-                        stagingAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-                        stagingAllocInfo.allocationSize = stagingMemoryRequirements.size;
-                        stagingAllocInfo.memoryTypeIndex = findMemoryType(stagingMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-                        if (stagingAllocInfo.memoryTypeIndex == UINT32_MAX)
-                        {
-                            getContext()->log(Gek::Context::Error,
-                                "No compatible Vulkan memory type found for staging buffer '{}' (typeBits={}, flags={}).",
-                                description.name, stagingMemoryRequirements.memoryTypeBits,
-                                static_cast<uint32_t>(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
-                            vkDestroyBuffer(device, stagingBuffer, nullptr);
-                            return nullptr;
-                        }
-                        if (vkAllocateMemory(device, &stagingAllocInfo, nullptr, &stagingMemory) != VK_SUCCESS)
-                        {
-                            vkDestroyBuffer(device, stagingBuffer, nullptr);
-                            return nullptr;
-                        }
-
-                        vkBindBufferMemory(device, stagingBuffer, stagingMemory, 0);
-
-                        void *stagingData = nullptr;
-                        vkMapMemory(device, stagingMemory, 0, uploadSize, 0, &stagingData);
-                        std::memcpy(stagingData, data, static_cast<size_t>(uploadSize));
-                        vkUnmapMemory(device, stagingMemory);
-
-                        VkCommandBufferAllocateInfo commandAllocInfo{};
-                        commandAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-                        commandAllocInfo.commandPool = uploadCommandPool;
-                        commandAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-                        commandAllocInfo.commandBufferCount = 1;
-
-                        VkCommandBuffer uploadCommandBuffer = VK_NULL_HANDLE;
-                        if (vkAllocateCommandBuffers(device, &commandAllocInfo, &uploadCommandBuffer) != VK_SUCCESS)
-                        {
-                            vkDestroyBuffer(device, stagingBuffer, nullptr);
-                            vkFreeMemory(device, stagingMemory, nullptr);
-                            return nullptr;
-                        }
-
-                        VkCommandBufferBeginInfo beginInfo{};
-                        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-                        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-                        vkBeginCommandBuffer(uploadCommandBuffer, &beginInfo);
-
-                        VkImageMemoryBarrier toTransfer{};
-                        toTransfer.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                        toTransfer.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                        toTransfer.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-                        toTransfer.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                        toTransfer.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                        toTransfer.image = texture->image;
-                        toTransfer.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                        toTransfer.subresourceRange.baseMipLevel = 0;
-                        toTransfer.subresourceRange.levelCount = 1;
-                        toTransfer.subresourceRange.baseArrayLayer = 0;
-                        toTransfer.subresourceRange.layerCount = 1;
-                        toTransfer.srcAccessMask = 0;
-                        toTransfer.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-                        vkCmdPipelineBarrier(
-                            uploadCommandBuffer,
-                            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                            VK_PIPELINE_STAGE_TRANSFER_BIT,
-                            0,
-                            0, nullptr,
-                            0, nullptr,
-                            1, &toTransfer);
-
-                        VkBufferImageCopy region{};
-                        region.bufferOffset = 0;
-                        region.bufferRowLength = 0;
-                        region.bufferImageHeight = 0;
-                        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                        region.imageSubresource.mipLevel = 0;
-                        region.imageSubresource.baseArrayLayer = 0;
-                        region.imageSubresource.layerCount = 1;
-                        region.imageOffset = { 0, 0, 0 };
-                        region.imageExtent = { std::max(description.width, 1u), std::max(description.height, 1u), 1 };
-                        vkCmdCopyBufferToImage(uploadCommandBuffer, stagingBuffer, texture->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-
-                        VkImageMemoryBarrier toShaderRead{};
-                        toShaderRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                        toShaderRead.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-                        toShaderRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                        toShaderRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                        toShaderRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                        toShaderRead.image = texture->image;
-                        toShaderRead.subresourceRange = toTransfer.subresourceRange;
-                        toShaderRead.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                        toShaderRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-                        vkCmdPipelineBarrier(
-                            uploadCommandBuffer,
-                            VK_PIPELINE_STAGE_TRANSFER_BIT,
-                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                            0,
-                            0, nullptr,
-                            0, nullptr,
-                            1, &toShaderRead);
-
-                        if (vkEndCommandBuffer(uploadCommandBuffer) != VK_SUCCESS)
-                        {
-                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                            vkDestroyBuffer(device, stagingBuffer, nullptr);
-                            vkFreeMemory(device, stagingMemory, nullptr);
-                            return nullptr;
-                        }
-
-                        VkFence uploadFence = VK_NULL_HANDLE;
-                        VkFenceCreateInfo uploadFenceInfo{};
-                        uploadFenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-                        if (vkCreateFence(device, &uploadFenceInfo, nullptr, &uploadFence) != VK_SUCCESS)
-                        {
-                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                            vkDestroyBuffer(device, stagingBuffer, nullptr);
-                            vkFreeMemory(device, stagingMemory, nullptr);
-                            return nullptr;
-                        }
-
-                        VkSubmitInfo submitInfo{};
-                        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-                        submitInfo.commandBufferCount = 1;
-                        submitInfo.pCommandBuffers = &uploadCommandBuffer;
-                        {
-                            std::lock_guard<std::mutex> queueLock(getQueueSubmitMutex());
-                            const VkResult uploadSubmitResult = vkQueueSubmit(graphicsQueue, 1, &submitInfo, uploadFence);
-                            if (uploadSubmitResult != VK_SUCCESS)
-                            {
-                                vkDestroyFence(device, uploadFence, nullptr);
-                                vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                                vkDestroyBuffer(device, stagingBuffer, nullptr);
-                                vkFreeMemory(device, stagingMemory, nullptr);
-                                return nullptr;
-                            }
-                        }
-
-                        constexpr uint64_t kUploadFenceTimeoutNs = 5ull * 1000ull * 1000ull * 1000ull;
-                        const VkResult uploadWaitResult = vkWaitForFences(device, 1, &uploadFence, VK_TRUE, kUploadFenceTimeoutNs);
-                        vkDestroyFence(device, uploadFence, nullptr);
-                        if (uploadWaitResult == VK_TIMEOUT)
-                        {
-                            getContext()->log(Gek::Context::Error, "Vulkan texture upload wait timed out (copy-to-image path)");
-                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                            vkDestroyBuffer(device, stagingBuffer, nullptr);
-                            vkFreeMemory(device, stagingMemory, nullptr);
-                            return nullptr;
-                        }
-
-                        if (uploadWaitResult != VK_SUCCESS)
-                        {
-                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                            vkDestroyBuffer(device, stagingBuffer, nullptr);
-                            vkFreeMemory(device, stagingMemory, nullptr);
-                            return nullptr;
-                        }
-
-                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                        vkDestroyBuffer(device, stagingBuffer, nullptr);
-                        vkFreeMemory(device, stagingMemory, nullptr);
-                    }
-                    else
-                    {
-                        std::lock_guard<std::mutex> uploadLock(getUploadCommandPoolMutex());
-
-                        VkCommandBufferAllocateInfo commandAllocInfo{};
-                        commandAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-                        commandAllocInfo.commandPool = uploadCommandPool;
-                        commandAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-                        commandAllocInfo.commandBufferCount = 1;
-
-                        VkCommandBuffer uploadCommandBuffer = VK_NULL_HANDLE;
-                        if (vkAllocateCommandBuffers(device, &commandAllocInfo, &uploadCommandBuffer) != VK_SUCCESS)
-                        {
-                            return nullptr;
-                        }
-
-                        VkCommandBufferBeginInfo beginInfo{};
-                        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-                        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-                        if (vkBeginCommandBuffer(uploadCommandBuffer, &beginInfo) != VK_SUCCESS)
-                        {
-                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                            return nullptr;
-                        }
-
-                        VkImageMemoryBarrier toShaderRead{};
-                        toShaderRead.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                        toShaderRead.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                        toShaderRead.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                        toShaderRead.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                        toShaderRead.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                        toShaderRead.image = texture->image;
-                        toShaderRead.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                        toShaderRead.subresourceRange.baseMipLevel = 0;
-                        toShaderRead.subresourceRange.levelCount = 1;
-                        toShaderRead.subresourceRange.baseArrayLayer = 0;
-                        toShaderRead.subresourceRange.layerCount = 1;
-                        toShaderRead.srcAccessMask = 0;
-                        toShaderRead.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-                        vkCmdPipelineBarrier(
-                            uploadCommandBuffer,
-                            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                            0,
-                            0, nullptr,
-                            0, nullptr,
-                            1, &toShaderRead);
-
-                        if (vkEndCommandBuffer(uploadCommandBuffer) != VK_SUCCESS)
-                        {
-                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                            return nullptr;
-                        }
-
-                        VkFence uploadFence = VK_NULL_HANDLE;
-                        VkFenceCreateInfo uploadFenceInfo{};
-                        uploadFenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-                        if (vkCreateFence(device, &uploadFenceInfo, nullptr, &uploadFence) != VK_SUCCESS)
-                        {
-                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                            return nullptr;
-                        }
-
-                        VkSubmitInfo submitInfo{};
-                        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-                        submitInfo.commandBufferCount = 1;
-                        submitInfo.pCommandBuffers = &uploadCommandBuffer;
-                        {
-                            std::lock_guard<std::mutex> queueLock(getQueueSubmitMutex());
-                            const VkResult uploadSubmitResult = vkQueueSubmit(graphicsQueue, 1, &submitInfo, uploadFence);
-                            if (uploadSubmitResult != VK_SUCCESS)
-                            {
-                                vkDestroyFence(device, uploadFence, nullptr);
-                                vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                                return nullptr;
-                            }
-                        }
-
-                        constexpr uint64_t kUploadFenceTimeoutNs = 5ull * 1000ull * 1000ull * 1000ull;
-                        const VkResult uploadWaitResult = vkWaitForFences(device, 1, &uploadFence, VK_TRUE, kUploadFenceTimeoutNs);
-                        vkDestroyFence(device, uploadFence, nullptr);
-                        if (uploadWaitResult == VK_TIMEOUT)
-                        {
-                            getContext()->log(Gek::Context::Error, "Vulkan texture upload wait timed out (render-target init path)");
-                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                            return nullptr;
-                        }
-
-                        if (uploadWaitResult != VK_SUCCESS)
-                        {
-                            vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                            return nullptr;
-                        }
-
-                        vkFreeCommandBuffers(device, uploadCommandPool, 1, &uploadCommandBuffer);
-                    }
-
-                    VkImageViewCreateInfo imageViewInfo{};
-                    imageViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-                    imageViewInfo.image = texture->image;
-                    imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-                    imageViewInfo.format = imageFormat;
-                    imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    imageViewInfo.subresourceRange.baseMipLevel = 0;
-                    imageViewInfo.subresourceRange.levelCount = 1;
-                    imageViewInfo.subresourceRange.baseArrayLayer = 0;
-                    imageViewInfo.subresourceRange.layerCount = 1;
-                    if (vkCreateImageView(device, &imageViewInfo, nullptr, &texture->imageView) != VK_SUCCESS)
-                    {
-                        return nullptr;
-                    }
-
-                    {
-                        std::lock_guard<std::mutex> lookupLock(persistentImageViewLookupMutex);
-                        if (persistentImageViewLookup.size() > 32768)
-                        {
-                            persistentImageViewLookup.clear();
-                        }
-                        persistentImageViewLookup[texture->imageView] = std::make_pair(
-                            texture->image,
-                            VkExtent2D{ std::max(description.width, 1u), std::max(description.height, 1u) });
-                    }
-
-                    VkSamplerCreateInfo samplerInfo{};
-                    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-                    samplerInfo.magFilter = VK_FILTER_LINEAR;
-                    samplerInfo.minFilter = VK_FILTER_LINEAR;
-                    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-                    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-                    samplerInfo.minLod = 0.0f;
-                    samplerInfo.maxLod = 0.0f;
-                    if (vkCreateSampler(device, &samplerInfo, nullptr, &texture->sampler) != VK_SUCCESS)
-                    {
-                        return nullptr;
-                    }
-
-                    return texture;
-                }
+                return createSampledTexture(description, data);
             }
 
             Render::TexturePtr loadTexture(FileSystem::Path const &filePath, uint32_t flags)
             {
                 std::lock_guard<std::mutex> decodeLock(getTextureDecodeMutex());
+
+                auto createAllocationFailureFallback = [&](std::string_view sourceName) -> Render::TexturePtr
+                {
+                    constexpr uint32_t fallbackWidth = 2;
+                    constexpr uint32_t fallbackHeight = 2;
+                    constexpr std::array<uint8_t, fallbackWidth * fallbackHeight * 4> fallbackPixels =
+                    {
+                        255, 0, 255, 255,
+                        0, 0, 0, 255,
+                        0, 0, 0, 255,
+                        255, 0, 255, 255,
+                    };
+
+                    Render::Texture::Description fallbackDescription;
+                    fallbackDescription.name = std::string(sourceName);
+                    fallbackDescription.format = (flags & Render::TextureLoadFlags::sRGB)
+                        ? Render::Format::R8G8B8A8_UNORM_SRGB
+                        : Render::Format::R8G8B8A8_UNORM;
+                    fallbackDescription.width = fallbackWidth;
+                    fallbackDescription.height = fallbackHeight;
+                    fallbackDescription.depth = 1;
+                    fallbackDescription.mipMapCount = 1;
+                    fallbackDescription.flags = Render::Texture::Flags::Resource;
+
+                    if (auto fallbackTexture = createTexture(fallbackDescription, fallbackPixels.data()))
+                    {
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan texture allocation fallback: using 2x2 placeholder for '{}'",
+                            sourceName);
+                        return fallbackTexture;
+                    }
+
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan texture allocation fallback failed for '{}'",
+                        sourceName);
+                    return nullptr;
+                };
 
                 std::vector<uint8_t> sourceData = FileSystem::Load(filePath);
                 if (sourceData.empty())
@@ -6401,6 +7207,87 @@ namespace Gek
                     return nullptr;
                 }
 
+                if (extension == ".dds")
+                {
+                    const bool preferSrgb = ((flags & Render::TextureLoadFlags::sRGB) != 0);
+                    const DXGI_FORMAT preferredDxgiFormat = ResolveDxgiFormatForSrgbPreference(metadata.format, preferSrgb);
+                    const VkFormat nativeVkFormat = GetVkFormat(preferredDxgiFormat);
+                    if (nativeVkFormat != VK_FORMAT_UNDEFINED && metadata.dimension == ::DirectX::TEX_DIMENSION_TEXTURE2D && metadata.arraySize == 1 && metadata.depth == 1)
+                    {
+                        uint32_t mipLevelCount = static_cast<uint32_t>(std::max<size_t>(metadata.mipLevels, 1));
+                        mipLevelCount = std::min<uint32_t>(mipLevelCount, static_cast<uint32_t>(decodedImage.GetImageCount()));
+
+                        std::vector<VkBufferImageCopy> copyRegions;
+                        std::vector<uint8_t> uploadData;
+                        copyRegions.reserve(mipLevelCount);
+
+                        VkDeviceSize runningOffset = 0;
+                        for (uint32_t mipIndex = 0; mipIndex < mipLevelCount; ++mipIndex)
+                        {
+                            auto const *mipImage = decodedImage.GetImage(mipIndex, 0, 0);
+                            if (!mipImage || !mipImage->pixels || mipImage->slicePitch == 0 || mipImage->rowPitch == 0)
+                            {
+                                copyRegions.clear();
+                                break;
+                            }
+
+                            const uint32_t mipWidth = std::max(static_cast<uint32_t>(mipImage->width), 1u);
+                            const uint32_t mipHeight = std::max(static_cast<uint32_t>(mipImage->height), 1u);
+                            auto [numBlocksWide, numBlocksHigh] = GetBlockCount(mipImage->format, mipWidth, mipHeight);
+                            const size_t expectedRowPitch = GetRowPitch(mipImage->format, numBlocksWide);
+                            const size_t expectedSlicePitch = GetSlicePitch(mipImage->format, numBlocksWide, numBlocksHigh);
+                            if (expectedRowPitch == 0 || expectedSlicePitch == 0 || mipImage->rowPitch != expectedRowPitch || mipImage->slicePitch != expectedSlicePitch)
+                            {
+                                copyRegions.clear();
+                                break;
+                            }
+
+                            const size_t oldSize = uploadData.size();
+                            uploadData.resize(oldSize + mipImage->slicePitch);
+                            std::memcpy(uploadData.data() + oldSize, mipImage->pixels, mipImage->slicePitch);
+
+                            VkBufferImageCopy region{};
+                            region.bufferOffset = runningOffset;
+                            region.bufferRowLength = 0;
+                            region.bufferImageHeight = 0;
+                            region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                            region.imageSubresource.mipLevel = mipIndex;
+                            region.imageSubresource.baseArrayLayer = 0;
+                            region.imageSubresource.layerCount = 1;
+                            region.imageOffset = { 0, 0, 0 };
+                            region.imageExtent = { mipWidth, mipHeight, 1u };
+                            copyRegions.push_back(region);
+                            runningOffset += static_cast<VkDeviceSize>(mipImage->slicePitch);
+                        }
+
+                        if (!copyRegions.empty() && uploadData.size() == static_cast<size_t>(runningOffset))
+                        {
+                            Render::Texture::Description nativeDescription;
+                            nativeDescription.name = filePath.getString();
+                            nativeDescription.format = preferSrgb ? Render::Format::R8G8B8A8_UNORM_SRGB : Render::Format::R8G8B8A8_UNORM;
+                            nativeDescription.width = static_cast<uint32_t>(metadata.width);
+                            nativeDescription.height = static_cast<uint32_t>(metadata.height);
+                            nativeDescription.depth = 1;
+                            nativeDescription.mipMapCount = mipLevelCount;
+                            nativeDescription.flags = Render::Texture::Flags::Resource;
+
+                            if (auto texture = createNativeSampledTexture2D(
+                                nativeDescription,
+                                nativeVkFormat,
+                                mipLevelCount,
+                                copyRegions,
+                                uploadData.data(),
+                                static_cast<VkDeviceSize>(uploadData.size())))
+                            {
+                                getContext()->log(Gek::Context::Info, "Vulkan loadTexture: preserving native DDS format for '{}'", filePath.getString());
+                                return texture;
+                            }
+
+                            getContext()->log(Gek::Context::Warning, "Vulkan native DDS path failed, falling back to RGBA conversion for '{}'", filePath.getString());
+                        }
+                    }
+                }
+
                 const DXGI_FORMAT targetFormat = (flags & Render::TextureLoadFlags::sRGB) ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
                 ::DirectX::ScratchImage convertedImage;
                 const ::DirectX::Image *image = nullptr;
@@ -6418,6 +7305,7 @@ namespace Gek
 
                     image = convertedImage.GetImage(0, 0, 0);
                 }
+
                 if (!image || !image->pixels)
                 {
                     getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed: converted image missing pixels for '{}'", filePath.getString());
@@ -6566,12 +7454,51 @@ namespace Gek
                     height);
 #endif
                 getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed after retries for '{}'", filePath.getString());
-                return nullptr;
+                return createAllocationFailureFallback(filePath.getString());
             }
 
             Render::TexturePtr loadTexture(void const *buffer, size_t size, uint32_t flags)
             {
                 std::lock_guard<std::mutex> decodeLock(getTextureDecodeMutex());
+
+                auto createAllocationFailureFallback = [&](std::string_view sourceName) -> Render::TexturePtr
+                {
+                    constexpr uint32_t fallbackWidth = 2;
+                    constexpr uint32_t fallbackHeight = 2;
+                    constexpr std::array<uint8_t, fallbackWidth * fallbackHeight * 4> fallbackPixels =
+                    {
+                        255, 0, 255, 255,
+                        0, 0, 0, 255,
+                        0, 0, 0, 255,
+                        255, 0, 255, 255,
+                    };
+
+                    Render::Texture::Description fallbackDescription;
+                    fallbackDescription.name = std::string(sourceName);
+                    fallbackDescription.format = (flags & Render::TextureLoadFlags::sRGB)
+                        ? Render::Format::R8G8B8A8_UNORM_SRGB
+                        : Render::Format::R8G8B8A8_UNORM;
+                    fallbackDescription.width = fallbackWidth;
+                    fallbackDescription.height = fallbackHeight;
+                    fallbackDescription.depth = 1;
+                    fallbackDescription.mipMapCount = 1;
+                    fallbackDescription.flags = Render::Texture::Flags::Resource;
+
+                    if (auto fallbackTexture = createTexture(fallbackDescription, fallbackPixels.data()))
+                    {
+                        getContext()->log(
+                            Gek::Context::Warning,
+                            "Vulkan texture allocation fallback: using 2x2 placeholder for '{}'",
+                            sourceName);
+                        return fallbackTexture;
+                    }
+
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan texture allocation fallback failed for '{}'",
+                        sourceName);
+                    return nullptr;
+                };
 
                 if (!buffer || size == 0)
                 {
@@ -6661,93 +7588,46 @@ namespace Gek
                     return nullptr;
                 }
 
-                constexpr uint32_t kMaxTextureDimension = 2048;
-                uint32_t targetWidth = width;
-                uint32_t targetHeight = height;
-                const uint32_t maxDimension = std::max(width, height);
-                if (maxDimension > kMaxTextureDimension)
+                const uint32_t uploadWidth = width;
+                const uint32_t uploadHeight = height;
+
+                const size_t requiredRowPitch = static_cast<size_t>(uploadWidth) * 4u;
+                if (image->rowPitch < requiredRowPitch)
                 {
-                    targetWidth = std::max(1u, static_cast<uint32_t>((static_cast<uint64_t>(width) * kMaxTextureDimension) / maxDimension));
-                    targetHeight = std::max(1u, static_cast<uint32_t>((static_cast<uint64_t>(height) * kMaxTextureDimension) / maxDimension));
+                    getContext()->log(
+                        Gek::Context::Error,
+                        "Vulkan loadTexture(memory) failed: converted row pitch too small (rowPitch={} required={})",
+                        static_cast<uint64_t>(image->rowPitch),
+                        static_cast<uint64_t>(requiredRowPitch));
+                    return nullptr;
                 }
 
-                for (;;)
+                std::vector<uint8_t> uploadData(static_cast<size_t>(uploadWidth) * static_cast<size_t>(uploadHeight) * 4u);
+                for (uint32_t row = 0; row < uploadHeight; ++row)
                 {
-                    const ::DirectX::Image *uploadImage = image;
-                    ::DirectX::ScratchImage resizedImage;
-                    if (targetWidth != width || targetHeight != height)
-                    {
-                        if (FAILED(::DirectX::Resize(*image, targetWidth, targetHeight, ::DirectX::TEX_FILTER_DEFAULT, resizedImage)))
-                        {
-                            getContext()->log(
-                                Gek::Context::Error,
-                                "Vulkan loadTexture(memory) failed: resize error to {}x{}",
-                                targetWidth,
-                                targetHeight);
-                            return nullptr;
-                        }
+                    const uint8_t *sourceRow = image->pixels + (static_cast<size_t>(row) * image->rowPitch);
+                    uint8_t *destRow = uploadData.data() + (static_cast<size_t>(row) * requiredRowPitch);
+                    std::memcpy(destRow, sourceRow, requiredRowPitch);
+                }
 
-                        const ::DirectX::Image *resizedLevel = resizedImage.GetImage(0, 0, 0);
-                        if (!resizedLevel || !resizedLevel->pixels)
-                        {
-                            getContext()->log(Gek::Context::Error, "Vulkan loadTexture(memory) failed: resized image missing pixels");
-                            return nullptr;
-                        }
+                Render::Texture::Description description;
+                description.name = "memory_texture";
+                description.format = (flags & Render::TextureLoadFlags::sRGB)
+                    ? Render::Format::R8G8B8A8_UNORM_SRGB
+                    : Render::Format::R8G8B8A8_UNORM;
+                description.width = uploadWidth;
+                description.height = uploadHeight;
+                description.depth = 1;
+                description.mipMapCount = 1;
+                description.flags = Render::Texture::Flags::Resource;
 
-                        uploadImage = resizedLevel;
-                    }
-
-                    const uint32_t uploadWidth = static_cast<uint32_t>(uploadImage->width);
-                    const uint32_t uploadHeight = static_cast<uint32_t>(uploadImage->height);
-
-                    const size_t requiredRowPitch = static_cast<size_t>(uploadWidth) * 4u;
-                    if (uploadImage->rowPitch < requiredRowPitch)
-                    {
-                        getContext()->log(
-                            Gek::Context::Error,
-                            "Vulkan loadTexture(memory) failed: converted row pitch too small (rowPitch={} required={})",
-                            static_cast<uint64_t>(uploadImage->rowPitch),
-                            static_cast<uint64_t>(requiredRowPitch));
-                        return nullptr;
-                    }
-
-                    std::vector<uint8_t> uploadData(static_cast<size_t>(uploadWidth) * static_cast<size_t>(uploadHeight) * 4u);
-                    for (uint32_t row = 0; row < uploadHeight; ++row)
-                    {
-                        const uint8_t *sourceRow = uploadImage->pixels + (static_cast<size_t>(row) * uploadImage->rowPitch);
-                        uint8_t *destRow = uploadData.data() + (static_cast<size_t>(row) * requiredRowPitch);
-                        std::memcpy(destRow, sourceRow, requiredRowPitch);
-                    }
-
-                    Render::Texture::Description description;
-                    description.name = "memory_texture";
-                    description.format = (flags & Render::TextureLoadFlags::sRGB)
-                        ? Render::Format::R8G8B8A8_UNORM_SRGB
-                        : Render::Format::R8G8B8A8_UNORM;
-                    description.width = uploadWidth;
-                    description.height = uploadHeight;
-                    description.depth = 1;
-                    description.mipMapCount = 1;
-                    description.flags = Render::Texture::Flags::Resource;
-
-                    if (auto texture = createTexture(description, uploadData.data()))
-                    {
-                        return texture;
-                    }
-
-                    if (targetWidth == 1 && targetHeight == 1)
-                    {
-                        break;
-                    }
-
-                    const uint32_t nextWidth = std::max(1u, targetWidth / 2u);
-                    const uint32_t nextHeight = std::max(1u, targetHeight / 2u);
-                    targetWidth = nextWidth;
-                    targetHeight = nextHeight;
+                if (auto texture = createTexture(description, uploadData.data()))
+                {
+                    return texture;
                 }
 
                 getContext()->log(Gek::Context::Error, "Vulkan loadTexture(memory) failed after retries");
-                return nullptr;
+                return createAllocationFailureFallback("memory_texture");
             }
 
             Texture::Description loadTextureDescription(FileSystem::Path const &filePath)
@@ -6933,6 +7813,24 @@ namespace Gek
                     constantBufferVersionRotationsThisFrame = 0;
                     constantBufferVersionExhaustionThisFrame = 0;
                     constantBufferVersionWaitRecoveriesThisFrame = 0;
+                    constantBufferVersionWriteAttemptsThisFrame = 0;
+                    constantBufferVersionExhaustionNoFenceThisFrame = 0;
+                    constantBufferVersionWaitAttemptsThisFrame = 0;
+                    constantBufferVersionPostWaitExhaustionThisFrame = 0;
+                    vertexBufferVersionRotationsThisFrame = 0;
+                    vertexBufferVersionExhaustionThisFrame = 0;
+                    vertexBufferVersionWaitRecoveriesThisFrame = 0;
+                    vertexBufferVersionWriteAttemptsThisFrame = 0;
+                    vertexBufferVersionExhaustionNoFenceThisFrame = 0;
+                    vertexBufferVersionWaitAttemptsThisFrame = 0;
+                    vertexBufferVersionPostWaitExhaustionThisFrame = 0;
+                    indexBufferVersionRotationsThisFrame = 0;
+                    indexBufferVersionExhaustionThisFrame = 0;
+                    indexBufferVersionWaitRecoveriesThisFrame = 0;
+                    indexBufferVersionWriteAttemptsThisFrame = 0;
+                    indexBufferVersionExhaustionNoFenceThisFrame = 0;
+                    indexBufferVersionWaitAttemptsThisFrame = 0;
+                    indexBufferVersionPostWaitExhaustionThisFrame = 0;
 
                     const auto cleanupFramebufferEndTime = std::chrono::high_resolution_clock::now();
                     cleanupFramebufferCpuMs = std::chrono::duration<double, std::milli>(cleanupFramebufferEndTime - cleanupFramebufferStartTime).count();
@@ -8670,7 +9568,7 @@ namespace Gek
                                 }
 
                                 Buffer *computeConstantBuffer = drawCommand.computeConstantBuffers[resourceSlot];
-                                const VkBuffer computeConstantVkBuffer = getCapturedConstantVkBuffer(computeConstantBuffer, drawCommand.computeConstantBufferVersions[resourceSlot]);
+                                const VkBuffer computeConstantVkBuffer = getCapturedVkBuffer(computeConstantBuffer, drawCommand.computeConstantBufferVersions[resourceSlot]);
                                 if (computeConstantBuffer && computeConstantVkBuffer != VK_NULL_HANDLE)
                                 {
                                     auto &constantBufferInfo = bufferInfos[bufferInfoCount++];
@@ -9268,7 +10166,11 @@ namespace Gek
                                 continue;
                             }
 
-                            VkBuffer vertexBuffer = drawCommand.vertexBuffers[slot]->buffer;
+                            VkBuffer vertexBuffer = getCapturedVkBuffer(drawCommand.vertexBuffers[slot], drawCommand.vertexBufferVersions[slot]);
+                            if (vertexBuffer == VK_NULL_HANDLE)
+                            {
+                                continue;
+                            }
                             VkDeviceSize vertexOffset = drawCommand.vertexOffsets[slot];
                             vkCmdBindVertexBuffers(commandBuffer, slot, 1, &vertexBuffer, &vertexOffset);
                         }
@@ -9282,7 +10184,13 @@ namespace Gek
                             }
 
                             const VkIndexType indexType = (drawCommand.indexBuffer->getDescription().format == Render::Format::R16_UINT) ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
-                            vkCmdBindIndexBuffer(commandBuffer, drawCommand.indexBuffer->buffer, drawCommand.indexOffset, indexType);
+                            VkBuffer indexBuffer = getCapturedVkBuffer(drawCommand.indexBuffer, drawCommand.indexBufferVersion);
+                            if (indexBuffer == VK_NULL_HANDLE)
+                            {
+                                endRenderPassForCurrentTarget();
+                                continue;
+                            }
+                            vkCmdBindIndexBuffer(commandBuffer, indexBuffer, drawCommand.indexOffset, indexType);
                         }
 
                         if (!isUiDraw && drawToBackBuffer)
@@ -9315,7 +10223,7 @@ namespace Gek
                                 if (vkAllocateDescriptorSets(device, &descriptorAllocateInfo, &descriptorSet) == VK_SUCCESS)
                                 {
                                     VkDescriptorBufferInfo bufferInfo{};
-                                    const VkBuffer uiVertexConstantVkBuffer = getCapturedConstantVkBuffer(drawCommand.vertexConstantBuffer, drawCommand.vertexConstantBufferVersion);
+                                    const VkBuffer uiVertexConstantVkBuffer = getCapturedVkBuffer(drawCommand.vertexConstantBuffer, drawCommand.vertexConstantBufferVersion);
                                     bufferInfo.buffer = uiVertexConstantVkBuffer;
                                     bufferInfo.offset = 0;
                                     bufferInfo.range = drawCommand.vertexConstantBuffer ? drawCommand.vertexConstantBuffer->size : 0;
@@ -9483,7 +10391,7 @@ namespace Gek
                                     for (uint32_t constantStage = 0; constantStage < PixelResourceSlotCount; ++constantStage)
                                     {
                                         Buffer *pixelConstantBuffer = drawCommand.pixelConstantBuffers[constantStage];
-                                        const VkBuffer pixelConstantVkBuffer = getCapturedConstantVkBuffer(pixelConstantBuffer, drawCommand.pixelConstantBufferVersions[constantStage]);
+                                        const VkBuffer pixelConstantVkBuffer = getCapturedVkBuffer(pixelConstantBuffer, drawCommand.pixelConstantBufferVersions[constantStage]);
                                         if (pixelConstantBuffer && pixelConstantVkBuffer != VK_NULL_HANDLE)
                                         {
                                             auto &pixelConstantBufferInfo = bufferInfos[bufferInfoCount++];
@@ -9502,7 +10410,7 @@ namespace Gek
                                         }
 
                                         Buffer *vertexConstantBuffer = drawCommand.vertexConstantBuffers[constantStage];
-                                        const VkBuffer vertexConstantVkBuffer = getCapturedConstantVkBuffer(vertexConstantBuffer, drawCommand.vertexConstantBufferVersions[constantStage]);
+                                        const VkBuffer vertexConstantVkBuffer = getCapturedVkBuffer(vertexConstantBuffer, drawCommand.vertexConstantBufferVersions[constantStage]);
                                         if (!vertexConstantBuffer || vertexConstantVkBuffer == VK_NULL_HANDLE)
                                         {
                                             continue;
@@ -9717,7 +10625,7 @@ namespace Gek
                 const uint32_t totalCommandCount = static_cast<uint32_t>(pendingDrawCommands.size());
                 const uint32_t uiCommandCount = (totalCommandCount >= sceneCommandCount) ? (totalCommandCount - sceneCommandCount) : 0u;
                 debugOverlayText = std::format(
-                    "VK f={} total={} ui={} scene={} draws={} off={} back={} descSkips={} pipeSkips={} offSkips={} glassDraw={} glassCopy={} glassNoRes={} glassS1Miss={} glassS01Eq={} glassFirstSlot={}..{} cbRot={} cbExh={} cbRec={} devLost={}",
+                    "VK f={} total={} ui={} scene={} draws={} off={} back={} descSkips={} pipeSkips={} offSkips={} glassDraw={} glassCopy={} glassNoRes={} glassS1Miss={} glassS01Eq={} glassFirstSlot={}..{} cb={}/{}/{} vb={}/{}/{} ib={}/{}/{} devLost={}",
                     presentFrameIndex,
                     totalCommandCount,
                     uiCommandCount,
@@ -9738,12 +10646,24 @@ namespace Gek
                     constantBufferVersionRotationsThisFrame,
                     constantBufferVersionExhaustionThisFrame,
                     constantBufferVersionWaitRecoveriesThisFrame,
+                    vertexBufferVersionRotationsThisFrame,
+                    vertexBufferVersionExhaustionThisFrame,
+                    vertexBufferVersionWaitRecoveriesThisFrame,
+                    indexBufferVersionRotationsThisFrame,
+                    indexBufferVersionExhaustionThisFrame,
+                    indexBufferVersionWaitRecoveriesThisFrame,
                     static_cast<uint32_t>(deviceLost));
                 getContext()->setRuntimeMetric("vulkan.frame", static_cast<double>(presentFrameIndex));
                 getContext()->setRuntimeMetric("vulkan.totalCommands", static_cast<double>(totalCommandCount));
                 getContext()->setRuntimeMetric("vulkan.uiCommands", static_cast<double>(uiCommandCount));
                 getContext()->setRuntimeMetric("vulkan.sceneCommands", static_cast<double>(sceneCommandCount));
                 getContext()->setRuntimeMetric("vulkan.sceneDraws", static_cast<double>(sceneDrawCallsIssued));
+                getContext()->setRuntimeMetric("vulkan.constantBufferVersioningEnabled", (constantBufferVersioningPolicy.mode == Render::BufferVersioningMode::FixedRing) ? 1.0 : 0.0);
+                getContext()->setRuntimeMetric("vulkan.vertexBufferVersioningEnabled", (vertexBufferVersioningPolicy.mode == Render::BufferVersioningMode::FixedRing) ? 1.0 : 0.0);
+                getContext()->setRuntimeMetric("vulkan.indexBufferVersioningEnabled", (indexBufferVersioningPolicy.mode == Render::BufferVersioningMode::FixedRing) ? 1.0 : 0.0);
+                getContext()->setRuntimeMetric("vulkan.constantBufferRingSize", static_cast<double>(constantBufferVersioningPolicy.ringSize));
+                getContext()->setRuntimeMetric("vulkan.vertexBufferRingSize", static_cast<double>(vertexBufferVersioningPolicy.ringSize));
+                getContext()->setRuntimeMetric("vulkan.indexBufferRingSize", static_cast<double>(indexBufferVersioningPolicy.ringSize));
                 getContext()->setRuntimeMetric("render.frame", static_cast<double>(presentFrameIndex));
                 getContext()->setRuntimeMetric("render.backend", 0.0);
                 getContext()->setRuntimeMetric("render.totalCommands", static_cast<double>(totalCommandCount));
@@ -9793,6 +10713,45 @@ namespace Gek
                 getContext()->setRuntimeMetric("vulkan.constantVersionRotations", static_cast<double>(constantBufferVersionRotationsThisFrame));
                 getContext()->setRuntimeMetric("vulkan.constantVersionExhaustions", static_cast<double>(constantBufferVersionExhaustionThisFrame));
                 getContext()->setRuntimeMetric("vulkan.constantVersionWaitRecoveries", static_cast<double>(constantBufferVersionWaitRecoveriesThisFrame));
+                getContext()->setRuntimeMetric("vulkan.constantVersionWriteAttempts", static_cast<double>(constantBufferVersionWriteAttemptsThisFrame));
+                getContext()->setRuntimeMetric("vulkan.constantVersionExhaustionsNoFence", static_cast<double>(constantBufferVersionExhaustionNoFenceThisFrame));
+                getContext()->setRuntimeMetric("vulkan.constantVersionWaitAttempts", static_cast<double>(constantBufferVersionWaitAttemptsThisFrame));
+                getContext()->setRuntimeMetric("vulkan.constantVersionPostWaitExhaustions", static_cast<double>(constantBufferVersionPostWaitExhaustionThisFrame));
+                getContext()->setRuntimeMetric("vulkan.vertexVersionRotations", static_cast<double>(vertexBufferVersionRotationsThisFrame));
+                getContext()->setRuntimeMetric("vulkan.vertexVersionExhaustions", static_cast<double>(vertexBufferVersionExhaustionThisFrame));
+                getContext()->setRuntimeMetric("vulkan.vertexVersionWaitRecoveries", static_cast<double>(vertexBufferVersionWaitRecoveriesThisFrame));
+                getContext()->setRuntimeMetric("vulkan.vertexVersionWriteAttempts", static_cast<double>(vertexBufferVersionWriteAttemptsThisFrame));
+                getContext()->setRuntimeMetric("vulkan.vertexVersionExhaustionsNoFence", static_cast<double>(vertexBufferVersionExhaustionNoFenceThisFrame));
+                getContext()->setRuntimeMetric("vulkan.vertexVersionWaitAttempts", static_cast<double>(vertexBufferVersionWaitAttemptsThisFrame));
+                getContext()->setRuntimeMetric("vulkan.vertexVersionPostWaitExhaustions", static_cast<double>(vertexBufferVersionPostWaitExhaustionThisFrame));
+                getContext()->setRuntimeMetric("vulkan.indexVersionRotations", static_cast<double>(indexBufferVersionRotationsThisFrame));
+                getContext()->setRuntimeMetric("vulkan.indexVersionExhaustions", static_cast<double>(indexBufferVersionExhaustionThisFrame));
+                getContext()->setRuntimeMetric("vulkan.indexVersionWaitRecoveries", static_cast<double>(indexBufferVersionWaitRecoveriesThisFrame));
+                getContext()->setRuntimeMetric("vulkan.indexVersionWriteAttempts", static_cast<double>(indexBufferVersionWriteAttemptsThisFrame));
+                getContext()->setRuntimeMetric("vulkan.indexVersionExhaustionsNoFence", static_cast<double>(indexBufferVersionExhaustionNoFenceThisFrame));
+                getContext()->setRuntimeMetric("vulkan.indexVersionWaitAttempts", static_cast<double>(indexBufferVersionWaitAttemptsThisFrame));
+                getContext()->setRuntimeMetric("vulkan.indexVersionPostWaitExhaustions", static_cast<double>(indexBufferVersionPostWaitExhaustionThisFrame));
+                getContext()->setRuntimeMetric("vulkan.constantVersionRotationsTotal", static_cast<double>(constantBufferVersionRotationsTotal));
+                getContext()->setRuntimeMetric("vulkan.constantVersionExhaustionsTotal", static_cast<double>(constantBufferVersionExhaustionTotal));
+                getContext()->setRuntimeMetric("vulkan.constantVersionWaitRecoveriesTotal", static_cast<double>(constantBufferVersionWaitRecoveriesTotal));
+                getContext()->setRuntimeMetric("vulkan.constantVersionWriteAttemptsTotal", static_cast<double>(constantBufferVersionWriteAttemptsTotal));
+                getContext()->setRuntimeMetric("vulkan.constantVersionExhaustionsNoFenceTotal", static_cast<double>(constantBufferVersionExhaustionNoFenceTotal));
+                getContext()->setRuntimeMetric("vulkan.constantVersionWaitAttemptsTotal", static_cast<double>(constantBufferVersionWaitAttemptsTotal));
+                getContext()->setRuntimeMetric("vulkan.constantVersionPostWaitExhaustionsTotal", static_cast<double>(constantBufferVersionPostWaitExhaustionTotal));
+                getContext()->setRuntimeMetric("vulkan.vertexVersionRotationsTotal", static_cast<double>(vertexBufferVersionRotationsTotal));
+                getContext()->setRuntimeMetric("vulkan.vertexVersionExhaustionsTotal", static_cast<double>(vertexBufferVersionExhaustionTotal));
+                getContext()->setRuntimeMetric("vulkan.vertexVersionWaitRecoveriesTotal", static_cast<double>(vertexBufferVersionWaitRecoveriesTotal));
+                getContext()->setRuntimeMetric("vulkan.vertexVersionWriteAttemptsTotal", static_cast<double>(vertexBufferVersionWriteAttemptsTotal));
+                getContext()->setRuntimeMetric("vulkan.vertexVersionExhaustionsNoFenceTotal", static_cast<double>(vertexBufferVersionExhaustionNoFenceTotal));
+                getContext()->setRuntimeMetric("vulkan.vertexVersionWaitAttemptsTotal", static_cast<double>(vertexBufferVersionWaitAttemptsTotal));
+                getContext()->setRuntimeMetric("vulkan.vertexVersionPostWaitExhaustionsTotal", static_cast<double>(vertexBufferVersionPostWaitExhaustionTotal));
+                getContext()->setRuntimeMetric("vulkan.indexVersionRotationsTotal", static_cast<double>(indexBufferVersionRotationsTotal));
+                getContext()->setRuntimeMetric("vulkan.indexVersionExhaustionsTotal", static_cast<double>(indexBufferVersionExhaustionTotal));
+                getContext()->setRuntimeMetric("vulkan.indexVersionWaitRecoveriesTotal", static_cast<double>(indexBufferVersionWaitRecoveriesTotal));
+                getContext()->setRuntimeMetric("vulkan.indexVersionWriteAttemptsTotal", static_cast<double>(indexBufferVersionWriteAttemptsTotal));
+                getContext()->setRuntimeMetric("vulkan.indexVersionExhaustionsNoFenceTotal", static_cast<double>(indexBufferVersionExhaustionNoFenceTotal));
+                getContext()->setRuntimeMetric("vulkan.indexVersionWaitAttemptsTotal", static_cast<double>(indexBufferVersionWaitAttemptsTotal));
+                getContext()->setRuntimeMetric("vulkan.indexVersionPostWaitExhaustionsTotal", static_cast<double>(indexBufferVersionPostWaitExhaustionTotal));
 
                 transientFrameConstantBufferSnapshotsInFlight = std::move(transientFrameConstantBufferSnapshotsPending);
                 transientFrameConstantBufferSnapshotsPending.clear();
@@ -9867,7 +10826,7 @@ namespace Gek
             for (uint32_t slot = 0; slot < command.computeConstantBuffers.size(); ++slot)
             {
                 command.computeConstantBuffers[slot] = snapshotConstantBuffer(command.computeConstantBuffers[slot]);
-                command.computeConstantBufferVersions[slot] = captureConstantBufferVersion(command.computeConstantBuffers[slot]);
+                command.computeConstantBufferVersions[slot] = captureVersionedBufferSlot(command.computeConstantBuffers[slot]);
             }
 
             if (sourceContext->isDeferredContext)

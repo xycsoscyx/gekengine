@@ -1072,9 +1072,9 @@ namespace Gek
                 static constexpr std::string_view formatList[] =
                 {
                     "",
-                    ".dds",
                     ".tga",
                     ".png",
+                    ".dds",
                     ".jpg",
                     ".jpeg",
                     ".tif",
