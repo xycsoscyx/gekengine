@@ -53,17 +53,55 @@ OutputPixel mainPixelProgram(InputPixel inputPixel) : SV_Target0
     }
 
     float3 surfacePosition = inputPixel.position;
+    const float yFlipSign = (Options::Normals::FlipY ? -1.0f : 1.0f);
+    // PreferDDSDecode=true assumes BC5-style RG normals.
+    // PreferDDSDecode=false assumes full RGB normals (BC7/PNG/TGA authored XYZ).
+    const uint decodeMode = (Options::Normals::PreferDDSDecode ? 0u : 1u);
 
-    float3 normalColor = Resources::normal.Sample(Global::TextureSampler, inputPixel.texCoord).xyz;
-    float3 textureNormal = ((normalColor * (255.0 / 127.0)) - (128.0 / 127.0));
-    
-    float3 surfaceNormal = normalize((textureNormal.x * inputPixel.tangent) + 
-                                     (textureNormal.y * inputPixel.biTangent) +
-                                     (textureNormal.z * inputPixel.normal));
-    //surfaceNormal = inputPixel.normal;
+    const float4 sampledNormal = Resources::normal.Sample(Global::TextureSampler, inputPixel.texCoord);
+    float3 textureNormal = DecodeNormalSample(sampledNormal, yFlipSign, decodeMode);
+    float3 surfaceNormal = GetSurfaceNormalFromTangent(inputPixel.position, inputPixel.normal, inputPixel.texCoord, textureNormal, inputPixel.tangent, inputPixel.biTangent);
+    float3 meshBasisNormal = GetSurfaceNormalFromMeshBasis(inputPixel.normal, inputPixel.tangent, inputPixel.biTangent, textureNormal);
 
-    //float3x3 coTangentFrame = GetCoTangentFrame(inputPixel.position, inputPixel.normal, inputPixel.texCoord);
-    //surfaceNormal = mul(coTangentFrame, textureNormal);
+    switch (debugSelection)
+    {
+    case 14u: // ShowSampledNormalChannels
+    {
+        OutputPixel outputPixel;
+        outputPixel.finalBuffer = sampledNormal.rgb;
+        outputPixel.albedoBuffer = sampledNormal.rgb;
+        outputPixel.normalBuffer = float2(0.5f, 0.5f);
+        return outputPixel;
+    }
+    case 15u: // ShowTangentNormal
+    {
+        float3 debugNormal = (textureNormal * 0.5f) + 0.5f;
+        OutputPixel outputPixel;
+        outputPixel.finalBuffer = debugNormal;
+        outputPixel.albedoBuffer = debugNormal;
+        outputPixel.normalBuffer = float2(0.5f, 0.5f);
+        return outputPixel;
+    }
+    case 16u: // ShowMirrorHandedness
+    {
+        float handedness = GetCoTangentFrameHandedness(inputPixel.position, inputPixel.normal, inputPixel.texCoord);
+        float3 debugColor = (handedness < 0.0f) ? float3(1.0f, 0.0f, 0.0f) : float3(0.0f, 1.0f, 0.0f);
+        OutputPixel outputPixel;
+        outputPixel.finalBuffer = debugColor;
+        outputPixel.albedoBuffer = debugColor;
+        outputPixel.normalBuffer = float2(0.5f, 0.5f);
+        return outputPixel;
+    }
+    case 17u: // ShowBasisDelta
+    {
+        float3 delta = abs(surfaceNormal - meshBasisNormal);
+        OutputPixel outputPixel;
+        outputPixel.finalBuffer = delta;
+        outputPixel.albedoBuffer = delta;
+        outputPixel.normalBuffer = float2(0.5f, 0.5f);
+        return outputPixel;
+    }
+    }
 
     float3 materialAlbedo = albedo.rgb;
     float materialRoughness = Resources::roughness.Sample(Global::TextureSampler, inputPixel.texCoord);

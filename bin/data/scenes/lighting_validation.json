@@ -1,0 +1,184 @@
+{
+    "Templates": {
+        "GlassProbeSphere": {
+            "Model": "#sphere",
+            "Transform": {
+                "scale": [ 3.0, 3.0, 3.0 ]
+            }
+        },
+        "GlassProbeCube": {
+            "Model": "#cube",
+            "Transform": {
+                "scale": [ 2.5, 2.5, 2.5 ]
+            }
+        }
+    },
+    "Population": [
+        {
+            "Transform": {
+                "position": [ 34, 26, 0 ],
+                "rotation": [ 0.12278781, -0.6963644, 0.122787766, 0.6963641 ],
+                "scale": [ 1, 1, 1 ]
+            },
+            "FirstPersonCamera": {
+                "fieldOfView": 60,
+                "nearClip": 0.5,
+                "target": "",
+                "farClip": 100
+            },
+            "Player": {
+                "height": 10,
+                "outerRadius": 4,
+                "innerRadius": 2,
+                "stairStep": 0.5
+            },
+            "Name": "player"
+        },
+        {
+            "Transform": {},
+            "Model": "supersponza",
+            "Scene": {}
+        },
+
+        {
+            "Template": "GlassProbeSphere",
+            "Transform": {
+                "position": [ -30, 4, 0 ]
+            }
+        },
+        {
+            "Template": "GlassProbeSphere",
+            "Transform": {
+                "position": [ -10, 4, 0 ]
+            }
+        },
+        {
+            "Template": "GlassProbeSphere",
+            "Transform": {
+                "position": [ 10, 4, 0 ]
+            }
+        },
+        {
+            "Template": "GlassProbeSphere",
+            "Transform": {
+                "position": [ 30, 4, 0 ]
+            }
+        },
+        {
+            "Template": "GlassProbeCube",
+            "Transform": {
+                "position": [ 0, 4, -12 ],
+                "rotation": [ 0, 0.785398, 0 ]
+            }
+        },
+        {
+            "Template": "GlassProbeCube",
+            "Transform": {
+                "position": [ 0, 4, 12 ],
+                "rotation": [ 0, -0.785398, 0 ]
+            }
+        },
+
+        {
+            "Transform": {
+                "position": [ -55, 22, -20 ]
+            },
+            "PointLight": {
+                "radius": 1.6,
+                "range": 46,
+                "intensity": 10
+            },
+            "Color": {
+                "normalize": [ 1.00, 0.82, 0.68 ]
+            }
+        },
+        {
+            "Transform": {
+                "position": [ 52, 24, 18 ]
+            },
+            "PointLight": {
+                "radius": 1.5,
+                "range": 46,
+                "intensity": 10
+            },
+            "Color": {
+                "normalize": [ 0.60, 0.78, 1.00 ]
+            }
+        },
+        {
+            "Transform": {
+                "position": [ 0, 28, 0 ]
+            },
+            "PointLight": {
+                "radius": 2.0,
+                "range": 55,
+                "intensity": 12
+            },
+            "Color": {
+                "normalize": [ 1.00, 1.00, 1.00 ]
+            }
+        },
+        {
+            "Transform": {
+                "position": [ -20, 60, 30 ]
+            },
+            "PointLight": {
+                "radius": 1.3,
+                "range": 40,
+                "intensity": 8
+            },
+            "Color": {
+                "normalize": [ 0.90, 1.00, 0.85 ]
+            }
+        },
+
+        {
+            "Transform": {
+                "position": [ -62, 36, 0 ],
+                "rotation": [ 0.10, 1.10, 0.00 ]
+            },
+            "SpotLight": {
+                "range": 70,
+                "innerAngle": 16,
+                "outerAngle": 34,
+                "coneFalloff": 1.6,
+                "intensity": 18
+            },
+            "Color": {
+                "normalize": [ 1.00, 0.95, 0.85 ]
+            }
+        },
+        {
+            "Transform": {
+                "position": [ 60, 34, -6 ],
+                "rotation": [ 0.05, -1.30, 0.00 ]
+            },
+            "SpotLight": {
+                "range": 70,
+                "innerAngle": 14,
+                "outerAngle": 30,
+                "coneFalloff": 1.6,
+                "intensity": 18
+            },
+            "Color": {
+                "normalize": [ 0.80, 0.90, 1.00 ]
+            }
+        },
+        {
+            "Transform": {
+                "position": [ 0, 66, -28 ],
+                "rotation": [ 1.20, 0.00, 0.00 ]
+            },
+            "SpotLight": {
+                "range": 72,
+                "innerAngle": 10,
+                "outerAngle": 24,
+                "coneFalloff": 2.0,
+                "intensity": 14
+            },
+            "Color": {
+                "normalize": [ 1.00, 1.00, 1.00 ]
+            }
+        }
+    ]
+}

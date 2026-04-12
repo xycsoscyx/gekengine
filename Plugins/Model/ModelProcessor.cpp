@@ -27,6 +27,7 @@
 #include <memory>
 #include <future>
 #include <mutex>
+#include <cstring>
 #include <unordered_set>
 
 namespace Gek
@@ -262,6 +263,33 @@ namespace Gek
         , public Gek::Processor::Model
     {
     public:
+        enum class NormalEncoding : uint8_t
+        {
+            RG = 0,
+            RGB = 1,
+        };
+
+        static constexpr uint16_t LegacyModelVersion = 8;
+        static constexpr uint16_t CurrentModelVersion = 9;
+
+        struct FileHeader
+        {
+            uint32_t identifier = 0;
+            uint16_t type = 0;
+            uint16_t version = 0;
+
+            Shapes::AlignedBox boundingBox;
+
+            uint32_t meshCount = 0;
+        };
+
+        struct LegacyMeshHeader
+        {
+            char material[64] = "";
+            uint32_t vertexCount = 0;
+            uint32_t faceCount = 0;
+        };
+
         struct Header
         {
             struct Mesh
@@ -269,6 +297,8 @@ namespace Gek
                 char material[64];
                 uint32_t vertexCount = 0;
                 uint32_t faceCount = 0;
+                uint8_t normalEncoding = static_cast<uint8_t>(NormalEncoding::RGB);
+                uint8_t reserved[3] = { 0, 0, 0 };
             };
 
             uint32_t identifier = 0;
@@ -424,6 +454,21 @@ namespace Gek
 
             Unpacker unpacker(meshBuffer);
             mesh.material = resources->loadMaterial(meshHeader.material);
+            auto normalEncoding = static_cast<NormalEncoding>(meshHeader.normalEncoding);
+            if ((normalEncoding != NormalEncoding::RG) && (normalEncoding != NormalEncoding::RGB))
+            {
+                normalEncoding = NormalEncoding::RGB;
+            }
+
+            getContext()->log(
+                Context::Info,
+                "Loading mesh {} from '{}' in group '{}' with material '{}' and normal encoding '{}'",
+                meshIndex,
+                fileName,
+                name,
+                meshHeader.material,
+                (normalEncoding == NormalEncoding::RG) ? "rg" : "rgb");
+
             if (!mesh.material)
             {
                 auto const missingMaterialName = std::string(meshHeader.material);
@@ -484,8 +529,28 @@ namespace Gek
 
             std::shared_ptr<std::vector<uint8_t>> buffer = std::make_shared<std::vector<uint8_t>>(FileSystem::Load(filePath));
 
-            Header* header = (Header*)buffer->data();
-            if (buffer->size() < (sizeof(Header) + (sizeof(Header::Mesh) * header->meshCount)))
+            if (buffer->size() < sizeof(FileHeader))
+            {
+                getContext()->log(Context::Error, "Model file too small to contain header: {}", filePath.getString());
+                return;
+            }
+
+            FileHeader* header = reinterpret_cast<FileHeader*>(buffer->data());
+            if ((header->version != LegacyModelVersion) && (header->version != CurrentModelVersion))
+            {
+                getContext()->log(
+                    Context::Error,
+                    "Unsupported model version encountered (requires: {} or {}, has {}): {}",
+                    LegacyModelVersion,
+                    CurrentModelVersion,
+                    header->version,
+                    filePath.getString());
+                return;
+            }
+
+            const size_t meshHeaderSize = (header->version >= CurrentModelVersion) ? sizeof(Header::Mesh) : sizeof(LegacyMeshHeader);
+            const size_t requiredHeaderSize = sizeof(FileHeader) + (meshHeaderSize * header->meshCount);
+            if (buffer->size() < requiredHeaderSize)
             {
                 getContext()->log(Context::Error, "Model file too small to contain mesh headers: {}", filePath.getString());
                 return;
@@ -497,11 +562,25 @@ namespace Gek
             group.boundingBox.extend(model.boundingBox.minimum);
             group.boundingBox.extend(model.boundingBox.maximum);
             model.meshList.resize(header->meshCount);
-            uint8_t *meshBuffer = (uint8_t*)&header->meshList[header->meshCount];
+            uint8_t* meshHeaderBuffer = buffer->data() + sizeof(FileHeader);
+            uint8_t* meshBuffer = meshHeaderBuffer + (meshHeaderSize * header->meshCount);
             for (uint32_t meshIndex = 0; meshIndex < header->meshCount; ++meshIndex)
             {
-                Header::Mesh& meshHeader = header->meshList[meshIndex];
                 Group::Model::Mesh& mesh = model.meshList[meshIndex];
+
+                Header::Mesh meshHeader;
+                if (header->version >= CurrentModelVersion)
+                {
+                    meshHeader = *reinterpret_cast<Header::Mesh*>(meshHeaderBuffer + (meshHeaderSize * meshIndex));
+                }
+                else
+                {
+                    auto const& legacyMeshHeader = *reinterpret_cast<LegacyMeshHeader*>(meshHeaderBuffer + (meshHeaderSize * meshIndex));
+                    std::memcpy(meshHeader.material, legacyMeshHeader.material, sizeof(meshHeader.material));
+                    meshHeader.vertexCount = legacyMeshHeader.vertexCount;
+                    meshHeader.faceCount = legacyMeshHeader.faceCount;
+                    meshHeader.normalEncoding = static_cast<uint8_t>(NormalEncoding::RGB);
+                }
 
                 scheduleLoadMesh(meshHeader, mesh, meshIndex, fileName, name, meshBuffer, buffer);
                 meshBuffer += (meshHeader.vertexCount * (sizeof(Math::Float3) + sizeof(Math::Float2) + sizeof(Math::Float4) + sizeof(Math::Float3)));
@@ -605,14 +684,14 @@ namespace Gek
                     std::string fileName(filePath.getString());
                     if (filePath.isFile() && String::GetLower(filePath.getExtension()) == ".gek")
                     {
-                        std::vector<uint8_t> buffer(FileSystem::Load(filePath, sizeof(Header)));
-                        if (buffer.size() < sizeof(Header))
+                        std::vector<uint8_t> buffer(FileSystem::Load(filePath, sizeof(FileHeader)));
+                        if (buffer.size() < sizeof(FileHeader))
                         {
                             getContext()->log(Context::Error, "Model file too small to contain header: {}", fileName);
                             return true;
                         }
 
-                        Header* header = (Header*)buffer.data();
+                        FileHeader* header = reinterpret_cast<FileHeader*>(buffer.data());
                         if (header->identifier != *(uint32_t*)"GEKX")
                         {
                             getContext()->log(Context::Error, "Unknown model file identifier encountered (requires: GEKX, has: {}): {}", header->identifier, fileName);
@@ -625,9 +704,15 @@ namespace Gek
                             return true;
                         }
 
-                        if (header->version != 8)
+                        if ((header->version != LegacyModelVersion) && (header->version != CurrentModelVersion))
                         {
-                            getContext()->log(Context::Error, "Unsupported model version encountered (requires: 8, has {}): {}", header->version, fileName);
+                            getContext()->log(
+                                Context::Error,
+                                "Unsupported model version encountered (requires: {} or {}, has {}): {}",
+                                LegacyModelVersion,
+                                CurrentModelVersion,
+                                header->version,
+                                fileName);
                             return true;
                         }
 

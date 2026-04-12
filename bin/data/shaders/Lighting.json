@@ -16,7 +16,11 @@
                 "ShowSpecular",
                 "ShowForceVisible",
                 "ShowTexCoord",
-                "ShowWorldNormal"
+                "ShowWorldNormal",
+                "ShowSampledNormalChannels",
+                "ShowTangentNormal",
+                "ShowMirrorHandedness",
+                "ShowBasisDelta"
             ]
         },
         "NormalDistribution": {
@@ -60,5 +64,16 @@
             ]
         },
         "UseHalfLambert": true
+    },
+    "Normals": {
+        "PreferDDSDecode": false,
+        "FlipY": false,
+        "DecodeMode": {
+            "selection": "RGBNormalize",
+            "options": [
+                "RGReconstructZ",
+                "RGBNormalize"
+            ]
+        }
     }
 }

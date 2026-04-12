@@ -26,6 +26,36 @@
 
 using namespace Gek;
 
+enum class NormalEncoding : uint8_t
+{
+    RG = 0,
+    RGB = 1,
+};
+
+constexpr const char* ToString(NormalEncoding encoding)
+{
+    switch (encoding)
+    {
+    case NormalEncoding::RG:
+        return "rg";
+
+    case NormalEncoding::RGB:
+    default:
+        return "rgb";
+    }
+}
+
+NormalEncoding ParseNormalEncoding(std::string value)
+{
+    value = String::GetLower(value);
+    if (value == "rg" || value == "dds" || value == "bc5")
+    {
+        return NormalEncoding::RG;
+    }
+
+    return NormalEncoding::RGB;
+}
+
 struct Header
 {
     struct Mesh
@@ -33,11 +63,13 @@ struct Header
         char material[64] = "";
         uint32_t vertexCount = 0;
         uint32_t faceCount = 0;
+        uint8_t normalEncoding = static_cast<uint8_t>(NormalEncoding::RGB);
+        uint8_t reserved[3] = { 0, 0, 0 };
     };
 
     uint32_t identifier = *(uint32_t *)"GEKX";
     uint16_t type = 0;
-    uint16_t version = 8;
+    uint16_t version = 9;
 
     Shapes::AlignedBox boundingBox;
 
@@ -90,6 +122,7 @@ struct Parameters
     bool generateSmoothNormals;
     float smoothingAngle;
     bool saveAsCode;
+    NormalEncoding normalEncoding;
 };
 
 bool GetModels(Context *context, Parameters const &parameters, aiScene const *inputScene, aiNode const *inputNode, aiMatrix4x4 const &accumulatedTransform, ModelList &modelList, std::function<std::string(const std::string &, const std::string &)> findMaterialForMesh)
@@ -200,12 +233,24 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
                 {
                     Math::Float3 position(inputMesh->mVertices[vertexIndex].x, inputMesh->mVertices[vertexIndex].y, inputMesh->mVertices[vertexIndex].z);
                     Math::Float2 texCoord(inputMesh->mTextureCoords[0][vertexIndex].x, inputMesh->mTextureCoords[0][vertexIndex].y);
-                    Math::Float3 tangent(inputMesh->mTangents[vertexIndex].x, inputMesh->mTangents[vertexIndex].y, inputMesh->mTangents[vertexIndex].z);
                     Math::Float3 normal(inputMesh->mNormals[vertexIndex].x, inputMesh->mNormals[vertexIndex].y, inputMesh->mNormals[vertexIndex].z);
+
+                    Math::Float3 tangent(1.0f, 0.0f, 0.0f);
+                    float tangentSign = 1.0f;
+                    if (inputMesh->mTangents)
+                    {
+                        tangent = Math::Float3(inputMesh->mTangents[vertexIndex].x, inputMesh->mTangents[vertexIndex].y, inputMesh->mTangents[vertexIndex].z);
+
+                        if (inputMesh->mBitangents)
+                        {
+                            Math::Float3 bitangent(inputMesh->mBitangents[vertexIndex].x, inputMesh->mBitangents[vertexIndex].y, inputMesh->mBitangents[vertexIndex].z);
+                            tangentSign = ((normal.cross(tangent)).dot(bitangent) < 0.0f) ? -1.0f : 1.0f;
+                        }
+                    }
 
                     indexedMesh.pointList[vertexIndex] = localTransform.transform(position) * parameters.feetPerUnit;
                     indexedMesh.texCoordList[vertexIndex] = texCoord;
-                    indexedMesh.tangentList[vertexIndex].set(localTransform.rotate(normal), 1.0f);
+                    indexedMesh.tangentList[vertexIndex].set(localTransform.rotate(tangent), tangentSign);
                     indexedMesh.normalList[vertexIndex] = localTransform.rotate(normal);
                 }
 
@@ -234,12 +279,24 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
                         auto vertexIndex = face.mIndices[edgeIndex];
                         Math::Float3 position(inputMesh->mVertices[vertexIndex].x, inputMesh->mVertices[vertexIndex].y, inputMesh->mVertices[vertexIndex].z);
                         Math::Float2 texCoord(inputMesh->mTextureCoords[0][vertexIndex].x, inputMesh->mTextureCoords[0][vertexIndex].y);
-                        Math::Float3 tangent(inputMesh->mTangents[vertexIndex].x, inputMesh->mTangents[vertexIndex].y, inputMesh->mTangents[vertexIndex].z);
                         Math::Float3 normal(inputMesh->mNormals[vertexIndex].x, inputMesh->mNormals[vertexIndex].y, inputMesh->mNormals[vertexIndex].z);
+
+                        Math::Float3 tangent(1.0f, 0.0f, 0.0f);
+                        float tangentSign = 1.0f;
+                        if (inputMesh->mTangents)
+                        {
+                            tangent = Math::Float3(inputMesh->mTangents[vertexIndex].x, inputMesh->mTangents[vertexIndex].y, inputMesh->mTangents[vertexIndex].z);
+
+                            if (inputMesh->mBitangents)
+                            {
+                                Math::Float3 bitangent(inputMesh->mBitangents[vertexIndex].x, inputMesh->mBitangents[vertexIndex].y, inputMesh->mBitangents[vertexIndex].z);
+                                tangentSign = ((normal.cross(tangent)).dot(bitangent) < 0.0f) ? -1.0f : 1.0f;
+                            }
+                        }
 
                         mesh.pointList.push_back(localTransform.transform(position) * parameters.feetPerUnit);
                         mesh.texCoordList.push_back(texCoord);
-                        mesh.tangentList.push_back(Math::Float4(localTransform.rotate(normal), 1.0f));
+                        mesh.tangentList.push_back(Math::Float4(localTransform.rotate(tangent), tangentSign));
                         mesh.normalList.push_back(localTransform.rotate(normal));
                     }
                 }
@@ -300,7 +357,38 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
                 mikkContext.m_pInterface = &mikkInterface;
                 mikkContext.m_pUserData = &mesh;
 
-                genTangSpaceDefault(&mikkContext);
+                if (!genTangSpaceDefault(&mikkContext))
+                {
+                    context->log(Context::Warning, "MikkTSpace generation failed for mesh '{}'; using imported tangent frame fallback", material);
+                }
+
+                // Enforce mirrored-UV handedness explicitly per triangle.
+                // Mesh vertices are expanded (3 vertices per face), so each triangle can carry
+                // its own tangent.w sign without sharing-vertex conflicts.
+                auto faceCount = (mesh.texCoordList.size() / 3);
+                for (size_t faceIndex = 0; faceIndex < faceCount; ++faceIndex)
+                {
+                    const size_t vertexOffset = (faceIndex * 3);
+                    auto const& uv0 = mesh.texCoordList[vertexOffset + 0];
+                    auto const& uv1 = mesh.texCoordList[vertexOffset + 1];
+                    auto const& uv2 = mesh.texCoordList[vertexOffset + 2];
+
+                    Math::Float2 duv1 = (uv1 - uv0);
+                    Math::Float2 duv2 = (uv2 - uv0);
+                    float orientation = ((duv1.x * duv2.y) - (duv1.y * duv2.x));
+
+                    if (std::abs(orientation) <= 1.0e-10f)
+                    {
+                        continue;
+                    }
+
+                    const float handedness = (orientation < 0.0f) ? -1.0f : 1.0f;
+                    for (size_t edgeIndex = 0; edgeIndex < 3; ++edgeIndex)
+                    {
+                        auto& tangent = mesh.tangentList[vertexOffset + edgeIndex];
+                        tangent.w = std::abs(tangent.w) * handedness;
+                    }
+                }
 
                 model.meshList.push_back(mesh);
                 model.indexedMeshList.push_back(indexedMesh);
@@ -355,6 +443,10 @@ int main(int argumentCount, char const * const argumentList[])
         .help("units per foot")
         .default_value(1.0f);
 
+    program.add_argument("-n", "--normalencoding")
+        .help("normal texture encoding to coordinate materials and model metadata (rgb|rg)")
+        .default_value(std::string("rgb"));
+
     program.add_description("Convert input model in to GEK Engine format.");
     program.add_epilog("Input model formats include anything supported by the Assimp library.");
 
@@ -386,6 +478,7 @@ int main(int argumentCount, char const * const argumentList[])
     parameters.smoothingAngle = program.get<float>("--smoothangle");
     parameters.generateSmoothNormals = program.is_used("--smoothangle");
     parameters.saveAsCode = program.get<bool>("codify");
+    parameters.normalEncoding = ParseNormalEncoding(program.get<std::string>("--normalencoding"));
 
     auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
     auto cachePath(FileSystem::GetCacheFromModule());
@@ -523,7 +616,14 @@ int main(int argumentCount, char const * const argumentList[])
             return path;
         };
 
-        std::map<std::string, std::string> albedoToMaterialMap;
+        struct MaterialCandidate
+        {
+            std::string name;
+            bool hasExplicitEncoding = false;
+            NormalEncoding encoding = NormalEncoding::RGB;
+        };
+
+        std::unordered_map<std::string, std::vector<MaterialCandidate>> albedoToMaterialMap;
         std::function<bool(FileSystem::Path const&)> findMaterials;
         findMaterials = [&](FileSystem::Path const& filePath) -> bool
         {
@@ -539,8 +639,50 @@ int main(int argumentCount, char const * const argumentList[])
             FileSystem::Path albedoPath = JSON::Value(albedoNode, "file", String::Empty);
             auto albedoFile = albedoPath.withoutExtension().getString();
 
-            context->log(Context::Info, "Found material: {}, with albedo: {}", filePath.getString(), albedoFile);
-            albedoToMaterialMap[String::GetLower(albedoFile)] = String::GetLower(removeRoot("materials", filePath).getString());
+            auto materialPath = String::GetLower(removeRoot("materials", filePath).withoutExtension().getString());
+            auto encoding = parameters.normalEncoding;
+            bool hasExplicitEncoding = false;
+
+            auto normalEncodingNode = JSON::Find(materialNode, "normalEncoding");
+            if (!normalEncodingNode.is_null())
+            {
+                encoding = ParseNormalEncoding(normalEncodingNode.get<std::string>());
+                hasExplicitEncoding = true;
+            }
+            else
+            {
+                auto shaderNormalEncodingNode = JSON::Find(shaderNode, "normalEncoding");
+                if (!shaderNormalEncodingNode.is_null())
+                {
+                    encoding = ParseNormalEncoding(shaderNormalEncodingNode.get<std::string>());
+                    hasExplicitEncoding = true;
+                }
+                else if (String::EndsWith(materialPath, "_rg"))
+                {
+                    encoding = NormalEncoding::RG;
+                    hasExplicitEncoding = true;
+                }
+                else if (String::EndsWith(materialPath, "_rgb"))
+                {
+                    encoding = NormalEncoding::RGB;
+                    hasExplicitEncoding = true;
+                }
+            }
+
+            context->log(
+                Context::Info,
+                "Found material: {}, with albedo: {}, normal encoding: {}{}",
+                filePath.getString(),
+                albedoFile,
+                ToString(encoding),
+                hasExplicitEncoding ? "" : " (implicit/default)");
+
+            auto& list = albedoToMaterialMap[String::GetLower(albedoFile)];
+            list.push_back(MaterialCandidate {
+                .name = materialPath,
+                .hasExplicitEncoding = hasExplicitEncoding,
+                .encoding = encoding,
+            });
             return true;
         };
 
@@ -551,7 +693,7 @@ int main(int argumentCount, char const * const argumentList[])
             return -__LINE__;
         }
 
-        auto findMaterial = [&](FileSystem::Path albedoPath) -> std::string
+        auto findMaterial = [&](FileSystem::Path albedoPath, NormalEncoding normalEncoding) -> std::string
         {
             albedoPath = removeRoot("textures", albedoPath);
             context->log(Context::Info, "Searching for albedo: {}", albedoPath.getString());
@@ -564,8 +706,26 @@ int main(int argumentCount, char const * const argumentList[])
 
             if (albedoSearch != std::end(albedoToMaterialMap))
             {
-                context->log(Context::Info, "Found material for albedo: {} belongs to {}", albedoPath.getString(), albedoSearch->second);
-                return albedoSearch->second;
+                for (auto const& candidate : albedoSearch->second)
+                {
+                    if (candidate.hasExplicitEncoding && candidate.encoding == normalEncoding)
+                    {
+                        context->log(Context::Info, "Selected encoding-specific material for albedo: {} belongs to {}", albedoPath.getString(), candidate.name);
+                        return candidate.name;
+                    }
+                }
+
+                for (auto const& candidate : albedoSearch->second)
+                {
+                    if (!candidate.hasExplicitEncoding)
+                    {
+                        context->log(Context::Info, "Selected generic material for albedo: {} belongs to {}", albedoPath.getString(), candidate.name);
+                        return candidate.name;
+                    }
+                }
+
+                context->log(Context::Info, "Selected fallback material for albedo: {} belongs to {}", albedoPath.getString(), albedoSearch->second.front().name);
+                return albedoSearch->second.front().name;
             }
 
             return String::Empty;
@@ -577,14 +737,14 @@ int main(int argumentCount, char const * const argumentList[])
 
             FileSystem::Path albedoPath = FileSystem::Path(diffuseName).lexicallyRelative("textures");
             albedoPath = filePath.withoutExtension().getFileName() / albedoPath.withoutExtension();
-            auto materialName = findMaterial(albedoPath);
+            auto materialName = findMaterial(albedoPath, parameters.normalEncoding);
             if (!materialName.empty())
             {
                 return materialName;
             }
 
             albedoPath = FileSystem::GetCanonicalPath(filePath / diffuseName);
-            materialName = findMaterial(albedoPath);
+            materialName = findMaterial(albedoPath, parameters.normalEncoding);
             if (!materialName.empty())
             {
                 return materialName;
@@ -599,6 +759,8 @@ int main(int argumentCount, char const * const argumentList[])
         {
             return -__LINE__;
         }
+
+        context->log(Context::Info, "Using normal encoding mode: {}", ToString(parameters.normalEncoding));
 
         aiReleasePropertyStore(propertyStore);
         aiReleaseImport(inputScene);
@@ -728,6 +890,7 @@ struct StaticModel
                     std::strncpy(meshHeader.material, mesh.material.data(), 63);
                     meshHeader.vertexCount = mesh.pointList.size();
                     //meshHeader.faceCount = mesh.faceList.size();
+                    meshHeader.normalEncoding = static_cast<uint8_t>(parameters.normalEncoding);
                     fwrite(&meshHeader, sizeof(Header::Mesh), 1, file);
                 }
 

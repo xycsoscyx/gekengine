@@ -15,15 +15,13 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
         discard;
     }
 
-    const float3x3 viewBasis = float3x3(inputPixel.tangent, inputPixel.biTangent, inputPixel.normal);
-	//float3x3 viewBasis = GetCoTangentFrame(inputPixel.position, inputPixel.normal, inputPixel.texCoord);
+    const float yFlipSign = (Options::Normals::FlipY ? -1.0 : 1.0);
+    // PreferDDSDecode=true: BC5 RG decode. PreferDDSDecode=false: full RGB decode.
+    const uint decodeMode = (Options::Normals::PreferDDSDecode ? 0u : 1u);
 
-    float3 normal;
-    // assume normals are stored as 3Dc format, so generate the Z value
-    normal.xy = Resources::normal.Sample(Global::TextureSampler, inputPixel.texCoord).xy;
-    normal.xy = ((normal.xy * 2.0) - 1.0);
-    normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
-    normal = mul(normal, viewBasis);
+    float3 normal = DecodeNormalSample(Resources::normal.Sample(Global::TextureSampler, inputPixel.texCoord), yFlipSign, decodeMode);
+
+    normal = GetSurfaceNormalFromTangent(inputPixel.position, inputPixel.normal, inputPixel.texCoord, normal, inputPixel.tangent, inputPixel.biTangent);
     normal = normalize((inputPixel.isFrontFacing != 0) ? normal : -normal);
 
     OutputPixel outputPixel;

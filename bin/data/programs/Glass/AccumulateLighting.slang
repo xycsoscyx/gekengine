@@ -81,16 +81,13 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 
     float3 surfacePosition = inputPixel.position;
 
-    const float3x3 viewBasis = float3x3(inputPixel.tangent, inputPixel.biTangent, inputPixel.normal);
-    //float3x3 viewBasis = GetCoTangentFrame(inputPixel.position, inputPixel.normal, inputPixel.screenCoord);
+    const float yFlipSign = (Options::Normals::FlipY ? -1.0 : 1.0);
+    // PreferDDSDecode=true: BC5 RG decode. PreferDDSDecode=false: full RGB decode.
+    const uint decodeMode = (Options::Normals::PreferDDSDecode ? 0u : 1u);
 
-    float3 surfaceNormal;
-    // assume normals are stored as 3Dc format, so generate the Z value
-    surfaceNormal.xy = Resources::normal.Sample(Global::TextureSampler, inputPixel.texCoord.xy).xy;
-    surfaceNormal.xy = ((surfaceNormal.xy * 2.0) - 1.0);
-    surfaceNormal.y *= -1.0; // grrr, inverted y axis, WHY?!?
-    surfaceNormal.z = sqrt(1.0 - dot(surfaceNormal.xy, surfaceNormal.xy));
-    surfaceNormal = mul(surfaceNormal, viewBasis);
+    float3 surfaceNormal = DecodeNormalSample(Resources::normal.Sample(Global::TextureSampler, inputPixel.texCoord.xy), yFlipSign, decodeMode);
+
+    surfaceNormal = GetSurfaceNormalFromTangent(inputPixel.position, inputPixel.normal, inputPixel.texCoord.xy, surfaceNormal, inputPixel.tangent, inputPixel.biTangent);
     surfaceNormal = normalize((inputPixel.isFrontFacing != 0) ? surfaceNormal : -surfaceNormal);
 
     float3 materialAlbedo = albedo.rgb;

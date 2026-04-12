@@ -64,6 +64,17 @@
         }
     },
     "options": {
+        "Normals": {
+            "PreferDDSDecode": false,
+            "FlipY": false,
+            "DecodeMode": {
+                "selection": "RGBNormalize",
+                "options": [
+                    "RGReconstructZ",
+                    "RGBNormalize"
+                ]
+            }
+        },
         "fillMode": {
             "selection": "Solid",
             "options": [

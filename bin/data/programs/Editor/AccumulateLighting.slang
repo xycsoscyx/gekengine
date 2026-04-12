@@ -3,15 +3,6 @@
 #include <GEKGlobal.slang>
 #include <GEKUtility.slang>
 
-// assume normals are stored as 3Dc format, so generate the Z value
-float3 ConvertNormal(float2 encoded)
-{
-    float3 normal;
-    normal.xy = ((encoded.xy * 2.0) - 1.0) * float2(1.0f, -1.0f);
-    normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
-    return normal;
-}
-
 [shader("fragment")]
 OutputPixel mainPixelProgram(InputPixel inputPixel) : SV_Target0
 {
@@ -25,12 +16,13 @@ OutputPixel mainPixelProgram(InputPixel inputPixel) : SV_Target0
     }
 
     float3 surfacePosition = inputPixel.position;
+    const float yFlipSign = (Options::Normals::FlipY ? -1.0f : 1.0f);
+    // PreferDDSDecode=true: BC5 RG decode. PreferDDSDecode=false: full RGB decode.
+    const uint decodeMode = (Options::Normals::PreferDDSDecode ? 0u : 1u);
 
-    const float3x3 viewBasis = float3x3(inputPixel.tangent, inputPixel.biTangent, inputPixel.normal);
-
-    float3 surfaceNormal = ConvertNormal(Resources::normal.Sample(Global::TextureSampler, inputPixel.texCoord).xy);
+    float3 surfaceNormal = DecodeNormalSample(Resources::normal.Sample(Global::TextureSampler, inputPixel.texCoord), yFlipSign, decodeMode);
+    surfaceNormal = GetSurfaceNormalFromTangent(inputPixel.position, inputPixel.normal, inputPixel.texCoord, surfaceNormal, inputPixel.tangent, inputPixel.biTangent);
     surfaceNormal = normalize((inputPixel.isFrontFacing != 0) ? surfaceNormal : -surfaceNormal);
-    surfaceNormal = mul(surfaceNormal, viewBasis);
 
     float3 materialAlbedo = albedo.rgb;
     float materialRoughness = Resources::roughness.Sample(Global::TextureSampler, inputPixel.texCoord);

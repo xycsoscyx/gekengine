@@ -105,6 +105,72 @@ float3x3 GetCoTangentFrame(float3 position, float3 normal, float2 texCoord)
     return transpose(float3x3(T * invmax, B * invmax, normal));
 }
 
+float GetCoTangentFrameHandedness(float3 position, float3 normal, float2 texCoord)
+{
+    float3 N = normalize(normal);
+
+    float3 dp1 = ddx(position);
+    float3 dp2 = ddy(position);
+    float2 duv1 = ddx(texCoord);
+    float2 duv2 = ddy(texCoord);
+
+    float3 dp2perp = cross(dp2, N);
+    float3 dp1perp = cross(N, dp1);
+    float3 T = dp2perp * duv1.x + dp1perp * duv2.x;
+    float3 B = dp2perp * duv1.y + dp1perp * duv2.y;
+
+    return (dot(cross(T, B), N) < 0.0f) ? -1.0f : 1.0f;
+}
+
+// Resource-to-decode mapping used by this renderer:
+// - Full RGB normal maps (PNG/TGA source and DDS BC7 RGB): decodeMode=1 (RGB normalize).
+// - Packed RG normal maps (DDS BC5): decodeMode=0 (RG + reconstructed Z).
+// In program passes, Options::Normals::PreferDDSDecode selects between these modes.
+// Set PreferDDSDecode=false for BC7-RGB normal content, true for BC5-RG content.
+// decodeMode: 0=RG reconstruct Z, 1=RGB normalize
+float3 DecodeNormalSample(float4 encoded, float yFlipSign, uint decodeMode)
+{
+    float3 normal;
+    if (decodeMode == 1u)
+    {
+        normal = ((encoded.xyz * 2.0f) - 1.0f);
+        normal.y *= yFlipSign;
+        return normalize(normal);
+    }
+
+    normal.xy = ((encoded.xy * 2.0f) - 1.0f);
+    normal.y *= yFlipSign;
+    normal.z = sqrt(saturate(1.0f - dot(normal.xy, normal.xy)));
+    return normal;
+}
+
+float3 GetSurfaceNormalFromMeshBasis(float3 normal, float3 tangent, float3 biTangent, float3 tangentNormal)
+{
+    float3 N = normalize(normal);
+    float3 T = normalize(tangent - (N * dot(tangent, N)));
+
+    // Preserve authored bitangent direction (including mirrored-UV handedness)
+    // instead of re-deriving sign in shader, which can mismatch import-space conventions.
+    float3 B = biTangent - (N * dot(biTangent, N));
+    float bLengthSquared = dot(B, B);
+    if (bLengthSquared <= 1.0e-10f)
+    {
+        B = cross(N, T);
+    }
+    else
+    {
+        B *= rsqrt(bLengthSquared);
+    }
+
+    return normalize((tangentNormal.x * T) + (tangentNormal.y * B) + (tangentNormal.z * N));
+}
+
+float3 GetSurfaceNormalFromTangent(float3 position, float3 normal, float2 texCoord, float3 tangentNormal, float3 meshTangent, float3 meshBiTangent)
+{
+    float3x3 coTangentFrame = GetCoTangentFrame(position, normal, texCoord);
+    return normalize(mul(coTangentFrame, tangentNormal));
+}
+
 float GetLinearDepthFromSampleDepth(float depthSample)
 {
     depthSample = ((2.0 * depthSample) - 1.0);
