@@ -144,22 +144,65 @@ float3 DecodeNormalSample(float4 encoded, float yFlipSign, uint decodeMode)
     return normal;
 }
 
+float3 GetSurfaceNormalFromMeshBasis(float3 normal, float4 tangent, float3 biTangent, float3 tangentNormal)
+{
+    float3 N = normalize(normal);
+    float3 T = normalize(tangent.xyz - (N * dot(tangent.xyz, N)));
+    float handedness = (tangent.w < 0.0f) ? -1.0f : 1.0f;
+    float3 B = normalize(cross(N, T) * handedness);
+
+    float3 projectedBiTangent = biTangent - (N * dot(biTangent, N));
+    float bLengthSquared = dot(projectedBiTangent, projectedBiTangent);
+    if (bLengthSquared > 1.0e-10f)
+    {
+        projectedBiTangent *= rsqrt(bLengthSquared);
+        B = projectedBiTangent;
+    }
+
+    return normalize((tangentNormal.x * T) + (tangentNormal.y * B) + (tangentNormal.z * N));
+}
+
 float3 GetSurfaceNormalFromMeshBasis(float3 normal, float3 tangent, float3 biTangent, float3 tangentNormal)
 {
     float3 N = normalize(normal);
     float3 T = normalize(tangent - (N * dot(tangent, N)));
-
-    // Preserve authored bitangent direction (including mirrored-UV handedness)
-    // instead of re-deriving sign in shader, which can mismatch import-space conventions.
-    float3 B = biTangent - (N * dot(biTangent, N));
-    float bLengthSquared = dot(B, B);
-    if (bLengthSquared <= 1.0e-10f)
+    float3 projectedBiTangent = biTangent - (N * dot(biTangent, N));
+    float bLengthSquared = dot(projectedBiTangent, projectedBiTangent);
+    float3 B;
+    if (bLengthSquared > 1.0e-10f)
     {
-        B = cross(N, T);
+        B = projectedBiTangent * rsqrt(bLengthSquared);
     }
     else
     {
-        B *= rsqrt(bLengthSquared);
+        B = normalize(cross(N, T));
+    }
+
+    return normalize((tangentNormal.x * T) + (tangentNormal.y * B) + (tangentNormal.z * N));
+}
+
+float3 GetSurfaceNormalFromTangent(float3 position, float3 normal, float2 texCoord, float3 tangentNormal, float4 meshTangent, float3 meshBiTangent)
+{
+    float3 N = normalize(normal);
+    float3 T = meshTangent.xyz - (N * dot(meshTangent.xyz, N));
+    float tLengthSquared = dot(T, T);
+
+    if (tLengthSquared <= 1.0e-10f)
+    {
+        float3x3 coTangentFrame = GetCoTangentFrame(position, normal, texCoord);
+        return normalize(mul(coTangentFrame, tangentNormal));
+    }
+
+    T *= rsqrt(tLengthSquared);
+
+    float handedness = (meshTangent.w < 0.0f) ? -1.0f : 1.0f;
+    float3 B = normalize(cross(N, T) * handedness);
+
+    float3 projectedBiTangent = meshBiTangent - (N * dot(meshBiTangent, N));
+    float bLengthSquared = dot(projectedBiTangent, projectedBiTangent);
+    if (bLengthSquared > 1.0e-10f)
+    {
+        B = projectedBiTangent * rsqrt(bLengthSquared);
     }
 
     return normalize((tangentNormal.x * T) + (tangentNormal.y * B) + (tangentNormal.z * N));
@@ -167,8 +210,32 @@ float3 GetSurfaceNormalFromMeshBasis(float3 normal, float3 tangent, float3 biTan
 
 float3 GetSurfaceNormalFromTangent(float3 position, float3 normal, float2 texCoord, float3 tangentNormal, float3 meshTangent, float3 meshBiTangent)
 {
-    float3x3 coTangentFrame = GetCoTangentFrame(position, normal, texCoord);
-    return normalize(mul(coTangentFrame, tangentNormal));
+    float3 N = normalize(normal);
+    float3 T = meshTangent - (N * dot(meshTangent, N));
+    float tLengthSquared = dot(T, T);
+
+    if (tLengthSquared <= 1.0e-10f)
+    {
+        float3x3 coTangentFrame = GetCoTangentFrame(position, normal, texCoord);
+        return normalize(mul(coTangentFrame, tangentNormal));
+    }
+
+    T *= rsqrt(tLengthSquared);
+
+    float3 projectedBiTangent = meshBiTangent - (N * dot(meshBiTangent, N));
+    float bLengthSquared = dot(projectedBiTangent, projectedBiTangent);
+    float3 B;
+    if (bLengthSquared > 1.0e-10f)
+    {
+        B = projectedBiTangent * rsqrt(bLengthSquared);
+    }
+    else
+    {
+        float handedness = GetCoTangentFrameHandedness(position, N, texCoord);
+        B = normalize(cross(N, T) * handedness);
+    }
+
+    return normalize((tangentNormal.x * T) + (tangentNormal.y * B) + (tangentNormal.z * N));
 }
 
 float GetLinearDepthFromSampleDepth(float depthSample)

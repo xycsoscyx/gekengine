@@ -248,6 +248,8 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
                         }
                     }
 
+                    tangentSign = -tangentSign;
+
                     indexedMesh.pointList[vertexIndex] = localTransform.transform(position) * parameters.feetPerUnit;
                     indexedMesh.texCoordList[vertexIndex] = texCoord;
                     indexedMesh.tangentList[vertexIndex].set(localTransform.rotate(tangent), tangentSign);
@@ -293,6 +295,8 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
                                 tangentSign = ((normal.cross(tangent)).dot(bitangent) < 0.0f) ? -1.0f : 1.0f;
                             }
                         }
+
+                        tangentSign = -tangentSign;
 
                         mesh.pointList.push_back(localTransform.transform(position) * parameters.feetPerUnit);
                         mesh.texCoordList.push_back(texCoord);
@@ -348,7 +352,7 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
                     mesh.tangentList[(faceIndex * 3) + vertexIndex].x = tangent[0];
                     mesh.tangentList[(faceIndex * 3) + vertexIndex].y = tangent[1];
                     mesh.tangentList[(faceIndex * 3) + vertexIndex].z = tangent[2];
-                    mesh.tangentList[(faceIndex * 3) + vertexIndex].w = sign;
+                    mesh.tangentList[(faceIndex * 3) + vertexIndex].w = -sign;
                 };
 
                 mikkInterface.m_setTSpace = nullptr;
@@ -362,9 +366,27 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
                     context->log(Context::Warning, "MikkTSpace generation failed for mesh '{}'; using imported tangent frame fallback", material);
                 }
 
-                // Enforce mirrored-UV handedness explicitly per triangle.
-                // Mesh vertices are expanded (3 vertices per face), so each triangle can carry
-                // its own tangent.w sign without sharing-vertex conflicts.
+                size_t positiveTangentSignCount = 0;
+                size_t negativeTangentSignCount = 0;
+                size_t zeroTangentSignCount = 0;
+                for (auto const& tangentValue : mesh.tangentList)
+                {
+                    if (tangentValue.w > 0.0f)
+                    {
+                        ++positiveTangentSignCount;
+                    }
+                    else if (tangentValue.w < 0.0f)
+                    {
+                        ++negativeTangentSignCount;
+                    }
+                    else
+                    {
+                        ++zeroTangentSignCount;
+                    }
+                }
+
+                size_t mirroredUVFaceCount = 0;
+                size_t regularUVFaceCount = 0;
                 auto faceCount = (mesh.texCoordList.size() / 3);
                 for (size_t faceIndex = 0; faceIndex < faceCount; ++faceIndex)
                 {
@@ -377,18 +399,25 @@ bool GetModels(Context *context, Parameters const &parameters, aiScene const *in
                     Math::Float2 duv2 = (uv2 - uv0);
                     float orientation = ((duv1.x * duv2.y) - (duv1.y * duv2.x));
 
-                    if (std::abs(orientation) <= 1.0e-10f)
+                    if (orientation < 0.0f)
                     {
-                        continue;
+                        ++mirroredUVFaceCount;
                     }
-
-                    const float handedness = (orientation < 0.0f) ? -1.0f : 1.0f;
-                    for (size_t edgeIndex = 0; edgeIndex < 3; ++edgeIndex)
+                    else if (orientation > 0.0f)
                     {
-                        auto& tangent = mesh.tangentList[vertexOffset + edgeIndex];
-                        tangent.w = std::abs(tangent.w) * handedness;
+                        ++regularUVFaceCount;
                     }
                 }
+
+                context->log(
+                    Context::Info,
+                    "Mesh '{}' tangent sign stats: +{} -{} 0{} | uv orientation: mirrored={} regular={}",
+                    material,
+                    positiveTangentSignCount,
+                    negativeTangentSignCount,
+                    zeroTangentSignCount,
+                    mirroredUVFaceCount,
+                    regularUVFaceCount);
 
                 model.meshList.push_back(mesh);
                 model.indexedMeshList.push_back(indexedMesh);
@@ -890,6 +919,7 @@ struct StaticModel
                     std::strncpy(meshHeader.material, mesh.material.data(), 63);
                     meshHeader.vertexCount = mesh.pointList.size();
                     //meshHeader.faceCount = mesh.faceList.size();
+                    // Always write the normalEncoding field from parameters, regardless of material properties
                     meshHeader.normalEncoding = static_cast<uint8_t>(parameters.normalEncoding);
                     fwrite(&meshHeader, sizeof(Header::Mesh), 1, file);
                 }

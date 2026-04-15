@@ -41,11 +41,11 @@ namespace Gek
             virtual ResourceHandle createBuffer(const Render::Buffer::Description &description, std::vector<uint8_t> &&staticData, uint32_t flags = 0) = 0;
 
             template <typename TYPE>
-            ResourceHandle createBuffer(const Render::Buffer::Description &description, const TYPE *staticData)
+            ResourceHandle createBuffer(const Render::Buffer::Description &description, const TYPE *staticData, uint32_t flags = 0)
             {
                 auto rawData = reinterpret_cast<const uint8_t *>(staticData);
                 std::vector<uint8_t> rawBuffer(rawData, (rawData + (sizeof(TYPE) * description.count)));
-                return createBuffer(description, std::move(rawBuffer));
+                return createBuffer(description, std::move(rawBuffer), flags);
             }
 
             virtual void setIndexBuffer(Render::Device::Context *videoContext, ResourceHandle resourceHandle, uint32_t offset) = 0;

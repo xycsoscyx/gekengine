@@ -67,7 +67,7 @@
     },
     "Normals": {
         "PreferDDSDecode": false,
-        "FlipY": false,
+        "FlipY": true,
         "DecodeMode": {
             "selection": "RGBNormalize",
             "options": [

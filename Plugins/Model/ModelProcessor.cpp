@@ -1,4 +1,4 @@
-﻿#include "GEK/Math/Matrix4x4.hpp"
+#include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Math/SIMD.hpp"
 #include "GEK/Shapes/AlignedBox.hpp"
 #include "GEK/Utility/String.hpp"
@@ -492,6 +492,17 @@ namespace Gek
             mesh.vertexCount = meshHeader.vertexCount;
             mesh.indexCount = (meshHeader.faceCount * 3);
 
+            if (mesh.vertexCount == 0)
+            {
+                getContext()->log(
+                    Context::Warning,
+                    "Skipping mesh {} from '{}' in group '{}' due to zero vertex count",
+                    meshIndex,
+                    fileName,
+                    name);
+                return;
+            }
+
             //Render::Buffer::Description indexBufferDescription;
             //indexBufferDescription.format = Render::Format::R16_UINT;
             //indexBufferDescription.count = (meshHeader.faceCount * 3);
@@ -503,19 +514,19 @@ namespace Gek
             vertexBufferDescription.stride = sizeof(Math::Float3);
             vertexBufferDescription.count = meshHeader.vertexCount;
             vertexBufferDescription.type = Render::Buffer::Type::Vertex;
-            mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
+            mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount), Plugin::Resources::Flags::Immediate);
 
             vertexBufferDescription.stride = sizeof(Math::Float2);
             vertexBufferDescription.name = std::format("model:{}.{}.{}:texcoords", meshIndex, fileName, name);
-            mesh.vertexBufferList[1] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float2>(meshHeader.vertexCount));
+            mesh.vertexBufferList[1] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float2>(meshHeader.vertexCount), Plugin::Resources::Flags::Immediate);
 
             vertexBufferDescription.stride = sizeof(Math::Float4);
             vertexBufferDescription.name = std::format("model:{}.{}.{}:tangents", meshIndex, fileName, name);
-            mesh.vertexBufferList[2] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float4>(meshHeader.vertexCount));
+            mesh.vertexBufferList[2] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float4>(meshHeader.vertexCount), Plugin::Resources::Flags::Immediate);
 
             vertexBufferDescription.stride = sizeof(Math::Float3);
             vertexBufferDescription.name = std::format("model:{}.{}.{}:normals", meshIndex, fileName, name);
-            mesh.vertexBufferList[3] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount));
+            mesh.vertexBufferList[3] = resources->createBuffer(vertexBufferDescription, unpacker.readBlock<Math::Float3>(meshHeader.vertexCount), Plugin::Resources::Flags::Immediate);
         }
 
         void scheduleLoadData(std::string name, FileSystem::Path filePath, ModelProcessor::Group &group, ModelProcessor::Group::Model &model)
@@ -616,7 +627,7 @@ namespace Gek
                     vertexBufferDescription.stride = sizeof(Math::Float3);
                     vertexBufferDescription.count = static_cast<uint32_t>(staticModel.positions.size());
                     vertexBufferDescription.type = Render::Buffer::Type::Vertex;
-                    mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, staticModel.positions.data());
+                    mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, staticModel.positions.data(), Plugin::Resources::Flags::Immediate);
                     for (auto& position : staticModel.positions)
                     {
                         loadedGroup.boundingBox.extend(position);
@@ -627,15 +638,15 @@ namespace Gek
                     loadedGroup.boundingBox.extend(model.boundingBox.maximum);
                     vertexBufferDescription.name = std::format("model:cube.{}:texCoords", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float2);
-                    mesh.vertexBufferList[1] = resources->createBuffer(vertexBufferDescription, staticModel.texCoords.data());
+                    mesh.vertexBufferList[1] = resources->createBuffer(vertexBufferDescription, staticModel.texCoords.data(), Plugin::Resources::Flags::Immediate);
 
                     vertexBufferDescription.name = std::format("model:cube.{}:tangents", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float4);
-                    mesh.vertexBufferList[2] = resources->createBuffer(vertexBufferDescription, staticModel.tangents.data());
+                    mesh.vertexBufferList[2] = resources->createBuffer(vertexBufferDescription, staticModel.tangents.data(), Plugin::Resources::Flags::Immediate);
 
                     vertexBufferDescription.name = std::format("model:cube.{}:normals", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                    mesh.vertexBufferList[3] = resources->createBuffer(vertexBufferDescription, staticModel.normals.data());
+                    mesh.vertexBufferList[3] = resources->createBuffer(vertexBufferDescription, staticModel.normals.data(), Plugin::Resources::Flags::Immediate);
                 }
             }
             else if (name == "#sphere")
@@ -653,7 +664,7 @@ namespace Gek
                     vertexBufferDescription.stride = sizeof(Math::Float3);
                     vertexBufferDescription.count = static_cast<uint32_t>(staticModel.positions.size());
                     vertexBufferDescription.type = Render::Buffer::Type::Vertex;
-                    mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, staticModel.positions.data());
+                    mesh.vertexBufferList[0] = resources->createBuffer(vertexBufferDescription, staticModel.positions.data(), Plugin::Resources::Flags::Immediate);
                     for (auto& position : staticModel.positions)
                     {
                         loadedGroup.boundingBox.extend(position);
@@ -664,15 +675,15 @@ namespace Gek
                     loadedGroup.boundingBox.extend(model.boundingBox.maximum);
                     vertexBufferDescription.name = std::format("model:sphere.{}:texCoords", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float2);
-                    mesh.vertexBufferList[1] = resources->createBuffer(vertexBufferDescription, staticModel.texCoords.data());
+                    mesh.vertexBufferList[1] = resources->createBuffer(vertexBufferDescription, staticModel.texCoords.data(), Plugin::Resources::Flags::Immediate);
 
                     vertexBufferDescription.name = std::format("model:sphere.{}:tangents", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float4);
-                    mesh.vertexBufferList[2] = resources->createBuffer(vertexBufferDescription, staticModel.tangents.data());
+                    mesh.vertexBufferList[2] = resources->createBuffer(vertexBufferDescription, staticModel.tangents.data(), Plugin::Resources::Flags::Immediate);
 
                     vertexBufferDescription.name = std::format("model:sphere.{}:normals", model.meshList.size());
                     vertexBufferDescription.stride = sizeof(Math::Float3);
-                    mesh.vertexBufferList[3] = resources->createBuffer(vertexBufferDescription, staticModel.normals.data());
+                    mesh.vertexBufferList[3] = resources->createBuffer(vertexBufferDescription, staticModel.normals.data(), Plugin::Resources::Flags::Immediate);
                 }
             }
             else
@@ -1039,40 +1050,67 @@ namespace Gek
 					}
 				}
 
-                Render::Buffer::Description batchInstanceDescription;
-                batchInstanceDescription.name = std::format("model:instances:{}", queuedBatchCount.load());
-                batchInstanceDescription.stride = sizeof(Math::Float4x4);
-                batchInstanceDescription.count = static_cast<uint32_t>(instanceList.size());
-                batchInstanceDescription.type = Render::Buffer::Type::Vertex;
-                batchInstanceDescription.flags = Render::Buffer::Flags::Mappable;
-
-                auto batchInstanceBuffer = videoDevice->createBuffer(batchInstanceDescription);
-                Math::Float4x4 *instanceData = nullptr;
-                if (!batchInstanceBuffer || !videoDevice->mapBuffer(batchInstanceBuffer.get(), instanceData))
+                if (instanceList.empty())
                 {
-                    getContext()->log(Context::Warning,
-                        "ModelProcessor skipped draw batch due to instance buffer mapping failure (instances={})",
-                        instanceList.size());
                     return;
                 }
 
-                std::copy(std::begin(instanceList), std::end(instanceList), instanceData);
-                videoDevice->unmapBuffer(batchInstanceBuffer.get());
+                uint32_t const requiredInstanceCount = static_cast<uint32_t>(instanceList.size());
+                uint32_t currentInstanceCapacity = 0;
+                if (instanceBuffer)
+                {
+                    currentInstanceCapacity = instanceBuffer->getDescription().count;
+                }
+
+                if (!instanceBuffer || currentInstanceCapacity < requiredInstanceCount)
+                {
+                    Render::Buffer::Description instanceDescription;
+                    instanceDescription.name = "model:instances";
+                    instanceDescription.stride = sizeof(Math::Float4x4);
+                    instanceDescription.count = std::max<uint32_t>(requiredInstanceCount, std::max<uint32_t>(100, (currentInstanceCapacity > 0 ? currentInstanceCapacity * 2 : 0)));
+                    instanceDescription.type = Render::Buffer::Type::Vertex;
+                    instanceDescription.flags = Render::Buffer::Flags::Mappable;
+
+                    instanceBuffer = videoDevice->createBuffer(instanceDescription);
+                    if (!instanceBuffer)
+                    {
+                        getContext()->log(Context::Warning,
+                            "ModelProcessor skipped draw batch due to instance buffer creation failure (instances={})",
+                            instanceList.size());
+                        return;
+                    }
+                }
 
                 queuedBatchCount.fetch_add(1);
-                std::shared_ptr<Render::Buffer> sharedInstanceBuffer = std::move(batchInstanceBuffer);
-                // Keep buffer alive via retire ring (outlives the lambda by 2 extra frames).
-                instanceBufferRetireSlots[instanceBufferRetireIndex].push_back(sharedInstanceBuffer);
-				renderer->queueDrawCall(visual, material, [this, drawDataList = std::move(drawDataList), sharedInstanceBuffer](Render::Device::Context *videoContext) -> void
+				renderer->queueDrawCall(visual, material, [this, drawDataList = std::move(drawDataList), instanceList = std::move(instanceList)](Render::Device::Context *videoContext) -> void
 				{
-					if (sharedInstanceBuffer)
+					if (instanceBuffer)
 					{
-						videoContext->setVertexBufferList({ sharedInstanceBuffer.get() }, 4);
+						Math::Float4x4 *instanceData = nullptr;
+						if (!videoDevice->mapBuffer(instanceBuffer.get(), instanceData))
+						{
+							getContext()->log(Context::Warning,
+								"ModelProcessor skipped draw batch due to instance buffer mapping failure (instances={})",
+								instanceList.size());
+							return;
+						}
+
+						std::copy(std::begin(instanceList), std::end(instanceList), instanceData);
+						videoDevice->unmapBuffer(instanceBuffer.get());
+						videoContext->setVertexBufferList({ instanceBuffer.get() }, 4);
 						for (auto const &drawData : drawDataList)
 						{
 							if (drawData.data)
 							{
 								auto &level = *drawData.data;
+                                if ((level.vertexCount == 0) && (!level.indexBuffer || (level.indexCount == 0)))
+                                {
+                                    continue;
+                                }
+                                if (!std::all_of(std::begin(level.vertexBufferList), std::end(level.vertexBufferList), [](ResourceHandle const &handle) { return (handle.identifier != 0); }))
+                                {
+                                    continue;
+                                }
 								resources->setVertexBufferList(videoContext, level.vertexBufferList, 0);
                                 if (level.indexBuffer)
                                 {
