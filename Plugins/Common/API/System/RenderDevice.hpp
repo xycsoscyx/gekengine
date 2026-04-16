@@ -1,14 +1,5 @@
 /// @file
 /// @author Todd Zupan <toddzupan@gmail.com>
-/// @version $Revision$
-/// @section LICENSE
-/// https://en.wikipedia.org/wiki/MIT_License
-/// @section DESCRIPTION
-/// Last Changed: $Date$
-#pragma once
-
-/// @file
-/// @author Todd Zupan <toddzupan@gmail.com>
 /// @version $Revision: aba582126fd326535c2ce09055b12123f07428b2 $
 /// @section LICENSE
 /// https://en.wikipedia.org/wiki/MIT_License
