@@ -46,12 +46,15 @@ int main(int argumentCount, char const * const argumentList[])
     std::vector<FileSystem::Path> searchPathList;
     searchPathList.push_back(corePluginPath);
 
+    auto configPath = binaryPath / "cache" / "config.json";
+    auto config = Gek::JSON::Load(configPath);
+    std::string renderer = Gek::JSON::Value(config, "renderer", std::string("rendervulkan"));
+
     std::vector<FileSystem::Path> pluginList;
-    pluginList.push_back(renderPluginPath / "renderd3d11");
+    pluginList.push_back(renderPluginPath / renderer);
     pluginList.push_back(systemPluginPath / "systemwin32");
 
     ContextPtr context(Context::Create(&searchPathList, &pluginList));
-
     if (context)
     {
         context->setCachePath(cachePath);
