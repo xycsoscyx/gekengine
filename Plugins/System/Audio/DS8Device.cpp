@@ -1,6 +1,6 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/System/AudioDevice.hpp"
+#include "GEK/API/AudioDevice.hpp"
 #include <atlbase.h>
 
 #include <mmsystem.h>

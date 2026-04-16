@@ -10,8 +10,8 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Shapes/Frustum.hpp"
 #include "GEK/Utility/Context.hpp"
-#include "GEK/API/Resources.hpp"
-#include "GEK/API/Visualizer.hpp"
+#include "API/Resources.hpp"
+#include "API/Visualizer.hpp"
 #include <memory>
 
 namespace Gek

@@ -9,9 +9,9 @@
 
 #include "GEK/Shapes/Frustum.hpp"
 #include "GEK/Utility/Context.hpp"
-#include "GEK/System/RenderDevice.hpp"
-#include "GEK/API/Handles.hpp"
-#include "GEK/API/Entity.hpp"
+#include "GEK/API/RenderDevice.hpp"
+#include "API/Handles.hpp"
+#include "API/Entity.hpp"
 #include <wink/signal.hpp>
 #include <imgui.h>
 

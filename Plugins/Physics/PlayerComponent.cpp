@@ -2,9 +2,9 @@
 #include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/API/Core.hpp"
-#include "GEK/API/ComponentMixin.hpp"
-#include "GEK/API/Editor.hpp"
+#include "API/Core.hpp"
+#include "API/ComponentMixin.hpp"
+#include "API/Editor.hpp"
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Physics/Base.hpp"
 #include <algorithm>

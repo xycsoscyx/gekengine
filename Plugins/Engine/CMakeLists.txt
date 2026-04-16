@@ -3,7 +3,7 @@ string(REPLACE " " "_" ProjectID ${ProjectID})
 
 project(${ProjectID})
 
-file(GLOB API_HEADERS "${CMAKE_SOURCE_DIR}/Plugins/API/GEK/API/*.hpp")
+file(GLOB API_HEADERS "${CMAKE_SOURCE_DIR}/Plugins/API/Engine/*.hpp")
 
 file(GLOB HEADERS "GEK/${ProjectID}/*.hpp")
 file(GLOB SOURCES "*.[ch]pp")

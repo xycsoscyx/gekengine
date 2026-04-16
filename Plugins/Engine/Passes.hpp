@@ -9,7 +9,7 @@
 
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include "GEK/System/RenderDevice.hpp"
+#include "GEK/API/RenderDevice.hpp"
 #include "GEK/Engine/Resources.hpp"
 
 namespace Gek

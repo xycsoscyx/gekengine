@@ -1,5 +1,5 @@
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/System/Window.hpp"
+#include "GEK/API/Window.hpp"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xos.h>

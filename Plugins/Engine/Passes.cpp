@@ -1,4 +1,4 @@
-#include "GEK/API/Visualizer.hpp"
+#include "API/Visualizer.hpp"
 #include "Passes.hpp"
 
 namespace Gek

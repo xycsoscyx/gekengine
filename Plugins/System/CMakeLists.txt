@@ -55,7 +55,7 @@ foreach(target_name ${SLANG_INTERNAL_TARGETS})
     endif()
 endforeach()
 
-file(GLOB API_HEADERS "${CMAKE_SOURCE_DIR}/Plugins/API/GEK/API/*.hpp")
+file(GLOB API_HEADERS "${CMAKE_SOURCE_DIR}/Plugins/API/Engine/*.hpp")
 
 file(GLOB HEADERS "GEK/${ProjectID}/*.hpp")
 file(GLOB SOURCES "*.cpp")

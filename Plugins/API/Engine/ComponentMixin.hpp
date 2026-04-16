@@ -7,9 +7,9 @@
 /// Last Changed: $Date:   Wed Oct 19 17:38:40 2016 +0000 $
 #pragma once
 
-#include "GEK/API/Component.hpp"
-#include "GEK/API/Processor.hpp"
-#include "GEK/API/Population.hpp"
+#include "API/Component.hpp"
+#include "API/Processor.hpp"
+#include "API/Population.hpp"
 #include <tbb/concurrent_unordered_map.h>
 #include <execution>
 #include <mutex>

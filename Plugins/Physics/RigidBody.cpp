@@ -2,7 +2,7 @@
 #include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/API/ComponentMixin.hpp"
+#include "API/ComponentMixin.hpp"
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Physics/Base.hpp"
 

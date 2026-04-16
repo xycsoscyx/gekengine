@@ -7,8 +7,8 @@
 /// Last Changed: $Date:   Fri Oct 21 13:54:12 2016 +0000 $
 #pragma once
 
-#include "GEK/API/Component.hpp"
-#include "GEK/API/Entity.hpp"
+#include "API/Component.hpp"
+#include "API/Entity.hpp"
 
 namespace Gek
 {

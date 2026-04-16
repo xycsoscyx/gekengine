@@ -22,7 +22,7 @@ include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dIkSolver")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dJoints")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton")
 
-file(GLOB API_HEADERS "${CMAKE_SOURCE_DIR}/Plugins/API/GEK/API/*.hpp")
+file(GLOB API_HEADERS "${CMAKE_SOURCE_DIR}/Plugins/API/Engine/*.hpp")
 
 file(GLOB HEADERS "GEK/Newton/*.hpp")
 file(GLOB SOURCES "*.cpp")

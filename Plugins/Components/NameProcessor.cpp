@@ -1,9 +1,9 @@
 ﻿#include "GEK/Utility/ContextUser.hpp"
-#include "GEK/API/ComponentMixin.hpp"
-#include "GEK/API/Core.hpp"
-#include "GEK/API/Entity.hpp"
-#include "GEK/API/Editor.hpp"
-#include "GEK/API/Processor.hpp"
+#include "API/ComponentMixin.hpp"
+#include "API/Core.hpp"
+#include "API/Entity.hpp"
+#include "API/Editor.hpp"
+#include "API/Processor.hpp"
 #include "GEK/Components/Name.hpp"
 
 namespace Gek
