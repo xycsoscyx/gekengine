@@ -3,24 +3,6 @@
 # Simply set the desired values below and run CMake configure
 
 # ============================================================================
-# Window System (Platform-specific window handling)
-# Options: win32 (Windows), x11 (Linux/X11)
-# ============================================================================
-set(GEK_WINDOW_DEVICE "win32" CACHE STRING "Window device implementation" FORCE)
-
-# ============================================================================
-# Render Device (Graphics API backend)
-# Options: d3d11 (Direct3D 11 - Windows), vulkan (Vulkan - cross-platform)
-# ============================================================================
-set(GEK_RENDER_DEVICE "d3d11" CACHE STRING "Render device implementation")
-
-# ============================================================================
-# Audio System
-# Options: ds8 (DirectSound 8 - Windows)
-# ============================================================================
-set(GEK_AUDIO_DEVICE "ds8" CACHE STRING "Audio device implementation" FORCE)
-
-# ============================================================================
 # Build Configuration Options
 # ============================================================================
 
@@ -52,10 +34,6 @@ set(JSON_BuildTests OFF CACHE BOOL "Disable JSON tests" FORCE)
 # ============================================================================
 # Advanced Options (Change only if you know what you're doing)
 # ============================================================================
-
-# Vulkan SDK path (only needed if GEK_RENDER_DEVICE is "vulkan")
-# Adjust this if Vulkan is not found automatically
-# set(VULKAN_SDK "C:/VulkanSDK/1.4.335.0" CACHE STRING "Vulkan SDK path" FORCE)
 
 # Mark this file as processed to avoid re-inclusion
 set(GEK_OPTIONS_FILE_PROCESSED TRUE)

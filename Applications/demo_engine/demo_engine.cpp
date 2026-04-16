@@ -34,16 +34,23 @@ int main(int argumentCount, char const * const argumentList[])
     initializeConsoleOutput();
 #endif
 
-    auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
+    auto binaryPath(FileSystem::GetModuleFilePath().getParentPath());
+    auto corePluginPath(binaryPath / "plugins" / "core");
+    auto renderPluginPath(binaryPath / "plugins" / "render");
+    auto systemPluginPath(binaryPath / "plugins" / "system");
     auto cachePath(FileSystem::GetCacheFromModule());
     auto rootPath(cachePath.getParentPath());
 
     cachePath.setWorkingDirectory();
 
     std::vector<FileSystem::Path> searchPathList;
-    searchPathList.push_back(pluginPath);
+    searchPathList.push_back(corePluginPath);
 
-    ContextPtr context(Context::Create(&searchPathList));
+    std::vector<FileSystem::Path> pluginList;
+    pluginList.push_back(renderPluginPath / "renderd3d11");
+    pluginList.push_back(systemPluginPath / "systemwin32");
+
+    ContextPtr context(Context::Create(&searchPathList, &pluginList));
 
     if (context)
     {

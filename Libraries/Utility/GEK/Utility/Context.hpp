@@ -61,7 +61,7 @@ namespace Gek
             }
         };
 
-        static ContextPtr Create(std::vector<FileSystem::Path> const *pluginSearchList);
+        static ContextPtr Create(std::vector<FileSystem::Path> const *pluginSearchList, std::vector<FileSystem::Path> const *pluginList = nullptr);
 
         virtual ~Context(void) = default;
 

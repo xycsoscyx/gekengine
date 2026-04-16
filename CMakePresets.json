@@ -16,34 +16,6 @@
         "strategy": "external"
       },
       "binaryDir": "${sourceDir}/build"
-    },
-    {
-      "name": "vs2022-x64-d3d11",
-      "displayName": "VS2022 x64 (D3D11)",
-      "description": "Visual Studio 2022 x64 configure preset using D3D11 renderer",
-      "generator": "Visual Studio 17 2022",
-      "architecture": {
-        "value": "x64",
-        "strategy": "external"
-      },
-      "binaryDir": "${sourceDir}/build/d3d11",
-      "cacheVariables": {
-        "GEK_RENDER_DEVICE": "d3d11"
-      }
-    },
-    {
-      "name": "vs2022-x64-vulkan",
-      "displayName": "VS2022 x64 (Vulkan)",
-      "description": "Visual Studio 2022 x64 configure preset using Vulkan renderer",
-      "generator": "Visual Studio 17 2022",
-      "architecture": {
-        "value": "x64",
-        "strategy": "external"
-      },
-      "binaryDir": "${sourceDir}/build/vulkan",
-      "cacheVariables": {
-        "GEK_RENDER_DEVICE": "vulkan"
-      }
     }
   ],
   "buildPresets": [
@@ -53,41 +25,9 @@
       "configurePreset": "vs2022-x64"
     },
     {
-      "name": "vs2022-x64-demo_engine",
-      "displayName": "Build VS2022 x64 (demo_engine)",
+      "name": "vs2022-x64-install",
+      "displayName": "Install VS2022 x64",
       "configurePreset": "vs2022-x64",
-      "targets": [
-        "demo_engine"
-      ]
-    },
-    {
-      "name": "vs2022-x64-d3d11-demo_engine",
-      "displayName": "Build VS2022 x64 D3D11 (demo_engine)",
-      "configurePreset": "vs2022-x64-d3d11",
-      "targets": [
-        "demo_engine"
-      ]
-    },
-    {
-      "name": "vs2022-x64-d3d11-install",
-      "displayName": "Install VS2022 x64 D3D11",
-      "configurePreset": "vs2022-x64-d3d11",
-      "targets": [
-        "install"
-      ]
-    },
-    {
-      "name": "vs2022-x64-vulkan-demo_engine",
-      "displayName": "Build VS2022 x64 Vulkan (demo_engine)",
-      "configurePreset": "vs2022-x64-vulkan",
-      "targets": [
-        "demo_engine"
-      ]
-    },
-    {
-      "name": "vs2022-x64-vulkan-install",
-      "displayName": "Install VS2022 x64 Vulkan",
-      "configurePreset": "vs2022-x64-vulkan",
       "targets": [
         "install"
       ]

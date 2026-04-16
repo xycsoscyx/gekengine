@@ -1,4 +1,5 @@
-﻿#include "GEK/Utility/ContextUser.hpp"
+﻿
+#include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/Timer.hpp"
 #include "GEK/Utility/FileSystem.hpp"
@@ -387,18 +388,16 @@ namespace Gek
             Core(Context *context)
                 : ContextRegistration(context)
             {
-            if (auto environmentLogFile = std::getenv("gek_log_file"); environmentLogFile && environmentLogFile[0])
-            {
-                std::snprintf(runtimeLogFilePath.data(), runtimeLogFilePath.size(), "%s", environmentLogFile);
-            }
-            else
-            {
-                std::snprintf(runtimeLogFilePath.data(), runtimeLogFilePath.size(), "%s", "gek.log");
-            }
+                if (auto environmentLogFile = std::getenv("gek_log_file"); environmentLogFile && environmentLogFile[0])
+                {
+                    std::snprintf(runtimeLogFilePath.data(), runtimeLogFilePath.size(), "%s", environmentLogFile);
+                }
+                else
+                {
+                    std::snprintf(runtimeLogFilePath.data(), runtimeLogFilePath.size(), "%s", "gek.log");
+                }
 
 				getContext()->log(Context::Info, "Starting GEK Engine");
-
-                configuration = JSON::Load(getContext()->findDataPath("config.json"s));
 
                 const uint32_t defaultSinkMask = static_cast<uint32_t>(getContext()->getLogSinkMask());
                 uint32_t configuredSinkMask = JSON::Value(getOption("logging", "sinkMask"), defaultSinkMask);
@@ -427,6 +426,9 @@ namespace Gek
                     return;
                 }
 #endif
+                configuration = JSON::Load(getContext()->findDataPath("config.json"s));
+
+                // Use the selected window handler module (class name can be mapped as needed)
                 window = getContext()->createClass<Window::Device>("Default::System::Window");
                 if (window)
                 {
@@ -492,6 +494,7 @@ namespace Gek
                 renderDevice = nullptr;
                 window = nullptr;
 
+                // Always save config on shutdown, even after error
                 JSON::Save(configuration, getContext()->getCachePath("config.json"s));
 #ifdef _WIN32
                 CoUninitialize();
@@ -606,6 +609,7 @@ namespace Gek
                 deviceDescription.indexBufferVersioningPolicy.mode =
                     (deviceDescription.indexBufferVersioningPolicy.ringSize >= 2) ? Render::BufferVersioningMode::FixedRing : Render::BufferVersioningMode::Disabled;
 
+                // Use the selected render device module (class name can be mapped as needed)
                 renderDevice = getContext()->createClass<Render::Device>("Default::Device::Video", window.get(), deviceDescription);
 
                 uint32_t preferredDisplayMode = 0;
@@ -2351,3 +2355,4 @@ namespace Gek
         GEK_REGISTER_CONTEXT_USER(Core);
     }; // namespace Implementation
 }; // namespace Gek
+#include <string>

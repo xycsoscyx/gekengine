@@ -9,53 +9,73 @@
 #include <fstream>
 #include <cstdlib>
 
-#ifdef _WIN32
-#include <Windows.h>
-#define LIBRARY                         HMODULE
-
-std::string getWindowsLastErrorMessage(DWORD errorCode)
-{
-    if (errorCode == 0)
-    {
-        return std::string();
-    }
-
-    LPSTR messageBuffer = nullptr;
-    DWORD size = FormatMessageA(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-        nullptr,
-        errorCode,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPSTR)&messageBuffer,
-        0,
-        nullptr);
-
-    std::string message;
-    if (size && messageBuffer)
-    {
-        message.assign(messageBuffer, size);
-        LocalFree(messageBuffer);
-    }
-
-    return message;
-}
-
-LIBRARY loadLibrary(std::string_view fileName)
-{
-    return LoadLibraryA(fileName.data());
-}
-
-#define getFunction(HANDLE, FUNCTION)   GetProcAddress(HANDLE, FUNCTION)
-#define freeLibrary(HANDLE)             FreeLibrary(HANDLE)
-static const char *moduleExtension = ".dll";
+#ifdef _DEBUG
+const char modulePostfix[] = "_debug";
 #else
-#include <dlfcn.h>
-#define LIBRARY                         void *
-#define loadLibrary(FILE)               dlopen(FILE, RTLD_LAZY);
-#define getFunction(HANDLE, FUNCTION)   dlsym(HANDLE, FUNCTION)
-#define freeLibrary(HANDLE)             dlclose(HANDLE)
-static const char *moduleExtension = ".so";
+const char modulePostfix[] = "";
 #endif
+
+#ifdef _WIN32
+    #include <Windows.h>
+    std::string getWindowsLastErrorMessage(DWORD errorCode)
+    {
+        if (errorCode == 0)
+        {
+            return std::string();
+        }
+
+        LPSTR messageBuffer = nullptr;
+        DWORD size = FormatMessageA(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+            nullptr,
+            errorCode,
+            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            (LPSTR)&messageBuffer,
+            0,
+            nullptr);
+
+        std::string message;
+        if (size && messageBuffer)
+        {
+            message.assign(messageBuffer, size);
+            LocalFree(messageBuffer);
+        }
+
+        return message;
+    }
+
+    #define LIBRARY                         HMODULE
+    #define loadLibrary(PATH)               LoadLibraryA(PATH.getString().c_str())
+    #define getFunction(HANDLE, FUNCTION)   GetProcAddress(HANDLE, FUNCTION)
+    #define freeLibrary(HANDLE)             FreeLibrary(HANDLE)
+    const char *moduleExtension = ".dll";
+#else
+    #include <dlfcn.h>
+    #define LIBRARY                         void *
+    #define loadLibrary(PATH)               dlopen(PATH.getString().c_str(), RTLD_LAZY)
+    #define getFunction(HANDLE, FUNCTION)   dlsym(HANDLE, FUNCTION)
+    #define freeLibrary(HANDLE)             dlclose(HANDLE)
+    const char *moduleExtension = ".so";
+    LIBRARY loadLibrary(const Gek::FileSystem::Path& path)
+    {
+        if (path.isFile() && path.getExtension() == moduleExtension && path.withoutExtension().getFileName().ends_with(modulePostfix))
+        {
+            return dlopen((path.getString().c_str()), RTLD_LAZY);
+        }
+
+        return nullptr;
+    }
+#endif
+
+LIBRARY loadPlugin(const Gek::FileSystem::Path& path)
+{
+    if (path.isFile() && path.getExtension() == moduleExtension && path.withoutExtension().getFileName().ends_with(modulePostfix))
+    {
+        return loadLibrary(path);
+    }
+
+    return nullptr;
+}
 
 namespace Gek
 {
@@ -154,6 +174,60 @@ namespace Gek
             }
         }
 
+        void initializePlugin(const FileSystem::Path &pluginPath)
+        {
+            LIBRARY library = loadPlugin(pluginPath.getString());
+            if (library)
+            {
+#ifdef _WIN32
+                using InitializePlugin = void(*)(std::function<void(std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<Hash>&)>)>, std::function<void(std::string_view, std::string_view)>);
+                InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress((HMODULE)library, "initializePlugin");
+#else
+                using InitializePlugin = void(*)(std::function<void(std::string_view, std::function<ContextUserPtr(Context *, void *, std::vector<Hash>&)>)>, std::function<void(std::string_view, std::string_view)>);
+                InitializePlugin initializePlugin = (InitializePlugin)dlsym(library, "initializePlugin");
+#endif
+                if (initializePlugin)
+                {
+                    log(Info, "Initializing Plugin: {}", pluginPath.getFileName());
+                    initializePlugin([this, pluginPath = pluginPath.getString()](std::string_view className, std::function<ContextUserPtr(Context *, void *, std::vector<Hash> &)> creator) -> void
+                    {
+                        if (classMap.count(className) == 0)
+                        {
+                            classMap[className] = creator;
+                            log(Info, "Adding {} to context registry", className);
+                        }
+                        else
+                        {
+                            log(Info, "Skipping duplicate class from plugin: {}, from: {}", className, pluginPath);
+                        }
+                    }, [this](std::string_view typeName, std::string_view className) -> void
+                    {
+                        typeMap.insert(std::make_pair(typeName, className));
+                        log(Info, "Adding {} to {}", typeName, className);
+                    });
+                    libraryList.push_back(library);
+                }
+                else
+                {
+#ifdef _WIN32
+                    FreeLibrary((HMODULE)library);
+#else
+                    dlclose(library);
+#endif
+                }
+            }
+            else
+            {
+#ifdef _WIN32
+                DWORD errorCode = GetLastError();
+                std::string errorMessage = getWindowsLastErrorMessage(errorCode);
+                log(Error, "Unable to load plugin: {} (error {}: {})", pluginPath.getString(), errorCode, errorMessage);
+#else
+                log(Error, "Unable to load plugin: {}", pluginPath.getString());
+#endif
+            }
+        }
+
 	public:
         ContextImplementation(void)
         {
@@ -161,57 +235,23 @@ namespace Gek
             configureLogSinkFromEnvironment();
         }
 
-        ContextImplementation(std::vector<FileSystem::Path> const &pluginSearchList)
+        ContextImplementation(std::vector<FileSystem::Path> const &pluginSearchList, std::vector<FileSystem::Path> const &pluginList)
         {
             SetThreadPoolLogContext(this);
             configureLogSinkFromEnvironment();
-			for (auto const &searchPath : pluginSearchList)
+            for (auto const &pluginPath : pluginList)
             {
-                log(Info, "Looking Plugins: {}", searchPath.getString());
+                // Load root plugin names first, these are the root names, the postfix and extension gets appended in loadPlugin.
+                initializePlugin(FileSystem::Path(pluginPath.getString() + modulePostfix).withExtension(moduleExtension));
+            }
+
+            for (auto const &searchPath : pluginSearchList)
+            {
+                log(Info, "Looking for Plugins: {}", searchPath.getString());
                 searchPath.findFiles([&](FileSystem::Path const &filePath) -> bool
                 {
-					if (filePath.isFile() && String::GetLower(filePath.getExtension()) == moduleExtension)
-					{
-                        log(Info, "Found module to search: {}", filePath.getString());
-                        LIBRARY library = loadLibrary(filePath.getString().data());
-						if (library)
-						{
-                            InitializePlugin initializePlugin = (InitializePlugin)getFunction(library, "initializePlugin");
-							if (initializePlugin)
-							{
-								log(Info, "Initializing Plugin: {}", filePath.getFileName());
-								initializePlugin([this, filePath = filePath.getString()](std::string_view className, std::function<ContextUserPtr(Context *, void *, std::vector<Hash> &)> creator) -> void
-								{
-									if (classMap.count(className) == 0)
-									{
-										classMap[className] = creator;
-                                        log(Info, "Adding {} to context registry", className);
-									}
-									else
-									{
-                                        log(Info, "Skipping duplicate class from plugin: {}, from: {}", className, filePath);
-									}
-								}, [this](std::string_view typeName, std::string_view className) -> void
-								{
-									typeMap.insert(std::make_pair(typeName, className));
-                                    log(Info, "Adding {} to {}", typeName, className);
-								});
-
-								libraryList.push_back(library);
-							}
-							else
-							{
-                                freeLibrary(library);
-							}
-						}
-						else
-						{
-                            DWORD errorCode = GetLastError();
-                            std::string errorMessage = getWindowsLastErrorMessage(errorCode);
-                            log(Error, "Unable to load plugin: {} (error {}: {})", filePath.getString(), errorCode, errorMessage);
-						}
-					}
-
+                    // Load all core plugins that match the current platform and build configuration.
+                    initializePlugin(filePath);
                     return true;
                 });
             }
@@ -471,15 +511,8 @@ namespace Gek
         }
     };
 
-    ContextPtr Context::Create(std::vector<FileSystem::Path> const *pluginSearchList)
+    ContextPtr Context::Create(std::vector<FileSystem::Path> const *pluginSearchList, std::vector<FileSystem::Path> const *pluginList)
     {
-        if (pluginSearchList)
-        {
-            return std::make_unique<ContextImplementation>(*pluginSearchList);
-        }
-        else
-        {
-            return std::make_unique<ContextImplementation>();
-        }
+        return std::make_unique<ContextImplementation>(pluginSearchList ? *pluginSearchList : std::vector<FileSystem::Path>(), pluginList ? *pluginList : std::vector<FileSystem::Path>());
     }
 }; // namespace Gek
