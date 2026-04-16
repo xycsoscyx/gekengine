@@ -8,8 +8,8 @@
 #pragma once
 
 #include "GEK/Math/Vector3.hpp"
-#include "API/Component.hpp"
-#include "API/Entity.hpp"
+#include "API/Engine/Component.hpp"
+#include "API/Engine/Entity.hpp"
 #include <wink/signal.hpp>
 #include <dNewton/ndNewton.h>
 

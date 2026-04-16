@@ -8,7 +8,7 @@
 #pragma once
 
 #include "GEK/Utility/Context.hpp"
-#include "GEK/API/RenderDevice.hpp"
+#include "API/System/RenderDevice.hpp"
 
 namespace Gek
 {

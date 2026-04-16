@@ -9,9 +9,9 @@
 
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include "API/Component.hpp"
-#include "API/Entity.hpp"
-#include "API/Population.hpp"
+#include "API/Engine/Component.hpp"
+#include "API/Engine/Entity.hpp"
+#include "API/Engine/Population.hpp"
 #include "GEK/GUI/Utilities.hpp"
 #include <wink/signal.hpp>
 #include <list>

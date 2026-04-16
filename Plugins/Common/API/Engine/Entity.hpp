@@ -8,7 +8,7 @@
 #pragma once
 
 #include "GEK/Utility/Context.hpp"
-#include "API/Component.hpp"
+#include "API/Engine/Component.hpp"
 #include <typeindex>
 #include <algorithm>
 #include <numeric>

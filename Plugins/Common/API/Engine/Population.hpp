@@ -10,7 +10,7 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/ShuntingYard.hpp"
-#include "API/Entity.hpp"
+#include "API/Engine/Entity.hpp"
 #include <wink/signal.hpp>
 #include <functional>
 #include <typeindex>

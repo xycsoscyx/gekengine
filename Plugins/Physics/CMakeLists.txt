@@ -22,11 +22,9 @@ include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dIkSolver")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton/dJoints")
 include_directories("${newton_SOURCE_DIR}/newton-4.00/sdk/dNewton")
 
-file(GLOB API_HEADERS "${CMAKE_SOURCE_DIR}/Plugins/API/Engine/*.hpp")
-
 file(GLOB HEADERS "GEK/Newton/*.hpp")
 file(GLOB SOURCES "*.cpp")
-add_library(${ProjectID} SHARED ${SOURCES} ${HEADERS} ${API_HEADERS})
+add_library(${ProjectID} SHARED ${SOURCES} ${HEADERS})
 set_target_properties(${ProjectID} PROPERTIES
 	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/plugins/core"
 	LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/plugins/core"
@@ -38,7 +36,7 @@ set_target_properties(${ProjectID} PROPERTIES
 target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
 target_link_libraries(${ProjectID} PRIVATE ndNewton)
-target_link_libraries(${ProjectID} PUBLIC Math Shapes Utility GUI API Components Model)
+target_link_libraries(${ProjectID} PUBLIC Math Shapes Utility GUI Common Components Model)
 
 install(TARGETS ${ProjectID}
 	RUNTIME DESTINATION bin/plugins/core

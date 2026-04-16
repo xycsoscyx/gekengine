@@ -7,7 +7,7 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "API/Component.hpp"
+#include "API/Engine/Component.hpp"
 
 namespace Gek
 {

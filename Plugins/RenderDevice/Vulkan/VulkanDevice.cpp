@@ -1,8 +1,8 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/API/RenderDevice.hpp"
-#include "GEK/API/WindowDevice.hpp"
+#include "API/System/RenderDevice.hpp"
+#include "API/System/WIndowDevice.hpp"
 #include <algorithm>
 #include <bit>
 #include <chrono>

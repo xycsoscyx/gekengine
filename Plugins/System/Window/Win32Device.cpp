@@ -1,4 +1,4 @@
-#include "GEK/API/WindowDevice.hpp"
+#include "API/System/WIndowDevice.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include <atlbase.h>
 #include <chrono>

@@ -8,7 +8,7 @@
 #pragma once
 
 #include "GEK/Math/Vector3.hpp"
-#include "API/Component.hpp"
+#include "API/Engine/Component.hpp"
 #include "GEK/Shapes/AlignedBox.hpp"
 
 namespace Gek

@@ -9,7 +9,7 @@
 
 #include "GEK/Math/Vector4.hpp"
 #include "GEK/Utility/Hash.hpp"
-#include "API/Component.hpp"
+#include "API/Engine/Component.hpp"
 
 namespace Gek
 {

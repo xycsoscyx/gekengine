@@ -1,7 +1,7 @@
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/String.hpp"
-#include "API/ComponentMixin.hpp"
-#include "API/Editor.hpp"
+#include "API/Engine/ComponentMixin.hpp"
+#include "API/Engine/Editor.hpp"
 #include "GEK/Components/Light.hpp"
 
 namespace Gek

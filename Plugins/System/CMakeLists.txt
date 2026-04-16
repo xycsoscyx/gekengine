@@ -55,15 +55,13 @@ foreach(target_name ${SLANG_INTERNAL_TARGETS})
     endif()
 endforeach()
 
-file(GLOB API_HEADERS "${CMAKE_SOURCE_DIR}/Plugins/API/Engine/*.hpp")
-
 file(GLOB HEADERS "GEK/${ProjectID}/*.hpp")
 file(GLOB SOURCES "*.cpp")
 file(GLOB SOURCES "*.cpp")
 
 list(APPEND SOURCES ${OS_SOURCES})
 
-add_library(${ProjectID} SHARED ${SOURCES} ${HEADERS} ${API_HEADERS})
+add_library(${ProjectID} SHARED ${SOURCES} ${HEADERS}})
 set_target_properties(${ProjectID} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/plugins/core"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/plugins/core"

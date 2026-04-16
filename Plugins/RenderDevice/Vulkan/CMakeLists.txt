@@ -59,8 +59,6 @@ set_target_properties(rendervulkan PROPERTIES
 	DEBUG_POSTFIX ""
 )
 
-target_include_directories(rendervulkan PUBLIC ${CMAKE_SOURCE_DIR}/Plugins/API)
-
 # Slang include directories
 get_target_property(slang_interface_includes slang INTERFACE_INCLUDE_DIRECTORIES)
 if(slang_interface_includes)
@@ -69,9 +67,9 @@ endif()
 if(DEFINED slang_SOURCE_DIR)
 	target_include_directories(rendervulkan PRIVATE ${slang_SOURCE_DIR}/include)
 endif()
-target_link_libraries(rendervulkan PUBLIC Math Utility Resources slang)
+target_link_libraries(rendervulkan PUBLIC Math Utility Resources Common)
 find_package(Vulkan REQUIRED)
-target_link_libraries(rendervulkan PRIVATE Vulkan::Vulkan DirectXTex)
+target_link_libraries(rendervulkan PRIVATE Vulkan::Vulkan DirectXTex slang)
 set_target_properties(rendervulkan PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 install(TARGETS rendervulkan
     RUNTIME DESTINATION bin/plugins/render

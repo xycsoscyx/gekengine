@@ -59,8 +59,6 @@ set_target_properties(renderd3d11 PROPERTIES
 	DEBUG_POSTFIX ""
 )
 
-target_include_directories(renderd3d11 PUBLIC ${CMAKE_SOURCE_DIR}/Plugins/API)
-
 # Slang include directories
 get_target_property(slang_interface_includes slang INTERFACE_INCLUDE_DIRECTORIES)
 if(slang_interface_includes)
@@ -69,8 +67,8 @@ endif()
 if(DEFINED slang_SOURCE_DIR)
 	target_include_directories(renderd3d11 PRIVATE ${slang_SOURCE_DIR}/include)
 endif()
-target_link_libraries(renderd3d11 PUBLIC Math Utility Resources slang)
-target_link_libraries(renderd3d11 PRIVATE d3d11 dxgi d3dcompiler DirectXTex)
+target_link_libraries(renderd3d11 PUBLIC Math Utility Resources Common)
+target_link_libraries(renderd3d11 PRIVATE d3d11 dxgi d3dcompiler DirectXTex slang)
 set_target_properties(renderd3d11 PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 install(TARGETS renderd3d11
     RUNTIME DESTINATION bin/plugins/render

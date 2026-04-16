@@ -8,8 +8,8 @@
 #pragma once
 
 #include "GEK/Utility/Context.hpp"
-#include "GEK/API/RenderDevice.hpp"
-#include "API/Handles.hpp"
+#include "API/System/RenderDevice.hpp"
+#include "API/Engine/Handles.hpp"
 #include <type_traits>
 #include <typeindex>
 

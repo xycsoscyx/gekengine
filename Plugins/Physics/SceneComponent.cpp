@@ -1,6 +1,6 @@
 #include "GEK/Physics/Base.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "API/ComponentMixin.hpp"
+#include "API/Engine/ComponentMixin.hpp"
 #include "GEK/Math/Common.hpp"
 
 namespace Gek

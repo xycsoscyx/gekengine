@@ -8,7 +8,7 @@
 #pragma once
 
 #include "GEK/Utility/Context.hpp"
-#include "API/Editor.hpp"
+#include "API/Engine/Editor.hpp"
 
 namespace Gek
 {

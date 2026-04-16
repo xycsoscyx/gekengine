@@ -5,7 +5,7 @@
 #include "GEK/Utility/XML.hpp"
 #include "GEK/Utility/Allocator.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/API/VideoDevice.hpp"
+#include "API/Engine/VideoDevice.hpp"
 #include "GEK/Engine/Core.hpp"
 #include "GEK/Engine/Processor.hpp"
 #include "GEK/Engine/ComponentMixin.hpp"

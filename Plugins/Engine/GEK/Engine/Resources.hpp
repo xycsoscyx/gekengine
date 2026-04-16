@@ -9,8 +9,8 @@
 
 #include "GEK/Math/Vector4.hpp"
 #include "GEK/Utility/Context.hpp"
-#include "GEK/API/RenderDevice.hpp"
-#include "API/Resources.hpp"
+#include "API/System/RenderDevice.hpp"
+#include "API/Engine/Resources.hpp"
 #include "GEK/Engine/Shader.hpp"
 
 namespace Gek

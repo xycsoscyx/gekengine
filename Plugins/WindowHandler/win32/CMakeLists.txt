@@ -12,9 +12,7 @@ set_target_properties(systemwin32 PROPERTIES
 	DEBUG_POSTFIX ""
 )
 
-target_include_directories(systemwin32 PUBLIC ${CMAKE_SOURCE_DIR}/Plugins/API)
-
-target_link_libraries(systemwin32 PUBLIC Math Utility Resources)
+target_link_libraries(systemwin32 PUBLIC Math Utility Resources Common)
 target_link_libraries(systemwin32 PRIVATE user32 gdi32)
 set_target_properties(systemwin32 PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 install(TARGETS systemwin32

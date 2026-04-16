@@ -3,7 +3,7 @@
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Engine/Core.hpp"
-#include "API/Core.hpp"
+#include "API/Engine/Core.hpp"
 
 #ifdef _WIN32
 #include <Windows.h>
