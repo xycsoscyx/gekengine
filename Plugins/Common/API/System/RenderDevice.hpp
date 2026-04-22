@@ -666,16 +666,63 @@ namespace Gek
 			struct Information
 			{
 				Type type;
-				uint64_t programId = 0;
 				std::string name;
-				FileSystem::Path debugPath;
+				FileSystem::Path shaderPath;
+				std::string shaderData;
 				std::string entryFunction;
-				std::string uncompiledData;
 				std::vector<uint8_t> compiledData;
+				uint64_t programId = 0;
+
+				Information(Information const &information)
+					: name(information.name)
+					, type(information.type)
+					, entryFunction(information.entryFunction)
+					, shaderData(information.shaderData)
+					, shaderPath(information.shaderPath)
+					, compiledData(information.compiledData)
+					, programId(information.programId)
+				{
+				}
+
+				Information(std::string_view name, Type type, std::string_view entryFunction, std::string_view shaderData, FileSystem::Path const &shaderPath)
+					: name(name)
+					, type(type)
+					, entryFunction(entryFunction)
+					, shaderData(shaderData)
+					, shaderPath(shaderPath)
+				{
+					programId = computeProgramId();
+				}
+
+				uint64_t computeProgramId(void) const
+				{
+					constexpr uint64_t fnvOffsetBasis = 1469598103934665603ull;
+					constexpr uint64_t fnvPrime = 1099511628211ull;
+
+					auto hashBytes = [](uint64_t seed, const void *data, size_t size) -> uint64_t
+					{
+						const uint8_t *bytes = static_cast<const uint8_t *>(data);
+						uint64_t value = seed;
+						for (size_t index = 0; index < size; ++index)
+						{
+							value ^= static_cast<uint64_t>(bytes[index]);
+							value *= fnvPrime;
+						}
+
+						return value;
+					};
+
+					uint64_t programId = fnvOffsetBasis;
+					const uint8_t typeValue = static_cast<uint8_t>(type);
+					programId = hashBytes(programId, &typeValue, sizeof(typeValue));
+					programId = hashBytes(programId, entryFunction.data(), entryFunction.size());
+					programId = hashBytes(programId, shaderData.data(), shaderData.size());
+					return programId;
+				}
 
 				bool isValid(void) const
 				{
-					return (!name.empty() && !uncompiledData.empty() && !entryFunction.empty());
+					return (!name.empty() && !shaderData.empty() && !entryFunction.empty());
 				}
 			};
 

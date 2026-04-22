@@ -2972,17 +2972,8 @@ namespace Gek
                         if (!hasExtension)
                         {
                             addUnique(candidates, includeName + ".slang");
-                            addUnique(candidates, includeName + ".hlsl");
                             addUnique(candidates, forwardSlashes + ".slang");
-                            addUnique(candidates, forwardSlashes + ".hlsl");
                             addUnique(candidates, backSlashes + ".slang");
-                            addUnique(candidates, backSlashes + ".hlsl");
-                        }
-                        else if ((includeName.substr(extensionPosition) == ".slang") || (includeName.substr(extensionPosition) == ".SLANG"))
-                        {
-                            std::string hlslName = includeName;
-                            hlslName.replace(extensionPosition, std::string::npos, ".hlsl");
-                            addUnique(candidates, hlslName);
                         }
 
                         for (auto const &candidate : candidates)
@@ -3073,7 +3064,7 @@ namespace Gek
                     return resolved;
                 };
 
-                std::string resolvedProgram = resolveIncludes(information.uncompiledData, 0);
+                std::string resolvedProgram = resolveIncludes(information.shaderData, 0);
                 auto typeSearch = D3DTypeMap.find(information.type);
                 if (typeSearch != std::end(D3DTypeMap))
                 {
@@ -3108,7 +3099,7 @@ namespace Gek
                             getContext()->log(Gek::Context::Debug, "Loading Slang module for '{}' with entry point '{}'.", information.name, information.entryFunction);
 
                             slang::IBlob* outDiagnosticsRaw = nullptr;
-                            slang::IModule* slangModule = session->loadModuleFromSourceString(information.name.data(), information.debugPath.getFileName().data(), resolvedProgram.c_str(), &outDiagnosticsRaw);
+                            slang::IModule* slangModule = session->loadModuleFromSourceString(information.name.data(), information.shaderPath.getFileName().data(), resolvedProgram.c_str(), &outDiagnosticsRaw);
                             Slang::ComPtr<slang::IBlob> outDiagnostics(outDiagnosticsRaw);
 
                             if (outDiagnostics)

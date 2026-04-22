@@ -864,20 +864,20 @@ namespace Gek
                     showVideoResourceMap(&staticProgramCache, "Global"s, [&](auto& object) -> void
                     {
                         auto information = object->getInformation();
-                        auto pathString = information.debugPath.getString();
+                        auto pathString = information.shaderPath.getString();
                         ImGui::PushItemWidth(-1.0f);
                         ImGui::InputText("##path", const_cast<char*>(pathString.data()), pathString.size(), ImGuiInputTextFlags_ReadOnly);
-                        ImGui::InputTextMultiline("##data", const_cast<char*>(information.uncompiledData.data()), information.uncompiledData.size(), ImVec2(-1.0f, 500.0f), ImGuiInputTextFlags_ReadOnly);
+                        ImGui::InputTextMultiline("##data", const_cast<char*>(information.shaderData.data()), information.shaderData.size(), ImVec2(-1.0f, 500.0f), ImGuiInputTextFlags_ReadOnly);
                         ImGui::PopItemWidth();
                     });
 
                     showVideoResourceMap(&programCache, "Local"s, [&](auto& object) -> void
                     {
                         auto information = object->getInformation();
-                        auto pathString = information.debugPath.getString();
+                        auto pathString = information.shaderPath.getString();
                         ImGui::PushItemWidth(-1.0f);
                         ImGui::InputText("##path", const_cast<char*>(pathString.data()), pathString.size(), ImGuiInputTextFlags_ReadOnly);
-                        ImGui::InputTextMultiline("##data", const_cast<char*>(information.uncompiledData.data()), information.uncompiledData.size(), ImVec2(-1.0f, 500.0f), ImGuiInputTextFlags_ReadOnly);
+                        ImGui::InputTextMultiline("##data", const_cast<char*>(information.shaderData.data()), information.shaderData.size(), ImVec2(-1.0f, 500.0f), ImGuiInputTextFlags_ReadOnly);
                         ImGui::PopItemWidth();
                     });
 
@@ -1626,32 +1626,6 @@ namespace Gek
                 return dynamicCache.getResource(resourceHandle);
             }
 
-            uint64_t computeDeterministicProgramId(Render::Program::Type type, std::string_view entryFunction, std::string_view normalizedSource)
-            {
-                constexpr uint64_t fnvOffsetBasis = 1469598103934665603ull;
-                constexpr uint64_t fnvPrime = 1099511628211ull;
-
-                auto hashBytes = [](uint64_t seed, const void *data, size_t size) -> uint64_t
-                {
-                    const uint8_t *bytes = static_cast<const uint8_t *>(data);
-                    uint64_t value = seed;
-                    for (size_t index = 0; index < size; ++index)
-                    {
-                        value ^= static_cast<uint64_t>(bytes[index]);
-                        value *= fnvPrime;
-                    }
-
-                    return value;
-                };
-
-                uint64_t programId = fnvOffsetBasis;
-                const uint8_t typeValue = static_cast<uint8_t>(type);
-                programId = hashBytes(programId, &typeValue, sizeof(typeValue));
-                programId = hashBytes(programId, entryFunction.data(), entryFunction.size());
-                programId = hashBytes(programId, normalizedSource.data(), normalizedSource.size());
-                return programId;
-            }
-
             Render::Program::Information getProgramInformation(Render::Program::Type type, std::string_view name, std::string_view entryFunction, std::string_view engineData)
             {
                 auto programsPath(getContext()->findDataPath("programs"s, false));
@@ -1665,33 +1639,32 @@ namespace Gek
                 auto uncompiledPath(cachePath.withExtension(std::format(".{}.slang", hash)));
                 auto compiledPath(cachePath.withExtension(std::format(".{}.bin", hash)));
 
-                Render::Program::Information information =
-                {
-                    type,
-                    computeDeterministicProgramId(type, entryFunction, uncompiledData),
+                Render::Program::Information information(
                     std::format("{}:{}", name, entryFunction),
-                    uncompiledPath,
-                    entryFunction.data(),
-                    uncompiledData.data(),
-                };
+                    type,
+                    entryFunction,
+                    uncompiledData,
+                    filePath
+                );
 
                 // --- Disk cache read with version/hash invalidation ---
                 if (compiledPath.isFile())
                 {
-                    std::ifstream inFile(compiledPath.getString(), std::ios::binary);
-                    if (inFile)
+                    std::ifstream cacheFile(compiledPath.getString(), std::ios::binary);
+                    if (cacheFile)
                     {
                         uint32_t fileVersion = 0;
                         uint64_t fileHash = 0;
-                        inFile.read(reinterpret_cast<char*>(&fileVersion), sizeof(fileVersion));
-                        inFile.read(reinterpret_cast<char*>(&fileHash), sizeof(fileHash));
+                        cacheFile.read(reinterpret_cast<char*>(&fileVersion), sizeof(fileVersion));
+                        cacheFile.read(reinterpret_cast<char*>(&fileHash), sizeof(fileHash));
                         if (fileVersion == SHADER_CACHE_VERSION && fileHash == hash)
                         {
-                            std::vector<uint8_t> blob((std::istreambuf_iterator<char>(inFile)), std::istreambuf_iterator<char>());
-                            if (!blob.empty())
+                            std::vector<uint8_t> cachedShader((std::istreambuf_iterator<char>(cacheFile)), std::istreambuf_iterator<char>());
+                            if (!cachedShader.empty())
                             {
-                                information.compiledData = std::move(blob);
-                                getContext()->log(Context::Info, "Loaded shader from cache: {} (version {} hash {})", compiledPath.getString(), fileVersion, fileHash);
+                                information.compiledData = std::move(cachedShader);
+                                information.compiledData.shrink_to_fit();
+                                getContext()->log(Context::Info, "Loaded shader from cache: {} (version {} hash {}) [size={}]", compiledPath.getString(), fileVersion, fileHash, information.compiledData.size());
                             }
                         }
                         else
@@ -1752,7 +1725,7 @@ namespace Gek
 
                 if (information.compiledData.empty() && videoDevice->compileProgram(information, onInclude))
                 {
-                    FileSystem::Save(uncompiledPath, information.uncompiledData);
+                    FileSystem::Save(uncompiledPath, information.shaderData);
                     if (!information.compiledData.empty())
                     {
                         std::ofstream outFile(compiledPath.getString(), std::ios::binary | std::ios::trunc);
@@ -1761,7 +1734,9 @@ namespace Gek
                             outFile.write(reinterpret_cast<const char*>(&SHADER_CACHE_VERSION), sizeof(SHADER_CACHE_VERSION));
                             outFile.write(reinterpret_cast<const char*>(&hash), sizeof(hash));
                             outFile.write(reinterpret_cast<const char*>(information.compiledData.data()), information.compiledData.size());
-                            getContext()->log(Context::Info, "Shader cached to: {} (version {} hash {})", compiledPath.getString(), SHADER_CACHE_VERSION, hash);
+                            outFile.close();
+
+                            getContext()->log(Context::Info, "Shader cached to: {} (version {} hash {}) [size={}]", compiledPath.getString(), SHADER_CACHE_VERSION, hash, information.compiledData.size());
                         }
                     }
                 }

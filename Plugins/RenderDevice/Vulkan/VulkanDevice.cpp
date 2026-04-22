@@ -2920,22 +2920,22 @@ namespace Gek
                 return (programName == "core::uiPixelProgram:main") || (programName == "core:uiPixelProgram:main");
             }
 
-            void trackUiProgramId(std::string_view programName, uint64_t programId)
+            void trackUiProgram(Render::Program::Information const &programInfo)
             {
-                if (programId == 0)
+                if (programInfo.programId == 0)
                 {
                     return;
                 }
 
                 std::lock_guard<std::mutex> lock(uiProgramIdMutex);
-                if (isUiVertexProgramName(programName))
+                if (isUiVertexProgramName(programInfo.name))
                 {
-                    uiVertexProgramId = programId;
+                    uiVertexProgramId = programInfo.programId;
                 }
 
-                if (isUiPixelProgramName(programName))
+                if (isUiPixelProgramName(programInfo.name))
                 {
-                    uiPixelProgramId = programId;
+                    uiPixelProgramId = programInfo.programId;
                 }
             }
 
@@ -5633,17 +5633,8 @@ namespace Gek
                         if (!hasExtension)
                         {
                             addUnique(candidates, includeName + ".slang");
-                            addUnique(candidates, includeName + ".hlsl");
                             addUnique(candidates, forwardSlashes + ".slang");
-                            addUnique(candidates, forwardSlashes + ".hlsl");
                             addUnique(candidates, backSlashes + ".slang");
-                            addUnique(candidates, backSlashes + ".hlsl");
-                        }
-                        else if ((includeName.substr(extensionPosition) == ".slang") || (includeName.substr(extensionPosition) == ".SLANG"))
-                        {
-                            std::string hlslName = includeName;
-                            hlslName.replace(extensionPosition, std::string::npos, ".hlsl");
-                            addUnique(candidates, hlslName);
                         }
 
                         for (auto const &candidate : candidates)
@@ -5734,7 +5725,7 @@ namespace Gek
                     return resolved;
                 };
 
-                std::string resolvedProgram = resolveIncludes(information.uncompiledData, 0);
+                std::string resolvedProgram = resolveIncludes(information.shaderData, 0);
                 auto normalizeBufferResources = [](std::string &source)
                 {
                     const std::string token = "Buffer<";
@@ -5958,7 +5949,7 @@ namespace Gek
                     return false;
                 }
 
-                const std::string debugFileName(information.debugPath.getFileName());
+                const std::string debugFileName(information.shaderPath.getFileName());
 
                 slang::IBlob* outDiagnosticsRaw = nullptr;
                 slang::IModule* slangModule = session->loadModuleFromSourceString(information.name.c_str(), debugFileName.c_str(), resolvedProgram.c_str(), &outDiagnosticsRaw);
@@ -5994,7 +5985,7 @@ namespace Gek
                 {
                     const char *diagMsg = compositeDiagnostics ? reinterpret_cast<const char *>(compositeDiagnostics->getBufferPointer()) : "Unknown error";
                     getContext()->log(Gek::Context::Error, "Failed to create composite component type for Slang program: {}", diagMsg);
-                    return {};
+                    return false;
                 }
 
                 Slang::ComPtr<slang::IBlob> spirvCode;
@@ -6009,7 +6000,7 @@ namespace Gek
                 {
                     const char *diagMsg = spirvDiagnostics ? reinterpret_cast<const char *>(spirvDiagnostics->getBufferPointer()) : "Unknown error";
                     getContext()->log(Gek::Context::Error, "Failed to generate SPIRV code for Slang program: {}", diagMsg);
-                    return {};
+                    return false;
                 }
 
                 information.compiledData = spirvCode ? std::vector<uint8_t>((uint8_t*)spirvCode->getBufferPointer(), (uint8_t*)spirvCode->getBufferPointer() + spirvCode->getBufferSize()) : std::vector<uint8_t>();
@@ -6019,12 +6010,12 @@ namespace Gek
             template <class TYPE>
             Render::ProgramPtr createProgram(Render::Program::Information const &information)
             {
-                trackUiProgramId(information.name, information.programId);
                 return std::make_unique<TYPE>(device, information);
             }
 
             Render::ProgramPtr createProgram(Render::Program::Information const &information)
             {
+                trackUiProgram(information);
                 switch (information.type)
                 {
                 case Render::Program::Type::Compute:
