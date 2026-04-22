@@ -285,6 +285,7 @@ namespace Gek
             float mouseSensitivity = 0.5f;
             bool enableInterfaceControl = true;
 
+            std::string renderDeviceName;
             Render::DevicePtr renderDevice;
             Plugin::VisualizerPtr visualizer;
             Engine::ResourcesPtr resources;
@@ -388,6 +389,20 @@ namespace Gek
             Core(Context *context)
                 : ContextRegistration(context)
             {
+#ifdef _WIN32
+                HRESULT resultValue = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
+                if (FAILED(resultValue))
+                {
+                    getContext()->log(Context::Error, "Call to CoInitialize failed: {}", static_cast<uint32_t>(resultValue));
+                    return;
+                }
+#endif
+                configuration = JSON::Load(getContext()->findDataPath("config.json"s));
+
+                auto devicePlugin = Plugin::Core::getOption("render", "device", "renderd3d11"s);
+                Gek::String::Replace(devicePlugin, "render", "");
+                renderDeviceName = devicePlugin;
+
                 if (auto environmentLogFile = std::getenv("gek_log_file"); environmentLogFile && environmentLogFile[0])
                 {
                     std::snprintf(runtimeLogFilePath.data(), runtimeLogFilePath.size(), "%s", environmentLogFile);
@@ -417,16 +432,6 @@ namespace Gek
                 {
                     getContext()->setLogFilePath(FileSystem::Path(runtimeLogFilePath.data()), runtimeLogFileAppend);
                 }
-
-#ifdef _WIN32
-                HRESULT resultValue = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
-                if (FAILED(resultValue))
-                {
-                    getContext()->log(Context::Error, "Call to CoInitialize failed: {}", static_cast<uint32_t>(resultValue));
-                    return;
-                }
-#endif
-                configuration = JSON::Load(getContext()->findDataPath("config.json"s));
 
                 // Use the selected window handler module (class name can be mapped as needed)
                 window = getContext()->createClass<Window::Device>("Default::System::Window");
@@ -506,7 +511,7 @@ namespace Gek
                 if (current.fullScreen != requestFullScreen)
                 {
                     current.fullScreen = requestFullScreen;
-                    setOption("display"s, "fullScreen"s, requestFullScreen);
+                    setOption("render"s, "fullScreen"s, requestFullScreen);
                     if (requestFullScreen)
                     {
                         window->move(Math::Int2::Zero);
@@ -534,7 +539,10 @@ namespace Gek
                     {
                         next.mode = requestDisplayMode;
                         current.mode = requestDisplayMode;
-                        setOption("display"s, "mode"s, requestDisplayMode);
+
+                        auto deviceOptions = getOption("render", renderDeviceName);
+                        deviceOptions["mode"] = requestDisplayMode;
+                        setOption("render", renderDeviceName, deviceOptions);
                         renderDevice->setDisplayMode(displayModeData);
                         window->move();
                         onChangedDisplay();
@@ -648,7 +656,9 @@ namespace Gek
                         displayModeStringList.push_back(displayModeString);
                     }
 
-                    setDisplayMode(Plugin::Core::getOption("display", "mode", preferredDisplayMode));
+                    auto deviceOptions = getOption("render", renderDeviceName);
+                    auto displayMode = JSON::Value(deviceOptions, "mode", preferredDisplayMode);
+                    setDisplayMode(displayMode);
                 }
 
                 population = getContext()->createClass<Engine::Population>("Engine::Population", (Engine::Core *)this);
@@ -686,7 +696,7 @@ namespace Gek
                 windowActive = true;
 
                 window->setVisibility(true);
-                setFullScreen(Plugin::Core::getOption("display", "fullScreen", false));
+                setFullScreen(Plugin::Core::getOption("render", "fullScreen", false));
                 getContext()->log(Gek::Context::Info, "Finished Core Initialization");
             }
 

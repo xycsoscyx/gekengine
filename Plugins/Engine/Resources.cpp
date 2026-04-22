@@ -593,6 +593,7 @@ namespace Gek
             Engine::Core * core = nullptr;
             Render::Device* videoDevice = nullptr;
             Plugin::Visualizer* renderer = nullptr;
+            std::string renderDeviceName;
 
             ThreadPool loadPool;
             std::recursive_mutex& shaderMutex;
@@ -667,6 +668,10 @@ namespace Gek
                 assert(core);
                 assert(videoDevice);
 
+                auto renderDevice = core->getOption("render", "device", "renderd3d11"s);
+                String::Replace(renderDevice, "render", "");
+                renderDeviceName = renderDevice;
+                
                 core->onChangedDisplay.connect(this, &Resources::onReload);
                 core->onChangedSettings.connect(this, &Resources::onReload);
                 core->onInitialized.connect(this, &Resources::onInitialized);
@@ -1629,8 +1634,8 @@ namespace Gek
                 std::string uncompiledData = filePath.isFile() ? FileSystem::Read(filePath) : engineData.data();
 
                 constexpr uint32_t SHADER_CACHE_VERSION = 1;
-                auto hash = GetHash(name, uncompiledData, engineData);
-                auto cachePath = getContext()->getCachePath(FileSystem::CreatePath("shader_cache", name));
+                auto hash = GetHash(renderDeviceName, name, uncompiledData, engineData);
+                auto cachePath = getContext()->getCachePath(FileSystem::CreatePath("shaders", renderDeviceName, name));
                 auto uncompiledPath(cachePath.withExtension(std::format(".{}.slang", hash)));
                 auto compiledPath(cachePath.withExtension(std::format(".{}.bin", hash)));
 
@@ -1655,13 +1660,13 @@ namespace Gek
                             if (!blob.empty())
                             {
                                 information.compiledData = std::move(blob);
-                                getContext()->log(Gek::Context::Info, "Loaded shader from cache: {} (version {} hash {})", compiledPath.getString(), fileVersion, fileHash);
+                                getContext()->log(Context::Info, "Loaded shader from cache: {} (version {} hash {})", compiledPath.getString(), fileVersion, fileHash);
                                 return information;
                             }
                         }
                         else
                         {
-                            getContext()->log(Gek::Context::Info, "Shader cache invalidated: {} (found version {} hash {}, expected version {} hash {})", compiledPath.getString(), fileVersion, fileHash, SHADER_CACHE_VERSION, hash);
+                            getContext()->log(Context::Info, "Shader cache invalidated: {} (found version {} hash {}, expected version {} hash {})", compiledPath.getString(), fileVersion, fileHash, SHADER_CACHE_VERSION, hash);
                         }
                     }
                 }
@@ -1755,7 +1760,7 @@ namespace Gek
                             outFile.write(reinterpret_cast<const char*>(&SHADER_CACHE_VERSION), sizeof(SHADER_CACHE_VERSION));
                             outFile.write(reinterpret_cast<const char*>(&hash), sizeof(hash));
                             outFile.write(reinterpret_cast<const char*>(information.compiledData.data()), information.compiledData.size());
-                            getContext()->log(Gek::Context::Info, "Shader cached to: {} (version {} hash {})", compiledPath.getString(), SHADER_CACHE_VERSION, hash);
+                            getContext()->log(Context::Info, "Shader cached to: {} (version {} hash {})", compiledPath.getString(), SHADER_CACHE_VERSION, hash);
                         }
                     }
                 }
