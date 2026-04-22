@@ -36,32 +36,6 @@ namespace Gek
 {
     namespace Render::Implementation
     {
-        static uint64_t computeDeterministicProgramId(Render::Program::Type type, std::string_view entryFunction, std::string_view normalizedSource)
-        {
-            constexpr uint64_t fnvOffsetBasis = 1469598103934665603ull;
-            constexpr uint64_t fnvPrime = 1099511628211ull;
-
-            auto hashBytes = [](uint64_t seed, const void *data, size_t size) -> uint64_t
-            {
-                const uint8_t *bytes = static_cast<const uint8_t *>(data);
-                uint64_t value = seed;
-                for (size_t index = 0; index < size; ++index)
-                {
-                    value ^= static_cast<uint64_t>(bytes[index]);
-                    value *= fnvPrime;
-                }
-
-                return value;
-            };
-
-            uint64_t programId = fnvOffsetBasis;
-            const uint8_t typeValue = static_cast<uint8_t>(type);
-            programId = hashBytes(programId, &typeValue, sizeof(typeValue));
-            programId = hashBytes(programId, entryFunction.data(), entryFunction.size());
-            programId = hashBytes(programId, normalizedSource.data(), normalizedSource.size());
-            return programId;
-        }
-
         // All these lists must match, since the same GEK Format can be used for either textures or buffers
         // The size list must also match
         static constexpr DXGI_FORMAT TextureFormatList[] =
@@ -2917,16 +2891,13 @@ namespace Gek
                 }
             };
 
-            Render::Program::Information compileProgram(Render::Program::Type type, std::string_view name, FileSystem::Path const &debugPath, std::string_view uncompiledProgram, std::string_view entryFunction, std::function<bool(Render::IncludeType, std::string_view, void const **data, uint32_t *size)> &&onInclude)
+			bool compileProgram(Render::Program::Information &information, std::function<bool(IncludeType, std::string_view, void const **data, uint32_t *size)> &&onInclude = nullptr)
             {
                 assert(d3dDevice);
 
-                Render::Program::Information information;
-                if (name.empty() ||
-                    uncompiledProgram.empty() ||
-                    entryFunction.empty())
+                if (!information.isValid())
                 {
-                    return information;
+                    return false;
                 }
 
                 // Map program type to Slang SM5.0 shader model profiles for DXBC output.
@@ -3102,17 +3073,8 @@ namespace Gek
                     return resolved;
                 };
 
-                std::string resolvedProgram = resolveIncludes(uncompiledProgram, 0);
-
-                information.type = type;
-                information.programId = computeDeterministicProgramId(type, entryFunction, resolvedProgram);
-                information.name = std::format("{}:{}", name, entryFunction);
-                information.debugPath = debugPath;
-                information.entryFunction = entryFunction;
-                information.uncompiledData = resolvedProgram;
-                information.compiledData = EmptyBuffer;
-
-                auto typeSearch = D3DTypeMap.find(type);
+                std::string resolvedProgram = resolveIncludes(information.uncompiledData, 0);
+                auto typeSearch = D3DTypeMap.find(information.type);
                 if (typeSearch != std::end(D3DTypeMap))
                 {
                     Slang::ComPtr<slang::IGlobalSession> slangGlobalSession;
@@ -3128,13 +3090,13 @@ namespace Gek
                         profile = slangGlobalSession->findProfile(mappedProfile.c_str());
                         if (!profile || profile == SLANG_PROFILE_UNKNOWN)
                         {
-                            getContext()->log(Gek::Context::Warning, "Requested Slang profile '{}' not available while compiling '{}'; continuing without explicit Slang profile.", mappedProfile, name);
+                            getContext()->log(Gek::Context::Warning, "Requested Slang profile '{}' not available while compiling '{}'; continuing without explicit Slang profile.", mappedProfile, information.name);
                             profile = SLANG_PROFILE_UNKNOWN;
                         }
 
                         targetDesc.profile = profile;
 
-                        getContext()->log(Gek::Context::Debug, "Using Slang DXBC profile ('{}') while compiling '{}'.", mappedProfile, name);
+                        getContext()->log(Gek::Context::Debug, "Using Slang DXBC profile ('{}') while compiling '{}'.", mappedProfile, information.name);
 
                         slang::SessionDesc sessionDesc = {};
                         sessionDesc.targets = &targetDesc;
@@ -3143,10 +3105,10 @@ namespace Gek
                         Slang::ComPtr<slang::ISession> session;
                         if (SLANG_SUCCEEDED(slangGlobalSession->createSession(sessionDesc, session.writeRef())) && session)
                         {
-                            getContext()->log(Gek::Context::Debug, "Loading Slang module for '{}' with entry point '{}'.", name, entryFunction);
+                            getContext()->log(Gek::Context::Debug, "Loading Slang module for '{}' with entry point '{}'.", information.name, information.entryFunction);
 
                             slang::IBlob* outDiagnosticsRaw = nullptr;
-                            slang::IModule* slangModule = session->loadModuleFromSourceString(name.data(), debugPath.getFileName().data(), resolvedProgram.c_str(), &outDiagnosticsRaw);
+                            slang::IModule* slangModule = session->loadModuleFromSourceString(information.name.data(), information.debugPath.getFileName().data(), resolvedProgram.c_str(), &outDiagnosticsRaw);
                             Slang::ComPtr<slang::IBlob> outDiagnostics(outDiagnosticsRaw);
 
                             if (outDiagnostics)
@@ -3157,10 +3119,10 @@ namespace Gek
 
                             if (slangModule)
                             {
-                                getContext()->log(Gek::Context::Debug, "Module loaded successfully, searching for entry point '{}'.", entryFunction);
+                                getContext()->log(Gek::Context::Debug, "Module loaded successfully, searching for entry point '{}'.", information.entryFunction);
 
                                 Slang::ComPtr<slang::IEntryPoint> entryPoint;
-                                slangModule->findEntryPointByName(entryFunction.data(), entryPoint.writeRef());
+                                slangModule->findEntryPointByName(information.entryFunction.data(), entryPoint.writeRef());
                                 if (entryPoint)
                                 {
                                     getContext()->log(Gek::Context::Debug, "Entry point found; composing program.");
@@ -3184,37 +3146,37 @@ namespace Gek
                                             if (data && dataSize > 0)
                                             {
                                                 information.compiledData.assign(data, data + dataSize);
-                                                getContext()->log(Gek::Context::Info, "Slang->DXBC succeeded for '{}' entry '{}' ({} bytes)", name, entryFunction, information.compiledData.size());
-                                                return information;
+                                                getContext()->log(Gek::Context::Info, "Slang->DXBC succeeded for '{}' entry '{}' ({} bytes)", information.name, information.entryFunction, information.compiledData.size());
+                                                return true;
                                             }
                                         }
                                         else
                                         {
-                                            getContext()->log(Gek::Context::Error, "Slang DXBC generation failed for '{}': getEntryPointCode returned error code {}", name, static_cast<int32_t>(codeResult));
+                                            getContext()->log(Gek::Context::Error, "Slang DXBC generation failed for '{}': getEntryPointCode returned error code {}", information.name, static_cast<int32_t>(codeResult));
                                         }
                                     }
                                     else
                                     {
                                         const char *diagnosticMessage = compositeDiagnostics ? reinterpret_cast<const char *>(compositeDiagnostics->getBufferPointer()) : "Unknown Slang composite error";
-                                        getContext()->log(Gek::Context::Error, "Slang composite program failed for '{}': {}", name, diagnosticMessage);
+                                        getContext()->log(Gek::Context::Error, "Slang composite program failed for '{}': {}", information.name, diagnosticMessage);
                                     }
                                 }
                                 else
                                 {
                                     const char *diagnosticMessage = outDiagnostics ? reinterpret_cast<const char *>(outDiagnostics->getBufferPointer()) : "Unknown Slang entry point error";
-                                    getContext()->log(Gek::Context::Error, "Slang entry point '{}' not found in module '{}': {}", entryFunction, name, diagnosticMessage);
+                                    getContext()->log(Gek::Context::Error, "Slang entry point '{}' not found in module '{}': {}", information.entryFunction, information.name, diagnosticMessage);
                                 }
                             }
                             else
                             {
                                 const char *diagnosticMessage = outDiagnostics ? reinterpret_cast<const char *>(outDiagnostics->getBufferPointer()) : "Unknown Slang loadModule error";
-                                getContext()->log(Gek::Context::Error, "Failed to load Slang module for '{}': {}", name, diagnosticMessage);
+                                getContext()->log(Gek::Context::Error, "Failed to load Slang module for '{}': {}", information.name, diagnosticMessage);
                             }
                         }
                     }
                 }
 
-                return information;
+                return false;
             }
 
             template <class D3DTYPE, class TYPE, typename RETURN, typename CLASS, typename... PARAMETERS>

@@ -10,7 +10,8 @@ namespace Gek
 {
     namespace Engine
     {
-        inline void* LoadPlugin(const std::string& path) {
+        inline void* LoadPlugin(const std::string& path)
+        {
         #ifdef _WIN32
             #ifdef _DEBUG
                 return reinterpret_cast<void*>(LoadLibraryA((path + "_debug.dll").c_str()));

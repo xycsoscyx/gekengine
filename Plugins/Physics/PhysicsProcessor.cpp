@@ -112,13 +112,15 @@ namespace Gek
                 void OnContactCallback(const ndContact* const contact, ndFloat32 timestep) const override {
                     const auto& points = contact->GetContactPoints();
                     using NodeType = ndList<ndContactMaterial, ndContainersFreeListAlloc<ndContactMaterial>>::ndNode;
-                    for (NodeType* node = points.GetFirst(); node; node = node->GetNext()) {
+                    for (NodeType* node = points.GetFirst(); node; node = node->GetNext())
+                    {
                         const ndContactMaterial& cp = node->GetInfo();
                         Plugin::Entity* entity0 = nullptr;
                         Plugin::Entity* entity1 = nullptr;
                         ndBodyKinematic* body0 = (ndBodyKinematic*)contact->GetBody0();
                         ndBodyKinematic* body1 = (ndBodyKinematic*)contact->GetBody1();
-                        for (auto& pair : processor->entityBodyMap) {
+                        for (auto& pair : processor->entityBodyMap)
+                        {
                             if (pair.second && pair.second->getAsNewtonBody() == body0) entity0 = pair.first;
                             if (pair.second && pair.second->getAsNewtonBody() == body1) entity1 = pair.first;
                         }
@@ -130,9 +132,11 @@ namespace Gek
                 }
             };
 
-            class NewtonWorld : public ndWorld {
+            class NewtonWorld : public ndWorld
+            {
             public:
-                NewtonWorld(Processor* processor) {
+                NewtonWorld(Processor* processor)
+                {
                     SetContactNotify(new ContactNotify(this->GetScene(), processor));
                 }
             };
@@ -201,67 +205,90 @@ namespace Gek
             {
                 co_await loadPool.schedule();
 
-
                 ndShape* shape = nullptr;
-                if (modelComponent.name == "#cube") {
+                if (modelComponent.name == "#cube")
+                {
                     shape = new ndShapeBox(1.0f, 1.0f, 1.0f);
-                } else if (modelComponent.name == "#sphere") {
+                }
+                else if (modelComponent.name == "#sphere")
+                {
                     shape = new ndShapeSphere(1.0f);
-                } else {
+                }
+                else
+                {
                     auto filePath = getContext()->findDataPath(FileSystem::CreatePath("physics", modelComponent.name).withExtension(".gek"));
                     std::vector<uint8_t> buffer(FileSystem::Load(filePath));
-                    if (buffer.size() < sizeof(Header)) {
+                    if (buffer.size() < sizeof(Header))
+                    {
                         getContext()->log(Context::Error, "File too small to be physics model: {}", modelComponent.name);
                         co_return;
                     }
+
                     BufferReader reader(buffer.data());
                     Header* header = reader.read<Header>(0);
-                    if (header->identifier != *(uint32_t*)"GEKX") {
+                    if (header->identifier != *(uint32_t*)"GEKX")
+                    {
                         getContext()->log(Context::Error, "Unknown model file identifier encountered: {}", modelComponent.name);
                         co_return;
                     }
-                    if (header->version != 3) {
+
+                    if (header->version != 3)
+                    {
                         getContext()->log(Context::Error, "Unsupported model version encountered (requires: 2, has: {}): {}", header->version, modelComponent.name);
                         co_return;
                     }
-                    if (header->type == 1) {
+
+                    if (header->type == 1)
+                    {
                         getContext()->log(Context::Info, "Loading convex hull for static scene: {}", modelComponent.name);
                         HullHeader* hullHeader = reader.read<HullHeader>();
                         Math::Float3* points = reader.read<Math::Float3>(hullHeader->pointCount);
                         shape = new ndShapeConvexHull(hullHeader->pointCount, sizeof(Math::Float3), 0.0f, points->data);
-                    } else if (header->type == 2) {
+                    }
+                    else if (header->type == 2)
+                    {
                         getContext()->log(Context::Info, "Loading tree mesh for static scene: {}", modelComponent.name);
                         TreeHeader* treeHeader = reader.read<TreeHeader>();
+
                         // Read materials
                         std::vector<std::string> materialNames;
-                        for (uint32_t i = 0; i < treeHeader->materialCount; ++i) {
+                        for (uint32_t i = 0; i < treeHeader->materialCount; ++i)
+                        {
                             TreeHeader::Material* mat = reader.read<TreeHeader::Material>();
                             materialNames.push_back(std::string(mat->name));
                         }
+
                         // Read meshes
                         std::vector<TreeHeader::Mesh> meshes;
-                        for (uint32_t i = 0; i < treeHeader->meshCount; ++i) {
+                        for (uint32_t i = 0; i < treeHeader->meshCount; ++i)
+                        {
                             TreeHeader::Mesh* mesh = reader.read<TreeHeader::Mesh>();
                             meshes.push_back(*mesh);
                         }
                         // Read faces and points for all meshes
                         ndPolygonSoupBuilder builder;
                         builder.Begin();
-                        for (auto& mesh : meshes) {
+                        for (auto& mesh : meshes)
+                        {
                             TreeHeader::Face* faces = reader.read<TreeHeader::Face>(mesh.faceCount);
                             Math::Float3* meshPoints = reader.read<Math::Float3>(mesh.pointCount);
-                            for (uint32_t f = 0; f < mesh.faceCount; ++f) {
-                                ndVector verts[3] = {
+                            for (uint32_t f = 0; f < mesh.faceCount; ++f)
+                            {
+                                ndVector verts[3] =
+                                {
                                     ndVector(meshPoints[faces[f].indices[0]].x, meshPoints[faces[f].indices[0]].y, meshPoints[faces[f].indices[0]].z, 0.0f),
                                     ndVector(meshPoints[faces[f].indices[1]].x, meshPoints[faces[f].indices[1]].y, meshPoints[faces[f].indices[1]].z, 0.0f),
                                     ndVector(meshPoints[faces[f].indices[2]].x, meshPoints[faces[f].indices[2]].y, meshPoints[faces[f].indices[2]].z, 0.0f)
                                 };
+
                                 builder.AddFace(&verts[0].m_x, sizeof(ndVector), 3, 0); // 0 = material id
                             }
                         }
                         builder.End(true);
                         shape = new ndShapeStatic_bvh(builder);
-                    } else {
+                    }
+                    else
+                    {
                         getContext()->log(Context::Error, "Unsupported model type encountered: {}", modelComponent.name);
                         co_return;
                     }

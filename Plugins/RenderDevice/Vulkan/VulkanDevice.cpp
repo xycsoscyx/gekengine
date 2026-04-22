@@ -40,32 +40,6 @@ namespace Gek
     {
         static std::atomic_bool gVulkanDeviceShuttingDown{ false };
 
-        static uint64_t computeDeterministicProgramId(Render::Program::Type type, std::string_view entryFunction, std::string_view normalizedSource)
-        {
-            constexpr uint64_t fnvOffsetBasis = 1469598103934665603ull;
-            constexpr uint64_t fnvPrime = 1099511628211ull;
-
-            auto hashBytes = [](uint64_t seed, const void *data, size_t size) -> uint64_t
-            {
-                const uint8_t *bytes = static_cast<const uint8_t *>(data);
-                uint64_t value = seed;
-                for (size_t index = 0; index < size; ++index)
-                {
-                    value ^= static_cast<uint64_t>(bytes[index]);
-                    value *= fnvPrime;
-                }
-
-                return value;
-            };
-
-            uint64_t programId = fnvOffsetBasis;
-            const uint8_t typeValue = static_cast<uint8_t>(type);
-            programId = hashBytes(programId, &typeValue, sizeof(typeValue));
-            programId = hashBytes(programId, entryFunction.data(), entryFunction.size());
-            programId = hashBytes(programId, normalizedSource.data(), normalizedSource.size());
-            return programId;
-        }
-
         Render::Format GetFormat(VkFormat format)
         {
             switch (format)
@@ -936,8 +910,7 @@ namespace Gek
         };
 
         template <int UNIQUE>
-        class Program
-            : public Render::Program
+        class Program : public Render::Program
         {
         public:
             Render::Program::Information information;
@@ -949,6 +922,7 @@ namespace Gek
                 : information(information)
                 , device(device)
             {
+
                 if (!information.compiledData.empty())
                 {
                     if ((information.compiledData.size() < sizeof(uint32_t)) || ((information.compiledData.size() % sizeof(uint32_t)) != 0))
@@ -966,7 +940,7 @@ namespace Gek
                         shaderModule = VK_NULL_HANDLE;
                     }
                 }
-            }
+           }
 
             virtual ~Program(void)
             {
@@ -2938,12 +2912,12 @@ namespace Gek
 
             static bool isUiVertexProgramName(std::string_view programName)
             {
-                return (programName == "core::uiVertexProgram") || (programName == "core:uiVertexProgram");
+                return (programName == "core::uiVertexProgram:main") || (programName == "core:uiVertexProgram:main");
             }
 
             static bool isUiPixelProgramName(std::string_view programName)
             {
-                return (programName == "core::uiPixelProgram") || (programName == "core:uiPixelProgram");
+                return (programName == "core::uiPixelProgram:main") || (programName == "core:uiPixelProgram:main");
             }
 
             void trackUiProgramId(std::string_view programName, uint64_t programId)
@@ -5591,8 +5565,13 @@ namespace Gek
                 return std::make_unique<InputLayout>(elementList);
             }
 
-            Render::Program::Information compileProgram(Render::Program::Type type, std::string_view name, FileSystem::Path const &debugPath, std::string_view uncompiledProgram, std::string_view entryFunction, std::function<bool(Render::IncludeType, std::string_view, void const **data, uint32_t *size)> &&onInclude)
+			bool compileProgram(Render::Program::Information &information, std::function<bool(IncludeType, std::string_view, void const **data, uint32_t *size)> &&onInclude = nullptr)
             {
+                if (!information.isValid())
+                {
+                    return false;
+                }
+
                 std::function<std::string(std::string_view, uint32_t)> resolveIncludes;
                 resolveIncludes = [&](std::string_view source, uint32_t depth) -> std::string
                 {
@@ -5755,11 +5734,7 @@ namespace Gek
                     return resolved;
                 };
 
-                std::string resolvedProgram = resolveIncludes(uncompiledProgram, 0);
-                const std::string programIdSource = resolvedProgram;
-                const uint64_t currentProgramId = computeDeterministicProgramId(type, entryFunction, programIdSource);
-                trackUiProgramId(name, currentProgramId);
-
+                std::string resolvedProgram = resolveIncludes(information.uncompiledData, 0);
                 auto normalizeBufferResources = [](std::string &source)
                 {
                     const std::string token = "Buffer<";
@@ -5789,7 +5764,6 @@ namespace Gek
                 };
 
                 normalizeBufferResources(resolvedProgram);
-
                 auto extractRegisterIndex = [](std::string_view line, char registerClass, uint32_t &registerIndex) -> bool
                 {
                     std::string token = std::string("register(") + registerClass;
@@ -5853,7 +5827,7 @@ namespace Gek
                             if (extractRegisterIndex(line, 'b', registerIndex))
                             {
                                 const uint32_t uniformBindingBase =
-                                    (type == Render::Program::Type::Pixel)
+                                    (information.type == Render::Program::Type::Pixel)
                                     ? DescriptorPixelUniformBufferBase
                                     : DescriptorVertexUniformBufferBase;
                                 prefix = std::format("[[vk::binding({}, 0)]] ", uniformBindingBase + registerIndex);
@@ -5924,8 +5898,8 @@ namespace Gek
                     source = std::move(annotated);
                 };
 
-                const bool isUiVertexProgram = (type == Render::Program::Type::Vertex) && isUiProgramId(currentProgramId);
-                const bool isUiPixelProgram = (type == Render::Program::Type::Pixel) && isUiProgramId(currentProgramId);
+                const bool isUiVertexProgram = (information.type == Render::Program::Type::Vertex) && isUiProgramId(information.programId);
+                const bool isUiPixelProgram = (information.type == Render::Program::Type::Pixel) && isUiProgramId(information.programId);
 
                 if (isUiVertexProgram)
                 {
@@ -5950,7 +5924,7 @@ namespace Gek
                     }
                     else
                     {
-                        getContext()->log(Gek::Context::Warning, "Vulkan UI pixel texture binding annotation not applied for '{}'", name);
+                        getContext()->log(Gek::Context::Warning, "Vulkan UI pixel texture binding annotation not applied for '{}'", information.name);
                     }
 
                     size_t samplerPosition = resolvedProgram.find(samplerFrom);
@@ -5960,11 +5934,8 @@ namespace Gek
                     }
                     else
                     {
-                        getContext()->log(Gek::Context::Warning, "Vulkan UI pixel sampler binding annotation not applied for '{}'", name);
+                        getContext()->log(Gek::Context::Warning, "Vulkan UI pixel sampler binding annotation not applied for '{}'", information.name);
                     }
-                }
-                else
-                {
                 }
 
                 annotateVulkanBindings(resolvedProgram);
@@ -5984,29 +5955,27 @@ namespace Gek
                 if (!session)
                 {
                     getContext()->log(Gek::Context::Error, "Failed to create Slang compilation session");
-                    return {};
+                    return false;
                 }
 
-                const std::string moduleName(name);
-                const std::string debugFileName(debugPath.getFileName());
-                const std::string entryPointName(entryFunction);
+                const std::string debugFileName(information.debugPath.getFileName());
 
                 slang::IBlob* outDiagnosticsRaw = nullptr;
-                slang::IModule* slangModule = session->loadModuleFromSourceString(moduleName.c_str(), debugFileName.c_str(), resolvedProgram.c_str(), &outDiagnosticsRaw);
+                slang::IModule* slangModule = session->loadModuleFromSourceString(information.name.c_str(), debugFileName.c_str(), resolvedProgram.c_str(), &outDiagnosticsRaw);
                 Slang::ComPtr<slang::IBlob> outDiagnostics(outDiagnosticsRaw);
                 if (!slangModule)
                 {
                     const char *diagMsg = outDiagnostics ? reinterpret_cast<const char *>(outDiagnostics->getBufferPointer()) : "Unknown error";
                     getContext()->log(Gek::Context::Error, "Failed to load Slang module from source string: {}", diagMsg);
-                    return {};
+                    return false;
                 }
 
                 Slang::ComPtr<slang::IEntryPoint> entryPoint;
-                slangModule->findEntryPointByName(entryPointName.c_str(), entryPoint.writeRef());
+                slangModule->findEntryPointByName(information.entryFunction.c_str(), entryPoint.writeRef());
                 if (!entryPoint)
                 {
-                    getContext()->log(Gek::Context::Error, "Failed to find entry point '{}' in Slang module", entryFunction);
-                    return {};
+                    getContext()->log(Gek::Context::Error, "Failed to find entry point '{}' in Slang module", information.entryFunction);
+                    return false;
                 }
 
                 std::vector<slang::IComponentType *> componentTypes;
@@ -6043,20 +6012,14 @@ namespace Gek
                     return {};
                 }
 
-                Render::Program::Information information;
-                information.type = type;
-                information.programId = currentProgramId;
-                information.name = name;
-                information.debugPath = debugPath;
-                information.entryFunction = entryFunction;
-                information.uncompiledData = resolvedProgram;
                 information.compiledData = spirvCode ? std::vector<uint8_t>((uint8_t*)spirvCode->getBufferPointer(), (uint8_t*)spirvCode->getBufferPointer() + spirvCode->getBufferSize()) : std::vector<uint8_t>();
-                return information;
+                return true;
             }
 
             template <class TYPE>
             Render::ProgramPtr createProgram(Render::Program::Information const &information)
             {
+                trackUiProgramId(information.name, information.programId);
                 return std::make_unique<TYPE>(device, information);
             }
 

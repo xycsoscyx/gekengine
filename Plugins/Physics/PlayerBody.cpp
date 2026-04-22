@@ -79,16 +79,19 @@ namespace Gek
 
             bool touchingSurface = false;
 
-			class NotifyCallback : public ndBodyNotify {
+			class NotifyCallback : public ndBodyNotify
+			{
 			private:
 				PlayerBody* playerBody = nullptr;
 				World* world = nullptr;
-			public:
+
+				public:
 				NotifyCallback(PlayerBody* playerBody, World* world)
 					: ndBodyNotify(ndVector(world->getGravity().x, world->getGravity().y, world->getGravity().z, 0.0f))
 					, playerBody(playerBody)
 					, world(world) {}
 				~NotifyCallback() {}
+				
 				void OnTransform(ndFloat32 timestep, const ndMatrix& matrix) override {
 					// Update entity transform from physics
 					auto mat = reinterpret_cast<const Math::Float4x4*>(&matrix);
@@ -96,11 +99,14 @@ namespace Gek
 					transformComponent.rotation = mat->getRotation();
 					transformComponent.position = mat->translation();
 				}
-				void OnApplyExternalForce(ndInt32 threadIndex, ndFloat32 timeStep) override {
+
+				void OnApplyExternalForce(ndInt32 threadIndex, ndFloat32 timeStep) override
+				{
 					// Apply gravity/forces if needed
 					auto& physicalComponent = playerBody->entity->getComponent<Components::Physical>();
 					auto& transformComponent = playerBody->entity->getComponent<Components::Transform>();
-					if (playerBody->GetInvMass() > 0.0f) {
+					if (playerBody->GetInvMass() > 0.0f)
+					{
 						Math::Float3 gravity(world->getGravity(&transformComponent.position));
 						Math::Float3 force(gravity * physicalComponent.mass);
 						playerBody->SetForce(force.data);

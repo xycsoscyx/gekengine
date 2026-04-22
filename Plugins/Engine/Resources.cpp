@@ -1626,6 +1626,32 @@ namespace Gek
                 return dynamicCache.getResource(resourceHandle);
             }
 
+            uint64_t computeDeterministicProgramId(Render::Program::Type type, std::string_view entryFunction, std::string_view normalizedSource)
+            {
+                constexpr uint64_t fnvOffsetBasis = 1469598103934665603ull;
+                constexpr uint64_t fnvPrime = 1099511628211ull;
+
+                auto hashBytes = [](uint64_t seed, const void *data, size_t size) -> uint64_t
+                {
+                    const uint8_t *bytes = static_cast<const uint8_t *>(data);
+                    uint64_t value = seed;
+                    for (size_t index = 0; index < size; ++index)
+                    {
+                        value ^= static_cast<uint64_t>(bytes[index]);
+                        value *= fnvPrime;
+                    }
+
+                    return value;
+                };
+
+                uint64_t programId = fnvOffsetBasis;
+                const uint8_t typeValue = static_cast<uint8_t>(type);
+                programId = hashBytes(programId, &typeValue, sizeof(typeValue));
+                programId = hashBytes(programId, entryFunction.data(), entryFunction.size());
+                programId = hashBytes(programId, normalizedSource.data(), normalizedSource.size());
+                return programId;
+            }
+
             Render::Program::Information getProgramInformation(Render::Program::Type type, std::string_view name, std::string_view entryFunction, std::string_view engineData)
             {
                 auto programsPath(getContext()->findDataPath("programs"s, false));
@@ -1641,7 +1667,12 @@ namespace Gek
 
                 Render::Program::Information information =
                 {
-                    type
+                    type,
+                    computeDeterministicProgramId(type, entryFunction, uncompiledData),
+                    std::format("{}:{}", name, entryFunction),
+                    uncompiledPath,
+                    entryFunction.data(),
+                    uncompiledData.data(),
                 };
 
                 // --- Disk cache read with version/hash invalidation ---
@@ -1661,7 +1692,6 @@ namespace Gek
                             {
                                 information.compiledData = std::move(blob);
                                 getContext()->log(Context::Info, "Loaded shader from cache: {} (version {} hash {})", compiledPath.getString(), fileVersion, fileHash);
-                                return information;
                             }
                         }
                         else
@@ -1670,93 +1700,64 @@ namespace Gek
                         }
                     }
                 }
-                // Prefer pre-generated SPIR-V artifacts (name.entry.spv or name.spv) when present
-                auto spvPathEntry = programsPath / FileSystem::CreatePath(std::format("{}.{}", name, entryFunction)).replaceExtension(".spv");
-                auto spvPathSimple = programsPath / FileSystem::CreatePath(std::string(name)).replaceExtension(".spv");
-                if (spvPathEntry.isFile())
-                {
-                    information.compiledData = FileSystem::Load(spvPathEntry);
-                }
-                else if (spvPathSimple.isFile())
-                {
-                    information.compiledData = FileSystem::Load(spvPathSimple);
-                }
-                // Prefer pre-converted GLSL files next to source (name.entry.glsl or name.glsl) when present
-                auto glslPathEntry = programsPath / FileSystem::CreatePath(std::format("{}.{}", name, entryFunction)).replaceExtension(".glsl");
-                auto glslPathSimple = programsPath / FileSystem::CreatePath(std::string(name)).replaceExtension(".glsl");
-                if (information.compiledData.empty())
-                {
-                    if (glslPathEntry.isFile())
-                    {
-                        information.compiledData = FileSystem::Load(glslPathEntry);
-                    }
-                    else if (glslPathSimple.isFile())
-                    {
-                        information.compiledData = FileSystem::Load(glslPathSimple);
-                    }
-                    else if (compiledPath.isFile())
-                    {
-                        information.compiledData = FileSystem::Load(compiledPath);
-                    }
-                }
 
-                //if (information.compiledData.empty())
+                std::map<std::string_view, std::string> includedMap;
+                auto onInclude = [programsPath, programDirectory, &includedMap, engineData](Render::IncludeType includeType, std::string_view fileName, void const** data, uint32_t* size) -> bool
                 {
-                    std::map<std::string_view, std::string> includedMap;
-                    auto onInclude = [programsPath, programDirectory, &includedMap, engineData](Render::IncludeType includeType, std::string_view fileName, void const** data, uint32_t* size) -> bool
+                    std::string includeData;
+                    if (String::GetLower(fileName) == "gekengine"s)
                     {
-                        std::string includeData;
-                        if (String::GetLower(fileName) == "gekengine"s)
+                        (*data) = engineData.data();
+                        (*size) = engineData.size();
+                        return true;
+                    }
+                    else
+                    {
+                        switch (includeType)
                         {
-                            (*data) = engineData.data();
-                            (*size) = engineData.size();
-                            return true;
-                        }
-                        else
-                        {
-                            switch (includeType)
+                        case Render::IncludeType::Local:
+                            if (true)
                             {
-                            case Render::IncludeType::Local:
-                                if (true)
+                                auto localPath(programDirectory / fileName);
+                                if (localPath.isFile())
                                 {
-                                    auto localPath(programDirectory / fileName);
-                                    if (localPath.isFile())
-                                    {
-                                        includedMap[fileName] = FileSystem::Read(localPath);
-                                        (*data) = includedMap[fileName].data();
-                                        (*size) = includedMap[fileName].size();
-                                        return true;
-                                    }
+                                    includedMap[fileName] = FileSystem::Read(localPath);
+                                    (*data) = includedMap[fileName].data();
+                                    (*size) = includedMap[fileName].size();
+                                    return true;
                                 }
+                            }
 
-                                break;
+                            break;
 
-                            case Render::IncludeType::Global:
-                                if (true)
+                        case Render::IncludeType::Global:
+                            if (true)
+                            {
+                                auto rootPath(programsPath / fileName);
+                                if (rootPath.isFile())
                                 {
-                                    auto rootPath(programsPath / fileName);
-                                    if (rootPath.isFile())
-                                    {
-                                        includedMap[fileName] = FileSystem::Read(rootPath);
-                                        (*data) = includedMap[fileName].data();
-                                        (*size) = includedMap[fileName].size();
-                                        return true;
-                                    }
+                                    includedMap[fileName] = FileSystem::Read(rootPath);
+                                    (*data) = includedMap[fileName].data();
+                                    (*size) = includedMap[fileName].size();
+                                    return true;
                                 }
+                            }
 
-                                break;
-                            };
-                        }
+                            break;
+                        };
+                    }
 
-                        return false;
-                    };
+                    return false;
+                };
 
-                    information = videoDevice->compileProgram(type, name, uncompiledPath, uncompiledData, entryFunction, onInclude);
+                if (information.compiledData.empty() && videoDevice->compileProgram(information, onInclude))
+                {
                     FileSystem::Save(uncompiledPath, information.uncompiledData);
-                    // --- Disk cache write ---
-                    if (!information.compiledData.empty()) {
+                    if (!information.compiledData.empty())
+                    {
                         std::ofstream outFile(compiledPath.getString(), std::ios::binary | std::ios::trunc);
-                        if (outFile) {
+                        if (outFile)
+                        {
                             outFile.write(reinterpret_cast<const char*>(&SHADER_CACHE_VERSION), sizeof(SHADER_CACHE_VERSION));
                             outFile.write(reinterpret_cast<const char*>(&hash), sizeof(hash));
                             outFile.write(reinterpret_cast<const char*>(information.compiledData.data()), information.compiledData.size());
@@ -1764,11 +1765,6 @@ namespace Gek
                         }
                     }
                 }
-                /*else
-                {
-                    information.debugPath = uncompiledPath;
-                    information.uncompiledData = std::move(uncompiledData);
-                }*/
 
                 return information;
             }

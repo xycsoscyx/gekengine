@@ -672,6 +672,11 @@ namespace Gek
 				std::string entryFunction;
 				std::string uncompiledData;
 				std::vector<uint8_t> compiledData;
+
+				bool isValid(void) const
+				{
+					return (!name.empty() && !uncompiledData.empty() && !entryFunction.empty());
+				}
 			};
 
 			virtual ~Program(void) = default;
@@ -805,7 +810,7 @@ namespace Gek
 
 			virtual std::string_view const getSemanticMoniker(InputElement::Semantic semantic) = 0;
 			virtual ObjectPtr createInputLayout(const std::vector<Render::InputElement> &elementList, Program::Information const &information) = 0;
-			virtual Program::Information compileProgram(Program::Type type, std::string_view name, FileSystem::Path const &debugPath, std::string_view uncompiledProgram, std::string_view entryFunction, std::function<bool(IncludeType, std::string_view, void const **data, uint32_t *size)> &&onInclude = nullptr) = 0;
+			virtual bool compileProgram(Program::Information &information, std::function<bool(IncludeType, std::string_view, void const **data, uint32_t *size)> &&onInclude = nullptr) = 0;
 			virtual ProgramPtr createProgram(Program::Information const &information) = 0;
 
 			virtual void executeCommandList(Object *commandList) = 0;
