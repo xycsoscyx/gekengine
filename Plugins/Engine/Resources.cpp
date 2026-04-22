@@ -1628,15 +1628,43 @@ namespace Gek
                 auto programDirectory(filePath.getParentPath());
                 std::string uncompiledData = filePath.isFile() ? FileSystem::Read(filePath) : engineData.data();
 
+                constexpr uint32_t SHADER_CACHE_VERSION = 1;
                 auto hash = GetHash(name, uncompiledData, engineData);
-                auto cachePath = getContext()->getCachePath(FileSystem::CreatePath("programs", name));
+                auto cachePath = getContext()->getCachePath(FileSystem::CreatePath("shader_cache", name));
                 auto uncompiledPath(cachePath.withExtension(std::format(".{}.slang", hash)));
                 auto compiledPath(cachePath.withExtension(std::format(".{}.bin", hash)));
+
                 Render::Program::Information information =
                 {
                     type
                 };
 
+                // --- Disk cache read with version/hash invalidation ---
+                if (compiledPath.isFile())
+                {
+                    std::ifstream inFile(compiledPath.getString(), std::ios::binary);
+                    if (inFile)
+                    {
+                        uint32_t fileVersion = 0;
+                        uint64_t fileHash = 0;
+                        inFile.read(reinterpret_cast<char*>(&fileVersion), sizeof(fileVersion));
+                        inFile.read(reinterpret_cast<char*>(&fileHash), sizeof(fileHash));
+                        if (fileVersion == SHADER_CACHE_VERSION && fileHash == hash)
+                        {
+                            std::vector<uint8_t> blob((std::istreambuf_iterator<char>(inFile)), std::istreambuf_iterator<char>());
+                            if (!blob.empty())
+                            {
+                                information.compiledData = std::move(blob);
+                                getContext()->log(Gek::Context::Info, "Loaded shader from cache: {} (version {} hash {})", compiledPath.getString(), fileVersion, fileHash);
+                                return information;
+                            }
+                        }
+                        else
+                        {
+                            getContext()->log(Gek::Context::Info, "Shader cache invalidated: {} (found version {} hash {}, expected version {} hash {})", compiledPath.getString(), fileVersion, fileHash, SHADER_CACHE_VERSION, hash);
+                        }
+                    }
+                }
                 // Prefer pre-generated SPIR-V artifacts (name.entry.spv or name.spv) when present
                 auto spvPathEntry = programsPath / FileSystem::CreatePath(std::format("{}.{}", name, entryFunction)).replaceExtension(".spv");
                 auto spvPathSimple = programsPath / FileSystem::CreatePath(std::string(name)).replaceExtension(".spv");
@@ -1720,6 +1748,16 @@ namespace Gek
 
                     information = videoDevice->compileProgram(type, name, uncompiledPath, uncompiledData, entryFunction, onInclude);
                     FileSystem::Save(uncompiledPath, information.uncompiledData);
+                    // --- Disk cache write ---
+                    if (!information.compiledData.empty()) {
+                        std::ofstream outFile(compiledPath.getString(), std::ios::binary | std::ios::trunc);
+                        if (outFile) {
+                            outFile.write(reinterpret_cast<const char*>(&SHADER_CACHE_VERSION), sizeof(SHADER_CACHE_VERSION));
+                            outFile.write(reinterpret_cast<const char*>(&hash), sizeof(hash));
+                            outFile.write(reinterpret_cast<const char*>(information.compiledData.data()), information.compiledData.size());
+                            getContext()->log(Gek::Context::Info, "Shader cached to: {} (version {} hash {})", compiledPath.getString(), SHADER_CACHE_VERSION, hash);
+                        }
+                    }
                 }
                 /*else
                 {

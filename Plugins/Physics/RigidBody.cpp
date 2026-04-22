@@ -94,10 +94,6 @@ namespace Gek
                 auto& transformComponent = entity->getComponent<Components::Transform>();
                 transformComponent.rotation = matrix->getRotation();
                 transformComponent.position = matrix->translation();
-                printf("[RigidBody::OnTransform] Entity %p updated: pos=(%.3f, %.3f, %.3f) rot=(%.3f, %.3f, %.3f, %.3f)\n",
-                    entity,
-                    transformComponent.position.x, transformComponent.position.y, transformComponent.position.z,
-                    transformComponent.rotation.x, transformComponent.rotation.y, transformComponent.rotation.z, transformComponent.rotation.w);
             }
 
             void OnApplyExternalForce(ndBodyNotify *bodyNotify, ndInt32 threadIndex, ndFloat32 timeStep)
@@ -105,7 +101,6 @@ namespace Gek
                 auto const& physicalComponent = entity->getComponent<Components::Physical>();
                 auto const& transformComponent = entity->getComponent<Components::Transform>();
 
-                printf("[RigidBody::OnApplyExternalForce] Entity %p\n", entity);
                 auto kinematicBody = GetAsBodyKinematic();
                 if (kinematicBody->GetInvMass() > 0.0f)
                 {

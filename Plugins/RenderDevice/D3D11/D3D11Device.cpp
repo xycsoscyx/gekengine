@@ -2929,13 +2929,7 @@ namespace Gek
                     return information;
                 }
 
-                // Map program type -> Slang/DXC profile string. Use SM6-style
-                // profile strings so Slang can resolve a matching profile
-                // (e.g. "vs_6_0", "ps_6_0"). We'll still fall back to
-                // generic DXIL/dx_* profiles if a specific shader-model
-                // profile isn't available.
                 // Map program type to Slang SM5.0 shader model profiles for DXBC output.
-                // SM5.0 is the most compatible with D3D11 and should produce DXBC bytecode.
                 static const std::unordered_map<Render::Program::Type, std::string_view> D3DTypeMap =
                 {
                     { Render::Program::Type::Compute, "cs_5_0", },
@@ -3117,6 +3111,7 @@ namespace Gek
                 information.entryFunction = entryFunction;
                 information.uncompiledData = resolvedProgram;
                 information.compiledData = EmptyBuffer;
+
                 auto typeSearch = D3DTypeMap.find(type);
                 if (typeSearch != std::end(D3DTypeMap))
                 {
@@ -3124,16 +3119,12 @@ namespace Gek
                     if (SLANG_SUCCEEDED(slang::createGlobalSession(slangGlobalSession.writeRef())))
                     {
                         slang::TargetDesc targetDesc = {};
-                        // Generate HLSL from Slang, then compile with D3DCompile.
-                        // This preserves D3D11 input-signature behavior used by the pre-Slang pipeline.
-                        targetDesc.format = SLANG_HLSL;
+                        // Directly generate DXBC from Slang for D3D11.
+                        targetDesc.format = SLANG_DXBC;
 
-                        // Prefer trying a stage-specific profile (from D3DTypeMap)
-                        // so Slang can select the correct shader model. If that
-                        // fails, fall back to generic DXIL/dx_* profiles.
+                        // Use the mapped profile for the shader stage (e.g. "vs_5_0").
                         SlangProfileID profile = SLANG_PROFILE_UNKNOWN;
                         const std::string mappedProfile = std::string(typeSearch->second);
-                        // First try the mapped stage-specific profile (e.g. "vs_6_0").
                         profile = slangGlobalSession->findProfile(mappedProfile.c_str());
                         if (!profile || profile == SLANG_PROFILE_UNKNOWN)
                         {
@@ -3143,7 +3134,7 @@ namespace Gek
 
                         targetDesc.profile = profile;
 
-                        getContext()->log(Gek::Context::Debug, "Using Slang profile ('{}') while compiling '{}'.", mappedProfile, name);
+                        getContext()->log(Gek::Context::Debug, "Using Slang DXBC profile ('{}') while compiling '{}'.", mappedProfile, name);
 
                         slang::SessionDesc sessionDesc = {};
                         sessionDesc.targets = &targetDesc;
@@ -3153,28 +3144,27 @@ namespace Gek
                         if (SLANG_SUCCEEDED(slangGlobalSession->createSession(sessionDesc, session.writeRef())) && session)
                         {
                             getContext()->log(Gek::Context::Debug, "Loading Slang module for '{}' with entry point '{}'.", name, entryFunction);
-                            
+
                             slang::IBlob* outDiagnosticsRaw = nullptr;
                             slang::IModule* slangModule = session->loadModuleFromSourceString(name.data(), debugPath.getFileName().data(), resolvedProgram.c_str(), &outDiagnosticsRaw);
                             Slang::ComPtr<slang::IBlob> outDiagnostics(outDiagnosticsRaw);
-                            
+
                             if (outDiagnostics)
                             {
                                 const char *diagnosticMessage = reinterpret_cast<const char *>(outDiagnostics->getBufferPointer());
                                 getContext()->log(Gek::Context::Debug, "Slang module load diagnostics: {}", diagnosticMessage);
                             }
-                            
+
                             if (slangModule)
                             {
                                 getContext()->log(Gek::Context::Debug, "Module loaded successfully, searching for entry point '{}'.", entryFunction);
-                                
+
                                 Slang::ComPtr<slang::IEntryPoint> entryPoint;
                                 slangModule->findEntryPointByName(entryFunction.data(), entryPoint.writeRef());
                                 if (entryPoint)
                                 {
                                     getContext()->log(Gek::Context::Debug, "Entry point found; composing program.");
-                                    
-                                    // Include both module and entry point in composite
+
                                     std::vector<slang::IComponentType*> componentTypes;
                                     componentTypes.push_back(slangModule);
                                     componentTypes.push_back(entryPoint);
@@ -3185,70 +3175,22 @@ namespace Gek
                                     Slang::ComPtr<slang::IBlob> compositeDiagnostics(compositeDiagnosticsRaw);
                                     if (composedProgram)
                                     {
-                                        Slang::ComPtr<slang::IBlob> hlslCode;
-                                        // Entry point is at index 0 in the composite (first and only entry point)
-                                        // Target index 0 refers to the first (and only) target descriptor
-                                        SlangResult codeResult = composedProgram->getEntryPointCode(0, 0, hlslCode.writeRef());
-                                        if (SLANG_SUCCEEDED(codeResult) && hlslCode)
+                                        Slang::ComPtr<slang::IBlob> dxbcCode;
+                                        SlangResult codeResult = composedProgram->getEntryPointCode(0, 0, dxbcCode.writeRef());
+                                        if (SLANG_SUCCEEDED(codeResult) && dxbcCode)
                                         {
-                                            const char *generatedHlsl = reinterpret_cast<const char *>(hlslCode->getBufferPointer());
-                                            const size_t generatedHlslSize = hlslCode->getBufferSize();
-
-                                            if (generatedHlsl && generatedHlslSize > 0)
+                                            const uint8_t *data = reinterpret_cast<const uint8_t *>(dxbcCode->getBufferPointer());
+                                            const size_t dataSize = dxbcCode->getBufferSize();
+                                            if (data && dataSize > 0)
                                             {
-                                                const UINT compileFlags =
-                                                    D3DCOMPILE_ENABLE_STRICTNESS |
-                                                    D3DCOMPILE_PACK_MATRIX_ROW_MAJOR |
-                                                    (_DEBUG ? D3DCOMPILE_DEBUG : D3DCOMPILE_OPTIMIZATION_LEVEL3);
-
-                                                CComPtr<ID3DBlob> compiledShader;
-                                                CComPtr<ID3DBlob> compileErrors;
-
-                                                HRESULT compileResult = D3DCompile(
-                                                    generatedHlsl,
-                                                    generatedHlslSize,
-                                                    information.name.c_str(),
-                                                    nullptr,
-                                                    nullptr,
-                                                    entryFunction.data(),
-                                                    typeSearch->second.data(),
-                                                    compileFlags,
-                                                    0,
-                                                    &compiledShader,
-                                                    &compileErrors);
-
-                                                if (FAILED(compileResult) && entryFunction != "main")
-                                                {
-                                                    compileErrors.Release();
-                                                    compileResult = D3DCompile(
-                                                        generatedHlsl,
-                                                        generatedHlslSize,
-                                                        information.name.c_str(),
-                                                        nullptr,
-                                                        nullptr,
-                                                        "main",
-                                                        typeSearch->second.data(),
-                                                        compileFlags,
-                                                        0,
-                                                        &compiledShader,
-                                                        &compileErrors);
-                                                }
-
-                                                if (SUCCEEDED(compileResult) && compiledShader)
-                                                {
-                                                    const uint8_t *data = reinterpret_cast<const uint8_t *>(compiledShader->GetBufferPointer());
-                                                    information.compiledData.assign(data, data + compiledShader->GetBufferSize());
-                                                    getContext()->log(Gek::Context::Info, "Slang->HLSL->D3DCompile succeeded for '{}' entry '{}' ({} bytes)", name, entryFunction, information.compiledData.size());
-                                                    return information;
-                                                }
-
-                                                const char *compileErrorText = compileErrors ? reinterpret_cast<const char *>(compileErrors->GetBufferPointer()) : "Unknown D3DCompile error";
-                                                getContext()->log(Gek::Context::Error, "D3DCompile failed for Slang-generated HLSL in '{}': {}", name, compileErrorText);
+                                                information.compiledData.assign(data, data + dataSize);
+                                                getContext()->log(Gek::Context::Info, "Slang->DXBC succeeded for '{}' entry '{}' ({} bytes)", name, entryFunction, information.compiledData.size());
+                                                return information;
                                             }
                                         }
                                         else
                                         {
-                                            getContext()->log(Gek::Context::Error, "Slang HLSL generation failed for '{}': getEntryPointCode returned error code {}", name, static_cast<int32_t>(codeResult));
+                                            getContext()->log(Gek::Context::Error, "Slang DXBC generation failed for '{}': getEntryPointCode returned error code {}", name, static_cast<int32_t>(codeResult));
                                         }
                                     }
                                     else
