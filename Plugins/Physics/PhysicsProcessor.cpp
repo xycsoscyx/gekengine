@@ -16,6 +16,7 @@
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Physics/Base.hpp"
 #include "GEK/Model/Base.hpp"
+#include <dCollision/ndContactNotify.h>
 #include <tbb/concurrent_unordered_map.h>
 #include <tbb/concurrent_vector.h>
 #include <future>
@@ -102,12 +103,36 @@ namespace Gek
                 uint32_t indexCount;
             };
 
-            class NewtonWorld
-                : public ndWorld
-            {
+            class ContactNotify : public ndContactNotify {
+                Processor* processor;
             public:
-                NewtonWorld(Processor* processor)
-                {
+                ContactNotify(ndScene* scene, Processor* processor)
+                    : ndContactNotify(scene), processor(processor) {}
+                void OnContactCallback(const ndContact* const contact, ndFloat32 timestep) const override {
+                    const auto& points = contact->GetContactPoints();
+                    using NodeType = ndList<ndContactMaterial, ndContainersFreeListAlloc<ndContactMaterial>>::ndNode;
+                    for (NodeType* node = points.GetFirst(); node; node = node->GetNext()) {
+                        const ndContactMaterial& cp = node->GetInfo();
+                        Plugin::Entity* entity0 = nullptr;
+                        Plugin::Entity* entity1 = nullptr;
+                        ndBodyKinematic* body0 = (ndBodyKinematic*)contact->GetBody0();
+                        ndBodyKinematic* body1 = (ndBodyKinematic*)contact->GetBody1();
+                        for (auto& pair : processor->entityBodyMap) {
+                            if (pair.second && pair.second->getAsNewtonBody() == body0) entity0 = pair.first;
+                            if (pair.second && pair.second->getAsNewtonBody() == body1) entity1 = pair.first;
+                        }
+                        if (!entity0 || !entity1) continue;
+                        Math::Float3 position(cp.m_point.m_x, cp.m_point.m_y, cp.m_point.m_z);
+                        Math::Float3 normal(cp.m_normal.m_x, cp.m_normal.m_y, cp.m_normal.m_z);
+                        processor->onCollision(entity0, position, normal, entity1);
+                    }
+                }
+            };
+
+            class NewtonWorld : public ndWorld {
+            public:
+                NewtonWorld(Processor* processor) {
+                    SetContactNotify(new ContactNotify(this->GetScene(), processor));
                 }
             };
 
@@ -175,72 +200,67 @@ namespace Gek
             {
                 co_await loadPool.schedule();
 
+
                 ndShape* shape = nullptr;
-                if (modelComponent.name == "#cube")
-                {
+                if (modelComponent.name == "#cube") {
                     shape = new ndShapeBox(1.0f, 1.0f, 1.0f);
-                }
-                else if (modelComponent.name == "#sphere")
-                {
+                } else if (modelComponent.name == "#sphere") {
                     shape = new ndShapeSphere(1.0f);
-                }
-                else
-                {
+                } else {
                     auto filePath = getContext()->findDataPath(FileSystem::CreatePath("physics", modelComponent.name).withExtension(".gek"));
                     std::vector<uint8_t> buffer(FileSystem::Load(filePath));
-                    if (buffer.size() < sizeof(Header))
-                    {
+                    if (buffer.size() < sizeof(Header)) {
                         getContext()->log(Context::Error, "File too small to be physics model: {}", modelComponent.name);
                         co_return;
                     }
-
                     BufferReader reader(buffer.data());
                     Header* header = reader.read<Header>(0);
-                    if (header->identifier != *(uint32_t*)"GEKX")
-                    {
+                    if (header->identifier != *(uint32_t*)"GEKX") {
                         getContext()->log(Context::Error, "Unknown model file identifier encountered: {}", modelComponent.name);
                         co_return;
                     }
-
-                    if (header->version != 3)
-                    {
+                    if (header->version != 3) {
                         getContext()->log(Context::Error, "Unsupported model version encountered (requires: 2, has: {}): {}", header->version, modelComponent.name);
                         co_return;
                     }
-
-                    if (header->type == 1)
-                    {
-                        getContext()->log(Context::Info, "Loading hull: {}", modelComponent.name);
-
+                    if (header->type == 1) {
+                        getContext()->log(Context::Info, "Loading convex hull for static scene: {}", modelComponent.name);
                         HullHeader* hullHeader = reader.read<HullHeader>();
                         Math::Float3* points = reader.read<Math::Float3>(hullHeader->pointCount);
                         shape = new ndShapeConvexHull(hullHeader->pointCount, sizeof(Math::Float3), 0.0f, points->data);
-                    }
-                    else if (header->type == 2)
-                    {
-                        getContext()->log(Context::Info, "Loading tree: {}", modelComponent.name);
-                        /*
+                    } else if (header->type == 2) {
+                        getContext()->log(Context::Info, "Loading tree mesh for static scene: {}", modelComponent.name);
                         TreeHeader* treeHeader = reader.read<TreeHeader>();
-
-                        for (uint32_t materialIndex = 0; materialIndex < treeHeader->materialCount; ++materialIndex)
-                        {
-                            TreeHeader::Material* materialHeader = reader.read<TreeHeader::Material>();
-                            loadSurface(materialHeader->name);
+                        // Read materials
+                        std::vector<std::string> materialNames;
+                        for (uint32_t i = 0; i < treeHeader->materialCount; ++i) {
+                            TreeHeader::Material* mat = reader.read<TreeHeader::Material>();
+                            materialNames.push_back(std::string(mat->name));
                         }
-
-                        for (uint32_t meshIndex = 0; meshIndex < treeHeader->meshCount; meshIndex++)
-                        {
+                        // Read meshes
+                        std::vector<TreeHeader::Mesh> meshes;
+                        for (uint32_t i = 0; i < treeHeader->meshCount; ++i) {
                             TreeHeader::Mesh* mesh = reader.read<TreeHeader::Mesh>();
-                            TreeHeader::Face* faces = reader.read<TreeHeader::Face>(mesh->faceCount);
-                            Math::Float3* points = reader.read<Math::Float3>(mesh->pointCount);
-
-                            for (uint32_t faceIndex = 0; faceIndex < mesh->faceCount; faceIndex++)
-                            {
+                            meshes.push_back(*mesh);
+                        }
+                        // Read faces and points for all meshes
+                        ndPolygonSoupBuilder builder;
+                        builder.Begin();
+                        for (auto& mesh : meshes) {
+                            TreeHeader::Face* faces = reader.read<TreeHeader::Face>(mesh.faceCount);
+                            Math::Float3* meshPoints = reader.read<Math::Float3>(mesh.pointCount);
+                            for (uint32_t f = 0; f < mesh.faceCount; ++f) {
+                                ndVector verts[3] = {
+                                    ndVector(meshPoints[faces[f].indices[0]].x, meshPoints[faces[f].indices[0]].y, meshPoints[faces[f].indices[0]].z, 0.0f),
+                                    ndVector(meshPoints[faces[f].indices[1]].x, meshPoints[faces[f].indices[1]].y, meshPoints[faces[f].indices[1]].z, 0.0f),
+                                    ndVector(meshPoints[faces[f].indices[2]].x, meshPoints[faces[f].indices[2]].y, meshPoints[faces[f].indices[2]].z, 0.0f)
+                                };
+                                builder.AddFace(&verts[0].m_x, sizeof(ndVector), 3, 0); // 0 = material id
                             }
-                        }*/
-                    }
-                    else
-                    {
+                        }
+                        builder.End(true);
+                        shape = new ndShapeStatic_bvh(builder);
+                    } else {
                         getContext()->log(Context::Error, "Unsupported model type encountered: {}", modelComponent.name);
                         co_return;
                     }
@@ -280,11 +300,28 @@ namespace Gek
                 BodyPtr body;
                 if (entity->hasComponent<Components::Transform>())
                 {
-                    //concurrency::critical_section::scoped_lock lock(criticalSection);
-                    if (entity->hasComponents<Components::Model, Components::Scene>())
+                    // Handle static scene geometry (Model + Scene, no Physical)
+                    if (entity->hasComponents<Components::Model, Components::Scene>() && !entity->hasComponent<Components::Physical>())
                     {
                         auto const &modelComponent = entity->getComponent<Components::Model>();
+                        auto shape = loadShape(modelComponent);
+                        if (shape)
+                        {
+                            // Create a static body for the scene geometry
+                            auto* staticBody = new ndBodyKinematic();
+                            staticBody->SetCollisionShape(ndShapeInstance(shape));
+                            auto& transformComponent = entity->getComponent<Components::Transform>();
+                            staticBody->SetMatrix(transformComponent.getMatrix().data);
+                            staticBody->SetMassMatrix(0.0f, ndShapeInstance(shape));
+                            staticBody->SetNotifyCallback(nullptr); // No callback for static
+                            if (newtonWorld)
+                            {
+                                newtonWorld->AddBody(staticBody);
+                            }
+                            entityBodyMap[entity] = staticBody;
+                        }
                     }
+                    // Handle dynamic/kinematic bodies
                     else if (entity->hasComponents<Components::Physical>())
                     {
                         auto &physicalComponent = entity->getComponent<Components::Physical>();
@@ -314,13 +351,10 @@ namespace Gek
                     if (newtonWorld)
                     {
                         ndSharedPtr<ndBody> sharedBody(body->getAsNewtonBody());
-
                         auto& transformComponent = entity->getComponent<Components::Transform>();
-                        sharedBody->SetMatrix(transformComponent.getScaledMatrix().data);
-
+                        sharedBody->SetMatrix(transformComponent.getMatrix().data);
                         newtonWorld->AddBody(sharedBody);
                     }
-
                     entityBodyMap[entity] = body.release();
                 }
             }
@@ -507,7 +541,7 @@ namespace Gek
                         surface.elasticity = JSON::Value(surfaceNode, "elasticity", surface.elasticity);
                         surface.softness = JSON::Value(surfaceNode, "softness", surface.softness);
 
-                        surfaceIndex = surfaceList.size();
+                        surfaceIndex = static_cast<uint32_t>(surfaceList.size());
                         surfaceList.push_back(surface);
                         surfaceIndexMap[hash] = surfaceIndex;
                     }

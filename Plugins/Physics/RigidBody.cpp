@@ -43,9 +43,9 @@ namespace Gek
                     rigidBody->OnObjectPick(this);
                 }
 
-                void OnTransform(ndInt32 threadIndex, const ndMatrix& matrix)
+                void OnTransform(ndFloat32 timestep, const ndMatrix& matrix)
                 {
-                    rigidBody->OnTransform(this, threadIndex, matrix);
+                    rigidBody->OnTransform(this, timestep, matrix);
                 }
 
                 void OnApplyExternalForce(ndInt32 threadIndex, ndFloat32 timeStep)
@@ -64,12 +64,13 @@ namespace Gek
             {
                 assert(entity);
 
+                printf("[RigidBody::Ctor] Entity %p created\n", entity);
                 SetNotifyCallback(new NotifyCallback(world, this));
 
                 auto& transformComponent = entity->getComponent<Components::Transform>();
                 auto matrix(transformComponent.getMatrix());
                 SetMatrix(matrix.data);
-                //SetAutoSleep(false);
+                SetAutoSleep(false);
             }
 
             ~RigidBody(void)
@@ -87,12 +88,16 @@ namespace Gek
             {
             }
 
-            void OnTransform(ndBodyNotify* bodyNotify, ndInt32 threadIndex, const ndMatrix& matrixData)
+            void OnTransform(ndBodyNotify* bodyNotify, ndFloat32 timestep, const ndMatrix& matrixData)
             {
                 auto matrix = reinterpret_cast<const Math::Float4x4*>(&matrixData);
                 auto& transformComponent = entity->getComponent<Components::Transform>();
                 transformComponent.rotation = matrix->getRotation();
                 transformComponent.position = matrix->translation();
+                printf("[RigidBody::OnTransform] Entity %p updated: pos=(%.3f, %.3f, %.3f) rot=(%.3f, %.3f, %.3f, %.3f)\n",
+                    entity,
+                    transformComponent.position.x, transformComponent.position.y, transformComponent.position.z,
+                    transformComponent.rotation.x, transformComponent.rotation.y, transformComponent.rotation.z, transformComponent.rotation.w);
             }
 
             void OnApplyExternalForce(ndBodyNotify *bodyNotify, ndInt32 threadIndex, ndFloat32 timeStep)
@@ -100,6 +105,7 @@ namespace Gek
                 auto const& physicalComponent = entity->getComponent<Components::Physical>();
                 auto const& transformComponent = entity->getComponent<Components::Transform>();
 
+                printf("[RigidBody::OnApplyExternalForce] Entity %p\n", entity);
                 auto kinematicBody = GetAsBodyKinematic();
                 if (kinematicBody->GetInvMass() > 0.0f)
                 {

@@ -55,6 +55,7 @@ namespace Gek
 
 		class PlayerBody
 			: public Body
+			, public ndBodyKinematic
         {
 		public:
             Plugin::Core *core = nullptr;
@@ -78,24 +79,64 @@ namespace Gek
 
             bool touchingSurface = false;
 
-        public:
-			PlayerBody(Plugin::Core *core,
-                Plugin::Population *population,
-				World *world,
-				Plugin::Entity * const entity)
-                : core(core)
-				, population(population)
-				, entity(entity)
-				, currentState(std::make_unique<IdleState>())
-			{
-				auto const &transformComponent = entity->getComponent<Components::Transform>();
-				auto const& physicalComponent = entity->getComponent<Components::Physical>();
-				auto const& playerComponent = entity->getComponent<Components::Player>();
-				
-				headingAngle = transformComponent.rotation.getEuler().y;
+			class NotifyCallback : public ndBodyNotify {
+			private:
+				PlayerBody* playerBody = nullptr;
+				World* world = nullptr;
+			public:
+				NotifyCallback(PlayerBody* playerBody, World* world)
+					: ndBodyNotify(ndVector(world->getGravity().x, world->getGravity().y, world->getGravity().z, 0.0f))
+					, playerBody(playerBody)
+					, world(world) {}
+				~NotifyCallback() {}
+				void OnTransform(ndFloat32 timestep, const ndMatrix& matrix) override {
+					// Update entity transform from physics
+					auto mat = reinterpret_cast<const Math::Float4x4*>(&matrix);
+					auto& transformComponent = playerBody->entity->getComponent<Components::Transform>();
+					transformComponent.rotation = mat->getRotation();
+					transformComponent.position = mat->translation();
+				}
+				void OnApplyExternalForce(ndInt32 threadIndex, ndFloat32 timeStep) override {
+					// Apply gravity/forces if needed
+					auto& physicalComponent = playerBody->entity->getComponent<Components::Physical>();
+					auto& transformComponent = playerBody->entity->getComponent<Components::Transform>();
+					if (playerBody->GetInvMass() > 0.0f) {
+						Math::Float3 gravity(world->getGravity(&transformComponent.position));
+						Math::Float3 force(gravity * physicalComponent.mass);
+						playerBody->SetForce(force.data);
+						playerBody->SetTorque(Math::Float3::Zero.data);
+					}
+				}
+			};
 
-				population->onAction.connect(this, &PlayerBody::onAction);
-            }
+			ndBodyKinematic* newtonBody = nullptr;
+
+        public:
+				PlayerBody(Plugin::Core *core,
+					Plugin::Population *population,
+					World *world,
+					Plugin::Entity * const entity)
+					: core(core)
+					, population(population)
+					, entity(entity)
+					, currentState(std::make_unique<IdleState>())
+				{
+					auto const &transformComponent = entity->getComponent<Components::Transform>();
+					auto const& physicalComponent = entity->getComponent<Components::Physical>();
+					auto const& playerComponent = entity->getComponent<Components::Player>();
+
+					headingAngle = transformComponent.rotation.getEuler().y;
+
+					// Create Newton kinematic body for player
+					SetNotifyCallback(new NotifyCallback(this, world));
+					SetMatrix(transformComponent.getMatrix().data);
+					SetMassMatrix(physicalComponent.mass, ndShapeInstance(new ndShapeCapsule(playerComponent.innerRadius, playerComponent.outerRadius, playerComponent.height)));
+					SetAutoSleep(false);
+
+					newtonBody = this;
+
+					population->onAction.connect(this, &PlayerBody::onAction);
+				}
 
 			~PlayerBody(void)
 			{
@@ -150,10 +191,10 @@ namespace Gek
 			}
 
             // Body
-			ndBody* getAsNewtonBody(void)
-			{
-				return nullptr;
-			}
+			   ndBody* getAsNewtonBody(void) override
+			   {
+				   return newtonBody;
+			   }
 		};
 
 		StatePtr IdleState::onUpdate(PlayerBody *player, float frameTime)

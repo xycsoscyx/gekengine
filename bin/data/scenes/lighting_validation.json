@@ -32,6 +32,7 @@
                 "innerRadius": 2,
                 "stairStep": 0.5
             },
+            "Physical": { "mass": 80 },
             "Name": "player"
         },
         {
@@ -43,40 +44,46 @@
         {
             "Template": "GlassProbeSphere",
             "Transform": {
-                "position": [ -30, 4, 0 ]
-            }
+                "position": [ -30, 10, 0 ]
+            },
+            "Physical": { "mass": 1 }
         },
         {
             "Template": "GlassProbeSphere",
             "Transform": {
-                "position": [ -10, 4, 0 ]
-            }
+                "position": [ -10, 10, 0 ]
+            },
+            "Physical": { "mass": 1 }
         },
         {
             "Template": "GlassProbeSphere",
             "Transform": {
-                "position": [ 10, 4, 0 ]
-            }
+                "position": [ 10, 10, 0 ]
+            },
+            "Physical": { "mass": 1 }
         },
         {
             "Template": "GlassProbeSphere",
             "Transform": {
-                "position": [ 30, 4, 0 ]
-            }
+                "position": [ 30, 10, 0 ]
+            },
+            "Physical": { "mass": 1 }
         },
         {
             "Template": "GlassProbeCube",
             "Transform": {
-                "position": [ 0, 4, -12 ],
+                "position": [ 0, 10, -12 ],
                 "rotation": [ 0, 0.785398, 0 ]
-            }
+            },
+            "Physical": { "mass": 1 }
         },
         {
             "Template": "GlassProbeCube",
             "Transform": {
-                "position": [ 0, 4, 12 ],
+                "position": [ 0, 10, 12 ],
                 "rotation": [ 0, -0.785398, 0 ]
-            }
+            },
+            "Physical": { "mass": 1 }
         },
 
         {
