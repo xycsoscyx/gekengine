@@ -15,6 +15,7 @@
 #include "API/Engine/Editor.hpp"
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Physics/Base.hpp"
+#include "GEK/Physics/StaticBody.hpp"
 #include "GEK/Model/Base.hpp"
 #include <dCollision/ndContactNotify.h>
 #include <tbb/concurrent_unordered_map.h>
@@ -307,18 +308,13 @@ namespace Gek
                         auto shape = loadShape(modelComponent);
                         if (shape)
                         {
-                            // Create a static body for the scene geometry
-                            auto* staticBody = new ndBodyKinematic();
-                            staticBody->SetCollisionShape(ndShapeInstance(shape));
                             auto& transformComponent = entity->getComponent<Components::Transform>();
-                            staticBody->SetMatrix(transformComponent.getMatrix().data);
-                            staticBody->SetMassMatrix(0.0f, ndShapeInstance(shape));
-                            staticBody->SetNotifyCallback(nullptr); // No callback for static
+                            auto staticBody = std::make_unique<StaticBody>(transformComponent.getMatrix(), ndShapeInstance(shape));
                             if (newtonWorld)
                             {
-                                newtonWorld->AddBody(staticBody);
+                                newtonWorld->AddBody(staticBody->getAsNewtonBody());
                             }
-                            entityBodyMap[entity] = staticBody;
+                            entityBodyMap[entity] = staticBody.release();
                         }
                     }
                     // Handle dynamic/kinematic bodies
