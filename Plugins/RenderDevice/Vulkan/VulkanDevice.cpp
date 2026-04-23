@@ -6932,116 +6932,7 @@ namespace Gek
                     return nullptr;
                 }
 
-#ifdef _MAX_IMAGE_RESACLE
-                constexpr uint32_t kMaxTextureDimension = 2048;
-                uint32_t targetWidth = width;
-                uint32_t targetHeight = height;
-                const uint32_t maxDimension = std::max(width, height);
-                if (maxDimension > kMaxTextureDimension)
-                {
-                    targetWidth = std::max(1u, static_cast<uint32_t>((static_cast<uint64_t>(width) * kMaxTextureDimension) / maxDimension));
-                    targetHeight = std::max(1u, static_cast<uint32_t>((static_cast<uint64_t>(height) * kMaxTextureDimension) / maxDimension));
-                }
 
-                for (;;)
-                {
-                    const ::DirectX::Image *uploadImage = image;
-                    ::DirectX::ScratchImage resizedImage;
-                    if (targetWidth != width || targetHeight != height)
-                    {
-                        if (FAILED(::DirectX::Resize(*image, targetWidth, targetHeight, ::DirectX::TEX_FILTER_DEFAULT, resizedImage)))
-                        {
-                            getContext()->log(
-                                Gek::Context::Error,
-                                "Vulkan loadTexture failed: resize error for '{}' to {}x{}",
-                                filePath.getString(),
-                                targetWidth,
-                                targetHeight);
-                            return nullptr;
-                        }
-
-                        const ::DirectX::Image *resizedLevel = resizedImage.GetImage(0, 0, 0);
-                        if (!resizedLevel || !resizedLevel->pixels)
-                        {
-                            getContext()->log(
-                                Gek::Context::Error,
-                                "Vulkan loadTexture failed: resized image missing pixels for '{}'",
-                                filePath.getString());
-                            return nullptr;
-                        }
-
-                        uploadImage = resizedLevel;
-                    }
-
-                    const uint32_t uploadWidth = static_cast<uint32_t>(uploadImage->width);
-                    const uint32_t uploadHeight = static_cast<uint32_t>(uploadImage->height);
-                    const size_t requiredRowPitch = static_cast<size_t>(uploadWidth) * 4u;
-                    if (uploadImage->rowPitch < requiredRowPitch)
-                    {
-                        getContext()->log(
-                            Gek::Context::Error,
-                            "Vulkan loadTexture failed: converted row pitch too small for '{}' (rowPitch={} required={})",
-                            filePath.getString(),
-                            static_cast<uint64_t>(uploadImage->rowPitch),
-                            static_cast<uint64_t>(requiredRowPitch));
-                        return nullptr;
-                    }
-
-                    std::vector<uint8_t> uploadData(static_cast<size_t>(uploadWidth) * static_cast<size_t>(uploadHeight) * 4u);
-                    for (uint32_t row = 0; row < uploadHeight; ++row)
-                    {
-                        const uint8_t *sourceRow = uploadImage->pixels + (static_cast<size_t>(row) * uploadImage->rowPitch);
-                        uint8_t *destRow = uploadData.data() + (static_cast<size_t>(row) * requiredRowPitch);
-                        std::memcpy(destRow, sourceRow, requiredRowPitch);
-                    }
-
-                    Render::Texture::Description description;
-                    description.name = filePath.getString();
-                    description.format = (flags & Render::TextureLoadFlags::sRGB)
-                        ? Render::Format::R8G8B8A8_UNORM_SRGB
-                        : Render::Format::R8G8B8A8_UNORM;
-                    description.width = uploadWidth;
-                    description.height = uploadHeight;
-                    description.depth = 1;
-                    description.mipMapCount = 1;
-                    description.flags = Render::Texture::Flags::Resource;
-
-                    if (auto texture = createTexture(description, uploadData.data()))
-                    {
-                        if (uploadWidth != width || uploadHeight != height)
-                        {
-                            getContext()->log(
-                                Gek::Context::Warning,
-                                "Vulkan loadTexture scaled '{}' from {}x{} to {}x{} to reduce memory pressure",
-                                filePath.getString(),
-                                width,
-                                height,
-                                uploadWidth,
-                                uploadHeight);
-                        }
-
-                        return texture;
-                    }
-
-                    if (targetWidth == 1 && targetHeight == 1)
-                    {
-                        break;
-                    }
-
-                    const uint32_t nextWidth = std::max(1u, targetWidth / 2u);
-                    const uint32_t nextHeight = std::max(1u, targetHeight / 2u);
-                    getContext()->log(
-                        Gek::Context::Warning,
-                        "Vulkan loadTexture retrying '{}' at lower resolution {}x{} (previous {}x{})",
-                        filePath.getString(),
-                        nextWidth,
-                        nextHeight,
-                        targetWidth,
-                        targetHeight);
-                    targetWidth = nextWidth;
-                    targetHeight = nextHeight;
-                }
-#else
                 Render::Texture::Description description;
                 description.name = filePath.getString();
                 description.format = (flags & Render::TextureLoadFlags::sRGB)
@@ -7064,7 +6955,7 @@ namespace Gek
                     filePath.getString(),
                     width,
                     height);
-#endif
+
                 getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed after retries for '{}'", filePath.getString());
                 return createAllocationFailureFallback(filePath.getString());
             }
@@ -9739,13 +9630,13 @@ namespace Gek
                 }
 
                 transitionSwapChainImage(imageIndex, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 0, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-
                 if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
                 {
                     getContext()->log(Gek::Context::Error, "Vulkan failed to record command buffer");
                     pendingDrawCommands.clear();
                     return;
                 }
+
                 const auto recordEndTime = std::chrono::high_resolution_clock::now();
                 recordCpuMs = std::chrono::duration<double, std::milli>(recordEndTime - recordStartTime).count();
 
