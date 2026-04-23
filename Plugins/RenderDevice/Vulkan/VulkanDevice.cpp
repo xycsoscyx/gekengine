@@ -1977,78 +1977,52 @@ namespace Gek
                     {
                         command.pixelImageView = currentPixelImageView;
                     }
+
+                    std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
+                    command.vertexConstantBuffer = owner->captureBufferSnapshot(command.vertexConstantBuffer, false);
+                    command.pixelConstantBuffer = owner->captureBufferSnapshot(command.pixelConstantBuffer, false);
+                    command.vertexConstantBufferVersion = owner->captureVersionedBufferSlot(command.vertexConstantBuffer);
+                    command.pixelConstantBufferVersion = owner->captureVersionedBufferSlot(command.pixelConstantBuffer);
+                    for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                     {
-                        std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        const bool isUiDraw = owner->isUiDrawCommand(command);
-                        const bool shouldSnapshotConstants = isUiDraw;
-                        const bool shouldSnapshotGeometry = isUiDraw;
+                        command.vertexConstantBuffers[slot] = owner->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
+                        command.pixelConstantBuffers[slot] = owner->captureBufferSnapshot(command.pixelConstantBuffers[slot], false);
+                        command.vertexConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
+                        command.pixelConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
+                    }
 
-                        std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
-                        auto snapshotCapturedBuffer = [&](Buffer *buffer, bool shouldSnapshot) -> Buffer *
-                        {
-                            return owner->captureBufferSnapshot(buffer, shouldSnapshot, constantBufferSnapshotMap);
-                        };
+                    command.vertexBufferVersion = owner->captureVersionedBufferSlot(command.vertexBuffer);
+                    command.indexBufferVersion = owner->captureVersionedBufferSlot(command.indexBuffer);
+                    for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
+                    {
+                        command.vertexBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexBuffers[slot]);
+                    }
 
-                        command.vertexConstantBuffer = snapshotCapturedBuffer(command.vertexConstantBuffer, shouldSnapshotConstants);
-                        command.pixelConstantBuffer = snapshotCapturedBuffer(command.pixelConstantBuffer, shouldSnapshotConstants);
-                        command.vertexConstantBufferVersion = owner->captureVersionedBufferSlot(command.vertexConstantBuffer);
-                        command.pixelConstantBufferVersion = owner->captureVersionedBufferSlot(command.pixelConstantBuffer);
-                        for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
+                    for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
+                    {
+                        auto *target = currentRenderTargetList[targetIndex];
+                        if (!target)
                         {
-                            command.vertexConstantBuffers[slot] = snapshotCapturedBuffer(command.vertexConstantBuffers[slot], shouldSnapshotConstants);
-                            command.pixelConstantBuffers[slot] = snapshotCapturedBuffer(command.pixelConstantBuffers[slot], shouldSnapshotConstants);
-                            command.vertexConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
-                            command.pixelConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
+                            continue;
                         }
 
-                        command.vertexBufferVersion = owner->captureVersionedBufferSlot(command.vertexBuffer);
-                        command.indexBufferVersion = owner->captureVersionedBufferSlot(command.indexBuffer);
-                        for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
-                        {
-                            command.vertexBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexBuffers[slot]);
-                        }
+                        command.offscreenImages[targetIndex] = target->image;
+                        command.offscreenImageViews[targetIndex] = target->imageView;
+                        command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
+                        command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
+                        command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
+                        owner->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
+                    }
 
-                        if (shouldSnapshotGeometry)
-                        {
-                            command.vertexBuffer = snapshotCapturedBuffer(command.vertexBuffer, shouldSnapshotGeometry);
-                            command.indexBuffer = snapshotCapturedBuffer(command.indexBuffer, shouldSnapshotGeometry);
-                            for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
-                            {
-                                command.vertexBuffers[slot] = snapshotCapturedBuffer(command.vertexBuffers[slot], shouldSnapshotGeometry);
-                            }
-                        }
-
-                        for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
-                        {
-                            auto *target = currentRenderTargetList[targetIndex];
-                            if (!target)
-                            {
-                                continue;
-                            }
-
-                            command.offscreenImages[targetIndex] = target->image;
-                            command.offscreenImageViews[targetIndex] = target->imageView;
-                            command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
-                            command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
-                            command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
-                            owner->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
-                        }
-
-                        if (isDeferredContext && !isUiDraw)
-                        {
-                            owner->deferredContextDrawCommands[this].push_back(command);
-                            ++owner->deferredCommandEnqueueCount;
-                        }
-                        else if (isUiDraw)
-                        {
-                            owner->pendingUiDrawCommands.push_back(command);
-                            ++owner->pendingCommandEnqueueCount;
-                        }
-                        else
-                        {
-                            owner->pendingDrawCommands.push_back(command);
-                            ++owner->pendingCommandEnqueueCount;
-                        }
+                    if (isDeferredContext)
+                    {
+                        owner->deferredContextDrawCommands[this].push_back(command);
+                        ++owner->deferredCommandEnqueueCount;
+                    }
+                    else
+                    {
+                        owner->pendingDrawCommands.push_back(command);
+                        ++owner->pendingCommandEnqueueCount;
                     }
                 }
 
@@ -2130,24 +2104,14 @@ namespace Gek
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        const bool isUiDraw = owner->isUiDrawCommand(command);
-                        const bool shouldSnapshotConstants = isUiDraw;
-                        const bool shouldSnapshotGeometry = isUiDraw;
-
-                        std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
-                        auto snapshotCapturedBuffer = [&](Buffer *buffer, bool shouldSnapshot) -> Buffer *
-                        {
-                            return owner->captureBufferSnapshot(buffer, shouldSnapshot, constantBufferSnapshotMap);
-                        };
-
-                        command.vertexConstantBuffer = snapshotCapturedBuffer(command.vertexConstantBuffer, shouldSnapshotConstants);
-                        command.pixelConstantBuffer = snapshotCapturedBuffer(command.pixelConstantBuffer, shouldSnapshotConstants);
+                        command.vertexConstantBuffer = owner->captureBufferSnapshot(command.vertexConstantBuffer, false);
+                        command.pixelConstantBuffer = owner->captureBufferSnapshot(command.pixelConstantBuffer, false);
                         command.vertexConstantBufferVersion = owner->captureVersionedBufferSlot(command.vertexConstantBuffer);
                         command.pixelConstantBufferVersion = owner->captureVersionedBufferSlot(command.pixelConstantBuffer);
                         for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                         {
-                            command.vertexConstantBuffers[slot] = snapshotCapturedBuffer(command.vertexConstantBuffers[slot], shouldSnapshotConstants);
-                            command.pixelConstantBuffers[slot] = snapshotCapturedBuffer(command.pixelConstantBuffers[slot], shouldSnapshotConstants);
+                            command.vertexConstantBuffers[slot] = owner->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
+                            command.pixelConstantBuffers[slot] = owner->captureBufferSnapshot(command.pixelConstantBuffers[slot], false);
                             command.vertexConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
                             command.pixelConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
                         }
@@ -2157,16 +2121,6 @@ namespace Gek
                         for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
                         {
                             command.vertexBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexBuffers[slot]);
-                        }
-
-                        if (shouldSnapshotGeometry)
-                        {
-                            command.vertexBuffer = snapshotCapturedBuffer(command.vertexBuffer, shouldSnapshotGeometry);
-                            command.indexBuffer = snapshotCapturedBuffer(command.indexBuffer, shouldSnapshotGeometry);
-                            for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
-                            {
-                                command.vertexBuffers[slot] = snapshotCapturedBuffer(command.vertexBuffers[slot], shouldSnapshotGeometry);
-                            }
                         }
 
                         for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
@@ -2185,15 +2139,10 @@ namespace Gek
                             owner->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
                         }
 
-                        if (isDeferredContext && !isUiDraw)
+                        if (isDeferredContext)
                         {
                             owner->deferredContextDrawCommands[this].push_back(command);
                             ++owner->deferredCommandEnqueueCount;
-                        }
-                        else if (isUiDraw)
-                        {
-                            owner->pendingUiDrawCommands.push_back(command);
-                            ++owner->pendingCommandEnqueueCount;
                         }
                         else
                         {
@@ -2305,24 +2254,14 @@ namespace Gek
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        const bool isUiDraw = owner->isUiDrawCommand(command);
-                        const bool shouldSnapshotConstants = isUiDraw;
-                        const bool shouldSnapshotGeometry = isUiDraw;
-
-                        std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
-                        auto snapshotCapturedBuffer = [&](Buffer *buffer, bool shouldSnapshot) -> Buffer *
-                        {
-                            return owner->captureBufferSnapshot(buffer, shouldSnapshot, constantBufferSnapshotMap);
-                        };
-
-                        command.vertexConstantBuffer = snapshotCapturedBuffer(command.vertexConstantBuffer, shouldSnapshotConstants);
-                        command.pixelConstantBuffer = snapshotCapturedBuffer(command.pixelConstantBuffer, shouldSnapshotConstants);
+                        command.vertexConstantBuffer = owner->captureBufferSnapshot(command.vertexConstantBuffer, false);
+                        command.pixelConstantBuffer = owner->captureBufferSnapshot(command.pixelConstantBuffer, false);
                         command.vertexConstantBufferVersion = owner->captureVersionedBufferSlot(command.vertexConstantBuffer);
                         command.pixelConstantBufferVersion = owner->captureVersionedBufferSlot(command.pixelConstantBuffer);
                         for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                         {
-                            command.vertexConstantBuffers[slot] = snapshotCapturedBuffer(command.vertexConstantBuffers[slot], shouldSnapshotConstants);
-                            command.pixelConstantBuffers[slot] = snapshotCapturedBuffer(command.pixelConstantBuffers[slot], shouldSnapshotConstants);
+                            command.vertexConstantBuffers[slot] = owner->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
+                            command.pixelConstantBuffers[slot] = owner->captureBufferSnapshot(command.pixelConstantBuffers[slot], false);
                             command.vertexConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
                             command.pixelConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
                         }
@@ -2332,16 +2271,6 @@ namespace Gek
                         for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
                         {
                             command.vertexBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexBuffers[slot]);
-                        }
-
-                        if (shouldSnapshotGeometry)
-                        {
-                            command.vertexBuffer = snapshotCapturedBuffer(command.vertexBuffer, shouldSnapshotGeometry);
-                            command.indexBuffer = snapshotCapturedBuffer(command.indexBuffer, shouldSnapshotGeometry);
-                            for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
-                            {
-                                command.vertexBuffers[slot] = snapshotCapturedBuffer(command.vertexBuffers[slot], shouldSnapshotGeometry);
-                            }
                         }
 
                         for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
@@ -2360,15 +2289,10 @@ namespace Gek
                             owner->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
                         }
 
-                        if (isDeferredContext && !isUiDraw)
+                        if (isDeferredContext)
                         {
                             owner->deferredContextDrawCommands[this].push_back(command);
                             ++owner->deferredCommandEnqueueCount;
-                        }
-                        else if (isUiDraw)
-                        {
-                            owner->pendingUiDrawCommands.push_back(command);
-                            ++owner->pendingCommandEnqueueCount;
                         }
                         else
                         {
@@ -2480,24 +2404,14 @@ namespace Gek
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        const bool isUiDraw = owner->isUiDrawCommand(command);
-                        const bool shouldSnapshotConstants = isUiDraw;
-                        const bool shouldSnapshotGeometry = isUiDraw;
-
-                        std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
-                        auto snapshotCapturedBuffer = [&](Buffer *buffer, bool shouldSnapshot) -> Buffer *
-                        {
-                            return owner->captureBufferSnapshot(buffer, shouldSnapshot, constantBufferSnapshotMap);
-                        };
-
-                        command.vertexConstantBuffer = snapshotCapturedBuffer(command.vertexConstantBuffer, shouldSnapshotConstants);
-                        command.pixelConstantBuffer = snapshotCapturedBuffer(command.pixelConstantBuffer, shouldSnapshotConstants);
+                        command.vertexConstantBuffer = owner->captureBufferSnapshot(command.vertexConstantBuffer, false);
+                        command.pixelConstantBuffer = owner->captureBufferSnapshot(command.pixelConstantBuffer, false);
                         command.vertexConstantBufferVersion = owner->captureVersionedBufferSlot(command.vertexConstantBuffer);
                         command.pixelConstantBufferVersion = owner->captureVersionedBufferSlot(command.pixelConstantBuffer);
                         for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                         {
-                            command.vertexConstantBuffers[slot] = snapshotCapturedBuffer(command.vertexConstantBuffers[slot], shouldSnapshotConstants);
-                            command.pixelConstantBuffers[slot] = snapshotCapturedBuffer(command.pixelConstantBuffers[slot], shouldSnapshotConstants);
+                            command.vertexConstantBuffers[slot] = owner->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
+                            command.pixelConstantBuffers[slot] = owner->captureBufferSnapshot(command.pixelConstantBuffers[slot], false);
                             command.vertexConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
                             command.pixelConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
                         }
@@ -2507,16 +2421,6 @@ namespace Gek
                         for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
                         {
                             command.vertexBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexBuffers[slot]);
-                        }
-
-                        if (shouldSnapshotGeometry)
-                        {
-                            command.vertexBuffer = snapshotCapturedBuffer(command.vertexBuffer, shouldSnapshotGeometry);
-                            command.indexBuffer = snapshotCapturedBuffer(command.indexBuffer, shouldSnapshotGeometry);
-                            for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
-                            {
-                                command.vertexBuffers[slot] = snapshotCapturedBuffer(command.vertexBuffers[slot], shouldSnapshotGeometry);
-                            }
                         }
 
                         for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
@@ -2535,15 +2439,10 @@ namespace Gek
                             owner->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
                         }
 
-                        if (isDeferredContext && !isUiDraw)
+                        if (isDeferredContext)
                         {
                             owner->deferredContextDrawCommands[this].push_back(command);
                             ++owner->deferredCommandEnqueueCount;
-                        }
-                        else if (isUiDraw)
-                        {
-                            owner->pendingUiDrawCommands.push_back(command);
-                            ++owner->pendingCommandEnqueueCount;
                         }
                         else
                         {
@@ -2648,9 +2547,6 @@ namespace Gek
             VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
             VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
             VkPipelineLayout graphicsPipelineLayout = VK_NULL_HANDLE;
-            VkDescriptorSetLayout uiDescriptorSetLayout = VK_NULL_HANDLE;
-            VkDescriptorPool uiDescriptorPool = VK_NULL_HANDLE;
-            VkPipelineLayout uiGraphicsPipelineLayout = VK_NULL_HANDLE;
             static constexpr uint32_t PixelResourceSlotCount = 16;
             static constexpr uint32_t DescriptorSampledImageBase = 0;
             static constexpr uint32_t DescriptorStorageBufferBase = 64;
@@ -2749,15 +2645,8 @@ namespace Gek
             };
 
             std::vector<DrawCommand> pendingDrawCommands;
-            std::vector<DrawCommand> pendingUiDrawCommands;
             std::map<Context *, std::vector<DrawCommand>> deferredContextDrawCommands;
             std::map<uint64_t, std::vector<DrawCommand>> deferredCommandLists;
-            std::vector<Render::BufferPtr> transientFrameConstantBufferSnapshotsPending;
-            std::vector<Render::BufferPtr> transientFrameConstantBufferSnapshotsInFlight;
-            std::map<Buffer *, Buffer *> uiFrameSnapshotBufferMap;
-            uint64_t uiSnapshotCreatedThisFrame = 0;
-            uint64_t uiSnapshotReusedThisFrame = 0;
-            uint64_t uiSnapshotBytesThisFrame = 0;
             uint64_t constantBufferVersionRotationsThisFrame = 0;
             uint64_t constantBufferVersionExhaustionThisFrame = 0;
             uint64_t constantBufferVersionWaitRecoveriesThisFrame = 0;
@@ -2827,10 +2716,6 @@ namespace Gek
             bool loggedZeroCountSkip = false;
             bool deviceLost = false;
             bool loggedDeviceLost = false;
-            uint64_t uiVertexProgramId = 0;
-            uint64_t uiPixelProgramId = 0;
-            mutable std::mutex uiProgramIdMutex;
-            std::string debugOverlayText = "VK: init";
             bool samplerAnisotropySupported = false;
             float maxSamplerAnisotropy = 1.0f;
 
@@ -2908,53 +2793,6 @@ namespace Gek
             {
                 static std::mutex *mutex = new std::mutex();
                 return *mutex;
-            }
-
-            static bool isUiVertexProgramName(std::string_view programName)
-            {
-                return (programName == "core::uiVertexProgram:main") || (programName == "core:uiVertexProgram:main");
-            }
-
-            static bool isUiPixelProgramName(std::string_view programName)
-            {
-                return (programName == "core::uiPixelProgram:main") || (programName == "core:uiPixelProgram:main");
-            }
-
-            void trackUiProgram(Render::Program::Information const &programInfo)
-            {
-                if (programInfo.programId == 0)
-                {
-                    return;
-                }
-
-                std::lock_guard<std::mutex> lock(uiProgramIdMutex);
-                if (isUiVertexProgramName(programInfo.name))
-                {
-                    uiVertexProgramId = programInfo.programId;
-                }
-
-                if (isUiPixelProgramName(programInfo.name))
-                {
-                    uiPixelProgramId = programInfo.programId;
-                }
-            }
-
-            bool isUiProgramId(uint64_t programId) const
-            {
-                if (programId == 0)
-                {
-                    return false;
-                }
-
-                std::lock_guard<std::mutex> lock(uiProgramIdMutex);
-                return (programId == uiVertexProgramId) || (programId == uiPixelProgramId);
-            }
-
-            bool isUiDrawCommand(const DrawCommand &command) const
-            {
-                const uint64_t vertexProgramId = (command.vertexProgram ? command.vertexProgram->getInformation().programId : 0ull);
-                const uint64_t pixelProgramId = (command.pixelProgram ? command.pixelProgram->getInformation().programId : 0ull);
-                return isUiProgramId(vertexProgramId) || isUiProgramId(pixelProgramId);
             }
 
             static std::mutex &getTextureDecodeMutex(void)
@@ -3330,11 +3168,10 @@ namespace Gek
                     vkUnmapMemory(device, sourceBuffer->memory);
                 }
 
-                transientFrameConstantBufferSnapshotsPending.push_back(std::move(snapshotResource));
                 return snapshotBuffer;
             }
 
-            Buffer *captureBufferSnapshot(Buffer *buffer, bool shouldSnapshot, std::map<Buffer *, Buffer *> &snapshotMap)
+            Buffer *captureBufferSnapshot(Buffer *buffer, bool shouldSnapshot)
             {
                 if (!buffer)
                 {
@@ -3347,21 +3184,7 @@ namespace Gek
                     return buffer;
                 }
 
-                auto snapshotSearch = snapshotMap.find(buffer);
-                if (snapshotSearch != std::end(snapshotMap))
-                {
-                    return snapshotSearch->second;
-                }
-
-                Buffer *snapshotBuffer = createBufferSnapshot(buffer);
-                if (snapshotBuffer && snapshotBuffer != buffer)
-                {
-                    ++uiSnapshotCreatedThisFrame;
-                    uiSnapshotBytesThisFrame += static_cast<uint64_t>(buffer->size);
-                }
-
-                snapshotMap[buffer] = snapshotBuffer;
-                return snapshotBuffer;
+                return createBufferSnapshot(buffer);
             }
 
             bool checkInstanceExtensionSupport(std::vector<const char*> &instanceExtensions)
@@ -4262,67 +4085,6 @@ namespace Gek
                 {
                     throw std::runtime_error("failed to create graphics pipeline layout");
                 }
-
-                VkDescriptorSetLayoutBinding uiUniformBinding{};
-                uiUniformBinding.binding = 0;
-                uiUniformBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                uiUniformBinding.descriptorCount = 1;
-                uiUniformBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-                VkDescriptorSetLayoutBinding uiSampledImageBinding{};
-                uiSampledImageBinding.binding = 1;
-                uiSampledImageBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                uiSampledImageBinding.descriptorCount = 1;
-                uiSampledImageBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-                VkDescriptorSetLayoutBinding uiSamplerBinding{};
-                uiSamplerBinding.binding = 2;
-                uiSamplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-                uiSamplerBinding.descriptorCount = 1;
-                uiSamplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-                std::array<VkDescriptorSetLayoutBinding, 3> uiBindings =
-                {
-                    uiUniformBinding,
-                    uiSampledImageBinding,
-                    uiSamplerBinding,
-                };
-
-                VkDescriptorSetLayoutCreateInfo uiSetLayoutInfo{};
-                uiSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                uiSetLayoutInfo.bindingCount = static_cast<uint32_t>(uiBindings.size());
-                uiSetLayoutInfo.pBindings = uiBindings.data();
-                if (vkCreateDescriptorSetLayout(device, &uiSetLayoutInfo, nullptr, &uiDescriptorSetLayout) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("failed to create UI descriptor set layout");
-                }
-
-                std::array<VkDescriptorPoolSize, 3> uiPoolSizes =
-                {
-                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1024 },
-                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1024 },
-                    VkDescriptorPoolSize{ VK_DESCRIPTOR_TYPE_SAMPLER, 1024 },  
-                };
-
-                VkDescriptorPoolCreateInfo uiPoolInfo{};
-                uiPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-                uiPoolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-                uiPoolInfo.maxSets = 1024;
-                uiPoolInfo.poolSizeCount = static_cast<uint32_t>(uiPoolSizes.size());
-                uiPoolInfo.pPoolSizes = uiPoolSizes.data();
-                if (vkCreateDescriptorPool(device, &uiPoolInfo, nullptr, &uiDescriptorPool) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("failed to create UI descriptor pool");
-                }
-
-                VkPipelineLayoutCreateInfo uiPipelineLayoutInfo{};
-                uiPipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-                uiPipelineLayoutInfo.setLayoutCount = 1;
-                uiPipelineLayoutInfo.pSetLayouts = &uiDescriptorSetLayout;
-                if (vkCreatePipelineLayout(device, &uiPipelineLayoutInfo, nullptr, &uiGraphicsPipelineLayout) != VK_SUCCESS)
-                {
-                    throw std::runtime_error("failed to create UI graphics pipeline layout");
-                }
             }
 
             VkPipeline getOrCreateGraphicsPipeline(const DrawCommand &command, VkRenderPass activeRenderPass)
@@ -4331,8 +4093,6 @@ namespace Gek
                 {
                     return VK_NULL_HANDLE;
                 }
-
-                const bool isUiProgram = isUiDrawCommand(command);
 
                 PipelineKey key;
                 key.vertexModule = command.vertexProgram->shaderModule;
@@ -4387,28 +4147,7 @@ namespace Gek
                         }
 
                         VkVertexInputAttributeDescription attribute{};
-                        if (isUiProgram)
-                        {
-                            switch (element.semantic)
-                            {
-                            case Render::InputElement::Semantic::Position:
-                                attribute.location = 0;
-                                break;
-                            case Render::InputElement::Semantic::Color:
-                                attribute.location = 1;
-                                break;
-                            case Render::InputElement::Semantic::TexCoord:
-                                attribute.location = 2;
-                                break;
-                            default:
-                                attribute.location = index;
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            attribute.location = index;
-                        }
+                        attribute.location = index;
                         attribute.binding = slot;
                         attribute.format = format;
                         attribute.offset = (element.alignedByteOffset == Render::InputElement::AppendAligned) ? runningOffset[slot] : element.alignedByteOffset;
@@ -4475,10 +4214,7 @@ namespace Gek
                 rasterizer.lineWidth = 1.0f;
                 static constexpr VkCullModeFlags vkCullModes[] = { VK_CULL_MODE_NONE, VK_CULL_MODE_FRONT_BIT, VK_CULL_MODE_BACK_BIT };
                 rasterizer.cullMode = vkCullModes[static_cast<uint8_t>(key.cullMode)];
-                if (!isUiProgram)
-                {
-                    rasterizer.cullMode = VK_CULL_MODE_NONE;
-                }
+                rasterizer.cullMode = VK_CULL_MODE_NONE;
                 rasterizer.frontFace = key.frontCounterClockwise ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
                 rasterizer.depthBiasEnable = VK_FALSE;
 
@@ -4559,7 +4295,7 @@ namespace Gek
                 pipelineInfo.pDepthStencilState = &depthStencil;
                 pipelineInfo.pColorBlendState = &colorBlending;
                 pipelineInfo.pDynamicState = &dynamicState;
-                pipelineInfo.layout = (isUiProgram ? uiGraphicsPipelineLayout : graphicsPipelineLayout);
+                pipelineInfo.layout = graphicsPipelineLayout;
                 pipelineInfo.renderPass = activeRenderPass;
                 pipelineInfo.subpass = 0;
 
@@ -4906,34 +4642,16 @@ namespace Gek
                     graphicsPipelineLayout = VK_NULL_HANDLE;
                 }
 
-                if (uiGraphicsPipelineLayout != VK_NULL_HANDLE)
-                {
-                    vkDestroyPipelineLayout(device, uiGraphicsPipelineLayout, nullptr);
-                    uiGraphicsPipelineLayout = VK_NULL_HANDLE;
-                }
-
                 if (descriptorPool != VK_NULL_HANDLE)
                 {
                     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
                     descriptorPool = VK_NULL_HANDLE;
                 }
 
-                if (uiDescriptorPool != VK_NULL_HANDLE)
-                {
-                    vkDestroyDescriptorPool(device, uiDescriptorPool, nullptr);
-                    uiDescriptorPool = VK_NULL_HANDLE;
-                }
-
                 if (descriptorSetLayout != VK_NULL_HANDLE)
                 {
                     vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
                     descriptorSetLayout = VK_NULL_HANDLE;
-                }
-
-                if (uiDescriptorSetLayout != VK_NULL_HANDLE)
-                {
-                    vkDestroyDescriptorSetLayout(device, uiDescriptorSetLayout, nullptr);
-                    uiDescriptorSetLayout = VK_NULL_HANDLE;
                 }
 
                 for (auto framebuffer : transientFramebuffers)
@@ -4977,11 +4695,6 @@ namespace Gek
                 return nullptr;
             }
 
-            std::string getDebugOverlayText(void) const
-            {
-                return debugOverlayText;
-            }
-
             // Render::Device
             Render::DisplayModeList getDisplayModeList(Render::Format format) const
             {
@@ -4998,9 +4711,6 @@ namespace Gek
                     displayMode.refreshRate.numerator = windowsDisplayMode.dmDisplayFrequency;
                     displayMode.refreshRate.denominator = 1;
                     displayModeList.push_back(displayMode);
-
-                    getContext()->log(Gek::Context::Info, "Display Mode: {} x {}", displayMode.width, displayMode.height);
-
                     modeIndex++;
                 }
 #endif
@@ -5063,16 +4773,6 @@ namespace Gek
             {
                 auto samplerState = std::make_unique<SamplerState>(device, description);
 
-#if defined(VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE)
-                static constexpr VkSamplerAddressMode addressModeList[] =
-                {
-                    VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-                    VK_SAMPLER_ADDRESS_MODE_REPEAT,
-                    VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT,
-                    VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE,
-                    VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
-                };
-#else
                 static constexpr VkSamplerAddressMode addressModeList[] =
                 {
                     VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
@@ -5081,7 +4781,6 @@ namespace Gek
                     VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
                     VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
                 };
-#endif
 
                 VkSamplerCreateInfo samplerInfo{};
                 samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -5889,46 +5588,6 @@ namespace Gek
                     source = std::move(annotated);
                 };
 
-                const bool isUiVertexProgram = (information.type == Render::Program::Type::Vertex) && isUiProgramId(information.programId);
-                const bool isUiPixelProgram = (information.type == Render::Program::Type::Pixel) && isUiProgramId(information.programId);
-
-                if (isUiVertexProgram)
-                {
-                    static constexpr std::string_view from = "cbuffer DataBuffer : register(b0)";
-                    static constexpr std::string_view to = "[[vk::binding(0, 0)]] cbuffer DataBuffer : register(b0)";
-                    size_t position = resolvedProgram.find(from);
-                    if (position != std::string::npos)
-                    {
-                        resolvedProgram.replace(position, from.size(), to);
-                    }
-                }
-                else if (isUiPixelProgram)
-                {
-                    static constexpr std::string_view textureFrom = "Texture2D<float4> uiTexture : register(t0);";
-                    static constexpr std::string_view textureTo = "[[vk::binding(1, 0)]] Texture2D<float4> uiTexture : register(t0);";
-                    static constexpr std::string_view samplerFrom = "SamplerState uiSampler : register(s0);";
-                    static constexpr std::string_view samplerTo = "[[vk::binding(2, 0)]] SamplerState uiSampler : register(s0);";
-                    size_t texturePosition = resolvedProgram.find(textureFrom);
-                    if (texturePosition != std::string::npos)
-                    {
-                        resolvedProgram.replace(texturePosition, textureFrom.size(), textureTo);
-                    }
-                    else
-                    {
-                        getContext()->log(Gek::Context::Warning, "Vulkan UI pixel texture binding annotation not applied for '{}'", information.name);
-                    }
-
-                    size_t samplerPosition = resolvedProgram.find(samplerFrom);
-                    if (samplerPosition != std::string::npos)
-                    {
-                        resolvedProgram.replace(samplerPosition, samplerFrom.size(), samplerTo);
-                    }
-                    else
-                    {
-                        getContext()->log(Gek::Context::Warning, "Vulkan UI pixel sampler binding annotation not applied for '{}'", information.name);
-                    }
-                }
-
                 annotateVulkanBindings(resolvedProgram);
 
                 slang::TargetDesc targetDesc = {};
@@ -6015,7 +5674,6 @@ namespace Gek
 
             Render::ProgramPtr createProgram(Render::Program::Information const &information)
             {
-                trackUiProgram(information);
                 switch (information.type)
                 {
                 case Render::Program::Type::Compute:
@@ -7692,8 +7350,6 @@ namespace Gek
                 {
                     std::lock_guard<std::mutex> lock(getDrawCommandMutex());
                     pendingDrawCommands.clear();
-                    pendingUiDrawCommands.clear();
-                    debugOverlayText = "VK: deviceLost=1";
                     return;
                 }
 
@@ -7701,12 +7357,6 @@ namespace Gek
                 {
                     std::lock_guard<std::mutex> lock(getDrawCommandMutex());
                     pendingDrawCommands.clear();
-                    pendingUiDrawCommands.clear();
-                    transientFrameConstantBufferSnapshotsPending.clear();
-                    uiFrameSnapshotBufferMap.clear();
-                    uiSnapshotCreatedThisFrame = 0;
-                    uiSnapshotReusedThisFrame = 0;
-                    uiSnapshotBytesThisFrame = 0;
                 };
 
                 auto handleDeviceLost = [&](VkResult errorCode, std::string_view operation)
@@ -7722,7 +7372,6 @@ namespace Gek
                     }
 
                     deviceLost = true;
-                    debugOverlayText = std::format("VK: deviceLost=1 op={} code={}", operation, static_cast<int32_t>(errorCode));
                     clearQueuedDrawCommands();
                 };
 
@@ -7746,65 +7395,54 @@ namespace Gek
                     }
                 }
 
+                const auto cleanupStartTime = std::chrono::high_resolution_clock::now();
+
+                const auto cleanupFramebufferStartTime = std::chrono::high_resolution_clock::now();
+                for (auto framebuffer : transientFramebuffers)
                 {
-                    const auto cleanupStartTime = std::chrono::high_resolution_clock::now();
-
-                    const auto cleanupFramebufferStartTime = std::chrono::high_resolution_clock::now();
-                    for (auto framebuffer : transientFramebuffers)
+                    if (framebuffer != VK_NULL_HANDLE)
                     {
-                        if (framebuffer != VK_NULL_HANDLE)
-                        {
-                            vkDestroyFramebuffer(device, framebuffer, nullptr);
-                        }
+                        vkDestroyFramebuffer(device, framebuffer, nullptr);
                     }
-                    transientFramebuffers.clear();
-
-                    transientFrameConstantBufferSnapshotsInFlight.clear();
-                    uiFrameSnapshotBufferMap.clear();
-                    uiSnapshotCreatedThisFrame = 0;
-                    uiSnapshotReusedThisFrame = 0;
-                    uiSnapshotBytesThisFrame = 0;
-                    constantBufferVersionRotationsThisFrame = 0;
-                    constantBufferVersionExhaustionThisFrame = 0;
-                    constantBufferVersionWaitRecoveriesThisFrame = 0;
-                    constantBufferVersionWriteAttemptsThisFrame = 0;
-                    constantBufferVersionExhaustionNoFenceThisFrame = 0;
-                    constantBufferVersionWaitAttemptsThisFrame = 0;
-                    constantBufferVersionPostWaitExhaustionThisFrame = 0;
-                    vertexBufferVersionRotationsThisFrame = 0;
-                    vertexBufferVersionExhaustionThisFrame = 0;
-                    vertexBufferVersionWaitRecoveriesThisFrame = 0;
-                    vertexBufferVersionWriteAttemptsThisFrame = 0;
-                    vertexBufferVersionExhaustionNoFenceThisFrame = 0;
-                    vertexBufferVersionWaitAttemptsThisFrame = 0;
-                    vertexBufferVersionPostWaitExhaustionThisFrame = 0;
-                    indexBufferVersionRotationsThisFrame = 0;
-                    indexBufferVersionExhaustionThisFrame = 0;
-                    indexBufferVersionWaitRecoveriesThisFrame = 0;
-                    indexBufferVersionWriteAttemptsThisFrame = 0;
-                    indexBufferVersionExhaustionNoFenceThisFrame = 0;
-                    indexBufferVersionWaitAttemptsThisFrame = 0;
-                    indexBufferVersionPostWaitExhaustionThisFrame = 0;
-
-                    const auto cleanupFramebufferEndTime = std::chrono::high_resolution_clock::now();
-                    cleanupFramebufferCpuMs = std::chrono::duration<double, std::milli>(cleanupFramebufferEndTime - cleanupFramebufferStartTime).count();
-
-                    const auto cleanupDescriptorStartTime = std::chrono::high_resolution_clock::now();
-                    if (descriptorPool != VK_NULL_HANDLE)
-                    {
-                        vkResetDescriptorPool(device, descriptorPool, 0);
-                    }
-
-                    if (uiDescriptorPool != VK_NULL_HANDLE)
-                    {
-                        vkResetDescriptorPool(device, uiDescriptorPool, 0);
-                    }
-                    const auto cleanupDescriptorEndTime = std::chrono::high_resolution_clock::now();
-                    cleanupDescriptorCpuMs = std::chrono::duration<double, std::milli>(cleanupDescriptorEndTime - cleanupDescriptorStartTime).count();
-
-                    const auto cleanupEndTime = std::chrono::high_resolution_clock::now();
-                    cleanupCpuMs = std::chrono::duration<double, std::milli>(cleanupEndTime - cleanupStartTime).count();
                 }
+
+                transientFramebuffers.clear();
+                constantBufferVersionRotationsThisFrame = 0;
+                constantBufferVersionExhaustionThisFrame = 0;
+                constantBufferVersionWaitRecoveriesThisFrame = 0;
+                constantBufferVersionWriteAttemptsThisFrame = 0;
+                constantBufferVersionExhaustionNoFenceThisFrame = 0;
+                constantBufferVersionWaitAttemptsThisFrame = 0;
+                constantBufferVersionPostWaitExhaustionThisFrame = 0;
+                vertexBufferVersionRotationsThisFrame = 0;
+                vertexBufferVersionExhaustionThisFrame = 0;
+                vertexBufferVersionWaitRecoveriesThisFrame = 0;
+                vertexBufferVersionWriteAttemptsThisFrame = 0;
+                vertexBufferVersionExhaustionNoFenceThisFrame = 0;
+                vertexBufferVersionWaitAttemptsThisFrame = 0;
+                vertexBufferVersionPostWaitExhaustionThisFrame = 0;
+                indexBufferVersionRotationsThisFrame = 0;
+                indexBufferVersionExhaustionThisFrame = 0;
+                indexBufferVersionWaitRecoveriesThisFrame = 0;
+                indexBufferVersionWriteAttemptsThisFrame = 0;
+                indexBufferVersionExhaustionNoFenceThisFrame = 0;
+                indexBufferVersionWaitAttemptsThisFrame = 0;
+                indexBufferVersionPostWaitExhaustionThisFrame = 0;
+
+                const auto cleanupFramebufferEndTime = std::chrono::high_resolution_clock::now();
+                cleanupFramebufferCpuMs = std::chrono::duration<double, std::milli>(cleanupFramebufferEndTime - cleanupFramebufferStartTime).count();
+
+                const auto cleanupDescriptorStartTime = std::chrono::high_resolution_clock::now();
+                if (descriptorPool != VK_NULL_HANDLE)
+                {
+                    vkResetDescriptorPool(device, descriptorPool, 0);
+                }
+
+                const auto cleanupDescriptorEndTime = std::chrono::high_resolution_clock::now();
+                cleanupDescriptorCpuMs = std::chrono::duration<double, std::milli>(cleanupDescriptorEndTime - cleanupDescriptorStartTime).count();
+
+                const auto cleanupEndTime = std::chrono::high_resolution_clock::now();
+                cleanupCpuMs = std::chrono::duration<double, std::milli>(cleanupEndTime - cleanupStartTime).count();
 
                 uint32_t imageIndex = 0;
                 const auto acquireStartTime = std::chrono::high_resolution_clock::now();
@@ -7983,12 +7621,6 @@ namespace Gek
                 std::lock_guard<std::mutex> drawCommandLock(getDrawCommandMutex());
                 const auto drawCommandLockEndTime = std::chrono::high_resolution_clock::now();
                 drawCommandLockCpuMs = std::chrono::duration<double, std::milli>(drawCommandLockEndTime - drawCommandLockStartTime).count();
-                if (!pendingUiDrawCommands.empty())
-                {
-                    pendingDrawCommands.insert(pendingDrawCommands.end(), pendingUiDrawCommands.begin(), pendingUiDrawCommands.end());
-                    pendingUiDrawCommands.clear();
-                }
-
                 if (offscreenImageLayouts.size() > 32768)
                 {
                     offscreenImageLayouts.clear();
@@ -7997,58 +7629,6 @@ namespace Gek
                 const bool hasDrawCommands = !pendingDrawCommands.empty();
                 std::vector<VkDescriptorSet> descriptorSets;
                 descriptorSets.reserve(pendingDrawCommands.size());
-                uint32_t sceneCommandCount = 0;
-                uint32_t sceneDrawCallsIssued = 0;
-                uint32_t sceneBackBufferDrawCalls = 0;
-                uint32_t totalBackBufferDrawCalls = 0;
-                uint32_t sceneOffscreenDrawCalls = 0;
-                uint32_t sceneBackBufferMissingImageDrawCalls = 0;
-                bool sceneFallbackCopyPerformed = false;
-                uint32_t sceneOffscreenInvalidSkips = 0;
-                uint32_t scenePipelineSkips = 0;
-                uint32_t sceneDescriptorSkips = 0;
-                uint32_t glassDrawCommandCount = 0;
-                uint32_t solidToGlassCopyCommandCount = 0;
-                bool sawSolidToGlassCopyCommand = false;
-                bool loggedGlassDrawBeforeCopy = false;
-                uint32_t glassDrawMissingResourceCount = 0;
-                uint32_t glassSamplerSlot1MissingCount = 0;
-                uint32_t glassSamplerSlot01SameCount = 0;
-                uint32_t glassDrawFirstResourceSlotMin = PixelResourceSlotCount;
-                uint32_t glassDrawFirstResourceSlotMax = 0;
-                uint32_t drawCommandIndex = 0;
-                uint32_t firstSolidToGlassCopyCommandIndex = std::numeric_limits<uint32_t>::max();
-                uint32_t firstGlassDrawCommandIndex = std::numeric_limits<uint32_t>::max();
-                uint32_t solidSourceDrawBeforeCopyCount = 0;
-                uint32_t solidSourceDrawAfterCopyCount = 0;
-                uint32_t solidToGlassCopySameImageSkipCount = 0;
-                VkImage copiedSolidSourceImage = VK_NULL_HANDLE;
-                VkImage copiedGlassImage = VK_NULL_HANDLE;
-                VkImageView copiedGlassImageView = VK_NULL_HANDLE;
-                bool capturedSolidToGlassCopyDetails = false;
-                bool solidToGlassCopyUsedNamedSource = false;
-                bool solidToGlassCopyUsedNamedDestination = false;
-                VkImage solidToGlassCopySourceImage = VK_NULL_HANDLE;
-                VkImage solidToGlassCopyDestinationImage = VK_NULL_HANDLE;
-                VkImageLayout solidToGlassCopySourceLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                VkImageLayout solidToGlassCopyDestinationLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                uint32_t solidToGlassCopySourceWidth = 0;
-                uint32_t solidToGlassCopySourceHeight = 0;
-                uint32_t solidToGlassCopyDestinationWidth = 0;
-                uint32_t solidToGlassCopyDestinationHeight = 0;
-                uint32_t solidToGlassCopyExtentWidth = 0;
-                uint32_t solidToGlassCopyExtentHeight = 0;
-                uint32_t glassGenerateMipCommandCount = 0;
-                uint32_t glassGenerateMipLevels = 0;
-                VkImage glassGenerateMipImage = VK_NULL_HANDLE;
-                bool capturedGlassDrawBindingDetails = false;
-                uint32_t firstGlassDescriptorSlot = PixelResourceSlotCount;
-                VkImageView firstGlassDescriptorImageView = VK_NULL_HANDLE;
-                VkImage firstGlassDescriptorImage = VK_NULL_HANDLE;
-                VkImageLayout firstGlassDescriptorLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                VkImageLayout firstGlassTrackedLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                VkSampler firstGlassSamplerSlot0 = VK_NULL_HANDLE;
-                VkSampler firstGlassSamplerSlot1 = VK_NULL_HANDLE;
                 struct GraphicsDescriptorSignature
                 {
                     std::array<VkImageView, PixelResourceSlotCount> pixelResourceImageViews{};
@@ -8138,10 +7718,7 @@ namespace Gek
                 auto performSceneFallbackCopy = [&](bool transitionBackToColorAttachment)
                 {
                     if (!allowSceneFallbackCopy ||
-                        sceneFallbackCopyPerformed ||
-                        sceneOffscreenCopySourceImage == VK_NULL_HANDLE ||
-                        sceneOffscreenDrawCalls == 0 ||
-                        totalBackBufferDrawCalls > 0)
+                        sceneOffscreenCopySourceImage == VK_NULL_HANDLE)
                     {
                         return;
                     }
@@ -8249,21 +7826,16 @@ namespace Gek
                     {
                         transitionSwapChainImage(imageIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
                     }
-
-                    sceneFallbackCopyPerformed = true;
                 };
+
                 if (hasDrawCommands)
                 {
                     transitionSwapChainImage(imageIndex, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
                     for (const auto &drawCommand : pendingDrawCommands)
                     {
-                        ++drawCommandIndex;
-
                         if (drawCommand.commandType == DrawCommand::Type::ClearRenderTarget)
                         {
-                            ++sceneCommandCount;
-
                             auto *targetTexture = drawCommand.clearRenderTarget;
                             if (!targetTexture || targetTexture->image == VK_NULL_HANDLE)
                             {
@@ -8355,8 +7927,6 @@ namespace Gek
 
                         if (drawCommand.commandType == DrawCommand::Type::ClearDepthStencil)
                         {
-                            ++sceneCommandCount;
-
                             auto *depthTexture = drawCommand.clearDepthTarget;
                             if (!depthTexture || depthTexture->image == VK_NULL_HANDLE)
                             {
@@ -8492,27 +8062,8 @@ namespace Gek
 
                         if (drawCommand.commandType == DrawCommand::Type::CopyResource)
                         {
-                            ++sceneCommandCount;
-
-                            bool isSolidToGlassCopyCommand = false;
                             bool usedNamedSourceForCopy = false;
                             bool usedNamedDestinationForCopy = false;
-                            if (drawCommand.copyDestination && drawCommand.copySource)
-                            {
-                                const std::string_view destinationName = drawCommand.copyDestination->getName();
-                                const std::string_view sourceName = drawCommand.copySource->getName();
-                                if (destinationName.find("glassBuffer") != std::string_view::npos && sourceName.find("finalBuffer") != std::string_view::npos)
-                                {
-                                    sawSolidToGlassCopyCommand = true;
-                                    ++solidToGlassCopyCommandCount;
-                                    isSolidToGlassCopyCommand = true;
-                                    if (firstSolidToGlassCopyCommandIndex == std::numeric_limits<uint32_t>::max())
-                                    {
-                                        firstSolidToGlassCopyCommandIndex = drawCommandIndex;
-                                    }
-                                }
-                            }
-
                             auto *destinationBuffer = getObject<Buffer>(drawCommand.copyDestination);
                             auto *sourceBuffer = getObject<Buffer>(drawCommand.copySource);
                             if (destinationBuffer && sourceBuffer)
@@ -8638,9 +8189,6 @@ namespace Gek
                             const uint32_t originalDestinationHeight = destinationHeight;
                             const uint32_t originalSourceWidth = sourceWidth;
                             const uint32_t originalSourceHeight = sourceHeight;
-
-                            // Resolve named copy resources against the latest in-frame draw targets to avoid
-                            // stale texture instance mismatches (e.g. finalBuffer/glassBuffer aliases).
                             if (destinationTargetTexture)
                             {
                                 const auto destinationName = destinationTargetTexture->getDescription().name;
@@ -8711,26 +8259,8 @@ namespace Gek
                                 }
                             }
 
-                            if (isSolidToGlassCopyCommand)
-                            {
-                                copiedSolidSourceImage = sourceImage;
-                                copiedGlassImage = destinationImage;
-                                if (destinationTargetTexture)
-                                {
-                                    copiedGlassImageView = destinationTargetTexture->imageView;
-                                }
-                                else if (destinationViewTexture)
-                                {
-                                    copiedGlassImageView = destinationViewTexture->imageView;
-                                }
-                            }
-
                             if (destinationImage == sourceImage)
                             {
-                                if (isSolidToGlassCopyCommand)
-                                {
-                                    ++solidToGlassCopySameImageSkipCount;
-                                }
                                 continue;
                             }
 
@@ -8856,23 +8386,6 @@ namespace Gek
                             imageCopy.extent.height = std::min(sourceHeight, destinationHeight);
                             imageCopy.extent.depth = 1;
 
-                            if (isSolidToGlassCopyCommand && !capturedSolidToGlassCopyDetails)
-                            {
-                                capturedSolidToGlassCopyDetails = true;
-                                solidToGlassCopyUsedNamedSource = usedNamedSourceForCopy;
-                                solidToGlassCopyUsedNamedDestination = usedNamedDestinationForCopy;
-                                solidToGlassCopySourceImage = sourceImage;
-                                solidToGlassCopyDestinationImage = destinationImage;
-                                solidToGlassCopySourceLayout = sourceLayout;
-                                solidToGlassCopyDestinationLayout = destinationLayout;
-                                solidToGlassCopySourceWidth = sourceWidth;
-                                solidToGlassCopySourceHeight = sourceHeight;
-                                solidToGlassCopyDestinationWidth = destinationWidth;
-                                solidToGlassCopyDestinationHeight = destinationHeight;
-                                solidToGlassCopyExtentWidth = imageCopy.extent.width;
-                                solidToGlassCopyExtentHeight = imageCopy.extent.height;
-                            }
-
                             vkCmdCopyImage(
                                 commandBuffer,
                                 sourceImage,
@@ -8965,23 +8478,16 @@ namespace Gek
 
                         if (drawCommand.commandType == DrawCommand::Type::GenerateMipMaps)
                         {
-                            ++sceneCommandCount;
-
                             auto *targetTexture = getObject<TargetTexture>(drawCommand.mipmapTexture);
                             auto *viewTexture = getObject<ViewTexture>(drawCommand.mipmapTexture);
-                            bool isGlassGenerateMipCommand = false;
                             VkImage image = VK_NULL_HANDLE;
                             if (targetTexture)
                             {
                                 image = targetTexture->image;
-                                const auto &description = targetTexture->getDescription();
-                                isGlassGenerateMipCommand = (description.name.find("glassBuffer") != std::string::npos);
                             }
                             else if (viewTexture)
                             {
                                 image = viewTexture->image;
-                                const auto &description = viewTexture->getDescription();
-                                isGlassGenerateMipCommand = (description.name.find("glassBuffer") != std::string::npos);
                             }
 
                             if (targetTexture)
@@ -9047,13 +8553,6 @@ namespace Gek
                             if (image == VK_NULL_HANDLE || mipLevels <= 1)
                             {
                                 continue;
-                            }
-
-                            if (isGlassGenerateMipCommand)
-                            {
-                                ++glassGenerateMipCommandCount;
-                                glassGenerateMipLevels = mipLevels;
-                                glassGenerateMipImage = image;
                             }
 
                             VkImageLayout sourceLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -9270,18 +8769,14 @@ namespace Gek
 
                         if (drawCommand.commandType == DrawCommand::Type::ComputeDispatch)
                         {
-                            ++sceneCommandCount;
-
                             if (!drawCommand.computeProgram)
                             {
-                                ++scenePipelineSkips;
                                 continue;
                             }
 
                             VkPipeline computePipeline = getOrCreateComputePipeline(drawCommand.computeProgram);
                             if (computePipeline == VK_NULL_HANDLE || descriptorSetLayout == VK_NULL_HANDLE || descriptorPool == VK_NULL_HANDLE || graphicsPipelineLayout == VK_NULL_HANDLE)
                             {
-                                ++scenePipelineSkips;
                                 continue;
                             }
 
@@ -9425,7 +8920,6 @@ namespace Gek
                             VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
                             if (vkAllocateDescriptorSets(device, &descriptorAllocateInfo, &descriptorSet) != VK_SUCCESS)
                             {
-                                ++sceneDescriptorSkips;
                                 continue;
                             }
 
@@ -9578,90 +9072,16 @@ namespace Gek
                             continue;
                         }
 
-                        const bool isUiDraw = isUiDrawCommand(drawCommand);
-
-                        uint32_t firstGlassResourceSlot = PixelResourceSlotCount;
-                        if (!isUiDraw)
+                        for (uint32_t resourceSlot = 0; resourceSlot < PixelResourceSlotCount; ++resourceSlot)
                         {
-                            for (uint32_t resourceSlot = 0; resourceSlot < PixelResourceSlotCount; ++resourceSlot)
+                            VkImageView imageView = drawCommand.pixelResourceImageViews[resourceSlot];
+                            if (imageView == VK_NULL_HANDLE)
                             {
-                                VkImageView imageView = drawCommand.pixelResourceImageViews[resourceSlot];
-                                if (imageView == VK_NULL_HANDLE)
-                                {
-                                    continue;
-                                }
-
-                                if (copiedGlassImageView != VK_NULL_HANDLE && imageView == copiedGlassImageView)
-                                {
-                                    firstGlassResourceSlot = resourceSlot;
-                                    break;
-                                }
+                                continue;
                             }
-                        }
-
-                        const bool isGlassDraw =
-                            (!isUiDraw) &&
-                            (firstGlassResourceSlot != PixelResourceSlotCount);
-                        if (isGlassDraw)
-                        {
-                            ++glassDrawCommandCount;
-                            if (firstGlassDrawCommandIndex == std::numeric_limits<uint32_t>::max())
-                            {
-                                firstGlassDrawCommandIndex = drawCommandIndex;
-                            }
-                            glassDrawFirstResourceSlotMin = std::min(glassDrawFirstResourceSlotMin, firstGlassResourceSlot);
-                            glassDrawFirstResourceSlotMax = std::max(glassDrawFirstResourceSlotMax, firstGlassResourceSlot);
-
-                            if (copiedGlassImage == VK_NULL_HANDLE || copiedGlassImageView == VK_NULL_HANDLE)
-                            {
-                                ++glassDrawMissingResourceCount;
-                            }
-
-                            const VkSampler glassSamplerSlot0 = drawCommand.pixelSamplerStates[0];
-                            const VkSampler glassSamplerSlot1 = drawCommand.pixelSamplerStates[1];
-                            if (glassSamplerSlot1 == VK_NULL_HANDLE)
-                            {
-                                ++glassSamplerSlot1MissingCount;
-                            }
-                            else if (glassSamplerSlot0 != VK_NULL_HANDLE && glassSamplerSlot0 == glassSamplerSlot1)
-                            {
-                                ++glassSamplerSlot01SameCount;
-                            }
-
-                            if (!sawSolidToGlassCopyCommand && !loggedGlassDrawBeforeCopy)
-                            {
-                                loggedGlassDrawBeforeCopy = true;
-                            }
-
-                            if (!capturedGlassDrawBindingDetails)
-                            {
-                                capturedGlassDrawBindingDetails = true;
-                                firstGlassDescriptorSlot = firstGlassResourceSlot;
-                                firstGlassDescriptorImageView = drawCommand.pixelResourceImageViews[firstGlassResourceSlot];
-                                firstGlassDescriptorLayout = getSampledImageLayoutForView(firstGlassDescriptorImageView);
-                                firstGlassSamplerSlot0 = drawCommand.pixelSamplerStates[0];
-                                firstGlassSamplerSlot1 = drawCommand.pixelSamplerStates[1];
-
-                                auto glassViewSearch = frameOffscreenViewLookup.find(firstGlassDescriptorImageView);
-                                if (glassViewSearch != std::end(frameOffscreenViewLookup))
-                                {
-                                    firstGlassDescriptorImage = glassViewSearch->second.first;
-                                    auto glassLayoutSearch = offscreenImageLayouts.find(firstGlassDescriptorImage);
-                                    if (glassLayoutSearch != std::end(offscreenImageLayouts))
-                                    {
-                                        firstGlassTrackedLayout = glassLayoutSearch->second;
-                                    }
-                                }
-                            }
-                        }
-
-                        if (!isUiDraw)
-                        {
-                            ++sceneCommandCount;
                         }
 
                         const bool drawToBackBuffer = !drawCommand.hasOffscreenTarget;
-
                         if (!drawToBackBuffer && drawCommand.renderTarget)
                         {
                             const auto &targetDescription = drawCommand.renderTarget->getDescription();
@@ -9695,32 +9115,6 @@ namespace Gek
                             }
                         }
 
-                        if (copiedSolidSourceImage != VK_NULL_HANDLE && !drawToBackBuffer)
-                        {
-                            bool writesCopySourceImage = false;
-                            const uint32_t offscreenCount = std::min<uint32_t>(drawCommand.offscreenTargetCount, 8u);
-                            for (uint32_t targetIndex = 0; targetIndex < offscreenCount; ++targetIndex)
-                            {
-                                if (drawCommand.offscreenImages[targetIndex] == copiedSolidSourceImage)
-                                {
-                                    writesCopySourceImage = true;
-                                    break;
-                                }
-                            }
-
-                            if (writesCopySourceImage)
-                            {
-                                if (drawCommandIndex < firstSolidToGlassCopyCommandIndex)
-                                {
-                                    ++solidSourceDrawBeforeCopyCount;
-                                }
-                                else
-                                {
-                                    ++solidSourceDrawAfterCopyCount;
-                                }
-                            }
-                        }
-
                         VkRenderPass activeRenderPass = renderPass;
                         VkFramebuffer activeFramebuffer = swapChainFramebuffers[imageIndex];
                         VkExtent2D activeExtent = swapChainExtent;
@@ -9741,10 +9135,6 @@ namespace Gek
                         {
                             if (offscreenTargetCount == 0)
                             {
-                                if (!isUiDraw)
-                                {
-                                    ++sceneOffscreenInvalidSkips;
-                                }
                                 continue;
                             }
 
@@ -9764,10 +9154,6 @@ namespace Gek
 
                             if (!validTargets)
                             {
-                                if (!isUiDraw)
-                                {
-                                    ++sceneOffscreenInvalidSkips;
-                                }
                                 continue;
                             }
 
@@ -9806,14 +9192,10 @@ namespace Gek
                             activeRenderPass = getOrCreateOffscreenRenderPass(targetFormats, needsDepth ? offscreenDepthFormat : VK_FORMAT_UNDEFINED);
                             if (activeRenderPass == VK_NULL_HANDLE)
                             {
-                                if (!isUiDraw)
-                                {
-                                    ++sceneOffscreenInvalidSkips;
-                                }
                                 continue;
                             }
 
-                            if (!isUiDraw && offscreenTargetCount > 0)
+                            if (offscreenTargetCount > 0)
                             {
                                 sceneOffscreenCopySourceImage = offscreenImages[0];
                                 sceneOffscreenCopySourceExtent = activeExtent;
@@ -9933,10 +9315,6 @@ namespace Gek
                             activeFramebuffer = getOrCreateOffscreenFramebuffer(activeRenderPass, framebufferAttachmentViews, activeExtent);
                             if (activeFramebuffer == VK_NULL_HANDLE)
                             {
-                                if (!isUiDraw)
-                                {
-                                    ++sceneOffscreenInvalidSkips;
-                                }
                                 continue;
                             }
                         }
@@ -10046,7 +9424,7 @@ namespace Gek
 
                         const DrawCommand *pipelineCommand = &drawCommand;
                         DrawCommand backBufferCompositionCommand{};
-                        if (!isUiDraw && drawToBackBuffer)
+                        if (drawToBackBuffer)
                         {
                             backBufferCompositionCommand = drawCommand;
                             backBufferCompositionCommand.depthState = nullptr;
@@ -10057,10 +9435,6 @@ namespace Gek
                         VkPipeline pipeline = getOrCreateGraphicsPipeline(*pipelineCommand, activeRenderPass);
                         if (pipeline == VK_NULL_HANDLE)
                         {
-                            if (!isUiDraw)
-                            {
-                                ++scenePipelineSkips;
-                            }
                             endRenderPassForCurrentTarget();
                             continue;
                         }
@@ -10147,7 +9521,7 @@ namespace Gek
                             vkCmdBindIndexBuffer(commandBuffer, indexBuffer, drawCommand.indexOffset, indexType);
                         }
 
-                        if (!isUiDraw && drawToBackBuffer)
+                        if (drawToBackBuffer)
                         {
                             VkImageView sourceView = drawCommand.pixelResourceImageViews[0];
                             if (sourceView == VK_NULL_HANDLE)
@@ -10163,86 +9537,7 @@ namespace Gek
                             }
                         }
 
-                        if (isUiDraw)
-                        {
-                            if (uiDescriptorSetLayout != VK_NULL_HANDLE && uiDescriptorPool != VK_NULL_HANDLE && uiGraphicsPipelineLayout != VK_NULL_HANDLE)
-                            {
-                                VkDescriptorSetAllocateInfo descriptorAllocateInfo{};
-                                descriptorAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                                descriptorAllocateInfo.descriptorPool = uiDescriptorPool;
-                                descriptorAllocateInfo.descriptorSetCount = 1;
-                                descriptorAllocateInfo.pSetLayouts = &uiDescriptorSetLayout;
-
-                                VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
-                                if (vkAllocateDescriptorSets(device, &descriptorAllocateInfo, &descriptorSet) == VK_SUCCESS)
-                                {
-                                    VkDescriptorBufferInfo bufferInfo{};
-                                    const VkBuffer uiVertexConstantVkBuffer = getCapturedVkBuffer(drawCommand.vertexConstantBuffer, drawCommand.vertexConstantBufferVersion);
-                                    bufferInfo.buffer = uiVertexConstantVkBuffer;
-                                    bufferInfo.offset = 0;
-                                    bufferInfo.range = drawCommand.vertexConstantBuffer ? drawCommand.vertexConstantBuffer->size : 0;
-
-                                    VkDescriptorImageInfo sampledImageInfo{};
-                                    sampledImageInfo.imageLayout = getSampledImageLayoutForView(drawCommand.pixelImageView);
-                                    sampledImageInfo.imageView = drawCommand.pixelImageView;
-
-                                    VkDescriptorImageInfo samplerInfo{};
-                                    samplerInfo.sampler = drawCommand.pixelSampler;
-
-                                    std::array<VkWriteDescriptorSet, 3> writes{};
-                                    uint32_t writeCount = 0;
-
-                                    if (bufferInfo.buffer != VK_NULL_HANDLE)
-                                    {
-                                        auto &write = writes[writeCount++];
-                                        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                                        write.dstSet = descriptorSet;
-                                        write.dstBinding = 0;
-                                        write.descriptorCount = 1;
-                                        write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                                        write.pBufferInfo = &bufferInfo;
-                                    }
-
-                                    if (sampledImageInfo.imageView != VK_NULL_HANDLE)
-                                    {
-                                        auto &write = writes[writeCount++];
-                                        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                                        write.dstSet = descriptorSet;
-                                        write.dstBinding = 1;
-                                        write.descriptorCount = 1;
-                                        write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                                        write.pImageInfo = &sampledImageInfo;
-                                    }
-
-                                    if (samplerInfo.sampler != VK_NULL_HANDLE)
-                                    {
-                                        auto &write = writes[writeCount++];
-                                        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                                        write.dstSet = descriptorSet;
-                                        write.dstBinding = 2;
-                                        write.descriptorCount = 1;
-                                        write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-                                        write.pImageInfo = &samplerInfo;
-                                    }
-
-                                    if (writeCount > 0)
-                                    {
-                                        vkUpdateDescriptorSets(device, writeCount, writes.data(), 0, nullptr);
-                                        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, uiGraphicsPipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
-                                    }
-                                }
-                                else
-                                {
-                                    if (!isUiDraw)
-                                    {
-                                        ++sceneDescriptorSkips;
-                                    }
-                                    endRenderPassForCurrentTarget();
-                                    continue;
-                                }
-                            }
-                        }
-                        else if (descriptorSetLayout != VK_NULL_HANDLE && descriptorPool != VK_NULL_HANDLE && graphicsPipelineLayout != VK_NULL_HANDLE)
+                        if (descriptorSetLayout != VK_NULL_HANDLE && descriptorPool != VK_NULL_HANDLE && graphicsPipelineLayout != VK_NULL_HANDLE)
                         {
                             GraphicsDescriptorSignature descriptorSignature{};
                             descriptorSignature.pixelResourceImageViews = drawCommand.pixelResourceImageViews;
@@ -10396,10 +9691,6 @@ namespace Gek
                                 }
                                 else
                                 {
-                                    if (!isUiDraw)
-                                    {
-                                        ++sceneDescriptorSkips;
-                                    }
                                     endRenderPassForCurrentTarget();
                                     continue;
                                 }
@@ -10411,30 +9702,13 @@ namespace Gek
                             vkCmdDrawIndexed(commandBuffer, drawCommand.indexCount, std::max(drawCommand.instanceCount, 1u), 0, drawCommand.firstVertex, drawCommand.firstInstance);
                             if (drawToBackBuffer)
                             {
-                                ++totalBackBufferDrawCalls;
-                            }
-                            if (!isUiDraw)
-                            {
-                                ++sceneDrawCallsIssued;
-                                if (drawToBackBuffer)
+                                bool hasPixelImage = (drawCommand.pixelImageView != VK_NULL_HANDLE);
+                                if (!hasPixelImage)
                                 {
-                                    ++sceneBackBufferDrawCalls;
-                                    bool hasPixelImage = (drawCommand.pixelImageView != VK_NULL_HANDLE);
-                                    if (!hasPixelImage)
-                                    {
-                                        hasPixelImage = std::any_of(
-                                            std::begin(drawCommand.pixelResourceImageViews),
-                                            std::end(drawCommand.pixelResourceImageViews),
-                                            [](VkImageView imageView) { return imageView != VK_NULL_HANDLE; });
-                                    }
-                                    if (!hasPixelImage)
-                                    {
-                                        ++sceneBackBufferMissingImageDrawCalls;
-                                    }
-                                }
-                                else
-                                {
-                                    ++sceneOffscreenDrawCalls;
+                                    hasPixelImage = std::any_of(
+                                        std::begin(drawCommand.pixelResourceImageViews),
+                                        std::end(drawCommand.pixelResourceImageViews),
+                                        [](VkImageView imageView) { return imageView != VK_NULL_HANDLE; });
                                 }
                             }
                         }
@@ -10443,30 +9717,13 @@ namespace Gek
                             vkCmdDraw(commandBuffer, drawCommand.vertexCount, std::max(drawCommand.instanceCount, 1u), static_cast<uint32_t>(drawCommand.firstVertex), drawCommand.firstInstance);
                             if (drawToBackBuffer)
                             {
-                                ++totalBackBufferDrawCalls;
-                            }
-                            if (!isUiDraw)
-                            {
-                                ++sceneDrawCallsIssued;
-                                if (drawToBackBuffer)
+                                bool hasPixelImage = (drawCommand.pixelImageView != VK_NULL_HANDLE);
+                                if (!hasPixelImage)
                                 {
-                                    ++sceneBackBufferDrawCalls;
-                                    bool hasPixelImage = (drawCommand.pixelImageView != VK_NULL_HANDLE);
-                                    if (!hasPixelImage)
-                                    {
-                                        hasPixelImage   = std::any_of(
-                                            std::begin(drawCommand.pixelResourceImageViews),
-                                            std::end(drawCommand.pixelResourceImageViews),
-                                            [](VkImageView imageView) { return imageView != VK_NULL_HANDLE; });
-                                    }
-                                    if (!hasPixelImage)
-                                    {
-                                        ++sceneBackBufferMissingImageDrawCalls;
-                                    }
-                                }
-                                else
-                                {
-                                    ++sceneOffscreenDrawCalls;
+                                    hasPixelImage   = std::any_of(
+                                        std::begin(drawCommand.pixelResourceImageViews),
+                                        std::end(drawCommand.pixelResourceImageViews),
+                                        [](VkImageView imageView) { return imageView != VK_NULL_HANDLE; });
                                 }
                             }
                         }
@@ -10487,7 +9744,6 @@ namespace Gek
                 {
                     getContext()->log(Gek::Context::Error, "Vulkan failed to record command buffer");
                     pendingDrawCommands.clear();
-                    pendingUiDrawCommands.clear();
                     return;
                 }
                 const auto recordEndTime = std::chrono::high_resolution_clock::now();
@@ -10530,7 +9786,6 @@ namespace Gek
                         "Vulkan failed to submit draw command buffer: result={}",
                         static_cast<int32_t>(submitResult));
                     pendingDrawCommands.clear();
-                    pendingUiDrawCommands.clear();
                     recreateSwapChain();
                     return;
                 }
@@ -10570,48 +9825,14 @@ namespace Gek
                         "Vulkan failed to present swap-chain image: result={}",
                         static_cast<int32_t>(presentResult));
                     pendingDrawCommands.clear();
-                    pendingUiDrawCommands.clear();
                     recreateSwapChain();
                     return;
                 }
 
                 ++presentFrameIndex;
                 const uint32_t totalCommandCount = static_cast<uint32_t>(pendingDrawCommands.size());
-                const uint32_t uiCommandCount = (totalCommandCount >= sceneCommandCount) ? (totalCommandCount - sceneCommandCount) : 0u;
-                debugOverlayText = std::format(
-                    "VK f={} total={} ui={} scene={} draws={} off={} back={} descSkips={} pipeSkips={} offSkips={} glassDraw={} glassCopy={} glassNoRes={} glassS1Miss={} glassS01Eq={} glassFirstSlot={}..{} cb={}/{}/{} vb={}/{}/{} ib={}/{}/{} devLost={}",
-                    presentFrameIndex,
-                    totalCommandCount,
-                    uiCommandCount,
-                    sceneCommandCount,
-                    sceneDrawCallsIssued,
-                    sceneOffscreenDrawCalls,
-                    sceneBackBufferDrawCalls,
-                    sceneDescriptorSkips,
-                    scenePipelineSkips,
-                    sceneOffscreenInvalidSkips,
-                    glassDrawCommandCount,
-                    solidToGlassCopyCommandCount,
-                    glassDrawMissingResourceCount,
-                    glassSamplerSlot1MissingCount,
-                    glassSamplerSlot01SameCount,
-                    (glassDrawFirstResourceSlotMin == PixelResourceSlotCount ? 999u : glassDrawFirstResourceSlotMin),
-                    (glassDrawFirstResourceSlotMin == PixelResourceSlotCount ? 999u : glassDrawFirstResourceSlotMax),
-                    constantBufferVersionRotationsThisFrame,
-                    constantBufferVersionExhaustionThisFrame,
-                    constantBufferVersionWaitRecoveriesThisFrame,
-                    vertexBufferVersionRotationsThisFrame,
-                    vertexBufferVersionExhaustionThisFrame,
-                    vertexBufferVersionWaitRecoveriesThisFrame,
-                    indexBufferVersionRotationsThisFrame,
-                    indexBufferVersionExhaustionThisFrame,
-                    indexBufferVersionWaitRecoveriesThisFrame,
-                    static_cast<uint32_t>(deviceLost));
                 getContext()->setRuntimeMetric("vulkan.frame", static_cast<double>(presentFrameIndex));
                 getContext()->setRuntimeMetric("vulkan.totalCommands", static_cast<double>(totalCommandCount));
-                getContext()->setRuntimeMetric("vulkan.uiCommands", static_cast<double>(uiCommandCount));
-                getContext()->setRuntimeMetric("vulkan.sceneCommands", static_cast<double>(sceneCommandCount));
-                getContext()->setRuntimeMetric("vulkan.sceneDraws", static_cast<double>(sceneDrawCallsIssued));
                 getContext()->setRuntimeMetric("vulkan.constantBufferVersioningEnabled", (constantBufferVersioningPolicy.mode == Render::BufferVersioningMode::FixedRing) ? 1.0 : 0.0);
                 getContext()->setRuntimeMetric("vulkan.vertexBufferVersioningEnabled", (vertexBufferVersioningPolicy.mode == Render::BufferVersioningMode::FixedRing) ? 1.0 : 0.0);
                 getContext()->setRuntimeMetric("vulkan.indexBufferVersioningEnabled", (indexBufferVersioningPolicy.mode == Render::BufferVersioningMode::FixedRing) ? 1.0 : 0.0);
@@ -10621,7 +9842,6 @@ namespace Gek
                 getContext()->setRuntimeMetric("render.frame", static_cast<double>(presentFrameIndex));
                 getContext()->setRuntimeMetric("render.backend", 0.0);
                 getContext()->setRuntimeMetric("render.totalCommands", static_cast<double>(totalCommandCount));
-                getContext()->setRuntimeMetric("render.sceneDraws", static_cast<double>(sceneDrawCallsIssued));
                 getContext()->setRuntimeMetric("render.mappedDepthFunc", 0.0);
                 getContext()->setRuntimeMetric("render.firstIndexedInstanceCount", 0.0);
                 getContext()->setRuntimeMetric("vulkan.submitCpuMs", submitCpuMs);
@@ -10640,13 +9860,6 @@ namespace Gek
                 getContext()->setRuntimeMetric("vulkan.drawCommandLockCpuMs", drawCommandLockCpuMs);
                 getContext()->setRuntimeMetric("vulkan.untrackedFrameCpuMs", untrackedFrameCpuMs);
                 getContext()->setRuntimeMetric("vulkan.frameCpuMs", frameCpuMs);
-                getContext()->setRuntimeMetric("vulkan.sceneBackBufferDraws", static_cast<double>(sceneBackBufferDrawCalls));
-                getContext()->setRuntimeMetric("vulkan.sceneOffscreenDraws", static_cast<double>(sceneOffscreenDrawCalls));
-                getContext()->setRuntimeMetric("vulkan.sceneBackBufferMissingImageDraws", static_cast<double>(sceneBackBufferMissingImageDrawCalls));
-                getContext()->setRuntimeMetric("vulkan.sceneFallbackCopy", static_cast<double>(sceneFallbackCopyPerformed ? 1u : 0u));
-                getContext()->setRuntimeMetric("vulkan.offscreenSkips", static_cast<double>(sceneOffscreenInvalidSkips));
-                getContext()->setRuntimeMetric("vulkan.pipelineSkips", static_cast<double>(scenePipelineSkips));
-                getContext()->setRuntimeMetric("vulkan.descriptorSkips", static_cast<double>(sceneDescriptorSkips));
                 getContext()->setRuntimeMetric("vulkan.contextDrawAttempts", static_cast<double>(contextDrawCallAttempts));
                 getContext()->setRuntimeMetric("vulkan.skipMissingProgram", static_cast<double>(contextDrawSkipsMissingProgram));
                 getContext()->setRuntimeMetric("vulkan.skipMissingVB", static_cast<double>(contextDrawSkipsMissingVertexBuffer));
@@ -10659,11 +9872,6 @@ namespace Gek
                 getContext()->setRuntimeMetric("vulkan.deferredCommandLists", static_cast<double>(deferredCommandLists.size()));
                 getContext()->setRuntimeMetric("vulkan.pendingEnqueues", static_cast<double>(pendingCommandEnqueueCount));
                 getContext()->setRuntimeMetric("vulkan.deferredEnqueues", static_cast<double>(deferredCommandEnqueueCount));
-                getContext()->setRuntimeMetric("vulkan.uiSnapshotCreated", static_cast<double>(uiSnapshotCreatedThisFrame));
-                getContext()->setRuntimeMetric("vulkan.uiSnapshotReused", static_cast<double>(uiSnapshotReusedThisFrame));
-                getContext()->setRuntimeMetric("vulkan.uiSnapshotBytes", static_cast<double>(uiSnapshotBytesThisFrame));
-                getContext()->setRuntimeMetric("vulkan.uiSnapshotPending", static_cast<double>(transientFrameConstantBufferSnapshotsPending.size()));
-                getContext()->setRuntimeMetric("vulkan.uiSnapshotInFlight", static_cast<double>(transientFrameConstantBufferSnapshotsInFlight.size()));
                 getContext()->setRuntimeMetric("vulkan.constantVersionRotations", static_cast<double>(constantBufferVersionRotationsThisFrame));
                 getContext()->setRuntimeMetric("vulkan.constantVersionExhaustions", static_cast<double>(constantBufferVersionExhaustionThisFrame));
                 getContext()->setRuntimeMetric("vulkan.constantVersionWaitRecoveries", static_cast<double>(constantBufferVersionWaitRecoveriesThisFrame));
@@ -10706,11 +9914,7 @@ namespace Gek
                 getContext()->setRuntimeMetric("vulkan.indexVersionExhaustionsNoFenceTotal", static_cast<double>(indexBufferVersionExhaustionNoFenceTotal));
                 getContext()->setRuntimeMetric("vulkan.indexVersionWaitAttemptsTotal", static_cast<double>(indexBufferVersionWaitAttemptsTotal));
                 getContext()->setRuntimeMetric("vulkan.indexVersionPostWaitExhaustionsTotal", static_cast<double>(indexBufferVersionPostWaitExhaustionTotal));
-
-                transientFrameConstantBufferSnapshotsInFlight = std::move(transientFrameConstantBufferSnapshotsPending);
-                transientFrameConstantBufferSnapshotsPending.clear();
                 pendingDrawCommands.clear();
-                pendingUiDrawCommands.clear();
             }
         };
 
@@ -10771,15 +9975,9 @@ namespace Gek
             command.computeUnorderedAccessBuffers = sourceContext->currentComputeUnorderedAccessBuffers;
 
             std::lock_guard<std::mutex> lock(getDrawCommandMutex());
-            std::map<Buffer *, Buffer *> constantBufferSnapshotMap;
-            auto snapshotConstantBuffer = [&](Buffer *buffer) -> Buffer *
-            {
-                return captureBufferSnapshot(buffer, true, constantBufferSnapshotMap);
-            };
-
             for (uint32_t slot = 0; slot < command.computeConstantBuffers.size(); ++slot)
             {
-                command.computeConstantBuffers[slot] = snapshotConstantBuffer(command.computeConstantBuffers[slot]);
+                command.computeConstantBuffers[slot] = captureBufferSnapshot(command.computeConstantBuffers[slot], true);
                 command.computeConstantBufferVersions[slot] = captureVersionedBufferSlot(command.computeConstantBuffers[slot]);
             }
 
