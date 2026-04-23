@@ -1,0 +1,10 @@
+{
+  "cmake.useCMakePresets": "always",
+  "cmake.defaultConfigurePreset": "vs2022-x64-d3d11",
+  "cmake.defaultBuildPreset": "vs2022-x64-d3d11-install",
+  "cmake.defaultBuildTarget": "install",
+  "cmake.buildTarget": "install",
+  "cmake.defaultLaunchTarget": "demo_engine",
+  "cmake.buildBeforeRun": true,
+  "cmake.configureOnOpen": true
+}

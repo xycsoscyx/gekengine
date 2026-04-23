@@ -1,0 +1,65 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug demo_engine",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/demo_engine_debug.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/bin",
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "Install All (Debug)"
+    },
+    {
+      "name": "Debug createmodel",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/createmodel_debug.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/bin",
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "Install All (Debug)"
+    },
+    {
+      "name": "Debug createhull",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/createhull_debug.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/bin",
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "Install All (Debug)"
+    },
+    {
+      "name": "Debug createtree",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/createtree_debug.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/bin",
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "Install All (Debug)"
+    },
+    {
+      "name": "Debug compresstextures",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/compresstextures.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/bin",
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "Install All (Debug)"
+    }
+  ]
+}

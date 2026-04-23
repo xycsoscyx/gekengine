@@ -1,0 +1,140 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Install demo_engine and plugins (Debug)",
+      "type": "shell",
+      "command": "cmake --build --preset vs2022-x64-install --target demo_engine renderd3d11 rendervulkan systemwin32 --config Debug",
+      "options": {
+        "shell": {
+          "executable": "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+          "args": [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command"
+          ]
+        }
+      },
+      "problemMatcher": [
+        "$msCompile"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "Install create utilities (Debug)",
+      "type": "shell",
+      "command": "cmake --build --preset vs2022-x64-install --target createmodel createhull createtree compresstextures --config Debug",
+      "options": {
+        "shell": {
+          "executable": "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+          "args": [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command"
+          ]
+        }
+      },
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "Install createmodel (Debug)",
+      "type": "shell",
+      "command": "cmake --build --preset vs2022-x64-install --target createmodel --config Debug",
+      "options": {
+        "shell": {
+          "executable": "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+          "args": [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command"
+          ]
+        }
+      },
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "Install createhull (Debug)",
+      "type": "shell",
+      "command": "cmake --build --preset vs2022-x64-install --target createhull --config Debug",
+      "options": {
+        "shell": {
+          "executable": "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+          "args": [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command"
+          ]
+        }
+      },
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "Install createtree (Debug)",
+      "type": "shell",
+      "command": "cmake --build --preset vs2022-x64-install --target createtree --config Debug",
+      "options": {
+        "shell": {
+          "executable": "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+          "args": [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command"
+          ]
+        }
+      },
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "Install compresstextures (Debug)",
+      "type": "shell",
+      "command": "cmake --build --preset vs2022-x64-install --target compresstextures --config Debug",
+      "options": {
+        "shell": {
+          "executable": "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+          "args": [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command"
+          ]
+        }
+      },
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "CMake Install (Debug)",
+      "type": "shell",
+      "command": "cmake --install build --config Debug",
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build All (Debug)",
+      "type": "shell",
+      "command": "cmake --build build --config Debug",
+      "problemMatcher": ["$msCompile"],
+      "group": "build"
+    },
+    {
+      "label": "Install All (Debug)",
+      "type": "shell",
+      "command": "cmake --install build --config Debug",
+      "problemMatcher": ["$msCompile"],
+      "dependsOn": ["Build All (Debug)"],
+      "group": "build"
+    }
+  ]
+}
