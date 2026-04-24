@@ -8,45 +8,42 @@ on:
 
 env:
   BUILD_TYPE: Release
-  # This acts as a storage container for our anchor
-  OS_LIST: &os_list
-    - ubuntu-latest
-    - windows-latest
-    # - macos-latest
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      os_matrix: ${{ steps.set-list.outputs.os_list }}
+    steps:
+      - id: set-list
+        # The list is defined ONCE here as a JSON string
+        run: echo 'os_list=["ubuntu-latest", "windows-latest"]' >> "$GITHUB_OUTPUT"
+
   build:
+    needs: setup
     strategy:
       matrix:
-        os: *os_list
-
+        os: ${{ fromJson(needs.setup.outputs.os_matrix) }}
     runs-on: ${{ matrix.os }}
-
     steps:
     - uses: actions/checkout@v4
-
     - name: Prepare Vulkan SDK
       uses: humbletim/setup-vulkan-sdk@v1.2.1
       with:
         vulkan-query-version: 1.3.243.0
         vulkan-components: prebuilt loader
         vulkan-use-cache: true
-
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
   test:
     needs: build
-
     strategy:
       matrix:
-        os: *os_list
-
+        os: ${{ fromJson(needs.setup.outputs.os_matrix) }}
     runs-on: ${{ matrix.os }}
-
     steps:
     - name: Test
       working-directory: ${{github.workspace}}/build
