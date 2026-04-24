@@ -30,7 +30,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        submodules: true
+        submodules: recursive
+    - name: Install SPIRV-Headers
+      run: sudo apt-get update && sudo apt-get install -y spirv-headers
     - name: Clone Slang
       run: git clone --depth 1 --branch v2026.2.2 https://github.com/shader-slang/slang.git ${{github.workspace}}/slang
     - name: Build and install Slang
