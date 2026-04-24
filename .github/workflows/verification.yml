@@ -25,6 +25,7 @@ jobs:
       matrix:
         os: ${{ fromJson(needs.setup.outputs.os_matrix) }}
     runs-on: ${{ matrix.os }}
+    fail-fast: false
     steps:
     - uses: actions/checkout@v4
     - name: Prepare Vulkan SDK
