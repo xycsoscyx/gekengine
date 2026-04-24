@@ -6,3 +6,4 @@ include/
 install/
 lib/
 share/
+cmake/
