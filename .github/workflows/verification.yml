@@ -8,11 +8,11 @@ on:
 
 env:
   BUILD_TYPE: Release
-
-x-os-list: &os_list
-  - ubuntu-latest
-  - windows-latest
-  # - macos-latest
+  # This acts as a storage container for our anchor
+  OS_LIST: &os_list
+    - ubuntu-latest
+    - windows-latest
+    # - macos-latest
 
 jobs:
   build:
