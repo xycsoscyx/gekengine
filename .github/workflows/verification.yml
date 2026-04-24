@@ -11,7 +11,11 @@ env:
 
 jobs:
   build:
-    runs-on: windows-latest
+    parallel:
+      matrix:
+        - OS: [linux, windows]
+          # Map specific runner tags if they differ from the OS name
+          RUNNER_TAG: ["linux-runner", "windows-runner"]
 
     steps:
     - uses: actions/checkout@v4
@@ -31,12 +35,6 @@ jobs:
 
   test:
     needs: build
-
-    parallel:
-      matrix:
-        - OS: [linux, windows]
-          # Map specific runner tags if they differ from the OS name
-          RUNNER_TAG: ["linux-runner", "windows-runner"]
 
     steps:
     - name: Test
