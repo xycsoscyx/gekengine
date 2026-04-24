@@ -22,10 +22,10 @@ jobs:
   build:
     needs: setup
     strategy:
+      fail-fast: false
       matrix:
         os: ${{ fromJson(needs.setup.outputs.os_matrix) }}
     runs-on: ${{ matrix.os }}
-    fail-fast: false
     steps:
     - uses: actions/checkout@v4
     - name: Prepare Vulkan SDK
@@ -42,6 +42,7 @@ jobs:
   test:
     needs: build
     strategy:
+      fail-fast: false
       matrix:
         os: ${{ fromJson(needs.setup.outputs.os_matrix) }}
     runs-on: ${{ matrix.os }}
