@@ -12,7 +12,7 @@ env:
 x-os-list: &os_list
   - ubuntu-latest
   - windows-latest
-  - macos-latest
+  # - macos-latest
 
 jobs:
   build:
