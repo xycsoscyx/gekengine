@@ -1248,8 +1248,6 @@ namespace Gek
 
                             context->currentVertexConstantBuffers[slot] = getObject<Buffer>(list[bufferIndex]);
                         }
-
-                        context->currentVertexConstantBuffer = context->currentVertexConstantBuffers[0];
                     }
 
                     void setResourceList(const std::vector<Render::Object *> &list, uint32_t firstStage)
@@ -1277,8 +1275,6 @@ namespace Gek
                         {
                             context->currentVertexConstantBuffers[stage] = nullptr;
                         }
-
-                        context->currentVertexConstantBuffer = context->currentVertexConstantBuffers[0];
                     }
 
                     void clearResourceList(uint32_t count, uint32_t firstStage)
@@ -1389,11 +1385,6 @@ namespace Gek
                             auto samplerState = getObject<SamplerState>(list[samplerIndex]);
                             context->currentPixelSamplerStates[slot] = (samplerState ? samplerState->sampler : VK_NULL_HANDLE);
                         }
-
-                        if (firstStage == 0)
-                        {
-                            context->currentPixelSamplerState = getObject<SamplerState>(list[0]);
-                        }
                     }
 
                     void setConstantBufferList(const std::vector<Render::Buffer *> &list, uint32_t firstStage)
@@ -1413,8 +1404,6 @@ namespace Gek
 
                             context->currentPixelConstantBuffers[slot] = getObject<Buffer>(list[bufferIndex]);
                         }
-
-                        context->currentPixelConstantBuffer = context->currentPixelConstantBuffers[0];
                     }
 
                     void setResourceList(const std::vector<Render::Object *> &list, uint32_t firstStage)
@@ -1467,12 +1456,6 @@ namespace Gek
                             context->currentPixelResourceImageViews[slot] = imageView;
                             context->currentPixelResourceSamplers[slot] = imageSampler;
                         }
-
-                        if (firstStage == 0 && !context->currentPixelResourceImageViews.empty())
-                        {
-                            context->currentPixelImageView = context->currentPixelResourceImageViews[0];
-                            context->currentPixelImageSampler = context->currentPixelResourceSamplers[0];
-                        }
                     }
 
                     void setUnorderedAccessList(const std::vector<Render::Object *> &list, uint32_t firstStage, uint32_t *countList)
@@ -1491,11 +1474,6 @@ namespace Gek
                         {
                             context->currentPixelSamplerStates[stage] = VK_NULL_HANDLE;
                         }
-
-                        if (firstStage == 0)
-                        {
-                            context->currentPixelSamplerState = nullptr;
-                        }
                     }
 
                     void clearConstantBufferList(uint32_t count, uint32_t firstStage)
@@ -1510,8 +1488,6 @@ namespace Gek
                         {
                             context->currentPixelConstantBuffers[stage] = nullptr;
                         }
-
-                        context->currentPixelConstantBuffer = context->currentPixelConstantBuffers[0];
                     }
 
                     void clearResourceList(uint32_t count, uint32_t firstStage)
@@ -1528,9 +1504,6 @@ namespace Gek
                             context->currentPixelResourceSamplers[stage] = VK_NULL_HANDLE;
                             context->currentPixelResourceBuffers[stage] = nullptr;
                         }
-
-                        context->currentPixelImageView = context->currentPixelResourceImageViews[0];
-                        context->currentPixelImageSampler = context->currentPixelResourceSamplers[0];
                     }
 
                     void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
@@ -1548,8 +1521,6 @@ namespace Gek
                 PipelinePtr pixelSystemHandler;
 
                 InputLayout *currentInputLayout = nullptr;
-                Buffer *currentVertexBuffer = nullptr;
-                uint32_t currentVertexBufferOffset = 0;
                 std::array<Buffer *, 8> currentVertexBufferList{};
                 std::array<uint32_t, 8> currentVertexBufferOffsetList{};
                 Buffer *currentIndexBuffer = nullptr;
@@ -1564,13 +1535,9 @@ namespace Gek
                 VertexProgram *currentVertexProgram = nullptr;
                 PixelProgram *currentPixelProgram = nullptr;
                 ComputeProgram *currentComputeProgram = nullptr;
-                Buffer *currentVertexConstantBuffer = nullptr;
-                Buffer *currentPixelConstantBuffer = nullptr;
                 std::array<Buffer *, ContextResourceSlotCount> currentVertexConstantBuffers{};
                 std::array<Buffer *, ContextResourceSlotCount> currentPixelConstantBuffers{};
                 std::array<Buffer *, ContextResourceSlotCount> currentComputeConstantBuffers{};
-                VkImageView currentPixelImageView = VK_NULL_HANDLE;
-                VkSampler currentPixelImageSampler = VK_NULL_HANDLE;
                 std::array<VkImageView, 16> currentPixelResourceImageViews{};
                 std::array<VkSampler, 16> currentPixelResourceSamplers{};
                 std::array<VkSampler, 16> currentPixelSamplerStates{};
@@ -1582,7 +1549,6 @@ namespace Gek
                 std::array<Render::Object *, ContextResourceSlotCount> currentComputeUnorderedAccessResources{};
                 std::array<VkImageView, 16> currentComputeUnorderedAccessImageViews{};
                 std::array<Buffer *, ContextResourceSlotCount> currentComputeUnorderedAccessBuffers{};
-                SamplerState *currentPixelSamplerState = nullptr;
                 BlendState *currentBlendState = nullptr;
                 DepthState *currentDepthState = nullptr;
                 RenderState *currentRenderState = nullptr;
@@ -1671,7 +1637,6 @@ namespace Gek
                 void clearState(void)
                 {
                     currentInputLayout = nullptr;
-                    currentVertexBuffer = nullptr;
                     currentVertexBufferList.fill(nullptr);
                     currentVertexBufferOffsetList.fill(0);
                     currentIndexBuffer = nullptr;
@@ -1683,13 +1648,9 @@ namespace Gek
                     currentVertexProgram = nullptr;
                     currentPixelProgram = nullptr;
                     currentComputeProgram = nullptr;
-                    currentVertexConstantBuffer = nullptr;
-                    currentPixelConstantBuffer = nullptr;
                     currentVertexConstantBuffers.fill(nullptr);
                     currentPixelConstantBuffers.fill(nullptr);
                     currentComputeConstantBuffers.fill(nullptr);
-                    currentPixelImageView = VK_NULL_HANDLE;
-                    currentPixelImageSampler = VK_NULL_HANDLE;
                     currentPixelResourceImageViews.fill(VK_NULL_HANDLE);
                     currentPixelResourceSamplers.fill(VK_NULL_HANDLE);
                     currentPixelSamplerStates.fill(VK_NULL_HANDLE);
@@ -1701,7 +1662,6 @@ namespace Gek
                     currentComputeUnorderedAccessResources.fill(nullptr);
                     currentComputeUnorderedAccessImageViews.fill(VK_NULL_HANDLE);
                     currentComputeUnorderedAccessBuffers.fill(nullptr);
-                    currentPixelSamplerState = nullptr;
                     currentBlendState = nullptr;
                     currentDepthState = nullptr;
                 }
@@ -1795,9 +1755,6 @@ namespace Gek
                         currentVertexBufferList[slot] = nullptr;
                         currentVertexBufferOffsetList[slot] = 0;
                     }
-
-                    currentVertexBuffer = currentVertexBufferList[0];
-                    currentVertexBufferOffset = currentVertexBufferOffsetList[0];
                 }
 
                 void clearRenderTargetList(uint32_t count, bool depthBuffer)
@@ -1891,9 +1848,6 @@ namespace Gek
                         currentVertexBufferList[slot] = getObject<Buffer>(vertexBufferList[bufferIndex]);
                         currentVertexBufferOffsetList[slot] = (offsetList ? offsetList[bufferIndex] : 0);
                     }
-
-                    currentVertexBuffer = currentVertexBufferList[0];
-                    currentVertexBufferOffset = currentVertexBufferOffsetList[0];
                 }
 
                 void setPrimitiveType(Render::PrimitiveType primitiveType)
@@ -1922,8 +1876,6 @@ namespace Gek
                     command.indexed = false;
                     command.instanceCount = 1;
                     command.firstInstance = 0;
-                    command.vertexBuffer = currentVertexBuffer;
-                    command.vertexOffset = currentVertexBufferOffset;
                     command.vertexBuffers = currentVertexBufferList;
                     command.vertexOffsets = currentVertexBufferOffsetList;
                     command.vertexCount = vertexCount;
@@ -1934,16 +1886,14 @@ namespace Gek
                     command.inputLayout = currentInputLayout;
                     command.vertexProgram = currentVertexProgram;
                     command.pixelProgram = currentPixelProgram;
-                    command.vertexConstantBuffer = currentVertexConstantBuffer;
-                    command.pixelConstantBuffer = currentPixelConstantBuffer;
                     command.vertexConstantBuffers = currentVertexConstantBuffers;
                     command.pixelConstantBuffers = currentPixelConstantBuffers;
                     command.pixelResourceImageViews = currentPixelResourceImageViews;
                     command.pixelResourceSamplers = currentPixelResourceSamplers;
                     command.pixelSamplerStates = currentPixelSamplerStates;
                     command.pixelResourceBuffers = currentPixelResourceBuffers;
-                    command.pixelImageView = currentPixelImageView;
-                    command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
+                    command.pixelImageView = (currentPixelResourceImageViews.empty() ? VK_NULL_HANDLE : currentPixelResourceImageViews[0]);
+                    command.pixelSampler = (currentPixelSamplerStates.empty() ? VK_NULL_HANDLE : currentPixelSamplerStates[0]);
                     command.renderTarget = currentRenderTarget;
                     command.depthTarget = currentDepthTarget;
                     command.hasOffscreenTarget = (currentRenderTargetCount > 0);
@@ -1951,20 +1901,8 @@ namespace Gek
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
                     command.renderState = currentRenderState;
-                    if (command.pixelSampler == VK_NULL_HANDLE)
-                    {
-                        command.pixelSampler = currentPixelImageSampler;
-                    }
-                    if (command.pixelImageView == VK_NULL_HANDLE)
-                    {
-                        command.pixelImageView = currentPixelImageView;
-                    }
 
                     std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                    command.vertexConstantBuffer = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffer, false);
-                    command.pixelConstantBuffer = pipelineDevice->captureBufferSnapshot(command.pixelConstantBuffer, false);
-                    command.vertexConstantBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.vertexConstantBuffer);
-                    command.pixelConstantBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffer);
                     for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                     {
                         command.vertexConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
@@ -1973,7 +1911,6 @@ namespace Gek
                         command.pixelConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
                     }
 
-                    command.vertexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffer);
                     command.indexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.indexBuffer);
                     for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
                     {
@@ -2027,8 +1964,6 @@ namespace Gek
                     command.indexed = false;
                     command.instanceCount = instanceCount;
                     command.firstInstance = firstInstance;
-                    command.vertexBuffer = currentVertexBuffer;
-                    command.vertexOffset = currentVertexBufferOffset;
                     command.vertexBuffers = currentVertexBufferList;
                     command.vertexOffsets = currentVertexBufferOffsetList;
                     command.vertexCount = vertexCount;
@@ -2039,16 +1974,14 @@ namespace Gek
                     command.inputLayout = currentInputLayout;
                     command.vertexProgram = currentVertexProgram;
                     command.pixelProgram = currentPixelProgram;
-                    command.vertexConstantBuffer = currentVertexConstantBuffer;
-                    command.pixelConstantBuffer = currentPixelConstantBuffer;
                     command.vertexConstantBuffers = currentVertexConstantBuffers;
                     command.pixelConstantBuffers = currentPixelConstantBuffers;
                     command.pixelResourceImageViews = currentPixelResourceImageViews;
                     command.pixelResourceSamplers = currentPixelResourceSamplers;
                     command.pixelSamplerStates = currentPixelSamplerStates;
                     command.pixelResourceBuffers = currentPixelResourceBuffers;
-                    command.pixelImageView = currentPixelImageView;
-                    command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
+                    command.pixelImageView = (currentPixelResourceImageViews.empty() ? VK_NULL_HANDLE : currentPixelResourceImageViews[0]);
+                    command.pixelSampler = (currentPixelSamplerStates.empty() ? VK_NULL_HANDLE : currentPixelSamplerStates[0]);
                     command.renderTarget = currentRenderTarget;
                     command.depthTarget = currentDepthTarget;
                     command.hasOffscreenTarget = (currentRenderTargetCount > 0);
@@ -2056,59 +1989,45 @@ namespace Gek
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
                     command.renderState = currentRenderState;
-                    if (command.pixelSampler == VK_NULL_HANDLE)
+
+                    std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
+                    for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                     {
-                        command.pixelSampler = currentPixelImageSampler;
+                        command.vertexConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
+                        command.pixelConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.pixelConstantBuffers[slot], false);
+                        command.vertexConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
+                        command.pixelConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
                     }
-                    if (command.pixelImageView == VK_NULL_HANDLE)
+
+                    command.indexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.indexBuffer);
+                    for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
                     {
-                        command.pixelImageView = currentPixelImageView;
+                        command.vertexBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffers[slot]);
                     }
+
+                    for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
                     {
-                        std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        command.vertexConstantBuffer = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffer, false);
-                        command.pixelConstantBuffer = pipelineDevice->captureBufferSnapshot(command.pixelConstantBuffer, false);
-                        command.vertexConstantBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.vertexConstantBuffer);
-                        command.pixelConstantBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffer);
-                        for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
+                        auto *target = currentRenderTargetList[targetIndex];
+                        if (!target)
                         {
-                            command.vertexConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
-                            command.pixelConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.pixelConstantBuffers[slot], false);
-                            command.vertexConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
-                            command.pixelConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
+                            continue;
                         }
 
-                        command.vertexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffer);
-                        command.indexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.indexBuffer);
-                        for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
-                        {
-                            command.vertexBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffers[slot]);
-                        }
+                        command.offscreenImages[targetIndex] = target->image;
+                        command.offscreenImageViews[targetIndex] = target->imageView;
+                        command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
+                        command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
+                        command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
+                        pipelineDevice->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
+                    }
 
-                        for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
-                        {
-                            auto *target = currentRenderTargetList[targetIndex];
-                            if (!target)
-                            {
-                                continue;
-                            }
-
-                            command.offscreenImages[targetIndex] = target->image;
-                            command.offscreenImageViews[targetIndex] = target->imageView;
-                            command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
-                            command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
-                            command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
-                            pipelineDevice->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
-                        }
-
-                        if (isDeferredContext)
-                        {
-                            pipelineDevice->deferredContextDrawCommands[this].push_back(command);
-                        }
-                        else
-                        {
-                            pipelineDevice->pendingDrawCommands.push_back(command);
-                        }
+                    if (isDeferredContext)
+                    {
+                        pipelineDevice->deferredContextDrawCommands[this].push_back(command);
+                    }
+                    else
+                    {
+                        pipelineDevice->pendingDrawCommands.push_back(command);
                     }
                 }
 
@@ -2124,7 +2043,7 @@ namespace Gek
                         return;
                     }
 
-                    if (!currentVertexBuffer)
+                    if (currentVertexBufferList.empty())
                     {
                         return;
                     }
@@ -2143,8 +2062,6 @@ namespace Gek
                     command.indexed = true;
                     command.instanceCount = 1;
                     command.firstInstance = 0;
-                    command.vertexBuffer = currentVertexBuffer;
-                    command.vertexOffset = currentVertexBufferOffset;
                     command.vertexBuffers = currentVertexBufferList;
                     command.vertexOffsets = currentVertexBufferOffsetList;
                     command.indexBuffer = currentIndexBuffer;
@@ -2157,16 +2074,14 @@ namespace Gek
                     command.inputLayout = currentInputLayout;
                     command.vertexProgram = currentVertexProgram;
                     command.pixelProgram = currentPixelProgram;
-                    command.vertexConstantBuffer = currentVertexConstantBuffer;
-                    command.pixelConstantBuffer = currentPixelConstantBuffer;
                     command.vertexConstantBuffers = currentVertexConstantBuffers;
                     command.pixelConstantBuffers = currentPixelConstantBuffers;
                     command.pixelResourceImageViews = currentPixelResourceImageViews;
                     command.pixelResourceSamplers = currentPixelResourceSamplers;
                     command.pixelSamplerStates = currentPixelSamplerStates;
                     command.pixelResourceBuffers = currentPixelResourceBuffers;
-                    command.pixelImageView = currentPixelImageView;
-                    command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
+                    command.pixelImageView = (currentPixelResourceImageViews.empty() ? VK_NULL_HANDLE : currentPixelResourceImageViews[0]);
+                    command.pixelSampler = (currentPixelSamplerStates.empty() ? VK_NULL_HANDLE : currentPixelSamplerStates[0]);
                     command.renderTarget = currentRenderTarget;
                     command.depthTarget = currentDepthTarget;
                     command.hasOffscreenTarget = (currentRenderTargetCount > 0);
@@ -2174,59 +2089,45 @@ namespace Gek
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
                     command.renderState = currentRenderState;
-                    if (command.pixelSampler == VK_NULL_HANDLE)
+
+                    std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
+                    for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                     {
-                        command.pixelSampler = currentPixelImageSampler;
+                        command.vertexConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
+                        command.pixelConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.pixelConstantBuffers[slot], false);
+                        command.vertexConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
+                        command.pixelConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
                     }
-                    if (command.pixelImageView == VK_NULL_HANDLE)
+
+                    command.indexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.indexBuffer);
+                    for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
                     {
-                        command.pixelImageView = currentPixelImageView;
+                        command.vertexBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffers[slot]);
                     }
+
+                    for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
                     {
-                        std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        command.vertexConstantBuffer = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffer, false);
-                        command.pixelConstantBuffer = pipelineDevice->captureBufferSnapshot(command.pixelConstantBuffer, false);
-                        command.vertexConstantBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.vertexConstantBuffer);
-                        command.pixelConstantBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffer);
-                        for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
+                        auto *target = currentRenderTargetList[targetIndex];
+                        if (!target)
                         {
-                            command.vertexConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
-                            command.pixelConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.pixelConstantBuffers[slot], false);
-                            command.vertexConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
-                            command.pixelConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
+                            continue;
                         }
 
-                        command.vertexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffer);
-                        command.indexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.indexBuffer);
-                        for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
-                        {
-                            command.vertexBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffers[slot]);
-                        }
+                        command.offscreenImages[targetIndex] = target->image;
+                        command.offscreenImageViews[targetIndex] = target->imageView;
+                        command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
+                        command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
+                        command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
+                        pipelineDevice->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
+                    }
 
-                        for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
-                        {
-                            auto *target = currentRenderTargetList[targetIndex];
-                            if (!target)
-                            {
-                                continue;
-                            }
-
-                            command.offscreenImages[targetIndex] = target->image;
-                            command.offscreenImageViews[targetIndex] = target->imageView;
-                            command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
-                            command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
-                            command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
-                            pipelineDevice->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
-                        }
-
-                        if (isDeferredContext)
-                        {
-                            pipelineDevice->deferredContextDrawCommands[this].push_back(command);
-                        }
-                        else
-                        {
-                            pipelineDevice->pendingDrawCommands.push_back(command);
-                        }
+                    if (isDeferredContext)
+                    {
+                        pipelineDevice->deferredContextDrawCommands[this].push_back(command);
+                    }
+                    else
+                    {
+                        pipelineDevice->pendingDrawCommands.push_back(command);
                     }
                 }
 
@@ -2242,7 +2143,7 @@ namespace Gek
                         return;
                     }
 
-                    if (!currentVertexBuffer)
+                    if (currentVertexBufferList.empty())
                     {
                         return;
                     }
@@ -2261,8 +2162,6 @@ namespace Gek
                     command.indexed = true;
                     command.instanceCount = instanceCount;
                     command.firstInstance = firstInstance;
-                    command.vertexBuffer = currentVertexBuffer;
-                    command.vertexOffset = currentVertexBufferOffset;
                     command.vertexBuffers = currentVertexBufferList;
                     command.vertexOffsets = currentVertexBufferOffsetList;
                     command.indexBuffer = currentIndexBuffer;
@@ -2275,16 +2174,14 @@ namespace Gek
                     command.inputLayout = currentInputLayout;
                     command.vertexProgram = currentVertexProgram;
                     command.pixelProgram = currentPixelProgram;
-                    command.vertexConstantBuffer = currentVertexConstantBuffer;
-                    command.pixelConstantBuffer = currentPixelConstantBuffer;
                     command.vertexConstantBuffers = currentVertexConstantBuffers;
                     command.pixelConstantBuffers = currentPixelConstantBuffers;
                     command.pixelResourceImageViews = currentPixelResourceImageViews;
                     command.pixelResourceSamplers = currentPixelResourceSamplers;
                     command.pixelSamplerStates = currentPixelSamplerStates;
                     command.pixelResourceBuffers = currentPixelResourceBuffers;
-                    command.pixelImageView = currentPixelImageView;
-                    command.pixelSampler = (currentPixelSamplerState ? currentPixelSamplerState->sampler : VK_NULL_HANDLE);
+                    command.pixelImageView = (currentPixelResourceImageViews.empty() ? VK_NULL_HANDLE : currentPixelResourceImageViews[0]);
+                    command.pixelSampler = (currentPixelSamplerStates.empty() ? VK_NULL_HANDLE : currentPixelSamplerStates[0]);
                     command.renderTarget = currentRenderTarget;
                     command.depthTarget = currentDepthTarget;
                     command.hasOffscreenTarget = (currentRenderTargetCount > 0);
@@ -2292,59 +2189,45 @@ namespace Gek
                     command.blendState = currentBlendState;
                     command.depthState = currentDepthState;
                     command.renderState = currentRenderState;
-                    if (command.pixelSampler == VK_NULL_HANDLE)
+
+                    std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
+                    for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                     {
-                        command.pixelSampler = currentPixelImageSampler;
+                        command.vertexConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
+                        command.pixelConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.pixelConstantBuffers[slot], false);
+                        command.vertexConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
+                        command.pixelConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
                     }
-                    if (command.pixelImageView == VK_NULL_HANDLE)
+
+                    command.indexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.indexBuffer);
+                    for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
                     {
-                        command.pixelImageView = currentPixelImageView;
+                        command.vertexBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffers[slot]);
                     }
+
+                    for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
                     {
-                        std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        command.vertexConstantBuffer = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffer, false);
-                        command.pixelConstantBuffer = pipelineDevice->captureBufferSnapshot(command.pixelConstantBuffer, false);
-                        command.vertexConstantBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.vertexConstantBuffer);
-                        command.pixelConstantBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffer);
-                        for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
+                        auto *target = currentRenderTargetList[targetIndex];
+                        if (!target)
                         {
-                            command.vertexConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
-                            command.pixelConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.pixelConstantBuffers[slot], false);
-                            command.vertexConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
-                            command.pixelConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
+                            continue;
                         }
 
-                        command.vertexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffer);
-                        command.indexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.indexBuffer);
-                        for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
-                        {
-                            command.vertexBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffers[slot]);
-                        }
+                        command.offscreenImages[targetIndex] = target->image;
+                        command.offscreenImageViews[targetIndex] = target->imageView;
+                        command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
+                        command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
+                        command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
+                        pipelineDevice->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
+                    }
 
-                        for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
-                        {
-                            auto *target = currentRenderTargetList[targetIndex];
-                            if (!target)
-                            {
-                                continue;
-                            }
-
-                            command.offscreenImages[targetIndex] = target->image;
-                            command.offscreenImageViews[targetIndex] = target->imageView;
-                            command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
-                            command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
-                            command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
-                            pipelineDevice->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
-                        }
-
-                        if (isDeferredContext)
-                        {
-                            pipelineDevice->deferredContextDrawCommands[this].push_back(command);
-                        }
-                        else
-                        {
-                            pipelineDevice->pendingDrawCommands.push_back(command);
-                        }
+                    if (isDeferredContext)
+                    {
+                        pipelineDevice->deferredContextDrawCommands[this].push_back(command);
+                    }
+                    else
+                    {
+                        pipelineDevice->pendingDrawCommands.push_back(command);
                     }
                 }
 
@@ -2466,9 +2349,6 @@ namespace Gek
                 bool indexed = false;
                 uint32_t instanceCount = 1;
                 uint32_t firstInstance = 0;
-                Buffer *vertexBuffer = nullptr;
-                uint8_t vertexBufferVersion = 0;
-                uint32_t vertexOffset = 0;
                 std::array<Buffer *, 8> vertexBuffers{};
                 std::array<uint8_t, 8> vertexBufferVersions{};
                 std::array<uint32_t, 8> vertexOffsets{};
@@ -2484,10 +2364,6 @@ namespace Gek
                 InputLayout *inputLayout = nullptr;
                 VertexProgram *vertexProgram = nullptr;
                 PixelProgram *pixelProgram = nullptr;
-                Buffer *vertexConstantBuffer = nullptr;
-                Buffer *pixelConstantBuffer = nullptr;
-                uint8_t vertexConstantBufferVersion = 0;
-                uint8_t pixelConstantBufferVersion = 0;
                 std::array<Buffer *, PixelResourceSlotCount> vertexConstantBuffers{};
                 std::array<Buffer *, PixelResourceSlotCount> pixelConstantBuffers{};
                 std::array<uint8_t, PixelResourceSlotCount> vertexConstantBufferVersions{};
@@ -6534,7 +6410,6 @@ namespace Gek
                                 uploadData.data(),
                                 static_cast<VkDeviceSize>(uploadData.size())))
                             {
-                                getContext()->log(Gek::Context::Info, "Vulkan loadTexture: preserving native DDS format for '{}'", filePath.getString());
                                 return texture;
                             }
 
