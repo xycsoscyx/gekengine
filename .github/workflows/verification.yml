@@ -9,11 +9,17 @@ on:
 env:
   BUILD_TYPE: Release
 
+x-os-list: &os_list
+  - ubuntu-latest
+  - windows-latest
+  - macos-latest
+
 jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: *os_list
+
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -34,6 +40,10 @@ jobs:
 
   test:
     needs: build
+
+    strategy:
+      matrix:
+        os: *os_list
 
     runs-on: ${{ matrix.os }}
 
