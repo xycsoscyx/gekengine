@@ -11,12 +11,9 @@ env:
 
 jobs:
   build:
-    parallel:
+    strategy:
       matrix:
-        - OS: [linux, windows]
-          # Map specific runner tags if they differ from the OS name
-          RUNNER_TAG: ["linux-runner", "windows-runner"]
-
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
 
     steps:
