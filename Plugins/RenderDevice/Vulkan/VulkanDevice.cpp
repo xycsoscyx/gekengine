@@ -1539,7 +1539,7 @@ namespace Gek
                 };
 
             public:
-	            Device *owner = nullptr;
+	            Device *pipelineDevice = nullptr;
     	        VkDevice device;
                 bool isDeferredContext = false;
                 PipelinePtr computeSystemHandler;
@@ -1588,8 +1588,8 @@ namespace Gek
                 RenderState *currentRenderState = nullptr;
 
             public:
-                Context(Device *owner, bool isDeferredContext = false)
-                    : owner(owner)
+                Context(Device *pipelineDevice, bool isDeferredContext = false)
+                    : pipelineDevice(pipelineDevice)
                     , isDeferredContext(isDeferredContext)
                     , computeSystemHandler(new ComputePipeline(this))
                     , vertexSystemHandler(new VertexPipeline(this))
@@ -1646,12 +1646,12 @@ namespace Gek
 
                 void generateMipMaps(Render::Texture *texture)
                 {
-                    if (!owner || !texture)
+                    if (!pipelineDevice || !texture)
                     {
                         return;
                     }
 
-                    owner->enqueueGenerateMipMapsCommand(this, texture);
+                    pipelineDevice->enqueueGenerateMipMapsCommand(this, texture);
                 }
 
                 void resolveSamples(Render::Texture *destination, Render::Texture *source)
@@ -1660,12 +1660,12 @@ namespace Gek
 
                 void copyResource(Render::Object *destination, Render::Object *source)
                 {
-                    if (!owner || !destination || !source)
+                    if (!pipelineDevice || !destination || !source)
                     {
                         return;
                     }
 
-                    owner->enqueueCopyResourceCommand(this, destination, source);
+                    pipelineDevice->enqueueCopyResourceCommand(this, destination, source);
                 }
 
                 void clearState(void)
@@ -1708,15 +1708,15 @@ namespace Gek
 
                 void setViewportList(const std::vector<Render::ViewPort> &viewPortList)
                 {
-                    if (owner && !viewPortList.empty())
+                    if (pipelineDevice && !viewPortList.empty())
                     {
                         const auto &viewPort = viewPortList[0];
-                        owner->currentViewport.x = viewPort.position.x;
-                        owner->currentViewport.y = viewPort.position.y;
-                        owner->currentViewport.width = viewPort.size.x;
-                        owner->currentViewport.height = viewPort.size.y;
-                        owner->currentViewport.minDepth = viewPort.nearClip;
-                        owner->currentViewport.maxDepth = viewPort.farClip;
+                        pipelineDevice->currentViewport.x = viewPort.position.x;
+                        pipelineDevice->currentViewport.y = viewPort.position.y;
+                        pipelineDevice->currentViewport.width = viewPort.size.x;
+                        pipelineDevice->currentViewport.height = viewPort.size.y;
+                        pipelineDevice->currentViewport.minDepth = viewPort.nearClip;
+                        pipelineDevice->currentViewport.maxDepth = viewPort.farClip;
                     }
                 }
 
@@ -1746,14 +1746,14 @@ namespace Gek
 
                 void clearRenderTarget(Render::Target *renderTarget, Math::Float4 const &clearColor)
                 {
-                    if (!owner || !renderTarget)
+                    if (!pipelineDevice || !renderTarget)
                     {
                         return;
                     }
 
-                    if (renderTarget == owner->backBuffer.get())
+                    if (renderTarget == pipelineDevice->backBuffer.get())
                     {
-                        owner->pendingClearColor =
+                        pipelineDevice->pendingClearColor =
                         {
                             clearColor.r,
                             clearColor.g,
@@ -1763,17 +1763,17 @@ namespace Gek
                         return;
                     }
 
-                    owner->enqueueClearRenderTargetCommand(this, renderTarget, clearColor);
+                    pipelineDevice->enqueueClearRenderTargetCommand(this, renderTarget, clearColor);
                 }
 
                 void clearDepthStencilTarget(Render::Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
                 {
-                    if (!owner || !depthBuffer || flags == 0)
+                    if (!pipelineDevice || !depthBuffer || flags == 0)
                     {
                         return;
                     }
 
-                    owner->enqueueClearDepthStencilCommand(this, depthBuffer, flags, clearDepth, clearStencil);
+                    pipelineDevice->enqueueClearDepthStencilCommand(this, depthBuffer, flags, clearDepth, clearStencil);
                 }
 
                 void clearIndexBuffer(void)
@@ -1817,14 +1817,14 @@ namespace Gek
                     currentRenderTargetList.fill(nullptr);
                     currentRenderTargetCount = 0;
                     currentDepthTarget = getObject<DepthTexture>(depthBuffer);
-                    if (!owner)
+                    if (!pipelineDevice)
                     {
                         return;
                     }
 
                     for (auto *renderTarget : renderTargetList)
                     {
-                        if (!renderTarget || renderTarget == owner->backBuffer.get())
+                        if (!renderTarget || renderTarget == pipelineDevice->backBuffer.get())
                         {
                             continue;
                         }
@@ -1903,36 +1903,18 @@ namespace Gek
 
                 void drawPrimitive(uint32_t vertexCount, uint32_t firstVertex)
                 {
-                    if (!owner)
+                    if (!pipelineDevice)
                     {
                         return;
                     }
 
-                    ++owner->contextDrawCallAttempts;
-
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
-                        ++owner->contextDrawSkipsMissingProgram;
-                        if (!owner->loggedMissingProgramSkip)
-                        {
-                            owner->loggedMissingProgramSkip = true;
-                            owner->getContext()->log(
-                                Gek::Context::Error,
-                                "Vulkan draw skip: missing program (vertexProgram={} pixelProgram={})",
-                                static_cast<uint32_t>(currentVertexProgram != nullptr),
-                                static_cast<uint32_t>(currentPixelProgram != nullptr));
-                        }
                         return;
                     }
 
                     if (vertexCount == 0)
                     {
-                        ++owner->contextDrawSkipsZeroCount;
-                        if (!owner->loggedZeroCountSkip)
-                        {
-                            owner->loggedZeroCountSkip = true;
-                            owner->getContext()->log(Gek::Context::Warning, "Vulkan draw skip: zero vertex count");
-                        }
                         return;
                     }
 
@@ -1948,7 +1930,7 @@ namespace Gek
                     command.firstVertex = static_cast<int32_t>(firstVertex);
                     command.primitiveType = currentPrimitiveType;
                     command.scissor = currentScissor;
-                    command.viewport = owner->currentViewport;
+                    command.viewport = pipelineDevice->currentViewport;
                     command.inputLayout = currentInputLayout;
                     command.vertexProgram = currentVertexProgram;
                     command.pixelProgram = currentPixelProgram;
@@ -1979,23 +1961,23 @@ namespace Gek
                     }
 
                     std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                    command.vertexConstantBuffer = owner->captureBufferSnapshot(command.vertexConstantBuffer, false);
-                    command.pixelConstantBuffer = owner->captureBufferSnapshot(command.pixelConstantBuffer, false);
-                    command.vertexConstantBufferVersion = owner->captureVersionedBufferSlot(command.vertexConstantBuffer);
-                    command.pixelConstantBufferVersion = owner->captureVersionedBufferSlot(command.pixelConstantBuffer);
+                    command.vertexConstantBuffer = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffer, false);
+                    command.pixelConstantBuffer = pipelineDevice->captureBufferSnapshot(command.pixelConstantBuffer, false);
+                    command.vertexConstantBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.vertexConstantBuffer);
+                    command.pixelConstantBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffer);
                     for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                     {
-                        command.vertexConstantBuffers[slot] = owner->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
-                        command.pixelConstantBuffers[slot] = owner->captureBufferSnapshot(command.pixelConstantBuffers[slot], false);
-                        command.vertexConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
-                        command.pixelConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
+                        command.vertexConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
+                        command.pixelConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.pixelConstantBuffers[slot], false);
+                        command.vertexConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
+                        command.pixelConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
                     }
 
-                    command.vertexBufferVersion = owner->captureVersionedBufferSlot(command.vertexBuffer);
-                    command.indexBufferVersion = owner->captureVersionedBufferSlot(command.indexBuffer);
+                    command.vertexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffer);
+                    command.indexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.indexBuffer);
                     for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
                     {
-                        command.vertexBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexBuffers[slot]);
+                        command.vertexBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffers[slot]);
                     }
 
                     for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
@@ -2011,53 +1993,33 @@ namespace Gek
                         command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
                         command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
                         command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
-                        owner->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
+                        pipelineDevice->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
                     }
 
                     if (isDeferredContext)
                     {
-                        owner->deferredContextDrawCommands[this].push_back(command);
-                        ++owner->deferredCommandEnqueueCount;
+                        pipelineDevice->deferredContextDrawCommands[this].push_back(command);
                     }
                     else
                     {
-                        owner->pendingDrawCommands.push_back(command);
-                        ++owner->pendingCommandEnqueueCount;
+                        pipelineDevice->pendingDrawCommands.push_back(command);
                     }
                 }
 
                 void drawInstancedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex)
                 {
-                    if (!owner)
+                    if (!pipelineDevice)
                     {
                         return;
                     }
 
-                    ++owner->contextDrawCallAttempts;
-
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
-                        ++owner->contextDrawSkipsMissingProgram;
-                        if (!owner->loggedMissingProgramSkip)
-                        {
-                            owner->loggedMissingProgramSkip = true;
-                            owner->getContext()->log(
-                                Gek::Context::Error,
-                                "Vulkan draw skip: missing program (vertexProgram={} pixelProgram={})",
-                                static_cast<uint32_t>(currentVertexProgram != nullptr),
-                                static_cast<uint32_t>(currentPixelProgram != nullptr));
-                        }
                         return;
                     }
 
                     if (vertexCount == 0 || instanceCount == 0)
                     {
-                        ++owner->contextDrawSkipsZeroCount;
-                        if (!owner->loggedZeroCountSkip)
-                        {
-                            owner->loggedZeroCountSkip = true;
-                            owner->getContext()->log(Gek::Context::Warning, "Vulkan draw skip: zero count in instanced draw");
-                        }
                         return;
                     }
 
@@ -2073,7 +2035,7 @@ namespace Gek
                     command.firstVertex = static_cast<int32_t>(firstVertex);
                     command.primitiveType = currentPrimitiveType;
                     command.scissor = currentScissor;
-                    command.viewport = owner->currentViewport;
+                    command.viewport = pipelineDevice->currentViewport;
                     command.inputLayout = currentInputLayout;
                     command.vertexProgram = currentVertexProgram;
                     command.pixelProgram = currentPixelProgram;
@@ -2104,23 +2066,23 @@ namespace Gek
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        command.vertexConstantBuffer = owner->captureBufferSnapshot(command.vertexConstantBuffer, false);
-                        command.pixelConstantBuffer = owner->captureBufferSnapshot(command.pixelConstantBuffer, false);
-                        command.vertexConstantBufferVersion = owner->captureVersionedBufferSlot(command.vertexConstantBuffer);
-                        command.pixelConstantBufferVersion = owner->captureVersionedBufferSlot(command.pixelConstantBuffer);
+                        command.vertexConstantBuffer = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffer, false);
+                        command.pixelConstantBuffer = pipelineDevice->captureBufferSnapshot(command.pixelConstantBuffer, false);
+                        command.vertexConstantBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.vertexConstantBuffer);
+                        command.pixelConstantBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffer);
                         for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                         {
-                            command.vertexConstantBuffers[slot] = owner->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
-                            command.pixelConstantBuffers[slot] = owner->captureBufferSnapshot(command.pixelConstantBuffers[slot], false);
-                            command.vertexConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
-                            command.pixelConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
+                            command.vertexConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
+                            command.pixelConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.pixelConstantBuffers[slot], false);
+                            command.vertexConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
+                            command.pixelConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
                         }
 
-                        command.vertexBufferVersion = owner->captureVersionedBufferSlot(command.vertexBuffer);
-                        command.indexBufferVersion = owner->captureVersionedBufferSlot(command.indexBuffer);
+                        command.vertexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffer);
+                        command.indexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.indexBuffer);
                         for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
                         {
-                            command.vertexBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexBuffers[slot]);
+                            command.vertexBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffers[slot]);
                         }
 
                         for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
@@ -2136,76 +2098,44 @@ namespace Gek
                             command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
                             command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
                             command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
-                            owner->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
+                            pipelineDevice->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
                         }
 
                         if (isDeferredContext)
                         {
-                            owner->deferredContextDrawCommands[this].push_back(command);
-                            ++owner->deferredCommandEnqueueCount;
+                            pipelineDevice->deferredContextDrawCommands[this].push_back(command);
                         }
                         else
                         {
-                            owner->pendingDrawCommands.push_back(command);
-                            ++owner->pendingCommandEnqueueCount;
+                            pipelineDevice->pendingDrawCommands.push_back(command);
                         }
                     }
                 }
 
                 void drawIndexedPrimitive(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
                 {
-                    if (!owner)
+                    if (!pipelineDevice)
                     {
                         return;
                     }
 
-                    ++owner->contextDrawCallAttempts;
-
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
-                        ++owner->contextDrawSkipsMissingProgram;
-                        if (!owner->loggedMissingProgramSkip)
-                        {
-                            owner->loggedMissingProgramSkip = true;
-                            owner->getContext()->log(
-                                Gek::Context::Error,
-                                "Vulkan draw skip: missing program (vertexProgram={} pixelProgram={})",
-                                static_cast<uint32_t>(currentVertexProgram != nullptr),
-                                static_cast<uint32_t>(currentPixelProgram != nullptr));
-                        }
                         return;
                     }
 
                     if (!currentVertexBuffer)
                     {
-                        ++owner->contextDrawSkipsMissingVertexBuffer;
-                        if (!owner->loggedMissingVertexBufferSkip)
-                        {
-                            owner->loggedMissingVertexBufferSkip = true;
-                            owner->getContext()->log(Gek::Context::Error, "Vulkan draw skip: missing vertex buffer for indexed draw");
-                        }
                         return;
                     }
 
                     if (!currentIndexBuffer)
                     {
-                        ++owner->contextDrawSkipsMissingIndexBuffer;
-                        if (!owner->loggedMissingIndexBufferSkip)
-                        {
-                            owner->loggedMissingIndexBufferSkip = true;
-                            owner->getContext()->log(Gek::Context::Error, "Vulkan draw skip: missing index buffer for indexed draw");
-                        }
                         return;
                     }
 
                     if (indexCount == 0)
                     {
-                        ++owner->contextDrawSkipsZeroCount;
-                        if (!owner->loggedZeroCountSkip)
-                        {
-                            owner->loggedZeroCountSkip = true;
-                            owner->getContext()->log(Gek::Context::Warning, "Vulkan draw skip: zero index count");
-                        }
                         return;
                     }
 
@@ -2223,7 +2153,7 @@ namespace Gek
                     command.firstVertex = firstVertex;
                     command.primitiveType = currentPrimitiveType;
                     command.scissor = currentScissor;
-                    command.viewport = owner->currentViewport;
+                    command.viewport = pipelineDevice->currentViewport;
                     command.inputLayout = currentInputLayout;
                     command.vertexProgram = currentVertexProgram;
                     command.pixelProgram = currentPixelProgram;
@@ -2254,23 +2184,23 @@ namespace Gek
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        command.vertexConstantBuffer = owner->captureBufferSnapshot(command.vertexConstantBuffer, false);
-                        command.pixelConstantBuffer = owner->captureBufferSnapshot(command.pixelConstantBuffer, false);
-                        command.vertexConstantBufferVersion = owner->captureVersionedBufferSlot(command.vertexConstantBuffer);
-                        command.pixelConstantBufferVersion = owner->captureVersionedBufferSlot(command.pixelConstantBuffer);
+                        command.vertexConstantBuffer = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffer, false);
+                        command.pixelConstantBuffer = pipelineDevice->captureBufferSnapshot(command.pixelConstantBuffer, false);
+                        command.vertexConstantBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.vertexConstantBuffer);
+                        command.pixelConstantBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffer);
                         for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                         {
-                            command.vertexConstantBuffers[slot] = owner->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
-                            command.pixelConstantBuffers[slot] = owner->captureBufferSnapshot(command.pixelConstantBuffers[slot], false);
-                            command.vertexConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
-                            command.pixelConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
+                            command.vertexConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
+                            command.pixelConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.pixelConstantBuffers[slot], false);
+                            command.vertexConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
+                            command.pixelConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
                         }
 
-                        command.vertexBufferVersion = owner->captureVersionedBufferSlot(command.vertexBuffer);
-                        command.indexBufferVersion = owner->captureVersionedBufferSlot(command.indexBuffer);
+                        command.vertexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffer);
+                        command.indexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.indexBuffer);
                         for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
                         {
-                            command.vertexBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexBuffers[slot]);
+                            command.vertexBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffers[slot]);
                         }
 
                         for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
@@ -2286,76 +2216,44 @@ namespace Gek
                             command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
                             command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
                             command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
-                            owner->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
+                            pipelineDevice->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
                         }
 
                         if (isDeferredContext)
                         {
-                            owner->deferredContextDrawCommands[this].push_back(command);
-                            ++owner->deferredCommandEnqueueCount;
+                            pipelineDevice->deferredContextDrawCommands[this].push_back(command);
                         }
                         else
                         {
-                            owner->pendingDrawCommands.push_back(command);
-                            ++owner->pendingCommandEnqueueCount;
+                            pipelineDevice->pendingDrawCommands.push_back(command);
                         }
                     }
                 }
 
                 void drawInstancedIndexedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
                 {
-                    if (!owner)
+                    if (!pipelineDevice)
                     {
                         return;
                     }
 
-                    ++owner->contextDrawCallAttempts;
-
                     if (!currentVertexProgram || !currentPixelProgram)
                     {
-                        ++owner->contextDrawSkipsMissingProgram;
-                        if (!owner->loggedMissingProgramSkip)
-                        {
-                            owner->loggedMissingProgramSkip = true;
-                            owner->getContext()->log(
-                                Gek::Context::Error,
-                                "Vulkan draw skip: missing program (vertexProgram={} pixelProgram={})",
-                                static_cast<uint32_t>(currentVertexProgram != nullptr),
-                                static_cast<uint32_t>(currentPixelProgram != nullptr));
-                        }
                         return;
                     }
 
                     if (!currentVertexBuffer)
                     {
-                        ++owner->contextDrawSkipsMissingVertexBuffer;
-                        if (!owner->loggedMissingVertexBufferSkip)
-                        {
-                            owner->loggedMissingVertexBufferSkip = true;
-                            owner->getContext()->log(Gek::Context::Error, "Vulkan draw skip: missing vertex buffer for instanced indexed draw");
-                        }
                         return;
                     }
 
                     if (!currentIndexBuffer)
                     {
-                        ++owner->contextDrawSkipsMissingIndexBuffer;
-                        if (!owner->loggedMissingIndexBufferSkip)
-                        {
-                            owner->loggedMissingIndexBufferSkip = true;
-                            owner->getContext()->log(Gek::Context::Error, "Vulkan draw skip: missing index buffer for instanced indexed draw");
-                        }
                         return;
                     }
 
                     if (indexCount == 0 || instanceCount == 0)
                     {
-                        ++owner->contextDrawSkipsZeroCount;
-                        if (!owner->loggedZeroCountSkip)
-                        {
-                            owner->loggedZeroCountSkip = true;
-                            owner->getContext()->log(Gek::Context::Warning, "Vulkan draw skip: zero count in instanced indexed draw");
-                        }
                         return;
                     }
 
@@ -2373,7 +2271,7 @@ namespace Gek
                     command.firstVertex = static_cast<int32_t>(firstVertex);
                     command.primitiveType = currentPrimitiveType;
                     command.scissor = currentScissor;
-                    command.viewport = owner->currentViewport;
+                    command.viewport = pipelineDevice->currentViewport;
                     command.inputLayout = currentInputLayout;
                     command.vertexProgram = currentVertexProgram;
                     command.pixelProgram = currentPixelProgram;
@@ -2404,23 +2302,23 @@ namespace Gek
                     }
                     {
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        command.vertexConstantBuffer = owner->captureBufferSnapshot(command.vertexConstantBuffer, false);
-                        command.pixelConstantBuffer = owner->captureBufferSnapshot(command.pixelConstantBuffer, false);
-                        command.vertexConstantBufferVersion = owner->captureVersionedBufferSlot(command.vertexConstantBuffer);
-                        command.pixelConstantBufferVersion = owner->captureVersionedBufferSlot(command.pixelConstantBuffer);
+                        command.vertexConstantBuffer = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffer, false);
+                        command.pixelConstantBuffer = pipelineDevice->captureBufferSnapshot(command.pixelConstantBuffer, false);
+                        command.vertexConstantBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.vertexConstantBuffer);
+                        command.pixelConstantBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffer);
                         for (uint32_t slot = 0; slot < command.vertexConstantBuffers.size(); ++slot)
                         {
-                            command.vertexConstantBuffers[slot] = owner->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
-                            command.pixelConstantBuffers[slot] = owner->captureBufferSnapshot(command.pixelConstantBuffers[slot], false);
-                            command.vertexConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
-                            command.pixelConstantBufferVersions[slot] = owner->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
+                            command.vertexConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.vertexConstantBuffers[slot], false);
+                            command.pixelConstantBuffers[slot] = pipelineDevice->captureBufferSnapshot(command.pixelConstantBuffers[slot], false);
+                            command.vertexConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexConstantBuffers[slot]);
+                            command.pixelConstantBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.pixelConstantBuffers[slot]);
                         }
 
-                        command.vertexBufferVersion = owner->captureVersionedBufferSlot(command.vertexBuffer);
-                        command.indexBufferVersion = owner->captureVersionedBufferSlot(command.indexBuffer);
+                        command.vertexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffer);
+                        command.indexBufferVersion = pipelineDevice->captureVersionedBufferSlot(command.indexBuffer);
                         for (uint32_t slot = 0; slot < command.vertexBuffers.size(); ++slot)
                         {
-                            command.vertexBufferVersions[slot] = owner->captureVersionedBufferSlot(command.vertexBuffers[slot]);
+                            command.vertexBufferVersions[slot] = pipelineDevice->captureVersionedBufferSlot(command.vertexBuffers[slot]);
                         }
 
                         for (uint32_t targetIndex = 0; targetIndex < currentRenderTargetCount; ++targetIndex)
@@ -2436,62 +2334,59 @@ namespace Gek
                             command.offscreenFormats[targetIndex] = GetVkFormat(target->getDescription().format);
                             command.offscreenExtents[targetIndex].width = std::max(target->getDescription().width, 1u);
                             command.offscreenExtents[targetIndex].height = std::max(target->getDescription().height, 1u);
-                            owner->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
+                            pipelineDevice->offscreenImageLayouts.try_emplace(command.offscreenImages[targetIndex], target->currentLayout);
                         }
 
                         if (isDeferredContext)
                         {
-                            owner->deferredContextDrawCommands[this].push_back(command);
-                            ++owner->deferredCommandEnqueueCount;
+                            pipelineDevice->deferredContextDrawCommands[this].push_back(command);
                         }
                         else
                         {
-                            owner->pendingDrawCommands.push_back(command);
-                            ++owner->pendingCommandEnqueueCount;
+                            pipelineDevice->pendingDrawCommands.push_back(command);
                         }
                     }
                 }
 
                 void dispatch(uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ)
                 {
-                    if (!owner)
+                    if (!pipelineDevice)
                     {
                         return;
                     }
 
                     if (!currentComputeProgram)
                     {
-                        owner->getContext()->log(Gek::Context::Warning, "Vulkan compute dispatch skipped: no compute program bound");
+                        pipelineDevice->getContext()->log(Gek::Context::Warning, "Vulkan compute dispatch skipped: no compute program bound");
                         return;
                     }
 
                     if (threadGroupCountX == 0 || threadGroupCountY == 0 || threadGroupCountZ == 0)
                     {
-                        owner->getContext()->log(Gek::Context::Warning, "Vulkan compute dispatch skipped: zero thread group dimension ({}, {}, {})", threadGroupCountX, threadGroupCountY, threadGroupCountZ);
+                        pipelineDevice->getContext()->log(Gek::Context::Warning, "Vulkan compute dispatch skipped: zero thread group dimension ({}, {}, {})", threadGroupCountX, threadGroupCountY, threadGroupCountZ);
                         return;
                     }
 
-                    owner->enqueueComputeDispatchCommand(this, threadGroupCountX, threadGroupCountY, threadGroupCountZ);
+                    pipelineDevice->enqueueComputeDispatchCommand(this, threadGroupCountX, threadGroupCountY, threadGroupCountZ);
                 }
 
                 Render::ObjectPtr finishCommandList(void)
                 {
-                    if (!owner)
+                    if (!pipelineDevice)
                     {
                         return nullptr;
                     }
 
                     auto commandList = std::make_unique<CommandList>();
-                    commandList->identifier = owner->nextCommandListIdentifier++;
+                    commandList->identifier = pipelineDevice->nextCommandListIdentifier++;
                     if (isDeferredContext)
                     {
-                        ++owner->deferredFinishCalls;
                         std::lock_guard<std::mutex> lock(Device::getDrawCommandMutex());
-                        auto deferredContextCommandIterator = owner->deferredContextDrawCommands.find(this);
-                        if (deferredContextCommandIterator != owner->deferredContextDrawCommands.end())
+                        auto deferredContextCommandIterator = pipelineDevice->deferredContextDrawCommands.find(this);
+                        if (deferredContextCommandIterator != pipelineDevice->deferredContextDrawCommands.end())
                         {
-                            owner->deferredCommandLists[commandList->identifier] = std::move(deferredContextCommandIterator->second);
-                            owner->deferredContextDrawCommands.erase(deferredContextCommandIterator);
+                            pipelineDevice->deferredCommandLists[commandList->identifier] = std::move(deferredContextCommandIterator->second);
+                            pipelineDevice->deferredContextDrawCommands.erase(deferredContextCommandIterator);
                         }
                     }
 
@@ -2647,73 +2542,16 @@ namespace Gek
             std::vector<DrawCommand> pendingDrawCommands;
             std::map<Context *, std::vector<DrawCommand>> deferredContextDrawCommands;
             std::map<uint64_t, std::vector<DrawCommand>> deferredCommandLists;
-            uint64_t constantBufferVersionRotationsThisFrame = 0;
-            uint64_t constantBufferVersionExhaustionThisFrame = 0;
-            uint64_t constantBufferVersionWaitRecoveriesThisFrame = 0;
-            uint64_t constantBufferVersionWriteAttemptsThisFrame = 0;
-            uint64_t constantBufferVersionExhaustionNoFenceThisFrame = 0;
-            uint64_t constantBufferVersionWaitAttemptsThisFrame = 0;
-            uint64_t constantBufferVersionPostWaitExhaustionThisFrame = 0;
-            uint64_t constantBufferVersionRotationsTotal = 0;
-            uint64_t constantBufferVersionExhaustionTotal = 0;
-            uint64_t constantBufferVersionWaitRecoveriesTotal = 0;
-            uint64_t constantBufferVersionWriteAttemptsTotal = 0;
-            uint64_t constantBufferVersionExhaustionNoFenceTotal = 0;
-            uint64_t constantBufferVersionWaitAttemptsTotal = 0;
-            uint64_t constantBufferVersionPostWaitExhaustionTotal = 0;
-            uint64_t vertexBufferVersionRotationsThisFrame = 0;
-            uint64_t vertexBufferVersionExhaustionThisFrame = 0;
-            uint64_t vertexBufferVersionWaitRecoveriesThisFrame = 0;
-            uint64_t vertexBufferVersionWriteAttemptsThisFrame = 0;
-            uint64_t vertexBufferVersionExhaustionNoFenceThisFrame = 0;
-            uint64_t vertexBufferVersionWaitAttemptsThisFrame = 0;
-            uint64_t vertexBufferVersionPostWaitExhaustionThisFrame = 0;
-            uint64_t vertexBufferVersionRotationsTotal = 0;
-            uint64_t vertexBufferVersionExhaustionTotal = 0;
-            uint64_t vertexBufferVersionWaitRecoveriesTotal = 0;
-            uint64_t vertexBufferVersionWriteAttemptsTotal = 0;
-            uint64_t vertexBufferVersionExhaustionNoFenceTotal = 0;
-            uint64_t vertexBufferVersionWaitAttemptsTotal = 0;
-            uint64_t vertexBufferVersionPostWaitExhaustionTotal = 0;
-            uint64_t indexBufferVersionRotationsThisFrame = 0;
-            uint64_t indexBufferVersionExhaustionThisFrame = 0;
-            uint64_t indexBufferVersionWaitRecoveriesThisFrame = 0;
-            uint64_t indexBufferVersionWriteAttemptsThisFrame = 0;
-            uint64_t indexBufferVersionExhaustionNoFenceThisFrame = 0;
-            uint64_t indexBufferVersionWaitAttemptsThisFrame = 0;
-            uint64_t indexBufferVersionPostWaitExhaustionThisFrame = 0;
-            uint64_t indexBufferVersionRotationsTotal = 0;
-            uint64_t indexBufferVersionExhaustionTotal = 0;
-            uint64_t indexBufferVersionWaitRecoveriesTotal = 0;
-            uint64_t indexBufferVersionWriteAttemptsTotal = 0;
-            uint64_t indexBufferVersionExhaustionNoFenceTotal = 0;
-            uint64_t indexBufferVersionWaitAttemptsTotal = 0;
-            uint64_t indexBufferVersionPostWaitExhaustionTotal = 0;
             Render::BufferVersioningPolicy constantBufferVersioningPolicy = { Render::BufferVersioningMode::FixedRing, static_cast<uint8_t>(Buffer::VersionSlotCount) };
             Render::BufferVersioningPolicy vertexBufferVersioningPolicy = { Render::BufferVersioningMode::FixedRing, static_cast<uint8_t>(Buffer::VersionSlotCount) };
             Render::BufferVersioningPolicy indexBufferVersioningPolicy = { Render::BufferVersioningMode::FixedRing, static_cast<uint8_t>(Buffer::VersionSlotCount) };
             uint64_t nextCommandListIdentifier = 1;
-            uint64_t deferredFinishCalls = 0;
-            uint64_t deferredExecuteCalls = 0;
-            uint64_t deferredExecutedCommandCount = 0;
-            uint64_t pendingCommandEnqueueCount = 0;
-            uint64_t deferredCommandEnqueueCount = 0;
             std::set<Buffer *> versionedConstantBuffersInFlight;
             std::map<VkImage, VkImageLayout> offscreenImageLayouts;
             std::map<VkImageView, std::pair<VkImage, VkExtent2D>> persistentImageViewLookup;
             std::mutex persistentImageViewLookupMutex;
             uint64_t presentFrameIndex = 0;
-            bool loggedMrtFallback = false;
             VkViewport currentViewport = { 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f };
-            uint64_t contextDrawCallAttempts = 0;
-            uint64_t contextDrawSkipsMissingProgram = 0;
-            uint64_t contextDrawSkipsMissingVertexBuffer = 0;
-            uint64_t contextDrawSkipsMissingIndexBuffer = 0;
-            uint64_t contextDrawSkipsZeroCount = 0;
-            bool loggedMissingProgramSkip = false;
-            bool loggedMissingVertexBufferSkip = false;
-            bool loggedMissingIndexBufferSkip = false;
-            bool loggedZeroCountSkip = false;
             bool deviceLost = false;
             bool loggedDeviceLost = false;
             bool samplerAnisotropySupported = false;
@@ -2876,160 +2714,6 @@ namespace Gek
                 }
 
                 return Buffer::VersionSlotCount;
-            }
-
-            void incrementVersionRotation(Render::Buffer::Description const &description)
-            {
-                switch (description.type)
-                {
-                case Render::Buffer::Type::Vertex:
-                    ++vertexBufferVersionRotationsThisFrame;
-                    ++vertexBufferVersionRotationsTotal;
-                    break;
-
-                case Render::Buffer::Type::Index:
-                    ++indexBufferVersionRotationsThisFrame;
-                    ++indexBufferVersionRotationsTotal;
-                    break;
-
-                case Render::Buffer::Type::Constant:
-                default:
-                    ++constantBufferVersionRotationsThisFrame;
-                    ++constantBufferVersionRotationsTotal;
-                    break;
-                }
-            }
-
-            void incrementVersionExhaustion(Render::Buffer::Description const &description)
-            {
-                switch (description.type)
-                {
-                case Render::Buffer::Type::Vertex:
-                    ++vertexBufferVersionExhaustionThisFrame;
-                    ++vertexBufferVersionExhaustionTotal;
-                    break;
-
-                case Render::Buffer::Type::Index:
-                    ++indexBufferVersionExhaustionThisFrame;
-                    ++indexBufferVersionExhaustionTotal;
-                    break;
-
-                case Render::Buffer::Type::Constant:
-                default:
-                    ++constantBufferVersionExhaustionThisFrame;
-                    ++constantBufferVersionExhaustionTotal;
-                    break;
-                }
-            }
-
-            void incrementVersionWaitRecovery(Render::Buffer::Description const &description)
-            {
-                switch (description.type)
-                {
-                case Render::Buffer::Type::Vertex:
-                    ++vertexBufferVersionWaitRecoveriesThisFrame;
-                    ++vertexBufferVersionWaitRecoveriesTotal;
-                    break;
-
-                case Render::Buffer::Type::Index:
-                    ++indexBufferVersionWaitRecoveriesThisFrame;
-                    ++indexBufferVersionWaitRecoveriesTotal;
-                    break;
-
-                case Render::Buffer::Type::Constant:
-                default:
-                    ++constantBufferVersionWaitRecoveriesThisFrame;
-                    ++constantBufferVersionWaitRecoveriesTotal;
-                    break;
-                }
-            }
-
-            void incrementVersionWriteAttempt(Render::Buffer::Description const &description)
-            {
-                switch (description.type)
-                {
-                case Render::Buffer::Type::Vertex:
-                    ++vertexBufferVersionWriteAttemptsThisFrame;
-                    ++vertexBufferVersionWriteAttemptsTotal;
-                    break;
-
-                case Render::Buffer::Type::Index:
-                    ++indexBufferVersionWriteAttemptsThisFrame;
-                    ++indexBufferVersionWriteAttemptsTotal;
-                    break;
-
-                case Render::Buffer::Type::Constant:
-                default:
-                    ++constantBufferVersionWriteAttemptsThisFrame;
-                    ++constantBufferVersionWriteAttemptsTotal;
-                    break;
-                }
-            }
-
-            void incrementVersionExhaustionNoFence(Render::Buffer::Description const &description)
-            {
-                switch (description.type)
-                {
-                case Render::Buffer::Type::Vertex:
-                    ++vertexBufferVersionExhaustionNoFenceThisFrame;
-                    ++vertexBufferVersionExhaustionNoFenceTotal;
-                    break;
-
-                case Render::Buffer::Type::Index:
-                    ++indexBufferVersionExhaustionNoFenceThisFrame;
-                    ++indexBufferVersionExhaustionNoFenceTotal;
-                    break;
-
-                case Render::Buffer::Type::Constant:
-                default:
-                    ++constantBufferVersionExhaustionNoFenceThisFrame;
-                    ++constantBufferVersionExhaustionNoFenceTotal;
-                    break;
-                }
-            }
-
-            void incrementVersionWaitAttempt(Render::Buffer::Description const &description)
-            {
-                switch (description.type)
-                {
-                case Render::Buffer::Type::Vertex:
-                    ++vertexBufferVersionWaitAttemptsThisFrame;
-                    ++vertexBufferVersionWaitAttemptsTotal;
-                    break;
-
-                case Render::Buffer::Type::Index:
-                    ++indexBufferVersionWaitAttemptsThisFrame;
-                    ++indexBufferVersionWaitAttemptsTotal;
-                    break;
-
-                case Render::Buffer::Type::Constant:
-                default:
-                    ++constantBufferVersionWaitAttemptsThisFrame;
-                    ++constantBufferVersionWaitAttemptsTotal;
-                    break;
-                }
-            }
-
-            void incrementVersionPostWaitExhaustion(Render::Buffer::Description const &description)
-            {
-                switch (description.type)
-                {
-                case Render::Buffer::Type::Vertex:
-                    ++vertexBufferVersionPostWaitExhaustionThisFrame;
-                    ++vertexBufferVersionPostWaitExhaustionTotal;
-                    break;
-
-                case Render::Buffer::Type::Index:
-                    ++indexBufferVersionPostWaitExhaustionThisFrame;
-                    ++indexBufferVersionPostWaitExhaustionTotal;
-                    break;
-
-                case Render::Buffer::Type::Constant:
-                default:
-                    ++constantBufferVersionPostWaitExhaustionThisFrame;
-                    ++constantBufferVersionPostWaitExhaustionTotal;
-                    break;
-                }
             }
 
             void releaseVersionedConstantBufferSlots(void)
@@ -5073,15 +4757,11 @@ namespace Gek
 
                     if (mapping == Render::Map::WriteDiscard)
                     {
-                        incrementVersionWriteAttempt(vulkanBuffer->getDescription());
                         auto selectedVersion = selectFreeVersion();
                         if (!selectedVersion)
                         {
-                            incrementVersionExhaustion(vulkanBuffer->getDescription());
-
                             if (inFlightFencePending)
                             {
-                                incrementVersionWaitAttempt(vulkanBuffer->getDescription());
                                 lock.unlock();
                                 const VkResult waitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
                                 lock.lock();
@@ -5091,28 +4771,12 @@ namespace Gek
                                     inFlightFencePending = false;
                                     releaseVersionedConstantBufferSlots();
                                     selectedVersion = selectFreeVersion();
-                                    if (selectedVersion)
-                                    {
-                                        incrementVersionWaitRecovery(vulkanBuffer->getDescription());
-                                    }
-                                    else
-                                    {
-                                        incrementVersionPostWaitExhaustion(vulkanBuffer->getDescription());
-                                    }
                                 }
-                            }
-                            else
-                            {
-                                incrementVersionExhaustionNoFence(vulkanBuffer->getDescription());
                             }
                         }
 
                         if (selectedVersion)
                         {
-                            if (*selectedVersion != vulkanBuffer->activeVersionIndex)
-                            {
-                                incrementVersionRotation(vulkanBuffer->getDescription());
-                            }
                             vulkanBuffer->activeVersionIndex = *selectedVersion;
                         }
                     }
@@ -5154,7 +4818,6 @@ namespace Gek
 
                     if (vulkanBuffer->usesVersionedConstantBacking)
                     {
-                        incrementVersionWriteAttempt(vulkanBuffer->getDescription());
                         const uint32_t ringSize = getVersionedRingSize(vulkanBuffer->getDescription());
                         std::optional<uint32_t> selectedVersion;
                         for (uint32_t step = 1; step <= ringSize; ++step)
@@ -5169,19 +4832,12 @@ namespace Gek
 
                         if (selectedVersion)
                         {
-                            if (*selectedVersion != vulkanBuffer->activeVersionIndex)
-                            {
-                                incrementVersionRotation(vulkanBuffer->getDescription());
-                            }
                             vulkanBuffer->activeVersionIndex = *selectedVersion;
                         }
                         else
                         {
-                            incrementVersionExhaustion(vulkanBuffer->getDescription());
-
                             if (inFlightFencePending)
                             {
-                                incrementVersionWaitAttempt(vulkanBuffer->getDescription());
                                 lock.unlock();
                                 const VkResult waitResult = vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
                                 lock.lock();
@@ -5203,22 +4859,9 @@ namespace Gek
 
                                     if (selectedVersion)
                                     {
-                                        if (*selectedVersion != vulkanBuffer->activeVersionIndex)
-                                        {
-                                            incrementVersionRotation(vulkanBuffer->getDescription());
-                                        }
                                         vulkanBuffer->activeVersionIndex = *selectedVersion;
-                                        incrementVersionWaitRecovery(vulkanBuffer->getDescription());
-                                    }
-                                    else
-                                    {
-                                        incrementVersionPostWaitExhaustion(vulkanBuffer->getDescription());
                                     }
                                 }
-                            }
-                            else
-                            {
-                                incrementVersionExhaustionNoFence(vulkanBuffer->getDescription());
                             }
                         }
 
@@ -7215,8 +6858,6 @@ namespace Gek
                     return;
                 }
 
-                ++deferredExecuteCalls;
-                deferredExecutedCommandCount += static_cast<uint64_t>(deferredListIterator->second.size());
                 pendingDrawCommands.insert(pendingDrawCommands.end(), deferredListIterator->second.begin(), deferredListIterator->second.end());
                 deferredCommandLists.erase(deferredListIterator);
             }
@@ -7298,28 +6939,6 @@ namespace Gek
                 }
 
                 transientFramebuffers.clear();
-                constantBufferVersionRotationsThisFrame = 0;
-                constantBufferVersionExhaustionThisFrame = 0;
-                constantBufferVersionWaitRecoveriesThisFrame = 0;
-                constantBufferVersionWriteAttemptsThisFrame = 0;
-                constantBufferVersionExhaustionNoFenceThisFrame = 0;
-                constantBufferVersionWaitAttemptsThisFrame = 0;
-                constantBufferVersionPostWaitExhaustionThisFrame = 0;
-                vertexBufferVersionRotationsThisFrame = 0;
-                vertexBufferVersionExhaustionThisFrame = 0;
-                vertexBufferVersionWaitRecoveriesThisFrame = 0;
-                vertexBufferVersionWriteAttemptsThisFrame = 0;
-                vertexBufferVersionExhaustionNoFenceThisFrame = 0;
-                vertexBufferVersionWaitAttemptsThisFrame = 0;
-                vertexBufferVersionPostWaitExhaustionThisFrame = 0;
-                indexBufferVersionRotationsThisFrame = 0;
-                indexBufferVersionExhaustionThisFrame = 0;
-                indexBufferVersionWaitRecoveriesThisFrame = 0;
-                indexBufferVersionWriteAttemptsThisFrame = 0;
-                indexBufferVersionExhaustionNoFenceThisFrame = 0;
-                indexBufferVersionWaitAttemptsThisFrame = 0;
-                indexBufferVersionPostWaitExhaustionThisFrame = 0;
-
                 const auto cleanupFramebufferEndTime = std::chrono::high_resolution_clock::now();
                 cleanupFramebufferCpuMs = std::chrono::duration<double, std::milli>(cleanupFramebufferEndTime - cleanupFramebufferStartTime).count();
 
@@ -9751,60 +9370,8 @@ namespace Gek
                 getContext()->setRuntimeMetric("vulkan.drawCommandLockCpuMs", drawCommandLockCpuMs);
                 getContext()->setRuntimeMetric("vulkan.untrackedFrameCpuMs", untrackedFrameCpuMs);
                 getContext()->setRuntimeMetric("vulkan.frameCpuMs", frameCpuMs);
-                getContext()->setRuntimeMetric("vulkan.contextDrawAttempts", static_cast<double>(contextDrawCallAttempts));
-                getContext()->setRuntimeMetric("vulkan.skipMissingProgram", static_cast<double>(contextDrawSkipsMissingProgram));
-                getContext()->setRuntimeMetric("vulkan.skipMissingVB", static_cast<double>(contextDrawSkipsMissingVertexBuffer));
-                getContext()->setRuntimeMetric("vulkan.skipMissingIB", static_cast<double>(contextDrawSkipsMissingIndexBuffer));
-                getContext()->setRuntimeMetric("vulkan.skipZeroCount", static_cast<double>(contextDrawSkipsZeroCount));
-                getContext()->setRuntimeMetric("vulkan.deferredFinishCalls", static_cast<double>(deferredFinishCalls));
-                getContext()->setRuntimeMetric("vulkan.deferredExecuteCalls", static_cast<double>(deferredExecuteCalls));
-                getContext()->setRuntimeMetric("vulkan.deferredExecutedCommands", static_cast<double>(deferredExecutedCommandCount));
                 getContext()->setRuntimeMetric("vulkan.deferredContextQueues", static_cast<double>(deferredContextDrawCommands.size()));
                 getContext()->setRuntimeMetric("vulkan.deferredCommandLists", static_cast<double>(deferredCommandLists.size()));
-                getContext()->setRuntimeMetric("vulkan.pendingEnqueues", static_cast<double>(pendingCommandEnqueueCount));
-                getContext()->setRuntimeMetric("vulkan.deferredEnqueues", static_cast<double>(deferredCommandEnqueueCount));
-                getContext()->setRuntimeMetric("vulkan.constantVersionRotations", static_cast<double>(constantBufferVersionRotationsThisFrame));
-                getContext()->setRuntimeMetric("vulkan.constantVersionExhaustions", static_cast<double>(constantBufferVersionExhaustionThisFrame));
-                getContext()->setRuntimeMetric("vulkan.constantVersionWaitRecoveries", static_cast<double>(constantBufferVersionWaitRecoveriesThisFrame));
-                getContext()->setRuntimeMetric("vulkan.constantVersionWriteAttempts", static_cast<double>(constantBufferVersionWriteAttemptsThisFrame));
-                getContext()->setRuntimeMetric("vulkan.constantVersionExhaustionsNoFence", static_cast<double>(constantBufferVersionExhaustionNoFenceThisFrame));
-                getContext()->setRuntimeMetric("vulkan.constantVersionWaitAttempts", static_cast<double>(constantBufferVersionWaitAttemptsThisFrame));
-                getContext()->setRuntimeMetric("vulkan.constantVersionPostWaitExhaustions", static_cast<double>(constantBufferVersionPostWaitExhaustionThisFrame));
-                getContext()->setRuntimeMetric("vulkan.vertexVersionRotations", static_cast<double>(vertexBufferVersionRotationsThisFrame));
-                getContext()->setRuntimeMetric("vulkan.vertexVersionExhaustions", static_cast<double>(vertexBufferVersionExhaustionThisFrame));
-                getContext()->setRuntimeMetric("vulkan.vertexVersionWaitRecoveries", static_cast<double>(vertexBufferVersionWaitRecoveriesThisFrame));
-                getContext()->setRuntimeMetric("vulkan.vertexVersionWriteAttempts", static_cast<double>(vertexBufferVersionWriteAttemptsThisFrame));
-                getContext()->setRuntimeMetric("vulkan.vertexVersionExhaustionsNoFence", static_cast<double>(vertexBufferVersionExhaustionNoFenceThisFrame));
-                getContext()->setRuntimeMetric("vulkan.vertexVersionWaitAttempts", static_cast<double>(vertexBufferVersionWaitAttemptsThisFrame));
-                getContext()->setRuntimeMetric("vulkan.vertexVersionPostWaitExhaustions", static_cast<double>(vertexBufferVersionPostWaitExhaustionThisFrame));
-                getContext()->setRuntimeMetric("vulkan.indexVersionRotations", static_cast<double>(indexBufferVersionRotationsThisFrame));
-                getContext()->setRuntimeMetric("vulkan.indexVersionExhaustions", static_cast<double>(indexBufferVersionExhaustionThisFrame));
-                getContext()->setRuntimeMetric("vulkan.indexVersionWaitRecoveries", static_cast<double>(indexBufferVersionWaitRecoveriesThisFrame));
-                getContext()->setRuntimeMetric("vulkan.indexVersionWriteAttempts", static_cast<double>(indexBufferVersionWriteAttemptsThisFrame));
-                getContext()->setRuntimeMetric("vulkan.indexVersionExhaustionsNoFence", static_cast<double>(indexBufferVersionExhaustionNoFenceThisFrame));
-                getContext()->setRuntimeMetric("vulkan.indexVersionWaitAttempts", static_cast<double>(indexBufferVersionWaitAttemptsThisFrame));
-                getContext()->setRuntimeMetric("vulkan.indexVersionPostWaitExhaustions", static_cast<double>(indexBufferVersionPostWaitExhaustionThisFrame));
-                getContext()->setRuntimeMetric("vulkan.constantVersionRotationsTotal", static_cast<double>(constantBufferVersionRotationsTotal));
-                getContext()->setRuntimeMetric("vulkan.constantVersionExhaustionsTotal", static_cast<double>(constantBufferVersionExhaustionTotal));
-                getContext()->setRuntimeMetric("vulkan.constantVersionWaitRecoveriesTotal", static_cast<double>(constantBufferVersionWaitRecoveriesTotal));
-                getContext()->setRuntimeMetric("vulkan.constantVersionWriteAttemptsTotal", static_cast<double>(constantBufferVersionWriteAttemptsTotal));
-                getContext()->setRuntimeMetric("vulkan.constantVersionExhaustionsNoFenceTotal", static_cast<double>(constantBufferVersionExhaustionNoFenceTotal));
-                getContext()->setRuntimeMetric("vulkan.constantVersionWaitAttemptsTotal", static_cast<double>(constantBufferVersionWaitAttemptsTotal));
-                getContext()->setRuntimeMetric("vulkan.constantVersionPostWaitExhaustionsTotal", static_cast<double>(constantBufferVersionPostWaitExhaustionTotal));
-                getContext()->setRuntimeMetric("vulkan.vertexVersionRotationsTotal", static_cast<double>(vertexBufferVersionRotationsTotal));
-                getContext()->setRuntimeMetric("vulkan.vertexVersionExhaustionsTotal", static_cast<double>(vertexBufferVersionExhaustionTotal));
-                getContext()->setRuntimeMetric("vulkan.vertexVersionWaitRecoveriesTotal", static_cast<double>(vertexBufferVersionWaitRecoveriesTotal));
-                getContext()->setRuntimeMetric("vulkan.vertexVersionWriteAttemptsTotal", static_cast<double>(vertexBufferVersionWriteAttemptsTotal));
-                getContext()->setRuntimeMetric("vulkan.vertexVersionExhaustionsNoFenceTotal", static_cast<double>(vertexBufferVersionExhaustionNoFenceTotal));
-                getContext()->setRuntimeMetric("vulkan.vertexVersionWaitAttemptsTotal", static_cast<double>(vertexBufferVersionWaitAttemptsTotal));
-                getContext()->setRuntimeMetric("vulkan.vertexVersionPostWaitExhaustionsTotal", static_cast<double>(vertexBufferVersionPostWaitExhaustionTotal));
-                getContext()->setRuntimeMetric("vulkan.indexVersionRotationsTotal", static_cast<double>(indexBufferVersionRotationsTotal));
-                getContext()->setRuntimeMetric("vulkan.indexVersionExhaustionsTotal", static_cast<double>(indexBufferVersionExhaustionTotal));
-                getContext()->setRuntimeMetric("vulkan.indexVersionWaitRecoveriesTotal", static_cast<double>(indexBufferVersionWaitRecoveriesTotal));
-                getContext()->setRuntimeMetric("vulkan.indexVersionWriteAttemptsTotal", static_cast<double>(indexBufferVersionWriteAttemptsTotal));
-                getContext()->setRuntimeMetric("vulkan.indexVersionExhaustionsNoFenceTotal", static_cast<double>(indexBufferVersionExhaustionNoFenceTotal));
-                getContext()->setRuntimeMetric("vulkan.indexVersionWaitAttemptsTotal", static_cast<double>(indexBufferVersionWaitAttemptsTotal));
-                getContext()->setRuntimeMetric("vulkan.indexVersionPostWaitExhaustionsTotal", static_cast<double>(indexBufferVersionPostWaitExhaustionTotal));
                 pendingDrawCommands.clear();
             }
         };
@@ -9834,12 +9401,10 @@ namespace Gek
             if (sourceContext->isDeferredContext)
             {
                 deferredContextDrawCommands[sourceContext].push_back(command);
-                ++deferredCommandEnqueueCount;
             }
             else
             {
                 pendingDrawCommands.push_back(command);
-                ++pendingCommandEnqueueCount;
             }
         }
 
@@ -9875,12 +9440,10 @@ namespace Gek
             if (sourceContext->isDeferredContext)
             {
                 deferredContextDrawCommands[sourceContext].push_back(command);
-                ++deferredCommandEnqueueCount;
             }
             else
             {
                 pendingDrawCommands.push_back(command);
-                ++pendingCommandEnqueueCount;
             }
         }
 
@@ -9900,12 +9463,10 @@ namespace Gek
             if (sourceContext && sourceContext->isDeferredContext)
             {
                 deferredContextDrawCommands[sourceContext].push_back(command);
-                ++deferredCommandEnqueueCount;
             }
             else
             {
                 pendingDrawCommands.push_back(command);
-                ++pendingCommandEnqueueCount;
             }
         }
 
@@ -9933,12 +9494,10 @@ namespace Gek
             if (sourceContext && sourceContext->isDeferredContext)
             {
                 deferredContextDrawCommands[sourceContext].push_back(command);
-                ++deferredCommandEnqueueCount;
             }
             else
             {
                 pendingDrawCommands.push_back(command);
-                ++pendingCommandEnqueueCount;
             }
         }
 
@@ -9967,12 +9526,10 @@ namespace Gek
             if (sourceContext && sourceContext->isDeferredContext)
             {
                 deferredContextDrawCommands[sourceContext].push_back(command);
-                ++deferredCommandEnqueueCount;
             }
             else
             {
                 pendingDrawCommands.push_back(command);
-                ++pendingCommandEnqueueCount;
             }
         }
 

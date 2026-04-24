@@ -1542,7 +1542,7 @@ namespace Gek
                 };
 
             public:
-                Device *owner = nullptr;
+                Device *pipelineDevice = nullptr;
                 CComPtr<ID3D11DeviceContext> d3dDeviceContext;
                 PipelinePtr computeSystemHandler;
                 PipelinePtr vertexSystemHandler;
@@ -1559,8 +1559,8 @@ namespace Gek
                 bool hasCurrentDepthState = false;
 
             public:
-                Context(Device *owner, CComPtr<ID3D11DeviceContext> &d3dDeviceContext)
-                    : owner(owner)
+                Context(Device *pipelineDevice, CComPtr<ID3D11DeviceContext> &d3dDeviceContext)
+                    : pipelineDevice(pipelineDevice)
                     , d3dDeviceContext(d3dDeviceContext)
                     , computeSystemHandler(new ComputePipeline(d3dDeviceContext))
                     , vertexSystemHandler(new VertexPipeline(this))
@@ -1895,7 +1895,7 @@ namespace Gek
                 {
                     assert(d3dDeviceContext);
 
-                    if (owner && !owner->loggedFirstIndexedStateThisFrame)
+                    if (pipelineDevice && !pipelineDevice->loggedFirstIndexedStateThisFrame)
                     {
                         const auto engineCullMode = hasCurrentRenderState ? currentCullMode : Render::RenderState::CullMode::None;
                         const bool engineFrontCCW = hasCurrentRenderState ? currentFrontCounterClockwise : false;
@@ -1905,18 +1905,18 @@ namespace Gek
                         const auto mappedCullMode = Render::Implementation::CullModeList[static_cast<uint8_t>(engineCullMode)];
                         const auto mappedDepthCompare = Render::Implementation::ComparisonFunctionList[static_cast<uint8_t>(engineDepthCompare)];
 
-                        owner->loggedFirstIndexedStateThisFrame = true;
-                        owner->getContext()->setRuntimeMetric("d3d11.frame", static_cast<double>(owner->sampleFrameIndex));
-                        owner->getContext()->setRuntimeMetric("render.frame", static_cast<double>(owner->sampleFrameIndex));
-                        owner->getContext()->setRuntimeMetric("render.backend", 1.0);
-                        owner->getContext()->setRuntimeMetric("d3d11.engineCull", static_cast<double>(engineCullMode));
-                        owner->getContext()->setRuntimeMetric("d3d11.engineFrontCCW", static_cast<double>(engineFrontCCW ? 1u : 0u));
-                        owner->getContext()->setRuntimeMetric("d3d11.engineDepthEnable", static_cast<double>(engineDepthEnable ? 1u : 0u));
-                        owner->getContext()->setRuntimeMetric("d3d11.engineDepthWrite", static_cast<double>(engineDepthWrite ? 1u : 0u));
-                        owner->getContext()->setRuntimeMetric("d3d11.engineDepthCompare", static_cast<double>(engineDepthCompare));
-                        owner->getContext()->setRuntimeMetric("d3d11.mappedCull", static_cast<double>(mappedCullMode));
-                        owner->getContext()->setRuntimeMetric("d3d11.mappedDepthFunc", static_cast<double>(mappedDepthCompare));
-                        owner->getContext()->setRuntimeMetric("render.mappedDepthFunc", static_cast<double>(mappedDepthCompare));
+                        pipelineDevice->loggedFirstIndexedStateThisFrame = true;
+                        pipelineDevice->getContext()->setRuntimeMetric("d3d11.frame", static_cast<double>(pipelineDevice->sampleFrameIndex));
+                        pipelineDevice->getContext()->setRuntimeMetric("render.frame", static_cast<double>(pipelineDevice->sampleFrameIndex));
+                        pipelineDevice->getContext()->setRuntimeMetric("render.backend", 1.0);
+                        pipelineDevice->getContext()->setRuntimeMetric("d3d11.engineCull", static_cast<double>(engineCullMode));
+                        pipelineDevice->getContext()->setRuntimeMetric("d3d11.engineFrontCCW", static_cast<double>(engineFrontCCW ? 1u : 0u));
+                        pipelineDevice->getContext()->setRuntimeMetric("d3d11.engineDepthEnable", static_cast<double>(engineDepthEnable ? 1u : 0u));
+                        pipelineDevice->getContext()->setRuntimeMetric("d3d11.engineDepthWrite", static_cast<double>(engineDepthWrite ? 1u : 0u));
+                        pipelineDevice->getContext()->setRuntimeMetric("d3d11.engineDepthCompare", static_cast<double>(engineDepthCompare));
+                        pipelineDevice->getContext()->setRuntimeMetric("d3d11.mappedCull", static_cast<double>(mappedCullMode));
+                        pipelineDevice->getContext()->setRuntimeMetric("d3d11.mappedDepthFunc", static_cast<double>(mappedDepthCompare));
+                        pipelineDevice->getContext()->setRuntimeMetric("render.mappedDepthFunc", static_cast<double>(mappedDepthCompare));
                     }
 
                     d3dDeviceContext->DrawIndexed(indexCount, firstIndex, firstVertex);
@@ -1926,7 +1926,7 @@ namespace Gek
                 {
                     assert(d3dDeviceContext);
 
-                    if (owner && !owner->loggedFirstIndexedStateThisFrame)
+                    if (pipelineDevice && !pipelineDevice->loggedFirstIndexedStateThisFrame)
                     {
                         const auto engineCullMode = hasCurrentRenderState ? currentCullMode : Render::RenderState::CullMode::None;
                         const bool engineFrontCCW = hasCurrentRenderState ? currentFrontCounterClockwise : false;
@@ -1936,20 +1936,20 @@ namespace Gek
                         const auto mappedCullMode = Render::Implementation::CullModeList[static_cast<uint8_t>(engineCullMode)];
                         const auto mappedDepthCompare = Render::Implementation::ComparisonFunctionList[static_cast<uint8_t>(engineDepthCompare)];
 
-                        owner->loggedFirstIndexedStateThisFrame = true;
-                        owner->getContext()->setRuntimeMetric("d3d11.frame", static_cast<double>(owner->sampleFrameIndex));
-                        owner->getContext()->setRuntimeMetric("render.frame", static_cast<double>(owner->sampleFrameIndex));
-                        owner->getContext()->setRuntimeMetric("render.backend", 1.0);
-                        owner->getContext()->setRuntimeMetric("d3d11.engineCull", static_cast<double>(engineCullMode));
-                        owner->getContext()->setRuntimeMetric("d3d11.engineFrontCCW", static_cast<double>(engineFrontCCW ? 1u : 0u));
-                        owner->getContext()->setRuntimeMetric("d3d11.engineDepthEnable", static_cast<double>(engineDepthEnable ? 1u : 0u));
-                        owner->getContext()->setRuntimeMetric("d3d11.engineDepthWrite", static_cast<double>(engineDepthWrite ? 1u : 0u));
-                        owner->getContext()->setRuntimeMetric("d3d11.engineDepthCompare", static_cast<double>(engineDepthCompare));
-                        owner->getContext()->setRuntimeMetric("d3d11.mappedCull", static_cast<double>(mappedCullMode));
-                        owner->getContext()->setRuntimeMetric("d3d11.mappedDepthFunc", static_cast<double>(mappedDepthCompare));
-                        owner->getContext()->setRuntimeMetric("d3d11.firstIndexedInstanceCount", static_cast<double>(instanceCount));
-                        owner->getContext()->setRuntimeMetric("render.mappedDepthFunc", static_cast<double>(mappedDepthCompare));
-                        owner->getContext()->setRuntimeMetric("render.firstIndexedInstanceCount", static_cast<double>(instanceCount));
+                        pipelineDevice->loggedFirstIndexedStateThisFrame = true;
+                        pipelineDevice->getContext()->setRuntimeMetric("d3d11.frame", static_cast<double>(pipelineDevice->sampleFrameIndex));
+                        pipelineDevice->getContext()->setRuntimeMetric("render.frame", static_cast<double>(pipelineDevice->sampleFrameIndex));
+                        pipelineDevice->getContext()->setRuntimeMetric("render.backend", 1.0);
+                        pipelineDevice->getContext()->setRuntimeMetric("d3d11.engineCull", static_cast<double>(engineCullMode));
+                        pipelineDevice->getContext()->setRuntimeMetric("d3d11.engineFrontCCW", static_cast<double>(engineFrontCCW ? 1u : 0u));
+                        pipelineDevice->getContext()->setRuntimeMetric("d3d11.engineDepthEnable", static_cast<double>(engineDepthEnable ? 1u : 0u));
+                        pipelineDevice->getContext()->setRuntimeMetric("d3d11.engineDepthWrite", static_cast<double>(engineDepthWrite ? 1u : 0u));
+                        pipelineDevice->getContext()->setRuntimeMetric("d3d11.engineDepthCompare", static_cast<double>(engineDepthCompare));
+                        pipelineDevice->getContext()->setRuntimeMetric("d3d11.mappedCull", static_cast<double>(mappedCullMode));
+                        pipelineDevice->getContext()->setRuntimeMetric("d3d11.mappedDepthFunc", static_cast<double>(mappedDepthCompare));
+                        pipelineDevice->getContext()->setRuntimeMetric("d3d11.firstIndexedInstanceCount", static_cast<double>(instanceCount));
+                        pipelineDevice->getContext()->setRuntimeMetric("render.mappedDepthFunc", static_cast<double>(mappedDepthCompare));
+                        pipelineDevice->getContext()->setRuntimeMetric("render.firstIndexedInstanceCount", static_cast<double>(instanceCount));
                     }
 
                     d3dDeviceContext->DrawIndexedInstanced(indexCount, instanceCount, firstIndex, firstVertex, firstInstance);
@@ -1970,7 +1970,7 @@ namespace Gek
                     HRESULT resultValue = d3dDeviceContext->FinishCommandList(FALSE, &d3dCommandList);
                     if (FAILED(resultValue) || !d3dCommandList)
                     {
-                        owner->getContext()->log(Gek::Context::Error, "Unable to finish command list compilation");
+                        pipelineDevice->getContext()->log(Gek::Context::Error, "Unable to finish command list compilation");
                         return nullptr;
                     }
 
