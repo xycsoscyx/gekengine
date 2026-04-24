@@ -29,8 +29,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
-      - name: Clone Slang
-        run: git clone --depth 1 --branch v2026.2.2 https://github.com/shader-slang/slang.git ${{github.workspace}}/slang
+    - name: Clone Slang
+      run: git clone --depth 1 --branch v2026.2.2 https://github.com/shader-slang/slang.git ${{github.workspace}}/slang
     - name: Build and install Slang
       run: |
         cmake -S ${{github.workspace}}/slang -B ${{github.workspace}}/slang/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSLANG_ENABLE_TESTS=OFF -DSLANG_ENABLE_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/slang/install
