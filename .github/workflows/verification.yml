@@ -17,6 +17,8 @@ jobs:
           # Map specific runner tags if they differ from the OS name
           RUNNER_TAG: ["linux-runner", "windows-runner"]
 
+    runs-on: ${{ matrix.os }}
+
     steps:
     - uses: actions/checkout@v4
 
@@ -35,6 +37,8 @@ jobs:
 
   test:
     needs: build
+
+    runs-on: ${{ matrix.os }}
 
     steps:
     - name: Test
