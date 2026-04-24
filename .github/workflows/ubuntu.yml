@@ -1,0 +1,20 @@
+name: ubuntu
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  test:
+    uses: ./.github/workflows/build.yml
+    with:
+      os: ubuntu-latest
+    steps:
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest -C ${{env.BUILD_TYPE}}

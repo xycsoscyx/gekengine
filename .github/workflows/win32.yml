@@ -1,0 +1,17 @@
+name: win32
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    uses: ./.github/workflows/build.yml
+    with:
+      os: windows-latest
+    steps:
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest -C ${{env.BUILD_TYPE}}
