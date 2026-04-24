@@ -50,11 +50,6 @@ jobs:
         echo "Vulkan_INCLUDE_DIR=$VULKAN_SDK/include" >> $GITHUB_ENV
         echo "Vulkan_LIBRARY=$VULKAN_SDK/lib" >> $GITHUB_ENV
     - name: Configure CMake
-      run: |
-        cmake -B ${{github.workspace}}/build \
-          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
-          -DVULKAN_SDK="${{ env.VULKAN_SDK }}" \
-          -DVulkan_INCLUDE_DIR="${{ env.Vulkan_INCLUDE_DIR }}" \
-          -DVulkan_LIBRARY="${{ env.Vulkan_LIBRARY }}"
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DVULKAN_SDK="${{ env.VULKAN_SDK }}" -DVulkan_INCLUDE_DIR="${{ env.Vulkan_INCLUDE_DIR }}" -DVulkan_LIBRARY="${{ env.Vulkan_LIBRARY }}"
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
