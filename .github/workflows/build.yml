@@ -31,10 +31,9 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
-    - name: Install SPIRV-Headers
-      run: sudo apt-get update && sudo apt-get install -y spirv-headers
-    - name: Clone Slang
-      run: git clone --depth 1 --branch v2026.2.2 https://github.com/shader-slang/slang.git ${{github.workspace}}/slang
+    - name: Fetch Slang External Dependencies
+      working-directory: ${{github.workspace}}/slang
+      run: python3 ./external/fetch-external-dependencies.py
     - name: Build and install Slang
       run: |
         cmake -S ${{github.workspace}}/slang -B ${{github.workspace}}/slang/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSLANG_ENABLE_TESTS=OFF -DSLANG_ENABLE_EXAMPLES=OFF -DSLANG_ENABLE_RHI=OFF -DSLANG_ENABLE_SPIRV_TOOLS=OFF -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/slang/install
@@ -60,6 +59,13 @@ jobs:
         echo "Vulkan_INCLUDE_DIR=$VULKAN_SDK/include" >> $GITHUB_ENV
         echo "Vulkan_LIBRARY=$VULKAN_SDK/lib" >> $GITHUB_ENV
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DVULKAN_SDK="${{ env.VULKAN_SDK }}" -DVulkan_INCLUDE_DIR="${{ env.Vulkan_INCLUDE_DIR }}" -DVulkan_LIBRARY="${{ env.Vulkan_LIBRARY }}" -DSLANG_ROOT=${{github.workspace}}/slang/install
+      run: >
+        cmake -B ${{github.workspace}}/build 
+        -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} 
+        -DCMAKE_PREFIX_PATH="${{github.workspace}}/slang/install"
+        -DVULKAN_SDK="${{ env.VULKAN_SDK }}" 
+        -DVulkan_INCLUDE_DIR="${{ env.Vulkan_INCLUDE_DIR }}" 
+        -DVulkan_LIBRARY="${{ env.Vulkan_LIBRARY }}" 
+        -DSLANG_ROOT=${{github.workspace}}/slang/install
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
