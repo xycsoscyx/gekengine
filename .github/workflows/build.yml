@@ -33,7 +33,7 @@ jobs:
       run: git clone --depth 1 --branch v2026.2.2 https://github.com/shader-slang/slang.git ${{github.workspace}}/slang
     - name: Build and install Slang
       run: |
-        cmake -S ${{github.workspace}}/slang -B ${{github.workspace}}/slang/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSLANG_ENABLE_TESTS=OFF -DSLANG_ENABLE_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/slang/install
+        cmake -S ${{github.workspace}}/slang -B ${{github.workspace}}/slang/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSLANG_ENABLE_TESTS=OFF -DSLANG_ENABLE_EXAMPLES=OFF -DSLANG_ENABLE_RHI=OFF -DSLANG_ENABLE_SPIRV_TOOLS=OFF -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/slang/install
         cmake --build ${{github.workspace}}/slang/build --config ${{env.BUILD_TYPE}} --target install
     - name: Prepare Vulkan SDK
       uses: humbletim/setup-vulkan-sdk@v1.2.1
