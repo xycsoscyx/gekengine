@@ -42,19 +42,17 @@ jobs:
     - name: Build and install Slang
       shell: bash
       run: |
-        # Use -DCMAKE_BUILD_TYPE for Slang's internal logic, 
-        # but the --config flag is what actually matters for the MSVC generator.
         cmake -S "${{github.workspace}}/slang" -B "${{github.workspace}}/slang/build" \
           -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
           -DSLANG_ENABLE_TESTS=OFF \
           -DSLANG_ENABLE_EXAMPLES=OFF \
+          -DSLANG_ENABLE_GFX=OFF \
           -DSLANG_ENABLE_RHI=OFF \
           -DSLANG_ENABLE_SPIRV_TOOLS=OFF \
           -DSLANG_SLANG_LLVM_FLAVOR=DISABLE \
           -DSLANG_ENABLE_GLSLANG=OFF \
           -DCMAKE_INSTALL_PREFIX="${{github.workspace}}/slang/install"
 
-        # Explicitly build AND install using the config flag to align paths
         cmake --build "${{github.workspace}}/slang/build" --config ${{env.BUILD_TYPE}}
         cmake --install "${{github.workspace}}/slang/build" --config ${{env.BUILD_TYPE}}
     - name: Prepare Vulkan SDK
