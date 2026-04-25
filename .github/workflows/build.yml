@@ -39,12 +39,6 @@ jobs:
     - name: Clone Slang (Recursive)
       # Using --recursive ensures all dependencies in /external/ are fetched
       run: git clone --depth 1 --branch v2026.2.2 --recursive https://github.com/shader-slang/slang.git ${{github.workspace}}/slang
-    - name: Cache Slang
-      id: cache-slang
-      uses: actions/cache@v4
-      with:
-        path: ${{github.workspace}}/slang/install
-        key: ${{ runner.os }}-slang-v2026.2.2
     - name: Build and install Slang
       shell: bash
       run: |
@@ -54,7 +48,7 @@ jobs:
           -DSLANG_ENABLE_EXAMPLES=OFF \
           -DSLANG_ENABLE_RHI=OFF \
           -DSLANG_ENABLE_SPIRV_TOOLS=OFF \
-          -DSLANG_ENABLE_LLVM=OFF \
+          -DSLANG_SLANG_LLVM_FLAVOR=DISABLE \
           -DSLANG_ENABLE_GLSLANG=OFF \
           -DCMAKE_INSTALL_PREFIX="${{github.workspace}}/slang/install"
         cmake --build "${{github.workspace}}/slang/build" --config ${{env.BUILD_TYPE}} --target install
