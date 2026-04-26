@@ -51,8 +51,8 @@ jobs:
           -DSLANG_ENABLE_SPIRV_TOOLS=OFF \
           -DSLANG_SLANG_LLVM_FLAVOR=DISABLE \
           -DSLANG_ENABLE_GLSLANG=OFF \
+          -DCMAKE_CXX_FLAGS="-w" \
           -DCMAKE_INSTALL_PREFIX="${{github.workspace}}/slang/install"
-
         cmake --build "${{github.workspace}}/slang/build" --config ${{env.BUILD_TYPE}}
         cmake --install "${{github.workspace}}/slang/build" --config ${{env.BUILD_TYPE}}
     - name: Prepare Vulkan SDK
@@ -80,9 +80,11 @@ jobs:
         cmake -B ${{github.workspace}}/build 
         -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} 
         -DCMAKE_PREFIX_PATH="${{github.workspace}}/slang/install"
+        -Dslang_DIR="${{github.workspace}}/slang/install/lib/cmake/slang"
+        -DSLANG_ROOT="${{github.workspace}}/slang/install"
+        -DFETCHCONTENT_FULLY_DISCONNECTED=ON
         -DVULKAN_SDK="${{ env.VULKAN_SDK }}" 
         -DVulkan_INCLUDE_DIR="${{ env.Vulkan_INCLUDE_DIR }}" 
         -DVulkan_LIBRARY="${{ env.Vulkan_LIBRARY }}" 
-        -DSLANG_ROOT=${{github.workspace}}/slang/install
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
