@@ -81,10 +81,10 @@ jobs:
         -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} 
         -DCMAKE_PREFIX_PATH="${{github.workspace}}/slang/install"
         -Dslang_DIR="${{github.workspace}}/slang/install/lib/cmake/slang"
-        -DSLANG_ROOT="${{github.workspace}}/slang/install"
-        -DFETCHCONTENT_FULLY_DISCONNECTED=ON
+        -DFETCHCONTENT_TRY_FIND_PACKAGE_MODE=ALWAYS
         -DVULKAN_SDK="${{ env.VULKAN_SDK }}" 
         -DVulkan_INCLUDE_DIR="${{ env.Vulkan_INCLUDE_DIR }}" 
         -DVulkan_LIBRARY="${{ env.Vulkan_LIBRARY }}" 
+        -DSLANG_ROOT="${{github.workspace}}/slang/install"
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
