@@ -55,6 +55,32 @@ jobs:
           -DCMAKE_INSTALL_PREFIX="${{github.workspace}}/slang/install"
         cmake --build "${{github.workspace}}/slang/build" --config ${{env.BUILD_TYPE}}
         cmake --install "${{github.workspace}}/slang/build" --config ${{env.BUILD_TYPE}}
+    - name: Force Slang Target Alias
+      shell: bash
+      run: |
+        # Create the directory where CMake looks for the config
+        DIR="${{github.workspace}}/slang/install/lib/cmake/slang"
+        mkdir -p "$DIR"
+        
+        # Create a proxy config that satisfies your plugin's 'get_target_property' calls
+        cat > "$DIR/slang-config.cmake" <<EOF
+        if(NOT TARGET slang)
+          add_library(slang SHARED IMPORTED GLOBAL)
+          set_target_properties(slang PROPERTIES 
+            INTERFACE_INCLUDE_DIRECTORIES "${{github.workspace}}/slang/install/include"
+            IMPORTED_LOCATION "${{github.workspace}}/slang/install/bin/slang.dll"
+            IMPORTED_IMPLIB "${{github.workspace}}/slang/install/lib/slang.lib"
+          )
+          # For Linux compatibility
+          if(UNIX)
+            set_target_properties(slang PROPERTIES 
+              IMPORTED_LOCATION "${{github.workspace}}/slang/install/lib/libslang.so"
+            )
+          endif()
+        endif()
+        set(slang_FOUND TRUE)
+        set(slang_SOURCE_DIR "${{github.workspace}}/slang")
+        EOF
     - name: Prepare Vulkan SDK
       uses: humbletim/setup-vulkan-sdk@v1.2.1
       with:
@@ -83,8 +109,6 @@ jobs:
         -Dslang_DIR="${{github.workspace}}/slang/install/lib/cmake/slang"
         -DFETCHCONTENT_TRY_FIND_PACKAGE_MODE=ALWAYS
         -DVULKAN_SDK="${{ env.VULKAN_SDK }}" 
-        -DVulkan_INCLUDE_DIR="${{ env.Vulkan_INCLUDE_DIR }}" 
-        -DVulkan_LIBRARY="${{ env.Vulkan_LIBRARY }}" 
         -DSLANG_ROOT="${{github.workspace}}/slang/install"
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
