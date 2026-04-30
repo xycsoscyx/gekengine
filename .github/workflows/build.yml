@@ -27,20 +27,20 @@ jobs:
         os: ${{ fromJson(needs.setup.outputs.os_matrix) }}
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
-    - name: Install X11 dependencies (Linux only)
-      if: runner.os == 'Linux'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libx11-dev
-    - name: Clone Slang (Recursive)
-      # Using --recursive ensures all dependencies in /external/ are fetched
-      run: git clone --depth 1 --branch v2026.2.2 --recursive https://github.com/shader-slang/slang.git ${{github.workspace}}/slang
-    - name: Build and install Slang
-      shell: bash
-      run: |
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install X11 dependencies (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libx11-dev
+      - name: Clone Slang (Recursive)
+        run: git clone --depth 1 --branch v2026.2.2 --recursive https://github.com/shader-slang/slang.git ${{github.workspace}}/slang
+      - name: Build and install Slang (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
           $prefix = "${{ github.workspace }}/slang/install"
           $prefix = $prefix -replace '\\', '/'
           cmake -S ${{github.workspace}}/slang -B ${{github.workspace}}/slang/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSLANG_ENABLE_TESTS=OFF -DSLANG_ENABLE_EXAMPLES=OFF -DSLANG_ENABLE_RHI=OFF -DSLANG_ENABLE_SPIRV_TOOLS=OFF -DCMAKE_INSTALL_PREFIX="$prefix"
@@ -51,33 +51,28 @@ jobs:
           prefix="${{ github.workspace }}/slang/install"
           cmake -S ${{github.workspace}}/slang -B ${{github.workspace}}/slang/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSLANG_ENABLE_TESTS=OFF -DSLANG_ENABLE_EXAMPLES=OFF -DSLANG_ENABLE_RHI=OFF -DSLANG_ENABLE_SPIRV_TOOLS=OFF -DCMAKE_INSTALL_PREFIX="$prefix"
           cmake --build ${{github.workspace}}/slang/build --config ${{env.BUILD_TYPE}} --target install
-    - name: Force Slang Target Alias
-      shell: bash
-      run: |
-        # Create the directory where CMake looks for the config
-        DIR="${{github.workspace}}/slang/install/lib/cmake/slang"
-        mkdir -p "$DIR"
-        
-        # Create a proxy config that satisfies your plugin's 'get_target_property' calls
-        cat > "$DIR/slang-config.cmake" <<EOF
-        if(NOT TARGET slang)
-          add_library(slang SHARED IMPORTED GLOBAL)
-          set_target_properties(slang PROPERTIES 
-            INTERFACE_INCLUDE_DIRECTORIES "${{github.workspace}}/slang/install/include"
-            IMPORTED_LOCATION "${{github.workspace}}/slang/install/bin/slang.dll"
-            IMPORTED_IMPLIB "${{github.workspace}}/slang/install/lib/slang.lib"
-          )
-          # For Linux compatibility
-          if(UNIX)
-            set_target_properties(slang PROPERTIES 
-              IMPORTED_LOCATION "${{github.workspace}}/slang/install/lib/libslang.so"
+      - name: Force Slang Target Alias
+        run: |
+          DIR="${{github.workspace}}/slang/install/lib/cmake/slang"
+          mkdir -p "$DIR"
+          cat > "$DIR/slang-config.cmake" <<EOF
+          if(NOT TARGET slang)
+            add_library(slang SHARED IMPORTED GLOBAL)
+            set_target_properties(slang PROPERTIES \
+              INTERFACE_INCLUDE_DIRECTORIES "${{github.workspace}}/slang/install/include"\
+              IMPORTED_LOCATION "${{github.workspace}}/slang/install/bin/slang.dll"\
+              IMPORTED_IMPLIB "${{github.workspace}}/slang/install/lib/slang.lib"\
             )
+            if(UNIX)
+              set_target_properties(slang PROPERTIES \
+                IMPORTED_LOCATION "${{github.workspace}}/slang/install/lib/libslang.so"\
+              )
+            endif()
           endif()
-        endif()
-        set(slang_FOUND TRUE)
-        set(slang_SOURCE_DIR "${{github.workspace}}/slang")
-        EOF
-    - name: Prepare Vulkan SDK
+          set(slang_FOUND TRUE)
+          set(slang_SOURCE_DIR "${{github.workspace}}/slang")
+          EOF
+      - name: Prepare Vulkan SDK
       uses: humbletim/setup-vulkan-sdk@v1.2.1
       with:
         vulkan-query-version: 1.4.304.1
