@@ -13,11 +13,11 @@ env:
 jobs:
   setup:
     runs-on: ubuntu-latest
-    outputs:
-      os_matrix: ${{ steps.set_list.outputs.os_list }}
     steps:
       - id: set_list
         run: echo 'os_list=["ubuntu-latest", "windows-latest"]' >> "$GITHUB_OUTPUT"
+    outputs:
+      os_matrix: ${{ steps.set_list.outputs.os_list }}
 
   build:
     needs: setup
