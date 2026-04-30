@@ -14,10 +14,9 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     outputs:
-      os_matrix: ${{ steps.set-list.outputs.os_list }}
+      os_matrix: ${{ steps.set_list.outputs.os_list }}
     steps:
-      - id: set-list
-        # The list is defined ONCE here as a JSON string
+      - id: set_list
         run: echo 'os_list=["ubuntu-latest", "windows-latest"]' >> "$GITHUB_OUTPUT"
 
   build:
