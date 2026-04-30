@@ -42,19 +42,16 @@ jobs:
     - name: Build and install Slang
       shell: bash
       run: |
-        cmake -S "${{github.workspace}}/slang" -B "${{github.workspace}}/slang/build" \
-          -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
-          -DSLANG_ENABLE_TESTS=OFF \
-          -DSLANG_ENABLE_EXAMPLES=OFF \
-          -DSLANG_ENABLE_GFX=OFF \
-          -DSLANG_ENABLE_RHI=OFF \
-          -DSLANG_ENABLE_SPIRV_TOOLS=OFF \
-          -DSLANG_SLANG_LLVM_FLAVOR=DISABLE \
-          -DSLANG_ENABLE_GLSLANG=OFF \
-          -DCMAKE_CXX_FLAGS="-w" \
-          -DCMAKE_INSTALL_PREFIX="${{github.workspace}}/slang/install"
-        cmake --build "${{github.workspace}}/slang/build" --config ${{env.BUILD_TYPE}}
-        cmake --install "${{github.workspace}}/slang/build" --config ${{env.BUILD_TYPE}}
+          $prefix = "${{ github.workspace }}/slang/install"
+          $prefix = $prefix -replace '\\', '/'
+          cmake -S ${{github.workspace}}/slang -B ${{github.workspace}}/slang/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSLANG_ENABLE_TESTS=OFF -DSLANG_ENABLE_EXAMPLES=OFF -DSLANG_ENABLE_RHI=OFF -DSLANG_ENABLE_SPIRV_TOOLS=OFF -DCMAKE_INSTALL_PREFIX="$prefix"
+          cmake --build ${{github.workspace}}/slang/build --config ${{env.BUILD_TYPE}} --target install
+      - name: Build and install Slang (Linux)
+        if: runner.os != 'Windows'
+        run: |
+          prefix="${{ github.workspace }}/slang/install"
+          cmake -S ${{github.workspace}}/slang -B ${{github.workspace}}/slang/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DSLANG_ENABLE_TESTS=OFF -DSLANG_ENABLE_EXAMPLES=OFF -DSLANG_ENABLE_RHI=OFF -DSLANG_ENABLE_SPIRV_TOOLS=OFF -DCMAKE_INSTALL_PREFIX="$prefix"
+          cmake --build ${{github.workspace}}/slang/build --config ${{env.BUILD_TYPE}} --target install
     - name: Force Slang Target Alias
       shell: bash
       run: |
