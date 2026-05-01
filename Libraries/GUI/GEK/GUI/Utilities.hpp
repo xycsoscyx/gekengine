@@ -7,6 +7,8 @@
 /// Last Changed: $Date:   Fri Oct 21 04:24:02 2016 +0000 $
 #pragma once
 
+#include <cstdint>
+
 #include "GEK/Utility/String.hpp"
 
 #include <imgui.h>
