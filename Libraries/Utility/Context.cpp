@@ -8,6 +8,7 @@
 #include <mutex>
 #include <fstream>
 #include <cstdlib>
+#include <cstring>
 
 #ifdef _DEBUG
 const char modulePostfix[] = "_debug";

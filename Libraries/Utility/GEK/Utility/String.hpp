@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include <format>
+#include <iterator>
 
 using namespace std::string_literals; // enables s-suffix for std::string literals  
 using namespace std::string_view_literals; // enables s-suffix for std::string literals  
