@@ -2,7 +2,7 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "API/System/RenderDevice.hpp"
-#include "API/System/WIndowDevice.hpp"
+#include "API/System/WindowDevice.hpp"
 #include <algorithm>
 #include <bit>
 #include <chrono>
