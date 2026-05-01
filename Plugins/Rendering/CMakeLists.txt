@@ -1,3 +1,5 @@
 add_subdirectory(RenderCore)
-add_subdirectory(D3D11)
+if(WIN32)
+    add_subdirectory(D3D11)
+endif()
 add_subdirectory(Vulkan)
