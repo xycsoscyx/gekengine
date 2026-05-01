@@ -57,15 +57,6 @@ const char modulePostfix[] = "";
     #define getFunction(HANDLE, FUNCTION)   dlsym(HANDLE, FUNCTION)
     #define freeLibrary(HANDLE)             dlclose(HANDLE)
     const char *moduleExtension = ".so";
-    LIBRARY loadLibrary(const Gek::FileSystem::Path& path)
-    {
-        if (path.isFile() && path.getExtension() == moduleExtension && path.withoutExtension().getFileName().ends_with(modulePostfix))
-        {
-            return dlopen((path.getString().c_str()), RTLD_LAZY);
-        }
-
-        return nullptr;
-    }
 #endif
 
 LIBRARY loadPlugin(const Gek::FileSystem::Path& path)
