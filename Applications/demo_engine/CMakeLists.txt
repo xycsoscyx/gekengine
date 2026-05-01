@@ -23,17 +23,8 @@ install(TARGETS ${ProjectID}
 )
 
 
-# Add dependencies on utility tools so they are built before demo_engine
-add_dependencies(${ProjectID} createmodel createhull createtree)
+add_dependencies(${ProjectID} rendervulkan createmodel createhull createtree)
 if(MSVC)
-    add_dependencies(${ProjectID} compresstextures)
+    add_dependencies(${ProjectID} compresstextures renderd3d11)
 endif()
 
-# Ensure all plugins are built/installed with demo_engine
-add_dependencies(${ProjectID}
-    renderd3d11
-    rendervulkan
-    # Add other plugin targets here as needed
-)
-
-# Ensure plugin installs run with main install
