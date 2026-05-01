@@ -56,22 +56,22 @@ jobs:
           DIR="${{github.workspace}}/slang/install/lib/cmake/slang"
           mkdir -p "$DIR"
           cat > "$DIR/slang-config.cmake" <<EOF
-          if(NOT TARGET slang)
-            add_library(slang SHARED IMPORTED GLOBAL)
-            set_target_properties(slang PROPERTIES \
-              INTERFACE_INCLUDE_DIRECTORIES "${{github.workspace}}/slang/install/include"\
-              IMPORTED_LOCATION "${{github.workspace}}/slang/install/bin/slang.dll"\
-              IMPORTED_IMPLIB "${{github.workspace}}/slang/install/lib/slang.lib"\
-            )
-            if(UNIX)
-              set_target_properties(slang PROPERTIES \
-                IMPORTED_LOCATION "${{github.workspace}}/slang/install/lib/libslang.so"\
-              )
-            endif()
-          endif()
-          set(slang_FOUND TRUE)
-          set(slang_SOURCE_DIR "${{github.workspace}}/slang")
-          EOF
+if(NOT TARGET slang)
+  add_library(slang SHARED IMPORTED GLOBAL)
+  set_target_properties(slang PROPERTIES \
+    INTERFACE_INCLUDE_DIRECTORIES "${{github.workspace}}/slang/install/include"\
+    IMPORTED_LOCATION "${{github.workspace}}/slang/install/bin/slang.dll"\
+    IMPORTED_IMPLIB "${{github.workspace}}/slang/install/lib/slang.lib"\
+  )
+  if(UNIX)
+    set_target_properties(slang PROPERTIES \
+      IMPORTED_LOCATION "${{github.workspace}}/slang/install/lib/libslang.so"\
+    )
+  endif()
+endif()
+set(slang_FOUND TRUE)
+set(slang_SOURCE_DIR "${{github.workspace}}/slang")
+EOF
       - name: Prepare Vulkan SDK
       uses: humbletim/setup-vulkan-sdk@v1.2.1
       with:
