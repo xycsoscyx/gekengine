@@ -10,7 +10,7 @@
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/JSON.hpp"
 #include "API/Engine/Core.hpp"
-#include "API/System/WIndowDevice.hpp"
+#include "API/System/WindowDevice.hpp"
 #include "API/System/RenderDevice.hpp"
 #include <wink/signal.hpp>
 #include <imgui.h>
