@@ -1,11 +1,3 @@
-name: ubuntu
-
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
 name: Ubuntu CI
 
 on:
