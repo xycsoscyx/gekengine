@@ -1006,7 +1006,9 @@ float4 main(PixelInput input) : SV_Target
 				const float minimumZ = ((z - 0.1f) * depthScale);
 				const float maximumZ = ((z + 1.1f) * depthScale);
 
-				const Math::Float4 tileBounds(Math::Float4(float(x), float(x), float(y), float(y)) + TileBoundsOffset);
+				const float minPosition(x);
+				const float maxPosition(y);
+				const Math::Float4 tileBounds(Math::Float4(minPosition, minPosition, maxPosition, maxPosition) + TileBoundsOffset);
 				const Math::Float4 projectionScale(GridScaleOne / Math::Float4(
 					currentCamera.projectionMatrix.r.x.x, currentCamera.projectionMatrix.r.x.x,
 					currentCamera.projectionMatrix.r.y.y, currentCamera.projectionMatrix.r.y.y));

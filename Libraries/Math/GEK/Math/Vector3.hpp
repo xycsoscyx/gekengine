@@ -53,18 +53,18 @@ namespace Gek
             {
             }
 
-            explicit Vector3(TYPE scalar) noexcept
+            explicit Vector3(const TYPE scalar) noexcept
                 : data{ scalar, scalar, scalar }
             {
             }
 
-            explicit Vector3(TYPE x, TYPE y, TYPE z) noexcept
+            explicit Vector3(const TYPE x, const TYPE y, const TYPE z) noexcept
                 : data{ x, y, z }
             {
             }
 
             template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            explicit Vector3(OTHER x, OTHER y, OTHER z) noexcept
+            explicit Vector3(const OTHER x, const OTHER y, const OTHER z) noexcept
                 : data{ TYPE(x), TYPE(y), TYPE(z)}
             {
             }
@@ -74,19 +74,19 @@ namespace Gek
             {
             }
 
-            Vector3(TYPE2 const &xy, TYPE z) noexcept
+            Vector3(TYPE2 const &xy, const TYPE z) noexcept
                 : x(xy.x)
                 , y(xy.y)
                 , z(z)
             {
             }
 
-            void set(TYPE value) noexcept
+            void set(const TYPE value) noexcept
             {
                 this->x = this->y = this->z = value;
             }
 
-            void set(TYPE x, TYPE y, TYPE z) noexcept
+            void set(const TYPE x, const TYPE y, const TYPE z) noexcept
             {
                 this->x = x;
                 this->y = y;

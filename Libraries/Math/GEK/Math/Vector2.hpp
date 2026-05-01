@@ -45,18 +45,18 @@ namespace Gek
             {
             }
 
-            explicit Vector2(TYPE scalar) noexcept
+            explicit Vector2(const TYPE scalar) noexcept
                 : data{ scalar, scalar }
             {
             }
 
-            explicit Vector2(TYPE x, TYPE y) noexcept
+            explicit Vector2(const TYPE x, const TYPE y) noexcept
                 : data{ x, y }
             {
             }
 
             template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            explicit Vector2(OTHER x, OTHER y) noexcept
+            explicit Vector2(const OTHER x, const OTHER y) noexcept
                 : data{ TYPE(x), TYPE(y) }
             {
             }
@@ -66,12 +66,12 @@ namespace Gek
             {
             }
 
-            void set(TYPE value) noexcept
+            void set(const TYPE value) noexcept
             {
                 this->x = this->y = TYPE(value);
             }
 
-            void set(TYPE x, TYPE y) noexcept
+            void set(const TYPE x, const TYPE y) noexcept
             {
                 this->x = TYPE(x);
                 this->y = TYPE(y);

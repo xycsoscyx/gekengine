@@ -56,7 +56,7 @@ namespace Gek
             {
             }
 
-            explicit Vector4(TYPE value) noexcept
+            explicit Vector4(const TYPE value) noexcept
 				: x(value)
 				, y(value)
 				, z(value)
@@ -64,7 +64,7 @@ namespace Gek
             {
             }
 
-            explicit Vector4(TYPE x, TYPE y, TYPE z, TYPE w) noexcept
+            explicit Vector4(const TYPE x, const TYPE y, const TYPE z, const TYPE w) noexcept
 				: x(x)
 				, y(y)
 				, z(z)
@@ -73,7 +73,7 @@ namespace Gek
             }
 
             template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            explicit Vector4(OTHER x, OTHER y, OTHER z, OTHER w) noexcept
+            explicit Vector4(const OTHER x, const OTHER y, const OTHER z, const OTHER w) noexcept
 				: x(TYPE(x))
 				, y(TYPE(y))
 				, z(TYPE(z))
@@ -105,12 +105,12 @@ namespace Gek
 			{
 			}
 
-            void set(TYPE value) noexcept
+            void set(const TYPE value) noexcept
             {
                 x = y = z = w = value;
             }
 
-            void set(TYPE x, TYPE y, TYPE z, TYPE w) noexcept
+            void set(const TYPE x, const TYPE y, const TYPE z, const TYPE w) noexcept
             {
 				this->x = x;
 				this->y = y;
@@ -126,7 +126,7 @@ namespace Gek
                 this->w = data[3];
             }
 
-            void set(TYPE3 const &xyz, float w) noexcept
+            void set(TYPE3 const &xyz, const TYPE w) noexcept
             {
                 this->xyz() = xyz;
                 this->w = w;
