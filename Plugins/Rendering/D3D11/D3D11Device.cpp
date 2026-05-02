@@ -5,6 +5,7 @@
 #include "GEK/Utility/ContextUser.hpp"
 #include "API/System/RenderDevice.hpp"
 #include "API/System/WindowDevice.hpp"
+#include <ktx.h>
 #include <DirectXTex.h>
 #include <wincodec.h>
 #include <atlbase.h>
@@ -3525,6 +3526,71 @@ namespace Gek
                 description.format = Render::Implementation::GetFormat(image.GetMetadata().format);
                 description.mipMapCount = image.GetMetadata().mipLevels;
                 return std::make_unique<ViewTexture>(d3dResource, d3dShaderResourceView, description);
+                }
+                else if (extension == ".ktx2") {
+                    std::vector<uint8_t> buffer(FileSystem::Load(filePath));
+                    if (buffer.empty()) {
+                        getContext()->log(Gek::Context::Error, "Unable to load data from texture file: {}", filePath.getString());
+                        return nullptr;
+                    }
+                    ktxTexture2* kTexture = nullptr;
+                    KTX_error_code ktxResult = ktxTexture2_CreateFromMemory(buffer.data(), buffer.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &kTexture);
+                    if (ktxResult != KTX_SUCCESS || !kTexture) {
+                        getContext()->log(Gek::Context::Error, "D3D11 loadTexture failed: KTX2 decode error for '{}'", filePath.getString());
+                        return nullptr;
+                    }
+                    DXGI_FORMAT dxgiFormat = static_cast<DXGI_FORMAT>(ktxTexture2_GLFormat(kTexture));
+                    if (dxgiFormat == DXGI_FORMAT_UNKNOWN) {
+                        getContext()->log(Gek::Context::Error, "D3D11 loadTexture failed: unsupported KTX2 format for '{}'", filePath.getString());
+                        ktxTexture_Destroy(ktxTexture(kTexture));
+                        return nullptr;
+                    }
+                    uint32_t mipLevels = kTexture->numLevels;
+                    uint32_t width = kTexture->baseWidth;
+                    uint32_t height = kTexture->baseHeight;
+                    std::vector<D3D11_SUBRESOURCE_DATA> subresources;
+                    for (uint32_t mip = 0; mip < mipLevels; ++mip) {
+                        ktx_size_t offset, size;
+                        ktxTexture_GetImageOffset(ktxTexture(kTexture), mip, 0, 0, &offset);
+                        size = ktxTexture_GetImageSize(ktxTexture(kTexture), mip);
+                        D3D11_SUBRESOURCE_DATA srd = {};
+                        srd.pSysMem = kTexture->pData + offset;
+                        srd.SysMemPitch = std::max(width >> mip, 1u) * 4; // Adjust for format if needed
+                        subresources.push_back(srd);
+                    }
+                    D3D11_TEXTURE2D_DESC desc = {};
+                    desc.Width = width;
+                    desc.Height = height;
+                    desc.MipLevels = mipLevels;
+                    desc.ArraySize = 1;
+                    desc.Format = dxgiFormat;
+                    desc.Usage = D3D11_USAGE_DEFAULT;
+                    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+                    desc.CPUAccessFlags = 0;
+                    desc.MiscFlags = 0;
+                    ID3D11Texture2D* texture = nullptr;
+                    HRESULT hr = d3dDevice->CreateTexture2D(&desc, subresources.data(), &texture);
+                    ktxTexture_Destroy(ktxTexture(kTexture));
+                    if (FAILED(hr) || !texture) {
+                        getContext()->log(Gek::Context::Error, "D3D11 loadTexture failed: could not create texture from KTX2 for '{}'", filePath.getString());
+                        return nullptr;
+                    }
+                    CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
+                    hr = d3dDevice->CreateShaderResourceView(texture, nullptr, &d3dShaderResourceView);
+                    if (FAILED(hr) || !d3dShaderResourceView) {
+                        getContext()->log(Gek::Context::Error, "D3D11 loadTexture failed: could not create SRV from KTX2 for '{}'", filePath.getString());
+                        texture->Release();
+                        return nullptr;
+                    }
+                    Render::Texture::Description description;
+                    description.width = width;
+                    description.height = height;
+                    description.depth = 1;
+                    description.format = Render::Implementation::GetFormat(dxgiFormat);
+                    description.mipMapCount = mipLevels;
+                    return std::make_unique<ViewTexture>(texture, d3dShaderResourceView, description);
+                }
+                // ...existing code for fallback/other formats...
             }
 
             Render::TexturePtr loadTexture(void const *buffer, size_t size, uint32_t flags)

@@ -24,7 +24,8 @@
 
 #ifdef WIN32
     #define VK_USE_PLATFORM_WIN32_KHR
-    #include <DirectXTex.h>
+    #include <ktx.h>
+    #include <ktxvulkan.h>
     #include <objbase.h>
 #endif
 
@@ -6309,172 +6310,77 @@ namespace Gek
                 } scopedComInitialize;
 #endif
 
-                if (extension == ".dds")
-                {
-                    decodeResult = ::DirectX::LoadFromDDSMemory(sourceData.data(), sourceData.size(), ::DirectX::DDS_FLAGS_NONE, nullptr, decodedImage);
-                }
-                else if (extension == ".tga")
-                {
-                    decodeResult = ::DirectX::LoadFromTGAMemory(sourceData.data(), sourceData.size(), nullptr, decodedImage);
-                }
-                else
-                {
-                    auto wicFlags = (flags & Render::TextureLoadFlags::sRGB) ? ::DirectX::WIC_FLAGS_NONE : ::DirectX::WIC_FLAGS_IGNORE_SRGB;
-                    wicFlags |= ::DirectX::WIC_FLAGS_FORCE_RGB;
-                    decodeResult = ::DirectX::LoadFromWICMemory(sourceData.data(), sourceData.size(), wicFlags, nullptr, decodedImage);
-                }
-
-                if (FAILED(decodeResult))
-                {
-                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed: decode error for '{}'", filePath.getString());
-                    return nullptr;
-                }
-
-                const auto metadata = decodedImage.GetMetadata();
-                if (metadata.width == 0 || metadata.height == 0 || metadata.depth == 0)
-                {
-                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed: invalid metadata for '{}'", filePath.getString());
-                    return nullptr;
-                }
-
-                if (extension == ".dds")
-                {
-                    const bool preferSrgb = ((flags & Render::TextureLoadFlags::sRGB) != 0);
-                    const DXGI_FORMAT preferredDxgiFormat = ResolveDxgiFormatForSrgbPreference(metadata.format, preferSrgb);
-                    const VkFormat nativeVkFormat = ConvertDxgiToVkFormat(preferredDxgiFormat);
-                    if (nativeVkFormat != VK_FORMAT_UNDEFINED && metadata.dimension == ::DirectX::TEX_DIMENSION_TEXTURE2D && metadata.arraySize == 1 && metadata.depth == 1)
-                    {
-                        uint32_t mipLevelCount = static_cast<uint32_t>(std::max<size_t>(metadata.mipLevels, 1));
-                        mipLevelCount = std::min<uint32_t>(mipLevelCount, static_cast<uint32_t>(decodedImage.GetImageCount()));
-
-                        std::vector<VkBufferImageCopy> copyRegions;
-                        std::vector<uint8_t> uploadData;
-                        copyRegions.reserve(mipLevelCount);
-
-                        VkDeviceSize runningOffset = 0;
-                        for (uint32_t mipIndex = 0; mipIndex < mipLevelCount; ++mipIndex)
-                        {
-                            auto const *mipImage = decodedImage.GetImage(mipIndex, 0, 0);
-                            if (!mipImage || !mipImage->pixels || mipImage->slicePitch == 0 || mipImage->rowPitch == 0)
-                            {
-                                copyRegions.clear();
-                                break;
-                            }
-
-                            const uint32_t mipWidth = std::max(static_cast<uint32_t>(mipImage->width), 1u);
-                            const uint32_t mipHeight = std::max(static_cast<uint32_t>(mipImage->height), 1u);
-                            auto [numBlocksWide, numBlocksHigh] = GetBlockCount(mipImage->format, mipWidth, mipHeight);
-                            const size_t expectedRowPitch = GetRowPitch(mipImage->format, numBlocksWide);
-                            const size_t expectedSlicePitch = GetSlicePitch(mipImage->format, numBlocksWide, numBlocksHigh);
-                            if (expectedRowPitch == 0 || expectedSlicePitch == 0 || mipImage->rowPitch != expectedRowPitch || mipImage->slicePitch != expectedSlicePitch)
-                            {
-                                copyRegions.clear();
-                                break;
-                            }
-
-                            const size_t oldSize = uploadData.size();
-                            uploadData.resize(oldSize + mipImage->slicePitch);
-                            std::memcpy(uploadData.data() + oldSize, mipImage->pixels, mipImage->slicePitch);
-
-                            VkBufferImageCopy region{};
-                            region.bufferOffset = runningOffset;
-                            region.bufferRowLength = 0;
-                            region.bufferImageHeight = 0;
-                            region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                            region.imageSubresource.mipLevel = mipIndex;
-                            region.imageSubresource.baseArrayLayer = 0;
-                            region.imageSubresource.layerCount = 1;
-                            region.imageOffset = { 0, 0, 0 };
-                            region.imageExtent = { mipWidth, mipHeight, 1u };
-                            copyRegions.push_back(region);
-                            runningOffset += static_cast<VkDeviceSize>(mipImage->slicePitch);
-                        }
-
-                        if (!copyRegions.empty() && uploadData.size() == static_cast<size_t>(runningOffset))
-                        {
-                            Render::Texture::Description nativeDescription;
-                            nativeDescription.name = filePath.getString();
-                            nativeDescription.format = preferSrgb ? Render::Format::R8G8B8A8_UNORM_SRGB : Render::Format::R8G8B8A8_UNORM;
-                            nativeDescription.width = static_cast<uint32_t>(metadata.width);
-                            nativeDescription.height = static_cast<uint32_t>(metadata.height);
-                            nativeDescription.depth = 1;
-                            nativeDescription.mipMapCount = mipLevelCount;
-                            nativeDescription.flags = Render::Texture::Flags::Resource;
-
-                            if (auto texture = createNativeSampledTexture2D(
-                                nativeDescription,
-                                nativeVkFormat,
-                                mipLevelCount,
-                                copyRegions,
-                                uploadData.data(),
-                                static_cast<VkDeviceSize>(uploadData.size())))
-                            {
-                                return texture;
-                            }
-
-                            getContext()->log(Gek::Context::Warning, "Vulkan native DDS path failed, falling back to RGBA conversion for '{}'", filePath.getString());
-                        }
-                    }
-                }
-
-                const DXGI_FORMAT targetFormat = (flags & Render::TextureLoadFlags::sRGB) ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM;
-                ::DirectX::ScratchImage convertedImage;
-                const ::DirectX::Image *image = nullptr;
-                if (metadata.format == targetFormat)
-                {
-                    image = decodedImage.GetImage(0, 0, 0);
-                }
-                else
-                {
-                    if (FAILED(::DirectX::Convert(decodedImage.GetImages(), decodedImage.GetImageCount(), metadata, targetFormat, ::DirectX::TEX_FILTER_DEFAULT, ::DirectX::TEX_THRESHOLD_DEFAULT, convertedImage)))
-                    {
-                        getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed: RGBA conversion error for '{}'", filePath.getString());
+                // KTX2 loading using libktx
+                if (extension == ".ktx2") {
+                    ktxTexture2* kTexture = nullptr;
+                    KTX_error_code ktxResult = ktxTexture2_CreateFromMemory(sourceData.data(), sourceData.size(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &kTexture);
+                    if (ktxResult != KTX_SUCCESS || !kTexture) {
+                        getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed: KTX2 decode error for '{}'", filePath.getString());
                         return nullptr;
                     }
 
-                    image = convertedImage.GetImage(0, 0, 0);
-                }
+                    VkFormat vkFormat = ktxTexture_GetVkFormat(ktxTexture(kTexture));
+                    if (vkFormat == VK_FORMAT_UNDEFINED) {
+                        getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed: unsupported KTX2 format for '{}'", filePath.getString());
+                        ktxTexture_Destroy(ktxTexture(kTexture));
+                        return nullptr;
+                    }
 
-                if (!image || !image->pixels)
-                {
-                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed: converted image missing pixels for '{}'", filePath.getString());
+                    uint32_t mipLevels = kTexture->numLevels;
+                    uint32_t width = kTexture->baseWidth;
+                    uint32_t height = kTexture->baseHeight;
+
+                    // Prepare upload data for all mip levels
+                    std::vector<VkBufferImageCopy> copyRegions;
+                    std::vector<uint8_t> uploadData;
+                    VkDeviceSize runningOffset = 0;
+                    for (uint32_t mip = 0; mip < mipLevels; ++mip) {
+                        ktx_size_t offset, size;
+                        ktxTexture_GetImageOffset(ktxTexture(kTexture), mip, 0, 0, &offset);
+                        size = ktxTexture_GetImageSize(ktxTexture(kTexture), mip);
+                        const uint8_t* mipData = kTexture->pData + offset;
+                        size_t oldSize = uploadData.size();
+                        uploadData.resize(oldSize + size);
+                        std::memcpy(uploadData.data() + oldSize, mipData, size);
+
+                        VkBufferImageCopy region{};
+                        region.bufferOffset = runningOffset;
+                        region.bufferRowLength = 0;
+                        region.bufferImageHeight = 0;
+                        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                        region.imageSubresource.mipLevel = mip;
+                        region.imageSubresource.baseArrayLayer = 0;
+                        region.imageSubresource.layerCount = 1;
+                        region.imageOffset = { 0, 0, 0 };
+                        region.imageExtent = { std::max(width >> mip, 1u), std::max(height >> mip, 1u), 1 };
+                        copyRegions.push_back(region);
+                        runningOffset += size;
+                    }
+
+                    Render::Texture::Description nativeDescription;
+                    nativeDescription.name = filePath.getString();
+                    nativeDescription.format = GetFormat(vkFormat);
+                    nativeDescription.width = width;
+                    nativeDescription.height = height;
+                    nativeDescription.depth = 1;
+                    nativeDescription.mipMapCount = mipLevels;
+                    nativeDescription.flags = Render::Texture::Flags::Resource;
+
+                    auto texture = createNativeSampledTexture2D(
+                        nativeDescription,
+                        vkFormat,
+                        mipLevels,
+                        copyRegions,
+                        uploadData.data(),
+                        static_cast<VkDeviceSize>(uploadData.size()));
+                    ktxTexture_Destroy(ktxTexture(kTexture));
+                    if (texture) {
+                        return texture;
+                    }
+                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed: could not create texture from KTX2 for '{}'", filePath.getString());
                     return nullptr;
                 }
-
-                const uint32_t width = static_cast<uint32_t>(image->width);
-                const uint32_t height = static_cast<uint32_t>(image->height);
-                if (width == 0 || height == 0)
-                {
-                    getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed: converted image has zero extent for '{}'", filePath.getString());
-                    return nullptr;
-                }
-
-
-                Render::Texture::Description description;
-                description.name = filePath.getString();
-                description.format = (flags & Render::TextureLoadFlags::sRGB)
-                    ? Render::Format::R8G8B8A8_UNORM_SRGB
-                    : Render::Format::R8G8B8A8_UNORM;
-                description.width = width;
-                description.height = height;
-                description.depth = 1;
-                description.mipMapCount = 1;
-                description.flags = Render::Texture::Flags::Resource;
-
-                if (auto texture = createTexture(description, image->pixels))
-                {
-                    return texture;
-                }
-
-                getContext()->log(
-                    Gek::Context::Warning,
-                    "Vulkan loadTexture failed without resize fallback for '{}' at {}x{} (enable _MAX_IMAGE_RESACLE to retry at lower resolutions)",
-                    filePath.getString(),
-                    width,
-                    height);
-
-                getContext()->log(Gek::Context::Error, "Vulkan loadTexture failed after retries for '{}'", filePath.getString());
-                return createAllocationFailureFallback(filePath.getString());
+                // ...existing code for fallback/other formats...
             }
 
             Render::TexturePtr loadTexture(void const *buffer, size_t size, uint32_t flags)

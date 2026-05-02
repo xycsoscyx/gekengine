@@ -70,7 +70,7 @@ if(DEFINED slang_SOURCE_DIR)
 	target_include_directories(renderd3d11 PRIVATE ${slang_SOURCE_DIR}/include)
 endif()
 target_link_libraries(renderd3d11 PUBLIC Math Utility Resources Common)
-target_link_libraries(renderd3d11 PRIVATE d3d11 dxgi d3dcompiler DirectXTex slang)
+target_link_libraries(renderd3d11 PRIVATE d3d11 dxgi d3dcompiler ktx slang)
 set_target_properties(renderd3d11 PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 install(TARGETS renderd3d11
     RUNTIME DESTINATION bin/plugins/render

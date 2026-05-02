@@ -1,4 +1,7 @@
 {
+  "cmake.configureArgs": [
+    "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
+  ],
   "cmake.useCMakePresets": "always",
   "cmake.defaultConfigurePreset": "vs2022-x64-d3d11",
   "cmake.defaultBuildPreset": "vs2022-x64-d3d11-install",

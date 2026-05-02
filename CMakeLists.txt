@@ -108,15 +108,16 @@ if(GEK_BUILD_TESTS)
     FetchContent_MakeAvailable(googletest)
 endif()
 
-if(WIN32)
-    SET(BUILD_TOOLS OFF CACHE BOOL "" FORCE)
-    SET(BUILD_SAMPLE OFF CACHE BOOL "" FORCE)
-    SET(BUILD_DX12 OFF CACHE BOOL "" FORCE)
-    SET(BC_USE_OPENMP OFF CACHE BOOL "" FORCE)
-    SET(DISABLE_MSVC_ITERATOR_DEBUGGING ON CACHE BOOL "" FORCE)
-    FetchContent_Declare(DirectXTex OVERRIDE_FIND_PACKAGE GIT_REPOSITORY https://github.com/microsoft/DirectXTex.git GIT_TAG oct2025 OVERRIDE_FIND_PACKAGE)
-    FetchContent_MakeAvailable(DirectXTex)
-endif()
+
+# Add libktx for KTX2 texture support
+include(FetchContent)
+set(KTX_FEATURE_TESTS OFF)
+FetchContent_Declare(
+    ktx
+    GIT_REPOSITORY https://github.com/KhronosGroup/KTX-Software.git
+    GIT_TAG v4.0.0
+)
+FetchContent_MakeAvailable(ktx)
 
 add_definitions(-D_USE_MATH_DEFINES)
 add_definitions(-DNOMINMAX)

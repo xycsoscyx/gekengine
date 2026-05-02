@@ -11,7 +11,7 @@ set_target_properties(${ProjectID} PROPERTIES
 	DEBUG_POSTFIX ""
 )
 
-target_link_libraries(${ProjectID} PRIVATE argparse DirectXTex)
+target_link_libraries(${ProjectID} PRIVATE argparse ktx)
 target_link_libraries(${ProjectID} PUBLIC Math Utility Resources)
 
 if (WIN32)

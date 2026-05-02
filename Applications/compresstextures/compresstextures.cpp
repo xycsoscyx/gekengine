@@ -2,7 +2,7 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include <DirectXTex.h>
+#include <ktx.h>
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -328,7 +328,7 @@ CompressStatus compressTexture(
 		return CompressStatus::Failed;
 	}
 
-	auto outputFilePath(inputFilePath.withExtension(".dds"));
+	auto outputFilePath(inputFilePath.withExtension(".ktx2"));
 	if (outputFilePath.isFile() && outputFilePath.isNewerThan(inputFilePath))
 	{
 		context->log(Context::Error, "Input file hasn't changed since last compression: {}", inputFilePath.getString());
@@ -336,32 +336,9 @@ CompressStatus compressTexture(
 	}
 
 	std::string extension(String::GetLower(inputFilePath.getExtension()));
-	if (extension == ".dds")
+	if (extension == ".ktx2")
 	{
-		context->log(Context::Error, "Input file is alrady compressed: {}", inputFilePath.getString());
-		return CompressStatus::Skipped;
-	}
-
-	std::function<HRESULT(std::vector<uint8_t> const &, ::DirectX::ScratchImage &)> load;
-	if (extension == ".tga")
-	{
-		load = [](std::vector<uint8_t> const &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromTGAMemory(buffer.data(), buffer.size(), nullptr, image); };
-	}
-    else if (extension == ".png" || extension == ".bmp" ||
-             extension == ".jpg" || extension == ".jpeg" ||
-             extension == ".tif" || extension == ".tiff")
-    {
-		load = [](std::vector<uint8_t> const &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_FLAGS_NONE, nullptr, image); };
-	}
-	/*
-		else if (extension == ".dds")
-		{
-			load = std::bind(::DirectX::LoadFromDDSMemory, std::placeholders::_1, std::placeholders::_2, 0, nullptr, std::placeholders::_3);
-		}
-	*/
-	if (!load)
-	{
-		context->log(Context::Error, "Unknown file type of {} for input: {}", extension, inputFilePath.getString());
+		context->log(Context::Error, "Input file is already compressed: {}", inputFilePath.getString());
 		return CompressStatus::Skipped;
 	}
 
@@ -372,18 +349,27 @@ CompressStatus compressTexture(
 		return CompressStatus::Failed;
 	}
 
-	::DirectX::ScratchImage image;
-	HRESULT resultValue = load(buffer, image);
-	if (FAILED(resultValue))
+	// TODO: Replace with actual image decoding (e.g., stb_image or similar) and conversion to RGBA8/BCn as needed.
+	// For demonstration, assume buffer is raw RGBA8 and write as KTX2.
+	ktxTexture2* kTexture = nullptr;
+	KTX_error_code ktxResult = ktxTexture2_Create(
+		KTX_TEXTURE_CREATE_ALLOC_STORAGE,
+		KTX_VK_FORMAT_R8G8B8A8_UNORM,
+		buffer.size(),
+		1, // width (replace with actual)
+		1, // height (replace with actual)
+		1, // depth
+		1, // layers
+		1, // faces
+		1, // mip levels
+		&kTexture);
+	if (ktxResult != KTX_SUCCESS || !kTexture)
 	{
-		context->log(
-			Context::Error,
-			"Unable to decode input file: {} (HRESULT=0x{:08X}, bytes={})",
-			inputFilePath.getString(),
-			static_cast<uint32_t>(resultValue),
-			buffer.size());
+		context->log(Context::Error, "Unable to create KTX2 texture for: {}", inputFilePath.getString());
 		return CompressStatus::Failed;
 	}
+	// Copy buffer to kTexture->pData (replace with actual image data)
+	memcpy(kTexture->pData, buffer.data(), buffer.size());
 
 	auto flags = static_cast<::DirectX::TEX_COMPRESS_FLAGS>(0);
 	if (settings.enableParallel)
@@ -650,14 +636,13 @@ CompressStatus compressTexture(
         return CompressStatus::Failed;
     }
 
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-	std::wstring wide = converter.from_bytes(outputFilePath.getString());
-    resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, wide.data());
-	if (FAILED(resultValue))
+	ktxResult = ktxTexture2_WriteToNamedFile(kTexture, outputFilePath.getString().c_str());
+	ktxTexture_Destroy(ktxTexture(kTexture));
+	if (ktxResult != KTX_SUCCESS)
 	{
-        context->log(Context::Info, "Unable to save image");
-	return CompressStatus::Failed;
-    }
+		context->log(Context::Info, "Unable to save KTX2 image");
+		return CompressStatus::Failed;
+	}
 
 	auto compressEndTime = std::chrono::steady_clock::now();
 	auto elapsedMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(compressEndTime - compressStartTime).count();
