@@ -24,11 +24,10 @@
 
 #ifdef WIN32
     #define VK_USE_PLATFORM_WIN32_KHR
+    #include <DirectXTex.h>
+    #include <objbase.h>
 #endif
-#include <DirectXTex.h>
-#ifdef WIN32
-#include <objbase.h>
-#endif
+
 #include <vulkan/vulkan.h>
 
 #include <slang.h>
@@ -185,7 +184,7 @@ namespace Gek
             return format;
         }
 
-        VkFormat GetVkFormat(DXGI_FORMAT format)
+        VkFormat ConvertDxgiToVkFormat(DXGI_FORMAT format)
         {
             switch (format)
             {
@@ -6342,7 +6341,7 @@ namespace Gek
                 {
                     const bool preferSrgb = ((flags & Render::TextureLoadFlags::sRGB) != 0);
                     const DXGI_FORMAT preferredDxgiFormat = ResolveDxgiFormatForSrgbPreference(metadata.format, preferSrgb);
-                    const VkFormat nativeVkFormat = GetVkFormat(preferredDxgiFormat);
+                    const VkFormat nativeVkFormat = ConvertDxgiToVkFormat(preferredDxgiFormat);
                     if (nativeVkFormat != VK_FORMAT_UNDEFINED && metadata.dimension == ::DirectX::TEX_DIMENSION_TEXTURE2D && metadata.arraySize == 1 && metadata.depth == 1)
                     {
                         uint32_t mipLevelCount = static_cast<uint32_t>(std::max<size_t>(metadata.mipLevels, 1));
